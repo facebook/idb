@@ -29,56 +29,9 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
-@interface FBFramebuffer_Queue_Forwarder : NSObject
-
-@property (nonatomic, weak, readonly) id<FBFramebufferConsumer> consumer;
-@property (nonatomic, strong, readonly) dispatch_queue_t consumerQueue;
-@property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
-
-@end
-
-@implementation FBFramebuffer_Queue_Forwarder
-
-- (instancetype)initWithConsumer:(id<FBFramebufferConsumer>)consumer consumerQueue:(dispatch_queue_t)consumerQueue
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _consumer = consumer;
-  _consumerQueue = consumerQueue;
-  _consumerUUID = NSUUID.UUID;
-
-  return self;
-}
-
-- (void)didChangeIOSurface:(IOSurface *)surface
-{
-  id<FBFramebufferConsumer> consumer = self.consumer;
-  dispatch_async(self.consumerQueue, ^{
-    [consumer didChangeIOSurface:surface];
-  });
-}
-
-- (void)didReceiveDamageRect:(CGRect)rect
-{
-  id<FBFramebufferConsumer> consumer = self.consumer;
-  dispatch_async(self.consumerQueue, ^{
-    [consumer didReceiveDamageRect:rect];
-  });
-}
-
-- (NSString *)consumerIdentifier
-{
-  return self.consumer.consumerIdentifier;
-}
-
-@end
-
 @interface FBFramebuffer ()
 
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, id> *forwarders;
+@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -131,11 +84,10 @@
   if (!self) {
     return nil;
   }
-  NSMapTable<id<FBFramebufferConsumer>, id> *forwarders = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
-    valueOptions:NSPointerFunctionsStrongMemory];
 
-  _forwarders = forwarders;
+  _consumers = [NSMapTable
+    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
+    valueOptions:NSPointerFunctionsCopyIn];
   _logger = logger;
 
   return self;
@@ -146,35 +98,33 @@
 - (nullable IOSurface *)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
   // Don't attach the same consumer twice
-  FBFramebuffer_Queue_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
-  NSAssert(forwarder == nil, @"Cannot re-attach the same consumer %@", forwarder.consumer);
-
-  // Create the forwarder and keep a reference to it.
-  forwarder = [[FBFramebuffer_Queue_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
-  [self.forwarders setObject:forwarder forKey:consumer];
+  NSAssert([self.attachedConsumers containsObject:consumer] == NO, @"Cannot re-attach the same consumer %@", consumer);
+  NSUUID *consumerUUID = NSUUID.UUID;
 
   // Attempt to return the surface synchronously (if supported).
   IOSurface *surface = [self extractImmediatelyAvailableSurface];
 
   // Register the consumer.
-  [self registerConsumer:consumer withForwarder:forwarder];
+  [self.consumers setObject:consumerUUID forKey:consumer];
+  [self registerConsumer:consumer uuid:consumerUUID queue:queue];
 
   return surface;
 }
 
 - (void)detachConsumer:(id<FBFramebufferConsumer>)consumer
 {
-  FBFramebuffer_Queue_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
-  if (!forwarder) {
-    return;
+  NSUUID *uuid = [self.consumers objectForKey:consumer];
+  if (!uuid) {
+    return;;
   }
-  [self detachConsumer:consumer fromForwarder:forwarder];
+  [self.consumers removeObjectForKey:consumer];
+  [self unregisterConsumer:consumer uuid:uuid];
 }
 
 - (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers
 {
-  NSMutableArray<id<FBFramebufferConsumer>> *consumers = [NSMutableArray array];
-  for (id<FBFramebufferConsumer> consumer in self.forwarders.keyEnumerator) {
+  NSMutableArray<id<FBFramebufferConsumer>> *consumers = NSMutableArray.array;
+  for (id<FBFramebufferConsumer> consumer in self.consumers.objectEnumerator) {
     [consumers addObject:consumer];
   }
   return [consumers copy];
@@ -192,12 +142,12 @@
   return nil;
 }
 
-- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer withForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
+- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer fromForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
+- (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
@@ -223,22 +173,26 @@
   return self.surface.ioSurface;
 }
 
-- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer withForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
+- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
 {
-  [self.surface registerCallbackWithUUID:forwarder.consumerUUID ioSurfaceChangeCallback:^(IOSurface *surface) {
-    [forwarder didChangeIOSurface:surface];
+  [self.surface registerCallbackWithUUID:uuid ioSurfaceChangeCallback:^(IOSurface *surface) {
+    dispatch_async(queue, ^{
+      [consumer didChangeIOSurface:surface];
+    });
   }];
-  [self.surface registerCallbackWithUUID:forwarder.consumerUUID damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
-    for (NSValue *value in frames) {
-      [forwarder didReceiveDamageRect:value.rectValue];
-    }
+  [self.surface registerCallbackWithUUID:uuid damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
+    dispatch_async(queue, ^{
+      for (NSValue *value in frames) {
+        [consumer didReceiveDamageRect:value.rectValue];
+      }
+    });
   }];
 }
 
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer fromForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
+- (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid
 {
-  [self.surface unregisterIOSurfaceChangeCallbackWithUUID:forwarder.consumerUUID];
-  [self.surface unregisterDamageRectanglesCallbackWithUUID:forwarder.consumerUUID];
+  [self.surface unregisterIOSurfaceChangeCallbackWithUUID:uuid];
+  [self.surface unregisterDamageRectanglesCallbackWithUUID:uuid];
 }
 
 @end
