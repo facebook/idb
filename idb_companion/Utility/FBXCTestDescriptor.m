@@ -186,35 +186,25 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 - (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self
-    executorWithConfiguration:configuration target:target]
-    onQueue:target.workQueue fmap:^(id<FBXCTestProcessExecutor> executor) {
-      FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
-      FBLogicTestRunStrategy *runner = [FBLogicTestRunStrategy strategyWithExecutor:executor configuration:configuration reporter:adapter logger:logger];
-      FBFuture<NSNull *> *completed = [runner execute];
-      if (completed.error) {
-        return [FBFuture futureWithError:completed.error];
-      }
-      FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:configuration.coveragePath binaryPath:configuration.binaryPath reporter:reporter logger:logger completed:completed queue:target.workQueue];
-      return [FBFuture futureWithResult:operation];
-    }];
-}
-
-- (FBFuture<id<FBXCTestProcessExecutor>> *)executorWithConfiguration:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target
-{
-  id<FBXCTestProcessExecutor> executor = nil;
+  NSString *shimPath = nil;
   if ([target isKindOfClass:FBSimulator.class]) {
-    executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:(FBSimulator *)target shims:configuration.shims];
+    shimPath = configuration.shims.iOSSimulatorTestShimPath;
   } else if ([target isKindOfClass:FBMacDevice.class]) {
-    executor = [FBMacXCTestProcessExecutor executorWithMacDevice:(FBMacDevice *)target shims:configuration.shims];
-  }
-
-  if (!executor) {
+    shimPath = configuration.shims.macOSTestShimPath;
+  } else {
     return [[FBIDBError
       describeFormat:@"%@ does not support logic tests", target]
       failFuture];
   }
-  return [FBFuture futureWithResult:executor];
+
+  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
+  FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration shimPath:shimPath reporter:adapter logger:logger];
+  FBFuture<NSNull *> *completed = [runner execute];
+  if (completed.error) {
+    return [FBFuture futureWithError:completed.error];
+  }
+  FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:configuration.coveragePath binaryPath:configuration.binaryPath reporter:reporter logger:logger completed:completed queue:target.workQueue];
+  return [FBFuture futureWithResult:operation];
 }
 
 @end

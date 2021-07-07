@@ -48,6 +48,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize logger = _logger;
+@dynamic xctestPath;
 
 #pragma mark Lifecycle
 
@@ -218,6 +219,12 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return [[NSHomeDirectory()
     stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
     stringByAppendingPathComponent:self.udid];
+}
+
+- (NSString *)xctestBinaryPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
 }
 
 #pragma mark NSObject

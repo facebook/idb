@@ -13,8 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBLogicTestConfiguration;
 
-@protocol FBControlCoreLogger;
-@protocol FBLogicXCTestReporter;
+@protocol FBiOSTarget;
+@protocol FBProcessSpawnCommands;
+@protocol FBXCTestExtendedCommands;
 
 /**
  A Runner for Logic Tests
@@ -24,13 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Logic Test Runner for iOS with the Provided Parameters.
 
- @param executor the executor.
+ @param target the target to run against.
  @param configuration the Configuration to use.
+ @param shimPath the path to the shim dylib.
  @param reporter the reporter to report to.
  @param logger the logger to use.
  @return a new Logic Test Strategy.
  */
-+ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration shimPath:(NSString *)shimPath reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

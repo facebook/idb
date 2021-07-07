@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
-@protocol FBXCTestProcessExecutor;
 
 /**
  A Platform-Agnostic utility class responsible for managing an xctest process.

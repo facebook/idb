@@ -11,7 +11,6 @@
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestProcess.h"
-#import "FBXCTestProcessExecutor.h"
 #import "XCTestBootstrapError.h"
 
 FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;

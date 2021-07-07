@@ -99,8 +99,6 @@ extern FBXCTestType const FBXCTestTypeListTest;
 
 @end
 
-@protocol FBXCTestProcessExecutor;
-
 /**
  A Test Configuration, specialized to the listing of Test Bundles.
  */

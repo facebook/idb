@@ -12,7 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "XCTestBootstrapError.h"
-#import "FBXCTestProcessExecutor.h"
 #import "ReporterEvents.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -20;

@@ -17,7 +17,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorXCTestProcessExecutor.h"
 
 static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 
@@ -92,12 +91,10 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
         waitForDebugger:NO
         timeout:timeout];
 
-      return [[FBListTestStrategy
-        strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator shims:configuration.shims]
-        configuration:configuration
-        logger:self.simulator.logger]
+      return [[[FBListTestStrategy alloc]
+        initWithTarget:self.simulator configuration:configuration shimPath:shims.iOSSimulatorTestShimPath logger:self.simulator.logger]
         listTests];
-  }];
+    }];
 }
 
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
@@ -144,7 +141,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     }];
 }
 
-+ (NSString *)xctestPath
+- (NSString *)xctestPath
 {
   return [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];

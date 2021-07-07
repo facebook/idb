@@ -14,7 +14,6 @@
 #import "FBManagedTestRunStrategy.h"
 #import "XCTestBootstrapError.h"
 #import "FBListTestStrategy.h"
-#import "FBMacXCTestProcessExecutor.h"
 #import "FBXCTestConfiguration.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
@@ -125,7 +124,7 @@
   return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
 }
 
-+ (NSString *)xctestPath
+- (NSString *)xctestPath
 {
   return [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"usr/bin/xctest"];
@@ -419,22 +418,23 @@
 - (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
   return [[FBXCTestShimConfiguration
-      defaultShimConfigurationWithLogger:self.logger]
-      onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-        FBListTestConfiguration *configuration = [FBListTestConfiguration
-          configurationWithShims:shims
-          environment:@{}
-          workingDirectory:self.auxillaryDirectory
-          testBundlePath:bundlePath
-          runnerAppPath:appPath
-          waitForDebugger:NO
-          timeout:timeout];
+    defaultShimConfigurationWithLogger:self.logger]
+    onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
+      FBListTestConfiguration *configuration = [FBListTestConfiguration
+        configurationWithShims:shims
+        environment:@{}
+        workingDirectory:self.auxillaryDirectory
+        testBundlePath:bundlePath
+        runnerAppPath:appPath
+        waitForDebugger:NO
+        timeout:timeout];
 
-        return [[FBListTestStrategy
-          strategyWithExecutor:[FBMacXCTestProcessExecutor executorWithMacDevice:self shims:configuration.shims]
-          configuration:configuration
-          logger:self.logger]
-          listTests];
+      return [[[FBListTestStrategy alloc]
+        initWithTarget:self
+        configuration:configuration
+        shimPath:shims.macOSTestShimPath
+        logger:self.logger]
+        listTests];
     }];
 }
 
@@ -490,6 +490,11 @@
 {
   NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
+}
+
+- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+{
+  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration acceptableExitCodes:nil logger:self.logger];
 }
 
 @end

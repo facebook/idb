@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /*
  Class that can be used for operating on local Mac device
  */
-@interface FBMacDevice : NSObject <FBiOSTarget, FBXCTestExtendedCommands>
+@interface FBMacDevice : NSObject <FBiOSTarget, FBXCTestExtendedCommands, FBProcessSpawnCommands>
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
 

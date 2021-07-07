@@ -45,5 +45,4 @@
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>
 #import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
-#import <FBSimulatorControl/FBSimulatorXCTestProcessExecutor.h>
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
