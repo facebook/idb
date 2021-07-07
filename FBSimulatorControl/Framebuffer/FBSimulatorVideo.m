@@ -174,47 +174,12 @@
       failFuture];
   }
 
-  self.recordingStarted = [[[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/what"
-    arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
-    runUntilCompletion]
-    onQueue:self.queue handleError:^(NSError *error) {
-      [self.logger logFormat:@"Abnormal exit of what process %@", error];
-      return [FBFuture futureWithResult:NSNull.null];
-    }]
-    onQueue:self.queue fmap:^(FBTask *task) {
-      if ([task isKindOfClass:[NSNull class]]) {
-        [self.logger logFormat:@"what command failed, return 0.0"];
-        return [FBFuture futureWithResult:@"0.0"];
-      }
-
-      NSString *output = [task stdOut];
-      NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
-      NSRegularExpression* regex = [NSRegularExpression
-        regularExpressionWithPattern:pattern
-        options:0
-        error:nil];
-
-      NSArray* matches = [regex
-        matchesInString:output
-        options:0
-        range:NSMakeRange(0, output.length)];
-
-      // Some versions can output information twice, pick the first one
-      if (matches.count < 1) {
-        [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
-        return [FBFuture futureWithResult:@"0.0"];
-      }
-      NSTextCheckingResult *match = matches[0];
-      NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
-
-      return [FBFuture futureWithResult:result];
-    }]
-    onQueue:self.queue fmap:^(NSString *simctlVersion) {
+  self.recordingStarted = [[self
+    simctlVersionNumber]
+    onQueue:self.queue fmap:^(NSDecimalNumber *simctlVersion) {
       // Earlier versions use --type=codec instead of --type, so we need to switch on the version of simctl
-      NSDecimalNumber *simctlVersionNumber = [NSDecimalNumber decimalNumberWithString:simctlVersion];
       NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
-      if ([simctlVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
+      if ([simctlVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
         recordVideoParameters = @[@"--codec=h264", @"--force"];
       }
 
@@ -222,10 +187,11 @@
         arrayByAddingObjectsFromArray:recordVideoParameters]
         arrayByAddingObject:self.filePath];
 
-      return [[[[self.simctlExecutor
+      return [[[[[self.simctlExecutor
         taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
         withStdOutToLogger:self.logger]
         withStdErrToLogger:self.logger]
+        withTaskLifecycleLoggingTo:self.logger]
         start];
     }];
 
@@ -266,7 +232,7 @@
     logCompletion:self.logger withPurpose:@"The video recording task terminated"]
     onQueue:self.queue fmap:^(NSNumber *result) {
       self.recordingStarted = nil;
-      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:self.filePath queue:self.queue];
+      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:self.filePath queue:self.queue logger:self.logger];
     }]
     onQueue:self.queue handleError:^(NSError *error) {
       [self.logger logFormat:@"Failed confirm video file been written %@", error];
@@ -278,6 +244,8 @@
   return completed;
 }
 
+#pragma mark Private
+
 static NSTimeInterval const SimctlResolveFileTimeout = 10;
 
 // simctl, may exit before the underlying video file has been written out to disk.
@@ -286,18 +254,56 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
 // It's not simply enough to check that the file exists, we must also check that it has a nonzero size.
 // The reason for this is that simctl itself (since Xcode 10) isn't doing the writing, this is instead delegated to SimStreamProcessorService.
 // Since this writing is asynchronous with simctl, it's possible that it isn't written out when simctl has terminated.
-+ (FBFuture<NSNull *> *)confirmFileHasBeenWritten:(NSString *)filePath queue:(dispatch_queue_t)queue
++ (FBFuture<NSNull *> *)confirmFileHasBeenWritten:(NSString *)filePath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBFuture
     onQueue:queue resolveWhen:^{
       NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:nil];
       NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
       if (fileSize > 0) {
+        [logger logFormat:@"simctl has written out the video to %@ with file size %lu", filePath, fileSize];
         return YES;
       }
       return NO;
     }]
     timeout:SimctlResolveFileTimeout waitingFor:@"simctl to write file to %@", filePath];
+}
+
+- (FBFuture<NSDecimalNumber *> *)simctlVersionNumber
+{
+  return [[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/what"
+    arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
+    withStdOutInMemoryAsString]
+    withStdErrToDevNull]
+    runUntilCompletion]
+    onQueue:self.queue fmap:^(FBTask<NSNull *, NSString *, NSNull *> *task) {
+      NSString *output = task.stdOut;
+      NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
+      NSRegularExpression* regex = [NSRegularExpression
+        regularExpressionWithPattern:pattern
+        options:0
+        error:nil];
+
+      NSArray* matches = [regex
+        matchesInString:output
+        options:0
+        range:NSMakeRange(0, output.length)];
+
+      // Some versions can output information twice, pick the first one
+      if (matches.count < 1) {
+        [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
+        return [FBFuture futureWithResult:NSDecimalNumber.zero];
+      }
+      NSTextCheckingResult *match = matches[0];
+      NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
+
+      return [FBFuture futureWithResult:[NSDecimalNumber decimalNumberWithString:result]];
+    }]
+    onQueue:self.queue handleError:^(NSError *error) {
+      [self.logger logFormat:@"Abnormal exit of 'what' process %@, assuming version 0.0", error];
+      return [FBFuture futureWithResult:NSDecimalNumber.zero];
+    }];
 }
 
 @end
