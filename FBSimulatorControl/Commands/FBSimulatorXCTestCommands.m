@@ -78,47 +78,6 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     }];
 }
 
-- (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
-{
-  NSError *error = nil;
-  NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.simulator.auxillaryDirectory fromConfiguration:configuration error:&error];
-  if (!filePath) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-
-  NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
-  if (!xcodeBuildPath) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
-
-  return [FBXcodeBuildOperation
-    operationWithUDID:self.simulator.udid
-    configuration:configuration
-    xcodeBuildPath:xcodeBuildPath
-    testRunFilePath:filePath
-    simDeviceSet:self.simulator.customDeviceSetPath
-    queue:self.simulator.workQueue
-    logger:[logger withName:@"xcodebuild"]];
-}
-
-- (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  return [[[task
-    completed]
-    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      [reporter didFinishExecutingTestPlan];
-      return FBFuture.empty;
-    }];
-}
-
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
   return [[FBXCTestShimConfiguration
@@ -185,6 +144,12 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     }];
 }
 
++ (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
@@ -227,6 +192,47 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
       return [FBFuture futureWithResult:socketPath];
     }]
     timeout:TestmanagerdSimSockTimeout waitingFor:@"%@ to become available in the simulator environment", SimSockEnvKey];
+}
+
+- (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  NSError *error = nil;
+  NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.simulator.auxillaryDirectory fromConfiguration:configuration error:&error];
+  if (!filePath) {
+    return [FBSimulatorError failFutureWithError:error];
+  }
+
+  NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
+  if (!xcodeBuildPath) {
+    return [FBSimulatorError failFutureWithError:error];
+  }
+
+  return [FBXcodeBuildOperation
+    operationWithUDID:self.simulator.udid
+    configuration:configuration
+    xcodeBuildPath:xcodeBuildPath
+    testRunFilePath:filePath
+    simDeviceSet:self.simulator.customDeviceSetPath
+    queue:self.simulator.workQueue
+    logger:[logger withName:@"xcodebuild"]];
+}
+
+- (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[task
+    completed]
+    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
+      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+      if (configuration.resultBundlePath) {
+        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
+      }
+      [logger log:@"No result bundle to parse"];
+      return FBFuture.empty;
+    }]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
+      [reporter didFinishExecutingTestPlan];
+      return FBFuture.empty;
+    }];
 }
 
 @end

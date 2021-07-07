@@ -125,6 +125,12 @@
   return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
 }
 
++ (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"usr/bin/xctest"];
+}
+
 + (NSString *)resolveDeviceUDID
 {
   io_service_t platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));

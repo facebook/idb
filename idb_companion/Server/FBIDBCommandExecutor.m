@@ -288,14 +288,21 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     appPath = self.storageManager.application.persistedBundles[appPath].path;
   }
 
-  return [FBFuture onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
-    NSError *error = nil;
-    id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
-    if (!testDescriptor) {
-      return [FBFuture futureWithError:error];
-    }
-    return [self.target listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:appPath];
-  }];
+  return [FBFuture
+    onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
+      NSError *error = nil;
+      id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
+      if (!testDescriptor) {
+        return [FBFuture futureWithError:error];
+      }
+      id<FBXCTestExtendedCommands> commands = (id<FBXCTestExtendedCommands>) self.target;
+      if (![commands conformsToProtocol:@protocol(FBXCTestExtendedCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"%@ does not conform to FBXCTestExtendedCommands", commands]
+          failFuture];
+      }
+      return [commands listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:appPath];
+    }];
 }
 
 - (FBFuture<NSNull *> *)uninstall_application:(NSString *)bundleID
