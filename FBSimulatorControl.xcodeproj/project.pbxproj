@@ -1263,7 +1263,6 @@
 		AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporter.h; sourceTree = "<group>"; };
 		AAE5A0861EDF918800A1A811 /* FBJSONTestReporterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporterTests.m; sourceTree = "<group>"; };
 		AAE5A0891EDF919700A1A811 /* FBJSONTestReporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporter.m; sourceTree = "<group>"; };
-		AAE6380B2681EFEC00355FCD /* SimScreen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimScreen.h; sourceTree = "<group>"; };
 		AAE90BC01D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFrameworkLoader.h; sourceTree = "<group>"; };
 		AAE90BC11D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFrameworkLoader.m; sourceTree = "<group>"; };
 		AAE93BD922A7E503001FB8CC /* FBProcessIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBProcessIO.h; sourceTree = "<group>"; };
@@ -1715,7 +1714,6 @@
 				AA386D831E44F3EA005C6118 /* SimDisplayRotationAngleDelegate-Protocol.h */,
 				AA386D841E44F3EA005C6118 /* SimDisplayVideoWriter.h */,
 				AABEF1ED1E4A2E4600043BFE /* SimDisplayVideoWriter+Removed.h */,
-				AAE6380B2681EFEC00355FCD /* SimScreen.h */,
 				AA386D851E44F3EA005C6118 /* SimVideoFile.h */,
 				AA386D861E44F3EA005C6118 /* SimVideoFragmentedMP4File.h */,
 				AA386D871E44F3EA005C6118 /* SimVideoH264File.h */,

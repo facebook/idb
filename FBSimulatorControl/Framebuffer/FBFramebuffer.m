@@ -17,6 +17,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <SimulatorKit/SimDeviceFramebufferService.h>
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
@@ -29,7 +30,27 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
-@interface FBFramebuffer_Queue_Forwarder : NSObject
+static IOSurface * extractSurfaceFromUnknown(id unknown)
+{
+  // Return the Surface Immediately, if one is immediately available.
+  if (!unknown) {
+    return nil;
+  }
+  // If the object returns an
+  if ([unknown isKindOfClass:IOSurface.class]) {
+    return unknown;
+  }
+
+  // We need to convert the surface, treat it as an xpc_object_t
+  xpc_object_t xpcObject = unknown;
+  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcObject);
+  if (!surface) {
+    return nil;
+  }
+  return (__bridge IOSurface *)(surface);
+}
+
+@interface FBFramebuffer_Queue_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
 
 @property (nonatomic, weak, readonly) id<FBFramebufferConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t consumerQueue;
@@ -53,8 +74,14 @@
   return self;
 }
 
-- (void)didChangeIOSurface:(IOSurface *)surface
+- (void)didChangeIOSurface:(nullable id)unknown
 {
+  IOSurface *surface = extractSurfaceFromUnknown(unknown);
+  if (!surface) {
+    [self.consumer didChangeIOSurface:NULL];
+    return;
+  }
+  // Ensure the Surface is retained as it is delivered asynchronously.
   id<FBFramebufferConsumer> consumer = self.consumer;
   dispatch_async(self.consumerQueue, ^{
     [consumer didChangeIOSurface:surface];
@@ -80,14 +107,9 @@
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, id> *forwarders;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
-@end
-
-@interface FBFramebuffer_Legacy : FBFramebuffer
-
+@property (nonatomic, strong, readonly) id<SimDeviceIOProtocol> ioClient;
+@property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
-
-- (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -119,14 +141,27 @@
       [logger logFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass];
       continue;
     }
-    return [[FBFramebuffer_Legacy alloc] initWithSurface:descriptor logger:logger];
+    return [[FBFramebuffer alloc] initWithIOClient:ioClient port:port surface:descriptor logger:logger];
   }
   return [[FBSimulatorError
     describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
     fail:error];
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferConsumer>, id> *)forwarders logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _forwarders = forwarders;
+  _logger = logger;
+
+  return self;
+}
+
+- (instancetype)initWithIOClient:(id<SimDeviceIOProtocol>)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
   if (!self) {
     return nil;
@@ -137,6 +172,9 @@
 
   _forwarders = forwarders;
   _logger = logger;
+  _ioClient = ioClient;
+  _port = port;
+  _surface = surface;
 
   return self;
 }
@@ -153,11 +191,24 @@
   forwarder = [[FBFramebuffer_Queue_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
   [self.forwarders setObject:forwarder forKey:consumer];
 
-  // Attempt to return the surface synchronously (if supported).
-  IOSurface *surface = [self extractImmediatelyAvailableSurface];
+  // Extract the IOSurface if one does not exist.
+  IOSurface *surface = extractSurfaceFromUnknown(self.surface.ioSurface);
 
   // Register the consumer.
-  [self registerConsumer:consumer withForwarder:forwarder];
+  if ([self.ioClient respondsToSelector:@selector(attachConsumer:withUUID:toPort:errorQueue:errorHandler:)]) {
+    [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
+  } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
+    [self.ioClient attachConsumer:forwarder toPort:self.port];
+  } else {
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID ioSurfaceChangeCallback:^(id next) {
+      [forwarder didChangeIOSurface:next];
+    }];
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID damageRectanglesCallback:^(NSArray<NSValue *> *rects) {
+      for (NSValue *value in rects) {
+        [forwarder didReceiveDamageRect:value.rectValue];
+      }
+    }];
+  }
 
   return surface;
 }
@@ -168,7 +219,12 @@
   if (!forwarder) {
     return;
   }
-  [self detachConsumer:consumer fromForwarder:forwarder];
+  if ([self.ioClient respondsToSelector:@selector(detachConsumer:fromPort:)]) {
+    [self.ioClient detachConsumer:forwarder fromPort:self.port];
+  } else {
+    [self.surface unregisterIOSurfaceChangeCallbackWithUUID:forwarder.consumerUUID];
+    [self.surface unregisterDamageRectanglesCallbackWithUUID:forwarder.consumerUUID];
+  }
 }
 
 - (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers
@@ -185,60 +241,5 @@
   return [[self attachedConsumers] containsObject:consumer];
 }
 
-#pragma mark Private
-
-- (IOSurface *)extractImmediatelyAvailableSurface
-{
-  return nil;
-}
-
-- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer withForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer fromForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-@end
-
-@implementation FBFramebuffer_Legacy
-
-- (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithLogger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _surface = surface;
-
-  return self;
-}
-
-- (IOSurface *)extractImmediatelyAvailableSurface
-{
-  return self.surface.ioSurface;
-}
-
-- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer withForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
-{
-  [self.surface registerCallbackWithUUID:forwarder.consumerUUID ioSurfaceChangeCallback:^(IOSurface *surface) {
-    [forwarder didChangeIOSurface:surface];
-  }];
-  [self.surface registerCallbackWithUUID:forwarder.consumerUUID damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
-    for (NSValue *value in frames) {
-      [forwarder didReceiveDamageRect:value.rectValue];
-    }
-  }];
-}
-
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer fromForwarder:(FBFramebuffer_Queue_Forwarder *)forwarder
-{
-  [self.surface unregisterIOSurfaceChangeCallbackWithUUID:forwarder.consumerUUID];
-  [self.surface unregisterDamageRectanglesCallbackWithUUID:forwarder.consumerUUID];
-}
 
 @end
