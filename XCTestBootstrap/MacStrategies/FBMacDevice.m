@@ -239,6 +239,9 @@
 @synthesize containerApplication;
 @synthesize deviceType;
 
+- (BOOL) requiresBundlesToBeSigned {
+  return NO;
+}
 
 + (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target
 {

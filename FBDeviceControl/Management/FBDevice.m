@@ -132,6 +132,10 @@
   return NSDictionary.dictionary;
 }
 
+- (BOOL) requiresBundlesToBeSigned {
+  return YES;
+}
+
 #pragma mark NSObject
 
 - (NSString *)description

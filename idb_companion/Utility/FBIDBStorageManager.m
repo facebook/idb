@@ -153,7 +153,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
-  if (!self.relocateLibraries) {
+  if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned]) {
     return [FBFuture futureWithResult:artifact];
   }
   bundle = [FBBundleDescriptor bundleFromPath:destinationBundlePath.path error:&error];

@@ -175,6 +175,10 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   };
 }
 
+- (BOOL) requiresBundlesToBeSigned {
+  return YES;
+}
+
 #pragma mark Properties
 
 - (FBControlCoreProductFamily)productFamily

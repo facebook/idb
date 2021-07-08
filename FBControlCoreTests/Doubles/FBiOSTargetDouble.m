@@ -177,4 +177,9 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
+- (BOOL) requiresBundlesToBeSigned
+{
+  return NO;
+}
+
 @end

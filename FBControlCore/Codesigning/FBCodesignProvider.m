@@ -67,6 +67,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
+  
   return [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     withNoUnacceptableStatusCodes]

@@ -191,6 +191,13 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target;
 
 /**
+ If the target's bundle needs to be codesigned or not.
+
+ @return if it needs to be signed or not.
+ */
+- (BOOL)requiresBundlesToBeSigned;
+
+/**
   Env var replacements
  
   @return a dictionary with the replacements defined
