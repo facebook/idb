@@ -13,6 +13,7 @@
 
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBSimulatorError.h"
+#import "FBVideoEncoderSimulatorKit.h"
 
 @interface FBSimulatorVideo ()
 
@@ -22,6 +23,15 @@
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
 
 - (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
+
+@end
+
+@interface FBSimulatorVideo_SimulatorKit : FBSimulatorVideo
+
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readwrite) FBVideoEncoderSimulatorKit *encoder;
+
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -37,6 +47,11 @@
 @implementation FBSimulatorVideo
 
 #pragma mark Initializers
+
++ (instancetype)videoWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
+{
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithFramebuffer:framebuffer filePath:filePath logger:logger];
+}
 
 + (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
 {
@@ -79,6 +94,56 @@
 {
   return [self.completedFuture onQueue:self.queue respondToCancellation:^{
     return [self stopRecording];
+  }];
+}
+
+@end
+
+@implementation FBSimulatorVideo_SimulatorKit
+
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithFilePath:filePath logger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _framebuffer = framebuffer;
+
+  return self;
+}
+
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath
+{
+  if (self.encoder) {
+    return [[FBSimulatorError
+      describe:@"Cannot Start Recording, there is already an active encoder"]
+      failFuture];
+  }
+
+  // Create and start the encoder.
+  self.encoder = [FBVideoEncoderSimulatorKit encoderWithFramebuffer:self.framebuffer videoPath:filePath logger:self.logger];
+  FBFuture<NSNull *> *future = [self.encoder startRecording];
+
+  return future;
+}
+
+- (FBFuture<NSNull *> *)stopRecording
+{
+  if (!self.encoder) {
+    return [[FBSimulatorError
+      describe:@"Cannot Stop Recording, there is no active encoder"]
+      failFuture];
+  }
+
+  // Stop and release the encoder
+  FBFuture *future = [self.encoder stopRecording];
+  dispatch_queue_t queue = [self.encoder mediaQueue];
+  self.encoder = nil;
+  return [future onQueue:queue notifyOfCompletion:^(id _) {
+    [self.completedFuture resolveWithResult:NSNull.null];
   }];
 }
 

@@ -12,12 +12,23 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAppleSimctlCommandExecutor;
+@class FBFramebuffer;
 @protocol FBControlCoreLogger;
 
 /**
  Implementations of recording a Simulator's screen to a video file.
  */
 @interface FBSimulatorVideo : NSObject <FBiOSTargetOperation>
+
+/**
+ The Designated Initializer.
+
+ @param framebuffer the Framebuffer to consume
+ @param filePath the file path to write to.
+ @param logger the logger object to log events to, may be nil.
+ @return a new FBSimulatorVideo instance.
+ */
++ (instancetype)videoWithFramebuffer:(FBFramebuffer *)framebuffer filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Initializer, for doing simulator video recording using Apple's simctl
