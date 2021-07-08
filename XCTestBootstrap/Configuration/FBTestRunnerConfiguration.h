@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestConfiguration;
 
 @protocol FBiOSTarget;
-
+@protocol FBXCTestExtendedCommands;
 /**
  A Configuration Value for the Test Runner.
  */
@@ -29,12 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param target the target to run against.
  @param testLaunchConfiguration the configuration for the test launch
- @param shims the shims to use.
  @param workingDirectory the working directory to use.
  @param codesign if set this will be used for checking code signatures.
  @return a Future that will resolve with the Test Runner configuration.
  */
-+ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
++ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
 
 #pragma mark Public
 

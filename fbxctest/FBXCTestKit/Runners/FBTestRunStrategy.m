@@ -7,13 +7,14 @@
 
 #import "FBTestRunStrategy.h"
 
+#import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #include <glob.h>
 
 @interface FBTestRunStrategy ()
 
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<FBiOSTarget, FBXCTestExtendedCommands> target;
 @property (nonatomic, strong, readonly) FBTestManagerTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
@@ -21,12 +22,12 @@
 
 @implementation FBTestRunStrategy
 
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithTarget:target configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -100,30 +101,26 @@
     shims:nil];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
-  __block FBFuture<NSNull *> *executionFinished = nil;
+  FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy
+    runToCompletionWithTarget:self.target
+    configuration:testLaunchConfiguration
+    codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger] : nil)
+    workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
+    reporter:self.reporter
+    logger:self.target.logger];
 
-  return [[[[[[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.target.logger]
-    onQueue:self.target.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      executionFinished = [FBManagedTestRunStrategy
-        runToCompletionWithTarget:self.target
-        configuration:testLaunchConfiguration
-        shims:shims
-        codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.target.logger] : nil)
-        workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
-        reporter:self.reporter
-        logger:self.target.logger];
+  FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
+    ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
+    : (FBFuture<id> *) FBFuture.empty;
 
-      FBFuture<id> *startedVideoRecording = self.configuration.videoRecordingPath != nil
-        ? (FBFuture<id> *) [self.target startRecordingToFile:self.configuration.videoRecordingPath]
-        : (FBFuture<id> *) FBFuture.empty;
+  FBFuture<id> *startedTailLog = self.configuration.osLogPath != nil
+    ? (FBFuture<id> *) [self _startTailLogToFile:self.configuration.osLogPath]
+    : (FBFuture<id> *) FBFuture.empty;
 
-      FBFuture<id> *startedTailLog = self.configuration.osLogPath != nil
-        ? (FBFuture<id> *) [self _startTailLogToFile:self.configuration.osLogPath]
-        : (FBFuture<id> *) FBFuture.empty;
-
-      return [FBFuture futureWithFutures:@[startedVideoRecording, startedTailLog]];
-    }]
+  return [[[[[FBFuture
+    futureWithFutures:@[
+      startedVideoRecording, startedTailLog,
+    ]]
     onQueue:self.target.workQueue fmap:^(NSArray<id> *results) {
       if (results[1] != nil && ![results[1] isEqual:NSNull.null]) {
         tailLogOperation = results[1];

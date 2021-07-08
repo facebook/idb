@@ -161,18 +161,13 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       inSimulator:self.simulator]
       failFuture];
   }
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.simulator.logger]
-    onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      return [FBManagedTestRunStrategy
-        runToCompletionWithTarget:self.simulator
-        configuration:testLaunchConfiguration
-        shims:shims
-        codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger] : nil)
-        workingDirectory:self.simulator.auxillaryDirectory
-        reporter:reporter
-        logger:logger];
-    }];
+  return [FBManagedTestRunStrategy
+    runToCompletionWithTarget:self.simulator
+    configuration:testLaunchConfiguration
+    codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger] : nil)
+    workingDirectory:self.simulator.auxillaryDirectory
+    reporter:reporter
+    logger:logger];
 }
 
 static NSTimeInterval const TestmanagerdSimSockTimeout = 5; // 5 seconds.

@@ -7,11 +7,15 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import <XCTestBootstrap/FBXCTestRunner.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBTestManagerTestConfiguration;
+
 @protocol FBControlCoreLogger;
+@protocol FBiOSTarget;
+@protocol FBXCTestExtendedCommands;
 @protocol FBXCTestReporter;
 
 /**
@@ -27,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the reporter to report to.
  @param logger the logger to use.
  */
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestManagerTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

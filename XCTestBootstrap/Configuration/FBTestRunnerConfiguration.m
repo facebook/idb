@@ -31,17 +31,17 @@
 
 #pragma mark Public
 
-+ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory codesign:(FBCodesignProvider *)codesign
++ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory codesign:(FBCodesignProvider *)codesign
 {
   if (codesign) {
     return [[[codesign
       cdHashForBundleAtPath:testLaunchConfiguration.testBundlePath]
       rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundlePath]
       onQueue:target.asyncQueue fmap:^(id _) {
-        return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory];
+        return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory];
       }];
   }
-  return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration shims:shims workingDirectory:workingDirectory];
+  return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory];
 }
 
 + (NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPaths:(NSArray<NSString *> *)frameworkSearchPaths
@@ -94,7 +94,7 @@
 }
 
 
-+ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTargetAfterCodesignatureCheck:(id<FBiOSTarget>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration shims:(FBXCTestShimConfiguration *)shims workingDirectory:(NSString *)workingDirectory
++ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTargetAfterCodesignatureCheck:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory
 {
   // Common Paths
   NSString *runtimeRoot = target.runtimeRootDirectory;
@@ -154,16 +154,17 @@
       failFuture];
   }
 
-  return [[target
-    installedApplicationWithBundleID:testLaunchConfiguration.applicationLaunchConfiguration.bundleID]
-    onQueue:target.asyncQueue map:^(FBInstalledApplication *hostApplication) {
+  return [[FBFuture
+    futureWithFutures:@[
+      [target installedApplicationWithBundleID:testLaunchConfiguration.applicationLaunchConfiguration.bundleID],
+      [target extendedTestShim],
+    ]]
+    onQueue:target.asyncQueue map:^(NSArray<id> *tuple) {
+      FBInstalledApplication *hostApplication = tuple[0];
+      NSString *shimPath = tuple[1];
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
-      if (target.targetType == FBiOSTargetTypeSimulator) {
-        hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shims.iOSSimulatorTestShimPath;
-      } else if (target.targetType == FBiOSTargetTypeLocalMac) {
-        hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shims.macOSTestShimPath;
-      }
+      hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
       if (testLaunchConfiguration.coveragePath) {
         hostApplicationAdditionalEnvironment[@"LLVM_PROFILE_FILE"] = testLaunchConfiguration.coveragePath;
       }

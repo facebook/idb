@@ -18,7 +18,7 @@
 
 #pragma mark Initializers
 
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration shims:(FBXCTestShimConfiguration *)shims codesign:(FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(target);
   NSParameterAssert(configuration.applicationLaunchConfiguration);
@@ -31,7 +31,7 @@
 
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = configuration.applicationLaunchConfiguration;
   return [[FBTestRunnerConfiguration
-    prepareConfigurationWithTarget:target testLaunchConfiguration:configuration shims:shims workingDirectory:workingDirectory codesign:codesign]
+    prepareConfigurationWithTarget:target testLaunchConfiguration:configuration workingDirectory:workingDirectory codesign:codesign]
     onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
       // The launch configuration for the test bundle host.
       FBApplicationLaunchConfiguration *testHostLaunchConfiguration = [self

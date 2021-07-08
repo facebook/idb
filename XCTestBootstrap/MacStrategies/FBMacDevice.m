@@ -365,18 +365,13 @@
 
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:nil]
-    onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shimConfiguation) {
-      return [FBManagedTestRunStrategy
-        runToCompletionWithTarget:self
-        configuration:testLaunchConfiguration
-        shims:shimConfiguation
-        codesign:nil
-        workingDirectory:self.workingDirectory
-        reporter:reporter
-        logger:logger];
-    }];
+    return [FBManagedTestRunStrategy
+      runToCompletionWithTarget:self
+      configuration:testLaunchConfiguration
+      codesign:nil
+      workingDirectory:self.workingDirectory
+      reporter:reporter
+      logger:logger];
 }
 
 - (NSString *)uniqueIdentifier

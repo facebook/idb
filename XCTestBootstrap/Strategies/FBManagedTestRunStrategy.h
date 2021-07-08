@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestLaunchConfiguration;
 
 @protocol FBXCTestReporter;
+@protocol FBXCTestExtendedCommands;
 
 /**
  A Strategy that encompasses a Single Test Run on a Simulator.
@@ -32,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Test Run Strategy instance.
  */
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration shims:(FBXCTestShimConfiguration *)shims codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
