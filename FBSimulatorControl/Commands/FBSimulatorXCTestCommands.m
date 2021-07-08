@@ -79,22 +79,17 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.simulator.logger]
-    onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      FBListTestConfiguration *configuration = [FBListTestConfiguration
-        configurationWithShims:shims
-        environment:@{}
-        workingDirectory:self.simulator.auxillaryDirectory
-        testBundlePath:bundlePath
-        runnerAppPath:appPath
-        waitForDebugger:NO
-        timeout:timeout];
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithEnvironment:@{}
+    workingDirectory:self.simulator.auxillaryDirectory
+    testBundlePath:bundlePath
+    runnerAppPath:appPath
+    waitForDebugger:NO
+    timeout:timeout];
 
-      return [[[FBListTestStrategy alloc]
-        initWithTarget:self.simulator configuration:configuration shimPath:shims.iOSSimulatorTestShimPath logger:self.simulator.logger]
-        listTests];
-    }];
+  return [[[FBListTestStrategy alloc]
+    initWithTarget:self.simulator configuration:configuration logger:self.simulator.logger]
+    listTests];
 }
 
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
@@ -138,6 +133,15 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     onQueue:self.simulator.asyncQueue contextualTeardown:^(NSNumber *socketNumber, FBFutureState __) {
       close(socketNumber.intValue);
       return FBFuture.empty;
+    }];
+}
+
+- (FBFuture<NSString *> *)extendedTestShim
+{
+  return [[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:self.simulator.logger]
+    onQueue:self.simulator.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
+      return shims.iOSSimulatorTestShimPath;
     }];
 }
 

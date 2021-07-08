@@ -168,8 +168,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
       NSTimeInterval timeout = self.testTimeout.boolValue ? self.testTimeout.doubleValue : FBLogicTestTimeout;
       FBLogicTestConfiguration *configuration = [FBLogicTestConfiguration
-        configurationWithShims:shims
-        environment:self.environment
+        configurationWithEnvironment:self.environment
         workingDirectory:workingDirectory.path
         testBundlePath:testDescriptor.testBundle.path
         waitForDebugger:self.waitForDebugger
@@ -186,19 +185,8 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 - (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  NSString *shimPath = nil;
-  if ([target isKindOfClass:FBSimulator.class]) {
-    shimPath = configuration.shims.iOSSimulatorTestShimPath;
-  } else if ([target isKindOfClass:FBMacDevice.class]) {
-    shimPath = configuration.shims.macOSTestShimPath;
-  } else {
-    return [[FBIDBError
-      describeFormat:@"%@ does not support logic tests", target]
-      failFuture];
-  }
-
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
-  FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration shimPath:shimPath reporter:adapter logger:logger];
+  FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration reporter:adapter logger:logger];
   FBFuture<NSNull *> *completed = [runner execute];
   if (completed.error) {
     return [FBFuture futureWithError:completed.error];

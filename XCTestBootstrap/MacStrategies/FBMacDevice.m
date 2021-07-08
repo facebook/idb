@@ -130,6 +130,15 @@
     stringByAppendingPathComponent:@"usr/bin/xctest"];
 }
 
+- (FBFuture<NSString *> *)extendedTestShim
+{
+  return [[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:self.logger]
+    onQueue:self.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
+      return shims.macOSTestShimPath;
+    }];
+}
+
 + (NSString *)resolveDeviceUDID
 {
   io_service_t platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
@@ -417,25 +426,19 @@
 
 - (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.logger]
-    onQueue:self.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      FBListTestConfiguration *configuration = [FBListTestConfiguration
-        configurationWithShims:shims
-        environment:@{}
-        workingDirectory:self.auxillaryDirectory
-        testBundlePath:bundlePath
-        runnerAppPath:appPath
-        waitForDebugger:NO
-        timeout:timeout];
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithEnvironment:@{}
+    workingDirectory:self.auxillaryDirectory
+    testBundlePath:bundlePath
+    runnerAppPath:appPath
+    waitForDebugger:NO
+    timeout:timeout];
 
-      return [[[FBListTestStrategy alloc]
-        initWithTarget:self
-        configuration:configuration
-        shimPath:shims.macOSTestShimPath
-        logger:self.logger]
-        listTests];
-    }];
+  return [[[FBListTestStrategy alloc]
+    initWithTarget:self
+    configuration:configuration
+    logger:self.logger]
+    listTests];
 }
 
 - (nonnull FBFuture<id<FBiOSTargetOperation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer

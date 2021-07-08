@@ -29,10 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param target the target to run against.
  @param configuration the the configuration to use.
- @param shimPath the path to the shim dylib.
  @return a new FBListTestStrategy instance.
  */
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration shimPath:(NSString *)shimPath logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 

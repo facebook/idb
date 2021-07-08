@@ -20,7 +20,6 @@
 @property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands> target;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, copy, readonly) NSString *shimPath;
 
 @end
 
@@ -71,7 +70,7 @@
 
 @implementation FBListTestStrategy
 
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration shimPath:(NSString *)shimPath logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -80,7 +79,6 @@
 
   _target = target;
   _configuration = configuration;
-  _shimPath = shimPath;
   _logger = logger;
 
   return self;
@@ -89,17 +87,19 @@
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
   id<FBConsumableBuffer> shimBuffer = FBDataBuffer.consumableBuffer;
-  return [[[FBProcessOutput
-    outputForDataConsumer:shimBuffer]
-    providedThroughFile]
-    onQueue:self.target.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
-      return [self listTestsWithShimOutput:shimOutput shimBuffer:shimBuffer];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self.target extendedTestShim],
+      [[FBProcessOutput outputForDataConsumer:shimBuffer] providedThroughFile],
+    ]]
+    onQueue:self.target.workQueue fmap:^(NSArray<id> *tuple) {
+      return [self listTestsWithShimPath:tuple[0] shimOutput:tuple[1] shimBuffer:shimBuffer];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer
+- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimPath:(NSString *)shimPath shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer
 {
   id<FBConsumableBuffer> stdOutBuffer = FBDataBuffer.consumableBuffer;
   id<FBDataConsumer> stdOutConsumer = [FBCompositeDataConsumer consumerWithConsumers:@[
@@ -115,7 +115,7 @@
   return [[FBOToolDynamicLibs
     findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
     onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
-      NSDictionary<NSString *, NSString *> *environment = [self setupEnvironmentWithDylibs:libraries shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
+      NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
         
       return [[FBListTestStrategy
         listTestProcessWithTarget:self.target
@@ -137,9 +137,9 @@
     }];
 }
 
-- (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimPath:(NSString *)shimPath shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath
 {
-  NSMutableArray *librariesWithShim = [NSMutableArray arrayWithObject:self.shimPath];
+  NSMutableArray *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
   NSDictionary<NSString *, NSString *> *environment = @{
     @"DYLD_INSERT_LIBRARIES": [librariesWithShim componentsJoinedByString:@":"],

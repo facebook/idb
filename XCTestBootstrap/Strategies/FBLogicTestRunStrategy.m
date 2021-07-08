@@ -53,15 +53,13 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 @property (nonatomic, strong, readonly) id<FBLogicXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
-@property (nonatomic, copy, readonly) NSString *shimPath;
-
 @end
 
 @implementation FBLogicTestRunStrategy
 
 #pragma mark Initializers
 
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration shimPath:(NSString *)shimPath reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -70,7 +68,6 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
   _target = target;
   _configuration = configuration;
-  _shimPath = shimPath;
   _reporter = reporter;
   _logger = logger;
 
@@ -88,23 +85,25 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 {
   NSUUID *uuid = NSUUID.UUID;
 
-  return [[self
-    buildOutputsForUUID:uuid]
-    onQueue:self.target.workQueue fmap:^(FBLogicTestRunOutputs *outputs) {
-      return [self testFutureWithOutputs:outputs uuid:uuid];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self buildOutputsForUUID:uuid],
+      [self.target extendedTestShim],
+    ]]
+    onQueue:self.target.workQueue fmap:^(NSArray<id> *tuple) {
+      return [self testFutureWithOutputs:tuple[0] shimPath:tuple[1] uuid:uuid];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)testFutureWithOutputs:(FBLogicTestRunOutputs *)outputs uuid:(NSUUID *)uuid
+- (FBFuture<NSNull *> *)testFutureWithOutputs:(FBLogicTestRunOutputs *)outputs shimPath:(NSString *)shimPath uuid:(NSUUID *)uuid
 {
   [self.logger logFormat:@"Starting Logic Test execution of %@", self.configuration];
   id<FBLogicXCTestReporter> reporter = self.reporter;
   [reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.target.xctestPath;
-  NSString *shimPath = self.shimPath;
 
   // Get the Launch Path and Arguments for the xctest process.
   NSString *testSpecifier = self.configuration.testFilter ?: @"All";

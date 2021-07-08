@@ -75,7 +75,6 @@
 - (FBFuture<NSNull *> *)runMacTest
 {
   FBMacDevice *device = [[FBMacDevice alloc] initWithLogger:self.context.logger];
-  NSString *shimPath = self.configuration.shims.macOSTestShimPath;
 
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
     return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
@@ -84,10 +83,10 @@
   }
 
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[[FBListTestStrategy alloc] initWithTarget:device configuration:(FBListTestConfiguration *)self.configuration shimPath:shimPath logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
+    return [[[[FBListTestStrategy alloc] initWithTarget:device configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
-  return [[[FBLogicTestRunStrategy alloc] initWithTarget:device configuration:(FBLogicTestConfiguration *)self.configuration shimPath:shimPath reporter:adapter logger:self.context.logger] execute];
+  return [[[FBLogicTestRunStrategy alloc] initWithTarget:device configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
 - (FBFuture<NSNull *> *)runiOSTest
@@ -107,16 +106,14 @@
 
 - (FBFuture<NSNull *> *)runTestWithSimulator:(FBSimulator *)simulator
 {
-  NSString *shimPath = self.configuration.shims.iOSSimulatorTestShimPath;
-
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
     return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
   }
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[[FBListTestStrategy alloc] initWithTarget:simulator configuration:(FBListTestConfiguration *)self.configuration shimPath:shimPath logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
+    return [[[[FBListTestStrategy alloc] initWithTarget:simulator configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
-  return [[[FBLogicTestRunStrategy alloc] initWithTarget:simulator configuration:(FBLogicTestConfiguration *)self.configuration shimPath:shimPath reporter:adapter logger:self.context.logger] execute];
+  return [[[FBLogicTestRunStrategy alloc] initWithTarget:simulator configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
 @end

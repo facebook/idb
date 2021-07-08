@@ -57,6 +57,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(nullable NSString *)appPath;
 
 /**
+ Returns the platform specific shims.
+ */
+- (FBFuture<NSString *> *)extendedTestShim;
+
+/**
  The Path to the xctest executable.
  */
 @property (nonatomic, copy, readonly) NSString *xctestPath;

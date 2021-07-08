@@ -27,12 +27,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param target the target to run against.
  @param configuration the Configuration to use.
- @param shimPath the path to the shim dylib.
  @param reporter the reporter to report to.
  @param logger the logger to use.
  @return a new Logic Test Strategy.
  */
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration shimPath:(NSString *)shimPath reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
