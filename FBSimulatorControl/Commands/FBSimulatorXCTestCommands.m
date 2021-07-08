@@ -203,14 +203,19 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  return [FBXcodeBuildOperation
-    operationWithUDID:self.simulator.udid
-    configuration:configuration
-    xcodeBuildPath:xcodeBuildPath
-    testRunFilePath:filePath
-    simDeviceSet:self.simulator.customDeviceSetPath
-    queue:self.simulator.workQueue
-    logger:[logger withName:@"xcodebuild"]];
+  return [[FBXCTestShimConfiguration
+    defaultShimConfigurationWithLogger:self.simulator.logger]
+    onQueue:self.simulator.asyncQueue fmap:^(FBXCTestShimConfiguration *shims) {
+      return [FBXcodeBuildOperation
+        operationWithUDID:self.simulator.udid
+        configuration:configuration
+        xcodeBuildPath:xcodeBuildPath
+        testRunFilePath:filePath
+        simDeviceSet:self.simulator.customDeviceSetPath
+        macOSTestShimPath:shims.macOSTestShimPath
+        queue:self.simulator.workQueue
+        logger:[logger withName:@"xcodebuild"]];
+    }];
 }
 
 - (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger

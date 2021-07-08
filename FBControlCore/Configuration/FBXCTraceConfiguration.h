@@ -7,9 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBXCTestShimConfiguration.h"
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBXCTestShimConfiguration;
 
 /**
  A Value object with the information required to run `xctrace record`

@@ -17,7 +17,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
 @implementation FBXcodeBuildOperation
 
-+ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(NSString *)simDeviceSetPath macOSTestShimPath:(NSString *)macOSTestShimPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[
@@ -47,15 +47,15 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   
   // Add environments for xcodebuild method swizzling if a simulator device set is provided
   if (simDeviceSetPath) {
-    if (!configuration.shims || !configuration.shims.macOSTestShimPath) {
+    if (!macOSTestShimPath) {
       return [[XCTestBootstrapError describe:@"Failed to locate the shim file for xcodebuild method swizzling"] failFuture];
     }
     environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath;
     if (environment[XcodebuildEnvironmentInsertDylib]) {
-      environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", configuration.shims.macOSTestShimPath];
+      environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", macOSTestShimPath];
     }
     else {
-      environment[XcodebuildEnvironmentInsertDylib] = configuration.shims.macOSTestShimPath;
+      environment[XcodebuildEnvironmentInsertDylib] = macOSTestShimPath;
     }
   }
 

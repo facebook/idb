@@ -530,8 +530,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       resultBundlePath:nil
       reportActivities:request.reportActivities
       coveragePath:coveragePath
-      logDirectoryPath:logsDirectory
-      shims:nil];
+      logDirectoryPath:logsDirectory];
   }];
 }
 
@@ -624,8 +623,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       resultBundlePath:resultBundlePath
       reportActivities:request.reportActivities
       coveragePath:nil
-      logDirectoryPath:nil
-      shims:shims];
+      logDirectoryPath:nil];
   }];
 }
 

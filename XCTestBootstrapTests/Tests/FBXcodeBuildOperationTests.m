@@ -44,8 +44,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];

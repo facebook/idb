@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
-@class FBXCTestShimConfiguration;
 
 /**
  A Value object with the information required to launch a XCTest.
@@ -22,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
  */
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(nullable NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicaitonBundleID xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath shims:(nullable FBXCTestShimConfiguration *)shims;
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(nullable NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicaitonBundleID xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath;
 
 /**
  Path to XCTest bundle used for testing
@@ -98,11 +97,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Directory to use for storing logs generated during the execution of the test run.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
-
-/**
- Shims to be applied to test execution
- */
-@property (nonatomic, copy, readonly, nullable) FBXCTestShimConfiguration *shims;
 
 @end
 

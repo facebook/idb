@@ -72,8 +72,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
@@ -93,8 +92,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 }
 
 - (FBBundleDescriptor *)tableSearchApplication

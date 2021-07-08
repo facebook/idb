@@ -107,8 +107,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -145,8 +144,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
@@ -171,8 +169,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coveragePath:nil
-    logDirectoryPath:nil
-    shims:nil];
+    logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]

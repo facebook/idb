@@ -12,11 +12,12 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
-#import "FBXcodeConfiguration.h"
-#import "FBXCTraceConfiguration.h"
 #import "FBiOSTarget.h"
 #import "FBTask+Helpers.h"
 #import "FBTaskBuilder.h"
+#import "FBXcodeConfiguration.h"
+#import "FBXCTestShimConfiguration.h"
+#import "FBXCTraceConfiguration.h"
 
 const NSTimeInterval DefaultXCTraceRecordOperationTimeLimit = 4 * 60 * 60; // 4h
 const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s

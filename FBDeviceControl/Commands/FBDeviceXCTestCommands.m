@@ -110,6 +110,7 @@
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
     simDeviceSet:nil
+    macOSTestShimPath:nil
     queue:self.device.workQueue
     logger:[logger withName:@"xcodebuild"]];
 }
