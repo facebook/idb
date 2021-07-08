@@ -365,6 +365,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBFramebufferConsumer
 
+- (NSString *)consumerIdentifier
+{
+  return NSStringFromClass(self.class);
+}
+
 - (void)didChangeIOSurface:(IOSurface *)surface
 {
   [self mountSurface:surface error:nil];

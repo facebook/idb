@@ -32,6 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didReceiveDamageRect:(CGRect)rect;
 
+/**
+ The Identifier of the Consumer.
+ */
+@property (nonatomic, copy, readonly) NSString *consumerIdentifier;
+
 @end
 
 /**
