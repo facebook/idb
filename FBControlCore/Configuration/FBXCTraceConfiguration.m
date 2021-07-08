@@ -80,7 +80,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"xctrace record: template %@ | duration %f | process to launch %@ | process to attach %@ | package %@ | target stdin %@ | target stdout %@ | target arguments %@ | target environment %@ | record all processes %@ | shim %@",
+    @"xctrace record: template %@ | duration %f | process to launch %@ | process to attach %@ | package %@ | target stdin %@ | target stdout %@ | target arguments %@ | target environment %@ | record all processes %@",
     self.templateName,
     self.timeLimit,
     self.processToLaunch,
@@ -90,8 +90,7 @@
     self.targetStdout,
     [FBCollectionInformation oneLineDescriptionFromArray:self.launchArgs],
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.processEnv],
-    self.allProcesses ? @"Yes" : @"No",
-    self.shim
+    self.allProcesses ? @"Yes" : @"No"
   ];
 }
 
