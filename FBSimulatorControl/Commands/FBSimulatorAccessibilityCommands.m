@@ -181,6 +181,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   NSString *token = NSUUID.UUID.UUIDString;
   NSParameterAssert([self.tokenToSimulator objectForKey:token] == nil);
   [self.tokenToSimulator setObject:simulator forKey:token];
+  [self.logger logFormat:@"Simulator %@ backed by token %@", simulator, token];
   return token;
 }
 
@@ -189,6 +190,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
   NSParameterAssert(simulator);
   [self.tokenToSimulator removeObjectForKey:token];
+  [self.logger logFormat:@"Removing token %@", token];
   return simulator;
 }
 
@@ -198,8 +200,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (AXPTranslationCallback)translationCallbackForToken:(NSString *)token
 {
   FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
-  NSLog(@"REQUEST TOKEN %@", token);
-  NSParameterAssert(simulator);
+  if (!simulator) {
+    return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request) {
+      [self.logger logFormat:@"Simlator with token %@ is gone for request %@. Returning empty response", token, request];
+      return [objc_getClass("AXPTranslatorResponse") emptyResponse];
+    };
+  }
   return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request){
     [simulator.logger logFormat:@"Sending Accessibility Request %@", request];
     dispatch_group_t group = dispatch_group_create();
