@@ -65,9 +65,15 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             file.write(filedata)
 
 
+version = os.environ.get("FB_IDB_VERSION")
+if not version:
+    raise Exception(
+        """Cannot build with without a version number. Set the environment variable FB_IDB_VERSION"""
+    )
+
 setuptools.setup(
     name="fb-idb",
-    version="0.0.1",
+    version=version,
     author="Facebook",
     author_email="callumryan@fb.com",
     description="iOS debug bridge",
