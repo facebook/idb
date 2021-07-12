@@ -89,7 +89,9 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
 - (NSString *)description
 {
-  return [FBCollectionInformation oneLineDescriptionFromDictionary:self.jsonSerializableRepresentation];
+  NSData *data = [NSJSONSerialization dataWithJSONObject:self.jsonSerializableRepresentation options:0 error:NULL];
+  NSParameterAssert(data);
+  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
 - (BOOL)isEqual:(FBXCTestConfiguration *)object
