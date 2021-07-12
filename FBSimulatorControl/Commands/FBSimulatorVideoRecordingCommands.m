@@ -94,21 +94,8 @@
 
 + (FBFuture<FBSimulatorVideo *> *)videoImplementationForSimulator:(FBSimulator *)simulator filePath:(NSString *)filePath
 {
-  if (FBSimulatorVideoRecordingCommands.shouldUseSimctlEncoder) {
-    FBSimulatorVideo *video = [FBSimulatorVideo videoWithSimctlExecutor:simulator.simctlExecutor filePath:filePath logger:simulator.logger];
-    return [FBFuture futureWithResult:video];
-  }
-
-  return [[simulator
-    connectToFramebuffer]
-    onQueue:simulator.workQueue map:^(FBFramebuffer *framebuffer) {
-      return [FBSimulatorVideo videoWithFramebuffer:framebuffer filePath:filePath logger:simulator.logger];
-    }];
-}
-
-+ (BOOL)shouldUseSimctlEncoder
-{
-  return !NSProcessInfo.processInfo.environment[@"FBSIMULATORCONTROL_IN_PROCESS_RECORDER"].boolValue;
+  FBSimulatorVideo *video = [FBSimulatorVideo videoWithSimctlExecutor:simulator.simctlExecutor filePath:filePath logger:simulator.logger];
+  return [FBFuture futureWithResult:video];
 }
 
 @end
