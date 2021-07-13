@@ -18,7 +18,6 @@
 
 @interface FBSurfaceImageGenerator ()
 
-@property (nonatomic, copy, readwrite) NSString *consumerIdentifier;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) CIFilter *scaleFilter;
 
@@ -31,12 +30,11 @@
 
 + (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale purpose:(NSString *)purpose logger:(id<FBControlCoreLogger>)logger
 {
-  NSString *consumerIdentifier = [NSString stringWithFormat:@"%@_%@", NSStringFromClass(self), purpose];
   logger = [logger withName:[NSString stringWithFormat:@"%@_%@", logger.name, purpose]];
-  return [[FBSurfaceImageGenerator alloc] initWithScale:scale consumerIdentifier:consumerIdentifier logger:logger];
+  return [[FBSurfaceImageGenerator alloc] initWithScale:scale logger:logger];
 }
 
-- (instancetype)initWithScale:(NSDecimalNumber *)scale consumerIdentifier:(NSString *)consumerIdentifier logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithScale:(NSDecimalNumber *)scale logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -44,7 +42,6 @@
   }
 
   _logger = logger;
-  _consumerIdentifier = consumerIdentifier;
   _lastSeedValue = 0;
 
   if ([scale isNotEqualTo:NSDecimalNumber.one]) {
