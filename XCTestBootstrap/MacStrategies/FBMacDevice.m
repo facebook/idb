@@ -133,7 +133,7 @@
 - (FBFuture<NSString *> *)extendedTestShim
 {
   return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.logger]
+    sharedShimConfigurationWithLogger:self.logger]
     onQueue:self.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
       return shims.macOSTestShimPath;
     }];

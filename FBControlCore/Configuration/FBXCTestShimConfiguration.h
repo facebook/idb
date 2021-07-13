@@ -22,6 +22,14 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
 @interface FBXCTestShimConfiguration : NSObject <NSCopying>
 
 /**
+ Constructs or returned the singleton shim configuration
+
+ @param logger to use for logging.
+ @return a future wrapping the Shim Configuration.
+ */
++ (FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
  Constructs a Shim Configuration from the default base directory.
 
  @param logger to use for logging.

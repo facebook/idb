@@ -116,6 +116,16 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
     mapReplace:directory];
 }
 
++ (FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(id<FBControlCoreLogger>)logger
+{
+  static dispatch_once_t onceToken;
+  __block FBFuture<FBXCTestShimConfiguration *> *future;
+  dispatch_once(&onceToken, ^{
+    future = [self defaultShimConfigurationWithLogger:logger];
+  });
+  return future;
+}
+
 + (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfigurationWithLogger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createWorkQueue;

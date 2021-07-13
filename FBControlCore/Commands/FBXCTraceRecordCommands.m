@@ -38,7 +38,7 @@
 - (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:logger]
+    sharedShimConfigurationWithLogger:logger]
     onQueue:self.target.workQueue fmap:^(FBXCTestShimConfiguration *shim) {
       return [FBXCTraceRecordOperation operationWithTarget:self.target configuration:[configuration withShim:shim] logger:logger];
   }];

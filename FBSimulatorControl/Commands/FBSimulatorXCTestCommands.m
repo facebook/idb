@@ -48,7 +48,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBXCTestCommands
 
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
@@ -75,21 +75,6 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       self.isRunningXcodeBuildOperation = NO;
       return future;
     }];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
-{
-  FBListTestConfiguration *configuration = [FBListTestConfiguration
-    configurationWithEnvironment:@{}
-    workingDirectory:self.simulator.auxillaryDirectory
-    testBundlePath:bundlePath
-    runnerAppPath:appPath
-    waitForDebugger:NO
-    timeout:timeout];
-
-  return [[[FBListTestStrategy alloc]
-    initWithTarget:self.simulator configuration:configuration logger:self.simulator.logger]
-    listTests];
 }
 
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
@@ -136,10 +121,27 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     }];
 }
 
+#pragma mark FBXCTestExtendedCommands
+
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
+{
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithEnvironment:@{}
+    workingDirectory:self.simulator.auxillaryDirectory
+    testBundlePath:bundlePath
+    runnerAppPath:appPath
+    waitForDebugger:NO
+    timeout:timeout];
+
+  return [[[FBListTestStrategy alloc]
+    initWithTarget:self.simulator configuration:configuration logger:self.simulator.logger]
+    listTests];
+}
+
 - (FBFuture<NSString *> *)extendedTestShim
 {
   return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.simulator.logger]
+    sharedShimConfigurationWithLogger:self.simulator.logger]
     onQueue:self.simulator.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
       return shims.iOSSimulatorTestShimPath;
     }];
@@ -204,7 +206,7 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
   }
 
   return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.simulator.logger]
+    sharedShimConfigurationWithLogger:self.simulator.logger]
     onQueue:self.simulator.asyncQueue fmap:^(FBXCTestShimConfiguration *shims) {
       return [FBXcodeBuildOperation
         operationWithUDID:self.simulator.udid
