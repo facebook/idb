@@ -12,6 +12,7 @@ module.exports = {
     "installation",
     "guided-tour",
     "architecture",
+    "development",
     "commands",
     "fbsimulatorcontrol",
     "fbdevicecontrol",

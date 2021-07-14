@@ -70,7 +70,9 @@ These types exist so that APIs do not require extremely long and cumbersome argu
 
 ### Command Protocols & Implementations
 
-The protocols provide common APIs across Simulators and Devices. This allows the caller to treat the receiver the same, whether it is a Simulator or Device. There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`.
+In order to keep a common APIs between Simulators and Devices, `idb` has a set of Objective-C protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols.
+
+There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
 
 Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `FBApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `FBSimulatorApplicationCommands` and `FBDeviceApplicationCommands`.
 
@@ -78,7 +80,7 @@ If functionality is common to both Simulators & Devices, it's protocol is added 
 
 ### Logging
 
-`FBControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which receives arbitrary strings.
+`FBControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote, this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which receives arbitrary strings.
 
 There are also classes that are used for intercepting internal calls (`FBLoggingWrapper`) and logging them out to a "structured logger" (`FBEventReporter`). This is used in `idb` to produce accurate logging of all API calls that are made in the server. This supports user-defined classes, so is ideal for pushing into datastores that support aggregation.
 
