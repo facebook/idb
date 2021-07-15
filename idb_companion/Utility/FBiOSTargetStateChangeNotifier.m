@@ -7,9 +7,6 @@
 
 #import "FBiOSTargetStateChangeNotifier.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
-#import <FBDeviceControl/FBDeviceControl.h>
-
 #import "FBiOSTargetDescription.h"
 #import "FBIDBError.h"
 

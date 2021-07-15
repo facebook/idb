@@ -7,8 +7,6 @@
 
 #import "FBIDBStorageManager.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
-
 #import "FBIDBError.h"
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"

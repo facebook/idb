@@ -7,7 +7,6 @@
 
 #import "FBXCTestDescriptor.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBError.h"

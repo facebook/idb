@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBXCTestDescriptor.h"
 
@@ -19,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
 @class FBInstalledArtifact;
+@class FBSimulatorHIDEvent;
 @class FBTemporaryDirectory;
 
 @protocol FBXCTestReporter;
