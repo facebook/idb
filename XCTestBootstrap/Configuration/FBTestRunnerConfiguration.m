@@ -47,7 +47,7 @@
 
 + (NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPaths:(NSArray<NSString *> *)frameworkSearchPaths
 {
-  NSMutableDictionary *environmentVariables = hostApplicationAdditionalEnvironment.mutableCopy;
+  NSMutableDictionary<NSString *, NSString *> *environmentVariables = hostApplicationAdditionalEnvironment.mutableCopy;
   NSString *frameworkSearchPath = [frameworkSearchPaths componentsJoinedByString:@":"];
   [environmentVariables addEntriesFromDictionary:@{
     @"AppTargetLocation" : hostApplication.binary.path,
@@ -166,8 +166,13 @@
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[kEnv_ShimStartXCTest] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
-      if (testLaunchConfiguration.coveragePath) {
+      NSString *coveragePath = testLaunchConfiguration.coveragePath;
+      if (coveragePath) {
         hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = testLaunchConfiguration.coveragePath;
+      }
+      NSString *logDirectoryPath = testLaunchConfiguration.logDirectoryPath;
+      if (logDirectoryPath) {
+        hostApplicationAdditionalEnvironment[kEnv_LogDirectoryPath] = logDirectoryPath;
       }
       // These Search Paths are added via "DYLD_FALLBACK_FRAMEWORK_PATH" so that they can be resolved when linked by the Application.
       // This is needed so that the Application is aware of how to link the XCTest.framework from the developer directory.
