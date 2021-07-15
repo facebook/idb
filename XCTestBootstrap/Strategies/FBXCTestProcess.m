@@ -11,8 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBXCTestConstants.h"
 #import "XCTestBootstrapError.h"
-#import "ReporterEvents.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 180; // In case resources are pegged, just wait

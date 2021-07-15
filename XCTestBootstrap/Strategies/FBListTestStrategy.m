@@ -13,7 +13,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 
 @interface FBListTestStrategy ()
 

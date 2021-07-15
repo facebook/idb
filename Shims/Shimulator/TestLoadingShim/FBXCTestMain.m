@@ -10,10 +10,10 @@
 #import <dlfcn.h>
 #import <objc/runtime.h>
 
-#import "FBRuntimeTools.h"
-#import "XCTestPrivate.h"
 #import "FBDebugLog.h"
-#import "ReporterEvents.h"
+#import "FBRuntimeTools.h"
+#import "FBXCTestConstants.h"
+#import "XCTestPrivate.h"
 
 #include "TargetConditionals.h"
 

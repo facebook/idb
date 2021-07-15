@@ -9,7 +9,7 @@
 #import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 
 @interface FBLogicReporterAdapter ()
 

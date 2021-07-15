@@ -11,7 +11,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 #import "XCTestPrivate.h"
 
 #pragma clang diagnostic push

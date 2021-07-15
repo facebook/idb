@@ -938,7 +938,7 @@
 		AA3FD03D1C876E4F001093CA /* FBSimulatorLaunchTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchTests.m; sourceTree = "<group>"; };
 		AA3FD03F1C876E4F001093CA /* FBSimulatorSetTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorSetTests.m; sourceTree = "<group>"; };
 		AA3FD05D1C882685001093CA /* FBSimulatorControlValueTypeTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlValueTypeTests.m; sourceTree = "<group>"; };
-		AA40153E25769DF400AF4591 /* ReporterEvents.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ReporterEvents.h; path = Shims/Shimulator/TestReporterShim/ReporterEvents.h; sourceTree = SOURCE_ROOT; };
+		AA40153E25769DF400AF4591 /* FBXCTestConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FBXCTestConstants.h; path = Shims/Shimulator/Tools/FBXCTestConstants.h; sourceTree = SOURCE_ROOT; };
 		AA419EBC222E767000691017 /* FBGDBClientTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBGDBClientTests.m; sourceTree = "<group>"; };
 		AA4242FB1C529366008ABD80 /* FBSimulatorVideo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorVideo.h; sourceTree = "<group>"; };
 		AA4242FC1C529366008ABD80 /* FBSimulatorVideo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorVideo.m; sourceTree = "<group>"; };
@@ -2324,8 +2324,8 @@
 				2F8294C91FBC571A0011E722 /* FBLogicReporterAdapter.h */,
 				2F8294CA1FBC571B0011E722 /* FBLogicReporterAdapter.m */,
 				2F8294C81FBC571A0011E722 /* FBLogicXCTestReporter.h */,
+				AA40153E25769DF400AF4591 /* FBXCTestConstants.h */,
 				AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */,
-				AA40153E25769DF400AF4591 /* ReporterEvents.h */,
 			);
 			path = Reporters;
 			sourceTree = "<group>";
