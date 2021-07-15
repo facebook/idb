@@ -38,6 +38,36 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface FBXCTestReporterConfiguration : NSObject
+
+/**
+ The Result Bundle Path (if any)
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *resultBundlePath;
+
+/**
+ Coverage file path
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *coveragePath;
+
+/**
+ Log directory path
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *logDirectoryPath;
+
+/**
+ App binary path
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *binaryPath;
+
+/**
+ Whether to report attachments or not.
+ */
+@property (nonatomic, assign, readonly) BOOL reportAttachments;
+
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath binaryPath:(nullable NSString *)binaryPath reportAttachments:(BOOL)reportAttachments;
+
+@end
 
 /**
  Describes the necessary information to start a test run.
@@ -60,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
 
 /**
 The Initializer for App Tests.
@@ -76,7 +106,7 @@ The Initializer for App Tests.
  @param collectCoverage will collect llvm coverage data
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
 
 /**
 The Initializer for UI Tests.
@@ -93,7 +123,7 @@ The Initializer for UI Tests.
  @param collectCoverage will collect llvm coverage data
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities  collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
 
 #pragma mark Properties
 
@@ -147,11 +177,15 @@ The Initializer for UI Tests.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *testTimeout;
 
-
 /**
  If set activities and their data will be reported
  */
 @property (nonatomic, assign, readonly) BOOL reportActivities;
+
+/**
+ Whether to report activities or not.
+ */
+@property (nonatomic, assign, readonly) BOOL reportAttachments;
 
 /**
  If set llvm coverage data will be collected

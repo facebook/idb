@@ -264,6 +264,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   BOOL collectCoverage = request->collect_coverage();
   BOOL collectLogs = request->collect_logs();
   BOOL waitForDebugger = request->wait_for_debugger();
+  BOOL reportAttachments = request->report_attachments();
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -280,18 +281,18 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
       NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
       NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
     }
     default:
       return nil;
@@ -1036,15 +1037,12 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   }
   // Once the reporter is created, only it will perform writing to the writer.
   NSError *error = nil;
-  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response reportAttachments:request->report_attachments() queue:_target.workQueue logger:_target.logger];
+  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  reporter.resultBundlePath = operation.resultBundlePath;
-  reporter.coveragePath = operation.coveragePath;
-  reporter.binaryPath = operation.binaryPath;
-  reporter.logDirectoryPath = operation.logDirectoryPath;
+  reporter.configuration = operation.reporterConfiguration;
 
   // First wait for the test operation to finish
   [operation.completed block:&error];

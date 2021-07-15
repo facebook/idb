@@ -7,6 +7,8 @@
 
 #import "FBIDBXCTestReporter.h"
 
+#import "FBXCTestDescriptor.h"
+
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
@@ -29,7 +31,7 @@
 
 #pragma mark Initializer
 
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer reportAttachments:(BOOL)reportAttachments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -37,9 +39,10 @@
   }
 
   _writer = writer;
-  _reportAttachments = reportAttachments;
   _queue = queue;
   _logger = logger;
+
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binaryPath:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -333,7 +336,7 @@
   // https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al#L212
   __block idb::XctestRunResponse responseCaptured = response;
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-  if (self.resultBundlePath) {
+  if (self.configuration.resultBundlePath) {
     [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
@@ -345,7 +348,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.coveragePath) {
+  if (self.configuration.coveragePath) {
     [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
       NSString *coverageData = future.result;
       if (coverageData) {
@@ -356,7 +359,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.logDirectoryPath) {
+  if (self.configuration.logDirectoryPath) {
       [futures addObject:[[self getLogDirectoryData] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
         NSData *data = future.result;
         if (data) {
@@ -419,36 +422,40 @@
       }
     };
 
-  NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
-  return [[[[[self.processUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
-    return [[[[[FBTaskBuilder
-      withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
-      withStdOutInMemoryAsString]
-      withStdErrInMemoryAsString]
-      withNoUnacceptableStatusCodes]
-      runUntilCompletion];
-  }] onQueue:self.queue fmap:[checkXcrunError copy]
-  ] onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+  NSString *profdataPath = [[self.configuration.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
+
+  return [[[[[self.processUnderTestExitedMutable
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
       return [[[[[FBTaskBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
+        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.configuration.coveragePath]]
         withStdOutInMemoryAsString]
         withStdErrInMemoryAsString]
         withNoUnacceptableStatusCodes]
         runUntilCompletion];
-  }] onQueue:self.queue fmap:[checkXcrunError copy]
-  ] onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
-    return task.stdOut;
-  }];
+    }]
+    onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      return [[[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.configuration.binaryPath]]
+        withStdOutInMemoryAsString]
+        withStdErrInMemoryAsString]
+        withNoUnacceptableStatusCodes]
+        runUntilCompletion];
+    }]
+    onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
+      return task.stdOut;
+    }];
 }
 
 - (FBFuture<NSData *> *)getResultsBundle
 {
-  return [FBArchiveOperations createGzippedTarDataForPath:self.resultBundlePath queue:self.queue logger:self.logger];
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
 }
 
--(FBFuture<NSData *> *)getLogDirectoryData
+- (FBFuture<NSData *> *)getLogDirectoryData
 {
-  return [FBArchiveOperations createGzippedTarDataForPath:self.logDirectoryPath queue:self.queue logger:self.logger];
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
 }
 
 @end

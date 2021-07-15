@@ -16,6 +16,9 @@ using grpc::Status;
 using grpc::ServerContext;
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBXCTestReporterConfiguration;
+
 /**
  Bridges from the FBXCTestReporter protocol to a GRPC result writer.
  This also keeps track of the terminal condition of the reporter, so this can be used to know when reporting has fully terminated.
@@ -29,10 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param writer the response writer to use.
  @param queue the queue to serialize work on.
- @param reportAttachments whether to return activity attachments
  @param logger the logger to log to.
  */
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer reportAttachments:(BOOL)reportAttachments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
@@ -42,24 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *reportingTerminated;
 
 /**
- The Result Bundle Path (if any)
+ The configuration for the xctest reporter.
  */
-@property (nonatomic, copy, nullable, readwrite) NSString *resultBundlePath;
-
-/**
- Coverage file path
- */
-@property (nonatomic, copy, nullable, readwrite) NSString *coveragePath;
-
-/**
- Log directory path
- */
-@property (nonatomic, copy, nullable, readwrite) NSString *logDirectoryPath;
-
-/**
- App binary path
- */
-@property (nonatomic, copy, nullable, readwrite) NSString *binaryPath;
+@property (nonatomic, strong, readwrite) FBXCTestReporterConfiguration *configuration;
 
 @end
 
