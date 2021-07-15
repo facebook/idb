@@ -8,8 +8,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"

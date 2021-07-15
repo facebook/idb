@@ -43,8 +43,8 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
   return self;
 }
-
 #pragma mark Public
+
 
 - (NSTimeInterval)defaultTimeout
 {

@@ -8,8 +8,6 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAMDevice.h"

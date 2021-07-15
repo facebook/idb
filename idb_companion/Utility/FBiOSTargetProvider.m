@@ -9,6 +9,7 @@
 
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBError.h"
 

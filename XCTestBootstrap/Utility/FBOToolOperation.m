@@ -7,8 +7,7 @@
 
 #import "FBOToolOperation.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "XCTestBootstrapError.h"
 
 @implementation FBOToolOperation
 

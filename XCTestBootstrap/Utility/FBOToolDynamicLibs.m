@@ -7,6 +7,8 @@
 
 #import "FBOToolDynamicLibs.h"
 
+#import "FBOToolOperation.h"
+
 @implementation FBOToolDynamicLibs
 
 + (FBFuture<NSArray *> *)findFullPathForSanitiserDyldInBundle:(NSString *)bundlePath onQueue:(nonnull dispatch_queue_t)queue {
