@@ -350,7 +350,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return interpolatedEnvironment;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [request startWithBundleStorageManager:self.storageManager.xctest target:self.target reporter:reporter logger:logger temporaryDirectory:self.temporaryDirectory];
 }

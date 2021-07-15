@@ -123,22 +123,12 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   NSError *error = nil;
   NSURL *workingDirectory = [temporaryDirectory ephemeralTemporaryDirectory];
   if (![NSFileManager.defaultManager createDirectoryAtURL:workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
     return [FBFuture futureWithError:error];
-  }
-
-  NSString *logDirectoryPath = nil;
-  if (self.collectLogs) {
-    NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
-    if (![NSFileManager.defaultManager createDirectoryAtURL:dir withIntermediateDirectories:YES attributes:nil error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    logDirectoryPath = dir.path;
-    [reporter setLogDirectoryPath:logDirectoryPath];
   }
 
   NSString *coveragePath = nil;
@@ -176,10 +166,10 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     binaryPath:testDescriptor.testBundle.binary.path
     logDirectoryPath:logDirectoryPath];
 
-  return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
+  return [self startTestExecution:configuration logDirectoryPath:logDirectoryPath target:target reporter:reporter logger:logger];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
   FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration reporter:adapter logger:logger];
@@ -187,7 +177,16 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   if (completed.error) {
     return [FBFuture futureWithError:completed.error];
   }
-  FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:configuration.coveragePath binaryPath:configuration.binaryPath reporter:reporter logger:logger completed:completed queue:target.workQueue];
+  FBIDBTestOperation *operation = [[FBIDBTestOperation alloc]
+    initWithConfiguration:configuration
+    resultBundlePath:nil
+    coveragePath:configuration.coveragePath
+    binaryPath:configuration.binaryPath
+    logDirectoryPath:logDirectoryPath
+    reporter:reporter
+    logger:logger
+    completed:completed
+    queue:target.workQueue];
   return [FBFuture futureWithResult:operation];
 }
 
@@ -209,7 +208,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[testDescriptor
     testAppPairForRequest:self target:target]
@@ -218,13 +217,12 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       FBFuture<FBTestLaunchConfiguration *> *launchConfigFuture = [testDescriptor testConfigWithRunRequest:self testApps:pair logger:logger queue:target.workQueue];
       return [launchConfigFuture onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestLaunchConfiguration *testConfig) {
         [logger logFormat:@"Obtained launch configuration %@", testConfig];
-        [reporter setLogDirectoryPath:testConfig.logDirectoryPath];
-        return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target reporter:reporter logger:logger];
+        return [FBXCTestRunRequest_AppTest startTestExecution:testConfig logDirectoryPath:logDirectoryPath target:target reporter:reporter logger:logger];
       }];
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return [[target
     installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID]
@@ -236,6 +234,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         resultBundlePath:configuration.resultBundlePath
         coveragePath:configuration.coveragePath
         binaryPath:binaryPath
+        logDirectoryPath:logDirectoryPath
         reporter:reporter
         logger:logger
         completed:testCompleted
@@ -325,16 +324,25 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithBundleStorageManager:(FBXCTestBundleStorage *)bundleStorage target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[self
     fetchAndSetupDescriptorWithBundleStorage:bundleStorage target:target]
-    onQueue:target.workQueue fmap:^(id<FBXCTestDescriptor> descriptor) {
-      return [self startWithTestDescriptor:descriptor target:target reporter:reporter logger:logger temporaryDirectory:temporaryDirectory];
+    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (id<FBXCTestDescriptor> descriptor) {
+      NSString *logDirectoryPath = nil;
+      if (self.collectLogs) {
+        NSError *error;
+        NSURL *directory = [temporaryDirectory ephemeralTemporaryDirectory];
+        if (![NSFileManager.defaultManager createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:&error]) {
+          return [FBFuture futureWithError:error];
+        }
+        logDirectoryPath = directory.path;
+      }
+      return [self startWithTestDescriptor:descriptor logDirectoryPath:logDirectoryPath target:target reporter:reporter logger:logger temporaryDirectory:temporaryDirectory];
     }];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBIDBError
     describeFormat:@"%@ not implemented in abstract base class", NSStringFromSelector(_cmd)]

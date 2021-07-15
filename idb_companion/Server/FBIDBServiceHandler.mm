@@ -1044,6 +1044,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   reporter.resultBundlePath = operation.resultBundlePath;
   reporter.coveragePath = operation.coveragePath;
   reporter.binaryPath = operation.binaryPath;
+  reporter.logDirectoryPath = operation.logDirectoryPath;
 
   // First wait for the test operation to finish
   [operation.completed block:&error];

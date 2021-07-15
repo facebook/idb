@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Double for verifiying callers of FBXCTestReporter
  */
-@interface FBXCTestReporterDouble : NSObject <FBXCTestReporter, FBXCTestReporterWithFiles>
+@interface FBXCTestReporterDouble : NSObject <FBXCTestReporter>
 
 /**
  An array of the started test suites.

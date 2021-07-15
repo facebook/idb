@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  */
 @interface FBIDBTestOperation : NSObject <FBiOSTargetOperation>
 
-- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
+- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
 
 /**
  The Execution State.
@@ -64,6 +64,11 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  The path to the app binary
 */
 @property (nonatomic, nullable, copy, readonly) NSString *binaryPath;
+
+/**
+ The path that log directories are stored in.
+*/
+@property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
 
 @end
 

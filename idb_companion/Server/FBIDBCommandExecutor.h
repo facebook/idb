@@ -322,7 +322,7 @@ This allows to avoid the permission popup the first time we open a deeplink
  @param logger the logger to log to.
  @return a Future that resolves with the xctest operation.
  */
-- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter, FBXCTestReporterWithFiles>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Starts the debugserver

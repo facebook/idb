@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Reporter using xctool's linewise-json output.
  */
-@interface FBJSONTestReporter : NSObject <FBXCTestReporter, FBXCTestReporterWithFiles>
+@interface FBJSONTestReporter : NSObject <FBXCTestReporter>
 
 /**
  The Designated Initializer.

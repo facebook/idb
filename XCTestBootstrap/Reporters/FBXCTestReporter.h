@@ -40,7 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didFinishExecutingTestPlan;
 
-
 /**
  Called when the process under test exits
  */
@@ -169,22 +168,5 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path;
 
 @end
-
-
-
-/**
- fbxtest's reporting protocol to handle log files.
- */
-@protocol FBXCTestReporterWithFiles <NSObject>
-
-/**
- Add log files contained in the directory to the report.
- @param logDirectoryPath the path to the log directory
- */
-- (void)setLogDirectoryPath:(NSString *)logDirectoryPath;
-
-@end
-
-
 
 NS_ASSUME_NONNULL_END

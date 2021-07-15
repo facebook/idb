@@ -448,8 +448,7 @@
 
 -(FBFuture<NSData *> *)getLogDirectoryData
 {
-    return [FBArchiveOperations createGzippedTarDataForPath:self.logDirectoryPath queue:self.queue logger:self.logger];
-
+  return [FBArchiveOperations createGzippedTarDataForPath:self.logDirectoryPath queue:self.queue logger:self.logger];
 }
 
 @end

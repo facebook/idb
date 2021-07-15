@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestCommandLine;
 @class FBXCTestLogger;
 @protocol FBXCTestReporter;
-@protocol FBXCTestReporterWithFiles;
 
 /**
  Context for the Test Run.
@@ -33,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log with.
  @return a new context.
  */
-+ (instancetype)contextWithReporter:(nullable id<FBXCTestReporter,FBXCTestReporterWithFiles>)reporter logger:(nullable FBXCTestLogger *)logger;
++ (instancetype)contextWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger;
 
 #pragma mark Properties
 
@@ -45,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Reporter to report to.
  */
-@property (nonatomic, strong, readonly, nullable) id<FBXCTestReporter,FBXCTestReporterWithFiles> reporter;
+@property (nonatomic, strong, readonly, nullable) id<FBXCTestReporter> reporter;
 
 #pragma mark Public Methods
 
