@@ -267,10 +267,11 @@ The Initializer for UI Tests.
  @param request the xctest run request
  @param testApps the materialized Applications that are used as a part of testing.
  @param logger the logger to log to
+ @param logDirectoryPath the path to the log directory, if present.
  @param queue the queue to be used for async operations
  @return a Future wrapping the test launch configuration if constructed successfully or an error.
  */
-- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(nullable NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 /**
  Obtains the Test Application Components for the provided target and request
