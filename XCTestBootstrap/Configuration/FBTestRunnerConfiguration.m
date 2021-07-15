@@ -8,6 +8,7 @@
 #import "FBTestRunnerConfiguration.h"
 
 #import "FBTestConfiguration.h"
+#import "FBXCTestConstants.h"
 #import "XCTestBootstrapError.h"
 
 @implementation FBTestRunnerConfiguration
@@ -163,10 +164,10 @@
       FBInstalledApplication *hostApplication = tuple[0];
       NSString *shimPath = tuple[1];
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
-      hostApplicationAdditionalEnvironment[@"SHIMULATOR_START_XCTEST"] = @"1";
+      hostApplicationAdditionalEnvironment[kEnv_ShimStartXCTest] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
       if (testLaunchConfiguration.coveragePath) {
-        hostApplicationAdditionalEnvironment[@"LLVM_PROFILE_FILE"] = testLaunchConfiguration.coveragePath;
+        hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = testLaunchConfiguration.coveragePath;
       }
       // These Search Paths are added via "DYLD_FALLBACK_FRAMEWORK_PATH" so that they can be resolved when linked by the Application.
       // This is needed so that the Application is aware of how to link the XCTest.framework from the developer directory.

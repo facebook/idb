@@ -14,6 +14,8 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBXCTestConstants.h"
+
 static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 @interface FBLogicTestRunOutputs : NSObject
@@ -131,20 +133,23 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath waitForDebugger:(BOOL)waitForDebugger
 {
-  NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [NSMutableDictionary dictionaryWithDictionary:environment];
-
-  NSMutableArray *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
+  NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
-  updatedEnvironment[@"DYLD_INSERT_LIBRARIES"] = [librariesWithShim componentsJoinedByString:@":"];
-  updatedEnvironment[@"TEST_SHIM_STDOUT_PATH"] = shimOutputFilePath;
-  updatedEnvironment[@"TEST_SHIM_BUNDLE_PATH"] = bundlePath;
+
+  NSMutableDictionary<NSString *, NSString *> *environmentAdditions = [NSMutableDictionary dictionaryWithDictionary:@{
+    @"DYLD_INSERT_LIBRARIES": [librariesWithShim componentsJoinedByString:@":"],
+    @"TEST_SHIM_STDOUT_PATH": shimOutputFilePath,
+    @"TEST_SHIM_BUNDLE_PATH": bundlePath,
+    kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
+  }];
   if (coveragePath) {
-    updatedEnvironment[@"LLVM_PROFILE_FILE"] = coveragePath;
+    environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
   }
 
-  updatedEnvironment[@"XCTOOL_WAIT_FOR_DEBUGGER"] = waitForDebugger ? @"YES" : @"NO";
+  NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [environment mutableCopy];
+  [updatedEnvironment addEntriesFromDictionary:environmentAdditions];
 
-  return [NSDictionary dictionaryWithDictionary:updatedEnvironment];
+  return [updatedEnvironment copy];
 }
 
 - (FBFuture<NSNull *> *)completeLaunchedProcess:(FBFuture<NSNumber *> *)exitCode outputs:(FBLogicTestRunOutputs *)outputs

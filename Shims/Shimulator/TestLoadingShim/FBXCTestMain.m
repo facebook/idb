@@ -23,13 +23,11 @@
 #import <AppKit/AppKit.h>
 #endif
 
-static NSString *const ShimulatorStartXCTest = @"SHIMULATOR_START_XCTEST";
-
 __attribute__((constructor)) static void XCTestMainEntryPoint()
 {
   FBDebugLog(@"[XCTestMainEntryPoint] Running inside: %@", [[NSBundle mainBundle] bundleIdentifier]);
-  if (!NSProcessInfo.processInfo.environment[ShimulatorStartXCTest]) {
-    FBDebugLog(@"[XCTestMainEntryPoint] SHIMULATOR_START_XCTEST not present. Bye");
+  if (!NSProcessInfo.processInfo.environment[kEnv_ShimStartXCTest]) {
+    FBDebugLog(@"[XCTestMainEntryPoint] %@ not present. Bye", kEnv_ShimStartXCTest);
     return;
   }
   if ([[[NSBundle mainBundle] bundleIdentifier] hasPrefix:@"com.apple.test"]) {
