@@ -62,5 +62,6 @@ typedef NS_ENUM(NSInteger, TestShimExitCode) {
 #define kReporter_BeginStatus_LevelKey @"level"
 
 #define kEnv_LLVMProfileFile @"LLVM_PROFILE_FILE"
+#define kEnv_LogDirectoryPath @"LOG_DIRECTORY_PATH"
 #define kEnv_ShimStartXCTest @"SHIMULATOR_START_XCTEST"
 #define kEnv_WaitForDebugger @"XCTOOL_WAIT_FOR_DEBUGGER"

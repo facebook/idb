@@ -115,12 +115,14 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   return [[FBOToolDynamicLibs
     findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
     onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
-      NSDictionary<NSString *, NSString *> *environment = [self setupEnvironmentWithDylibs:[self.configuration.processUnderTestEnvironment mutableCopy]
+      NSDictionary<NSString *, NSString *> *environment = [FBLogicTestRunStrategy
+        setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
         withLibraries:libraries
         shimOutputFilePath:outputs.shimOutput.filePath
         shimPath:shimPath
         bundlePath:self.configuration.testBundlePath
         coveragePath:self.configuration.coveragePath
+        logDirectoryPath:self.configuration.logDirectoryPath
         waitForDebugger:self.configuration.waitForDebugger];
 
       return [[self
@@ -131,7 +133,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath waitForDebugger:(BOOL)waitForDebugger
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
 {
   NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
@@ -144,6 +146,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   }];
   if (coveragePath) {
     environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
+  }
+  if (logDirectoryPath) {
+    environmentAdditions[kEnv_LogDirectoryPath] = logDirectoryPath;
   }
 
   NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [environment mutableCopy];
