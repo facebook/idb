@@ -262,10 +262,20 @@
     stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]];
 
   FBMutableFuture<NSNumber *> *future = [FBMutableFuture future];
+
+  id<FBControlCoreLogger> logger = self.simulator.logger;
+  [logger logFormat:
+    @"Launching Application %@ with %@ %@",
+    configuration.bundleID,
+    [FBCollectionInformation oneLineDescriptionFromArray:configuration.arguments],
+    [FBCollectionInformation oneLineDescriptionFromDictionary:configuration.environment]
+  ];
   [simulator.device launchApplicationAsyncWithID:configuration.bundleID options:options completionQueue:simulator.workQueue completionHandler:^(NSError *error, pid_t pid){
     if (error) {
+      [logger logFormat:@"Failed to launch Application %@ %@", configuration.bundleID, error];
       [future resolveWithError:error];
     } else {
+      [logger logFormat:@"Launched Application %@ with pid %d", configuration.bundleID, pid];
       [future resolveWithResult:@(pid)];
     }
   }];
