@@ -23,7 +23,6 @@
 
 #import "XCTestBootstrapError.h"
 
-#import "FBTestApplicationLaunchStrategy.h"
 #import "FBTestBundleConnection.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
@@ -137,6 +136,44 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
       return [launchedApplication.applicationTerminated cancel];
     }];
 }
+
+- (FBFuture<id<FBLaunchedApplication>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
+{
+  if (!path) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]
+      failFuture];
+  }
+  return [[[[self.target
+    isApplicationInstalledWithBundleID:configuration.bundleID]
+    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
+      if (!isInstalled.boolValue) {
+        return FBFuture.empty;
+      }
+      return [self.target uninstallApplicationWithBundleID:configuration.bundleID];
+    }]
+    onQueue:self.target.workQueue fmap:^(NSNull *_) {
+      return [self.target installApplicationWithPath:path];
+    }]
+    onQueue:self.target.workQueue fmap:^(NSNull *_) {
+      return [self.target launchApplication:configuration];
+    }];
+}
+
+- (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
+{
+  // Check if path points to installed app
+  return [[self.target
+    installedApplicationWithBundleID:configuration.bundleID]
+    onQueue:self.target.workQueue chain:^(FBFuture<FBInstalledApplication *> *future) {
+      FBInstalledApplication *app = future.result;
+      if (app && [app.bundle.path isEqualToString:path]) {
+        return [self.target launchApplication:configuration];
+      }
+      return [self installAndLaunchApplication:configuration atPath:path];
+    }];
+}
+
 #pragma mark - XCTestManager_IDEInterface protocol
 
 #pragma mark Process Launch Delegation
@@ -164,8 +201,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     launchMode:FBApplicationLaunchModeFailIfRunning];
   id token = @(receipt.hash);
 
-  [[[FBTestApplicationLaunchStrategy
-    strategyWithTarget:self.target]
+  [[self
     launchApplication:launch atPath:path]
     onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
       NSError *innerError = future.error;
