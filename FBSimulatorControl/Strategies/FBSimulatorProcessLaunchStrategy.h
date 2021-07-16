@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a Strategy for the provided Simulator.
 
  @param simulator the Simulator to launch on.
- @return a new Agent Launch Strategy.
+ @return a new process launch strategy.
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
@@ -36,28 +36,28 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Launches a long-running process with the given configuration.
 
- @param agentLaunch the agent to launch.
+ @param configuration the configuration of the process to spawn.
  @return a future, wrapping the launched process.
  */
-- (FBFuture<id<FBLaunchedProcess>> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch;
+- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration;
 
 #pragma mark Short-Running Processes
 
 /**
  Launches a short-running process with the given configuration.
 
- @param agentLaunch the agent to launch.
+ @param configuration the configuration of the process to spawn.
  @return the stat_loc exit of the process, wrapped in a Future.
  */
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)agentLaunch;
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)configuration;
 
 /**
- Launches an agent, consuming it's output and returning it as a String.
+ Launches an process, consuming it's output and returning it as a String.
 
- @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
+ @param configuration the configuration of the process to spawn.
  @return A future that wraps the stdout of the launched process.
  */
-- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)agentLaunch;
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration;
 
 #pragma mark Helpers
 

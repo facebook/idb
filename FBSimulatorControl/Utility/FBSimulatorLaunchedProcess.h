@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param simulator the Simulator the Agent is launched in.
+ @param simulator the Simulator the Process is launched in.
  @param configuration the configuration the process was launched with.
  @param attachment the IO attachment.
  @param launchFuture a future that will fire when the process has launched. The value is the process identifier.

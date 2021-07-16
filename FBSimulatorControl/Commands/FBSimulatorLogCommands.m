@@ -76,7 +76,7 @@
 
   return [[FBSimulatorProcessLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchAgent:configuration];
+    launchProcess:configuration];
 }
 
 - (NSString *)logExecutablePathWithError:(NSError **)error

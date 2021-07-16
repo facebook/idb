@@ -55,7 +55,7 @@
         : [self processWasCancelled];
       return [teardown chainReplace:future];
     }]
-    nameFormat:@"Completion of agent process %d", processIdentifier];
+    nameFormat:@"Completion of  process %d", processIdentifier];
 
   return self;
 }
@@ -75,7 +75,7 @@
       }
       return [FBFuture futureWithResult:@(WEXITSTATUS(statLoc))];
     }]
-    nameFormat:@"Exit code of agent process %d", self.processIdentifier];
+    nameFormat:@"Exit code of process %d", self.processIdentifier];
 }
 
 - (FBFuture<NSNumber *> *)signal
@@ -91,7 +91,7 @@
       }
       return [FBFuture futureWithResult:@(WTERMSIG(statLoc))];
     }]
-    nameFormat:@"Exit code of agent process %d", self.processIdentifier];
+    nameFormat:@"Exit code of process %d", self.processIdentifier];
 }
 
 #pragma mark Private
@@ -124,7 +124,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Agent Operation %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
+  return [NSString stringWithFormat:@"Simulator Process %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
 }
 
 @end

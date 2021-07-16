@@ -49,7 +49,7 @@
 - (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   NSParameterAssert(configuration);
-  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:configuration];
+  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchProcess:configuration];
 }
 
 @end

@@ -16,8 +16,6 @@
 #import "FBSimulatorLaunchedProcess.h"
 #import "FBSimulatorProcessFetcher.h"
 
-typedef void (^FBAgentTerminationHandler)(int stat_loc);
-
 @interface FBSimulatorProcessLaunchStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
@@ -49,30 +47,30 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Long-Running Processes
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchAgent:(FBProcessSpawnConfiguration *)agentLaunch
+- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   FBSimulator *simulator = self.simulator;
 
-  return [[agentLaunch.io
+  return [[configuration.io
     attach]
     onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
       // Launch the Process
-      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", agentLaunch.launchPath, simulator.udid];
+      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid];
       FBFuture<NSNumber *> *launchFuture = [FBSimulatorProcessLaunchStrategy
-        launchAgentWithSimulator:simulator
-        launchPath:agentLaunch.launchPath
-        arguments:agentLaunch.arguments
-        environment:agentLaunch.environment
+        launchProcessWithSimulator:simulator
+        launchPath:configuration.launchPath
+        arguments:configuration.arguments
+        environment:configuration.environment
         waitForDebugger:NO
         stdOut:attachment.stdOut
         stdErr:attachment.stdErr
-        mode:agentLaunch.mode
+        mode:configuration.mode
         processStatusFuture:processStatusFuture];
 
       // Wrap in the container object
       return [FBSimulatorLaunchedProcess
         processWithSimulator:simulator
-        configuration:agentLaunch
+        configuration:configuration
         attachment:attachment
         launchFuture:launchFuture
         processStatusFuture:processStatusFuture];
@@ -81,28 +79,28 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Short-Running Processes
 
-- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)agentLaunch
+- (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)configuration
 {
   return [[self
-    launchAgent:agentLaunch]
+    launchProcess:configuration]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorLaunchedProcess *operation) {
       return [operation exitCode];
     }];
 }
 
-- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)agentLaunch
+- (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration
 {
   id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   FBProcessIO *io = [[FBProcessIO alloc]
-    initWithStdIn:agentLaunch.io.stdIn
+    initWithStdIn:configuration.io.stdIn
     stdOut:[FBProcessOutput outputForDataConsumer:consumer]
-    stdErr:agentLaunch.io.stdOut];
+    stdErr:configuration.io.stdOut];
   FBProcessSpawnConfiguration *derived = [[FBProcessSpawnConfiguration alloc]
-    initWithLaunchPath:agentLaunch.launchPath
-    arguments:agentLaunch.arguments
-    environment:agentLaunch.environment
+    initWithLaunchPath:configuration.launchPath
+    arguments:configuration.arguments
+    environment:configuration.environment
     io:io
-    mode:agentLaunch.mode];
+    mode:configuration.mode];
   return [[self
     launchAndNotifyOfCompletion:derived]
     onQueue:self.simulator.workQueue map:^(NSNumber *_) {
@@ -125,7 +123,7 @@ typedef void (^FBAgentTerminationHandler)(int stat_loc);
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)launchAgentWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<NSNumber *> *)launchProcessWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
 {
   // Get the Options
   NSDictionary<NSString *, id> *options = [FBSimulatorProcessLaunchStrategy
