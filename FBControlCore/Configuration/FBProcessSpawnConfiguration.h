@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessIO;
 
 /**
- An enum representing how an agent should be launched.
+ An enum representing how an process should be launched.
  */
 typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
   FBProcessSpawnModeDefault = 0,
@@ -40,12 +40,12 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
 - (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBProcessSpawnMode)mode;
 
 /**
- The Binary Path of the agent to Launch.
+ The Binary Path of the process to Launch.
  */
 @property (nonatomic, copy, readonly) NSString *launchPath;
 
 /**
- How the agent should be launched.
+ How the process should be launched.
  */
 @property (nonatomic, assign, readonly) FBProcessSpawnMode mode;
 

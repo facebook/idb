@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessIO;
 
 /**
- An abstract value object for launching both agents and applications
+ An abstract value object for launching both regular and applications processes.
  */
 @interface FBProcessLaunchConfiguration : NSObject
 

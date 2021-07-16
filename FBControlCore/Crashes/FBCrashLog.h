@@ -14,12 +14,12 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- The Process Type of the Crash Log
+ An emuration representing the kind of process that has crashed.
 */
 typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
-  FBCrashLogInfoProcessTypeSystem = 1 << 0, /** A Crash for a Simulator's System Application */
-  FBCrashLogInfoProcessTypeApplication = 1 << 1, /** A Crash for an App in the Simulator **/
-  FBCrashLogInfoProcessTypeCustomAgent = 1 << 2, /** A Crash for a Custom Launched Agent in the Simulator **/
+  FBCrashLogInfoProcessTypeSystem = 1 << 0, /** A process that is part of the operating system runtime */
+  FBCrashLogInfoProcessTypeApplication = 1 << 1, /** A process that is an application **/
+  FBCrashLogInfoProcessTypeCustom = 1 << 2, /** A process that not an application nor part of the operating system runtime **/
 };
 
 /**

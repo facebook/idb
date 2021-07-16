@@ -50,7 +50,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Output %@",
+    @"Process Launch %@ | Arguments %@ | Environment %@ | Output %@",
     self.launchPath,
     [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],

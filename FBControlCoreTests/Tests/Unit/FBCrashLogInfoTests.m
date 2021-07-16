@@ -52,7 +52,7 @@
   XCTAssertEqualObjects(info.parentProcessName, @"launchd_sim");
   XCTAssertEqualObjects(info.executablePath, @"/Users/USER/*/WebDriverAgent");
   XCTAssertEqualWithAccuracy(info.date.timeIntervalSinceReferenceDate, 479723798, 1);
-  XCTAssertEqual(info.processType, FBCrashLogInfoProcessTypeCustomAgent);
+  XCTAssertEqual(info.processType, FBCrashLogInfoProcessTypeCustom);
 }
 
 - (void)testAppDefaultSet

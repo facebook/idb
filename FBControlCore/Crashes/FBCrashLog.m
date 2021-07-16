@@ -373,7 +373,7 @@ static NSUInteger MaxLineSearch = 20;
   if ([executablePath containsString:@".app"]) {
     return FBCrashLogInfoProcessTypeApplication;
   }
-  return FBCrashLogInfoProcessTypeCustomAgent;
+  return FBCrashLogInfoProcessTypeCustom;
 }
 
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
