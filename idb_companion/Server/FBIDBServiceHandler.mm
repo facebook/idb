@@ -1053,26 +1053,47 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
 
 Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *request, grpc::ServerWriter<idb::LogResponse> *response)
 {@autoreleasepool{
-  NSArray<NSString *> *arguments = extract_string_array(request->arguments());
-  FBFuture<NSNull *> *clientClosed = [FBFuture onQueue:_target.asyncQueue resolveWhen:^ BOOL {
-    return context->IsCancelled();
-  }];
-  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
-    if (clientClosed.hasCompleted) {
-      return;
-    }
+  // In the background, write out the log data. Prevent future writes if the client write fails.
+  // This will happen asynchronously with the server thread.
+  FBMutableFuture<NSNull *> *writingDone = FBMutableFuture.future;
+  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     idb::LogResponse item;
     item.set_output(data.bytes, data.length);
-    response->Write(item);
+    if (writingDone.hasCompleted) {
+      return;
+    }
+    bool success = response->Write(item);
+    if (success) {
+      return;
+    }
+    // The client write failed, the client has gone so don't write again.
+    [writingDone resolveWithResult:NSNull.null];
   }];
+
+  // Setup the log operation.
   NSError *error = nil;
   BOOL logFromCompanion = request->source() == idb::LogRequest::Source::LogRequest_Source_COMPANION;
+  NSArray<NSString *> *arguments = extract_string_array(request->arguments());
   id<FBLogOperation> operation = [(logFromCompanion ? [_commandExecutor tail_companion_logs:consumer] : [_target tailLog:arguments consumer:consumer]) block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  FBFuture<NSNull *> *completed = [FBFuture race:@[clientClosed, operation.completed]];
-  [completed block:nil];
+
+  // Poll on completion (logging happens asynchronously). This occurs when the stream is cancelled, the log operation is done, or the last write failed.
+  FBFuture<NSNull *> *completed = [FBFuture race:@[writingDone, operation.completed]];
+  while (completed.hasCompleted == NO && context->IsCancelled() == false) {
+    // Sleep for 200ms before polling again.
+    usleep(1000 * 200);
+  }
+
+  // Signal that we're done writing due to the operation completion or the client going away.
+  // This will also prevent the polling of the ClientContext.
+  [writingDone resolveWithResult:NSNull.null];
+
+  // Teardown the log operation now that we're done with it
+  FBFuture<NSNull *> *teardown = [operation.completed cancel];
+  [teardown block:nil];
+
   return Status::OK;
 }}
 
