@@ -74,10 +74,9 @@
     processTerminationFutureNotifierForProcessIdentifier:processIdentifier]
     mapReplace:NSNull.null]
     onQueue:simulator.workQueue respondToCancellation:^{
-      [[FBProcessTerminationStrategy
+      return [[FBProcessTerminationStrategy
         strategyWithProcessFetcher:simulator.processFetcher.processFetcher workQueue:simulator.workQueue logger:simulator.logger]
         killProcessIdentifier:processIdentifier];
-      return FBFuture.empty;
     }];
 }
 

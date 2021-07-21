@@ -98,14 +98,21 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   NSTimeInterval timeout = self.context.timeout <= 0 ? DefaultTestTimeout : self.context.timeout;
   __block id<FBLaunchedApplication> launchedApplication = nil;
 
-  return [[[[[self
+  return [[[[[[[self
     startAndRunApplicationTestHost]
     onQueue:queue push:^(id<FBLaunchedApplication> innerLaunchedApplication) {
       launchedApplication = innerLaunchedApplication;
       return [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger];
     }]
-    onQueue:queue pop:^(FBTestBundleConnection *bundleConnection) {
+    onQueue:queue pend:^(FBTestBundleConnection *bundleConnection) {
       return [bundleConnection runTestPlanUntilCompletion];
+    }]
+    onQueue:queue pop:^(NSNull *_) {
+      // Hold the context alive while wait for application process to terminate.
+      return launchedApplication.applicationTerminated;
+    }]
+    onQueue:self.requestQueue doOnResolved:^(NSNull *_) {
+      [reporter processUnderTestDidExit];
     }]
     onQueue:queue timeout:timeout handler:^{
       [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
@@ -123,15 +130,8 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (FBFutureContext<id<FBLaunchedApplication>> *)startAndRunApplicationTestHost
 {
-  id<FBXCTestReporter> reporter = self.reporter;
-  return [[[self.target
+  return [[self.target
     launchApplication:self.context.testHostLaunchConfiguration]
-    onQueue:self.target.asyncQueue map:^(id<FBLaunchedApplication> launchedApplication) {
-      [launchedApplication.applicationTerminated onQueue:self.requestQueue doOnResolved:^(NSNull *_) {
-        [reporter processUnderTestDidExit];
-      }];
-      return launchedApplication;
-    }]
     onQueue:self.target.workQueue contextualTeardown:^(id<FBLaunchedApplication> launchedApplication, FBFutureState _) {
       return [launchedApplication.applicationTerminated cancel];
     }];
