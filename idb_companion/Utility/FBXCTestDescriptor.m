@@ -14,6 +14,7 @@
 #import "FBIDBTestOperation.h"
 #import "FBTemporaryDirectory.h"
 #import "FBTestApplicationsPair.h"
+#import "FBXCTestReporterConfiguration.h"
 #import "FBXCTestRunFileReader.h"
 
 static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSString *bundleID, NSDictionary<NSString *, NSString *> *environment, NSArray<NSString *> * arguments, id<FBControlCoreLogger> logger,  NSString * processLogDirectory, dispatch_queue_t queue)
@@ -48,26 +49,6 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
         launchMode:FBApplicationLaunchModeFailIfRunning];
   }];
 }
-
-@implementation FBXCTestReporterConfiguration
-
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath binaryPath:(nullable NSString *)binaryPath reportAttachments:(BOOL)reportAttachments
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _resultBundlePath = resultBundlePath;
-  _coveragePath = coveragePath;
-  _logDirectoryPath = logDirectoryPath;
-  _binaryPath = binaryPath;
-  _reportAttachments = reportAttachments;
-
-  return self;
-}
-
-@end
 
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
