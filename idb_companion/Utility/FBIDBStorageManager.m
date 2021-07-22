@@ -10,6 +10,7 @@
 #import "FBIDBError.h"
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
+#import "FBXCTestRunFileReader.h"
 
 NSString *const IdbTestBundlesFolder = @"idb-test-bundles";
 NSString *const IdbApplicationsFolder = @"idb-applications";

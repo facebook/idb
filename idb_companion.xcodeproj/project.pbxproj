@@ -17,6 +17,8 @@
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
 		AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */; };
 		AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */; };
+		AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */; };
+		AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */; };
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
 		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
@@ -102,6 +104,8 @@
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
 		AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
 		AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
+		AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunFileReader.h; sourceTree = "<group>"; };
+		AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunFileReader.m; sourceTree = "<group>"; };
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
 		BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idb_companion.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -290,6 +294,8 @@
 				D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */,
 				D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */,
 				D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */,
+				AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */,
+				AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -324,6 +330,7 @@
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
 				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
 				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
+				AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */,
 				AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */,
 				D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */,
 				D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */,
@@ -511,6 +518,7 @@
 				AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */,
 				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
 				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
+				AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,

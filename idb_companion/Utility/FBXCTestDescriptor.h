@@ -19,25 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestReporter;
 @protocol FBControlCoreLogger;
 
-/**
- Read and expand contents of a xctestrun file
- */
-@interface FBXCTestRunFileReader : NSObject
-
-#pragma mark Public Methods
-
-/**
- Read a xctestrun file and expand placeholders
-
- @param xctestrunURL URL of a xctestrun file
- @param path auxiliary directory for the test target
- @param error an error out for any oeeor that occurs
- @return a dictionary with expanded xctestrun contents if the xctestrun file could be read successfully
- */
-+ (nullable NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error;
-
-@end
-
 @interface FBXCTestReporterConfiguration : NSObject
 
 /**
