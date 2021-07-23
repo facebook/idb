@@ -34,7 +34,7 @@ def human_format_test_info(test: TestRunInfo) -> str:
         f"Duration: {test.duration}",
     ]
     failure_info = test.failure_info
-    if failure_info:
+    if failure_info is not None and len(failure_info.message):
         info_list += [
             f"Failure message: {failure_info.message}",
             f"Location {failure_info.file}:{failure_info.line}",
@@ -79,8 +79,7 @@ def human_format_activities(activities: List[TestActivity]) -> str:
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
-    failure_info = test.failure_info
-    data = {
+    data: Dict[str, Any] = {
         "bundleName": test.bundle_name,
         "className": test.class_name,
         "methodName": test.method_name,
@@ -88,17 +87,17 @@ def json_format_test_info(test: TestRunInfo) -> str:
         "duration": test.duration,
         "passed": test.passed,
         "crashed": test.crashed,
-        "failureInfo": {
-            "message": failure_info.message,
-            "file": failure_info.file,
-            "line": failure_info.line,
-        }
-        if failure_info
-        else None,
         "activityLogs": [
             json_format_activity(activity) for activity in (test.activityLogs or [])
         ],
     }
+    failure_info = test.failure_info
+    if failure_info is not None and len(failure_info.message):
+        data["failureInfo"] = {
+            "message": failure_info.message,
+            "file": failure_info.file,
+            "line": failure_info.line,
+        }
     return json.dumps(data)
 
 
