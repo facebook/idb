@@ -12,7 +12,6 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
-#import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBInstrumentsClient.h"

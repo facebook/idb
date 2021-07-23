@@ -22,5 +22,4 @@
 #import <FBDeviceControl/FBDeviceVideo.h>
 #import <FBDeviceControl/FBDeviceVideoStream.h>
 #import <FBDeviceControl/FBDeviceXCTestCommands.h>
-#import <FBDeviceControl/FBGDBClient.h>
 #import <FBDeviceControl/FBServiceConnectionClient.h>
