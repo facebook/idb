@@ -98,14 +98,17 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   NSTimeInterval timeout = self.context.timeout <= 0 ? DefaultTestTimeout : self.context.timeout;
   __block id<FBLaunchedApplication> launchedApplication = nil;
 
-  return [[[[[[[self
+  return [[[[[[self
     startAndRunApplicationTestHost]
-    onQueue:queue push:^(id<FBLaunchedApplication> innerLaunchedApplication) {
+    onQueue:queue pend:^(id<FBLaunchedApplication> innerLaunchedApplication) {
       launchedApplication = innerLaunchedApplication;
-      return [FBTestBundleConnection bundleConnectionWithContext:self.context target:self.target interface:(id)self.reporterForwarder testHostApplication:launchedApplication requestQueue:self.requestQueue logger:logger];
-    }]
-    onQueue:queue pend:^(FBTestBundleConnection *bundleConnection) {
-      return [bundleConnection runTestPlanUntilCompletion];
+      return [FBTestBundleConnection
+        connectAndRunBundleToCompletionWithContext:self.context
+        target:self.target
+        interface:(id)self.reporterForwarder
+        testHostApplication:launchedApplication
+        requestQueue:self.requestQueue
+        logger:logger];
     }]
     onQueue:queue pop:^(NSNull *_) {
       // Hold the context alive while wait for application process to terminate.

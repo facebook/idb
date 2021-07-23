@@ -47,10 +47,6 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *bundleReadyFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *testPlanFuture;
 
-@property (atomic, strong, nullable, readwrite) id<XCTestDriverInterface> testBundleProxy;
-@property (atomic, strong, nullable, readwrite) DTXConnection *testBundleConnection;
-@property (atomic, strong, nullable, readwrite) NSDate *applicationLaunchDate;
-
 @end
 
 @implementation FBTestBundleConnection
@@ -77,12 +73,6 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     _clientProcessDisplayPath = path;
   });
   return _clientProcessDisplayPath;
-}
-
-+ (FBFutureContext<FBTestBundleConnection *> *)bundleConnectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
-{
-  FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
-  return [connection connect];
 }
 
 - (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
@@ -129,20 +119,10 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)runTestPlanUntilCompletion
++ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [FBFuture
-    onQueue:self.requestQueue resolve:^ FBFuture<NSNull *> * {
-      id<XCTestDriverInterface> testBundleProxy = self.testBundleProxy;
-      if (!testBundleProxy) {
-        return [[XCTestBootstrapError
-          describeFormat:@"runTestPlanUntilCompletion called before bundle proxy created"]
-          failFuture];
-      }
-      [self.logger logFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion];
-      [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
-      return self.bundleDisconnectedSuccessfully;
-    }];
+  FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
+  return [connection connectAndRunToCompletion];
 }
 
 #pragma mark Private
@@ -178,9 +158,12 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   }];
 }
 
-- (FBFutureContext<FBTestBundleConnection *> *)connect
+- (FBFuture<NSNull *> *)connectAndRunToCompletion
 {
   [self.logger log:@"Connecting Test Bundle"];
+
+  __block id<XCTestDriverInterface> testBundleProxy;
+  __block DTXConnection *testBundleConnection;
 
   return [[[[[self
     startTestmanagerdConnection]
@@ -188,7 +171,7 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       [connection registerDisconnectHandler:^{
         [self.bundleDisconnected resolveWithResult:NSNull.null];
       }];
-      self.testBundleConnection = connection;
+      testBundleConnection = connection;
       return [FBFuture
         futureWithFutures:@[
           [self setupTestBundleConnectionWithConnection:connection],
@@ -197,19 +180,16 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     }]
     onQueue:self.requestQueue pend:^(NSArray<id> *results) {
       [self.logger logFormat:@"Waiting for test bundle to be ready.."];
-      id<XCTestDriverInterface> testBundleProxy = results[0];
-      self.testBundleProxy = testBundleProxy;
-      return [[self.bundleReadyFuture
-        timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"]
-        mapReplace:self];
+      testBundleProxy = results[0];
+      return [self.bundleReadyFuture timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"];
     }]
-    onQueue:self.requestQueue handleError:^FBFuture * _Nonnull(NSError * _Nonnull error) {
+    onQueue:self.requestQueue pop:^(id result) {
+      [self.logger logFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion];
+      [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
+      return self.bundleDisconnectedSuccessfully;
+    }]
+    onQueue:self.requestQueue handleError:^(NSError *error) {
       return [self performDiagnosisOnBundleConnectionError:error];
-    }]
-    onQueue:self.requestQueue contextualTeardown:^(id _, FBFutureState __) {
-      self.testBundleProxy = nil;
-      self.testBundleConnection = nil;
-      return FBFuture.empty;
     }];
 }
 
