@@ -26,8 +26,7 @@
     [[FBSimulatorBootConfiguration.defaultConfiguration
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
       withScale:FBScale75],
-    [[[FBSimulatorBootConfiguration.defaultConfiguration
-      withOptions:FBSimulatorBootOptionsUseNSWorkspace]
+    [[FBSimulatorBootConfiguration.defaultConfiguration
       withBootEnvironment:@{@"FOO": @"BAR"}]
       withScale:FBScale25]
   ];

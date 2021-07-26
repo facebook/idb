@@ -44,11 +44,6 @@
   return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
 }
 
-- (BOOL)shouldLaunchViaWorkspace
-{
-  return (self.options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace;
-}
-
 - (BOOL)shouldConnectBridge
 {
   // In some versions of Xcode 8, it was possible that a direct launch without a bridge could mean applications would not launch.
@@ -240,25 +235,7 @@
 
 @end
 
-@interface FBSimulatorApplicationProcessLauncher_Task : NSObject <FBSimulatorApplicationProcessLauncher>
-@end
-
 @interface FBSimulatorApplicationProcessLauncher_Workspace : NSObject <FBSimulatorApplicationProcessLauncher>
-@end
-
-@implementation FBSimulatorApplicationProcessLauncher_Task
-
-- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
-{
-  return [[[[[[FBTaskBuilder
-    withLaunchPath:FBBundleDescriptor.xcodeSimulator.binary.path]
-    withArguments:arguments]
-    withEnvironmentAdditions:environment]
-    start]
-    rephraseFailure:@"Failed to Launch Simulator Process %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
-    mapReplace:NSNull.null];
-}
-
 @end
 
 @implementation FBSimulatorApplicationProcessLauncher_Workspace
@@ -456,9 +433,7 @@
 
 + (id<FBSimulatorApplicationProcessLauncher>)applicationProcessLauncherWithConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
-  return configuration.shouldLaunchViaWorkspace
-    ? [FBSimulatorApplicationProcessLauncher_Workspace new]
-    : [FBSimulatorApplicationProcessLauncher_Task new];
+  return [FBSimulatorApplicationProcessLauncher_Workspace new];
 }
 
 + (id<FBSimulatorGUIAppLauncherOptions>)applicationLaunchOptions
