@@ -325,7 +325,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
       return [[FBLogicTestRunStrategy
         fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
         onQueue:queue fmap:^(id _) {
-          return [FBXCTestProcess ensureProcess:process completesWithin:timeout withCrashLogDetection:YES queue:queue logger:logger];
+          return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
         }];
     }];
 }

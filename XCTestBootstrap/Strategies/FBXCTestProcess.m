@@ -22,15 +22,10 @@ static NSTimeInterval const SampleDuration = 1;
 
 #pragma mark Public
 
-+ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout withCrashLogDetection:(BOOL)crashLogDetection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   // The start date of the process appear slightly older than we might think, so avoid missing it by a few seconds.
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  // This will be called right after the process has launched, so we should start listening for crash logs now.
-  FBCrashLogNotifier *notifier = nil;
-  if (crashLogDetection) {
-    notifier = [FBCrashLogNotifier.sharedInstance startListening:YES];
-  }
 
   [logger logFormat:@"Waiting for %d to exit within %f seconds", process.processIdentifier, timeout];
   return [[[process
@@ -48,11 +43,11 @@ static NSTimeInterval const SampleDuration = 1;
             return exitCodeFuture;
           }
           // Here we know a signalled exit has occurred. This return happens if no crash log detection is present.
-          if (!notifier) {
+          if (!crashLogCommands) {
             return exitCodeFuture;
           }
           // Here we know we want to find the crash log, so attempt to get it.
-          return [FBXCTestProcess performCrashLogQueryForProcess:process startDate:startDate notifier:notifier crashLogWaitTime:CrashLogWaitTime queue:queue logger:logger];
+          return [FBXCTestProcess performCrashLogQueryForProcess:process startDate:startDate crashLogCommands:crashLogCommands crashLogWaitTime:CrashLogWaitTime queue:queue logger:logger];
         }];
     }];
 }
@@ -109,11 +104,11 @@ static NSTimeInterval const SampleDuration = 1;
     }];
 }
 
-+ (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(id<FBLaunchedProcess>)process startDate:(NSDate *)startDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(id<FBLaunchedProcess>)process startDate:(NSDate *)startDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"xctest process (%d) died prematurely, checking for crash log for %f seconds", process.processIdentifier, crashLogWaitTime];
   return [[[FBXCTestProcess
-    crashLogsForTerminationOfProcess:process since:startDate notifier:notifier crashLogWaitTime:crashLogWaitTime queue:queue]
+    crashLogsForTerminationOfProcess:process since:startDate crashLogCommands:crashLogCommands crashLogWaitTime:crashLogWaitTime queue:queue]
     rephraseFailure:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", process.processIdentifier]
     onQueue:queue fmap:^(FBCrashLogInfo *crashInfo) {
       NSString *crashString = [NSString stringWithContentsOfFile:crashInfo.crashPath encoding:NSUTF8StringEncoding error:nil];
@@ -123,15 +118,15 @@ static NSTimeInterval const SampleDuration = 1;
     }];
 }
 
-+ (FBFuture<FBCrashLogInfo *> *)crashLogsForTerminationOfProcess:(id<FBLaunchedProcess>)process since:(NSDate *)sinceDate notifier:(FBCrashLogNotifier *)notifier crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue
++ (FBFuture<FBCrashLogInfo *> *)crashLogsForTerminationOfProcess:(id<FBLaunchedProcess>)process since:(NSDate *)sinceDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue
 {
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [FBCrashLogInfo predicateForCrashLogsWithProcessID:process.processIdentifier],
     [FBCrashLogInfo predicateNewerThanDate:sinceDate],
   ]];
 
-  return [[notifier
-    nextCrashLogForPredicate:predicate]
+  return [[crashLogCommands
+    notifyOfCrash:predicate]
     timeout:crashLogWaitTime waitingFor:@"Crash logs for terminated process %d to appear", process.processIdentifier];
 }
 

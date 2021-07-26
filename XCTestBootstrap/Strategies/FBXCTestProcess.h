@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
+@protocol FBCrashLogCommands;
 
 /**
  A Platform-Agnostic utility class responsible for managing an xctest process.
@@ -27,12 +28,12 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param process the process to inspect.
  @param timeout the timeout in seconds.
- @param crashLogDetection YES if crash log detection should be used, NO otherwise.
+ @param crashLogCommands if provided, crash log detection will be added. This implementation will be used for finding crash logs. If nil, then no crash detection will be used.
  @param queue the queue to use.
  @param logger the logger to log to.
  @return a future that resolves with the exit code.
  */
-+ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout withCrashLogDetection:(BOOL)crashLogDetection queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(nullable id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Describe the exit code, if an error.
