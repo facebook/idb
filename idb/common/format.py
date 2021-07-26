@@ -24,13 +24,20 @@ from idb.common.types import (
 from treelib import Tree
 
 
+def test_info_to_status(test: TestRunInfo) -> str:
+    if test.passed:
+        return "passed"
+    if test.crashed:
+        return "crashed"
+    return "failed"
+
+
 def human_format_test_info(test: TestRunInfo) -> str:
     output = ""
 
     info_list = [
         f"{test.bundle_name} - {test.class_name}/{test.method_name}",
-        f"Passed: {test.passed}",
-        f"Crashed: {test.crashed}",
+        f"Status: {test_info_to_status(test)}",
         f"Duration: {test.duration}",
     ]
     failure_info = test.failure_info
@@ -88,6 +95,7 @@ def json_format_test_info(test: TestRunInfo) -> str:
         "duration": test.duration,
         "passed": test.passed,
         "crashed": test.crashed,
+        "status": test_info_to_status(test),
     }
     failure_info = test.failure_info
     if failure_info is not None and len(failure_info.message):
