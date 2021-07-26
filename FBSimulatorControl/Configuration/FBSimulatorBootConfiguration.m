@@ -132,19 +132,4 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
   return [strings copy];
 }
 
-+ (FBSimulatorBootOptions)bootOptionsFromStrings:(NSArray<NSString *> *)strings
-{
-  FBSimulatorBootOptions options = 0;
-  for (NSString *string in strings) {
-    if ([string isEqualToString:BootOptionStringConnectBridge]) {
-      options = options | FBSimulatorBootOptionsConnectBridge;
-    } else if ([string isEqualToString:BootOptionStringDirectLaunch]) {
-      options = options | FBSimulatorBootOptionsEnableDirectLaunch;
-    } else if ([string isEqualToString:BootOptionStringUseNSWorkspace]) {
-      options = options | FBSimulatorBootOptionsUseNSWorkspace;
-    }
-  }
-  return options;
-}
-
 @end
