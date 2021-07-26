@@ -45,8 +45,9 @@ def human_format_test_info(test: TestRunInfo) -> str:
         log_lines = indent("\n".join(test.logs), " " * 4)
         output += "\n" + indent("Logs:\n" + log_lines, " " * 4)
 
-    if test.activityLogs:
-        output += f"\n{human_format_activities(test.activityLogs)}"
+    activities = test.activityLogs
+    if activities is not None and len(activities):
+        output += f"\n{human_format_activities(activities)}"
     return output
 
 
@@ -87,9 +88,6 @@ def json_format_test_info(test: TestRunInfo) -> str:
         "duration": test.duration,
         "passed": test.passed,
         "crashed": test.crashed,
-        "activityLogs": [
-            json_format_activity(activity) for activity in (test.activityLogs or [])
-        ],
     }
     failure_info = test.failure_info
     if failure_info is not None and len(failure_info.message):
@@ -98,6 +96,11 @@ def json_format_test_info(test: TestRunInfo) -> str:
             "file": failure_info.file,
             "line": failure_info.line,
         }
+    activities = test.activityLogs
+    if activities is not None and len(activities):
+        data["activityLogs"] = (
+            [json_format_activity(activity) for activity in activities],
+        )
     return json.dumps(data)
 
 
