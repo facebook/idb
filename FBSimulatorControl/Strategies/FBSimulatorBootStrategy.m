@@ -51,10 +51,6 @@
 
 - (BOOL)shouldConnectBridge
 {
-  // If the option is flagged it should be used.
-  if ((self.options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) {
-    return YES;
-  }
   // In some versions of Xcode 8, it was possible that a direct launch without a bridge could mean applications would not launch.
   if (!FBXcodeConfiguration.isXcode9OrGreater && self.shouldUseDirectLaunch) {
     return YES;

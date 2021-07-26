@@ -113,16 +113,12 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
 
 #pragma mark Utility
 
-static NSString *const BootOptionStringConnectBridge = @"Connect Bridge";
 static NSString *const BootOptionStringDirectLaunch = @"Direct Launch";
 static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
 
 + (NSArray<NSString *> *)stringsFromBootOptions:(FBSimulatorBootOptions)options
 {
   NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) {
-    [strings addObject:BootOptionStringConnectBridge];
-  }
   if ((options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch) {
     [strings addObject:BootOptionStringDirectLaunch];
   }
