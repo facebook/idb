@@ -56,17 +56,6 @@
 @end
 
 /**
- Provides relevant options to CoreSimulator for Booting.
- */
-@protocol FBCoreSimulatorBootOptions <NSObject>
-/**
- The Options to provide to the CoreSimulator API.
- */
-- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration;
-
-@end
-
-/**
  Provides an implementation of Launching a Simulator Application.
  */
 @protocol FBSimulatorApplicationProcessLauncher <NSObject>
@@ -121,7 +110,6 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) id<FBCoreSimulatorBootOptions> options;
 
 @end
 
@@ -136,47 +124,9 @@
 
 @end
 
-@interface FBCoreSimulatorBootOptions_Xcode8 : NSObject <FBCoreSimulatorBootOptions>
-@end
-
-@interface FBCoreSimulatorBootOptions_Xcode9_10 : NSObject <FBCoreSimulatorBootOptions>
-@end
-
-@implementation FBCoreSimulatorBootOptions_Xcode8
-
-- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
-{
-  // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
-  return @{
-    @"register-head-services" : @YES,
-    @"env" : @{
-      @"SIMULATOR_IS_HEADLESS" : @1,
-    },
-  };
-}
-
-@end
-
-@implementation FBCoreSimulatorBootOptions_Xcode9_10
-
-- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
-{
-  // "Persisting" means for the booted Simulator to live beyond the lifecycle of the process that calls the boot API.
-  // This is the default for `simctl which boots the simulator and leaves it booted until 'shutdown' is called.
-  // This is also possible in `simctl` if the undocumented `--wait` flag is passed after the Simulator's UDID.
-  // If "Direct Launch" is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot
-  // as this gives us cleaner teardown semantics for automated scenarios.
-  return @{
-    @"persist": @(!configuration.shouldUseDirectLaunch),
-    @"env" : configuration.environment ?: @{},
-  };
-}
-
-@end
-
 @implementation FBCoreSimulatorBootStrategy
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator options:(id<FBCoreSimulatorBootOptions>)options
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   self = [super init];
   if (!self) {
@@ -185,7 +135,6 @@
 
   _configuration = configuration;
   _simulator = simulator;
-  _options = options;
 
   return self;
 }
@@ -202,7 +151,7 @@
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
       // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
       // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-      return [[self bootSimulatorWithOptions:[self.options bootOptions:self.configuration]] mapReplace:hid];
+      return [[self bootSimulatorWithConfiguration:self.configuration] mapReplace:hid];
     }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
       // Combine everything into the connection.
@@ -220,8 +169,18 @@
   return self.configuration.shouldUseDirectLaunch;
 }
 
-- (FBFuture<NSNull *> *)bootSimulatorWithOptions:(NSDictionary<NSString *, id> *)options
+- (FBFuture<NSNull *> *)bootSimulatorWithConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
+  // "Persisting" means for the booted Simulator to live beyond the lifecycle of the process that calls the boot API.
+  // This is the default for `simctl which boots the simulator and leaves it booted until 'shutdown' is called.
+  // This is also possible in `simctl` if the undocumented `--wait` flag is passed after the Simulator's UDID.
+  // If "Direct Launch" is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot
+  // as this gives us cleaner teardown semantics for automated scenarios.
+  NSDictionary<NSString *, id> * options = @{
+    @"persist": @(!configuration.shouldUseDirectLaunch),
+    @"env" : configuration.environment ?: @{},
+  };
+
   FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
   [self.simulator.device bootAsyncWithOptions:options completionQueue:self.simulator.workQueue completionHandler:^(NSError *error){
     if (error) {
@@ -414,21 +373,11 @@
 
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
-  id<FBCoreSimulatorBootOptions> coreSimulatorOptions = [self coreSimulatorBootOptions];
-  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:coreSimulatorOptions];
+  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator];
   id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
   id<FBSimulatorGUIAppLauncherOptions> applicationOptions = [self applicationLaunchOptions];
   FBSimulatorGUIAppLauncher *appLauncher = [[FBSimulatorGUIAppLauncher alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher options:applicationOptions];
   return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator appLauncher:appLauncher coreSimulatorStrategy:coreSimulatorStrategy];
-}
-
-+ (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptions
-{
-  if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return [FBCoreSimulatorBootOptions_Xcode9_10 new];
-  } else {
-    return [FBCoreSimulatorBootOptions_Xcode8 new];
-  }
 }
 
 + (id<FBSimulatorApplicationProcessLauncher>)applicationProcessLauncherWithConfiguration:(FBSimulatorBootConfiguration *)configuration
