@@ -218,11 +218,6 @@
 
 #pragma mark Private Methods
 
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
-{
-  return [[self.simulatorTerminationStrategy killSpuriousSimulators] await:error] != nil;
-}
-
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators
 {
   NSMutableDictionary<NSString *, FBSimulator *> *dictionary = [NSMutableDictionary dictionary];

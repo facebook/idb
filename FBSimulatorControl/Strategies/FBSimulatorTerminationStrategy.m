@@ -103,20 +103,6 @@
   return [FBFuture futureWithFutures:futures];
 }
 
-- (FBFuture<NSNull *> *)killSpuriousSimulators
-{
-  NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
-    [NSCompoundPredicate andPredicateWithSubpredicates:@[
-      [FBSimulatorProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-      [FBSimulatorProcessFetcher simulatorApplicationProcessesLaunchedBySimulatorControl]
-    ]
-  ]];
-
-  return [[self
-    killSimulatorProcessesMatchingPredicate:predicate]
-    rephraseFailure:@"Could not kill spurious simulators"];
-}
-
 #pragma mark Private
 
 - (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
@@ -156,21 +142,6 @@
       simulator.launchdProcess = nil;
       return simulator;
     }];
-}
-
-- (FBFuture<NSNull *> *)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate
-{
-  NSArray<FBProcessInfo *> *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
-  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-
-  for (FBProcessInfo *process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    FBFuture<NSNull *> *future = [[self.processTerminationStrategy
-      killProcess:process]
-      delay:1];
-    [futures addObject:future];
-  }
-  return [FBFuture futureWithFutures:futures];
 }
 
 @end
