@@ -227,49 +227,6 @@
 
 @end
 
-@interface FBSimulatorGUIAppLauncherOptions_Xcode7 : NSObject <FBSimulatorGUIAppLauncherOptions>
-@end
-
-@implementation FBSimulatorGUIAppLauncherOptions_Xcode7
-
-- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  // These arguments are based on the NSUserDefaults that are serialized for the Simulator.app.
-  // These can be seen with `defaults read com.apple.iphonesimulator` and has default location of ~/Library/Preferences/com.apple.iphonesimulator.plist
-  // NSUserDefaults for any application can be overriden in the NSArgumentDomain:
-  // https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/UserDefaults/AboutPreferenceDomains/AboutPreferenceDomains.html#//apple_ref/doc/uid/10000059i-CH2-96930
-  NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithArray:@[
-    @"--args",
-    @"-CurrentDeviceUDID", simulator.udid,
-    @"-ConnectHardwareKeyboard", @"0",
-  ]];
-  FBScale scale = configuration.scale;
-  if (scale) {
-    [arguments addObjectsFromArray:@[
-      [self lastScaleCommandLineSwitchForSimulator:simulator], scale,
-    ]];
-  }
-
-  NSString *setPath = simulator.set.deviceSet.setPath;
-  if (setPath) {
-    [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];
-  }
-  return [arguments copy];
-}
-
-- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  // Only launch Simulator App if not using CoreSimulator to launch.
-  return !configuration.shouldUseDirectLaunch;
-}
-
-- (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator
-{
-  return [NSString stringWithFormat:@"-SimulatorWindowLastScale-%@", simulator.device.deviceTypeIdentifier];
-}
-
-@end
-
 @interface FBSimulatorGUIAppLauncherOptions_Xcode9 : NSObject <FBSimulatorGUIAppLauncherOptions>
 
 @end
@@ -387,9 +344,7 @@
 
 + (id<FBSimulatorGUIAppLauncherOptions>)applicationLaunchOptions
 {
-  return FBXcodeConfiguration.isXcode9OrGreater
-    ? [FBSimulatorGUIAppLauncherOptions_Xcode9 new]
-    : [FBSimulatorGUIAppLauncherOptions_Xcode7 new];
+  return [FBSimulatorGUIAppLauncherOptions_Xcode9 new];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator appLauncher:(FBSimulatorGUIAppLauncher *)appLauncher coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
