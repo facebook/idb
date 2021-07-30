@@ -19,7 +19,6 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorContainerApplicationLifecycleStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -266,11 +265,6 @@
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
   return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
-
-- (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
-{
-  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher workQueue:self.workQueue logger:self.logger];
 }
 
 - (FBSimulatorEraseStrategy *)eraseStrategy

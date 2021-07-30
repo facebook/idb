@@ -7,7 +7,6 @@
 
 #import <FBSimulatorControl/FBBundleDescriptor+Simulator.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
-#import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBDefaultsModificationStrategy.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
