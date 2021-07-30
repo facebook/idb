@@ -20,7 +20,6 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @interface FBSimulatorLifecycleCommands ()

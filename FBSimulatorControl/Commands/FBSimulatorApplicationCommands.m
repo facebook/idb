@@ -17,7 +17,6 @@
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorLaunchedApplication.h"
 #import "FBSimulatorProcessLaunchStrategy.h"
-#import "FBSimulatorSubprocessTerminationStrategy.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -81,9 +80,18 @@
 - (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID
 {
   if (!bundleID) {
-    return [[FBSimulatorError describe:@"Bundle ID was not provided"] failFuture];
+    return [[FBSimulatorError
+      describe:@"Bundle ID was not provided"]
+      failFuture];
   }
-  return [[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminateApplication:bundleID];
+  SimDevice *simDevice = self.simulator.device;
+  return [FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ NSNull * (NSError **error) {
+      if (![simDevice terminateApplicationWithID:bundleID error:error]) {
+        return nil;
+      }
+      return NSNull.null;
+    }];
 }
 
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
@@ -220,9 +228,7 @@
           describeFormat:@"App %@ can't be launched as is running (PID=%@)", bundleID, processID]
           failFuture];
       } else if (launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
-        return [[FBSimulatorSubprocessTerminationStrategy
-          strategyWithSimulator:simulator]
-          terminateApplication:bundleID];
+        return [self killApplicationWithBundleID:bundleID];
       }
       return FBFuture.empty;
   }];
