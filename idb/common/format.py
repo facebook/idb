@@ -106,9 +106,9 @@ def json_format_test_info(test: TestRunInfo) -> str:
         }
     activities = test.activityLogs
     if activities is not None and len(activities):
-        data["activityLogs"] = (
-            [json_format_activity(activity) for activity in activities],
-        )
+        data["activityLogs"] = [
+            json_format_activity(activity) for activity in activities
+        ]
     return json.dumps(data)
 
 
