@@ -102,9 +102,22 @@
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return [[[self
+    dataContainer]
+    onQueue:self.queue fmap:^(NSString *dataContainer) {
+      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:containerPath];
+      return [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/tail"]
+        withArguments:@[@"-c+1", @"-f", fullSourcePath]]
+        withStdOutConsumer:consumer]
+        start];
+    }]
+    onQueue:self.queue map:^(FBTask *task) {
+      return [task.statLoc
+        onQueue:self.queue respondToCancellation:^{
+          return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
+        }];
+    }];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
