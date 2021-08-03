@@ -47,6 +47,7 @@ from idb.cli.commands.file import (
     FSPushCommand,
     FSWriteCommand,
     FSRemoveCommand,
+    FSTailCommand,
     FBSReadCommand,
 )
 from idb.cli.commands.focus import FocusCommand
@@ -202,6 +203,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
                 FSListCommand(),
                 FBSReadCommand(),
                 FSWriteCommand(),
+                FSTailCommand(),
             ],
         ),
         CommandGroup(

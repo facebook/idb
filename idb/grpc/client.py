@@ -96,6 +96,7 @@ from idb.grpc.idb_pb2 import (
     InstallRequest,
     InstrumentsRunRequest,
     LaunchRequest,
+    TailRequest,
     ListAppsRequest,
     Location,
     LogRequest,
@@ -664,6 +665,22 @@ class Client(ClientBase):
             else:
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
             self.logger.info(f"pulled file to {dest_path}")
+
+    @log_and_handle_exceptions
+    async def tail(
+        self, stop: asyncio.Event, container: FileContainer, path: str
+    ) -> AsyncIterator[bytes]:
+        async with self.stub.tail.open() as stream:
+            await stream.send_message(
+                TailRequest(
+                    start=TailRequest.Start(
+                        container=file_container_to_grpc(container), path=path
+                    )
+                )
+            )
+            async for response in cancel_wrapper(stream=stream, stop=stop):
+                yield response.data
+            await stream.send_message(TailRequest(stop=TailRequest.Stop()))
 
     @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:

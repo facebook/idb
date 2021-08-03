@@ -14,6 +14,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand
+from idb.common.signal import signal_handler_event
 from idb.common.types import Client, FileContainer, FileContainerType
 
 
@@ -401,3 +402,26 @@ class FSWriteCommand(FSCommand):
                 container=container,
                 dest_path=destination_directory,
             )
+
+
+class FSTailCommand(FSCommand):
+    @property
+    def description(self) -> str:
+        return "Tails a remote file to stdout"
+
+    @property
+    def name(self) -> str:
+        return "tail"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("src", help="Relatve container source path", type=str)
+        super().add_parser_arguments(parser)
+
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: Client
+    ) -> None:
+        async for data in client.tail(
+            container=container, path=args.src, stop=signal_handler_event("tail")
+        ):
+            sys.stdout.buffer.write(data)
+            sys.stdout.flush()

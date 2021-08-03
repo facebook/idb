@@ -727,6 +727,12 @@ class Client(ABC):
     ) -> None:
         pass
 
+    @abstractmethod
+    async def tail(
+        self, stop: asyncio.Event, container: FileContainer, path: str
+    ) -> AsyncIterator[bytes]:
+        yield
+
 
 class ClientManager:
     @abstractmethod
