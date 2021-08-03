@@ -80,11 +80,6 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self printEvent:[FBJSONTestReporter waitingForDebuggerEvent:pid]];
 }
 
-- (void)debuggerAttached
-{
-  [self printEvent:[FBJSONTestReporter debuggerAttachedEvent]];
-}
-
 - (void)didBeginExecutingTestPlan
 {
   _started = YES;
@@ -266,15 +261,6 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     @"pid": @(pid),
     @"level": @"Info",
     @"message": [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
-  };
-}
-
-+ (NSDictionary<NSString *, id> *)debuggerAttachedEvent
-{
-  return @{
-    @"event": @"end-status",
-    @"level": @"Info",
-    @"message": @"Debugger attached",
   };
 }
 

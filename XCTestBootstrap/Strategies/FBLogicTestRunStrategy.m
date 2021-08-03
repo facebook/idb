@@ -218,30 +218,6 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-+ (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue waitForDebuggerToBeAttached:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
-{
-  if (!waitFor) {
-    return FBFuture.empty;
-  }
-
-  // Report from the current queue, but wait in a special queue.
-  dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
-  [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
-  return [[FBFuture
-    onQueue:waitQueue resolve:^{
-      // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
-      // We wait until it receives SIGCONT from an attached debugger.
-      waitid(P_PID, (id_t)processIdentifier, NULL, WCONTINUED);
-      [reporter debuggerAttached];
-
-      return FBFuture.empty;
-    }]
-    onQueue:queue map:^(id _) {
-      [reporter debuggerAttached];
-      return NSNull.null;
-    }];
-}
-
 - (FBFuture<FBLogicTestRunOutputs *> *)buildOutputsForUUID:(NSUUID *)udid
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
@@ -322,11 +298,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   return [[self.target
     launchProcess:configuration]
     onQueue:queue map:^ FBFuture<NSNumber *> * (id<FBLaunchedProcess> process) {
-      return [[FBLogicTestRunStrategy
-        fromQueue:queue waitForDebuggerToBeAttached:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
-        onQueue:queue fmap:^(id _) {
-          return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
-        }];
+      [reporter processWaitingForDebuggerWithProcessIdentifier:process.processIdentifier];
+
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
     }];
 }
 

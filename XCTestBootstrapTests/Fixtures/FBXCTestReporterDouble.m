@@ -100,11 +100,6 @@
 
 }
 
-- (void)debuggerAttached
-{
-
-}
-
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
 {
 

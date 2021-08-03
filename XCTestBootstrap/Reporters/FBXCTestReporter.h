@@ -25,10 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
 
-/**
- Called when a process has resumed after a debugger has been attached.
- */
-- (void)debuggerAttached;
 
 /**
  Called when the test plan has started executing.

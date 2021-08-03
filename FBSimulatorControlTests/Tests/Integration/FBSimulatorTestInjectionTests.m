@@ -232,11 +232,6 @@
 
 }
 
-- (void)debuggerAttached
-{
-
-}
-
 - (void)didCrashDuringTest:(NSError *)error
 {
 

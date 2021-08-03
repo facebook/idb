@@ -147,11 +147,6 @@
   [self writeResponse:response];
 }
 
-- (void)debuggerAttached
-{
-  [self.logger.info log:@"Debugger attached"];
-}
-
 - (void)didBeginExecutingTestPlan
 {
 }

@@ -32,10 +32,6 @@
   return self;
 }
 
-- (void)debuggerAttached
-{
-  [self.reporter debuggerAttached];
-}
 
 - (void)didBeginExecutingTestPlan
 {
