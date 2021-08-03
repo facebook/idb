@@ -57,7 +57,7 @@ static NSString *const IconJSONFile = @"icons.json";
   return [FBFuture futureWithResult:self.validFilenames];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
   NSString *filename = containerPath.lastPathComponent;
   return [[FBFuture
@@ -95,7 +95,7 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     iconLayoutFromSourcePath:sourcePath toDestinationFile:destinationPath.lastPathComponent]
@@ -111,14 +111,14 @@ static NSString *const IconJSONFile = @"icons.json";
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path
+- (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]

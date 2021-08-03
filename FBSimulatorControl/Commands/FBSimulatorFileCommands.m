@@ -34,7 +34,7 @@
 
 #pragma mark FBFileCommands
 
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
@@ -55,7 +55,7 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
   __block NSString *dstPath = destinationPath;
   return [[self
@@ -117,7 +117,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
@@ -135,7 +135,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path
+- (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[self
     dataContainer]

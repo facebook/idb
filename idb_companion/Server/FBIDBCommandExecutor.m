@@ -517,7 +517,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
       NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
       for (NSString *originPath in originPaths) {
-        [futures addObject:[container movePath:originPath toDestinationPath:destinationPath]];
+        [futures addObject:[container moveFrom:originPath to:destinationPath]];
       }
       return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
     }];
@@ -546,7 +546,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
         onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
           NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
           for (NSURL *originPath in paths) {
-            [futures addObject:[container copyPathOnHost:originPath toDestination:destinationPath]];
+            [futures addObject:[container copyFromHost:originPath toContainer:destinationPath]];
           }
           return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
         }];
@@ -558,7 +558,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     applicationDataContainerCommands:containerType]
     onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
-      return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
+      return [commands copyFromContainer:path toHost:destinationPath];
     }];
 }
 
@@ -573,7 +573,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       return [[self
         applicationDataContainerCommands:containerType]
         onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
-          return [container copyItemInContainer:path toDestinationOnHost:tempPath];
+          return [container copyFromContainer:path toHost:tempPath];
         }];
     }]
     onQueue:self.target.workQueue pop:^(id _) {
@@ -597,7 +597,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
       NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
       for (NSString *path in paths) {
-        [futures addObject:[container removePath:path]];
+        [futures addObject:[container remove:path]];
       }
       return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
     }];

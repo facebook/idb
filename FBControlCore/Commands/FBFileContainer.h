@@ -15,59 +15,59 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBProvisioningProfileCommands;
 
 /**
- File Commands related to a single target.
- This can be app or host-centric.
+ File Operations related to a single "container"
+ These containers are obtained from implementors of FBFileCommands.
  */
 @protocol FBFileContainer <NSObject>
 
 /**
- Copy items to from the host, to the target.
+ Copy a path from the host, to inside the container.
 
  @note Performs a recursive copy
  @param sourcePath The source path on the host. May be Files and/or Directories.
- @param destinationPath the destination path within the container.
+ @param destinationPath the destination path to copy to, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath;
 
 /**
- Relocate a file from the target, to the host.
+ Copy a path from inside the container, to the host.
 
- @param containerPath the sub-path within the to copy out.
- @param destinationPath the path to copy in to.
+ @param containerPath the source path, relative to the root of the container. May be Files and/or Directories.
+ @param destinationPath the destination path on the host.
  @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath;
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath;
 
 /**
- Create a directory inside the target.
+ Create a directory inside the container.
 
- @param directoryPath the path to the directory to be created.
+ @param directoryPath the path to the directory to be created within the container.
  @return A future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath;
 
 /**
- Move a path inside the container
+ Move a path inside the container.
 
- @param sourcePath relative source path.
- @param destinationPath relative path where the data will be moved to
+ @param sourcePath the source path, relative to the root of the container.
+ @param destinationPath the destination path, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath;
 
 /**
- Remove a path inside the target.
+ Remove a path inside the container.
 
- @param path relative path inside the container.
+ @param path the path to remove, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)removePath:(NSString *)path;
+- (FBFuture<NSNull *> *)remove:(NSString *)path;
 
 /**
- List directory within the target.
+ List directory within the container.
 
- @param path relative path to the container
+ @param path the path to list, relative to the root of the container.
  @return A future containing the list of entries that resolves when successful.
  */
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path;
