@@ -233,24 +233,10 @@
     return @"null";
   }
   if ([object isKindOfClass:NSArray.class]) {
-    NSMutableString *description = NSMutableString.string;
-    [description appendString:@"NSArray["];
-    for (NSObject *inner in (NSArray<id> *)object) {
-      [description appendString:[self descriptionForObject:inner]];
-      [description appendString:@", "];
-    }
-    [description appendString:@"]"];
-    return description;
+    return [self implodeDescription:(NSSet<id> *)object prefix:@"NSArray"];
   }
   if ([object isKindOfClass:NSSet.class]) {
-    NSMutableString *description = NSMutableString.string;
-    [description appendString:@"NSSet["];
-    for (NSObject *inner in (NSSet<id> *)object) {
-      [description appendString:[self descriptionForObject:inner]];
-      [description appendString:@", "];
-    }
-    [description appendString:@"]"];
-    return description;
+    return [self implodeDescription:(NSSet<id> *)object prefix:@"NSSet"];
   }
   if ([object isKindOfClass:NSDictionary.class]) {
     NSDictionary<id, id> *dict = (NSDictionary<id, id> *)object;
@@ -264,6 +250,15 @@
     return description;
   }
   return object.description;
+}
+
++ (NSString *)implodeDescription:(id<NSFastEnumeration>)container prefix:(NSString *)prefix
+{
+  NSMutableArray<NSString *> *descriptions = NSMutableArray.array;
+  for (id inner in container) {
+    [descriptions addObject:[self descriptionForObject:inner]];
+  }
+  return [NSString stringWithFormat:@"%@[%@]", prefix, [descriptions componentsJoinedByString:@", "]];
 }
 
 @end
