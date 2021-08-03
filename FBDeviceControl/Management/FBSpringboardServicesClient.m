@@ -104,6 +104,13 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError

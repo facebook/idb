@@ -62,7 +62,13 @@
      }
      return [FBFuture futureWithResult:destinationPath];
    }];
+}
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
@@ -181,6 +187,13 @@
     }];
 }
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
@@ -253,6 +266,13 @@
     }];
 }
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
@@ -309,6 +329,13 @@ static NSString *const MountedDeveloperDirectory = @"Developer";
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
     failFuture];
 }
 
