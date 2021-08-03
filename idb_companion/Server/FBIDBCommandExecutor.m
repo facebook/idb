@@ -581,6 +581,15 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path to_consumer:(id<FBDataConsumer>)consumer in_container:(nullable NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
+      return [container tail:path toConsumer:consumer];
+    }];
+}
+
 - (FBFuture<NSNull *> *)create_directory:(NSString *)directoryPath containerType:(NSString *)containerType
 {
   return [[self

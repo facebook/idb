@@ -54,9 +54,10 @@ service CompanionService {
   rpc ls (LsRequest) returns (LsResponse) {}
   rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
   rpc mv (MvRequest) returns (MvResponse) {}
+  rpc rm (RmRequest) returns (RmResponse) {}
   rpc pull (PullRequest) returns (stream PullResponse) {}
   rpc push (stream PushRequest) returns (PushResponse) {}
-  rpc rm (RmRequest) returns (RmResponse) {}
+  rpc tail (stream TailRequest) returns (stream TailResponse) {}
 }
 
 message Payload {
@@ -789,6 +790,24 @@ message PullRequest {
 
 message PullResponse {
   Payload payload = 1;
+}
+
+message TailRequest {
+  message Start {
+    FileContainer container = 1;
+    string path = 2;
+  }
+  message Stop {
+
+  }
+  oneof control {
+     Start start = 1;
+     Stop stop = 2;
+  }
+}
+
+message TailResponse {
+  bytes data = 1;
 }
 
 message DebuggerInfo{

@@ -443,6 +443,11 @@ This allows to avoid the permission popup the first time we open a deeplink
 - (FBFuture<NSData *> *)pull_file:(NSString *)path containerType:(nullable NSString *)containerType;
 
 /**
+ Tails a file from the container
+ */
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path to_consumer:(id<FBDataConsumer>)consumer in_container:(nullable NSString *)containerType;
+
+/**
  Remove path within the container
 
  @param paths relative paths to the container where data resides

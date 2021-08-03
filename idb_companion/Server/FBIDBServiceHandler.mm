@@ -1198,7 +1198,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   NSString *path = nsstring_from_c_string(request->src_path());
   NSError *error = nil;
   if (request->dst_path().length() > 0) {
-    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:nsstring_from_c_string(request->dst_path()) containerType:file_container(request->container()) ] block:&error];
+    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:nsstring_from_c_string(request->dst_path()) containerType:file_container(request->container())] block:&error];
     if (error) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
@@ -1216,6 +1216,37 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
                          logger:_target.logger],
                         stream);
   }
+}}
+
+Status FBIDBServiceHandler::tail(ServerContext* context, grpc::ServerReaderWriter<idb::TailResponse, idb::TailRequest>* stream)
+{@autoreleasepool{
+  idb::TailRequest request;
+  stream->Read(&request);
+  idb::TailRequest_Start start = request.start();
+  NSString *path = nsstring_from_c_string(start.path());
+  NSString *container = file_container(start.container());
+
+  FBMutableFuture<NSNull *> *finished = FBMutableFuture.future;
+  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+    if (finished.hasCompleted) {
+      return;
+    }
+    idb::TailResponse response;
+    response.set_data(data.bytes, data.length);
+    stream->Write(response);
+  }];
+
+  NSError *error = nil;
+  FBFuture<NSNull *> *tailOperation = [[_commandExecutor tail:path to_consumer:consumer in_container:container] block:&error];
+  if (!tailOperation) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+
+  stream->Read(&request);
+  [[tailOperation cancel] block:nil];
+  [finished resolveWithResult:NSNull.null];
+
+  return Status::OK;
 }}
 
 Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response)
