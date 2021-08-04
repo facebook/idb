@@ -218,6 +218,28 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
++ (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue reportWaitForDebugger:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
+{
+  if (!waitFor) {
+    return FBFuture.empty;
+  }
+
+  // Report from the current queue, but wait in a special queue.
+  dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
+
+  return [FBFuture
+    onQueue:waitQueue resolve:^FBFuture<NSNull *> *(){
+      siginfo_t sig_info;
+      if (waitid(P_PID, (id_t)processIdentifier, &sig_info, WSTOPPED) != 0) {
+        return [[XCTestBootstrapError
+                  describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%s'", processIdentifier, strerror(errno)]
+                failFuture];
+      }
+      [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
+      return FBFuture.empty;
+    }];
+}
+
 - (FBFuture<FBLogicTestRunOutputs *> *)buildOutputsForUUID:(NSUUID *)udid
 {
   id<FBLogicXCTestReporter> reporter = self.reporter;
@@ -298,9 +320,11 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   return [[self.target
     launchProcess:configuration]
     onQueue:queue map:^ FBFuture<NSNumber *> * (id<FBLaunchedProcess> process) {
-      [reporter processWaitingForDebuggerWithProcessIdentifier:process.processIdentifier];
-
-      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
+      return [[FBLogicTestRunStrategy
+        fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
+        onQueue:queue fmap:^(id _) {
+          return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
+        }];
     }];
 }
 
