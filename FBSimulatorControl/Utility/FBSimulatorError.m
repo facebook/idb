@@ -13,16 +13,6 @@
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
 
-@interface FBSimulatorError ()
-
-@property (nonatomic, copy, readwrite) NSString *describedAs;
-@property (nonatomic, copy, readwrite) NSError *cause;
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readwrite) NSMutableDictionary *additionalInfo;
-@property (nonatomic, assign, readwrite) BOOL describeRecursively;
-
-@end
-
 @implementation FBSimulatorError
 
 - (instancetype)init
