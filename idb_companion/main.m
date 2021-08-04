@@ -214,10 +214,10 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
       FBSimulatorBootConfiguration *config = FBSimulatorBootConfiguration.defaultConfiguration;
       if (headless) {
         [logger logFormat:@"Booting %@ headlessly", udid];
-        config = [config withOptions:(config.options | FBSimulatorBootOptionsEnableDirectLaunch)];
+        config = [config withOptions:(config.options | FBSimulatorBootOptionsTieToProcessLifecycle)];
       } else {
         [logger logFormat:@"Booting %@ normally", udid];
-        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsEnableDirectLaunch)];
+        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsTieToProcessLifecycle)];
       }
       if (verifyBooted) {
         [logger logFormat:@"Booting %@ with verification", udid];

@@ -81,7 +81,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   FBSimulatorBootOptions options = 0;
   if (self.useDirectLaunching) {
-    options = options | FBSimulatorBootOptionsEnableDirectLaunch;
+    options = options | FBSimulatorBootOptionsTieToProcessLifecycle;
   }
   return options;
 }

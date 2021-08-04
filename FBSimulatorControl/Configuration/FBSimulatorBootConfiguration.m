@@ -98,7 +98,7 @@ static NSString *const BootOptionStringDirectLaunch = @"Direct Launch";
 + (NSArray<NSString *> *)stringsFromBootOptions:(FBSimulatorBootOptions)options
 {
   NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch) {
+  if ((options & FBSimulatorBootOptionsTieToProcessLifecycle) == FBSimulatorBootOptionsTieToProcessLifecycle) {
     [strings addObject:BootOptionStringDirectLaunch];
   }
   return [strings copy];

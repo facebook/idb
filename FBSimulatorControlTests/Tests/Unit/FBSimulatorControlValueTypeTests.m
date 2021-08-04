@@ -24,7 +24,7 @@
 {
   NSArray<FBSimulatorBootConfiguration *> *values = @[
     [FBSimulatorBootConfiguration.defaultConfiguration
-      withOptions:FBSimulatorBootOptionsEnableDirectLaunch],
+      withOptions:FBSimulatorBootOptionsTieToProcessLifecycle],
     [FBSimulatorBootConfiguration.defaultConfiguration
       withBootEnvironment:@{@"FOO": @"BAR"}]
   ];

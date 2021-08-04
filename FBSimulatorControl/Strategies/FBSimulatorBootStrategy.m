@@ -33,19 +33,6 @@
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 
-@interface FBSimulatorBootConfiguration (FBSimulatorBootStrategy)
-
-@end
-
-@implementation FBSimulatorBootConfiguration (FBSimulatorBootStrategy)
-
-- (BOOL)shouldUseDirectLaunch
-{
-  return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
-}
-
-@end
-
 @interface FBCoreSimulatorBootStrategy : NSObject
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
@@ -95,13 +82,17 @@
 
 - (FBFuture<NSNull *> *)bootSimulatorWithConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
-  // "Persisting" means for the booted Simulator to live beyond the lifecycle of the process that calls the boot API.
-  // This is the default for `simctl which boots the simulator and leaves it booted until 'shutdown' is called.
-  // This is also possible in `simctl` if the undocumented `--wait` flag is passed after the Simulator's UDID.
-  // If "Direct Launch" is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot
-  // as this gives us cleaner teardown semantics for automated scenarios.
+  // "Persisting" means that the booted Simulator should live beyond the lifecycle of the process that calls the boot API.
+  // The inverse of this is `FBSimulatorBootOptionsTieToProcessLifecycle`, which means that the Simulator should shutdown when the process that calls the boot API dies.
+  //
+  // The default behaviour for `simctl` is to 'persist'; the Simulator is left booted until 'shutdown' is called, even after the simctl process dies.
+  // `simctl` has the option to 'tie to process lifecycle', if the undocumented `--wait` flag is passed after the Simulator's UDID.
+  //
+  // If `FBSimulatorBootOptionsTieToProcessLifecycle` is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot.
+  // This behaviour is useful for automated scenarios, where terminating the process that performs the boot gives us clean teardown semantics, without the need to call 'shutdown'.
+  BOOL persist = (configuration.options & FBSimulatorBootOptionsTieToProcessLifecycle) != FBSimulatorBootOptionsTieToProcessLifecycle;
   NSDictionary<NSString *, id> * options = @{
-    @"persist": @(!configuration.shouldUseDirectLaunch),
+    @"persist": @(persist),
     @"env" : configuration.environment ?: @{},
   };
 
