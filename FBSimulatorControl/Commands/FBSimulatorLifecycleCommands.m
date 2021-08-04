@@ -144,9 +144,8 @@
     return [FBFuture futureWithResult:self.connection];
   }
   if (simulator.state != FBiOSTargetStateBooted && simulator.state != FBiOSTargetStateBooting) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describeFormat:@"Cannot connect to Simulator in state %@", simulator.stateString]
-      inSimulator:simulator]
       failFuture];
   }
 

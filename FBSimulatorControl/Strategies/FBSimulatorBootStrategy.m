@@ -147,9 +147,8 @@
     return FBFuture.empty;
   }
   if (self.simulator.state != FBiOSTargetStateShutdown) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
-      inSimulator:self.simulator]
       failFuture];
   }
 
@@ -167,9 +166,8 @@
   FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
   FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
   if (!launchdProcess) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Could not obtain process info for launchd_sim process"]
-      inSimulator:self.simulator]
       failFuture];
   }
   self.simulator.launchdProcess = launchdProcess;

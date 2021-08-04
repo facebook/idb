@@ -158,9 +158,8 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
   if (self.simulator.state != FBiOSTargetStateBooted) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describe:@"Simulator must be booted to run tests"]
-      inSimulator:self.simulator]
       failFuture];
   }
   return [FBManagedTestRunStrategy
