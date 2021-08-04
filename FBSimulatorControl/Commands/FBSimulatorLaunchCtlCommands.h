@@ -19,13 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBSimulatorLaunchCtlCommands <NSObject, FBiOSTargetCommand>
 
-#pragma mark Processes
-
-/*
- Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
- */
-- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses;
-
 #pragma mark Querying Services
 
 /**

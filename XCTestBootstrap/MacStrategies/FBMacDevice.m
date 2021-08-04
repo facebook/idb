@@ -67,7 +67,6 @@
     _auxillaryDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
-    _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
     _udid = [FBMacDevice resolveDeviceUDID];
     _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
@@ -227,7 +226,6 @@
 @synthesize asyncQueue = _asyncQueue;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize name = _name;
-@synthesize launchdProcess = _launchdProcess;
 @synthesize logger = _logger;
 @synthesize osVersion = _osVersion;
 @synthesize state = _state;

@@ -36,57 +36,6 @@
   return self;
 }
 
-#pragma mark The Simulator's launchd_sim
-
-- (NSArray<FBProcessInfo *> *)launchdProcesses
-{
-  return [self.processFetcher processesWithProcessName:@"launchd_sim"];
-}
-
-- (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids
-{
-  NSDictionary<NSString *, NSString *> *serviceNameToUDID = [FBSimulatorProcessFetcher launchdSimServiceNamesToUDIDs:udids];
-  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:serviceNameToUDID.allKeys];
-
-  NSMutableDictionary<NSString *, FBProcessInfo *> *processes = [NSMutableDictionary dictionary];
-  for (NSString *serviceName in serviceNameToUDID.allKeys) {
-    NSString *udid = serviceNameToUDID[serviceName];
-    NSDictionary<NSString *, id> *job = jobs[serviceName];
-    if (!job) {
-      continue;
-    }
-    FBProcessInfo *process = [self.processFetcher processInfoForJobDictionary:job];
-    if (!process) {
-      continue;
-    }
-    processes[udid] = process;
-  }
-  return [processes copy];
-}
-
-- (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet
-{
-  NSMutableDictionary<FBProcessInfo *, NSString *> *dictionary = [NSMutableDictionary dictionary];
-
-  for (FBProcessInfo *process in self.launchdProcesses) {
-    NSString *deviceSetPath = [FBSimulatorProcessFetcher deviceSetPathForLaunchdSim:process];
-    if (!deviceSetPath) {
-      continue;
-    }
-    dictionary[process] = deviceSetPath;
-  }
-  return [dictionary copy];
-}
-
-- (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice
-{
-  NSDictionary<NSString *, id> *jobInfo = [FBServiceManagement jobInformationForUserServiceNamed:simDevice.launchdJobName];
-  if (!jobInfo) {
-    return nil;
-  }
-  return [self.processFetcher processInfoForJobDictionary:jobInfo];
-}
-
 #pragma mark CoreSimulatorService
 
 - (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses

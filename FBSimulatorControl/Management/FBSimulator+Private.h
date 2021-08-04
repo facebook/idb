@@ -17,12 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulator ()
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
-@property (nonatomic, copy, readwrite, nullable) FBProcessInfo *launchdProcess;
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) id forwarder;
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess set:(FBSimulatorSet *)set;
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set;
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
 
 @end
 

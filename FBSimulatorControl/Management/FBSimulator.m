@@ -52,20 +52,19 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess set:(FBSimulatorSet *)set
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set
 {
   return [[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
     processFetcher:set.processFetcher
-    launchdSimProcess:launchdSimProcess
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
     logger:set.logger
     reporter:set.reporter];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -77,7 +76,6 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   _set = set;
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
-  _launchdProcess = launchdSimProcess;
   _logger = [logger withName:device.UDID.UUIDString];
   _forwarder = [FBLoggingWrapper
     wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]

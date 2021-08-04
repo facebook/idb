@@ -62,17 +62,6 @@
   return self;
 }
 
-#pragma mark Processes
-
-- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
-{
-  FBProcessInfo *launchdSim = self.simulator.launchdProcess;
-  if (!launchdSim) {
-    return @[];
-  }
-  return [self.simulator.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
-}
-
 #pragma mark Querying Services
 
 - (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process

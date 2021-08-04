@@ -41,11 +41,6 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatState;
  */
 extern FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture;
 
-/**
- The Process Identifier of the Target where applicable.
- */
-extern FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier;
-
 @protocol FBiOSTarget;
 
 /**

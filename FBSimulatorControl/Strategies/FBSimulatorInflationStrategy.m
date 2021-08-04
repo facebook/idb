@@ -77,15 +77,12 @@
 
 - (NSArray<FBSimulator *> *)inflateSimulators:(NSArray<NSString *> *)simulatorsToInflate availableDevices:(NSDictionary<NSString *, SimDevice *> *)availableDevices
 {
-  NSDictionary<NSString *, FBProcessInfo *> *launchdSims = [self.processFetcher launchdProcessesByUDIDs:simulatorsToInflate];
-
   NSMutableArray<FBSimulator *> *inflatedSimulators = [NSMutableArray array];
   for (NSString *udid in simulatorsToInflate) {
     SimDevice *device = availableDevices[udid];
     FBSimulator *simulator = [FBSimulator
       fromSimDevice:device
       configuration:nil
-      launchdSimProcess:launchdSims[udid]
       set:self.set];
     [inflatedSimulators addObject:simulator];
   }

@@ -45,13 +45,11 @@
 - (void)assertSimulatorBooted:(FBSimulator *)simulator
 {
   XCTAssertEqual(simulator.state, FBiOSTargetStateBooted);
-  XCTAssertNotNil(simulator.launchdProcess);
 }
 
 - (void)assertSimulatorShutdown:(FBSimulator *)simulator
 {
   XCTAssertEqual(simulator.state, FBiOSTargetStateShutdown);
-  XCTAssertNil(simulator.launchdProcess);
 }
 
 #pragma mark Processes

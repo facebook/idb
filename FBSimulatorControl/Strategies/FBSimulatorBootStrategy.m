@@ -144,35 +144,24 @@
   }
 
   // Boot via CoreSimulator.
-  return [[[self.coreSimulatorStrategy
+  return [[self.coreSimulatorStrategy
     performBoot]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       return [self verifySimulatorIsBooted];
-    }]
-    mapReplace:NSNull.null];
+    }];
 }
 
-- (FBFuture<FBProcessInfo *> *)verifySimulatorIsBooted
+- (FBFuture<NSNull *> *)verifySimulatorIsBooted
 {
-  FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
-  FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
-  if (!launchdProcess) {
-    return [[FBSimulatorError
-      describe:@"Could not obtain process info for launchd_sim process"]
-      failFuture];
-  }
-  self.simulator.launchdProcess = launchdProcess;
-
   // Return early if we're not awaiting services.
   if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
-    return [FBFuture futureWithResult:launchdProcess];
+    return FBFuture.empty;
   }
 
   // Now wait for the services.
-  return [[[FBSimulatorBootVerificationStrategy
+  return [[FBSimulatorBootVerificationStrategy
     strategyWithSimulator:self.simulator]
-    verifySimulatorIsBooted]
-    mapReplace:launchdProcess];
+    verifySimulatorIsBooted];
 }
 
 @end

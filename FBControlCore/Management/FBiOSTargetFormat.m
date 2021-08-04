@@ -19,7 +19,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatModel = @"model";
 FBiOSTargetFormatKey const FBiOSTargetFormatOSVersion = @"os";
 FBiOSTargetFormatKey const FBiOSTargetFormatState = @"state";
 FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture = @"arch";
-FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier = @"pid";
 
 @implementation FBiOSTargetFormat
 
@@ -60,7 +59,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier = @"pid";
       FBiOSTargetFormatModel,
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatArchitecture,
-      FBiOSTargetFormatProcessIdentifier,
     ]];
   });
   return format;
@@ -166,8 +164,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier = @"pid";
     return FBiOSTargetStateStringFromState(target.state);
   } else if ([field isEqualToString:FBiOSTargetFormatArchitecture]) {
     return target.architecture;
-  } else if ([field isEqualToString:FBiOSTargetFormatProcessIdentifier]) {
-    return @(target.launchdProcess.processIdentifier);
   }
   return nil;
 }

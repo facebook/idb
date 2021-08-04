@@ -27,8 +27,6 @@
 
 @property (nonatomic, assign, readwrite) FBiOSTargetType targetType;
 
-@property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
-
 @property (nonatomic, copy, readwrite) FBDeviceType *deviceType;
 
 @property (nonatomic, copy, readwrite) FBOSVersion *osVersion;

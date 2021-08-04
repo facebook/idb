@@ -160,11 +160,6 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;
 
 /**
- Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
-
-/**
  The Queue to serialize work on.
  This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
  Mutually Exclusive operations should use this queue.

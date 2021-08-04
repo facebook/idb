@@ -84,11 +84,6 @@
   return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
 }
 
-- (FBProcessInfo *)launchdProcess
-{
-  return nil;
-}
-
 - (NSString *)auxillaryDirectory
 {
   NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;

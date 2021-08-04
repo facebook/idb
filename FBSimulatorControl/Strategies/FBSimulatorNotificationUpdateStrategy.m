@@ -78,41 +78,7 @@
     return;
   }
   FBSimulator *simulator = simulators.firstObject;
-
-  // Update State in response to boot/shutdown
-  if (state == FBiOSTargetStateBooted) {
-    [self fetchLaunchdSimInfoFromBootOfSimulator:simulator];
-  }
-  if (state == FBiOSTargetStateShutdown || state == FBiOSTargetStateShuttingDown) {
-    [self discardLaunchdSimInfoFromShutdownOfSimulator:simulator];
-  }
   [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
-}
-
-- (void)fetchLaunchdSimInfoFromBootOfSimulator:(FBSimulator *)simulator
-{
-  // We already have launchd_sim info, don't bother fetching.
-  if (simulator.launchdProcess) {
-    return;
-  }
-
-  FBProcessInfo *launchdSim = [self.processFetcher launchdProcessForSimDevice:simulator.device];
-  if (!launchdSim) {
-    return;
-  }
-  simulator.launchdProcess = launchdSim;
-}
-
-- (void)discardLaunchdSimInfoFromShutdownOfSimulator:(FBSimulator *)simulator
-{
-  // Don't look at the application if we know if we don't consider the Simulator boot.
-  FBProcessInfo *launchdProcess = simulator.launchdProcess;
-  if (!launchdProcess) {
-    return;
-  }
-
-  // Notify of Simulator Termination.
-  simulator.launchdProcess = nil;
 }
 
 - (FBSimulatorProcessFetcher *)processFetcher

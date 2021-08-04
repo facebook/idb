@@ -32,38 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
-#pragma mark The Simulator's launchd_sim
-
-/**
- Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
-
- @return an Array of launchd_sim processes.
- */
-- (NSArray<FBProcessInfo *> *)launchdProcesses;
-
-/**
- Fetches the Process Info for a given Simulator's launchd_sim.
-
- @param simDevice the Simulator to fetch Process Info for.
- @return Process Info if any could be obtained, nil otherwise.
- */
-- (nullable FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice;
-
-/**
- Fetches a Dictionary, mapping Simulator UDID to launchd_sim process.
-
- @param udids an Array of all the UDIDs to obtain launchd_sim processes for.
- @return a Dictionary, mapping UDIDs to launchd_sim processes.
- */
-- (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids;
-
-/**
- Fetches a Dictionary, mapping launchd_sim to the device set that contains it.
-
- @return Dictionary, mapping launchd_sim to the device set that contains it.
- */
-- (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet;
-
 #pragma mark CoreSimulatorService
 
 /**

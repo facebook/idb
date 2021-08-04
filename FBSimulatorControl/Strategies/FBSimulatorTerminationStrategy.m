@@ -109,16 +109,12 @@
   // 1) Wait for the Connection to the Simulator to Disconnect.
   // 2) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
   // 3) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-  return [[[simulator
+  return [[simulator
     disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [[FBSimulatorShutdownStrategy
         strategyWithSimulator:simulator]
         shutdown];
-    }]
-    onQueue:simulator.workQueue map:^(id _) {
-      simulator.launchdProcess = nil;
-      return simulator;
     }];
 }
 
