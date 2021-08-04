@@ -23,13 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorPredicates : FBiOSTargetPredicates
 
 /**
- Predicate for Simulators that are launched.
-
- @return an NSPredicate.
- */
-+ (NSPredicate *)launched;
-
-/**
  Predicate for matching Simulators against a Configuration.
 
  @param configuration the configuration to match against.

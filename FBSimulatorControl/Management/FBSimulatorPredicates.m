@@ -19,13 +19,6 @@
 
 @implementation FBSimulatorPredicates
 
-+ (NSPredicate *)launched
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return simulator.launchdProcess.processIdentifier > 1;
-  }];
-}
-
 #pragma mark Configurations
 
 + (NSPredicate *)configuration:(FBSimulatorConfiguration *)configuration

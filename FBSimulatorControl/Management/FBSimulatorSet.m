@@ -246,11 +246,6 @@
   return _allSimulators;
 }
 
-- (NSArray<FBSimulator *> *)launchedSimulators
-{
-  return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
-}
-
 #pragma mark FBiOSTargetSet Implementation
 
 - (NSArray<id<FBiOSTarget>> *)allTargetInfos
