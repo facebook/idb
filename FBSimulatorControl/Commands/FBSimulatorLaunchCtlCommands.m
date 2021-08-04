@@ -13,7 +13,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorLaunchCtlCommands ()

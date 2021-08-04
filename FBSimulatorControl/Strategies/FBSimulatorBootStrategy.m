@@ -31,7 +31,6 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootVerificationStrategy.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBCoreSimulatorBootStrategy : NSObject
 

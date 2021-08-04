@@ -12,7 +12,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulator+Private.h"
 
@@ -79,11 +78,6 @@
   }
   FBSimulator *simulator = simulators.firstObject;
   [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
-}
-
-- (FBSimulatorProcessFetcher *)processFetcher
-{
-  return self.set.processFetcher;
 }
 
 @end

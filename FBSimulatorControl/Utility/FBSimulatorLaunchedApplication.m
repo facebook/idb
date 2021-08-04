@@ -9,7 +9,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorLaunchedApplication ()
 
@@ -75,7 +74,7 @@
     mapReplace:NSNull.null]
     onQueue:simulator.workQueue respondToCancellation:^{
       return [[FBProcessTerminationStrategy
-        strategyWithProcessFetcher:simulator.processFetcher.processFetcher workQueue:simulator.workQueue logger:simulator.logger]
+        strategyWithProcessFetcher:FBProcessFetcher.new workQueue:simulator.workQueue logger:simulator.logger]
         killProcessIdentifier:processIdentifier];
     }];
 }

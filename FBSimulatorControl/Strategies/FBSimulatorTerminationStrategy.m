@@ -23,14 +23,12 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
@@ -42,13 +40,12 @@
 
 + (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:set.processFetcher.processFetcher workQueue:dispatch_get_main_queue() logger:set.logger];
-  return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:FBProcessFetcher.new workQueue:dispatch_get_main_queue() logger:set.logger];
+  return [[self alloc] initWithSet:set configuration:set.configuration processTerminationStrategy:processTerminationStrategy logger:set.logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
 {
-  NSParameterAssert(processFetcher);
   NSParameterAssert(configuration);
   NSParameterAssert(processTerminationStrategy);
 
@@ -59,7 +56,6 @@
 
   _set = set;
   _configuration = configuration;
-  _processFetcher = processFetcher;
   _logger = logger;
   _processTerminationStrategy = processTerminationStrategy;
 

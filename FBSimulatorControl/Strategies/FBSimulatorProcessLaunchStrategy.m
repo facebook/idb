@@ -14,12 +14,10 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchedProcess.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorProcessLaunchStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 @end
 
@@ -40,7 +38,6 @@
   }
 
   _simulator = simulator;
-  _processFetcher = simulator.processFetcher;
 
   return self;
 }

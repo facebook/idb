@@ -22,7 +22,6 @@
 
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorServiceContext ()
 

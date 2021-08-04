@@ -9,7 +9,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorLaunchedProcess ()
 
@@ -107,7 +106,7 @@
 
   // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
   [[FBProcessTerminationStrategy
-    strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher workQueue:self.simulator.workQueue logger:self.simulator.logger]
+    strategyWithProcessFetcher:FBProcessFetcher.new workQueue:self.simulator.workQueue logger:self.simulator.logger]
     killProcessIdentifier:self.processIdentifier];
 
   return teardown;

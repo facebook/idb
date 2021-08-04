@@ -415,8 +415,6 @@
 		AADBB6B525E5689600AFB15D /* FBSettingsCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AADBB6B325E5689600AFB15D /* FBSettingsCommands.m */; };
 		AADC72F02012BF7A001060E5 /* FBAccessibilityTraits.m in Sources */ = {isa = PBXBuildFile; fileRef = AADC72EE2012BF7A001060E5 /* FBAccessibilityTraits.m */; };
 		AADC72F12012BF7A001060E5 /* FBAccessibilityTraits.h in Headers */ = {isa = PBXBuildFile; fileRef = AADC72EF2012BF7A001060E5 /* FBAccessibilityTraits.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AADDED2F1D6D81F80011EE15 /* FBSimulatorProcessFetcher.h in Headers */ = {isa = PBXBuildFile; fileRef = AADDED2D1D6D81F80011EE15 /* FBSimulatorProcessFetcher.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AADDED301D6D81F80011EE15 /* FBSimulatorProcessFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = AADDED2E1D6D81F80011EE15 /* FBSimulatorProcessFetcher.m */; };
 		AADDED331D6D87D30011EE15 /* FBServiceManagement.m in Sources */ = {isa = PBXBuildFile; fileRef = AADDED311D6D87D30011EE15 /* FBServiceManagement.m */; };
 		AADDED341D6D87D30011EE15 /* FBServiceManagement.h in Headers */ = {isa = PBXBuildFile; fileRef = AADDED321D6D87D30011EE15 /* FBServiceManagement.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE119622293EF3500173417 /* FBServiceConnectionClient.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE119602293EF3500173417 /* FBServiceConnectionClient.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1203,8 +1201,6 @@
 		AADBB6B325E5689600AFB15D /* FBSettingsCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSettingsCommands.m; sourceTree = "<group>"; };
 		AADC72EE2012BF7A001060E5 /* FBAccessibilityTraits.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAccessibilityTraits.m; sourceTree = "<group>"; };
 		AADC72EF2012BF7A001060E5 /* FBAccessibilityTraits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAccessibilityTraits.h; sourceTree = "<group>"; };
-		AADDED2D1D6D81F80011EE15 /* FBSimulatorProcessFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorProcessFetcher.h; sourceTree = "<group>"; };
-		AADDED2E1D6D81F80011EE15 /* FBSimulatorProcessFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorProcessFetcher.m; sourceTree = "<group>"; };
 		AADDED311D6D87D30011EE15 /* FBServiceManagement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBServiceManagement.m; sourceTree = "<group>"; };
 		AADDED321D6D87D30011EE15 /* FBServiceManagement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBServiceManagement.h; sourceTree = "<group>"; };
 		AAE119602293EF3500173417 /* FBServiceConnectionClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBServiceConnectionClient.h; sourceTree = "<group>"; };
@@ -2055,8 +2051,6 @@
 		AA95171C1C15F54600A89CAD /* Processes */ = {
 			isa = PBXGroup;
 			children = (
-				AADDED2D1D6D81F80011EE15 /* FBSimulatorProcessFetcher.h */,
-				AADDED2E1D6D81F80011EE15 /* FBSimulatorProcessFetcher.m */,
 			);
 			path = Processes;
 			sourceTree = "<group>";
@@ -2779,7 +2773,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AADDED2F1D6D81F80011EE15 /* FBSimulatorProcessFetcher.h in Headers */,
 				AA9517971C15F54600A89CAD /* FBCoreSimulatorNotifier.h in Headers */,
 				AA6A3B431CC1597000E016C4 /* FBSimulatorTerminationStrategy.h in Headers */,
 				AA15688C1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.h in Headers */,
@@ -3324,7 +3317,6 @@
 			files = (
 				AA6A3B441CC1597000E016C4 /* FBSimulatorTerminationStrategy.m in Sources */,
 				AA3EA8541F31B20D003FBDC1 /* FBSimulatorFileCommands.m in Sources */,
-				AADDED301D6D81F80011EE15 /* FBSimulatorProcessFetcher.m in Sources */,
 				AAB475F820C8217F00B37634 /* FBSimulatorCrashLogCommands.m in Sources */,
 				AAE42AA91D2D77D800DCD0EA /* FBSimulatorBridge.m in Sources */,
 				AA8D347B24D04CDD000FAC59 /* FBSimulatorLocationCommands.m in Sources */,
