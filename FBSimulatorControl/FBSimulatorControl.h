@@ -31,7 +31,6 @@
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
 #import <FBSimulatorControl/FBSimulatorProcessSpawnCommands.h>
 #import <FBSimulatorControl/FBSimulatorScreenshotCommands.h>
