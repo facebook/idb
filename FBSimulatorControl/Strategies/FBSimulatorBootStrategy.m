@@ -55,57 +55,6 @@
 
 @end
 
-/**
- Provides an implementation of Launching a Simulator Application.
- */
-@protocol FBSimulatorApplicationProcessLauncher <NSObject>
-
-/**
- Launches the SimulatorApp Process.
-
- @param arguments the SimulatorApp process arguments.
- @param environment the environment for the process.
- @return YES if successful, NO otherwise.
- */
-- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
-
-@end
-
-/**
- Provides Launch Options to a Simulator.
- */
-@protocol FBSimulatorGUIAppLauncherOptions <NSObject>
-
-/**
- Creates and returns the arguments to pass to Xcode's Simulator.app for the receiver's configuration.
-
- @param configuration the configuration to base off.
- @param simulator the Simulator construct boot args for.
- @param error an error out for any error that occurs.
- @return an NSArray<NSString> of boot arguments, or nil if an error occurred.
- */
-- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error;
-
-/**
- Determines whether the Simulator Application should be launched.
-
- @param configuration the configuration to use.
- @param simulator the Simulator.
- @preturn YES if the SimulatorApp should be launched, NO otherwise.
- */
-- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
-
-@end
-
-@interface FBSimulatorGUIAppLauncher : NSObject
-
-@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
-@property (nonatomic, strong, readonly) id<FBSimulatorGUIAppLauncherOptions> options;
-
-@end
-
 @interface FBCoreSimulatorBootStrategy : NSObject
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
@@ -117,10 +66,9 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBSimulatorGUIAppLauncher *appLauncher;
 @property (nonatomic, strong, readonly) FBCoreSimulatorBootStrategy *coreSimulatorStrategy;
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator appLauncher:(FBSimulatorGUIAppLauncher *)appLauncher coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
 
 @end
 
@@ -194,150 +142,15 @@
 
 @end
 
-@interface FBSimulatorApplicationProcessLauncher_Workspace : NSObject <FBSimulatorApplicationProcessLauncher>
-@end
-
-@implementation FBSimulatorApplicationProcessLauncher_Workspace
-
-- (FBFuture<NSNull *> *)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
-{
-  // The NSWorkspace API allows for arguments & environment to be provided to the launched application
-  // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
-  NSURL *applicationURL = [NSURL fileURLWithPath:FBBundleDescriptor.xcodeSimulator.path];
-  NSDictionary *appLaunchConfiguration = @{
-    NSWorkspaceLaunchConfigurationArguments : arguments,
-    NSWorkspaceLaunchConfigurationEnvironment : environment,
-  };
-
-  NSError *error = nil;
-  NSRunningApplication *application = [NSWorkspace.sharedWorkspace
-    launchApplicationAtURL:applicationURL
-    options:NSWorkspaceLaunchDefault | NSWorkspaceLaunchNewInstance | NSWorkspaceLaunchWithoutActivation
-    configuration:appLaunchConfiguration
-    error:&error];
-
-  if (!application) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to launch simulator application %@ with configuration %@", applicationURL, appLaunchConfiguration]
-      causedBy:error]
-      failFuture];
-  }
-  return FBFuture.empty;
-}
-
-@end
-
-@interface FBSimulatorGUIAppLauncherOptions_Xcode9 : NSObject <FBSimulatorGUIAppLauncherOptions>
-
-@end
-
-@implementation FBSimulatorGUIAppLauncherOptions_Xcode9
-
-- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  NSString *setPath = simulator.set.deviceSet.setPath;
-  return @[
-    @"--args",
-    @"-DeviceSetPath", setPath, // Always pass the Device Set Path.
-    @"-DetatchOnAppQuit", @"0", // Shutdown Sims on Quitting the App, just like in < Xcode 9.
-    @"-DetachOnWindowClose", @"0",  // As above, but for windows.
-    @"-AttachBootedOnStart", @"1",  // Always attach to running sims, so that they have an open window.
-    @"-StartLastDeviceOnLaunch", @"0", // *never* let SimulatorApp boot on our behalf.
- ];
-}
-
-- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  // With Xcode 9 Direct-Launch Only, don't boot a Simulator App.
-  if (configuration.shouldUseDirectLaunch) {
-    return NO;
-  }
-  // Find a Simulator App for the current set if one exists, if it does exist then don't launch one.
-  NSString *setPath = simulator.set.deviceSet.setPath;
-  FBProcessInfo *applicationProcess = simulator.processFetcher.simulatorApplicationProcessesByDeviceSetPath[setPath];
-  if (applicationProcess) {
-    [simulator.logger logFormat:@"Existing Simulator Application %@ found, not re-launching one for this device set", applicationProcess];
-    return NO;
-  }
-  // Otherwise we should launch one
-  [simulator.logger logFormat:@"No Simulator Application found for device set '%@', launching a Simulator App for %@", setPath, simulator];
-  return YES;
-}
-
-@end
-
-
-@implementation FBSimulatorGUIAppLauncher
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher options:(id<FBSimulatorGUIAppLauncherOptions>)options
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-  _simulator = simulator;
-  _launcher = launcher;
-  _options = options;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)launchSimulatorApplication
-{
-  // Return early if we shouldn't launch the Application
-  if (![self.options shouldLaunchSimulatorApplication:self.configuration simulator:self.simulator]) {
-    return FBFuture.empty;
-  }
-
-  // Fetch the Boot Arguments & Environment
-  NSError *error = nil;
-  NSArray *arguments = [self.options xcodeSimulatorApplicationArguments:self.configuration simulator:self.simulator error:&error];
-  if (!arguments) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to create boot args for Configuration %@", self.configuration]
-      causedBy:error]
-      failFuture];
-  }
-  // Add the UDID marker to the subprocess environment, so that it can be queried in any process.
-  NSDictionary *environment = @{
-    FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : self.simulator.udid,
-    FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath : self.simulator.set.deviceSet.setPath,
-  };
-
-  // Launch the Simulator.app Process.
-  return [[self.launcher
-    launchSimulatorProcessWithArguments:arguments environment:environment]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      return [self.simulator resolveState:FBiOSTargetStateBooted];
-    }];
-}
-
-@end
-
 @implementation FBSimulatorBootStrategy
 
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator];
-  id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
-  id<FBSimulatorGUIAppLauncherOptions> applicationOptions = [self applicationLaunchOptions];
-  FBSimulatorGUIAppLauncher *appLauncher = [[FBSimulatorGUIAppLauncher alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher options:applicationOptions];
-  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator appLauncher:appLauncher coreSimulatorStrategy:coreSimulatorStrategy];
+  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator coreSimulatorStrategy:coreSimulatorStrategy];
 }
 
-+ (id<FBSimulatorApplicationProcessLauncher>)applicationProcessLauncherWithConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  return [FBSimulatorApplicationProcessLauncher_Workspace new];
-}
-
-+ (id<FBSimulatorGUIAppLauncherOptions>)applicationLaunchOptions
-{
-  return [FBSimulatorGUIAppLauncherOptions_Xcode9 new];
-}
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator appLauncher:(FBSimulatorGUIAppLauncher *)appLauncher coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
 {
   self = [super init];
   if (!self) {
@@ -346,7 +159,6 @@
 
   _configuration = configuration;
   _simulator = simulator;
-  _appLauncher = appLauncher;
   _coreSimulatorStrategy = coreSimulatorStrategy;
 
   return self;
@@ -366,11 +178,8 @@
   }
 
   // Boot via CoreSimulator.
-  return [[[[[self.coreSimulatorStrategy
+  return [[[[self.coreSimulatorStrategy
     performBoot]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [[self.appLauncher launchSimulatorApplication] mapReplace:connection];
-    }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       if (!self.configuration.shouldConnectBridge || FBXcodeConfiguration.isXcode12_5OrGreater) {
         return [FBFuture futureWithResult:connection];

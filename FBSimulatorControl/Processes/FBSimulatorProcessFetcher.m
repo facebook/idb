@@ -17,9 +17,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 
-NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
-NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FBSIMULATORCONTROL_SIM_SET_PATH";
-
 @implementation FBSimulatorProcessFetcher
 
 + (instancetype)fetcherWithProcessFetcher:(FBProcessFetcher *)processFetcher
@@ -37,57 +34,6 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
   _processFetcher = processFetcher;
 
   return self;
-}
-
-- (NSArray<FBProcessInfo *> *)simulatorApplicationProcesses
-{
-  NSArray<NSRunningApplication *> *runningApplications = [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.iphonesimulator"];
-  return [self.processFetcher processInfoForRunningApplications:runningApplications];
-}
-
-- (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut
-{
-  NSMutableDictionary<NSString *, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
-  NSMutableArray<FBProcessInfo *> *unclaimed = [NSMutableArray array];
-  NSSet<NSString *> *fetchSet = [NSSet setWithArray:udids];
-
-  for (FBProcessInfo *process in self.simulatorApplicationProcesses) {
-    NSString *udid = [FBSimulatorProcessFetcher udidForSimulatorApplicationProcess:process];
-    if (!udid) {
-      [unclaimed addObject:process];
-      continue;
-    }
-    if ([fetchSet containsObject:udid]) {
-      dictionary[udid] = process;
-    }
-  }
-  if (unclaimedOut) {
-    *unclaimedOut = [unclaimed copy];
-  }
-
-  return [dictionary copy];
-}
-
-- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath
-{
-  NSMutableDictionary<id, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
-  for (FBProcessInfo *processInfo in self.simulatorApplicationProcesses) {
-    id deviceSetPath = [FBSimulatorProcessFetcher deviceSetPathForApplicationProcess:processInfo] ?: NSNull.null;
-    dictionary[deviceSetPath] = processInfo;
-  }
-  return [dictionary copy];
-}
-
-- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice
-{
-  return [self simulatorApplicationProcessesByUDIDs:@[simDevice.UDID.UUIDString] unclaimed:nil][simDevice.UDID.UUIDString];
-}
-
-- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout
-{
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^{
-    return [self simulatorApplicationProcessForSimDevice:simDevice];
-  }];
 }
 
 #pragma mark The Simulator's launchd_sim
@@ -150,38 +96,6 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 
 #pragma mark Predicates
 
-+ (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:FBBundleDescriptor.xcodeSimulator.binary.path];
-  }];
-}
-
-+ (NSPredicate *)simulatorsProcessesLaunchedUnderConfiguration:(FBSimulatorControlConfiguration *)configuration
-{
-  NSString *deviceSetPath = configuration.deviceSetPath;
-  NSPredicate *argumentsPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    NSSet *arguments = [NSSet setWithArray:process.arguments];
-    return [arguments containsObject:deviceSetPath];
-  }];
-
-  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    self.simulatorProcessesWithCorrectLaunchPath,
-    argumentsPredicate,
-  ]];
-}
-
-+ (NSPredicate *)simulatorApplicationProcessesLaunchedBySimulatorControl
-{
-  // All Simulators launched by FBSimulatorControl have a magic string in their environment.
-  // This is the safest way to know about other processes launched by FBSimulatorControl
-  // since other processes could have launched with UDID arguments.
-  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    NSSet *argumentSet = [NSSet setWithArray:process.environment.allKeys];
-    return [argumentSet containsObject:FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
-  }];
-}
-
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
 {
   return [FBProcessFetcher processesWithLaunchPath:FBXcodeConfiguration.developerDirectory];
@@ -229,23 +143,6 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
     return nil;
   }
   return deviceSetPath;
-}
-
-+ (nullable NSString *)udidForSimulatorApplicationProcess:(FBProcessInfo *)process
-{
-  return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
-}
-
-+ (nullable NSString *)deviceSetPathForApplicationProcess:(FBProcessInfo *)process
-{
-  if (process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath]) {
-    return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath];
-  }
-  NSUInteger deviceIndex = [process.arguments indexOfObject:@"-DeviceSetPath"];
-  if (deviceIndex != NSNotFound && deviceIndex + 1 < process.arguments.count) {
-    return process.arguments[deviceIndex + 1];
-  }
-  return nil;
 }
 
 + (NSCharacterSet *)launchdSimEnvironmentVariableUDIDSplitCharacterSet

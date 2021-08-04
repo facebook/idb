@@ -15,22 +15,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Environment Variable that is inserted into Simulator.app processes launched by FBSimulatorControl.
- This makes the process of determining launched Simulator.app processes far simpler
- as otherwise it is difficult to determine the UDID corresponding to a Simulator.app based on information
- available to external processes.
- */
-extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
-
-/**
- An Environment Variable that is inserted into Simulator.app processes launched by FBSimulatorControl.
- This makes the process of determining launched Simulator.app processes far simpler
- as otherwise it is difficult to determine the UDID corresponding to a Simulator.app based on information
- available to external processes.
- */
-extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath;
-
-/**
  A class for obtaining information about Simulators that FBSimulatorControl cares about.
  */
 @interface FBSimulatorProcessFetcher : NSObject
@@ -47,50 +31,6 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath
  The Underlying Process Fetcher.
  */
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-
-#pragma mark The Container 'Simulator.app'
-
-/**
- Fetches an NSArray<FBProcessInfo *> of all Simulator Application Processes.
-
- @return an Array of all the Simulator.app Processes for the current version of Xcode.
- */
-- (NSArray<FBProcessInfo *> *)simulatorApplicationProcesses;
-
-/**
- Fetches a Dictionary, mapping Simulator UDID to Simulator.app Process.
- This can be used to obtain an understanding of the Simulator.app processes are for a number of Simulators.
-
- @param udids an array of the udids to look for.
- @param unclaimedOut an outparam for optionally returning Simulator.app processes that are not associated with any particular UDID.
- @return a Dictionary mapping UDIDs to Simulator.app processes.
- */
-- (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut;
-
-/**
- Fetches a Dictionary, mapping Device Set Path to Simulator Application Process.
- If no Device Set Path defined, NSNull will be the key.
-
- @return a Dictionary, mapping a String Device Set Path to UDID. NSNull if a Simulator.app does not have an identifiable Device Set Path.
- */
-- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath;
-
-/**
- Fetches the Process Info for a given Simulator.
-
- @param simDevice the Simulator to fetch Process Info for.
- @return Application Process Info if any could be obtained, nil otherwise.
- */
-- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice;
-
-/**
- Fetches the Process Info for a given Simulator, with a timeout as the process info may take a while to appear
-
- @param simDevice the Simulator to fetch Process Info for.
- @param timeout the time to wait for the process info to appear.
- @return Application Process Info if any could be obtained, nil otherwise.
- */
-- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout;
 
 #pragma mark The Simulator's launchd_sim
 
@@ -134,21 +74,6 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath
 - (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses;
 
 #pragma mark - Predicates
-
-/**
- Returns a Predicate that matches simulator processes only from the Xcode version in the provided configuration.
-
- @param configuration the configuration to match against.
- @return an NSPredicate that operates on an Collection of FBProcessInfo *.
- */
-+ (NSPredicate *)simulatorsProcessesLaunchedUnderConfiguration:(FBSimulatorControlConfiguration *)configuration;
-
-/**
- Returns a Predicate that matches simulator processes launched by FBSimulatorControl
-
- @return an NSPredicate that operates on an Collection of FBProcessInfo *.
- */
-+ (NSPredicate *)simulatorApplicationProcessesLaunchedBySimulatorControl;
 
 /**
  Constructs a Predicate that matches CoreSimulatorService Processes for the current xcode versions.
