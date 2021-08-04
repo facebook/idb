@@ -44,15 +44,6 @@
   return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
 }
 
-- (BOOL)shouldConnectBridge
-{
-  // In some versions of Xcode 8, it was possible that a direct launch without a bridge could mean applications would not launch.
-  if (!FBXcodeConfiguration.isXcode9OrGreater && self.shouldUseDirectLaunch) {
-    return YES;
-  }
-  return NO;
-}
-
 @end
 
 @interface FBCoreSimulatorBootStrategy : NSObject
@@ -178,24 +169,8 @@
   }
 
   // Boot via CoreSimulator.
-  return [[[[self.coreSimulatorStrategy
+  return [[[self.coreSimulatorStrategy
     performBoot]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      if (!self.configuration.shouldConnectBridge || FBXcodeConfiguration.isXcode12_5OrGreater) {
-        return [FBFuture futureWithResult:connection];
-      }
-      return [[connection
-        connectToBridge]
-        onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
-          // Set the Location to a default location, when launched directly.
-          // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
-          // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
-          [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
-
-          // Match the return type of the return-early case.
-          return connection;
-        }];
-    }]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
       return [self verifySimulatorIsBooted];
     }]
