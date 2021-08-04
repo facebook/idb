@@ -35,11 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
-/**
- The Scale of the Framebuffer.
- */
-@property (nonatomic, nullable, copy, readonly) FBScale scale;
-
 #pragma mark Default Instance
 
 /**
@@ -66,16 +61,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBSimulatorBootConfiguration with the arguments applied.
  */
 - (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment;
-
-#pragma mark Device Scale
-
-/**
- Updates the boot configuration with a new scale.
-
- @param scale the scale to update.
- @return a new FBSimulatorBootConfiguration with the arguments applied.
- */
-- (instancetype)withScale:(nullable FBScale)scale;
 
 @end
 

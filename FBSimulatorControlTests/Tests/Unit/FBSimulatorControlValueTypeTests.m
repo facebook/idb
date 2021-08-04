@@ -23,27 +23,12 @@
 - (void)testLaunchConfigurations
 {
   NSArray<FBSimulatorBootConfiguration *> *values = @[
-    [[FBSimulatorBootConfiguration.defaultConfiguration
-      withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
-      withScale:FBScale75],
-    [[FBSimulatorBootConfiguration.defaultConfiguration
+    [FBSimulatorBootConfiguration.defaultConfiguration
+      withOptions:FBSimulatorBootOptionsEnableDirectLaunch],
+    [FBSimulatorBootConfiguration.defaultConfiguration
       withBootEnvironment:@{@"FOO": @"BAR"}]
-      withScale:FBScale25]
   ];
   [self assertEqualityOfCopy:values];
-}
-
-- (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
-{
-  FBSimulatorBootConfiguration *launchConfiguration = [[FBSimulatorBootConfiguration
-    defaultConfiguration]
-    withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
-  XCTAssertNil(launchConfiguration.scale);
-  XCTAssertNil(launchConfiguration.scale);
-
-  launchConfiguration = [launchConfiguration withScale:FBScale75];
-  XCTAssertEqualObjects(launchConfiguration.scale, FBScale75);
-  XCTAssertNotEqualObjects(launchConfiguration.scale, FBScale50);
 }
 
 - (void)testHIDEvents
