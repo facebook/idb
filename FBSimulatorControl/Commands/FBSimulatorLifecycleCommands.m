@@ -100,17 +100,34 @@
 
 - (FBFuture<NSNull *> *)focus
 {
-  NSArray *apps = NSWorkspace.sharedWorkspace.runningApplications;
-  NSPredicate *matchingPid = [NSPredicate predicateWithFormat:@"processIdentifier = %@", @(self.simulator.containerApplication.processIdentifier)];
-  NSRunningApplication *app = [apps filteredArrayUsingPredicate:matchingPid].firstObject;
-  if (!app) {
-    return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.simulator.udid] failFuture];
+  NSString *deviceSetPath = self.simulator.customDeviceSetPath;
+  if (deviceSetPath) {
+    return [[FBSimulatorError
+      describeFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]
+      failFuture];
   }
-  if ([app activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
-    return FBFuture.empty;
-  } {
-    return [FBFuture futureWithError:[FBSimulatorError errorForDescription:@"Failed to focus"]];
+  NSArray<NSRunningApplication *> *apps = NSWorkspace.sharedWorkspace.runningApplications;
+  NSPredicate *simulatorAppPredicate = [NSPredicate predicateWithBlock:^(NSRunningApplication *application, NSDictionary<NSString *,id> *__) {
+    return [application.bundleIdentifier isEqualToString:@"com.apple.iphonesimulator"];
+  }];
+  NSArray<NSRunningApplication *> *simulatorApps = [apps filteredArrayUsingPredicate:simulatorAppPredicate];
+  if (simulatorApps.count > 1) {
+    return [[FBSimulatorError
+      describeFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]
+      failFuture];
   }
+  if (simulatorApps.count == 0) {
+    return [[FBSimulatorError
+      describe:@"No SimulatorApp running, nothing to focus"]
+      failFuture];
+  }
+  NSRunningApplication *simulatorApp = simulatorApps.firstObject;
+  if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
+    return [[FBSimulatorError
+      describeFormat:@"Failed to focus %@", simulatorApp]
+      failFuture];
+  }
+  return FBFuture.empty;
 }
 
 #pragma mark Connection

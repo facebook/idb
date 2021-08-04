@@ -236,7 +236,6 @@
 @synthesize screenInfo = _screenInfo;
 
 // Not used or set
-@synthesize containerApplication;
 @synthesize deviceType;
 
 - (BOOL) requiresBundlesToBeSigned {

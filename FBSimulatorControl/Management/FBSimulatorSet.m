@@ -19,7 +19,6 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBSimulatorContainerApplicationLifecycleStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -65,7 +64,6 @@
   _allSimulators = @[];
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
   _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
-  _containerApplicationStrategy = [FBSimulatorContainerApplicationLifecycleStrategy strategyForSet:self];
   _notificationUpdateStrategy = [FBSimulatorNotificationUpdateStrategy strategyWithSet:self];
 
   return self;

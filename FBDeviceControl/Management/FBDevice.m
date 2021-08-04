@@ -84,11 +84,6 @@
   return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
 }
 
-- (FBProcessInfo *)containerApplication
-{
-  return nil;
-}
-
 - (FBProcessInfo *)launchdProcess
 {
   return nil;

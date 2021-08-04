@@ -307,20 +307,10 @@
   };
 
   // Launch the Simulator.app Process.
-  return [[[self.launcher
+  return [[self.launcher
     launchSimulatorProcessWithArguments:arguments environment:environment]
-    onQueue:self.simulator.workQueue fmap:^(NSNull *_) {
+    onQueue:self.simulator.workQueue fmap:^(id _) {
       return [self.simulator resolveState:FBiOSTargetStateBooted];
-    }]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNull *_) {
-      FBProcessInfo *containerApplication = self.simulator.processFetcher.simulatorApplicationProcessesByDeviceSetPath[self.simulator.set.deviceSet.setPath];
-      if (!containerApplication) {
-        return [[FBSimulatorError
-          describe:@"Could not obtain process info for container application"]
-          failFuture];
-      }
-      self.simulator.containerApplication = containerApplication;
-      return FBFuture.empty;
     }];
 }
 

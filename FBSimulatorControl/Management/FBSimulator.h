@@ -70,11 +70,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
 
 /**
- The FBProcessInfo associated with the Container Application that launched the Simulator.
- */
-@property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
-
-/**
  A command executor for simctl
  */
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
