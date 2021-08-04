@@ -80,11 +80,6 @@
 
 - (FBFuture<FBSimulatorConnection *> *)performBoot
 {
-  // Only Boot with CoreSimulator when told to do so. Return early if not.
-  if (!self.shouldBootWithCoreSimulator) {
-    return [self.simulator connect];
-  }
-  
   return [[[FBSimulatorHID
     hidForSimulator:self.simulator]
     onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
@@ -96,16 +91,6 @@
       // Combine everything into the connection.
       return [self.simulator connectWithHID:hid framebuffer:nil];
     }];
-}
-
-- (BOOL)shouldBootWithCoreSimulator
-{
-  // Always boot with CoreSimulator on Xcode 9
-  if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return YES;
-  }
-  // Otherwise obey the direct launch config.
-  return self.configuration.shouldUseDirectLaunch;
 }
 
 - (FBFuture<NSNull *> *)bootSimulatorWithConfiguration:(FBSimulatorBootConfiguration *)configuration
