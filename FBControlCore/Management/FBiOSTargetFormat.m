@@ -23,45 +23,12 @@ FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier = @"pid";
 
 @implementation FBiOSTargetFormat
 
-+ (NSDictionary<NSString *, FBiOSTargetFormatKey> *)formatMapping
-{
-  return @{
-    @"a" : FBiOSTargetFormatArchitecture,
-    @"m" : FBiOSTargetFormatModel,
-    @"n" : FBiOSTargetFormatName,
-    @"o" : FBiOSTargetFormatOSVersion,
-    @"p" : FBiOSTargetFormatProcessIdentifier,
-    @"s" : FBiOSTargetFormatState,
-    @"u" : FBiOSTargetFormatUDID,
-  };
-}
-
 #pragma mark Initializers
 
 + (instancetype)formatWithFields:(NSArray<FBiOSTargetFormatKey> *)fields
 {
   NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:fields withClass:NSString.class]);
   return [[self alloc] initWithFields:fields];
-}
-
-+ (nullable instancetype)formatWithString:(NSString *)string error:(NSError **)error
-{
-  NSArray<NSString *> *components = [string componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"%@"]];
-  NSDictionary<NSString *, FBiOSTargetFormatKey> *mapping = [self formatMapping];
-  NSMutableArray<FBiOSTargetFormatKey> *keys = [NSMutableArray array];
-  for (NSString *component in components) {
-    if (component.length == 0) {
-      continue;
-    }
-    FBiOSTargetFormatKey key = mapping[component];
-    if (!key) {
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not a valid format in %@", component, [FBCollectionInformation oneLineDescriptionFromArray:mapping.allKeys]]
-        fail:error];
-    }
-    [keys addObject:key];
-  }
-  return [self formatWithFields:[keys copy]];
 }
 
 + (instancetype)defaultFormat

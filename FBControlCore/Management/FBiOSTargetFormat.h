@@ -62,14 +62,6 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier;
 + (instancetype)formatWithFields:(NSArray<FBiOSTargetFormatKey> *)fields;
 
 /**
- Creates and returns a new Target Format, using a 'Format String' to represent the components.
-
- @param string the format string to create the format from.
- @return error an error out for any error that occurs.
- */
-+ (nullable instancetype)formatWithString:(NSString *)string error:(NSError **)error;
-
-/**
  Creates and returns the Default Target Format.
 
  @return the Default Target Format.
