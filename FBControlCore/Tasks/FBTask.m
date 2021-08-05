@@ -207,6 +207,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
 }
 
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
+{
+  return [FBProcessSpawnCommandHelpers sendSignal:signo backingOffToKillWithTimeout:timeout toProcess:self logger:logger];
+}
+
 @end
 
 @interface FBTask ()
@@ -301,6 +306,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
   return [self.process sendSignal:signo];
+}
+
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
+{
+  return [self.process sendSignal:signo backingOffToKillWithTimeout:timeout logger:logger];
 }
 
 #pragma mark Accessors

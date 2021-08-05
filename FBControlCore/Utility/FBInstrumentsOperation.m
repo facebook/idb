@@ -14,7 +14,6 @@
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
-#import "FBTask+Helpers.h"
 #import "FBTaskBuilder.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;

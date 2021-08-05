@@ -98,6 +98,11 @@
   return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
 }
 
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
+{
+  return [FBProcessSpawnCommandHelpers sendSignal:signo backingOffToKillWithTimeout:timeout toProcess:self logger:logger];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc

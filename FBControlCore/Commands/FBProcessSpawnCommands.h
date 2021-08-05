@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBProcessSpawnConfiguration;
 
+@protocol FBControlCoreLogger;
 @protocol FBLaunchedProcess;
 
 /**
@@ -65,6 +66,18 @@ NS_ASSUME_NONNULL_BEGIN
  @return a successful Future that resolves to the signal number when the process has terminated.
  */
 + (FBFuture<NSNumber *> *)sendSignal:(int)signo toProcess:(id<FBLaunchedProcess>)process;
+
+/**
+ A mechanism for sending an signal to a task, backing off to a kill.
+ If the process does not die before the timeout is hit, a SIGKILL will be sent.
+
+ @param signo the signal number to send.
+ @param timeout the timeout to wait before sending a SIGKILL.
+ @param process the process to kill.
+ @param logger used for log information when timeout happened, may be nil.
+ @return a future that resolves to the signal sent when the process has been terminated.
+ */
++ (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout toProcess:(id<FBLaunchedProcess>)process logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 

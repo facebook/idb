@@ -7,6 +7,7 @@
 
 #import "FBProcessSpawnCommands.h"
 
+#import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 #import "FBLaunchedProcess.h"
 #import "FBProcessIO.h"
@@ -60,6 +61,20 @@
       return process.statLoc;
     }]
     mapReplace:@(signo)];
+}
+
++ (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout toProcess:(id<FBLaunchedProcess>)process logger:(nullable id<FBControlCoreLogger>)logger
+{
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task_terminate", DISPATCH_QUEUE_SERIAL);
+  FBFuture<NSNumber *> *signal = [self sendSignal:signo toProcess:process];
+  FBFuture<NSNumber *> *kill = [[[FBFuture
+    futureWithResult:NSNull.null]
+    delay:timeout]
+    onQueue:queue fmap:^(id _) {
+      [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", process.processIdentifier, timeout, signo];
+      return [self sendSignal:SIGKILL toProcess:process];
+    }];
+  return [[FBFuture race:@[signal, kill]] mapReplace:@(signo)];
 }
 
 @end

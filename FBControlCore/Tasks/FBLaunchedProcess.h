@@ -82,6 +82,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
+/**
+ A mechanism for sending an signal to a task, backing off to a kill.
+ If the process does not die before the timeout is hit, a SIGKILL will be sent.
+
+ @param signo the signal number to send.
+ @param timeout the timeout to wait before sending a SIGKILL.
+ @param logger used for log information when timeout happened, may be nil.
+ @return a future that resolves to the signal sent when the process has been terminated.
+ */
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+
 @end
 
 NS_ASSUME_NONNULL_END
