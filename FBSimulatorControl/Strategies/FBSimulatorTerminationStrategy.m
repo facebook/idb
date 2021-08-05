@@ -30,7 +30,6 @@
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
 
@@ -40,14 +39,12 @@
 
 + (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:FBProcessFetcher.new workQueue:dispatch_get_main_queue() logger:set.logger];
-  return [[self alloc] initWithSet:set configuration:set.configuration processTerminationStrategy:processTerminationStrategy logger:set.logger];
+  return [[self alloc] initWithSet:set configuration:set.configuration logger:set.logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(configuration);
-  NSParameterAssert(processTerminationStrategy);
 
   self = [super init];
   if (!self) {
@@ -57,7 +54,6 @@
   _set = set;
   _configuration = configuration;
   _logger = logger;
-  _processTerminationStrategy = processTerminationStrategy;
 
   return self;
 }
