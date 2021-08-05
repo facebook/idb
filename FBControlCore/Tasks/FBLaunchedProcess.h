@@ -41,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBLaunchedProcess <NSObject>
 
+#pragma mark Properties
+
 /**
  The Process Idenfifer of the Launched Process.
  */
@@ -68,6 +70,17 @@ NS_ASSUME_NONNULL_BEGIN
  The IO Object attached to the process.
  */
 @property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
+
+#pragma mark Methods
+
+/**
+ Signal the process.
+ The future returned will resolve when the process has terminated and can be ignored if not required.
+
+ @param signo the signal number to send.
+ @return a successful Future that resolves to the signal number when the process has terminated.
+ */
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
 
 @end
 

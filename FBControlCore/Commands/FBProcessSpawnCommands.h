@@ -56,6 +56,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
 
+/**
+ Signal a launched process.
+ The future returned will resolve when the process has terminated and can be ignored if not required.
+
+ @param signo the signal number to send.
+ @param process the process to signal
+ @return a successful Future that resolves to the signal number when the process has terminated.
+ */
++ (FBFuture<NSNumber *> *)sendSignal:(int)signo toProcess:(id<FBLaunchedProcess>)process;
+
 @end
 
 NS_ASSUME_NONNULL_END

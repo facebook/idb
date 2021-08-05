@@ -48,4 +48,18 @@
     }];
 }
 
++ (FBFuture<NSNumber *> *)sendSignal:(int)signo toProcess:(id<FBLaunchedProcess>)process
+{
+  return [[FBFuture
+    onQueue:self.queue resolve:^{
+      // Do not kill if the process is already dead.
+      if (process.statLoc.hasCompleted) {
+        return process.statLoc;
+      }
+      kill(process.processIdentifier, signo);
+      return process.statLoc;
+    }]
+    mapReplace:@(signo)];
+}
+
 @end

@@ -16,9 +16,10 @@
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 #import "FBLaunchedProcess.h"
+#import "FBProcessSpawnCommands.h"
 #import "FBProcessIO.h"
-#import "FBProcessStream.h"
 #import "FBProcessSpawnConfiguration.h"
+#import "FBProcessStream.h"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
@@ -203,8 +204,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  kill(self.processIdentifier, signo);
-  return self.statLoc;
+  return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
 }
 
 @end
@@ -294,15 +294,13 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return self;
 }
 
-#pragma mark Public Methods
+#pragma mark - FBLaunchedProcess
+
+#pragma mark Public
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  return [[FBFuture
-    onQueue:self.queue resolve:^{
-      return [self.process sendSignal:signo];
-    }]
-    mapReplace:@(signo)];
+  return [self.process sendSignal:signo];
 }
 
 #pragma mark Accessors

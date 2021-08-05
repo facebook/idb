@@ -93,6 +93,11 @@
     nameFormat:@"Exit code of process %d", self.processIdentifier];
 }
 
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo
+{
+  return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc

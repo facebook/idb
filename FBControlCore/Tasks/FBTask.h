@@ -38,17 +38,6 @@ extern NSString *const FBTaskErrorDomain;
  */
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes logger:(nullable id<FBControlCoreLogger>)logger;
 
-#pragma mark Public Methods
-
-/**
- Signal the process.
- The future returned will resolve when the process has terminated and can be ignored if not required.
-
- @param signo the signal number to send.
- @return a successful Future that resolves to the signal number when the process has terminated.
- */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
-
 #pragma mark Accessors
 
 /**
