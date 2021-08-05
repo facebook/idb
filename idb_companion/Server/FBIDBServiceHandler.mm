@@ -164,13 +164,25 @@ static FBProcessInput<NSOutputStream *> *pipe_to_input_output(const idb::Payload
 return input;
 }
 
-static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::LaunchResponse::Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
+static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::ProcessOutput_Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
 {
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::LaunchResponse response;
-    response.set_interface(interface);
+    switch (interface) {
+      case idb::ProcessOutput_Interface_STDOUT:
+        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT);
+        break;
+      case idb::ProcessOutput_Interface_STDERR:
+        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR);
+        break;
+      default:
+        break;
+    }
     idb::LaunchResponse_Pipe *pipe = response.mutable_pipe();
     pipe->set_data(data.bytes, data.length);
+    idb::ProcessOutput *output = response.mutable_output();
+    output->set_data(data.bytes, data.length);
+    output->set_interface(interface);
     stream->Write(response);
   }];
   return consumer;
@@ -918,10 +930,10 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   NSMutableArray<FBFuture *> *completions = NSMutableArray.array;
   if (start.wait_for()) {
     dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.idb.launch.write", DISPATCH_QUEUE_SERIAL);
-    id<FBDataConsumer, FBDataConsumerLifecycle> consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT, writeQueue, stream);
+    id<FBDataConsumer, FBDataConsumerLifecycle> consumer = pipe_output(idb::ProcessOutput_Interface_STDOUT, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
     stdOut = [FBProcessOutput outputForDataConsumer:consumer];
-    consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR, writeQueue, stream);
+    consumer = pipe_output(idb::ProcessOutput_Interface_STDERR, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
     stdErr = [FBProcessOutput outputForDataConsumer:consumer];
   }

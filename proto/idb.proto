@@ -73,6 +73,15 @@ message Payload {
   }
 }
 
+message ProcessOutput {
+  enum Interface {
+    STDOUT = 0;
+    STDERR = 1;
+  }
+  Interface interface = 1;
+  bytes data = 2;
+}
+
 message CompanionInfo {
   string udid = 1;
   bool is_local = 4;
@@ -443,6 +452,7 @@ message LaunchResponse {
   }
   Interface interface = 1;
   Pipe pipe = 2;
+  ProcessOutput output = 3;
 }
 
 message AddMediaRequest {
