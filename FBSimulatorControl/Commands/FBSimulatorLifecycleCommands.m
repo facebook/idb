@@ -11,6 +11,7 @@
 
 #import <AppKit/AppKit.h>
 
+#import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -100,34 +101,71 @@
 
 - (FBFuture<NSNull *> *)focus
 {
+  // We cannot 'focus' a SimulatorApp for the non-default device set.
   NSString *deviceSetPath = self.simulator.customDeviceSetPath;
   if (deviceSetPath) {
     return [[FBSimulatorError
       describeFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]
       failFuture];
   }
+  
+  // Find the running instances of SimulatorApp.
   NSArray<NSRunningApplication *> *apps = NSWorkspace.sharedWorkspace.runningApplications;
   NSPredicate *simulatorAppPredicate = [NSPredicate predicateWithBlock:^(NSRunningApplication *application, NSDictionary<NSString *,id> *__) {
     return [application.bundleIdentifier isEqualToString:@"com.apple.iphonesimulator"];
   }];
   NSArray<NSRunningApplication *> *simulatorApps = [apps filteredArrayUsingPredicate:simulatorAppPredicate];
+
+  // If we have no SimulatorApp running then we can instead launch one in a focused state
+  if (simulatorApps.count == 0) {
+    NSError *error = nil;
+    NSRunningApplication *simulatorApp = [FBSimulatorLifecycleCommands launchSimulatorApplicationForDefaultDeviceSetWithError:&error];
+    if (!simulatorApp) {
+      return [FBFuture futureWithError:error];
+    }
+    return FBFuture.empty;
+  }
+
+  // Multiple apps, we don't know which to select.
   if (simulatorApps.count > 1) {
     return [[FBSimulatorError
       describeFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]
       failFuture];
   }
-  if (simulatorApps.count == 0) {
-    return [[FBSimulatorError
-      describe:@"No SimulatorApp running, nothing to focus"]
-      failFuture];
-  }
+  
+  // Otherwise we have a single Simulator App to activate.
   NSRunningApplication *simulatorApp = simulatorApps.firstObject;
   if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to focus %@", simulatorApp]
       failFuture];
   }
+
   return FBFuture.empty;
+}
+
++ (NSRunningApplication *)launchSimulatorApplicationForDefaultDeviceSetWithError:(NSError **)error
+{
+  // Obtain the location of the SimulatorApp
+  FBBundleDescriptor *applicationBundle = FBBundleDescriptor.xcodeSimulator;
+  NSURL *applicationURL = [NSURL fileURLWithPath:applicationBundle.path];
+
+  // We only want to ever connect to the default SimulatorApp, including re-activating it rather than creating a new instance.
+  NSError *innerError = nil;
+  NSRunningApplication *application = [NSWorkspace.sharedWorkspace
+    launchApplicationAtURL:applicationURL
+    options:NSWorkspaceLaunchDefault
+    configuration:@{}
+    error:&innerError];
+
+  if (!application) {
+    return [[[FBSimulatorError
+      describe:@"Failed to launch SimulatorApp"]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  return application;
 }
 
 #pragma mark Connection
