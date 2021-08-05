@@ -13,7 +13,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBDefaultsModificationStrategy ()
 
@@ -110,9 +109,8 @@
     mode:FBProcessSpawnModeDefault];
 
   // Run the defaults command.
-  return [[[FBSimulatorProcessLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchConsumingStdout:configuration]
+  return [[FBProcessSpawnCommandHelpers
+    launchConsumingStdout:configuration withCommands:self.simulator]
     onQueue:self.simulator.asyncQueue map:^(NSString *output) {
       return [output stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
     }];

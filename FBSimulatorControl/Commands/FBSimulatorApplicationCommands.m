@@ -16,7 +16,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorLaunchedApplication.h"
-#import "FBSimulatorProcessLaunchStrategy.h"
+#import "FBSimulatorProcessSpawnCommands.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -306,7 +306,7 @@
 
 + (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsForConfiguration:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath
 {
-  NSMutableDictionary<NSString *, id> *options = [[FBSimulatorProcessLaunchStrategy launchOptionsWithArguments:configuration.arguments environment:configuration.environment waitForDebugger:configuration.waitForDebugger] mutableCopy];
+  NSMutableDictionary<NSString *, id> *options = [[FBSimulatorProcessSpawnCommands launchOptionsWithArguments:configuration.arguments environment:configuration.environment waitForDebugger:configuration.waitForDebugger] mutableCopy];
   if (stdOutPath){
     options[@"stdout"] = stdOutPath;
   }

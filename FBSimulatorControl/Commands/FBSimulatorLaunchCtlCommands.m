@@ -13,7 +13,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorLaunchCtlCommands ()
 
@@ -239,7 +238,7 @@
     mode:FBProcessSpawnModeDefault];
 
   // Spawn and get the output
-  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];
+  return [FBProcessSpawnCommandHelpers launchConsumingStdout:launchConfiguration withCommands:self.simulator];
 }
 
 @end

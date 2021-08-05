@@ -13,7 +13,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchedProcess.h"
-#import "FBSimulatorProcessLaunchStrategy.h"
 
 @interface FBSimulatorLogCommands ()
 
@@ -74,9 +73,7 @@
     io:processIO
     mode:FBProcessSpawnModeDefault];
 
-  return [[FBSimulatorProcessLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchProcess:configuration];
+  return [self.simulator launchProcess:configuration];
 }
 
 - (NSString *)logExecutablePathWithError:(NSError **)error

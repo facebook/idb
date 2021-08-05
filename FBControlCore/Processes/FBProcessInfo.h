@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessLaunchConfiguration;
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**

@@ -31,4 +31,31 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ More convenience.
+ */
+@interface FBProcessSpawnCommandHelpers : NSObject
+
+#pragma mark Short-Running Processes
+
+/**
+ Launches a short-running process with the given configuration.
+
+ @param configuration the configuration of the process to spawn.
+ @param commands the command implementation to use.
+ @return the stat_loc exit of the process, wrapped in a Future.
+ */
++ (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
+
+/**
+ Launches an process, consuming it's output and returning it as a String.
+
+ @param configuration the configuration of the process to spawn.
+ @param commands the command implementation to use.
+ @return A future that wraps the stdout of the launched process.
+ */
++ (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
+
+@end
+
 NS_ASSUME_NONNULL_END

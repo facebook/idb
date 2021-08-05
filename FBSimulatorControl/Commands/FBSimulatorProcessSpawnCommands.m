@@ -14,7 +14,7 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorProcessLaunchStrategy.h"
+#import "FBSimulatorLaunchedProcess.h"
 
 @interface FBSimulatorProcessSpawnCommands ()
 
@@ -47,8 +47,118 @@
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  NSParameterAssert(configuration);
-  return [[FBSimulatorProcessLaunchStrategy strategyWithSimulator:self.simulator] launchProcess:configuration];
+  FBSimulator *simulator = self.simulator;
+
+  return [[configuration.io
+    attach]
+    onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
+      // Launch the Process
+      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid];
+      FBFuture<NSNumber *> *launchFuture = [FBSimulatorProcessSpawnCommands
+        launchProcessWithSimulator:simulator
+        launchPath:configuration.launchPath
+        arguments:configuration.arguments
+        environment:configuration.environment
+        waitForDebugger:NO
+        stdOut:attachment.stdOut
+        stdErr:attachment.stdErr
+        mode:configuration.mode
+        processStatusFuture:processStatusFuture];
+
+      // Wrap in the container object
+      return [FBSimulatorLaunchedProcess
+        processWithSimulator:simulator
+        configuration:configuration
+        attachment:attachment
+        launchFuture:launchFuture
+        processStatusFuture:processStatusFuture];
+    }];
+}
+
+#pragma mark Public
+
++ (NSDictionary<NSString *, id> *)launchOptionsWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger
+{
+  NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
+  options[@"arguments"] = arguments;
+  options[@"environment"] = environment ? environment: @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"};
+  if (waitForDebugger) {
+    options[@"wait_for_debugger"] = @1;
+  }
+  return options;
+}
+
+#pragma mark Private
+
++ (FBFuture<NSNumber *> *)launchProcessWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
+{
+  // Get the Options
+  NSDictionary<NSString *, id> *options = [self
+    simDeviceLaunchOptionsWithSimulator:simulator
+    launchPath:launchPath
+    arguments:arguments
+    environment:environment
+    waitForDebugger:waitForDebugger
+    stdOut:stdOut
+    stdErr:stdErr
+    mode:mode];
+
+  // The Process launches and terminates synchronously
+  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithNameFormat:@"Launch of %@ on %@", launchPath, simulator.udid];
+  [simulator.device
+    spawnAsyncWithPath:launchPath
+    options:options
+    terminationQueue:simulator.workQueue
+    terminationHandler:^(int stat_loc) {
+      // Notify that we're done with the process to each of the futures.
+      [processStatusFuture resolveWithResult:@(stat_loc)];
+      // Close any open file handles that we have.
+      // This is important because otherwise any reader will stall forever.
+      // The SimDevice APIs do not automatically close any file descriptor passed into them, so we need to do this on it's behalf.
+      // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
+      // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
+      // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
+      close(stdOut.fileDescriptor);
+      close(stdErr.fileDescriptor);
+    }
+    completionQueue:simulator.workQueue
+    completionHandler:^(NSError *innerError, pid_t processIdentifier){
+      if (innerError) {
+        [launchFuture resolveWithError:innerError];
+      } else {
+        [launchFuture resolveWithResult:@(processIdentifier)];
+      }
+  }];
+  return launchFuture;
+}
+
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode
+{
+  // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
+  arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
+  NSMutableDictionary<NSString *, id> *options = [[self launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger] mutableCopy];
+  if (stdOut){
+    options[@"stdout"] = @(stdOut.fileDescriptor);
+  }
+  if (stdErr) {
+    options[@"stderr"] = @(stdErr.fileDescriptor);
+  }
+  options[@"standalone"] = @([self shouldLaunchStandaloneOnSimulator:simulator mode:mode]);
+  return [options copy];
+}
+
++ (BOOL)shouldLaunchStandaloneOnSimulator:(FBSimulator *)simulator mode:(FBProcessSpawnMode)mode
+{
+  // Standalone means "launch directly, not via launchd"
+  switch (mode) {
+    case FBProcessSpawnModeLaunchd:
+      return NO;
+    case FBProcessSpawnModePosixSpawn:
+      return YES;
+    default:
+      // Default behaviour is to use launchd if booted, otherwise use standalone.
+      return simulator.state != FBiOSTargetStateBooted;
+  }
 }
 
 @end

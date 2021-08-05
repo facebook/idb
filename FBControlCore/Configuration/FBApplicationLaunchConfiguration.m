@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBProcessLaunchConfiguration.h"
-
-#import <FBControlCore/FBControlCore.h>
+#import "FBApplicationLaunchConfiguration.h"
 
 @implementation FBApplicationLaunchConfiguration
 
