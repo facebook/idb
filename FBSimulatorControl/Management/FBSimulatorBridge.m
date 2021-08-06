@@ -16,7 +16,6 @@
 #import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchedProcess.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -30,7 +29,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
 @interface FBSimulatorBridge ()
 
 @property (nonatomic, strong, nullable, readwrite) NSProxy<SimulatorBridge> *bridge;
-@property (nonatomic, strong, nullable, readwrite) FBSimulatorLaunchedProcess *operation;
+@property (nonatomic, strong, nullable, readwrite) id<FBLaunchedProcess> process;
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
@@ -68,12 +67,12 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
   dispatch_queue_t bridgeQueue = FBSimulatorBridge.createBridgeQueue;
   dispatch_queue_t asyncQueue = simulator.asyncQueue;
   return [[[self
-    bridgeAndOperationForSimulator:simulator]
+    bridgeProcessForSimulator:simulator]
     onQueue:simulator.workQueue map:^(NSArray<id> *tuple) {
       NSCParameterAssert(tuple.count >= 1);
       NSProxy<SimulatorBridge> *bridge = tuple[0];
-      FBSimulatorLaunchedProcess *operation = (tuple.count == 2) ? tuple[1] : nil;
-      return [[FBSimulatorBridge alloc] initWithBridge:bridge operation:operation workQueue:bridgeQueue asyncQueue:asyncQueue];
+      id<FBLaunchedProcess> process = (tuple.count == 2) ? tuple[1] : nil;
+      return [[FBSimulatorBridge alloc] initWithBridge:bridge process:process workQueue:bridgeQueue asyncQueue:asyncQueue];
     }]
     onQueue:bridgeQueue fmap:^(FBSimulatorBridge *bridge) {
       [simulator.logger logFormat:@"Enabling Accessibility on the bridge %@", bridge];
@@ -81,7 +80,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
     }];
 }
 
-+ (FBFuture<NSArray<id> *> *)bridgeAndOperationForSimulator:(FBSimulator *)simulator;
++ (FBFuture<NSArray<id> *> *)bridgeProcessForSimulator:(FBSimulator *)simulator;
 {
   NSTimeInterval timeout = FBControlCoreGlobalConfiguration.fastTimeout;
   NSString *portName = [self portNameForSimulator:simulator];
@@ -113,7 +112,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   return [portName stringByAppendingFormat:@".%@", SimulatorBridgePortSuffix];
 }
 
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)bridgeOperationForSimulator:(FBSimulator *)simulator portName:(NSString *)portName
++ (FBFuture<id<FBLaunchedProcess> > *)bridgeOperationForSimulator:(FBSimulator *)simulator portName:(NSString *)portName
 {
   NSError *error = nil;
   NSString *bridgeLaunchPath = [self simulatorBridgeLaunchPathWithError:&error];
@@ -140,11 +139,11 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
     onQueue:simulator.asyncQueue fmap:^(id<FBLaunchedProcess> process) {
       return [[[buffer
         consumeAndNotifyWhen:[@"READY" dataUsingEncoding:NSUTF8StringEncoding]]
-        timeout:BridgeReadyTimeout waitingFor:@"The launched operation %@ to specify 'READY' for %@", process, portName]
+        timeout:BridgeReadyTimeout waitingFor:@"The launched process %@ to specify 'READY' for %@", process, portName]
         mapReplace:process];
     }]
     onQueue:simulator.asyncQueue doOnResolved:^(id<FBLaunchedProcess> process) {
-      [logger logFormat:@"Bridge operation is launched %@. %@ is now ready", process, portName];
+      [logger logFormat:@"Bridge process is launched %@. %@ is now ready", process, portName];
     }];
 }
 
@@ -197,7 +196,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   return [FBFuture futureWithResult:@(bridgePort)];
 }
 
-- (instancetype)initWithBridge:(NSProxy<SimulatorBridge> *)bridge operation:(FBSimulatorLaunchedProcess *)operation workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue
+- (instancetype)initWithBridge:(NSProxy<SimulatorBridge> *)bridge process:(id<FBLaunchedProcess>)process workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue
 {
   self = [super init];
   if (!self) {
@@ -205,7 +204,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   }
 
   _bridge = bridge;
-  _operation = operation;
+  _process = process;
   _workQueue = workQueue;
   _asyncQueue = asyncQueue;
 
@@ -225,9 +224,9 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   self.bridge = nil;
   [[distantObject connectionForProxy] invalidate];
 
-  // Dispose of the operation
-  [self.operation.statLoc cancel];
-  self.operation = nil;
+  // Dispose of the process
+  [self.process.statLoc cancel];
+  self.process = nil;
 }
 
 #pragma mark Interacting with the Simulator
