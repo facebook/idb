@@ -17,6 +17,7 @@
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 180; // In case resources are pegged, just wait
 static NSTimeInterval const SampleDuration = 1;
+static NSTimeInterval const KillBackoffTimeout = 1;
 
 @implementation FBXCTestProcess
 
@@ -100,7 +101,7 @@ static NSTimeInterval const SampleDuration = 1;
     performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger]
     onQueue:queue notifyOfCompletion:^(id _) {
       [logger logFormat:@"Terminating stalled xctest process %d", process.processIdentifier];
-      [process.statLoc cancel];
+      [process sendSignal:SIGTERM backingOffToKillWithTimeout:KillBackoffTimeout logger:logger];
     }];
 }
 
