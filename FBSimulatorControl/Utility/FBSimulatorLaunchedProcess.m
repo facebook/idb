@@ -122,13 +122,6 @@
   return teardown;
 }
 
-#pragma mark FBiOSTargetOperation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.exitCode mapReplace:NSNull.null];
-}
-
 #pragma mark NSObject
 
 - (NSString *)description
