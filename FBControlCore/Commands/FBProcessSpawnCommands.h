@@ -12,6 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBProcessIOAttachment;
 @class FBProcessSpawnConfiguration;
 
 @protocol FBControlCoreLogger;
@@ -78,6 +79,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves to the signal sent when the process has been terminated.
  */
 + (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout toProcess:(id<FBLaunchedProcess>)process logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Resolves an exitCode future from a statLoc.
+ Performs the necessary unwapping of the statLoc bitmask.
+ 
+ @param statLoc the stat_loc value.
+ @param attachment the IO attachment of the process.
+ @param statLocFuture the statLoc future to resolve.
+ @param exitCodeFuture the exitCode future to resolve.
+ @param signalFuture the signal future to resolve.
+ @param processIdentifier the pid of the finished process.
+ @param queue a queue to use for chaining
+ @param configuration the configuration of the finished process.
+ @param logger the logger to log to.
+ */
++ (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

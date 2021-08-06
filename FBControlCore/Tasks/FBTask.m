@@ -140,12 +140,12 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
-  [self resolveProcessCompletion:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
+  [self resolveProcessCompletion:processIdentifier attachment:attachment statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
   FBTaskProcessPosixSpawn *process = [[self alloc] initWithConfiguration:configuration processIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
   return [FBFuture futureWithResult:process];
 }
 
-+ (void)resolveProcessCompletion:(pid_t)processIdentifier statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task.posix_spawn.wait", DISPATCH_QUEUE_SERIAL);
   dispatch_source_t source = dispatch_source_create(
@@ -159,25 +159,18 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
       [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
     }
-    // First resolve the statLoc future.
-    [statLoc resolveWithResult:@(status)];
-
-    // Then resolve the exitCode & signal future. These are essentially mutually exclusive
-    if (WIFSIGNALED(status)) {
-      int signalCode = WTERMSIG(status);
-      NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with signal %d", processIdentifier, configuration.processName, signalCode];
-      [logger log:message];
-      NSError *error = [[FBControlCoreError describe:message] build];
-      [exitCode resolveWithError:error];
-      [signal resolveWithResult:@(signalCode)];
-    } else {
-      int exitCodeValue = WEXITSTATUS(status);
-      NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with exit code %d", processIdentifier, configuration.processName, exitCodeValue];
-      [logger log:message];
-      NSError *error = [[FBControlCoreError describe:message] build];
-      [exitCode resolveWithResult:@(exitCodeValue)];
-      [signal resolveWithError:error];
-    }
+    
+    // Resolve all of the related process finshed futures now, so that they do not need asynchronous resolution.
+    [FBProcessSpawnCommandHelpers
+      resolveProcessFinishedWithStatLoc:status
+      inTeardownOfIOAttachment:attachment
+      statLocFuture:statLoc
+      exitCodeFuture:exitCode
+      signalFuture:signal
+      processIdentifier:processIdentifier
+      configuration:configuration
+      queue:queue
+      logger:logger];
 
     // We only need a single notification and the dispatch_source must be retained until we resolve the future.
     // Cancelling the source at the end will release the source as the event handler will no longer be referenced.
@@ -242,7 +235,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
         onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
           return [[self alloc]
             initWithProcess:process
-            attachment:attachment
             queue:queue
             acceptableExitCodes:acceptableExitCodes
             logger:logger];
@@ -250,7 +242,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue acceptableExitCodes:(NSSet<NSNumber *> *)acceptableExitCodes logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -258,15 +250,12 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   }
 
   _process = process;
-  _attachment = attachment;
   _queue = queue;
 
-  // We only need to teardown the IO once, statLoc will fire on any exit condition of the process, so can be chained here.
-  _statLoc = [FBTask wrapNumberFuture:process.statLoc inTeardownOfIOAttachment:attachment process:process queue:queue logger:logger];
-
-  // The remainder of the futures should have the values from the process object, but need to occur after the IO teardown that happens in statLoc.
-  _exitCode = [self.statLoc chainReplace:process.exitCode];
-  _signal = [self.statLoc chainReplace:process.signal];
+  // The IO Teardown and Sequencing is priced-in the pass from above.
+  _statLoc = process.statLoc;
+  _exitCode = process.exitCode;
+  _signal = process.signal;
 
   // Do not propogate cancellation of completed to the exit code future.
   // Never cancel the underlying statLoc future. We can layer the cancellation and exit code checking semantics on top.
@@ -338,21 +327,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 - (nullable id)stdErr
 {
   return [self.process.configuration.io.stdErr contents];
-}
-
-#pragma mark Private
-
-+ (FBFuture<NSNumber *> *)wrapNumberFuture:(FBFuture<NSNumber *> *)future inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment process:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  return [[future
-    onQueue:queue chain:^(id _) {
-      [logger logFormat:@"Process %d (%@) has exited, tearing down IO...", process.processIdentifier, process.configuration.processName];
-      return [attachment detach];
-    }]
-    onQueue:queue chain:^(id _) {
-      [logger logFormat:@"Teardown of IO for process %d (%@) has completed", process.processIdentifier, process.configuration.processName];
-      return future;
-    }];
 }
 
 #pragma mark NSObject

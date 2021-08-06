@@ -7,6 +7,7 @@
 
 #import "FBProcessSpawnCommands.h"
 
+#import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 #import "FBLaunchedProcess.h"
@@ -75,6 +76,32 @@
       return [self sendSignal:SIGKILL toProcess:process];
     }];
   return [[FBFuture race:@[signal, kill]] mapReplace:@(signo)];
+}
+
++ (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  [logger logFormat:@"Process %d (%@) has exited, tearing down IO...", processIdentifier, configuration.processName];
+  [[attachment
+    detach]
+    onQueue:queue notifyOfCompletion:^(id _) {
+      [logger logFormat:@"Teardown of IO for process %d (%@) has completed", processIdentifier, configuration.processName];
+      [statLocFuture resolveWithResult:@(statLoc)];
+      if (WIFSIGNALED(statLoc)) {
+        int signalCode = WTERMSIG(statLoc);
+        NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with signal %d", processIdentifier, configuration.processName, signalCode];
+        [logger log:message];
+        NSError *error = [[FBControlCoreError describe:message] build];
+        [exitCodeFuture resolveWithError:error];
+        [signalFuture resolveWithResult:@(signalCode)];
+      } else {
+        int exitCode = WEXITSTATUS(statLoc);
+        NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with exit code %d", processIdentifier, configuration.processName, exitCode];
+        [logger log:message];
+        NSError *error = [[FBControlCoreError describe:message] build];
+        [signalFuture resolveWithError:error];
+        [exitCodeFuture resolveWithResult:@(exitCode)];
+      }
+    }];
 }
 
 @end
