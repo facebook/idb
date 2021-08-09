@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Should be called when the connection to the remote bridge should be disconnected.
  */
-- (void)disconnect;
+- (FBFuture<NSNull *> *)disconnect;
 
 #pragma mark Interacting with the Simulator
 

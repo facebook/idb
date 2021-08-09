@@ -213,20 +213,28 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 
 #pragma mark Lifecycle
 
-- (void)disconnect
+- (FBFuture<NSNull *> *)disconnect
 {
-  if (!self.bridge) {
-    return;
-  }
+  return [FBFuture
+    onQueue:self.workQueue resolve:^ FBFuture<NSNull *> * {
+      // Close the connection with the SimulatorBridge and nullify
+      NSDistantObject *bridge = (NSDistantObject *) self.bridge;
+      self.bridge = nil;
+      if (!bridge) {
+        return FBFuture.empty;
+      }
+      [[bridge connectionForProxy] invalidate];
 
-  // Close the connection with the SimulatorBridge and nullify
-  NSDistantObject *distantObject = (NSDistantObject *) self.bridge;
-  self.bridge = nil;
-  [[distantObject connectionForProxy] invalidate];
-
-  // Dispose of the process
-  [self.process.statLoc cancel];
-  self.process = nil;
+      // Dispose of the process
+      id<FBLaunchedProcess> process = self.process;
+      self.process = nil;
+      if (!process) {
+        return FBFuture.empty;
+      }
+      return [[process
+        sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil]
+        mapReplace:NSNull.null];
+    }];
 }
 
 #pragma mark Interacting with the Simulator

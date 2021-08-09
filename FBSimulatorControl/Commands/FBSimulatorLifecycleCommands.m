@@ -17,7 +17,6 @@
 #import "FBSimulatorBootStrategy.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
-#import "FBSimulatorConnection.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
@@ -26,7 +25,9 @@
 @interface FBSimulatorLifecycleCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
+@property (nonatomic, strong, readwrite, nullable) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
+@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 
 @end
 
@@ -170,45 +171,33 @@
 
 #pragma mark Connection
 
-- (FBFuture<FBSimulatorConnection *> *)connect
-{
-  return [self connectWithHID:nil framebuffer:nil];
-}
-
-- (FBFuture<FBSimulatorConnection *> *)connectWithHID:(FBSimulatorHID *)hid framebuffer:(FBFramebuffer *)framebuffer
-{
-  FBSimulator *simulator = self.simulator;
-  if (self.connection) {
-    return [FBFuture futureWithResult:self.connection];
-  }
-  if (simulator.state != FBiOSTargetStateBooted && simulator.state != FBiOSTargetStateBooting) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot connect to Simulator in state %@", simulator.stateString]
-      failFuture];
-  }
-
-  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithSimulator:simulator framebuffer:framebuffer hid:hid];
-  self.connection = connection;
-  return [FBFuture futureWithResult:connection];
-}
-
 - (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger
 {
-  FBSimulator *simulator = self.simulator;
-  FBSimulatorConnection *connection = self.connection;
-  if (!connection) {
-    [logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.description];
-    return FBFuture.empty;
-  }
-
   NSDate *date = NSDate.date;
-  [logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.description, connection, timeout];
-  return [[[connection
-    terminate]
-    timeout:timeout waitingFor:@"The Simulator Connection to teardown"]
+  return [[[self
+    terminateConnections]
+    timeout:timeout waitingFor:@"Simulator connections to teardown"]
     onQueue:self.simulator.workQueue map:^(id _) {
-      [logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
+      [logger.debug logFormat:@"Simulator connections torn down in %f seconds", [NSDate.date timeIntervalSinceDate:date]];
       return NSNull.null;
+    }];
+}
+
+- (FBFuture<NSNull *> *)terminateConnections
+{
+  FBSimulatorHID *hid = self.hid;
+  FBSimulatorBridge *bridge = self.bridge;
+  return [[FBFuture
+    futureWithFutures:@[
+      (hid ? [hid disconnect] : FBFuture.empty),
+      (bridge ? [bridge disconnect] : FBFuture.empty),
+    ]]
+    onQueue:self.simulator.workQueue chain:^(FBFuture *_) {
+      // Nullify
+      self.framebuffer = nil;
+      self.hid = nil;
+      self.bridge = nil;
+      return FBFuture.empty;
     }];
 }
 
@@ -216,10 +205,15 @@
 
 - (FBFuture<FBSimulatorBridge *> *)connectToBridge
 {
-  return [[self
-    connect]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToBridge];
+  if (self.bridge) {
+    return [FBFuture futureWithResult:self.bridge];
+  }
+
+  return [[FBSimulatorBridge
+    bridgeForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
+      self.bridge = bridge;
+      return bridge;
     }];
 }
 
@@ -227,10 +221,28 @@
 
 - (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
-  return [[self
-    connect]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToFramebuffer];
+  if (self.framebuffer) {
+    return [FBFuture futureWithResult:self.framebuffer];
+  }
+  FBSimulator *simulator = self.simulator;
+  return [FBFuture
+    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
+      return [FBFramebuffer mainScreenSurfaceForSimulator:simulator logger:simulator.logger error:error];
+    }];
+}
+
+#pragma mark Bridge
+
+- (FBFuture<FBSimulatorHID *> *)connectToHID
+{
+  if (self.hid) {
+    return [FBFuture futureWithResult:self.hid];
+  }
+  return [[FBSimulatorHID
+    hidForSimulator:self.simulator]
+    onQueue:self.simulator.workQueue map:^(FBSimulatorHID *hid) {
+      self.hid = hid;
+      return hid;
     }];
 }
 

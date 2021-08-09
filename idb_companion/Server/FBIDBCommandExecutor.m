@@ -746,27 +746,18 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [FBFuture futureWithResult:commands];
 }
 
-- (FBFuture<FBSimulatorConnection *> *)connectToSimulatorConnection
+- (FBFuture<FBSimulatorHID *> *)connectToHID
 {
   return [[self
     lifecycleCommands]
-    onQueue:self.target.workQueue fmap:^ FBFuture<FBSimulatorConnection *> * (id<FBSimulatorLifecycleCommands> commands) {
+    onQueue:self.target.workQueue fmap:^ FBFuture<FBSimulatorHID *> * (id<FBSimulatorLifecycleCommands> commands) {
       NSError *error = nil;
       if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
         return [[FBIDBError
           describeFormat:@"SimulatorKit is required for HID interactions: %@", error]
           failFuture];
       }
-      return [commands connect];
-    }];
-}
-
-- (FBFuture<FBSimulatorHID *> *)connectToHID
-{
-  return [[self
-    connectToSimulatorConnection]
-    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToHID];
+      return [commands connectToHID];
     }];
 }
 

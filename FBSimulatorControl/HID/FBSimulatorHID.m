@@ -120,9 +120,10 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   return FBFuture.empty;
 }
 
-- (void)disconnect
+- (FBFuture<NSNull *> *)disconnect
 {
   _client = nil;
+  return FBFuture.empty;
 }
 
 #pragma mark Private

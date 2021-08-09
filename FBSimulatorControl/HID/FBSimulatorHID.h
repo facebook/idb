@@ -40,14 +40,16 @@ NS_ASSUME_NONNULL_BEGIN
  This must be obtained in order to send IndigoHID events to the Simulator.
  This should be obtained after the Simulator is booted.
 
- @return YES if successful, NO otherwise.
+ @return A future that resolves when connected.
  */
 - (FBFuture<NSNull *> *)connect;
 
 /**
  Disconnects from the remote HID.
+ 
+ @return A future that resolves when disconnected
  */
-- (void)disconnect;
+- (FBFuture<NSNull *> *)disconnect;
 
 #pragma mark HID Manipulation
 
