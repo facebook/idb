@@ -32,24 +32,21 @@
 #import "FBSimulatorBootVerificationStrategy.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 
-@interface FBCoreSimulatorBootStrategy : NSObject
-
-@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
-
-@end
-
 @interface FBSimulatorBootStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBCoreSimulatorBootStrategy *coreSimulatorStrategy;
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
 
 @end
 
-@implementation FBCoreSimulatorBootStrategy
+@implementation FBSimulatorBootStrategy
+
+#pragma mark Initializers
+
++ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
+{
+  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator];
+}
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
@@ -62,6 +59,43 @@
   _simulator = simulator;
 
   return self;
+}
+
+#pragma mark Public
+
+- (FBFuture<NSNull *> *)boot
+{
+  // Return early depending on Simulator state.
+  if (self.simulator.state == FBiOSTargetStateBooted) {
+    return FBFuture.empty;
+  }
+  if (self.simulator.state != FBiOSTargetStateShutdown) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
+      failFuture];
+  }
+
+  // Boot via CoreSimulator.
+  return [[self
+    performBoot]
+    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+      return [self verifySimulatorIsBooted];
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)verifySimulatorIsBooted
+{
+  // Return early if we're not awaiting services.
+  if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
+    return FBFuture.empty;
+  }
+
+  // Now wait for the services.
+  return [[FBSimulatorBootVerificationStrategy
+    strategyWithSimulator:self.simulator]
+    verifySimulatorIsBooted];
 }
 
 - (FBFuture<FBSimulatorConnection *> *)performBoot
@@ -104,63 +138,6 @@
     }
   }];
   return future;
-}
-
-@end
-
-@implementation FBSimulatorBootStrategy
-
-+ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator];
-  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator coreSimulatorStrategy:coreSimulatorStrategy];
-}
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-  _simulator = simulator;
-  _coreSimulatorStrategy = coreSimulatorStrategy;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)boot
-{
-  // Return early depending on Simulator state.
-  if (self.simulator.state == FBiOSTargetStateBooted) {
-    return FBFuture.empty;
-  }
-  if (self.simulator.state != FBiOSTargetStateShutdown) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
-      failFuture];
-  }
-
-  // Boot via CoreSimulator.
-  return [[self.coreSimulatorStrategy
-    performBoot]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [self verifySimulatorIsBooted];
-    }];
-}
-
-- (FBFuture<NSNull *> *)verifySimulatorIsBooted
-{
-  // Return early if we're not awaiting services.
-  if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
-    return FBFuture.empty;
-  }
-
-  // Now wait for the services.
-  return [[FBSimulatorBootVerificationStrategy
-    strategyWithSimulator:self.simulator]
-    verifySimulatorIsBooted];
 }
 
 @end
