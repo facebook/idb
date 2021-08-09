@@ -7,30 +7,14 @@
 
 #import "FBSimulatorBootStrategy.h"
 
-#import <Cocoa/Cocoa.h>
-
 #import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDevice+Removed.h>
-#import <CoreSimulator/SimDeviceSet.h>
-#import <CoreSimulator/SimDeviceType.h>
-
-#import <SimulatorBridge/SimulatorBridge-Protocol.h>
-#import <SimulatorBridge/SimulatorBridge.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBBundleDescriptor+Simulator.h"
-#import "FBFramebuffer.h"
-#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
-#import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorHID.h"
-#import "FBSimulatorSet.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootVerificationStrategy.h"
-#import "FBSimulatorLaunchCtlCommands.h"
 
 @interface FBSimulatorBootStrategy ()
 
@@ -77,8 +61,8 @@
 
   // Boot via CoreSimulator.
   return [[self
-    performBoot]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorConnection *connection) {
+    bootSimulatorWithConfiguration:self.configuration]
+    onQueue:self.simulator.workQueue fmap:^(id _) {
       return [self verifySimulatorIsBooted];
     }];
 }
@@ -96,21 +80,6 @@
   return [[FBSimulatorBootVerificationStrategy
     strategyWithSimulator:self.simulator]
     verifySimulatorIsBooted];
-}
-
-- (FBFuture<FBSimulatorConnection *> *)performBoot
-{
-  return [[[FBSimulatorHID
-    hidForSimulator:self.simulator]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
-      // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
-      // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-      return [[self bootSimulatorWithConfiguration:self.configuration] mapReplace:hid];
-    }]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorHID *hid) {
-      // Combine everything into the connection.
-      return [self.simulator connectWithHID:hid framebuffer:nil];
-    }];
 }
 
 - (FBFuture<NSNull *> *)bootSimulatorWithConfiguration:(FBSimulatorBootConfiguration *)configuration
