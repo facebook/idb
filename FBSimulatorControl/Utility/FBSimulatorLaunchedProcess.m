@@ -13,7 +13,6 @@
 @interface FBSimulatorLaunchedProcess ()
 
 @property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBProcessIOAttachment *attachment;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -21,21 +20,14 @@
 @implementation FBSimulatorLaunchedProcess
 
 @synthesize configuration = _configuration;
+@synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
+@synthesize signal = _signal;
 @synthesize statLoc = _statLoc;
 
 #pragma mark Initializers
 
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
-{
-  return [launchFuture
-    onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
-      pid_t processIdentifier = processIdentifierNumber.intValue;
-      return [[self alloc] initWithSimulator:simulator configuration:configuration attachment:attachment processIdentifier:processIdentifier processStatusFuture:processStatusFuture];
-    }];
-}
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment processIdentifier:(pid_t)processIdentifier processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
 {
   self = [super init];
   if (!self) {
@@ -44,53 +36,20 @@
 
   _simulator = simulator;
   _configuration = configuration;
-  _attachment = attachment;
   _processIdentifier = processIdentifier;
   _queue = simulator.asyncQueue;
-  _statLoc = [[processStatusFuture
+  _exitCode = exitCode;
+  _signal = signal;
+  _statLoc = [[statLoc
     onQueue:simulator.workQueue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
-      FBFuture<NSNull *> *teardown = future.result
-        ? [self processDidTerminate:future.result.intValue]
-        : [self processWasCancelled];
-      return [teardown chainReplace:future];
+      if (future.state == FBFutureStateCancelled) {
+        return [self processWasCancelled:future];
+      }
+      return future;
     }]
     nameFormat:@"Completion of  process %d", processIdentifier];
 
   return self;
-}
-
-#pragma mark FBLaunchedProcess
-
-- (FBFuture<NSNumber *> *)exitCode
-{
-  pid_t processIdentifier = self.processIdentifier;
-  return [[self.statLoc
-    onQueue:self.queue fmap:^(NSNumber *statLocNumber) {
-      int statLoc = statLocNumber.intValue;
-      if (WIFSIGNALED(statLoc)) {
-        return [[FBControlCoreError
-          describeFormat:@"No normal exit code, process %d died with signal %d", processIdentifier, WTERMSIG(statLoc)]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:@(WEXITSTATUS(statLoc))];
-    }]
-    nameFormat:@"Exit code of process %d", self.processIdentifier];
-}
-
-- (FBFuture<NSNumber *> *)signal
-{
-  pid_t processIdentifier = self.processIdentifier;
-  return [[self.statLoc
-    onQueue:self.queue fmap:^(NSNumber *statLocNumber) {
-      int statLoc = statLocNumber.intValue;
-      if (!WIFSIGNALED(statLoc)) {
-        return [[FBControlCoreError
-          describeFormat:@"Did not exit with a signal, process %d died with exit status %d", processIdentifier, WEXITSTATUS(statLoc)]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:@(WTERMSIG(statLoc))];
-    }]
-    nameFormat:@"Exit code of process %d", self.processIdentifier];
 }
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
@@ -105,21 +64,14 @@
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)processDidTerminate:(int)stat_loc
+- (FBFuture<NSNumber *> *)processWasCancelled:(FBFuture<NSNumber *> *)statLocFuture
 {
-  return [self.attachment detach];
-}
-
-- (FBFuture<NSNull *> *)processWasCancelled
-{
-  FBFuture<NSNull *> *teardown = [self.attachment detach];
-
   // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
   [[FBProcessTerminationStrategy
     strategyWithProcessFetcher:FBProcessFetcher.new workQueue:self.simulator.workQueue logger:self.simulator.logger]
     killProcessIdentifier:self.processIdentifier];
 
-  return teardown;
+  return statLocFuture;
 }
 
 #pragma mark NSObject

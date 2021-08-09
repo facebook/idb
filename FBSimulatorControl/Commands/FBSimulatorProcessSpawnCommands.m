@@ -52,26 +52,10 @@
   return [[configuration.io
     attach]
     onQueue:simulator.workQueue fmap:^(FBProcessIOAttachment *attachment) {
-      // Launch the Process
-      FBMutableFuture<NSNumber *> *processStatusFuture = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid];
-      FBFuture<NSNumber *> *launchFuture = [FBSimulatorProcessSpawnCommands
+      return [FBSimulatorProcessSpawnCommands
         launchProcessWithSimulator:simulator
-        launchPath:configuration.launchPath
-        arguments:configuration.arguments
-        environment:configuration.environment
-        waitForDebugger:NO
-        stdOut:attachment.stdOut
-        stdErr:attachment.stdErr
-        mode:configuration.mode
-        processStatusFuture:processStatusFuture];
-
-      // Wrap in the container object
-      return [FBSimulatorLaunchedProcess
-        processWithSimulator:simulator
         configuration:configuration
-        attachment:attachment
-        launchFuture:launchFuture
-        processStatusFuture:processStatusFuture];
+        attachment:attachment];
     }];
 }
 
@@ -90,36 +74,52 @@
 
 #pragma mark Private
 
-+ (FBFuture<NSNumber *> *)launchProcessWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode processStatusFuture:(FBMutableFuture<NSNumber *> *)processStatusFuture
++ (FBFuture<FBSimulatorLaunchedProcess *> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
 {
+  // Prepare captured futures
+  id<FBControlCoreLogger> logger = simulator.logger;
+  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithNameFormat:@"Launch of %@ on %@", configuration.launchPath, simulator.udid];
+  FBMutableFuture<NSNumber *> *statLoc = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid];
+  FBMutableFuture<NSNumber *> *exitCode = [FBMutableFuture futureWithNameFormat:@"Process exit of %@ on %@", configuration.launchPath, simulator.udid];
+  FBMutableFuture<NSNumber *> *signal = [FBMutableFuture futureWithNameFormat:@"Process signal of %@ on %@", configuration.launchPath, simulator.udid];
+
   // Get the Options
   NSDictionary<NSString *, id> *options = [self
     simDeviceLaunchOptionsWithSimulator:simulator
-    launchPath:launchPath
-    arguments:arguments
-    environment:environment
-    waitForDebugger:waitForDebugger
-    stdOut:stdOut
-    stdErr:stdErr
-    mode:mode];
+    launchPath:configuration.launchPath
+    arguments:configuration.arguments
+    environment:configuration.environment
+    waitForDebugger:NO
+    stdOut:attachment.stdOut
+    stdErr:attachment.stdErr
+    mode:configuration.mode];
 
-  // The Process launches and terminates synchronously
-  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithNameFormat:@"Launch of %@ on %@", launchPath, simulator.udid];
+  // The Process launches and terminates asynchronously.
   [simulator.device
-    spawnAsyncWithPath:launchPath
+    spawnAsyncWithPath:configuration.launchPath
     options:options
     terminationQueue:simulator.workQueue
     terminationHandler:^(int stat_loc) {
       // Notify that we're done with the process to each of the futures.
-      [processStatusFuture resolveWithResult:@(stat_loc)];
+      [FBProcessSpawnCommandHelpers
+        resolveProcessFinishedWithStatLoc:stat_loc
+        inTeardownOfIOAttachment:attachment
+        statLocFuture:statLoc
+        exitCodeFuture:exitCode
+        signalFuture:signal
+        processIdentifier:[launchFuture.result intValue]
+        configuration:configuration
+        queue:simulator.workQueue
+        logger:logger];
+
       // Close any open file handles that we have.
       // This is important because otherwise any reader will stall forever.
       // The SimDevice APIs do not automatically close any file descriptor passed into them, so we need to do this on it's behalf.
       // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
       // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
       // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
-      close(stdOut.fileDescriptor);
-      close(stdErr.fileDescriptor);
+      close(attachment.stdOut.fileDescriptor);
+      close(attachment.stdErr.fileDescriptor);
     }
     completionQueue:simulator.workQueue
     completionHandler:^(NSError *innerError, pid_t processIdentifier){
@@ -129,7 +129,14 @@
         [launchFuture resolveWithResult:@(processIdentifier)];
       }
   }];
-  return launchFuture;
+
+  // Map to the FBLaunchedProcess implementation.
+  return [launchFuture
+    onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
+      // Wrap in the container object
+      pid_t processIdentifier = processIdentifierNumber.intValue;
+      return [[FBSimulatorLaunchedProcess alloc] initWithSimulator:simulator configuration:configuration processIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
+    }];
 }
 
 + (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithSimulator:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable FBProcessStreamAttachment *)stdOut stdErr:(nullable FBProcessStreamAttachment *)stdErr mode:(FBProcessSpawnMode)mode

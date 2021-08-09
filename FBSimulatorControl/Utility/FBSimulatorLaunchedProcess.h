@@ -19,24 +19,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorLaunchedProcess : NSObject <FBLaunchedProcess>
 
-@end
-
-/**
- Private methods that should not be called by consumers.
- */
-@interface FBSimulatorLaunchedProcess (Private)
-
 /**
  The Designated Initializer.
 
  @param simulator the Simulator the Process is launched in.
  @param configuration the configuration the process was launched with.
- @param attachment the IO attachment.
- @param launchFuture a future that will fire when the process has launched. The value is the process identifier.
- @param processStatusFuture a future that will fire when the process has terminated. The value is that of waitpid(2).
+ @param processIdentifier the process identifier of the launched process
+ @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
+ @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
+ @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
  @return a Future that resolves when the process is launched.
  */
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)processWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture processStatusFuture:(FBFuture<NSNumber *> *)processStatusFuture;
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal;
 
 @end
 
