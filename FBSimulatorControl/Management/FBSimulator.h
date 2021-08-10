@@ -10,15 +10,11 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorFileCommands.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
 #import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-#import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
-#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
