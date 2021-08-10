@@ -47,23 +47,6 @@ FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture = @"arch";
   return format;
 }
 
-+ (instancetype)fullFormat
-{
-  static dispatch_once_t onceToken;
-  static FBiOSTargetFormat *format;
-  dispatch_once(&onceToken, ^{
-    format = [FBiOSTargetFormat formatWithFields:@[
-      FBiOSTargetFormatUDID,
-      FBiOSTargetFormatName,
-      FBiOSTargetFormatState,
-      FBiOSTargetFormatModel,
-      FBiOSTargetFormatOSVersion,
-      FBiOSTargetFormatArchitecture,
-    ]];
-  });
-  return format;
-}
-
 - (instancetype)initWithFields:(NSArray<FBiOSTargetFormatKey> *)fields
 {
   self = [super init];

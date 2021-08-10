@@ -64,13 +64,6 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture;
 + (instancetype)defaultFormat;
 
 /**
- Creates and returns the Full Target Format.
-
- @return the Full Target Format.
- */
-+ (instancetype)fullFormat;
-
-/**
  An ordering of the fields to format targets with.
  */
 @property (nonatomic, copy, readonly) NSArray<FBiOSTargetFormatKey> *fields;
