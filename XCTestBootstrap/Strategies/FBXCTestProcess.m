@@ -32,7 +32,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
   return [[[process
     statLoc]
     onQueue:queue timeout:timeout handler:^{
-      return [FBXCTestProcess performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger];;
+      return [FBXCTestProcess performSampleStackshotOnProcess:process forTimeout:timeout queue:queue logger:logger];;
     }]
     onQueue:queue fmap:^(id _) {
       // This will not be reached if the sample error ran.
@@ -99,9 +99,13 @@ static NSTimeInterval const KillBackoffTimeout = 1;
 {
   return [[self
     performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger]
-    onQueue:queue notifyOfCompletion:^(id _) {
-      [logger logFormat:@"Terminating stalled xctest process %d", process.processIdentifier];
-      [process sendSignal:SIGTERM backingOffToKillWithTimeout:KillBackoffTimeout logger:logger];
+    onQueue:queue notifyOfCompletion:^(FBFuture *_) {
+      [logger logFormat:@"Terminating stalled xctest process %@", process];
+      [[process
+        sendSignal:SIGTERM backingOffToKillWithTimeout:KillBackoffTimeout logger:logger]
+        onQueue:queue notifyOfCompletion:^(FBFuture *__) {
+          [logger logFormat:@"Stalled xctest process %@ has been terminated", process];
+        }];
     }];
 }
 

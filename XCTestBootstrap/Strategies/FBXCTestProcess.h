@@ -45,6 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Performs a stackshot on the provided process id.
+ Does not terminate the process after performing the stackshot.
  Returns a future in the error state, with the stackshot in the error message.
 
  @param processIdentifier the process identifier of the process to stackshot.
