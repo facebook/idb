@@ -67,15 +67,13 @@
 + (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout toProcess:(id<FBLaunchedProcess>)process logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task_terminate", DISPATCH_QUEUE_SERIAL);
-  FBFuture<NSNumber *> *signal = [self sendSignal:signo toProcess:process];
-  FBFuture<NSNumber *> *kill = [[[FBFuture
-    futureWithResult:NSNull.null]
-    delay:timeout]
-    onQueue:queue fmap:^(id _) {
+  return [[[self
+    sendSignal:signo toProcess:process]
+    onQueue:queue timeout:timeout handler:^{
       [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", process.processIdentifier, timeout, signo];
       return [self sendSignal:SIGKILL toProcess:process];
-    }];
-  return [[FBFuture race:@[signal, kill]] mapReplace:@(signo)];
+    }]
+    mapReplace:@(signo)];
 }
 
 + (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
