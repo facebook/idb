@@ -142,7 +142,7 @@
       describe:@"Cannot Stop Recording, there is no recording task started"]
       failFuture];
   }
-  FBTask *recordingTask = recordingStarted.result;
+  FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *recordingTask = recordingStarted.result;
   if (!recordingTask) {
     return [[FBSimulatorError
       describe:@"Cannot Stop Recording, the recording task hasn't started"]
@@ -150,7 +150,7 @@
   }
 
   // Grab the task and see if it died already.
-  if (recordingTask.completed.hasCompleted) {
+  if (recordingTask.statLoc.hasCompleted) {
     [self.logger logFormat:@"Stop Recording requested, but it's completed with output '%@' '%@', perhaps the video is damaged", recordingTask.stdOut, recordingTask.stdErr];
     return FBFuture.empty;
   }
