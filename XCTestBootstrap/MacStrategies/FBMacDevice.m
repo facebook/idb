@@ -328,7 +328,7 @@
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
   }
-  [task.completed cancel];
+  [task sendSignal:SIGTERM backingOffToKillWithTimeout:2 logger:self.logger];
   [self.bundleIDToRunningTask removeObjectForKey:bundleID];
   return [FBFuture futureWithResult:[NSNull null]];
 }
