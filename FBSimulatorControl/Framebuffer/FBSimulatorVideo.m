@@ -133,6 +133,8 @@
   return [self.recordingStarted mapReplace:NSNull.null];
 }
 
+static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
+
 - (FBFuture<NSNull *> *)stopRecording
 {
   // Fail early if there's no task running.
@@ -153,12 +155,6 @@
   if (recordingTask.statLoc.hasCompleted) {
     [self.logger logFormat:@"Stop Recording requested, but it's completed with output '%@' '%@', perhaps the video is damaged", recordingTask.stdOut, recordingTask.stdErr];
     return FBFuture.empty;
-  }
-
-  NSTimeInterval recordingTaskWaitTimeout = 10.0;
-  NSString *recordingTaskWaitTimeoutFromEnv = NSProcessInfo.processInfo.environment[@"FBXCTEST_VIDEO_RECORDING_SIGINT_WAIT_TIMEOUT"];
-  if (recordingTaskWaitTimeoutFromEnv) {
-    recordingTaskWaitTimeout = recordingTaskWaitTimeoutFromEnv.floatValue;
   }
 
   // Stop for real be interrupting the task itself.
