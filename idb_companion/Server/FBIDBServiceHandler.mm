@@ -522,7 +522,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     stream->Read(&request);
     payload = request.payload();
   }
-  
+
   switch (payload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
@@ -1277,7 +1277,7 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   description->set_udid(_target.udid.UTF8String);
   description->set_name(_target.name.UTF8String);
   description->set_state(FBiOSTargetStateStringFromState(_target.state).UTF8String);
-  description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.UTF8String);
+  description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.lowercaseString.UTF8String);
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
 
