@@ -40,14 +40,7 @@
   _queue = simulator.asyncQueue;
   _exitCode = exitCode;
   _signal = signal;
-  _statLoc = [[statLoc
-    onQueue:simulator.workQueue chain:^ FBFuture<NSNumber *> * (FBFuture<NSNumber *> *future) {
-      if (future.state == FBFutureStateCancelled) {
-        return [self processWasCancelled:future];
-      }
-      return future;
-    }]
-    nameFormat:@"Completion of  process %d", processIdentifier];
+  _statLoc = statLoc;
 
   return self;
 }
@@ -60,18 +53,6 @@
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
 {
   return [FBProcessSpawnCommandHelpers sendSignal:signo backingOffToKillWithTimeout:timeout toProcess:self logger:logger];
-}
-
-#pragma mark Private
-
-- (FBFuture<NSNumber *> *)processWasCancelled:(FBFuture<NSNumber *> *)statLocFuture
-{
-  // When cancelled, the process is may still be alive. Therefore, the process needs to be terminated to fulfill the cancellation contract.
-  [[FBProcessTerminationStrategy
-    strategyWithProcessFetcher:FBProcessFetcher.new workQueue:self.simulator.workQueue logger:self.simulator.logger]
-    killProcessIdentifier:self.processIdentifier];
-
-  return statLocFuture;
 }
 
 #pragma mark NSObject
