@@ -163,16 +163,6 @@ class TargetDescription:
 
 
 @dataclass(frozen=True)
-class DaemonInfo:
-    host: str
-    port: int
-    targets: List[TargetDescription]
-
-
-ConnectResponse = Union[CompanionInfo, DaemonInfo]
-
-
-@dataclass(frozen=True)
 class FileEntryInfo:
     path: str
 
