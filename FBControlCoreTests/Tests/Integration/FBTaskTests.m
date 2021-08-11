@@ -75,19 +75,6 @@
   XCTAssertNotNil(error);
 }
 
-- (void)testErrorMessageContainingLastLinesOfOutput
-{
-  NSError *error = nil;
-  id result = [[[[FBTaskBuilder
-    withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"echo A BAD BAD >&2; false"]]
-    withStdErrToLoggerAndErrorMessage:[FBControlCoreLoggerDouble new]]
-    runUntilCompletion]
-    await:&error];
-
-  XCTAssertNil(result);
-  XCTAssertTrue([error.localizedDescription containsString:@"A BAD BAD"]);
-}
-
 - (void)testEnvironment
 {
   NSDictionary<NSString *, NSString *> *environment = @{

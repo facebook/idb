@@ -74,6 +74,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Methods
 
 /**
+ Confirms that the process exited with a defined set of status codes.
+ 
+ @param exitCodes the exit codes to check for, must not be nil.
+ @return a Future with the same base behaviour as -[FBLaunchedProcess exitCode] with additional checking of codes.
+ */
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes;
+
+/**
  Signal the process.
  The future returned will resolve when the process has terminated and can be ignored if not required.
 

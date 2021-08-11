@@ -17,11 +17,6 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
 @class FBProcessSpawnConfiguration;
 
 /**
- Error Doman for all FBTask errors.
- */
-extern NSString *const FBTaskErrorDomain;
-
-/**
  Programmatic interface to a Task.
  */
 @interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : NSObject <FBLaunchedProcess>

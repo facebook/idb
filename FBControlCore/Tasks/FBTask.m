@@ -21,8 +21,6 @@
 #import "FBProcessSpawnConfiguration.h"
 #import "FBProcessStream.h"
 
-NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
-
 static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)
 {
   if (!attachment) {
@@ -195,6 +193,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return self;
 }
 
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
+{
+  return [FBProcessSpawnCommandHelpers exitedWithCode:self.exitCode isAcceptable:exitCodes];
+}
+
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
   return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
@@ -267,22 +270,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }]
     chainReplace:self.exitCode]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSNumber *exitCode) {
-      // If exit codes are defined, check them.
-      if (acceptableExitCodes == nil) {
-        return FBFuture.empty;
-      }
-      if ([acceptableExitCodes containsObject:exitCode]) {
-        return FBFuture.empty;
-      }
-      NSString *message = [NSString stringWithFormat:@"Exit Code %@ is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]];
-      if ([self.stdErr conformsToProtocol:@protocol(FBAccumulatingBuffer)]) {
-        NSData *outputData = [self.stdErr data];
-        message = [message stringByAppendingFormat:@": %@", [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding]];
-      }
-      return [[[FBControlCoreError
-        describe:message]
-        inDomain:FBTaskErrorDomain]
-        failFuture];
+      return [FBProcessSpawnCommandHelpers confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes];
     }];
 
   return self;
@@ -291,6 +279,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 #pragma mark - FBLaunchedProcess
 
 #pragma mark Public
+
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
+{
+  return [self.process exitedWithCodes:exitCodes];
+}
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {

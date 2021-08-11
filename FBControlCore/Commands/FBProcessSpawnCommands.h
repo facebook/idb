@@ -96,6 +96,24 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
+/**
+ Confirms that an exit code is acceptable from the provided set
+
+ @param exitCode the exit code of the process.
+ @param acceptableExitCodes the status code set, if checked.
+ @return a future that resolves if the exit code is acceptable.
+ */
++ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(nullable NSSet<NSNumber *> *)acceptableExitCodes;
+
+/**
+ Confirms that an exit code is acceptable from the provided set
+
+ @param exitCodeFuture the exit code of the process.
+ @param acceptableExitCodes the permissable exit codes..
+ @return a future that resolves if the exit code is acceptable.
+ */
++ (FBFuture<NSNumber *> *)exitedWithCode:(FBFuture<NSNumber *> *)exitCodeFuture isAcceptable:(nullable NSSet<NSNumber *> *)acceptableExitCodes;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -45,6 +45,13 @@
   return self;
 }
 
+#pragma mark Public Methods
+
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
+{
+  return [FBProcessSpawnCommandHelpers exitedWithCode:self.exitCode isAcceptable:exitCodes];
+}
+
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
   return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];

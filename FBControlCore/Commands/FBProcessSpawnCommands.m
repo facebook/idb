@@ -7,6 +7,7 @@
 
 #import "FBProcessSpawnCommands.h"
 
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
@@ -99,6 +100,28 @@
         [signalFuture resolveWithError:error];
         [exitCodeFuture resolveWithResult:@(exitCode)];
       }
+    }];
+}
+
++ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(NSSet<NSNumber *> *)acceptableExitCodes
+{
+  // If exit codes are defined, check them.
+  if (acceptableExitCodes == nil) {
+    return FBFuture.empty;
+  }
+  if ([acceptableExitCodes containsObject:@(exitCode)]) {
+    return FBFuture.empty;
+  }
+  return [[FBControlCoreError
+    describeFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]
+    failFuture];
+}
+
++ (FBFuture<NSNull *> *)exitedWithCode:(FBFuture<NSNumber *> *)exitCodeFuture isAcceptable:(NSSet<NSNumber *> *)acceptableExitCodes
+{
+  return [exitCodeFuture
+    onQueue:self.queue fmap:^(NSNumber *exitCode) {
+      return [[self confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
     }];
 }
 
