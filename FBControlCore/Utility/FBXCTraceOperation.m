@@ -167,7 +167,8 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [[[self.task.completed
+  return [[[[self.task
+    exitedWithCodes:[NSSet setWithObject:@0]]
     mapReplace:NSNull.null]
     shieldCancellation]
     onQueue:self.queue respondToCancellation:^{
