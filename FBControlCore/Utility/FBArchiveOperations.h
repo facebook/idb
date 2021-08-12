@@ -1,4 +1,4 @@
-/*
+  /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -75,6 +75,7 @@ extern FBCompressionFormat const FBCompressionFormatZSTD;
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
  A plain gzip wrapping a single file is preferred when there's only a single file to transfer.
  Read the input stream to obtain all of the gzip output of the file.
+ To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
  @param queue the queue to do work on
@@ -86,6 +87,7 @@ extern FBCompressionFormat const FBCompressionFormatZSTD;
 /**
  Creates a gzipped tar archive, returning an task that has an NSInputStream attached to stdout.
  Read the input stream to obtain the gzipped tar output.
+ To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
  @param queue the queue to do work on
