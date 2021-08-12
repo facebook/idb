@@ -36,15 +36,6 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
 #pragma mark Accessors
 
 /**
- A future that resolves with the exit code when the process has finished.
- Cancelling this future will send a SIGTERM to the launched process.
- If the process exited with an exit code different than the acceptable
- values then the future will resolve to failure otherwise it will resolve to success.
- Any errors will also be surfaced in this future.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;
-
-/**
  Returns the stdin of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessInput.

@@ -260,19 +260,6 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   _exitCode = process.exitCode;
   _signal = process.signal;
 
-  // Do not propogate cancellation of completed to the exit code future.
-  // Never cancel the underlying statLoc future. We can layer the cancellation and exit code checking semantics on top.
-  FBMutableFuture<NSNumber *> *shieldedProcessFinished = FBMutableFuture.future;
-  [shieldedProcessFinished resolveFromFuture:self.statLoc];
-  _completed = [[[shieldedProcessFinished
-    onQueue:self.queue respondToCancellation:^{
-      return [self sendSignal:SIGTERM];
-    }]
-    chainReplace:self.exitCode]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSNumber *exitCode) {
-      return [FBProcessSpawnCommandHelpers confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes];
-    }];
-
   return self;
 }
 
@@ -326,10 +313,11 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (NSString *)description
 {
-  return [NSString
-    stringWithFormat:@"%@ | State %@",
+  return [NSString stringWithFormat:
+    @"%@ | Exit Code %@ | Signalled %@",
     self.process.configuration.description,
-    self.completed
+    self.exitCode.result,
+    self.signal.result
   ];
 }
 
