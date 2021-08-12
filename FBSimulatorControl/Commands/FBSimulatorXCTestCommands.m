@@ -69,7 +69,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
     onQueue:self.simulator.workQueue map:^(FBTask *task) {
-      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
+      return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.simulator logger:logger];
     }]
     onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
       self.isRunningXcodeBuildOperation = NO;
@@ -216,24 +216,6 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
         macOSTestShimPath:shims.macOSTestShimPath
         queue:self.simulator.workQueue
         logger:[logger withName:@"xcodebuild"]];
-    }];
-}
-
-- (FBFuture<NSNull * > *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  return [[[task
-    completed]
-    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      [reporter didFinishExecutingTestPlan];
-      return FBFuture.empty;
     }];
 }
 

@@ -69,7 +69,7 @@
     }]
     onQueue:self.device.workQueue fmap:^(FBTask *task) {
       // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
-      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
+      return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.device logger:logger];
     }]
     onQueue:self.device.workQueue chain:^(FBFuture *future) {
       self.runningXcodeBuildOperation = NO;
@@ -113,26 +113,6 @@
     macOSTestShimPath:nil
     queue:self.device.workQueue
     logger:[logger withName:@"xcodebuild"]];
-}
-
-- (FBFuture<NSNull *> *)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  return [[[task
-    completed]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      // This will execute only if the operation completes successfully.
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.device reporter:reporter logger:logger];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      [logger log:@"Reporting test results"];
-      [reporter didFinishExecutingTestPlan];
-      return FBFuture.empty;
-    }];
 }
 
 @end

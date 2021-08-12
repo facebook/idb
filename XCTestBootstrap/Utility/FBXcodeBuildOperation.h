@@ -89,6 +89,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSDictionary *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties;
 
+/**
+ Confirms the proper exit of the provided xcodebuild operation.
+ 
+ @param task the task to monitor.
+ @param configuration the configuration of the launched process.
+ @param reporter the reporter to report to
+ @param target the target for which the task was launched.
+ @param logger the logger to log to.
+ @return a checked exit of the task.
+ */
++ (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger;
+
 @end
 
 NS_ASSUME_NONNULL_END
