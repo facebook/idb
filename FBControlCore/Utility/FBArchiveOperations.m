@@ -21,14 +21,13 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:@[@"-zxp", @"-C", extractPath, @"-f", path]]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     mapReplace:extractPath];
 }
 
@@ -39,29 +38,27 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-xp", @"-C", extractPath, @"-f", @"-"];
   }
   
-  return [[[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:extractCommand]
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     mapReplace:extractPath];
 }
 
 + (FBFuture<NSString *> *)extractGzipFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gunzip"]
     withArguments:@[@"--to-stdout"]]
     withStdIn:stream]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutPath:extractPath]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     mapReplace:extractPath];
 }
 
@@ -96,7 +93,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     return [FBFuture futureWithError:error];
   }
   return [[builder
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue map:^(FBTask<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
       return [result stdOut];
     }];

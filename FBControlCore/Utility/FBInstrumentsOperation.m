@@ -199,15 +199,14 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue map:^(id _) {
       return outputTraceFile;
     }];

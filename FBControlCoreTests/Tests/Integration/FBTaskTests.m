@@ -46,7 +46,8 @@
   FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"true"]]
     withTaskLifecycleLoggingTo:FBControlCoreGlobalConfiguration.defaultLogger]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
+
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqualObjects(task.exitCode.result, @0);
@@ -54,10 +55,9 @@
 
 - (void)testFalseExit
 {
-  FBFuture *futureTask = [[[FBTaskBuilder
+  FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
-    withAcceptableExitCodes:[NSSet setWithObject:@1]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@1]];
 
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
   XCTAssertEqualObjects(task.exitCode.result, @1);
@@ -68,7 +68,7 @@
   NSError *error = nil;
   id result = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     await:&error];
 
   XCTAssertNil(result);
@@ -87,7 +87,7 @@
   FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/env"]
     withEnvironment:environment]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
 
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
   XCTAssertEqualObjects(task.exitCode.result, @0);
@@ -104,7 +104,7 @@
 
   FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
@@ -119,7 +119,8 @@
   NSString *binaryPath = [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
 
   FBFuture *futureTask = [[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]] runUntilCompletion];
+    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
 
@@ -134,7 +135,8 @@
   NSString *resourcesPath = [[bundle bundlePath] stringByAppendingPathComponent:@"Contents/Resources"];
 
   FBFuture *futureTask = [[FBTaskBuilder
-    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]] runUntilCompletion];
+    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
@@ -159,7 +161,7 @@
     withStdOutLineReader:^(NSString *line) {
       [lines addObject:line];
     }]
-  runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
@@ -179,7 +181,7 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
@@ -195,7 +197,7 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqual(task.completed.state, FBFutureStateDone);
@@ -230,7 +232,7 @@
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
       [expectation fulfill];
     }];
@@ -487,7 +489,7 @@
     withArguments:@[@"-zcvf", tarSource, FBControlCoreFixtures.bundleResource]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     mapReplace:NSNull.null]
     await:&error] != nil;
   XCTAssertNil(error);
@@ -502,7 +504,7 @@
       withStdInFromData:tarData]
       withStdOutToDevNull]
       withStdErrToDevNull]
-      runUntilCompletion]
+      runUntilCompletionWithAcceptableExitCodes:nil]
       mapReplace:NSNull.null]
       await:&error] != nil;
     XCTAssertNil(error);

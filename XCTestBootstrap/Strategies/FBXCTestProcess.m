@@ -78,7 +78,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
   [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", processIdentifier, timeout];
   return [[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:queue handleError:^(NSError *error) {
       return [[[FBXCTestError
         describeFormat:@"Failed to obtain a stack sample of stalled xctest process %d", processIdentifier]

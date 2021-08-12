@@ -131,11 +131,10 @@
       }
       [arguments addObject:self.binary.path];
       [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
-      return [[[[[FBTaskBuilder
+      return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
-        withAcceptableExitCodes:[NSSet setWithObject:@0]]
         withStdErrToLogger:logger]
-        runUntilCompletion]
+        runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
         mapReplace:replacements];
     }]
     onQueue:queue fmap:^(NSDictionary<NSString *, NSString *> *replacements) {

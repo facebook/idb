@@ -18,12 +18,11 @@
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
       NSString *directory = task.stdOut;
       if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {

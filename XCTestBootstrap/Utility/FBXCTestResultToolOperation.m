@@ -26,7 +26,7 @@ NSString *const JPEG = @"public.jpeg";
     withArguments:xcrunArguments]
     withStdErrToLogger:logger]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue map:^(FBTask *task) {
       return task;
     }];
@@ -77,7 +77,7 @@ NSString *const JPEG = @"public.jpeg";
          withArguments:arguments]
          withStdErrToLogger:logger]
          withTaskLifecycleLoggingTo:logger]
-         runUntilCompletion];
+         runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]];
      } else if ([encodeType isEqualToString:JPEG]) {
        return [FBFuture futureWithResult:task];
      } else {

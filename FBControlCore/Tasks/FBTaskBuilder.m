@@ -98,7 +98,6 @@
 
 - (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
-  NSParameterAssert(exitCodes);
   self.acceptableExitCodes = exitCodes;
   return self;
 }
@@ -250,12 +249,13 @@
   return [FBTask startTaskWithConfiguration:self.buildConfiguration acceptableExitCodes:self.acceptableExitCodes logger:self.logger];
 }
 
-- (FBFuture<FBTask *> *)runUntilCompletion
+- (FBFuture<FBTask *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) fmap:^(FBTask *task) {
-      return [[task completed] mapReplace:task];
+    onQueue:queue fmap:^(FBTask *task) {
+      return [[task exitedWithCodes:exitCodes] mapReplace:task];
     }];
 }
 

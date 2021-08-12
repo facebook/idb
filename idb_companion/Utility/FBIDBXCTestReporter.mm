@@ -422,21 +422,19 @@
 
   return [[[[[self.processUnderTestExitedMutable
     onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
-      return [[[[[FBTaskBuilder
+      return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.configuration.coveragePath]]
         withStdOutInMemoryAsString]
         withStdErrInMemoryAsString]
-        withNoUnacceptableStatusCodes]
-        runUntilCompletion];
+        runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
     onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
-      return [[[[[FBTaskBuilder
+      return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.configuration.binaryPath]]
         withStdOutInMemoryAsString]
         withStdErrInMemoryAsString]
-        withNoUnacceptableStatusCodes]
-        runUntilCompletion];
+        runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
     onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {

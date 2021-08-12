@@ -446,13 +446,12 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 {
   arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
   [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
-    withAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
     withTaskLifecycleLoggingTo:logger]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
           return [[FBSimulatorError

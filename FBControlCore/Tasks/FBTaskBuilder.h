@@ -285,7 +285,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the task on completion.
  */
-- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)runUntilCompletion;
+- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 
 @end
 

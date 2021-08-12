@@ -207,7 +207,7 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
     arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
     withStdOutInMemoryAsString]
     withStdErrToDevNull]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:self.queue fmap:^(FBTask<NSNull *, NSString *, NSNull *> *task) {
       NSString *output = task.stdOut;
       NSString *pattern = @"CoreSimulator-([0-9\\.]+)";

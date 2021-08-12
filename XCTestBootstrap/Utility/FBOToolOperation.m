@@ -22,16 +22,15 @@
     return [FBFuture futureWithError:[[XCTestBootstrapError describe:message] build]];
   }
   
-  FBTaskBuilder *builder = [[[[[FBTaskBuilder
-                                withLaunchPath:@"/usr/bin/otool"]
-                               withArguments:@[@"-L", [bundle executablePath]]]
-                              withAcceptableExitCodes:[NSSet setWithObject:@0]]
-                             withStdOutInMemoryAsString]
-                            withStdErrInMemoryAsString];
-  
-  return [[builder runUntilCompletion] onQueue:queue map:^NSArray<NSString*>* _Nonnull(FBTask<id,NSString*,NSString*> * _Nonnull task) {
-    return [[self class] extractSanitiserDylibsfromOtoolOutput:task.stdOut];
-  }];
+  return [[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/otool"]
+    withArguments:@[@"-L", [bundle executablePath]]]
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+    onQueue:queue map:^ NSArray<NSString * > *(FBTask<id, NSString *, NSString *> *task) {
+      return [FBOToolOperation extractSanitiserDylibsfromOtoolOutput:task.stdOut];
+    }];
 }
 
 + (NSArray<NSString *> *)extractSanitiserDylibsfromOtoolOutput:(NSString *)otool_output {
