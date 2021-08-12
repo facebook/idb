@@ -16,8 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  An in-memory representation of a launched application.
- This is distinct from FBLaunchedApplication, as exit information is not available.
- However, termination of the application is communicated via a Future.
+ This is distinct from FBLaunchedProcess, as exit codes for the process are not available.
+ However, an event for when termination of the application occurs is communicated through a Future.
  */
 @protocol FBLaunchedApplication <NSObject>
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  An in-memory representation of a launched process.
- This is distinct from FBLaunchedApplication, as exit information is available.
+ This is distinct from FBLaunchedApplication, as the exit code for the process is available.
  */
 @protocol FBLaunchedProcess <NSObject>
 
@@ -51,18 +51,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A future that resolves with the the value from waitpid(2) on termination.
  This will always resolve on completion, regardless of whether the process was signalled or exited normally.
+ Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
 
 /**
  A future that resolves with the exit code upon termination.
  If the process exited abnormally then this future will error.
+ Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
 
 /**
  A future that resolves when the process terminates with a signal.
  If the process exited normally then this future will error.
+ Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
 
