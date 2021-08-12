@@ -502,7 +502,7 @@
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration acceptableExitCodes:nil logger:self.logger];
+  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
 }
 
 @end

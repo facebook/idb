@@ -27,11 +27,10 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
  Creates a Task with the provided configuration and starts it.
 
  @param configuration the configuration to use.
- @param acceptableExitCodes the set of status codes that apply to the "completed" future.
  @param logger an optional logger to log task lifecycle events to.
  @return a future that resolves when the task has been started.
  */
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration acceptableExitCodes:(nullable NSSet<NSNumber *> *)acceptableExitCodes logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Accessors
 

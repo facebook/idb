@@ -21,7 +21,6 @@
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, copy, nullable, readwrite) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
@@ -43,7 +42,6 @@
   _launchPath = launchPath;
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
-  _acceptableExitCodes = [NSSet setWithObject:@0];
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
@@ -94,18 +92,6 @@
   NSMutableDictionary<NSString *, NSString *> *dictionary = [self.environment mutableCopy];
   [dictionary addEntriesFromDictionary:environment];
   return [self withEnvironment:[dictionary copy]];
-}
-
-- (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
-{
-  self.acceptableExitCodes = exitCodes;
-  return self;
-}
-
-- (instancetype)withNoUnacceptableStatusCodes
-{
-  self.acceptableExitCodes = nil;
-  return self;
 }
 
 #pragma mark stdin
@@ -246,7 +232,7 @@
 
 - (FBFuture<FBTask *> *)start
 {
-  return [FBTask startTaskWithConfiguration:self.buildConfiguration acceptableExitCodes:self.acceptableExitCodes logger:self.logger];
+  return [FBTask startTaskWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
 - (FBFuture<FBTask *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
