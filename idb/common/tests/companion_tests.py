@@ -8,22 +8,24 @@ import json
 import os
 from unittest import mock
 
-from idb.common.companion_spawner import CompanionSpawner
+from idb.common.companion import Companion
 from idb.common.constants import IDB_LOCAL_TARGETS_FILE
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 
 @ignoreTaskLeaks
-class CompanionSpawnerTest(TestCase):
+class CompanionTests(TestCase):
     async def test_spawn_companion(self) -> None:
-        spawner = CompanionSpawner("idb_path", logger=mock.Mock())
+        spawner = Companion(
+            companion_path="idb_path", device_set_path=None, logger=mock.Mock()
+        )
         spawner._log_file_path = mock.Mock()
-        spawner.pid_saver = mock.Mock()
+        spawner._pid_saver = mock.Mock()
         udid = "someUdid"
         with mock.patch(
-            "idb.common.companion_spawner.asyncio.create_subprocess_exec",
+            "idb.common.companion.asyncio.create_subprocess_exec",
             new=AsyncMock(),
-        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
+        ) as exec_mock, mock.patch("idb.common.companion.open"):
             process_mock = mock.Mock()
             process_mock.stdout.readline = AsyncMock(
                 return_value=json.dumps(
@@ -48,14 +50,16 @@ class CompanionSpawnerTest(TestCase):
             self.assertEqual(port, 1234)
 
     async def test_spawn_notifier(self) -> None:
-        spawner = CompanionSpawner("idb_path", logger=mock.Mock())
+        spawner = Companion(
+            companion_path="idb_path", device_set_path=None, logger=mock.Mock()
+        )
         spawner._log_file_path = mock.Mock()
         spawner._is_notifier_running = mock.Mock(return_value=False)
-        spawner.pid_saver = mock.Mock()
+        spawner._pid_saver = mock.Mock()
         with mock.patch(
-            "idb.common.companion_spawner.asyncio.create_subprocess_exec",
+            "idb.common.companion.asyncio.create_subprocess_exec",
             new=AsyncMock(),
-        ) as exec_mock, mock.patch("idb.common.companion_spawner.open"):
+        ) as exec_mock, mock.patch("idb.common.companion.open"):
             process_mock = mock.Mock()
             process_mock.stdout.readline = AsyncMock(
                 return_value=json.dumps({"report_initial_state": True}).encode("utf-8")
