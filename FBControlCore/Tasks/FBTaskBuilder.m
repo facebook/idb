@@ -14,19 +14,17 @@
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
 #import "FBTask.h"
-#import "FBTaskConfiguration.h"
+#import "FBProcessSpawnConfiguration.h"
 
 @interface FBTaskBuilder ()
 
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, copy, nullable, readwrite) NSSet<NSNumber *> *acceptableExitCodes;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
 @property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
 @property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
 @property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
-@property (nonatomic, copy, readwrite) NSString *programName;
 
 @end
 
@@ -44,12 +42,10 @@
   _launchPath = launchPath;
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
-  _acceptableExitCodes = [NSSet setWithObject:@0];
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
-  _logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:[NSString stringWithFormat:@"FBTask_%@", launchPath.lastPathComponent]];
-  _programName = [launchPath lastPathComponent];
+  _logger = nil;
 
   return self;
 }
@@ -96,19 +92,6 @@
   NSMutableDictionary<NSString *, NSString *> *dictionary = [self.environment mutableCopy];
   [dictionary addEntriesFromDictionary:environment];
   return [self withEnvironment:[dictionary copy]];
-}
-
-- (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
-{
-  NSParameterAssert(exitCodes);
-  self.acceptableExitCodes = exitCodes;
-  return self;
-}
-
-- (instancetype)withNoUnacceptableStatusCodes
-{
-  self.acceptableExitCodes = nil;
-  return self;
 }
 
 #pragma mark stdin
@@ -239,21 +222,9 @@
 
 #pragma mark Loggers
 
-- (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger
+- (instancetype)withTaskLifecycleLoggingTo:(id<FBControlCoreLogger>)logger;
 {
   self.logger = logger;
-  return self;
-}
-
-- (instancetype)withNoLogging
-{
-  self.logger = nil;
-  return self;
-}
-
-- (instancetype)withProgramName:(NSString *)programName
-{
-  self.programName = programName;
   return self;
 }
 
@@ -261,30 +232,29 @@
 
 - (FBFuture<FBTask *> *)start
 {
-  return [FBTask startTaskWithConfiguration:self.buildConfiguration];
+  return [FBTask startTaskWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
-- (FBFuture<FBTask *> *)runUntilCompletion
+- (FBFuture<FBTask *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) fmap:^(FBTask *task) {
-      return [[task completed] mapReplace:task];
+    onQueue:queue fmap:^(FBTask *task) {
+      return [[task exitedWithCodes:exitCodes] mapReplace:task];
     }];
 }
 
 #pragma mark Private
 
-- (FBTaskConfiguration *)buildConfiguration
+- (FBProcessSpawnConfiguration *)buildConfiguration
 {
-  return [[FBTaskConfiguration alloc]
+  return [[FBProcessSpawnConfiguration alloc]
     initWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment
-    acceptableExitCodes:self.acceptableExitCodes
     io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-    logger:self.logger
-    programName:self.programName];
+    mode:FBProcessSpawnModeDefault];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

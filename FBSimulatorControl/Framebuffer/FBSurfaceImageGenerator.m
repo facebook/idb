@@ -14,13 +14,14 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <IOSurface/IOSurface.h>
+
 @interface FBSurfaceImageGenerator ()
 
-@property (nonatomic, copy, readwrite) NSString *consumerIdentifier;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) CIFilter *scaleFilter;
 
-@property (nonatomic, assign, readwrite) IOSurfaceRef surface;
+@property (nonatomic, strong, readwrite) IOSurface *surface;
 @property (nonatomic, assign, readwrite) uint32_t lastSeedValue;
 
 @end
@@ -29,12 +30,11 @@
 
 + (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale purpose:(NSString *)purpose logger:(id<FBControlCoreLogger>)logger
 {
-  NSString *consumerIdentifier = [NSString stringWithFormat:@"%@_%@", NSStringFromClass(self), purpose];
   logger = [logger withName:[NSString stringWithFormat:@"%@_%@", logger.name, purpose]];
-  return [[FBSurfaceImageGenerator alloc] initWithScale:scale consumerIdentifier:consumerIdentifier logger:logger];
+  return [[FBSurfaceImageGenerator alloc] initWithScale:scale logger:logger];
 }
 
-- (instancetype)initWithScale:(NSDecimalNumber *)scale consumerIdentifier:(NSString *)consumerIdentifier logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithScale:(NSDecimalNumber *)scale logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -42,7 +42,6 @@
   }
 
   _logger = logger;
-  _consumerIdentifier = consumerIdentifier;
   _lastSeedValue = 0;
 
   if ([scale isNotEqualTo:NSDecimalNumber.one]) {
@@ -58,7 +57,7 @@
 
 - (nullable CGImageRef)availableImage
 {
-  uint32_t currentSeed = IOSurfaceGetSeed(self.surface);
+  uint32_t currentSeed = [self.surface seed];
   if (currentSeed == self.lastSeedValue) {
     return NULL;
   }
@@ -69,7 +68,7 @@
 - (CGImageRef)image
 {
   CIContext *context = [CIContext contextWithOptions:nil];
-  CIImage *ciImage = [CIImage imageWithIOSurface:self.surface];
+  CIImage *ciImage = [CIImage imageWithIOSurface:(__bridge IOSurfaceRef _Nonnull)(self.surface)];
   if (self.scaleFilter) {
     [self.scaleFilter setValue:ciImage forKey:kCIInputImageKey];
     ciImage = [self.scaleFilter outputImage];
@@ -86,18 +85,16 @@
 
 #pragma mark FBFramebufferConsumer
 
-- (void)didChangeIOSurface:(IOSurfaceRef)surface
+- (void)didChangeIOSurface:(IOSurface *)surface
 {
   self.lastSeedValue = 0;
   if (self.surface != NULL) {
     [self.logger.info logFormat:@"Removing old surface %@", surface];
-    IOSurfaceDecrementUseCount(self.surface);
-    CFRelease(self.surface);
+    [surface decrementUseCount];
     self.surface = nil;
   }
   if (surface != NULL) {
-    IOSurfaceIncrementUseCount(surface);
-    CFRetain(surface);
+    [surface incrementUseCount];
     [self.logger.info logFormat:@"Received IOSurface from Framebuffer Service %@", surface];
     self.surface = surface;
   }

@@ -193,13 +193,12 @@ static void EventStreamCallback(
   return [FBFuture
    onQueue:queue resolveUntil:^{
      FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
-       crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate]
+       crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate logger:nil]
        filteredArrayUsingPredicate:predicate]
        firstObject];
      if (!crashInfo) {
-       return [[[FBControlCoreError
+       return [[FBControlCoreError
          describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
-         noLogging]
          failFuture];
      }
      return [FBFuture futureWithResult:crashInfo];

@@ -60,6 +60,7 @@
       configurationWithShims:configuration.shims
       environment:processEnvironment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0
@@ -98,6 +99,7 @@
       configurationWithShims:configuration.shims
       environment:processEnvironment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0
@@ -138,6 +140,7 @@
       configurationWithShims:configuration.shims
       environment:processEnvironment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:self.iOSUnitTestBundlePath
       waitForDebugger:NO
       timeout:0

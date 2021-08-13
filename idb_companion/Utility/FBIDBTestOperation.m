@@ -17,7 +17,7 @@
 
 @synthesize completed = _completed;
 
-- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(NSString *)resultBundlePath coveragePath:(NSString *)coveragePath  binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
+- (instancetype)initWithConfiguration:(id)configuration reporterConfiguration:(FBXCTestReporterConfiguration *)reporterConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -25,9 +25,7 @@
   }
 
   _configuration = configuration;
-  _resultBundlePath = resultBundlePath;
-  _coveragePath = coveragePath;
-  _binaryPath = binaryPath;
+  _reporterConfiguration = reporterConfiguration;
   _reporter = reporter;
   _logger = logger;
   _completed = completed;

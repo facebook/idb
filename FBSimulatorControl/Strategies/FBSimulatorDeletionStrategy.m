@@ -53,9 +53,8 @@
    // Confirm that the Simulators belong to the set
   for (FBSimulator *simulator in simulators) {
     if (simulator.set != self.set) {
-      return [[[FBSimulatorError
+      return [[FBSimulatorError
         describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
-        inSimulator:simulator]
         failFuture];
     }
   }

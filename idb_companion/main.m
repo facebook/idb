@@ -8,8 +8,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBCompanionServer.h"
 #import "FBIDBConfiguration.h"
@@ -46,6 +47,7 @@ Usage: \n \
 \n\
   Options:\n\
     --grpc-port PORT           Port to start the grpc companion server on (default: 10882).\n\
+    --tls-cert-path PATH       If specified exposed GRPC server will be listening on a TLS enabled socket.\n\
     --grpc-domain-sock PATH    Unix Domain Socket path to start the companion server on, will superceed TCP binding via --grpc-port.\n\
     --debug-port PORT          Port to connect debugger on (default: 10881).\n\
     --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).\n\
@@ -212,10 +214,10 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
       FBSimulatorBootConfiguration *config = FBSimulatorBootConfiguration.defaultConfiguration;
       if (headless) {
         [logger logFormat:@"Booting %@ headlessly", udid];
-        config = [config withOptions:(config.options | FBSimulatorBootOptionsEnableDirectLaunch)];
+        config = [config withOptions:(config.options | FBSimulatorBootOptionsTieToProcessLifecycle)];
       } else {
         [logger logFormat:@"Booting %@ normally", udid];
-        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsEnableDirectLaunch)];
+        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsTieToProcessLifecycle)];
       }
       if (verifyBooted) {
         [logger logFormat:@"Booting %@ with verification", udid];
@@ -521,9 +523,8 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(int argc, con
     [logger.info logFormat:@"Cleaning %@", clean];
     return [FBFuture futureWithResult:CleanFuture(clean, userDefaults, logger, reporter)];
   }
-  return [[[FBIDBError
+  return [[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
-    noLogging]
     failFuture];
 }
 
@@ -548,15 +549,7 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
 
 static NSString *EnvDescription()
 {
-  NSDictionary<NSString *, NSString *> *env = NSProcessInfo.processInfo.environment;
-  NSMutableDictionary<NSString *, NSString *> *modified = NSMutableDictionary.dictionary;
-  for (NSString *key in env) {
-    if ([key containsString:@"TERMCAP"]) {
-      continue;
-    }
-    modified[key] = env[key];
-  }
-  return [FBCollectionInformation oneLineDescriptionFromDictionary:modified];
+  return [FBCollectionInformation oneLineDescriptionFromDictionary:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment];
 }
 
 int main(int argc, const char *argv[]) {
@@ -573,11 +566,12 @@ int main(int argc, const char *argv[]) {
     [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
     NSError *error = nil;
 
-    // Check that xcode-select returns a valid path
-    [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
+    // Check that xcode-select returns a valid path, throw a big
+    // warning if not
+    [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&error];
     if (error) {
       [logger.error log:error.localizedDescription];
-      return 1;
+      error = nil;
     }
 
     FBFuture<NSNumber *> *signalled = [FBFuture race:@[

@@ -7,24 +7,21 @@
 
 #import "FBMacDevice.h"
 
-#import <DTXConnectionServices/CDStructures.h>
-#import <DTXConnectionServices/DTXSocketTransport.h>
+#import <CoreFoundation/CoreFoundation.h>
 #import <FBControlCore/FBControlCore.h>
-#import <objc/runtime.h>
-#include <CoreFoundation/CoreFoundation.h>
-#include <IOKit/IOKitLib.h>
+#import <IOKit/IOKitLib.h>
 
-#import "FBProductBundle.h"
-#import "FBMacTestPreparationStrategy.h"
 #import "FBManagedTestRunStrategy.h"
 #import "XCTestBootstrapError.h"
+#import "FBListTestStrategy.h"
+#import "FBXCTestConfiguration.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
 - (void)_XCT_requestConnectedSocketForTransport:(void (^)(NSFileHandle *, NSError *))arg1;
 @end
 
 @interface FBMacDevice()
-@property (nonatomic, strong) NSMutableDictionary<NSString *, FBProductBundle *> *bundleIDToProductMap;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, FBBundleDescriptor *> *bundleIDToProductMap;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
 @property (nonatomic, copy) NSString *workingDirectory;
@@ -43,21 +40,18 @@
   return _value;
 }
 
-+ (NSMutableDictionary<NSString *, FBProductBundle *> *)fetchInstalledApplications
++ (NSMutableDictionary<NSString *, FBBundleDescriptor *> *)fetchInstalledApplications
 {
-  NSMutableDictionary<NSString *, FBProductBundle *> *mapping = @{}.mutableCopy;
+  NSMutableDictionary<NSString *, FBBundleDescriptor *> *mapping = @{}.mutableCopy;
   NSArray<NSString *> *content = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.applicationInstallDirectory error:nil];
   for (NSString *fileOrDirectory in content) {
     if (![fileOrDirectory.pathExtension isEqualToString:@"app"]) {
       continue;
     }
     NSString *path = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:fileOrDirectory];
-    FBProductBundle *product =
-    [[[FBProductBundleBuilder builder]
-      withBundlePath:path]
-     buildWithError:nil];
-    if (product && product.bundleID) {
-      mapping[product.bundleID] = product;
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:nil];
+    if (bundle && bundle.identifier) {
+      mapping[bundle.identifier] = bundle;
     }
   }
   return mapping;
@@ -70,10 +64,9 @@
   if (self) {
     _architecture = FBArchitectureX86_64;
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-    _auxillaryDirectory = NSTemporaryDirectory();
+    _auxillaryDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
-    _launchdProcess = [[FBProcessInfo alloc] initWithProcessIdentifier:1 launchPath:@"/sbin/launchd" arguments:@[] environment:@{}];
     _udid = [FBMacDevice resolveDeviceUDID];
     _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
@@ -120,6 +113,30 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
+- (NSString *)runtimeRootDirectory
+{
+  return [self platformRootDirectory];
+}
+
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
+}
+
+- (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"usr/bin/xctest"];
+}
+
+- (FBFuture<NSString *> *)extendedTestShim
+{
+  return [[FBXCTestShimConfiguration
+    sharedShimConfigurationWithLogger:self.logger]
+    onQueue:self.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
+      return shims.macOSTestShimPath;
+    }];
+}
 
 + (NSString *)resolveDeviceUDID
 {
@@ -209,7 +226,6 @@
 @synthesize asyncQueue = _asyncQueue;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize name = _name;
-@synthesize launchdProcess = _launchdProcess;
 @synthesize logger = _logger;
 @synthesize osVersion = _osVersion;
 @synthesize state = _state;
@@ -218,9 +234,11 @@
 @synthesize screenInfo = _screenInfo;
 
 // Not used or set
-@synthesize containerApplication;
 @synthesize deviceType;
 
+- (BOOL) requiresBundlesToBeSigned {
+  return NO;
+}
 
 + (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target
 {
@@ -228,7 +246,7 @@
   return nil;
 }
 
-- (nonnull FBFuture<NSNull *> *)installApplicationWithPath:(nonnull NSString *)path
+- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
   NSFileManager *fm = [NSFileManager defaultManager];
@@ -247,26 +265,24 @@
   if (![fm copyItemAtPath:path toPath:dest error:&error]) {
     return [FBFuture futureWithResult:error];
   }
-  FBProductBundle *product =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:dest]
-   buildWithError:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:dest error:&error];
   if (error) {
     return [FBFuture futureWithResult:error];
   }
-  self.bundleIDToProductMap[product.bundleID] = product;
-  return [FBFuture futureWithResult:[NSNull null]];
+  self.bundleIDToProductMap[bundle.identifier] = bundle;
+  return FBFuture.empty;
 }
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
 {
-  FBProductBundle *product = self.bundleIDToProductMap[bundleID];
-  if (!product) {
-    NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID];
-    return [FBFuture futureWithError:error];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
+  if (!bundle) {
+    return [[XCTestBootstrapError
+      describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
+      failFuture];
   }
   NSError *error;
-  if (![[NSFileManager defaultManager] removeItemAtPath:product.path error:&error]) {
+  if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
     return [FBFuture futureWithResult:error];
   }
   [self.bundleIDToProductMap removeObjectForKey:bundleID];
@@ -277,9 +293,9 @@
 {
   NSMutableArray *result = [NSMutableArray array];
   for (NSString *bundleID in self.bundleIDToProductMap) {
-    FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
+    FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
     NSError *error;
-    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
+    bundle = [FBBundleDescriptor bundleFromPath:bundle.path error:&error];
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
@@ -290,9 +306,9 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  FBProductBundle *productBundle = self.bundleIDToProductMap[bundleID];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
   NSError *error;
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:productBundle.path error:&error];
+  bundle = [FBBundleDescriptor bundleFromPath:bundle.path error:&error];
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
@@ -312,24 +328,26 @@
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
   }
-  [task.completed cancel];
+  [task sendSignal:SIGTERM backingOffToKillWithTimeout:2 logger:self.logger];
   [self.bundleIDToRunningTask removeObjectForKey:bundleID];
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
 - (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
-  FBProductBundle *product = self.bundleIDToProductMap[configuration.bundleID];
-  if (!product) {
-    return [FBFuture futureWithResult:@0];
+  FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
+  if (!bundle) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not find application for %@", configuration.bundleID]
+      failFuture];
   }
   return [[[[[FBTaskBuilder
-    withLaunchPath:product.binaryPath]
+    withLaunchPath:bundle.binary.path]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
     onQueue:self.workQueue map:^ id<FBLaunchedProcess> (FBTask *task) {
-      self.bundleIDToRunningTask[product.bundleID] = task;
+      self.bundleIDToRunningTask[bundle.identifier] = task;
       return task;
     }];
 }
@@ -345,20 +363,15 @@
   return [FBFuture futureWithResult:runningProcesses];
 }
 
-- (nonnull FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger
 {
-  FBMacTestPreparationStrategy *testPreparationStrategy =
-    [FBMacTestPreparationStrategy
-     strategyWithTestLaunchConfiguration:testLaunchConfiguration
-     workingDirectory:self.workingDirectory];
-  return (FBFuture<id<FBiOSTargetOperation>> *)
-    [[FBManagedTestRunStrategy
-      strategyWithTarget:self
+    return [FBManagedTestRunStrategy
+      runToCompletionWithTarget:self
       configuration:testLaunchConfiguration
+      codesign:nil
+      workingDirectory:self.workingDirectory
       reporter:reporter
-      logger:logger
-      testPreparationStrategy:testPreparationStrategy]
-    connectAndStart];
+      logger:logger];
 }
 
 - (NSString *)uniqueIdentifier
@@ -376,84 +389,120 @@
   return NSOrderedSame; // There should be only one
 }
 
+- (NSString *)customDeviceSetPath
+{
+  return nil;
+}
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return NSDictionary.dictionary;
+}
+
 #pragma mark Not supported
 
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
-  NSAssert(nil, @"createStreamWithConfiguration: is not yet supported");
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
+- (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
-  NSAssert(nil, @"startRecordingToFile: is not yet supported");
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFuture<NSNull *> *)stopRecording
+- (FBFuture<NSNull *> *)stopRecording
 {
-  NSAssert(nil, @"stopRecording: is not yet supported");
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
-  NSAssert(nil, @"listTestsForBundleAtPath:timeout: is not yet supported");
-  return nil;
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithEnvironment:@{}
+    workingDirectory:self.auxillaryDirectory
+    testBundlePath:bundlePath
+    runnerAppPath:appPath
+    waitForDebugger:NO
+    timeout:timeout];
+
+  return [[[FBListTestStrategy alloc]
+    initWithTarget:self
+    configuration:configuration
+    logger:self.logger]
+    listTests];
 }
 
-- (nonnull FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(nonnull NSArray<NSString *> *)arguments
+- (FBFuture<id<FBiOSTargetOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
-  NSAssert(nil, @"logLinesWithArguments: is not yet supported");
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFuture<id<FBiOSTargetOperation>> *)tailLog:(nonnull NSArray<NSString *> *)arguments consumer:(nonnull id<FBDataConsumer>)consumer
+- (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
-  NSAssert(nil, @"tailLog:consumer: is not yet supported");
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format
+- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
 {
-  NSAssert(nil, @"takeScreenshot: is not yet supported");
-  return nil;
-}
-
-- (nonnull FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate
-{
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [FBCrashLogNotifier.sharedInstance nextCrashLogForPredicate:predicate];
 }
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache
 {
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate
 {
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (nonnull FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
 {
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFutureContext];
 }
 
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBBundleDescriptor *)application port:(in_port_t)port
+- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
-  NSAssert(NO, @"-[%@ %@] is not yet supported", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+{
+  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
 }
 
 @end

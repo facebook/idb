@@ -61,9 +61,10 @@ NS_ASSUME_NONNULL_BEGIN
  For the supported archives see -[FBArchiveOperations extractArchiveFromStream:toPath:queue:logger:]
 
  @param input stream containing tar data
+ @param compression compression format used by client
  @return a Context Future containing the root of the extraction tar
  */
-- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input;
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
 
 /**
  Extracts an archive file to a temporary location.

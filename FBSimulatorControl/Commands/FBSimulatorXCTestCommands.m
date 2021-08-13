@@ -13,20 +13,17 @@
 #import <sys/un.h>
 
 #import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorXCTestProcessExecutor.h"
-#import "FBSimulatorTestPreparationStrategy.h"
 
 static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 
 @interface FBSimulatorXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetOperation> operation;
+@property (nonatomic, assign, readwrite) BOOL isRunningXcodeBuildOperation;
 
 @end
 
@@ -51,28 +48,147 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBXCTestCommands
 
-- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Use FBXCTestBootstrap to run the test if `shouldUseXcodebuild` is not set in the test launch.
   if (!testLaunchConfiguration.shouldUseXcodebuild) {
-    return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
+    return [self runTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger workingDirectory:self.simulator.auxillaryDirectory];
   }
 
-  if (self.operation) {
+  if (self.isRunningXcodeBuildOperation) {
     return [[FBSimulatorError
       describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
       failFuture];
   }
-  return [[[FBXcodeBuildOperation
+  return [[[[FBXcodeBuildOperation
     terminateAbandonedXcodebuildProcessesForUDID:self.simulator.udid processFetcher:[FBProcessFetcher new] queue:self.simulator.workQueue logger:logger]
     onQueue:self.simulator.workQueue fmap:^(id _) {
+      self.isRunningXcodeBuildOperation = YES;
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
     onQueue:self.simulator.workQueue map:^(FBTask *task) {
-      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
+      return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.simulator logger:logger];
+    }]
+    onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
+      self.isRunningXcodeBuildOperation = NO;
+      return future;
     }];
+}
+
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService
+{
+  return [[[self
+    testManagerDaemonSocketPath]
+    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNumber *> * (NSString *testManagerSocketString) {
+      int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
+      if (socketFD == -1) {
+        return [[FBSimulatorError
+          describe:@"Unable to create a unix domain socket"]
+          failFuture];
+      }
+      if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
+        close(socketFD);
+        return [[FBSimulatorError
+          describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
+          failFuture];
+      }
+
+      const char *testManagerSocketPath = testManagerSocketString.UTF8String;
+      if (strlen(testManagerSocketPath) >= 0x68) {
+        close(socketFD);
+        return [[FBSimulatorError
+          describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
+          failFuture];
+      }
+
+      struct sockaddr_un remote;
+      remote.sun_family = AF_UNIX;
+      strcpy(remote.sun_path, testManagerSocketPath);
+      socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
+      if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
+        close(socketFD);
+        return [[FBSimulatorError
+          describe:@"Failed to connect to testmangerd socket"]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:@(socketFD)];
+    }]
+    onQueue:self.simulator.asyncQueue contextualTeardown:^(NSNumber *socketNumber, FBFutureState __) {
+      close(socketNumber.intValue);
+      return FBFuture.empty;
+    }];
+}
+
+#pragma mark FBXCTestExtendedCommands
+
+- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
+{
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithEnvironment:@{}
+    workingDirectory:self.simulator.auxillaryDirectory
+    testBundlePath:bundlePath
+    runnerAppPath:appPath
+    waitForDebugger:NO
+    timeout:timeout];
+
+  return [[[FBListTestStrategy alloc]
+    initWithTarget:self.simulator configuration:configuration logger:self.simulator.logger]
+    listTests];
+}
+
+- (FBFuture<NSString *> *)extendedTestShim
+{
+  return [[FBXCTestShimConfiguration
+    sharedShimConfigurationWithLogger:self.simulator.logger]
+    onQueue:self.simulator.asyncQueue map:^(FBXCTestShimConfiguration *shims) {
+      return shims.iOSSimulatorTestShimPath;
+    }];
+}
+
+- (NSString *)xctestPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
+{
+  if (self.simulator.state != FBiOSTargetStateBooted) {
+    return [[FBSimulatorError
+      describe:@"Simulator must be booted to run tests"]
+      failFuture];
+  }
+  return [FBManagedTestRunStrategy
+    runToCompletionWithTarget:self.simulator
+    configuration:testLaunchConfiguration
+    codesign:(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid ? [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.simulator.logger] : nil)
+    workingDirectory:self.simulator.auxillaryDirectory
+    reporter:reporter
+    logger:logger];
+}
+
+static NSTimeInterval const TestmanagerdSimSockTimeout = 5; // 5 seconds.
+static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
+
+- (FBFuture<NSString *> *)testManagerDaemonSocketPath
+{
+  return [[FBFuture
+    onQueue:self.simulator.asyncQueue resolveUntil:^{
+      NSError *error = nil;
+      NSString *socketPath = [self.simulator.device getenv:SimSockEnvKey error:&error];
+      if (socketPath.length == 0) {
+        return [[[FBSimulatorError
+          describeFormat:@"Failed to get %@ from simulator environment", SimSockEnvKey]
+          causedBy:error]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:socketPath];
+    }]
+    timeout:TestmanagerdSimSockTimeout waitingFor:@"%@ to become available in the simulator environment", SimSockEnvKey];
 }
 
 - (FBFuture<FBTask *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
@@ -88,175 +204,19 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
     return [FBSimulatorError failFutureWithError:error];
   }
 
-  return [FBXcodeBuildOperation
-    operationWithUDID:self.simulator.udid
-    configuration:configuration
-    xcodeBuildPath:xcodeBuildPath
-    testRunFilePath:filePath
-    simDeviceSet:[self.simulator.device.deviceSet.setPath isEqualToString:[DefaultSimDeviceSet stringByExpandingTildeInPath]] ? nil : self.simulator.device.deviceSet.setPath
-    queue:self.simulator.workQueue
-    logger:[logger withName:@"xcodebuild"]];
-}
-
-- (id<FBiOSTargetOperation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  FBFuture<NSNull *> *completed = [[[[task
-    completed]
-    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.simulator reporter:reporter logger:logger];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
-      return FBFuture.empty;
-    }]
-    onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
-      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration.description];
-      self.operation = nil;
-      return future;
-    }];
-
-  self.operation = FBiOSTargetOperationFromFuture(completed);
-  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration.description];
-
-  return self.operation;
-}
-
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
-{
   return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:self.simulator.logger]
-    onQueue:self.simulator.workQueue fmap:^(FBXCTestShimConfiguration *shims) {
-      FBListTestConfiguration *configuration = [FBListTestConfiguration
-        configurationWithShims:shims
-        environment:@{}
-        workingDirectory:self.simulator.auxillaryDirectory
-        testBundlePath:bundlePath
-        runnerAppPath:appPath
-        waitForDebugger:NO
-        timeout:timeout];
-
-      return [[FBListTestStrategy
-        strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator shims:configuration.shims]
+    sharedShimConfigurationWithLogger:self.simulator.logger]
+    onQueue:self.simulator.asyncQueue fmap:^(FBXCTestShimConfiguration *shims) {
+      return [FBXcodeBuildOperation
+        operationWithUDID:self.simulator.udid
         configuration:configuration
-        logger:self.simulator.logger]
-        listTests];
-  }];
-}
-
-- (FBFutureContext<NSNumber *> *)transportForTestManagerService
-{
-  const BOOL simulatorIsBooted = (self.simulator.state == FBiOSTargetStateBooted);
-  if (!simulatorIsBooted) {
-    return [[[FBSimulatorError
-      describe:@"Simulator should be already booted"]
-      logger:self.simulator.logger]
-      failFutureContext];
-  }
-
-  NSError *innerError;
-  int testManagerSocket = [self makeTestManagerDaemonSocketWithLogger:self.simulator.logger error:&innerError];
-  if (testManagerSocket < 1) {
-    return [[[[FBSimulatorError
-      describe:@"Falied to create test manager dameon socket"]
-      causedBy:innerError]
-      logger:self.simulator.logger]
-      failFutureContext];
-  }
-
-  return [[FBFuture
-    futureWithResult:@(testManagerSocket)]
-    onQueue:self.simulator.workQueue contextualTeardown:^(id _, FBFutureState __) {
-      close(testManagerSocket);
-      return FBFuture.empty;
+        xcodeBuildPath:xcodeBuildPath
+        testRunFilePath:filePath
+        simDeviceSet:self.simulator.customDeviceSetPath
+        macOSTestShimPath:shims.macOSTestShimPath
+        queue:self.simulator.workQueue
+        logger:[logger withName:@"xcodebuild"]];
     }];
-}
-
-#pragma mark Private
-
-- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
-{
-  if (self.simulator.state != FBiOSTargetStateBooted) {
-    return [[[FBSimulatorError
-      describe:@"Simulator must be booted to run tests"]
-      inSimulator:self.simulator]
-      failFuture];
-  }
-  FBSimulatorTestPreparationStrategy *testPreparationStrategy = [FBSimulatorTestPreparationStrategy
-    strategyWithTestLaunchConfiguration:testLaunchConfiguration
-    workingDirectory:workingDirectory];
-  return (FBFuture<id<FBiOSTargetOperation>> *) [[FBManagedTestRunStrategy
-    strategyWithTarget:self.simulator configuration:testLaunchConfiguration reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy]
-    connectAndStart];
-}
-
-- (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (socketFD == -1) {
-    return [[[FBSimulatorError
-      describe:@"Unable to create a unix domain socket"]
-      logger:logger]
-      failInt:error];
-  }
-
-  NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
-  if (testManagerSocketString.length == 0) {
-    close(socketFD);
-    return [[[FBSimulatorError
-      describe:@"Failed to retrieve testmanagerd socket path"]
-      logger:logger]
-      failInt:error];
-  }
-
-  if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
-    close(socketFD);
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
-      logger:logger]
-      failInt:error];
-  }
-
-  const char *testManagerSocketPath = testManagerSocketString.UTF8String;
-  if (strlen(testManagerSocketPath) >= 0x68) {
-    close(socketFD);
-    return [[[FBSimulatorError
-      describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
-      logger:logger]
-      failInt:error];
-  }
-
-  struct sockaddr_un remote;
-  remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, testManagerSocketPath);
-  socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
-  if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
-    close(socketFD);
-    return [[[FBSimulatorError
-      describe:@"Failed to connect to testmangerd socket"]
-      logger:logger]
-      failInt:error];
-  }
-  return socketFD;
-}
-
-- (NSString *)testManagerDaemonSocketPathWithLogger:(id<FBControlCoreLogger>)logger
-{
-  const NSUInteger maxTryCount = 10;
-  NSUInteger tryCount = 0;
-  do {
-    NSString *socketPath = [self.simulator.device getenv:@"TESTMANAGERD_SIM_SOCK" error:nil];
-    if (socketPath.length > 0) {
-      return socketPath;
-    }
-    [logger logFormat:@"Simulator is booted but getenv returned nil for test connection socket path.\n Will retry in 1s (%lu attempts so far).", (unsigned long)tryCount];
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
-  } while (tryCount++ >= maxTryCount);
-  return nil;
 }
 
 @end

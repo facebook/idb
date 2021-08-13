@@ -21,11 +21,12 @@ NSString *const JPEG = @"public.jpeg";
 + (FBFuture<FBTask *> *)internalOperationWithArguments:(NSArray<NSString *> *)arguments queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSArray<NSString *> *xcrunArguments = [@[@"xcresulttool"] arrayByAddingObjectsFromArray:arguments];
-  return [[[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:XcrunPath]
     withArguments:xcrunArguments]
     withStdErrToLogger:logger]
-    runUntilCompletion]
+    withTaskLifecycleLoggingTo:logger]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue map:^(FBTask *task) {
       return task;
     }];
@@ -71,11 +72,12 @@ NSString *const JPEG = @"public.jpeg";
    onQueue:queue fmap:^ FBFuture * (FBTask *task) {
      if ([encodeType isEqualToString:HEIC]) {
        NSArray<NSString *> *arguments = @[@"-s", @"format", @"jpeg", destination, @"--out", destination];
-       return [[[[FBTaskBuilder
+       return [[[[[FBTaskBuilder
          withLaunchPath:SipsPath]
          withArguments:arguments]
          withStdErrToLogger:logger]
-         runUntilCompletion];
+         withTaskLifecycleLoggingTo:logger]
+         runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]];
      } else if ([encodeType isEqualToString:JPEG]) {
        return [FBFuture futureWithResult:task];
      } else {

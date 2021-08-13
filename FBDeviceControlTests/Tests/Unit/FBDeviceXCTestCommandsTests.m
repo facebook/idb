@@ -14,7 +14,7 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
-@interface FBTestManagerTestReporterDouble : NSObject <FBTestManagerTestReporter>
+@interface FBTestManagerTestReporterDouble : NSObject <FBXCTestReporter>
 
 @property (nonatomic, assign, readwrite) BOOL testCaseDidStartForTestClassCalled;
 @property (nonatomic, assign, readwrite) BOOL testCaseDidFinishForTestClassCalled;
@@ -30,12 +30,12 @@
   return self;
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
+- (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
   self.testCaseDidStartForTestClassCalled = YES;
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
 {
   self.testCaseDidFinishForTestClassCalled = YES;
 }

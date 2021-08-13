@@ -14,49 +14,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 static const size_t FBTaskOutputErrorMessageLength = 200;
 
-@class FBTaskConfiguration;
-
-/**
- Error Doman for all FBTask errors.
- */
-extern NSString *const FBTaskErrorDomain;
+@class FBProcessSpawnConfiguration;
 
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : NSObject <FBLaunchedProcess>
+@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBLaunchedProcess
 
 #pragma mark Initializers
 
 /**
  Creates a Task with the provided configuration and starts it.
 
- @param configuration the configuration to use
+ @param configuration the configuration to use.
+ @param logger an optional logger to log task lifecycle events to.
  @return a future that resolves when the task has been started.
  */
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBTaskConfiguration *)configuration;
-
-#pragma mark Public Methods
-
-/**
- Signal the process.
- The future returned will resolve when the process has terminated and can be ignored if not required.
-
- @param signo the signal number to send.
- @return a successful Future that resolves to the signal number when the process has terminated.
- */
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo;
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Accessors
-
-/**
- A future that resolves with the exit code when the process has finished.
- Cancelling this future will send a SIGTERM to the launched process.
- If the process exited with an exit code different than the acceptable
- values then the future will resolve to failure otherwise it will resolve to success.
- Any errors will also be surfaced in this future.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *completed;
 
 /**
  Returns the stdin of the task.

@@ -57,7 +57,7 @@ static NSString *const IconJSONFile = @"icons.json";
   return [FBFuture futureWithResult:self.validFilenames];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
   NSString *filename = containerPath.lastPathComponent;
   return [[FBFuture
@@ -77,7 +77,7 @@ static NSString *const IconJSONFile = @"icons.json";
         if (!data) {
           return [FBFuture futureWithError:error];
         }
-        if (![NSFileManager.defaultManager writeData:data toFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
           return [FBFuture futureWithError:error];
         }
         return [FBFuture futureWithResult:destinationPath];
@@ -87,7 +87,7 @@ static NSString *const IconJSONFile = @"icons.json";
         if (!data) {
           return [FBFuture futureWithError:error];
         }
-        if (![NSFileManager.defaultManager writeData:data toFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
           return [FBFuture futureWithError:error];
         }
         return [FBFuture futureWithResult:destinationPath];
@@ -95,13 +95,20 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     iconLayoutFromSourcePath:sourcePath toDestinationFile:destinationPath.lastPathComponent]
     onQueue:self.client.queue fmap:^ FBFuture<NSNull *> * (IconLayoutType layout) {
       return [self.client setIconLayout:layout];
     }];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
@@ -111,14 +118,14 @@ static NSString *const IconJSONFile = @"icons.json";
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path
+- (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]

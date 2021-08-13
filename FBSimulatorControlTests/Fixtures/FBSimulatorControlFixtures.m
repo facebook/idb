@@ -36,11 +36,6 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
 }
 
-+ (NSString *)JUnitXMLResult0Path
-{
-  return [[NSBundle bundleForClass:self] pathForResource:@"junitResult0" ofType:@"xml"];
-}
-
 + (NSString *)simulatorSystemLogPath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"simulator_system" ofType:@"log"];
@@ -62,18 +57,42 @@
 
 - (FBTestLaunchConfiguration *)testLaunchTableSearch
 {
-  return [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
-    withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
-    withUITesting:NO];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    applicationLaunchConfiguration:self.tableSearchAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
 {
-  return [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
-    withApplicationLaunchConfiguration:self.safariAppLaunch]
-    withUITesting:NO];
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 }
 
 - (FBBundleDescriptor *)tableSearchApplication
@@ -94,12 +113,14 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:application
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:application.identifier
+    bundleName:application.name
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    io:FBProcessIO.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
@@ -109,23 +130,24 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunchWithMode:(FBApplicationLaunchMode)launchMode
 {
-  return [FBApplicationLaunchConfiguration
-    configurationWithBundleID:MobileSafariBundleIdentifier
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:MobileSafariBundleIdentifier
     bundleName:MobileSafariBundleName
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
-    output:FBProcessOutputConfiguration.outputToDevNull
+    waitForDebugger:NO
+    io:FBProcessIO.outputToDevNull
     launchMode:launchMode];
 }
 
-- (FBAgentLaunchConfiguration *)agentLaunch1
+- (FBProcessSpawnConfiguration *)agentLaunch1
 {
-  return [FBAgentLaunchConfiguration
-    configurationWithBinary:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil]
+  return [[FBProcessSpawnConfiguration alloc]
+    initWithLaunchPath:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil].path
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
-    output:FBProcessOutputConfiguration.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    io:FBProcessIO.outputToDevNull
+    mode:FBProcessSpawnModeDefault];
 }
 
 - (nullable NSString *)iOSUnitTestBundlePath

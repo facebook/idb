@@ -7,76 +7,77 @@
 
 #import "FBManagedTestRunStrategy.h"
 
-#import "FBTestManager.h"
-#import "FBXCTestRunStrategy.h"
+#import "FBTestManagerAPIMediator.h"
+#import "FBTestManagerContext.h"
+#import "FBTestRunnerConfiguration.h"
+#import "FBXCTestReporter.h"
 #import "XCTestBootstrapError.h"
 #import "XCTestBootstrapFrameworkLoader.h"
-
-@interface FBManagedTestRunStrategy ()
-
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
-
-@property (nonatomic, strong, nullable, readonly) FBTestLaunchConfiguration *configuration;
-@property (nonatomic, strong, nullable, readonly) id<FBTestManagerTestReporter> reporter;
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, nullable, readonly) id<FBXCTestPreparationStrategy> testPreparationStrategy;
-
-@end
 
 @implementation FBManagedTestRunStrategy
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(target);
-
-  return [[self alloc] initWithConfiguration:configuration target:target reporter:reporter logger:logger testPreparationStrategy:testPreparationStrategy];
-}
-
-- (instancetype)initWithConfiguration:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-  _reporter = reporter;
-  _target = target;
-  _logger = logger;
-  _testPreparationStrategy = testPreparationStrategy;
-
-  return self;
-}
-
-#pragma mark Public Methods
-
-- (FBFuture<FBTestManager *> *)connectAndStart
-{
-  NSParameterAssert(self.configuration.applicationLaunchConfiguration);
-  NSParameterAssert(self.configuration.testBundlePath);
+  NSParameterAssert(configuration.applicationLaunchConfiguration);
+  NSParameterAssert(configuration.testBundlePath);
 
   NSError *error = nil;
-  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
+  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:target.logger error:&error]) {
     return [XCTestBootstrapError failFutureWithError:error];
   }
 
-  FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-    strategyWithIOSTarget:self.target
-    testPrepareStrategy:self.testPreparationStrategy
-    reporter:self.reporter
-    logger:self.logger];
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = configuration.applicationLaunchConfiguration;
+  return [[FBTestRunnerConfiguration
+    prepareConfigurationWithTarget:target testLaunchConfiguration:configuration workingDirectory:workingDirectory codesign:codesign]
+    onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
+      // The launch configuration for the test bundle host.
+      FBApplicationLaunchConfiguration *testHostLaunchConfiguration = [self
+        prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
+        withTestRunnerConfiguration:runnerConfiguration];
 
-  return [[testRunStrategy
-    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration]
-    onQueue:self.target.workQueue fmap:^(FBTestManager *testManager) {
-      FBFuture<FBTestManagerResult *> *result = [testManager execute];
-      if (result.error) {
-        return [FBFuture futureWithError:result.error];
-      }
-      return [FBFuture futureWithResult:testManager];
+      // Make the Context for the Test Manager.
+      FBTestManagerContext *context = [[FBTestManagerContext alloc]
+        initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
+        timeout:configuration.timeout
+        testHostLaunchConfiguration:testHostLaunchConfiguration
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+
+      // Construct and run the mediator, the core of the test execution.
+      return [FBTestManagerAPIMediator
+        connectAndRunUntilCompletionWithContext:context
+        target:target
+        reporter:reporter
+        logger:logger];
     }];
+}
+
++ (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
+{
+  return [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:testRunnerConfiguration.testRunner.identifier
+    bundleName:testRunnerConfiguration.testRunner.identifier
+    arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
+    environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+    waitForDebugger:NO
+    io:applicationLaunchConfiguration.io
+    launchMode:FBApplicationLaunchModeFailIfRunning];
+}
+
++ (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes
+{
+  return [(configuration.launchArguments ?: @[]) arrayByAddingObjectsFromArray:(attributes ?: @[])];
+}
+
++ (NSDictionary<NSString *, NSString *> *)environmentFromConfiguration:(FBTestRunnerConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment
+{
+  NSMutableDictionary<NSString *, NSString *> *mEnvironment = (configuration.launchEnvironment ?: @{}).mutableCopy;
+  if (environment) {
+    [mEnvironment addEntriesFromDictionary:environment];
+  }
+  return [mEnvironment copy];
 }
 
 @end

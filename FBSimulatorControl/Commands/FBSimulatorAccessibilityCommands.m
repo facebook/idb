@@ -48,6 +48,10 @@
 // The only exception here is the usage of -[NSAccessibility accessibilityParent] which calls a delegate method with an unknown implementation.
 // Since all values are enumerated recursively downwards, this is fine for the time being.
 //
+// We must also remember to set the `bridgeDelegateToken` on all created `AXPTranslationObject`s.
+// This applies to those created by us when the `AXPTranslationObject` as well`AXPMacPlatformElement`'s that are created inside `AccessibilityPlatformTranslation`
+// This is needed so that we know which Simulator the request belongs to, since the Translator is a singleton object, we need to be able to de-duplicate here.
+//
 
 static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
 
@@ -95,91 +99,154 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, AXPTranslationDelegateHelper, AXPTranslationTokenDelegateHelper>
+@interface FBSimulator_TranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
 
-@property (nonatomic, strong, readonly) SimDevice *device;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, weak, readonly) AXPTranslator *translator;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) dispatch_queue_t callbackQueue;
+@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBSimulator *> *tokenToSimulator;
 
 @end
 
-@implementation FBSimulatorAccessibilityCommands_CoreSimulator
+@implementation FBSimulator_TranslationDispatcher
 
-- (instancetype)initWithDevice:(SimDevice *)device queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+#pragma mark Initializers
+
+- (instancetype)initWithTranslator:(AXPTranslator *)translator logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _device = device;
-  _queue = queue;
+  _translator = translator;
   _logger = logger;
+  _callbackQueue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.accessibility_translator.callback", DISPATCH_QUEUE_SERIAL);
+  _tokenToSimulator = [NSMapTable
+    mapTableWithKeyOptions:NSPointerFunctionsCopyIn
+    valueOptions:NSPointerFunctionsWeakMemory];
 
   return self;
 }
 
-#pragma mark FBSimulatorAccessibilityCommands Implementation
-
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
++ (instancetype)sharedInstance
 {
-  AXPTranslator *translator = self.translator;
-  AXPTranslationObject *translationObject = [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:DummyBridgeToken];
-  AXPMacPlatformElement *element = [translator macPlatformElementFromTranslation:translationObject];
-  if (nestedFormat) {
-    return [FBFuture futureWithResult:@[[self.class nestedRecursiveDescriptionFromElement:element]]];
-  }
-  return [FBFuture futureWithResult:[self.class flatRecursiveDescriptionFromElement:element]];
+  static dispatch_once_t onceToken;
+  static FBSimulator_TranslationDispatcher *dispatcher;
+  dispatch_once(&onceToken, ^{
+    AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
+    // bridgeTokenDelegate is preferred by AXPTranslator.
+    dispatcher = [[FBSimulator_TranslationDispatcher alloc] initWithTranslator:translator logger:nil];
+    translator.bridgeTokenDelegate = dispatcher;
+  });
+  return dispatcher;
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+#pragma mark Public
+
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)frontmostApplicationForSimulator:(FBSimulator *)simulator displayId:(unsigned int)displayId nestedFormat:(BOOL)nestedFormat
 {
-  AXPTranslator *translator = self.translator;
-  AXPTranslationObject *translationObject = [translator objectAtPoint:point displayId:0 bridgeDelegateToken:DummyBridgeToken];
-  AXPMacPlatformElement *element = [translator macPlatformElementFromTranslation:translationObject];
-  if (nestedFormat) {
-    return [FBFuture futureWithResult:[self.class nestedRecursiveDescriptionFromElement:element]];
-  }
-  return [FBFuture futureWithResult:[self.class accessibilityDictionaryForElement:element]];
+  return [FBFuture
+    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
+      NSString *token = [self pushSimulator:simulator];
+      AXPTranslationObject *translation = [self.translator frontmostApplicationWithDisplayId:displayId bridgeDelegateToken:token];
+      translation.bridgeDelegateToken = token;
+      AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
+      element.translation.bridgeDelegateToken = token;
+      NSArray<NSDictionary<NSString *, id> *> *formatted = [self.class recursiveDescriptionFromElement:element token:token nestedFormat:nestedFormat];
+      [self popSimulator:token];
+      return formatted;
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, id> *> *)objectAtPointForSimulator:(FBSimulator *)simulator displayId:(unsigned int)displayId atPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+{
+  return [FBFuture
+    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
+      NSString *token = [self pushSimulator:simulator];
+      AXPTranslationObject *translation = [self.translator objectAtPoint:point displayId:displayId bridgeDelegateToken:token];
+      translation.bridgeDelegateToken = token;
+      AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
+      element.translation.bridgeDelegateToken = token;
+      NSDictionary<NSString *, id> *formatted = [self.class formattedDescriptionOfElement:element token:token nestedFormat:nestedFormat];
+      [self popSimulator:token];
+      return formatted;
+    }];
 }
 
 #pragma mark Private
 
-// This is basically the root class of how translation works.
-- (AXPTranslator *)translator
+- (NSString *)pushSimulator:(FBSimulator *)simulator
 {
-  AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
-  // bridgeTokenDelegate is preferred by AXPTranslator.
-  translator.bridgeDelegate = self;
-  translator.bridgeTokenDelegate = self;
-  return translator;
+  NSString *token = NSUUID.UUID.UUIDString;
+  NSParameterAssert([self.tokenToSimulator objectForKey:token] == nil);
+  [self.tokenToSimulator setObject:simulator forKey:token];
+  [self.logger logFormat:@"Simulator %@ backed by token %@", simulator, token];
+  return token;
+}
+
+- (FBSimulator *)popSimulator:(NSString *)token
+{
+  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
+  NSParameterAssert(simulator);
+  [self.tokenToSimulator removeObjectForKey:token];
+  [self.logger logFormat:@"Removing token %@", token];
+  return simulator;
 }
 
 // Since we're using an async callback-based function in CoreSimulator this needs to be converted to a synchronous variant for the AXTranslator callbacks.
 // In order to do this we have a dispatch group acting as a mutex.
 // This also means that the queue that this happens on should **never be the main queue**. An async global queue will suffice here.
-+ (AXPTranslationCallback)translationCallbackForSimDevice:(SimDevice *)device queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (AXPTranslationCallback)translationCallbackForToken:(NSString *)token
 {
+  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
+  if (!simulator) {
+    return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request) {
+      [self.logger logFormat:@"Simlator with token %@ is gone for request %@. Returning empty response", token, request];
+      return [objc_getClass("AXPTranslatorResponse") emptyResponse];
+    };
+  }
   return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request){
+    [simulator.logger logFormat:@"Sending Accessibility Request %@", request];
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
     __block AXPTranslatorResponse *response = nil;
-    [logger logFormat:@"Sending Accessibility Request %@", request];
-    [device sendAccessibilityRequestAsync:request completionQueue:queue completionHandler:^(AXPTranslatorResponse *innerResponse) {
+    [simulator.device sendAccessibilityRequestAsync:request completionQueue:self.callbackQueue completionHandler:^(AXPTranslatorResponse *innerResponse) {
       response = innerResponse;
       dispatch_group_leave(group);
     }];
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-    [logger logFormat:@"Got Accessibility Response %@", response];
+    [simulator.logger logFormat:@"Got Accessibility Response %@", response];
     return response;
   };
 }
 
 static NSString *const AXPrefix = @"AX";
 
-// The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
 {
+  element.translation.bridgeDelegateToken = token;
+  if (nestedFormat) {
+    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token]];
+  }
+  return [self.class flatRecursiveDescriptionFromElement:element token:token];
+}
+
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
+{
+  element.translation.bridgeDelegateToken = token;
+  if (nestedFormat) {
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token];
+  }
+  return [self.class accessibilityDictionaryForElement:element token:token];
+}
+
+// The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token
+{
+  // The token must always be set so that the right callback is called
+  element.translation.bridgeDelegateToken = token;
+
   NSRect frame = element.accessibilityFrame;
   // The value returned in accessibilityRole is may be prefixed with "AX".
   // If that's the case, then let's strip it to make it like the SimulatorBridge implementation.
@@ -215,34 +282,37 @@ static NSString *const AXPrefix = @"AX";
 
 // This replicates the non-heirarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element]];
+  [values addObject:[self accessibilityDictionaryForElement:element token:token]];
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement];
+    childElement.translation.bridgeDelegateToken = token;
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
 {
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element] mutableCopy];
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement];
+    childElement.translation.bridgeDelegateToken = token;
+    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token];
     [childrenValues addObject:childValues];
   }
   values[@"children"] = childrenValues;
   return values;
 }
 
+
 #pragma mark AXPTranslationTokenDelegateHelper
 
 - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token
 {
-  return [self.class translationCallbackForSimDevice:self.device queue:self.queue logger:self.logger];
+  return [self translationCallbackForToken:token];
 }
 
 - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token
@@ -252,26 +322,46 @@ static NSString *const AXPrefix = @"AX";
 
 - (id)accessibilityTranslationRootParentWithToken:(NSString *)token
 {
-  NSAssert(NO, @"Delegate method '%@', with unknown implementation called", NSStringFromSelector(_cmd));
+  [self.logger logFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token];
   return nil;
 }
 
-#pragma mark AXPTranslationDelegateHelper
+@end
 
-- (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallback
+@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations>
+
+@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
+@end
+
+@implementation FBSimulatorAccessibilityCommands_CoreSimulator
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [self.class translationCallbackForSimDevice:self.device queue:self.queue logger:self.logger];
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+  _queue = queue;
+  _logger = logger;
+
+  return self;
 }
 
-- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withContext:(id)context postProcess:(id)postProcess
+#pragma mark FBSimulatorAccessibilityCommands Implementation
+
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
 {
-  return rect;
+  return [FBSimulator_TranslationDispatcher.sharedInstance frontmostApplicationForSimulator:self.simulator displayId:0 nestedFormat:nestedFormat];
 }
 
-- (id)accessibilityTranslationRootParent
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
 {
-  NSAssert(NO, @"Delegate method '%@', with unknown implementation called", NSStringFromSelector(_cmd));
-  return nil;
+  return [FBSimulator_TranslationDispatcher.sharedInstance objectAtPointForSimulator:self.simulator displayId:0 atPoint:point nestedFormat:nestedFormat];
 }
 
 @end
@@ -309,7 +399,7 @@ static NSString *const AXPrefix = @"AX";
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.workQueue fmap:^(id<FBAccessibilityOperations> implementation) {
+    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
       return [implementation accessibilityElementsWithNestedFormat:nestedFormat];
     }];
 }
@@ -318,7 +408,7 @@ static NSString *const AXPrefix = @"AX";
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.workQueue fmap:^(id<FBAccessibilityOperations> implementation) {
+    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
       return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat];
     }];
 }
@@ -339,11 +429,11 @@ static NSString *const AXPrefix = @"AX";
         describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
         failFuture];
     }
-    return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithDevice:simulator.device queue:simulator.asyncQueue logger:simulator.logger]];
+    return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
   }
   return [[self.simulator
     connectToBridge]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
+    onQueue:self.simulator.asyncQueue map:^(FBSimulatorBridge *bridge) {
       return [[FBSimulatorAccessibilityCommands_SimulatorBridge alloc] initWithBridge:bridge];
     }];
 }

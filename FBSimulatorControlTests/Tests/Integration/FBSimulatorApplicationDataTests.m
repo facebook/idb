@@ -28,7 +28,7 @@
   BOOL success = [[[simulator
     fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
     onQueue:simulator.asyncQueue pop:^(id<FBFileContainer> container) {
-      return [container copyPathOnHost:[NSURL fileURLWithPath:fixturePath] toDestination:@"Documents"];
+      return [container copyFromHost:[NSURL fileURLWithPath:fixturePath] toContainer:@"Documents"];
     }]
     await:&error] != nil;
   XCTAssertNil(error);
@@ -38,7 +38,7 @@
   success = [[[simulator
     fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
     onQueue:simulator.asyncQueue pop:^(id<FBFileContainer> container) {
-      return [container copyItemInContainer:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent] toDestinationOnHost:destinationPath];
+      return [container copyFromContainer:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent] toHost:destinationPath];
    }]
    await:&error] != nil;
   XCTAssertNil(error);

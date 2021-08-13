@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a FBSimulatorEraseStrategy.
 
  @param set the Simulator Set to create the strategy for,
- @return a configured FBSimulatorTerminationStrategy instance.
+ @return a configured FBSimulatorEraseStrategy instance.
  */
 + (instancetype)strategyForSet:(FBSimulatorSet *)set;
 

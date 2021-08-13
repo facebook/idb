@@ -7,88 +7,50 @@
 
 #import "FBXCTestDescriptor.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBError.h"
-#import "FBIDBTestOperation.h"
-#import "FBTestApplicationsPair.h"
-#import "FBTemporaryDirectory.h"
 #import "FBIDBStorageManager.h"
+#import "FBIDBTestOperation.h"
+#import "FBTemporaryDirectory.h"
+#import "FBTestApplicationsPair.h"
+#import "FBXCTestReporterConfiguration.h"
+#import "FBXCTestRunFileReader.h"
 
-static FBApplicationLaunchConfiguration *BuildAppLaunchConfig(NSString *bundleID, NSDictionary<NSString *, NSString *> *environment, NSArray<NSString *> * arguments, id<FBControlCoreLogger> logger)
+static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSString *bundleID, NSDictionary<NSString *, NSString *> *environment, NSArray<NSString *> * arguments, id<FBControlCoreLogger> logger,  NSString * processLogDirectory, dispatch_queue_t queue)
 {
-  NSError *error = nil;
-  FBProcessOutputConfiguration *processOutput = [FBProcessOutputConfiguration
-    configurationWithStdOut:[FBLoggingDataConsumer consumerWithLogger:logger]
-    stdErr:[FBLoggingDataConsumer consumerWithLogger:logger]
-    error:&error];
-  NSCAssert(processOutput, @"Could not build process output %@", error);
-  return [FBApplicationLaunchConfiguration configurationWithBundleID:bundleID
-    bundleName:nil
-    arguments:arguments ?: @[]
-    environment:environment ?: @{}
-    output:processOutput
-    launchMode:FBApplicationLaunchModeFailIfRunning];
+  FBLoggingDataConsumer *stdOutConsumer = [FBLoggingDataConsumer consumerWithLogger:logger];
+  FBLoggingDataConsumer *stdErrConsumer = [FBLoggingDataConsumer consumerWithLogger:logger];
+
+  FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *stdOutFuture = [FBFuture futureWithResult:stdOutConsumer];
+  FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *stdErrFuture = [FBFuture futureWithResult:stdErrConsumer];
+
+  if (processLogDirectory) {
+    FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDirectory:processLogDirectory];
+    NSUUID *udid = NSUUID.UUID;
+    stdOutFuture = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:udid logger:logger];
+    stdErrFuture = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger];
+  }
+
+  return [[FBFuture
+    futureWithFutures:@[stdOutFuture, stdErrFuture]]
+    onQueue:queue map:^ (NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
+      FBProcessIO *io = [[FBProcessIO alloc]
+        initWithStdIn:nil
+        stdOut:[FBProcessOutput outputForDataConsumer:outputs[0]]
+        stdErr:[FBProcessOutput outputForDataConsumer:outputs[1]]];
+      return [[FBApplicationLaunchConfiguration alloc]
+        initWithBundleID:bundleID
+        bundleName:nil
+        arguments:arguments ?: @[]
+        environment:environment ?: @{}
+        waitForDebugger:NO
+        io:io
+        launchMode:FBApplicationLaunchModeFailIfRunning];
+  }];
 }
 
 static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
-
-@implementation FBXCTestRunFileReader : NSObject
-
-+ (NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error
-{
-  NSFileManager *fileManager = [NSFileManager defaultManager];
-  if(![fileManager fileExistsAtPath:[xctestrunURL path]]) {
-    if (error) {
-      *error = [FBXCTestError errorForFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL];
-    }
-    return nil;
-  }
-  NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
-  NSString *idbAppStoragePath = [path stringByAppendingPathComponent:IdbApplicationsFolder];
-  if (![fileManager fileExistsAtPath:idbAppStoragePath]) {
-    if (error) {
-      *error = [FBXCTestError errorForFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath];
-    }
-    return nil;
-  }
-  // dictionaryWithContentsOfURL:error: is only available in NSDictionary not in NSMutableDictionary
-  NSMutableDictionary<NSString *, id> *xctestrunContents = [[NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error] mutableCopy];
-  if (!xctestrunContents) {
-    return nil;
-  }
-  for (NSString *testTarget in xctestrunContents) {
-    if ([testTarget isEqualToString:@"__xctestrun_metadata__"] || [testTarget isEqualToString:@"CodeCoverageBuildableInfos"]) {
-      continue;
-    }
-    NSMutableDictionary<NSString *, id> *testTargetProperties = [[xctestrunContents objectForKey:testTarget] mutableCopy];
-    // Expand __TESTROOT__ and __IDB_APPSTORAGE__ in TestHostPath
-    NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
-    if (testHostPath != nil) {
-      testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
-      testHostPath = [testHostPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
-      [testTargetProperties setObject:testHostPath forKey:@"TestHostPath"];
-    }
-    // Expand __TESTROOT__ and __TESTHOST__ in TestBundlePath
-    NSString *testBundlePath = [testTargetProperties objectForKey:@"TestBundlePath"];
-    if (testBundlePath != nil) {
-      testBundlePath = [testBundlePath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
-      testBundlePath = [testBundlePath stringByReplacingOccurrencesOfString:@"__TESTHOST__" withString:testHostPath];
-      [testTargetProperties setObject:testBundlePath forKey:@"TestBundlePath"];
-    }
-    // Expand __IDB_APPSTORAGE__ in UITargetAppPath
-    NSString *targetAppPath = [testTargetProperties objectForKey:@"UITargetAppPath"];
-    if (targetAppPath != nil) {
-      targetAppPath = [targetAppPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
-      [testTargetProperties setObject:targetAppPath forKey:@"UITargetAppPath"];
-    }
-    [xctestrunContents setObject:testTargetProperties forKey:testTarget];
-  }
-  return xctestrunContents;
-}
-
-@end
 
 @interface FBXCTestRunRequest_LogicTest : FBXCTestRunRequest
 
@@ -106,77 +68,74 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath reportActivities:(BOOL)reportActivities target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:logger]
-    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBXCTestShimConfiguration *shims) {
-      NSError *error = nil;
-      NSURL *workingDirectory = [temporaryDirectory ephemeralTemporaryDirectory];
-      if (![NSFileManager.defaultManager createDirectoryAtURL:workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      NSString *testFilter = nil;
-      NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects ?: @[];
-      if (testsToSkip.count > 0) {
-        return [[FBXCTestError
-          describeFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]
-          failFuture];
-      }
-      NSArray<NSString *> *testsToRun = self.testsToRun.allObjects ?: @[];
-      if (testsToRun.count > 1){
-        return [[FBXCTestError
-          describeFormat:@"More than one 'Tests to Run' %@ provided, but only one 'Tests to Run' is supported.", [FBCollectionInformation oneLineDescriptionFromArray:testsToRun]]
-          failFuture];
-      }
-      testFilter = testsToRun.firstObject;
-
-      NSTimeInterval timeout = self.testTimeout.boolValue ? self.testTimeout.doubleValue : FBLogicTestTimeout;
-      FBLogicTestConfiguration *configuration = [FBLogicTestConfiguration
-        configurationWithShims:shims
-        environment:self.environment
-        workingDirectory:workingDirectory.path
-        testBundlePath:testDescriptor.testBundle.path
-        waitForDebugger:NO
-        timeout:timeout
-        testFilter:testFilter
-        mirroring:FBLogicTestMirrorFileLogs];
-
-      return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
-    }];
-}
-
-- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  return [[self
-    executorWithConfiguration:configuration target:target]
-    onQueue:target.workQueue fmap:^(id<FBXCTestProcessExecutor> executor) {
-      FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
-      FBLogicTestRunStrategy *runner = [FBLogicTestRunStrategy strategyWithExecutor:executor configuration:configuration reporter:adapter logger:logger];
-      FBFuture<NSNull *> *completed = [runner execute];
-      if (completed.error) {
-        return [FBFuture futureWithError:completed.error];
-      }
-    FBIDBTestOperation *operation = [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:nil coveragePath:nil binaryPath:nil reporter:reporter logger:logger completed:completed queue:target.workQueue];
-      return [FBFuture futureWithResult:operation];
-    }];
-}
-
-- (FBFuture<id<FBXCTestProcessExecutor>> *)executorWithConfiguration:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target
-{
-  id<FBXCTestProcessExecutor> executor = nil;
-  if ([target isKindOfClass:FBSimulator.class]) {
-    executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:(FBSimulator *)target shims:configuration.shims];
-  } else if ([target isKindOfClass:FBMacDevice.class]) {
-    executor = [FBMacXCTestProcessExecutor executorWithMacDevice:(FBMacDevice *)target shims:configuration.shims];
+  NSError *error = nil;
+  NSURL *workingDirectory = [temporaryDirectory ephemeralTemporaryDirectory];
+  if (![NSFileManager.defaultManager createDirectoryAtURL:workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
+    return [FBFuture futureWithError:error];
   }
 
-  if (!executor) {
-    return [[FBIDBError
-      describeFormat:@"%@ does not support logic tests", target]
+  NSString *coveragePath = nil;
+  if (self.collectCoverage) {
+    NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
+    NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
+    coveragePath = [dir.path stringByAppendingPathComponent:coverageFileName];
+  }
+
+  NSString *testFilter = nil;
+  NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects ?: @[];
+  if (testsToSkip.count > 0) {
+    return [[FBXCTestError
+      describeFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]
       failFuture];
   }
-  return [FBFuture futureWithResult:executor];
+  NSArray<NSString *> *testsToRun = self.testsToRun.allObjects ?: @[];
+  if (testsToRun.count > 1){
+    return [[FBXCTestError
+      describeFormat:@"More than one 'Tests to Run' %@ provided, but only one 'Tests to Run' is supported.", [FBCollectionInformation oneLineDescriptionFromArray:testsToRun]]
+      failFuture];
+  }
+  testFilter = testsToRun.firstObject;
+
+  NSTimeInterval timeout = self.testTimeout.boolValue ? self.testTimeout.doubleValue : FBLogicTestTimeout;
+  FBLogicTestConfiguration *configuration = [FBLogicTestConfiguration
+    configurationWithEnvironment:self.environment
+    workingDirectory:workingDirectory.path
+    testBundlePath:testDescriptor.testBundle.path
+    waitForDebugger:self.waitForDebugger
+    timeout:timeout
+    testFilter:testFilter
+    mirroring:FBLogicTestMirrorFileLogs
+    coveragePath:coveragePath
+    binaryPath:testDescriptor.testBundle.binary.path
+    logDirectoryPath:logDirectoryPath];
+
+  return [self startTestExecution:configuration logDirectoryPath:logDirectoryPath target:target reporter:reporter logger:logger];
+}
+
+- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+{
+  FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
+  FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration reporter:adapter logger:logger];
+  FBFuture<NSNull *> *completed = [runner execute];
+  if (completed.error) {
+    return [FBFuture futureWithError:completed.error];
+  }
+  FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
+    initWithResultBundlePath:nil
+    coveragePath:configuration.coveragePath
+    logDirectoryPath:logDirectoryPath
+    binaryPath:configuration.binaryPath
+    reportAttachments:self.reportAttachments];
+  FBIDBTestOperation *operation = [[FBIDBTestOperation alloc]
+    initWithConfiguration:configuration
+    reporterConfiguration:reporterConfiguration
+    reporter:reporter
+    logger:logger
+    completed:completed
+    queue:target.workQueue];
+  return [FBFuture futureWithResult:operation];
 }
 
 @end
@@ -197,37 +156,41 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return NO;
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath reportActivities:(BOOL)reportActivities target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
-  return [[FBXCTestShimConfiguration
-    defaultShimConfigurationWithLogger:logger]
-    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBXCTestShimConfiguration *shims) {
-      return [[testDescriptor
-        testAppPairForRequest:self target:target]
-        onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestApplicationsPair *pair) {
-          [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
-          NSError *error = nil;
-          FBTestLaunchConfiguration *testConfig = [testDescriptor testConfigWithRunRequest:self testApps:pair shims:shims logger:logger error:&error];
-          if (!testConfig) {
-            return [FBFuture futureWithError:error];
-          }
-          [logger logFormat:@"Obtained launch configuration %@", testConfig];
-          return [FBXCTestRunRequest_AppTest startTestExecution:testConfig target:target reporter:reporter logger:logger];
-        }];
+  return [[[testDescriptor
+    testAppPairForRequest:self target:target]
+    onQueue:target.workQueue fmap:^ FBFuture<FBTestLaunchConfiguration *> * (FBTestApplicationsPair *pair) {
+      [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
+      return [testDescriptor testConfigWithRunRequest:self testApps:pair logDirectoryPath:logDirectoryPath logger:logger queue:target.workQueue];
+    }]
+    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestLaunchConfiguration *testConfig) {
+      [logger logFormat:@"Obtained launch configuration %@", testConfig];
+      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig logDirectoryPath:logDirectoryPath reportAttachments:self.reportAttachments target:target reporter:reporter logger:logger];
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBXCTestReporterAdapter *adapter = [FBXCTestReporterAdapter adapterWithReporter:reporter];
-  return [[target installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID] onQueue:target.workQueue fmap:^(FBInstalledApplication *installedApp) {
-    NSString *binaryPath = [FBProductBundleBuilder productBundleFromInstalledApplication:installedApp error:nil].binaryPath;
-    return [[target
-      startTestWithLaunchConfiguration:configuration reporter:adapter logger:logger]
-      onQueue:target.workQueue map:^(id<FBiOSTargetOperation> operation) {
-        return [[FBIDBTestOperation alloc] initWithConfiguration:configuration resultBundlePath:configuration.resultBundlePath coveragePath:configuration.coveragePath binaryPath:binaryPath reporter:reporter logger:logger completed:operation.completed queue:target.workQueue];
-      }];
-  }];
+  return [[target
+    installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID]
+    onQueue:target.workQueue map:^(FBInstalledApplication *installedApp) {
+      NSString *binaryPath = installedApp.bundle.binary.path;
+      FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
+      FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
+        initWithResultBundlePath:configuration.resultBundlePath
+        coveragePath:configuration.coveragePath
+        logDirectoryPath:logDirectoryPath
+        binaryPath:binaryPath
+        reportAttachments:reportAttachments];
+      return [[FBIDBTestOperation alloc]
+        initWithConfiguration:configuration
+        reporterConfiguration:reporterConfiguration
+        reporter:reporter
+        logger:logger
+        completed:testCompleted
+        queue:target.workQueue];
+    }];
 }
 
 @end
@@ -264,22 +227,22 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 #pragma mark Initializers
 
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout  reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger
 {
-  return [[FBXCTestRunRequest_LogicTest alloc] initWithTestBundleID:testBundleID appBundleID:nil testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+  return [[FBXCTestRunRequest_LogicTest alloc] initWithTestBundleID:testBundleID appBundleID:nil testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
 }
 
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip  testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
 {
-  return [[FBXCTestRunRequest_AppTest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+  return [[FBXCTestRunRequest_AppTest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:nil environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:NO];
 }
 
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout  reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs
 {
-  return [[FBXCTestRunRequest_UITest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+  return [[FBXCTestRunRequest_UITest alloc] initWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:NO];
 }
 
-- (instancetype)initWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage
+- (instancetype)initWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger
 {
   self = [super init];
   if (!self) {
@@ -295,7 +258,10 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   _testsToSkip = testsToSkip;
   _testTimeout = testTimeout;
   _reportActivities = reportActivities;
+  _reportAttachments = reportAttachments;
   _collectCoverage = collectCoverage;
+  _collectLogs = collectLogs;
+  _waitForDebugger = waitForDebugger;
 
   return self;
 }
@@ -314,12 +280,21 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 {
   return [[self
     fetchAndSetupDescriptorWithBundleStorage:bundleStorage target:target]
-    onQueue:target.workQueue fmap:^(id<FBXCTestDescriptor> descriptor) {
-      return [self startWithTestDescriptor:descriptor target:target reporter:reporter logger:logger temporaryDirectory:temporaryDirectory];
+    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (id<FBXCTestDescriptor> descriptor) {
+      NSString *logDirectoryPath = nil;
+      if (self.collectLogs) {
+        NSError *error;
+        NSURL *directory = [temporaryDirectory ephemeralTemporaryDirectory];
+        if (![NSFileManager.defaultManager createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:&error]) {
+          return [FBFuture futureWithError:error];
+        }
+        logDirectoryPath = directory.path;
+      }
+      return [self startWithTestDescriptor:descriptor logDirectoryPath:logDirectoryPath reportActivities:self.reportActivities target:target reporter:reporter logger:logger temporaryDirectory:temporaryDirectory];
     }];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
+- (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath reportActivities:(BOOL)reportActivities target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBIDBError
     describeFormat:@"%@ not implemented in abstract base class", NSStringFromSelector(_cmd)]
@@ -458,35 +433,45 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }];
 }
 
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  FBTestLaunchConfiguration *config = [[[[FBTestLaunchConfiguration
-  configurationWithTestBundlePath:self.testBundle.path]
-  withTestsToRun:request.testsToRun]
-  withTestsToSkip:request.testsToSkip]
-  withReportActivities:request.reportActivities];
-
+  BOOL uiTesting = NO;
+  NSString *targetApplicationPath = nil;
+  NSString *targetApplicationBundleID = nil;
+  FBFuture<FBApplicationLaunchConfiguration *> *appLaunchConfigFuture = nil;
   if (request.isUITest) {
-    FBApplicationLaunchConfiguration *runnerLaunchConfig = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger);
-
+    appLaunchConfigFuture = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger, logDirectoryPath, queue);
     // Test config
-    config = [[[[config
-      withUITesting:YES]
-      withApplicationLaunchConfiguration:runnerLaunchConfig]
-      withTargetApplicationPath:testApps.applicationUnderTest.bundle.path]
-      withTargetApplicationBundleID:testApps.applicationUnderTest.bundle.identifier];
+    uiTesting = YES;
+    targetApplicationPath = testApps.applicationUnderTest.bundle.path;
+    targetApplicationBundleID = testApps.applicationUnderTest.bundle.identifier;
   } else {
-    FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
-    config = [config withApplicationLaunchConfiguration:launchConfig];
+    appLaunchConfigFuture = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, logDirectoryPath, queue);
   }
-
+  NSString *coveragePath = nil;
   if (request.collectCoverage) {
     NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
-    NSString *coveragePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageFileName];
-    config = [config withCoveragePath:coveragePath];
+    coveragePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageFileName];
   }
 
-  return config;
+  return [appLaunchConfigFuture onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
+    return [[FBTestLaunchConfiguration alloc]
+      initWithTestBundlePath:self.testBundle.path
+      applicationLaunchConfiguration:applicationLaunchConfiguration
+      testHostPath:nil
+      timeout:(request.testTimeout ? request.testTimeout.doubleValue : 0)
+      initializeUITesting:uiTesting
+      useXcodebuild:NO
+      testsToRun:request.testsToRun
+      testsToSkip:request.testsToSkip
+      targetApplicationPath:targetApplicationPath
+      targetApplicationBundleID:targetApplicationBundleID
+      xcTestRunProperties:nil
+      resultBundlePath:nil
+      reportActivities:request.reportActivities
+      coveragePath:coveragePath
+      logDirectoryPath:logDirectoryPath];
+  }];
 }
 
 @end
@@ -551,29 +536,36 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return [FBFuture futureWithResult:[[FBTestApplicationsPair alloc] initWithApplicationUnderTest:nil testHostApp:nil]];
 }
 
-
-- (FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  FBApplicationLaunchConfiguration *launchConfig = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger);
   NSString *resultBundleName = [NSString stringWithFormat:@"resultbundle_%@", NSUUID.UUID.UUIDString];
   NSString *resultBundlePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:resultBundleName];
 
-  NSDictionary<NSString *, id> *properties = [FBXCTestRunFileReader readContentsOf:self.url expandPlaceholderWithPath:self.targetAuxillaryDirectory error:error];
+  NSError *error = nil;
+  NSDictionary<NSString *, id> *properties = [FBXCTestRunFileReader readContentsOf:self.url expandPlaceholderWithPath:self.targetAuxillaryDirectory error:&error];
   if (!properties) {
-    return nil;
+    return [FBFuture futureWithError:error];
   }
-  return [[[[[[[[[[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:self.testBundle.path]
-    withTestHostPath:self.testHostBundle.path]
-    withApplicationLaunchConfiguration:launchConfig]
-    withXcodebuild:YES]
-    withUITesting:request.isUITest]
-    withXCTestRunProperties:properties]
-    withTestsToRun:request.testsToRun]
-    withTestsToSkip:request.testsToSkip]
-    withResultBundlePath:resultBundlePath]
-    withShims:shims]
-    withReportActivities:request.reportActivities];
+  return [BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, nil, queue)
+   onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *launchConfig) {
+    return [[FBTestLaunchConfiguration alloc]
+      initWithTestBundlePath:self.testBundle.path
+      applicationLaunchConfiguration:launchConfig
+      testHostPath:self.testHostBundle.path
+      timeout:0
+      initializeUITesting:request.isUITest
+      useXcodebuild:YES
+      testsToRun:request.testsToRun
+      testsToSkip:request.testsToSkip
+      targetApplicationPath:nil
+      targetApplicationBundleID:nil
+      xcTestRunProperties:properties
+      resultBundlePath:resultBundlePath
+      reportActivities:request.reportActivities
+      coveragePath:nil
+      logDirectoryPath:logDirectoryPath];
+  }];
 }
+
 
 @end

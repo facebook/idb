@@ -18,11 +18,10 @@
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBDeviceVideoFileEncoder.h"
 
 @interface FBDeviceVideo ()
 
-@property (nonatomic, strong, readonly) FBDeviceVideoFileEncoder *encoder;
+@property (nonatomic, strong, readonly) FBVideoFileWriter *encoder;
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 @end
@@ -37,9 +36,8 @@
     onQueue:device.workQueue resolveUntil:^{
       AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
       if (!captureDevice) {
-        return [[[FBDeviceControlError
+        return [[FBDeviceControlError
           describeFormat:@"Capture Device %@ not available", device.udid]
-          noLogging]
           failFuture];
       }
       return [FBFuture futureWithResult:captureDevice];
@@ -114,7 +112,7 @@
     onQueue:device.workQueue fmap:^(AVCaptureSession *session) {
       // Construct the Device Video instance.
       NSError *error = nil;
-      FBDeviceVideoFileEncoder *encoder = [FBDeviceVideoFileEncoder encoderWithSession:session filePath:filePath logger:device.logger error:&error];
+      FBVideoFileWriter *encoder = [FBVideoFileWriter writerWithSession:session filePath:filePath logger:device.logger error:&error];
       if (!encoder) {
         return [FBFuture futureWithError:error];
       }
@@ -123,7 +121,7 @@
     }];
 }
 
-- (instancetype)initWithEncoder:(FBDeviceVideoFileEncoder *)encoder workQueue:(dispatch_queue_t)workQueue
+- (instancetype)initWithEncoder:(FBVideoFileWriter *)encoder workQueue:(dispatch_queue_t)workQueue
 {
   self = [super init];
   if (!self) {
@@ -152,7 +150,7 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  FBDeviceVideoFileEncoder *encoder = self.encoder;
+  FBVideoFileWriter *encoder = self.encoder;
   return [[encoder
     completed]
     onQueue:self.workQueue respondToCancellation:^{

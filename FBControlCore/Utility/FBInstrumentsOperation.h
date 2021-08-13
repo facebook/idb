@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Represents an operation of the instruments command-line.
  */
-@interface FBInstrumentsOperation : NSObject <FBiOSTargetOperation>
+@interface FBInstrumentsOperation : NSObject
 
 #pragma mark Initializers
 

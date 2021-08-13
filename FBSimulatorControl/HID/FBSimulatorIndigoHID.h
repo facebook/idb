@@ -43,13 +43,6 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 + (nullable instancetype)simulatorKitHIDWithError:(NSError **)error;
 
 /**
- An implementation of FBSimulatorIndigoHID, by re-implementing SimulatorKit directly.
-
- @return a new FBSimulatorIndigoHID instance.
- */
-+ (instancetype)reimplemented;
-
-/**
  A Keyboard Event.
 
  @param direction the direction of the event.

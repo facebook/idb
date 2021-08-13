@@ -10,40 +10,8 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorError.h"
-
-@interface FBSimulatorLogOperation : NSObject <FBLogOperation>
-
-@property (nonatomic, strong, readonly) FBSimulatorAgentOperation *operation;
-
-@end
-
-@implementation FBSimulatorLogOperation
-
-@synthesize consumer = _consumer;
-
-- (instancetype)initWithOperation:(FBSimulatorAgentOperation *)operation consumer:(id<FBDataConsumer>)consumer
-{
-  self = [self init];
-  if (!self) {
-    return nil;
-  }
-
-  _operation = operation;
-  _consumer = consumer;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [self.operation.statLoc mapReplace:NSNull.null];
-}
-
-@end
 
 @interface FBSimulatorLogCommands ()
 
@@ -76,82 +44,48 @@
 
 - (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
-  return (FBFuture<id<FBLogOperation>> *) [[self
-    startLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorAgentOperation *operation) {
-      return [[FBSimulatorLogOperation alloc] initWithOperation:operation consumer:consumer];
-    }];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
-{
-  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   return [[self
-    runLogCommandAndWait:arguments consumer:consumer]
-    onQueue:self.simulator.asyncQueue fmap:^(id _){
-      NSArray<NSString *> *lines = consumer.lines;
-      if (lines.count < 2) {
-        return [FBFuture futureWithResult:@[]];
-      }
-      return [FBFuture futureWithResult:[lines subarrayWithRange:NSMakeRange(1, lines.count - 1)]];
-  }];
+    startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
+    onQueue:self.simulator.workQueue map:^(id<FBLaunchedProcess> process) {
+      return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer];
+    }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)runLogCommandAndWait:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
-{
-  return [[[self
-    startLogCommand:arguments consumer:consumer]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorAgentOperation *operation) {
-      // Re-Map from Launch to Exit
-      return [operation statLoc];
-    }]
-    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSNumber *statLoc){
-      // Check the exit code.
-      int value = statLoc.intValue;
-      int exitCode = WEXITSTATUS(value);
-      if (exitCode != 0) {
-        return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
-      }
-      return FBFuture.empty;
-  }];
-}
-
-- (FBFuture<FBSimulatorAgentOperation *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<id<FBLaunchedProcess>> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   NSError *error = nil;
-  FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:&error];
-  if (!binary) {
+  NSString *launchPath = [self logExecutablePathWithError:&error];
+  if (!launchPath) {
     return [FBSimulatorError failFutureWithError:error];
   }
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
-    configurationWithStdOut:consumer
-    stdErr:NSNull.null
-    error:&error];
-  if (!output) {
-    return [FBSimulatorError failFutureWithError:error];
-  }
+  FBProcessIO *processIO = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForDataConsumer:consumer]
+    stdErr:nil];
 
-  FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-    configurationWithBinary:binary
+  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
+    initWithLaunchPath:launchPath
     arguments:arguments
     environment:@{}
-    output:output
-    mode:FBAgentLaunchModeDefault];
+    io:processIO
+    mode:FBProcessSpawnModeDefault];
 
-  return [[FBAgentLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchAgent:configuration];
+  return [self.simulator launchProcess:configuration];
 }
 
-- (FBBinaryDescriptor *)logBinaryDescriptorWithError:(NSError **)error
+- (NSString *)logExecutablePathWithError:(NSError **)error
 {
   NSString *path = [[[self.simulator.device.runtime.root
     stringByAppendingPathComponent:@"usr"]
     stringByAppendingPathComponent:@"bin"]
     stringByAppendingPathComponent:@"log"];
-  return [FBBinaryDescriptor binaryWithPath:path error:error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
+  if (!binary) {
+    return nil;
+  }
+  return binary.path;
 }
 
 @end

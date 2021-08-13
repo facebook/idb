@@ -51,6 +51,7 @@ from idb.common.types import (
     Client as ClientBase,
     Companion,
     CompanionInfo,
+    Compression,
     CrashLog,
     CrashLogInfo,
     CrashLogQuery,
@@ -78,10 +79,7 @@ from idb.grpc.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
-from idb.grpc.file import (
-    container_to_bundle_id_deprecated as file_container_to_bundle_id_deprecated,
-    container_to_grpc as file_container_to_grpc,
-)
+from idb.grpc.file import container_to_grpc as file_container_to_grpc
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
@@ -98,6 +96,7 @@ from idb.grpc.idb_pb2 import (
     InstallRequest,
     InstrumentsRunRequest,
     LaunchRequest,
+    TailRequest,
     ListAppsRequest,
     Location,
     LogRequest,
@@ -123,6 +122,7 @@ from idb.grpc.idb_pb2 import (
     VideoStreamRequest,
     XctestListBundlesRequest,
     XctestListTestsRequest,
+    XctraceRecordRequest,
 )
 from idb.grpc.install import (
     Bundle,
@@ -149,9 +149,13 @@ from idb.grpc.xctest import (
     make_request,
     make_results,
     save_attachments,
-    write_result_bundle,
+    untar_into_path,
 )
 from idb.grpc.xctest_log_parser import XCTestLogParser
+from idb.grpc.xctrace import (
+    xctrace_drain_until_running,
+    xctrace_generate_bytes,
+)
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -169,6 +173,11 @@ VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
     VideoFormat.MJPEG: VideoStreamRequest.MJPEG,
     VideoFormat.MINICAP: VideoStreamRequest.MINICAP,
+}
+
+COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
+    Compression.GZIP: Payload.GZIP,
+    Compression.ZSTD: Payload.ZSTD,
 }
 
 
@@ -234,6 +243,7 @@ class Client(ClientBase):
         is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
         extra_metadata: Optional[Dict[str, str]] = None,
+        use_tls: bool = False,
     ) -> AsyncGenerator["Client", None]:
         metadata_to_companion = (
             {
@@ -247,8 +257,16 @@ class Client(ClientBase):
             if exchange_metadata
             else {}
         )
+        ssl_context = plugin.channel_ssl_context() if use_tls else None
+        if use_tls:
+            assert ssl_context is not None
         async with (
-            Channel(host=address.host, port=address.port, loop=asyncio.get_event_loop())
+            Channel(
+                host=address.host,
+                port=address.port,
+                loop=asyncio.get_event_loop(),
+                ssl=ssl_context,
+            )
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
         ) as channel:
@@ -313,7 +331,10 @@ class Client(ClientBase):
                 yield message.output.decode()
 
     async def _install_to_destination(
-        self, bundle: Bundle, destination: Destination
+        self,
+        bundle: Bundle,
+        destination: Destination,
+        compression: Optional[Compression] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -334,7 +355,10 @@ class Client(ClientBase):
                     else:
                         # chunk file from file_path
                         generator = generate_binary_chunks(
-                            path=file_path, destination=destination, logger=self.logger
+                            path=file_path,
+                            destination=destination,
+                            compression=compression,
+                            logger=self.logger,
                         )
 
             else:
@@ -342,6 +366,12 @@ class Client(ClientBase):
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
+            if compression is not None:
+                await stream.send_message(
+                    InstallRequest(
+                        payload=Payload(compression=COMPRESSION_MAP[compression])
+                    )
+                )
             async for message in generator:
                 await stream.send_message(message)
             await stream.end()
@@ -488,11 +518,7 @@ class Client(ClientBase):
     @log_and_handle_exceptions
     async def rm(self, container: FileContainer, paths: List[str]) -> None:
         await self.stub.rm(
-            RmRequest(
-                bundle_id=file_container_to_bundle_id_deprecated(container),
-                paths=paths,
-                container=file_container_to_grpc(container),
-            )
+            RmRequest(paths=paths, container=file_container_to_grpc(container))
         )
 
     @log_and_handle_exceptions
@@ -501,7 +527,6 @@ class Client(ClientBase):
     ) -> None:
         await self.stub.mv(
             MvRequest(
-                bundle_id=file_container_to_bundle_id_deprecated(container),
                 src_paths=src_paths,
                 dst_path=dest_path,
                 container=file_container_to_grpc(container),
@@ -513,11 +538,7 @@ class Client(ClientBase):
         self, container: FileContainer, path: str
     ) -> List[FileEntryInfo]:
         response = await self.stub.ls(
-            LsRequest(
-                bundle_id=file_container_to_bundle_id_deprecated(container),
-                path=path,
-                container=file_container_to_grpc(container),
-            )
+            LsRequest(path=path, container=file_container_to_grpc(container))
         )
         return [FileEntryInfo(path=file.path) for file in response.files]
 
@@ -537,11 +558,7 @@ class Client(ClientBase):
     @log_and_handle_exceptions
     async def mkdir(self, container: FileContainer, path: str) -> None:
         await self.stub.mkdir(
-            MkdirRequest(
-                bundle_id=file_container_to_bundle_id_deprecated(container),
-                path=path,
-                container=file_container_to_grpc(container),
-            )
+            MkdirRequest(path=path, container=file_container_to_grpc(container))
         )
 
     @log_and_handle_exceptions
@@ -560,9 +577,13 @@ class Client(ClientBase):
         return _to_crash_log(response)
 
     @log_and_handle_exceptions
-    async def install(self, bundle: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install(
+        self,
+        bundle: Bundle,
+        compression: Optional[Compression] = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=bundle, destination=InstallRequest.APP
+            bundle=bundle, destination=InstallRequest.APP, compression=compression
         ):
             yield response
 
@@ -604,9 +625,7 @@ class Client(ClientBase):
             await stream.send_message(
                 PushRequest(
                     inner=PushRequest.Inner(
-                        bundle_id=file_container_to_bundle_id_deprecated(container),
-                        dst_path=dest_path,
-                        container=file_container_to_grpc(container),
+                        dst_path=dest_path, container=file_container_to_grpc(container)
                     )
                 )
             )
@@ -633,7 +652,6 @@ class Client(ClientBase):
     ) -> None:
         async with self.stub.pull.open() as stream:
             request = request = PullRequest(
-                bundle_id=file_container_to_bundle_id_deprecated(container),
                 src_path=src_path,
                 # not sending the destination to remote companion
                 # so it streams the file back
@@ -647,6 +665,22 @@ class Client(ClientBase):
             else:
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
             self.logger.info(f"pulled file to {dest_path}")
+
+    @log_and_handle_exceptions
+    async def tail(
+        self, stop: asyncio.Event, container: FileContainer, path: str
+    ) -> AsyncIterator[bytes]:
+        async with self.stub.tail.open() as stream:
+            await stream.send_message(
+                TailRequest(
+                    start=TailRequest.Start(
+                        container=file_container_to_grpc(container), path=path
+                    )
+                )
+            )
+            async for response in cancel_wrapper(stream=stream, stop=stop):
+                yield response.data
+            await stream.send_message(TailRequest(stop=TailRequest.Stop()))
 
     @log_and_handle_exceptions
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
@@ -966,6 +1000,8 @@ class Client(ClientBase):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        log_directory_path: Optional[str] = None,
+        wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
             request = make_request(
@@ -987,6 +1023,8 @@ class Client(ClientBase):
                 ),
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
+                collect_logs=log_directory_path is not None,
+                wait_for_debugger=wait_for_debugger,
             )
             log_parser = XCTestLogParser()
             await stream.send_message(request)
@@ -1005,14 +1043,27 @@ class Client(ClientBase):
                         idb_log_buffer.write(line)
 
                 if result_bundle_path:
-                    await write_result_bundle(
-                        response=response,
+                    await untar_into_path(
+                        payload=response.result_bundle,
+                        description="result bundle",
                         output_path=result_bundle_path,
+                        logger=self.logger,
+                    )
+                if log_directory_path:
+                    await untar_into_path(
+                        payload=response.log_directory,
+                        description="log directory",
+                        output_path=log_directory_path,
                         logger=self.logger,
                     )
                 if response.coverage_json and coverage_output_path:
                     with open(coverage_output_path, "w") as f:
                         f.write(response.coverage_json)
+
+                if wait_for_debugger and response.debugger.pid:
+                    print("Tests waiting for debugger. To debug run:")
+                    print(f"lldb -p {response.debugger.pid}")
+
                 for result in make_results(response, log_parser):
                     if activities_output_path:
                         save_attachments(
@@ -1068,3 +1119,104 @@ class Client(ClientBase):
             )
         )
         return list(response.values)
+
+    @log_and_handle_exceptions
+    async def xctrace_record(
+        self,
+        stop: asyncio.Event,
+        # original 'xctrace record' options
+        output: str,
+        template_name: str,
+        all_processes: bool = False,
+        time_limit: Optional[float] = None,
+        package: Optional[str] = None,
+        process_to_attach: Optional[str] = None,
+        process_to_launch: Optional[str] = None,
+        process_env: Optional[Dict[str, str]] = None,
+        launch_args: Optional[List[str]] = None,
+        target_stdin: Optional[str] = None,
+        target_stdout: Optional[str] = None,
+        # FB options
+        post_args: Optional[List[str]] = None,
+        stop_timeout: Optional[float] = None,
+        # control events
+        started: Optional[asyncio.Event] = None,
+    ) -> List[str]:
+        self.logger.info("Starting xctrace connection")
+        async with self.stub.xctrace_record.open() as stream:
+            self.logger.info("Sending xctrace record request")
+            target = None
+            if all_processes:
+                target = XctraceRecordRequest.Target(all_processes=all_processes)
+            elif process_to_attach:
+                target = XctraceRecordRequest.Target(
+                    process_to_attach=process_to_attach
+                )
+            else:
+                target = XctraceRecordRequest.Target(
+                    launch_process=XctraceRecordRequest.LauchProcess(
+                        process_to_launch=process_to_launch,
+                        launch_args=launch_args,
+                        target_stdin=target_stdin,
+                        target_stdout=target_stdout,
+                        process_env=process_env,
+                    )
+                )
+            await stream.send_message(
+                XctraceRecordRequest(
+                    start=XctraceRecordRequest.Start(
+                        template_name=template_name,
+                        time_limit=time_limit,
+                        package=package,
+                        target=target,
+                    )
+                )
+            )
+            self.logger.info("Starting xctrace record")
+            await xctrace_drain_until_running(stream=stream, logger=self.logger)
+            if started:
+                started.set()
+            self.logger.info("Xctrace record has started, waiting for stop")
+            async for response in stop_wrapper(stream=stream, stop=stop):
+                log = response.log
+                if len(log):
+                    self.logger.info(log.decode())
+            self.logger.info("Stopping xctrace record")
+            await stream.send_message(
+                XctraceRecordRequest(
+                    stop=XctraceRecordRequest.Stop(
+                        timeout=stop_timeout,
+                        args=post_args,
+                    )
+                )
+            )
+            await stream.end()
+
+            result = []
+
+            with tempfile.TemporaryDirectory() as tmp_trace_dir:
+                self.logger.info(f"Writing xctrace data from tar to {tmp_trace_dir}")
+                await drain_untar(
+                    xctrace_generate_bytes(stream=stream, logger=self.logger),
+                    output_path=tmp_trace_dir,
+                )
+                if os.path.exists(
+                    os.path.join(os.path.abspath(tmp_trace_dir), "instrument_data")
+                ):
+                    trace_file = f"{output}.trace"
+                    shutil.copytree(tmp_trace_dir, trace_file)
+                    result.append(trace_file)
+                    self.logger.info(f"Trace written to {trace_file}")
+                else:
+                    # tar is a folder containing one or more trace files
+                    for file in os.listdir(tmp_trace_dir):
+                        _, file_extension = os.path.splitext(file)
+                        tmp_trace_file = os.path.join(
+                            os.path.abspath(tmp_trace_dir), file
+                        )
+                        trace_file = f"{output}{file_extension}"
+                        shutil.move(tmp_trace_file, trace_file)
+                        result.append(trace_file)
+                        self.logger.info(f"Trace written to {trace_file}")
+
+            return result

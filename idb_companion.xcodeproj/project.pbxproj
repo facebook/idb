@@ -3,23 +3,27 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */; };
 		623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */; };
 		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
+		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
 		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
 		AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */; };
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
 		AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */; };
 		AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */; };
+		AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */; };
+		AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */; };
+		AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */; };
+		AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */; };
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
 		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
-		D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; };
-		D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = D720AE7823CE1E140040F01B /* libz.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
@@ -69,22 +73,11 @@
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.h",
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.cc",
 			);
-			script = "# Generate grpc code from .proto\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
+			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
 		};
 /* End PBXBuildRule section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		D720AE7623CE1D6E0040F01B /* Embed Libraries */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				D720AE7A23CE1E140040F01B /* libz.1.dylib in Embed Libraries */,
-			);
-			name = "Embed Libraries";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -97,22 +90,33 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
+		2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
+		409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
+		5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
 		623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
 		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
+		716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<absolute>"; };
+		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
+		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.debug.xcconfig"; sourceTree = "<group>"; };
 		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
 		AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
 		AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBXCTestReporter.mm; sourceTree = "<group>"; };
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
 		AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
 		AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
+		AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunFileReader.h; sourceTree = "<group>"; };
+		AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunFileReader.m; sourceTree = "<group>"; };
+		AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterConfiguration.m; sourceTree = "<group>"; };
+		AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterConfiguration.h; sourceTree = "<group>"; };
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
+		BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idb_companion.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idbGRPC.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.release.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.release.xcconfig"; sourceTree = "<group>"; };
 		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
-		D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<group>"; };
-		D720AE7123CE1B690040F01B /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<group>"; };
 		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
-		D720AE7723CE1DF50040F01B /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = /usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
-		D720AE7823CE1E140040F01B /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = /usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
 		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -122,9 +126,7 @@
 		D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF942265DF2200B01F14 /* libidbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidbGRPC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF992265DF2B00B01F14 /* idb.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = idb.proto; sourceTree = "<group>"; };
-		D7D6DFA22265E76200B01F14 /* libgrpc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgrpc.a; path = /usr/local/lib/libgrpc.a; sourceTree = "<group>"; };
 		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
-		D7D6DFA42265E76200B01F14 /* libgrpc++.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgrpc++.a"; path = "/usr/local/lib/libgrpc++.a"; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
 		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
 		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
@@ -158,11 +160,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */,
-				D720AE7923CE1E140040F01B /* libz.1.dylib in Frameworks */,
 				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
 				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
+				7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +172,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,6 +186,7 @@
 				D7D6DF982265DF2B00B01F14 /* proto */,
 				D7D6DF132265DDEC00B01F14 /* Products */,
 				D7D6DF872265DE4E00B01F14 /* Frameworks */,
+				E47FF620763B1FAD507E99B9 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -198,18 +202,17 @@
 		D7D6DF872265DE4E00B01F14 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D720AE7823CE1E140040F01B /* libz.1.dylib */,
-				D720AE7723CE1DF50040F01B /* libz.1.tbd */,
+				716E3C782625D7AE00D7DA42 /* libz.tbd */,
+				716E3C2126210B9B00D7DA42 /* libgrpc.dylib */,
+				716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */,
 				D720AE7323CE1D6E0040F01B /* libcares.2.dylib */,
-				D720AE7123CE1B690040F01B /* libgrpc.dylib */,
-				D720AE6F23CE1B5F0040F01B /* libgrpc++.dylib */,
 				D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */,
 				D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */,
 				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
-				D7D6DFA42265E76200B01F14 /* libgrpc++.a */,
-				D7D6DFA22265E76200B01F14 /* libgrpc.a */,
 				D7D6DFA32265E76200B01F14 /* libprotobuf.a */,
 				D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */,
+				BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */,
+				CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -295,8 +298,25 @@
 				D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */,
 				D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */,
 				D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */,
+				AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */,
+				AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */,
+				AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */,
+				AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */,
 			);
 			path = Utility;
+			sourceTree = "<group>";
+		};
+		E47FF620763B1FAD507E99B9 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */,
+				D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */,
+				409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */,
+				5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */,
+				1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */,
+				2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -316,6 +336,7 @@
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
 				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
 				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
+				AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */,
 				AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */,
 				D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */,
 				D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */,
@@ -323,6 +344,7 @@
 				623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */,
 				D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */,
 				D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */,
+				AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */,
 				D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */,
 				D7D6E0342265F0DF00B01F14 /* FBStorageUtils.h in Headers */,
 				AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */,
@@ -341,11 +363,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */;
 			buildPhases = (
+				4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */,
 				D7D6DF0E2265DDEC00B01F14 /* Sources */,
 				D7D6DF9E2265E35300B01F14 /* Headers */,
 				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
 				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
-				D720AE7623CE1D6E0040F01B /* Embed Libraries */,
+				273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -360,6 +383,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */;
 			buildPhases = (
+				8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */,
 				D7D6DF912265DF2200B01F14 /* Sources */,
 				D7D6DF902265DF2200B01F14 /* Headers */,
 				D7D6DF922265DF2200B01F14 /* Frameworks */,
@@ -411,6 +435,67 @@
 /* End PBXProject section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-idb_companion-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-idbGRPC-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		D7D6DF9B2265DF3900B01F14 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -426,7 +511,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -440,6 +525,8 @@
 				AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */,
 				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
 				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
+				AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */,
+				AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
@@ -581,21 +668,16 @@
 		};
 		D7D6DF1A2265DDEC00B01F14 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
 					"$(BUILT_PRODUCTS_DIR)/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				OTHER_LDFLAGS = (
-					"/usr/local/lib/libgrpc++.a",
-					/usr/local/lib/libgrpc.a,
-					/usr/local/lib/libprotobuf.a,
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
@@ -603,21 +685,16 @@
 		};
 		D7D6DF1B2265DDEC00B01F14 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
 					"$(BUILT_PRODUCTS_DIR)/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
-				OTHER_LDFLAGS = (
-					"/usr/local/lib/libgrpc++.a",
-					/usr/local/lib/libgrpc.a,
-					/usr/local/lib/libprotobuf.a,
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
@@ -625,12 +702,10 @@
 		};
 		D7D6DF962265DF2300B01F14 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				HEADER_SEARCH_PATHS = " /usr/local/include";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -638,12 +713,10 @@
 		};
 		D7D6DF972265DF2300B01F14 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				HEADER_SEARCH_PATHS = " /usr/local/include";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};

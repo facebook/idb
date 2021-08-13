@@ -13,12 +13,12 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 
 @interface FBListTestStrategy ()
 
-@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands> target;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -34,15 +34,15 @@
 
 - (instancetype)initWithStrategy:(FBListTestStrategy *)strategy reporter:(id<FBXCTestReporter>)reporter
 {
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _strategy = strategy;
-  _reporter = reporter;
-
-  return self;
+    self = [super init];
+    if (!self) {
+        return nil;
+    }
+    
+    _strategy = strategy;
+    _reporter = reporter;
+    
+    return self;
 }
 
 
@@ -52,7 +52,7 @@
 
   return [[self.strategy
     listTests]
-    onQueue:self.strategy.executor.workQueue map:^(NSArray<NSString *> *testNames) {
+    onQueue:self.strategy.target.workQueue map:^(NSArray<NSString *> *testNames) {
       for (NSString *testName in testNames) {
         NSRange slashRange = [testName rangeOfString:@"/"];
         NSString *className = [testName substringToIndex:slashRange.location];
@@ -70,19 +70,14 @@
 
 @implementation FBListTestStrategy
 
-+ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
-{
-  return [[self alloc] initWithExecutor:executor configuration:configuration logger:logger];
-}
-
-- (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
-    return nil;
+      return nil;
   }
 
-  _executor = executor;
+  _target = target;
   _configuration = configuration;
   _logger = logger;
 
@@ -92,23 +87,20 @@
 - (FBFuture<NSArray<NSString *> *> *)listTests
 {
   id<FBConsumableBuffer> shimBuffer = FBDataBuffer.consumableBuffer;
-  return [[[FBProcessOutput
-    outputForDataConsumer:shimBuffer]
-    providedThroughFile]
-    onQueue:self.executor.workQueue fmap:^(id<FBProcessFileOutput> shimOutput) {
-      return [self listTestsWithShimOutput:shimOutput shimBuffer:shimBuffer];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self.target extendedTestShim],
+      [[FBProcessOutput outputForDataConsumer:shimBuffer] providedThroughFile],
+    ]]
+    onQueue:self.target.workQueue fmap:^(NSArray<id> *tuple) {
+      return [self listTestsWithShimPath:tuple[0] shimOutput:tuple[1] shimBuffer:shimBuffer];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer
+- (FBFuture<NSArray<NSString *> *> *)listTestsWithShimPath:(NSString *)shimPath shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer
 {
-  NSDictionary<NSString *, NSString *> *environment = @{
-    @"DYLD_INSERT_LIBRARIES": self.executor.shimPath,
-    @"TEST_SHIM_OUTPUT_PATH": shimOutput.filePath,
-    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
-  };
   id<FBConsumableBuffer> stdOutBuffer = FBDataBuffer.consumableBuffer;
   id<FBDataConsumer> stdOutConsumer = [FBCompositeDataConsumer consumerWithConsumers:@[
     stdOutBuffer,
@@ -119,23 +111,43 @@
     stdErrBuffer,
     [FBLoggingDataConsumer consumerWithLogger:self.logger],
   ]];
-
-  return [[FBListTestStrategy
-    listTestProcessWithConfiguration:self.configuration
-    environment:environment
-    stdOutConsumer:stdOutConsumer
-    stdErrConsumer:stdErrConsumer
-    executor:self.executor
-    logger:self.logger]
-    onQueue:self.executor.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
-      return [FBListTestStrategy
-        launchedProcessWithExitCode:exitCode
-        shimOutput:shimOutput
-        shimBuffer:shimBuffer
-        stdOutBuffer:stdOutBuffer
-        stdErrBuffer:stdErrBuffer
-        queue:self.executor.workQueue];
+    
+  return [[FBOToolDynamicLibs
+    findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
+    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
+      NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
+        
+      return [[FBListTestStrategy
+        listTestProcessWithTarget:self.target
+        configuration:self.configuration
+        xctestPath:self.target.xctestPath
+        environment:environment
+        stdOutConsumer:stdOutConsumer
+        stdErrConsumer:stdErrConsumer
+        logger:self.logger]
+        onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
+          return [FBListTestStrategy
+            launchedProcessWithExitCode:exitCode
+            shimOutput:shimOutput
+            shimBuffer:shimBuffer
+            stdOutBuffer:stdOutBuffer
+            stdErrBuffer:stdErrBuffer
+            queue:self.target.workQueue];
+        }];
     }];
+}
+
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimPath:(NSString *)shimPath shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath
+{
+  NSMutableArray *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
+  [librariesWithShim addObjectsFromArray:libraries];
+  NSDictionary<NSString *, NSString *> *environment = @{
+    @"DYLD_INSERT_LIBRARIES": [librariesWithShim componentsJoinedByString:@":"],
+    @"TEST_SHIM_OUTPUT_PATH": shimOutputFilePath,
+    @"TEST_SHIM_BUNDLE_PATH": bundlePath,
+  };
+
+  return environment;
 }
 
 + (FBFuture<NSArray<NSString *> *> *)launchedProcessWithExitCode:(FBFuture<NSNumber *> *)exitCode shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue
@@ -168,7 +180,7 @@
         [testNames addObject:testName];
       }
       return [FBFuture futureWithResult:[testNames copy]];
-  }];
+    }];
 }
 
 + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue confirmExit:(FBFuture<NSNumber *> *)exitCode closingOutput:(id<FBProcessFileOutput>)output shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer
@@ -190,83 +202,46 @@
     }];
 }
 
-+ (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithConfiguration:(FBListTestConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer executor:(id<FBXCTestProcessExecutor>)executor logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target configuration:(FBListTestConfiguration *)configuration xctestPath:(NSString *)xctestPath environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer logger:(id<FBControlCoreLogger>)logger
 {
-  NSString *launchPath = executor.xctestPath;
+  NSString *launchPath = xctestPath;
   NSTimeInterval timeout = configuration.testTimeout;
 
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
-    NSString *xcTestFrameworkPath =
-    [[FBXcodeConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-      stringByAppendingPathComponent:@"Developer/Library/Frameworks/XCTest.framework"];
+    // Since we're loading the test bundle in app binary's process without booting a simulator,
+    // testing frameworks like XCTest.framework and XCTAutomationSupport.framework won't be available.
+    // (They are available in iOS simulator's runtime). To fix this, we could add the paths of those
+    // frameworks (developer library version) to `DYLD_FALLBACK_FRAMEWORK_PATH` to meet the dependency
+    // requirements of loading test bundle.
+    NSString *developerLibraryPath =
+    [FBXcodeConfiguration.developerDirectory
+     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
 
-    // Since we spawn process using app binary directly without installation, we need to manully copy
-    // xctest framework to app's rpath so it can be found by dyld when we load test bundle later.
-    [self copyFrameworkToApplicationAtPath:configuration.runnerAppPath frameworkPath:xcTestFrameworkPath error:nil];
+    NSArray<NSString *> *testFrameworkPaths = @[
+      [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
+      [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+    ];
 
-    // Since Xcode 11, XCTest.framework load XCTAutomationSupport.framework use LC_LOAD_DYLIB, so
-    // we need to make sure XCTAutomationSupport.framework is available at @rpath when we load test bundle.
-    if ([FBXcodeConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"11.0"]]) {
-      NSString *XCTAutomationSupportFrameworkPath =
-      [[FBXcodeConfiguration.developerDirectory
-        stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-        stringByAppendingPathComponent:@"Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework"];
-
-      [self copyFrameworkToApplicationAtPath:configuration.runnerAppPath frameworkPath:XCTAutomationSupportFrameworkPath error:nil];
-    }
+    NSMutableDictionary *environmentVariables = environment.mutableCopy;
+    [environmentVariables addEntriesFromDictionary:@{
+      @"DYLD_FALLBACK_FRAMEWORK_PATH" : [testFrameworkPaths componentsJoinedByString:@":"],
+      @"DYLD_FALLBACK_LIBRARY_PATH" : [testFrameworkPaths componentsJoinedByString:@":"],
+    }];
+    environment = environmentVariables.copy;
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
     launchPath = appBundle.binary.path;
   }
 
-  return [[executor
-    startProcessWithLaunchPath:launchPath
-    arguments:@[]
-    environment:environment
-    stdOutConsumer:stdOutConsumer
-    stdErrConsumer:stdErrConsumer]
-    onQueue:executor.workQueue map:^(id<FBLaunchedProcess> process) {
-      return [FBXCTestProcess ensureProcess:process completesWithin:timeout queue:executor.workQueue logger:logger];
+  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
+  FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    
+  return [[target
+    launchProcess:spawnConfiguration]
+    onQueue:target.asyncQueue map:^(id<FBLaunchedProcess> process) {
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
     }];
-}
-
-+ (NSString *)copyFrameworkToApplicationAtPath:(NSString *)appPath frameworkPath:(NSString *)frameworkPath error:(NSError **)error
-{
-  if (![FBBundleDescriptor isApplicationAtPath:appPath]) {
-    return nil;
-  }
-
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-  NSString *frameworksDir = [appPath stringByAppendingPathComponent:@"Frameworks"];
-  BOOL isDirectory = NO;
-  if ([fileManager fileExistsAtPath:frameworksDir isDirectory:&isDirectory]) {
-    if (!isDirectory) {
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not a directory", frameworksDir]
-        fail:error];
-    }
-  } else {
-    if (![fileManager createDirectoryAtPath:frameworksDir withIntermediateDirectories:NO attributes:nil error:error]) {
-      return [[FBControlCoreError
-        describeFormat:@"Create framework directory %@ failed", frameworksDir]
-        fail:error];
-    }
-  }
-
-  NSString *toPath = [frameworksDir stringByAppendingPathComponent:[frameworkPath lastPathComponent]];
-  if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
-    return appPath;
-  }
-
-  if (![fileManager copyItemAtPath:frameworkPath toPath:toPath error:error]) {
-    return [[FBControlCoreError
-      describeFormat:@"Error copying framework %@ to app %@.", frameworkPath, appPath]
-      fail:error];
-  }
-
-  return appPath;
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter

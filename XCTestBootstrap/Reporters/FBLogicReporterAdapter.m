@@ -9,7 +9,7 @@
 #import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 
 @interface FBLogicReporterAdapter ()
 
@@ -32,10 +32,6 @@
   return self;
 }
 
-- (void)debuggerAttached
-{
-  [self.reporter debuggerAttached];
-}
 
 - (void)didBeginExecutingTestPlan
 {
@@ -45,6 +41,7 @@
 - (void)didFinishExecutingTestPlan
 {
   [self.reporter didFinishExecutingTestPlan];
+  [self.reporter processUnderTestDidExit];
 }
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid

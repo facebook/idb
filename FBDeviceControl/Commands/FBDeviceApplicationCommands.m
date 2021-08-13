@@ -12,7 +12,6 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
-#import "FBDeviceApplicationProcess.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBInstrumentsClient.h"
@@ -218,7 +217,6 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
           bundlePath = [@"/private" stringByAppendingString:bundlePath];
           bundleIdentifier = bundlePathToBundleIdentifier[bundlePath];
           if (!bundleIdentifier) {
-            [[self.device.logger debug] logFormat:@"Was not able to map realAppName \"%@\" of a running process to a bundle identifier", processRealName];
             continue;
           }
         }

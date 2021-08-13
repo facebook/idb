@@ -39,6 +39,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) in_port_t debugserverPort;
 
+/**
+ The TLS server cert path. If not specified grpcPort will be listening on unencrypted socket
+ */
+@property (nonatomic, assign, readonly) NSString *tlsCertPath;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -16,7 +16,7 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlAssertions.h"
 
-@interface FBSimulatorTestInjection : FBSimulatorControlTestCase <FBTestManagerTestReporter>
+@interface FBSimulatorTestInjection : FBSimulatorControlTestCase <FBXCTestReporter>
 
 @property (nonatomic, strong, readwrite) NSMutableSet *passedMethods;
 @property (nonatomic, strong, readwrite) NSMutableSet *failedMethods;
@@ -49,14 +49,10 @@
   return simulator;
 }
 
-- (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBTestManagerTestReporter>)reporter simulator:(FBSimulator *)simulator
+- (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBXCTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  id<FBiOSTargetOperation> operation = [[simulator startTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(operation);
-
-  id result = [operation.completed awaitWithTimeout:20 error:&error];
+  id result = [[simulator runTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(result);
 }
@@ -65,26 +61,53 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
   [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass", @"testAsyncExpectationPassing"]
+              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail", @"testAsyncExpectationFailing"]];
 }
 
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:self.testLaunchSafari reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass", @"testAsyncExpectationPassing"]
+              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail", @"testAsyncExpectationFailing"]];
 }
 
 - (void)testInjectsApplicationTestWithCustomOutputConfiguration
 {
   NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  XCTAssertTrue([[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:nil]);
+
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
-  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
-  FBTestLaunchConfiguration *testLaunch = [self.testLaunchSafari withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:[FBProcessOutput outputForFilePath:stdOutPath]
+    stdErr:[FBProcessOutput outputForFilePath:stdErrPath]];
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:self.safariAppLaunch.bundleID
+    bundleName:self.safariAppLaunch.bundleName
+    arguments:self.safariAppLaunch.arguments
+    environment:self.safariAppLaunch.environment
+    waitForDebugger:NO
+    io:io
+    launchMode:self.safariAppLaunch.launchMode];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:applicationLaunchConfiguration
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -103,27 +126,25 @@
   XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:failed]);
 }
 
-- (void)testInjectsApplicationTestIntoSampleAppWithJUnitReporter
-{
-  NSURL *outputFileURL =
-      [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
-  FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
-  [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:reporter simulator:simulator];
-
-  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
-  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
-  NSString *actual = [self stringWithContentsOfJUnitResult:outputFileURL];
-
-  XCTAssertEqualObjects(expected, actual);
-}
-
 - (void)testInjectsApplicationTestWithTestsToRun
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
-    withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
-    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
@@ -133,47 +154,41 @@
 - (void)testInjectsApplicationTestWithTestsToSkip
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[self.testLaunchSafari
-    withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
-    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    applicationLaunchConfiguration:self.safariAppLaunch
+    testHostPath:nil
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }
 
-#pragma mark -
+#pragma mark FBXCTestReporter
 
-- (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
-{
-  NSError *error;
-  NSString *string = [NSString stringWithContentsOfURL:path encoding:NSUTF8StringEncoding error:&error];
-  XCTAssertNil(error);
-
-  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"time=\"[^\"]+\""
-                                                                         options:NSRegularExpressionCaseInsensitive
-                                                                           error:&error];
-  XCTAssertNil(error);
-
-  return [regex stringByReplacingMatchesInString:string
-                                         options:0
-                                           range:NSMakeRange(0, string.length)
-                                    withTemplate:@"time=\"0.00\""];
-}
-
-#pragma mark FBTestManagerTestReporter
-
-- (void)testManagerMediatorDidBeginExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
+- (void)didBeginExecutingTestPlan
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
+- (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
   switch (status) {
     case FBTestReportStatusPassed:
@@ -186,27 +201,60 @@
   }
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
+- (void)testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
 {
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
+- (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
+
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary
+- (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
   XCTAssertNotNil(summary.finishTime);
   XCTAssertNotNil(summary.testSuite);
 }
 
-- (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
+- (void)didFinishExecutingTestPlan
+{
+
+}
+
+- (void)processUnderTestDidExit
+{
+
+}
+
+- (void)didCrashDuringTest:(NSError *)error
+{
+
+}
+
+
+- (void)handleExternalEvent:(NSString *)event
+{
+
+}
+
+
+- (BOOL)printReportWithError:(NSError **)error
+{
+  return YES;
+}
+
+- (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
+{
+
+}
+
+- (void)testHadOutput:(NSString *)output
 {
 
 }

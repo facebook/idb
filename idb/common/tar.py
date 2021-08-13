@@ -9,8 +9,10 @@ import os
 import sys
 import tempfile
 import uuid
+from abc import abstractmethod
 from typing import AsyncGenerator, AsyncIterator, List, Optional
 
+from idb.common.types import Compression
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws
 
@@ -23,7 +25,6 @@ def _has_executable(exe: str) -> bool:
     return any((os.path.exists(os.path.join(path, exe)) for path in os.get_exec_path()))
 
 
-COMPRESSION_COMMAND = ["pigz", "-c"] if _has_executable("pigz") else ["gzip", "-4"]
 READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
@@ -37,35 +38,76 @@ async def is_gnu_tar() -> bool:
     return proc.returncode == 0
 
 
-@asynccontextmanager
-async def _create_tar_command(
-    paths: List[str],
-    additional_tar_args: Optional[List[str]],
-    place_in_subfolders: bool,
-    verbose: bool = False,
-) -> AsyncGenerator[asyncio.subprocess.Process, None]:
-    with tempfile.TemporaryDirectory(prefix="tar_link_") as temp_dir:
-        command = ["tar", "vcf" if verbose else "cf", "-"]
-        if additional_tar_args:
-            command.extend(additional_tar_args)
+class TarArchiveProcess:
+    def __init__(
+        self,
+        paths: List[str],
+        additional_tar_args: Optional[List[str]],
+        place_in_subfolders: bool,
+        verbose: bool,
+    ) -> None:
+        self._paths = paths
+        self._additional_tar_args = additional_tar_args
+        self._place_in_subfolders = place_in_subfolders
+        self._verbose = verbose
 
-        if place_in_subfolders:
-            for path in paths:
+    @asynccontextmanager
+    async def run(self) -> AsyncGenerator[asyncio.subprocess.Process, None]:
+        with tempfile.TemporaryDirectory(prefix="tar_link_") as temp_dir:
+            command = self._tar_command
+            self._apply_additional_args(command, temp_dir)
+            async with self._run_process(command) as process:
+                yield process
+
+    def _apply_additional_args(self, command: List[str], temp_dir: str) -> None:
+        additional_args = self._additional_tar_args
+        if additional_args:
+            command.extend(additional_args)
+
+        if self._place_in_subfolders:
+            for path in self._paths:
                 sub_dir_name = str(uuid.uuid4())
                 temp_subdir = os.path.join(temp_dir, sub_dir_name)
                 os.symlink(os.path.dirname(path), temp_subdir)
                 path_to_file = os.path.join(sub_dir_name, os.path.basename(path))
                 command.extend(["-C", temp_dir, path_to_file])
         else:
-            for path in paths:
+            for path in self._paths:
                 command.extend(["-C", os.path.dirname(path), os.path.basename(path)])
+
+    @property
+    @abstractmethod
+    def _tar_command(self) -> List[str]:
+        pass
+
+    @asynccontextmanager
+    @abstractmethod
+    def _run_process(
+        self, command: List[str]
+    ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
+        pass
+
+
+class GzipArchive(TarArchiveProcess):
+    GZIP_COMPRESSION_COMMAND = (
+        ["pigz", "-c"] if _has_executable("pigz") else ["gzip", "-4"]
+    )
+
+    @property
+    def _tar_command(self) -> List[str]:
+        return ["tar", "vcf" if self._verbose else "cf", "-"]
+
+    @asynccontextmanager
+    async def _run_process(
+        self, command: List[str]
+    ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
         pipe_read, pipe_write = os.pipe()
         process_tar = await asyncio.create_subprocess_exec(
             *command, stderr=sys.stderr, stdout=pipe_write
         )
         os.close(pipe_write)
         process_compressor = await asyncio.create_subprocess_exec(
-            *COMPRESSION_COMMAND,
+            *self.GZIP_COMPRESSION_COMMAND,
             stdin=pipe_read,
             stderr=sys.stderr,
             stdout=asyncio.subprocess.PIPE,
@@ -73,6 +115,39 @@ async def _create_tar_command(
         os.close(pipe_read)
         yield process_compressor
         await asyncio.gather(process_tar.wait(), process_compressor.wait())
+
+
+class ZstdArchive(TarArchiveProcess):
+    ZSTD_EXECUTABLES: List[str] = ["pzstd", "zstd"]  # in the order of preference
+
+    @property
+    def _tar_command(self) -> List[str]:
+        return [
+            "tar",
+            "--use-compress-program",
+            self._get_zstd_exe(),
+            "-vcf" if self._verbose else "-cf",
+            "-",
+        ]
+
+    @asynccontextmanager
+    async def _run_process(
+        self, command: List[str]
+    ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
+        process = await asyncio.create_subprocess_exec(
+            *command, stderr=sys.stderr, stdout=asyncio.subprocess.PIPE
+        )
+        yield process
+        await process.wait()
+
+    @classmethod
+    def _get_zstd_exe(cls) -> str:
+        for zstd_exe in cls.ZSTD_EXECUTABLES:
+            if _has_executable(zstd_exe):
+                return zstd_exe
+        raise Exception(
+            f"Missing ZSTD dependencies. Make sure either of {cls.ZSTD_EXECUTABLES} is on the PATH"
+        )
 
 
 def _create_untar_command(
@@ -96,12 +171,12 @@ async def create_tar(
     place_in_subfolders: bool = False,
     verbose: bool = False,
 ) -> bytes:
-    async with _create_tar_command(
+    async with GzipArchive(
         paths=paths,
         additional_tar_args=additional_tar_args,
         place_in_subfolders=place_in_subfolders,
         verbose=verbose,
-    ) as process:
+    ).run() as process:
         tar_contents = (await process.communicate())[0]
         if process.returncode != 0:
             raise TarException(
@@ -113,16 +188,29 @@ async def create_tar(
 
 async def generate_tar(
     paths: List[str],
+    compression: Compression = Compression.GZIP,
     additional_tar_args: Optional[List[str]] = None,
     place_in_subfolders: bool = False,
     verbose: bool = False,
 ) -> AsyncIterator[bytes]:
-    async with _create_tar_command(
-        paths=paths,
-        additional_tar_args=additional_tar_args,
-        place_in_subfolders=place_in_subfolders,
-        verbose=verbose,
-    ) as process:
+    if compression == Compression.ZSTD:
+        tar_process: TarArchiveProcess = ZstdArchive(
+            paths=paths,
+            additional_tar_args=additional_tar_args,
+            place_in_subfolders=place_in_subfolders,
+            verbose=verbose,
+        )
+    elif compression == Compression.GZIP:
+        tar_process = GzipArchive(
+            paths=paths,
+            additional_tar_args=additional_tar_args,
+            place_in_subfolders=place_in_subfolders,
+            verbose=verbose,
+        )
+    else:
+        raise Exception(f"Unsupported compression format: {compression}")
+
+    async with tar_process.run() as process:
         reader = none_throws(process.stdout)
         while not reader.at_eof():
             data = await reader.read(READ_CHUNK_SIZE)

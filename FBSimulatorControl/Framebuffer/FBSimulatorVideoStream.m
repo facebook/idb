@@ -357,7 +357,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
         return FBFuture.empty;
       }
       // If we have a surface now, we can start rendering, so mount the surface.
-      IOSurfaceRef surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
+      IOSurface *surface = [self.framebuffer attachConsumer:self onQueue:self.writeQueue];
       [self didChangeIOSurface:surface];
       return FBFuture.empty;
     }];
@@ -365,12 +365,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBFramebufferConsumer
 
-- (NSString *)consumerIdentifier
-{
-  return NSStringFromClass(self.class);
-}
-
-- (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
+- (void)didChangeIOSurface:(IOSurface *)surface
 {
   [self mountSurface:surface error:nil];
   [self pushFrame];
@@ -382,7 +377,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Private
 
-- (BOOL)mountSurface:(IOSurfaceRef)surface error:(NSError **)error
+- (BOOL)mountSurface:(IOSurface *)surface error:(NSError **)error
 {
   // Remove the old pixel buffer.
   CVPixelBufferRef oldBuffer = self.pixelBuffer;
@@ -394,7 +389,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   CVPixelBufferRef buffer = NULL;
   CVReturn status = CVPixelBufferCreateWithIOSurface(
     NULL,
-    surface,
+    (__bridge IOSurfaceRef _Nonnull)(surface),
     NULL,
     &buffer
   );
@@ -546,7 +541,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Private
 
-- (BOOL)mountSurface:(IOSurfaceRef)surface error:(NSError **)error
+- (BOOL)mountSurface:(IOSurface *)surface error:(NSError **)error
 {
   if (![super mountSurface:surface error:error]) {
     return NO;

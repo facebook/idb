@@ -34,7 +34,7 @@
 
 #pragma mark FBFileCommands
 
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)sourcePath toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
@@ -43,6 +43,8 @@
       NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
       NSFileManager *fileManager = NSFileManager.defaultManager;
       NSURL *destURL = [basePathURL URLByAppendingPathComponent:sourcePath.lastPathComponent];
+      // Attempt to delete first to overwrite
+      [fileManager removeItemAtURL:destURL error:nil];
       if (![fileManager copyItemAtURL:sourcePath toURL:destURL error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destURL, error]
@@ -53,7 +55,7 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
   __block NSString *dstPath = destinationPath;
   return [[self
@@ -98,6 +100,26 @@
     }];
 }
 
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[[self
+    dataContainer]
+    onQueue:self.queue fmap:^(NSString *dataContainer) {
+      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:containerPath];
+      return [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/tail"]
+        withArguments:@[@"-c+1", @"-f", fullSourcePath]]
+        withStdOutConsumer:consumer]
+        start];
+    }]
+    onQueue:self.queue map:^(FBTask *task) {
+      return [task.statLoc
+        onQueue:self.queue respondToCancellation:^{
+          return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
+        }];
+    }];
+}
+
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[self
@@ -115,7 +137,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)sourcePath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[self
     dataContainer]
@@ -133,7 +155,7 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path
+- (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[self
     dataContainer]

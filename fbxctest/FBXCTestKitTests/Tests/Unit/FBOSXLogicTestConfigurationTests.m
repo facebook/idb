@@ -59,6 +59,7 @@
       configurationWithShims:configuration.shims
       environment:processEnvironment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:testBundlePath
       waitForDebugger:NO
       timeout:0
@@ -94,6 +95,7 @@
       configurationWithShims:configuration.shims
       environment:processEnvironment
       workingDirectory:workingDirectory
+      logDirectoryPath:nil
       testBundlePath:testBundlePath
       waitForDebugger:NO
       timeout:0

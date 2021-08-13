@@ -324,6 +324,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return nextContext;
 }
 
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue handleError:(nonnull FBFuture * _Nonnull (^)(NSError * _Nonnull))handler
+{
+  FBFuture *next = [self.future onQueue:queue handleError:handler];
+  return [[FBFutureContext alloc] initWithFuture:next teardowns:self.teardowns];
+}
+
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(id, FBFutureState) )action
 {
   FBFutureContext_Teardown *teardown = [[FBFutureContext_Teardown alloc] initWithFuture:self.future queue:queue action:action];
@@ -480,12 +486,34 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   NSString *description = [[NSString alloc] initWithFormat:format arguments:args];
   va_end(args);
 
-  FBFuture *timeoutFuture = [[[[FBControlCoreError
+  FBFuture *timeoutFuture = [[[FBControlCoreError
     describeFormat:@"Timed out after %f seconds waiting for %@", timeout, description]
-    noLogging]
     failFuture]
     delay:timeout];
   return [FBFuture race:@[self, timeoutFuture]];
+}
+
+- (FBFuture *)onQueue:(dispatch_queue_t)queue
+{
+  FBMutableFuture *future = FBMutableFuture.future;
+  dispatch_async(queue, ^{
+    [future resolveFromFuture:self];
+  });
+  return future;
+}
+
+- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture * (^)(void))handler
+{
+  return [FBFuture
+    race:@[
+      self,
+      [[FBFuture
+        futureWithDelay:timeout future:FBFuture.empty]
+        onQueue:queue fmap:^(id _) {
+          return handler();
+        }],
+      ]
+    ];
 }
 
 + (FBFuture *)futureWithFutures:(NSArray<FBFuture *> *)futures

@@ -10,9 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-@class FBSimulator;
-@class FBSimulatorApplicationOperation;
 /**
  Implementation of FBApplicationCommands for Simulators.
  */

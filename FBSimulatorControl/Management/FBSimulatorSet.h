@@ -14,7 +14,6 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
-@class FBSimulatorProcessFetcher;
 @class FBiOSTargetQuery;
 @class SimDeviceSet;
 
@@ -176,11 +175,6 @@ NS_ASSUME_NONNULL_BEGIN
  The SimDeviceSet to that is owned by the receiver.
  */
 @property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
-
-/**
- The FBProcessFetcher that is used to obtain Simulator Process Information.
- */
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.

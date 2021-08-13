@@ -61,14 +61,25 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly, class) BOOL isXcode10OrGreater;
 
 /**
- YES if Xcode 10 or greater, NO Otherwise.
+ YES if Xcode 12 or greater, NO Otherwise.
  */
 @property (nonatomic, assign, readonly, class) BOOL isXcode12OrGreater;
+
+/**
+ YES if Xcode 12.5 or greater, NO Otherwise.
+ */
+@property (nonatomic, assign, readonly, class) BOOL isXcode12_5OrGreater;
 
 /**
  A Description of the Current Configuration.
  */
 @property (nonatomic, copy, readonly, class) NSString *description;
+
+
+/**
+ Return Developer directory if exist or nil.
+ */
++ (NSString *)getDeveloperDirectoryIfExists;
 
 @end
 

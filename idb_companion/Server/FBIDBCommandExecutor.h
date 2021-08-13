@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBXCTestDescriptor.h"
 
@@ -19,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
 @class FBInstalledArtifact;
+@class FBSimulatorHIDEvent;
 @class FBTemporaryDirectory;
 
 @protocol FBXCTestReporter;
@@ -89,9 +89,10 @@ extern FBFileContainerKind const FBFileContainerKindDiskImages;
  Install an App via a Data stream.
 
  @param input the input to pipe.
+ @param compression the compression type to use
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
 
 /**
  Installs an xctest bundle by file path.
@@ -440,6 +441,11 @@ This allows to avoid the permission popup the first time we open a deeplink
  @return A future that resolves the content of that file.
  */
 - (FBFuture<NSData *> *)pull_file:(NSString *)path containerType:(nullable NSString *)containerType;
+
+/**
+ Tails a file from the container
+ */
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path to_consumer:(id<FBDataConsumer>)consumer in_container:(nullable NSString *)containerType;
 
 /**
  Remove path within the container

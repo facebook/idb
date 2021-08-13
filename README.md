@@ -63,58 +63,13 @@ com.apple.mobileslideshow | MobileSlideShow | system | x86_64 | Not running | No
 com.apple.mobilesafari | MobileSafari | system | x86_64 | Not running | Not Debuggable
 ```
 
-`launch` will launch an application the application:
+`launch` will launch an application:
 
 ```
 $ idb launch com.apple.mobilesafari
 ```
 
-Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands.
-
-## Building from Source
-
-`idb` is made up of 2 parts.
-
-To build the python part make sure you are in the root of the repo and run:
-
-```
-pip3 install .
-```
-
-To build the objective-c/c++ part:
-
-Make sure you have installed gRPC dependencies: ```brew tap grpc/grpc && brew install grpc```
-
-```
-open idb_companion.xcworkspace
-```
-
-This will open an Xcode project that you can build and run.
-
-After opening the Xcode project you will need to add a `--udid` argument for launch.
-- Get the UDID of either your device or simulator
-  - Window -> Devices and Simulators
-  - Select the device or simulator you care about
-  - Copy the value in the `Identifier` section of the header
-- Project -> Scheme -> Edit Scheme (or `cmd + <`)
-- Run -> Arguments
-- Click the `+` under the `Arguments Passed on Launch` section
-- Enter `--udid <UDID copied above>`
-- Run the `idb_companion` target on `My Mac`
-
-Once `idb_companion` has launched, it will output the TCP port upon which the companion has bound to `stdout`:
-
-```
-{"grpc_port":10882}
-```
-
-By default this port is `10882`, it can be bound on a random port with `--port 0` or a port of your choosing. You'll now be able to direct `idb` commands against this companion with the `IDB_COMPANION` environment variable passed to the cli:
-
-```
-$ IDB_COMPANION=localhost:10882 idb describe
-```
-
-As long as you prefix this environment variable before all commands, you'll be able to run commands against the companion that you're currently debugging within Xcode.
+Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands. There are also instructions on how to [make changes to `idb` including building it from source](https://www.fbidb.io/docs/development).
 
 ## Documentation
 

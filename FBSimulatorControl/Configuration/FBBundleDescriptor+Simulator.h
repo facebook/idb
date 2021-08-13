@@ -24,16 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)xcodeSimulator;
 
-/**
- Returns the System Application with the provided name.
-
- @param appName the System Application to fetch.
- @param simulator the Simulator to fetch for.
- @param error any error that occurred in fetching the application.
- @return FBBundleDescriptor instance if one could for the given name could be found, nil otherwise.
- */
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

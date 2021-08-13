@@ -17,6 +17,7 @@
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -126,7 +127,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBInstrumentsCommands, FBDebuggerCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands, FBDebuggerCommands>
 
 /**
  The Target's Logger.
@@ -134,24 +135,29 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
+ The path to the custom (non-default) device set if applicable.
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *customDeviceSetPath;
+
+/**
  The Directory that the target uses to store per-target files on the host.
  */
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
 
 /**
+ The root of the "Runtime" where applicable
+ */
+@property (nonatomic, copy, readonly) NSString *runtimeRootDirectory;
+
+/**
+ The root of the "Runtime" where applicable
+ */
+@property (nonatomic, copy, readonly) NSString *platformRootDirectory;
+
+/**
  The Screen Info for the Target.
  */
 @property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;
-
-/**
- Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
-
-/**
- Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
 
 /**
  The Queue to serialize work on.
@@ -173,6 +179,21 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
  @return a Comparison Result.
  */
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target;
+
+/**
+ If the target's bundle needs to be codesigned or not.
+
+ @return if it needs to be signed or not.
+ */
+- (BOOL)requiresBundlesToBeSigned;
+
+/**
+  Env var replacements
+ 
+  @return a dictionary with the replacements defined
+ */
+- (NSDictionary<NSString *, NSString *> *)replacementMapping;
+
 
 @end
 
@@ -205,20 +226,9 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
 
 /**
- The default screenshot path for a target.
-
- @param storageDirectory the storage directory of the target to use.
- @return a file path.
+ Constructs a string description of the provided target.
  */
-extern NSString *FBiOSTargetDefaultScreenshotPath(NSString *storageDirectory);
-
-/**
- The default video path for a target.
-
- @param storageDirectory the storage directory of the target to use.
- @return a file path.
- */
-extern NSString *FBiOSTargetDefaultVideoPath(NSString *storageDirectory);
+extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
 
 #if defined __cplusplus
 };

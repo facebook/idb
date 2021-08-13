@@ -53,11 +53,19 @@ class HidTests(TestCase):
         for delta in deltas:
             self.assertEqual(
                 event_to_grpc(
-                    HIDSwipe(start=Point(x=1, y=2), end=Point(x=3, y=4), delta=delta)
+                    HIDSwipe(
+                        start=Point(x=1, y=2),
+                        end=Point(x=3, y=4),
+                        delta=delta,
+                        duration=0.5,
+                    )
                 ),
                 GrpcHIDEvent(
                     swipe=GrpcHIDSwipe(
-                        start=GrpcPoint(x=1, y=2), end=GrpcPoint(x=3, y=4), delta=delta
+                        start=GrpcPoint(x=1, y=2),
+                        end=GrpcPoint(x=3, y=4),
+                        delta=delta,
+                        duration=0.5,
                     )
                 ),
             )

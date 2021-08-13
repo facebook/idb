@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBDataConsumer;
+@protocol FBLaunchedProcess;
 
 /**
  A logging operation of indeterminate duration.
@@ -24,6 +25,34 @@ NS_ASSUME_NONNULL_BEGIN
  The consumer of the operation.
  */
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+
+@end
+
+/**
+ A log operation that is contained within an FBLaunchedProcess
+ */
+@interface FBProcessLogOperation : NSObject <FBLogOperation>
+
+/**
+ The wrapped launched process.
+ */
+@property (nonatomic, strong, readonly) id<FBLaunchedProcess> process;
+
+/**
+ The Designated Initializer
+
+ @param process the wrapped process.
+ @param consumer the wrapped consumer.
+ */
+- (instancetype)initWithProcess:(id<FBLaunchedProcess>)process consumer:(id<FBDataConsumer>)consumer;
+
+/**
+ Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.
+
+ @param arguments the existing arguments
+ @return a new arguments array containing either the original subcommand, or a stream subcommand.
+ */
++ (NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(NSArray<NSString *> *)arguments;
 
 @end
 
@@ -40,14 +69,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that will complete when the log command has started successfully. The wrapped Awaitable can then be cancelled, or awaited until it is finished.
  */
 - (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer;
-
-/**
- Runs the log command, returning the results as an array of strings.
-
- @param arguments the arguments to the log command.
- @return a Future wrapping the log lines.
- */
-- (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments;
 
 @end
 

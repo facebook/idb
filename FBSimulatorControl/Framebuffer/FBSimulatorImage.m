@@ -63,7 +63,7 @@
 {
   if (![self.framebuffer isConsumerAttached:self.imageGenerator]) {
     [self.logger logFormat:@"Image Generator %@ not attached, attaching", self.imageGenerator];
-    IOSurfaceRef surface = [self.framebuffer attachConsumer:self.imageGenerator onQueue:self.writeQueue];
+    IOSurface *surface = [self.framebuffer attachConsumer:self.imageGenerator onQueue:self.writeQueue];
     if (surface) {
       [self.logger logFormat:@"Surface %@ immediately available, adding to Image Generator %@", surface, self.imageGenerator];
       [self.imageGenerator didChangeIOSurface:surface];

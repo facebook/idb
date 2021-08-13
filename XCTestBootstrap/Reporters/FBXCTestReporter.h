@@ -25,10 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
 
-/**
- Called when a process has resumed after a debugger has been attached.
- */
-- (void)debuggerAttached;
 
 /**
  Called when the test plan has started executing.
@@ -40,11 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)didFinishExecutingTestPlan;
 
-
 /**
- Called when the app under test exists
+ Called when the process under test exits
  */
-- (void)appUnderTestExited;
+- (void)processUnderTestDidExit;
 
 /**
  Called when the Test Suite has started.
@@ -75,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param file the failing file.
  @param line the failing line number.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line;
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
 
 /**
  Called when a test case has started
@@ -112,6 +107,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error for an error that occurs.
  */
 - (BOOL)printReportWithError:(NSError **)error;
+
+/**
+ Called when the test process has crashed mid test
+
+ @param error error returned by the test process, most likely includes a stack trace
+ */
+- (void)didCrashDuringTest:(NSError *)error;
 
 @optional
 /**
@@ -160,13 +162,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param path the new path that the test artifact is copied to.
  */
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path;
-
-/**
- Called when the test process has crashed mid test
-
- @param error error returned by the test process, most likely includes a stack trace
- */
-- (void)didCrashDuringTest:(NSError *)error;
 
 @end
 

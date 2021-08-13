@@ -47,13 +47,12 @@
   if (!destination) {
     return nil;
   }
-  FBXCTestShimConfiguration *shims = nil;
   NSString *testBundlePath = nil;
   NSString *runnerAppPath = nil;
   NSString *testFilter = nil;
   NSString *testTargetPathOut = nil;
   BOOL waitForDebugger = NO;
-  if (![FBXCTestCommandLine loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
+  if (![FBXCTestCommandLine loadWithArguments:arguments testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testTargetPathOut:&testTargetPathOut testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
   NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
@@ -63,8 +62,7 @@
       runnerAppPath = nil;
     }
     configuration = [FBListTestConfiguration
-      configurationWithShims:shims
-      environment:environment
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       runnerAppPath:runnerAppPath
@@ -72,14 +70,16 @@
       timeout:timeout];
   } else if ([argumentSet containsObject:@"-logicTest"]) {
     configuration = [FBLogicTestConfiguration
-      configurationWithShims:shims
-      environment:environment
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
       timeout:timeout
       testFilter:testFilter
-      mirroring:FBLogicTestMirrorFileLogs];
+      mirroring:FBLogicTestMirrorFileLogs
+      coveragePath:nil
+      binaryPath:nil
+      logDirectoryPath:nil];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
     [allEnvironment addEntriesFromDictionary:environment];
@@ -90,8 +90,7 @@
     NSString *osLogPath = allEnvironment[@"FBXCTEST_OS_LOG_PATH"];
 
     configuration = [FBTestManagerTestConfiguration
-      configurationWithShims:shims
-      environment:environment
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -104,8 +103,7 @@
       osLogPath:osLogPath];
   } else if ([argumentSet containsObject:@"-uiTest"]) {
     configuration = [FBTestManagerTestConfiguration
-      configurationWithShims:shims
-      environment:environment
+      configurationWithEnvironment:environment
       workingDirectory:workingDirectory
       testBundlePath:testBundlePath
       waitForDebugger:waitForDebugger
@@ -125,12 +123,10 @@
   return [[FBXCTestCommandLine alloc] initWithConfiguration:configuration destination:destination];
 }
 
-+ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
++ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testTargetPathOut:(NSString **)testTargetPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
 {
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
-  BOOL shimsRequired = YES;
-
   while (nextArgument < arguments.count) {
     NSString *argument = arguments[nextArgument++];
     if ([argument isEqualToString:@"run-tests"]) {
@@ -205,14 +201,6 @@
     }
   }
 
-  if (shimsRequired) {
-    NSError *innerError = nil;
-    FBXCTestShimConfiguration *shimConfiguration = [[FBXCTestShimConfiguration defaultShimConfigurationWithLogger:nil] await:&innerError];
-    if (!shimConfiguration) {
-      return [FBXCTestError failBoolWithError:innerError errorOut:error];
-    }
-    *shimsOut = shimConfiguration;
-  }
   if (testFilter != nil) {
     NSString *expectedPrefix = [*testBundlePathOut stringByAppendingString:@":"];
     if (![testFilter hasPrefix:expectedPrefix]) {
@@ -343,6 +331,7 @@
 #pragma mark Properties
 
 static NSTimeInterval FetchTotalTestProportion = 0.8; // Fetching cannot take greater than 80% of the total test timeout.
+static NSTimeInterval AdditionalGlobalTimeoutFromTest = 10; // Give tests 10 seconds to handle their own timeouts gracefully.
 
 - (NSTimeInterval)testPreparationTimeout
 {
@@ -351,7 +340,7 @@ static NSTimeInterval FetchTotalTestProportion = 0.8; // Fetching cannot take gr
 
 - (NSTimeInterval)globalTimeout
 {
-  return self.configuration.testTimeout;
+  return self.configuration.testTimeout + AdditionalGlobalTimeoutFromTest;
 }
 
 @end

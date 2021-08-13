@@ -9,23 +9,43 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
- Context for the Test Manager.
+ Context for FBTestManagerAPIMediator.
  */
 @interface FBTestManagerContext : NSObject <NSCopying>
 
 /**
  Constructor for the Test Manager Context.
 
- @param testRunnerPID a process id of the Test Host Process. This is the process into which the Test Bundle is injected.
- @param testRunnerBundleID the Bundle ID of the Test Host Process. This is the process into which the Test Bundle is injected.
  @param sessionIdentifier a session identifier of test that should be started
+ @param timeout the maximum amount of time permitted for the test execution to finish.
+ @param testHostLaunchConfiguration the process id of the Test Host Process. This is the process into which the Test Bundle is injected.
+ @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-+ (instancetype)contextWithTestRunnerPID:(pid_t)testRunnerPID testRunnerBundleID:(NSString *)testRunnerBundleID sessionIdentifier:(NSUUID *)sessionIdentifier;
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
 
-@property (nonatomic, assign, readonly) pid_t testRunnerPID;
-@property (nonatomic, copy, readonly) NSString *testRunnerBundleID;
+/**
+ A session identifier of test that should be started
+ */
 @property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
 
+/**
+ The maximum amount of time permitted for the test execution to finish
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+
+/**
+ The launch configuration for the test host.
+ */
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
+/**
+ Additional environment for the app-under-test.
+ */
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+
 @end
+
+NS_ASSUME_NONNULL_END

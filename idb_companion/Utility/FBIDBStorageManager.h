@@ -236,12 +236,11 @@ extern NSString *const IdbFrameworksFolder;
 #pragma mark Public Methods
 
 /**
- Interpolate any replacements
-
- @param environment the environment to interpolate.
+ Interpolate path replacements
+ 
  @return a dictionary with the replacements defined
  */
-- (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment;
+- (NSDictionary<NSString *, NSString *> *)replacementMapping;
 
 /**
  Interpolate any bundle names in the arguments with bundle paths.

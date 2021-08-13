@@ -48,6 +48,15 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
+  if ([self.simulator.device respondsToSelector:(@selector(setHardwareKeyboardEnabled:keyboardType:error:))]) {
+    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
+      NSError *error = nil;
+      [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:&error];
+      
+      return FBFuture.empty;
+    }];
+  }
+  
   return [[self.simulator
     connectToBridge]
     onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
@@ -249,6 +258,9 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     if (data == nil) {
       data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
     }
+    if (data == nil) {
+      return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
+    }
 
     NSError *readError = nil;
     NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
@@ -434,24 +446,21 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 {
   arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
   [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
-    withAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
-    withLoggingTo:logger]
-    runUntilCompletion]
+    withTaskLifecycleLoggingTo:logger]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
     onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
-          return [[[FBSimulatorError
+          return [[FBSimulatorError
             describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]
-            logger:logger]
             failFuture];
       }
       if ([task.stdErr hasPrefix:@"Error"]) {
-        return [[[FBSimulatorError
+        return [[FBSimulatorError
           describeFormat:@"Failed to execute sqlite command: %@", task.stdErr]
-          logger:logger]
           failFuture];
       }
       return [FBFuture futureWithResult:task.stdOut];

@@ -34,7 +34,7 @@
 
 #pragma mark FBFileContainer Implementation
 
-- (FBFuture<NSNull *> *)copyPathOnHost:(NSURL *)path toDestination:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)path toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
@@ -47,7 +47,14 @@
     }];
 }
 
-- (FBFuture<NSString *> *)copyItemInContainer:(NSString *)containerPath toDestinationOnHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -61,14 +68,14 @@
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)movePath:(NSString *)originPath toDestinationPath:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)originPath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)removePath:(NSString *)path
+- (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[self.commands removeProvisioningProfile:path] mapReplace:NSNull.null];
 }

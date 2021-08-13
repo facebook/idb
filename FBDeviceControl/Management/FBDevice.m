@@ -8,8 +8,6 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAMDevice.h"
@@ -86,23 +84,28 @@
   return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
 }
 
-- (FBProcessInfo *)containerApplication
-{
-  return nil;
-}
-
-- (FBProcessInfo *)launchdProcess
-{
-  return nil;
-}
-
 - (NSString *)auxillaryDirectory
 {
   NSString *cwd = NSFileManager.defaultManager.currentDirectoryPath;
   return [NSFileManager.defaultManager isWritableFileAtPath:cwd] ? cwd : @"/tmp";
 }
 
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
+}
+
+- (NSString *)runtimeRootDirectory
+{
+  return [self platformRootDirectory];
+}
+
 - (FBiOSTargetScreenInfo *)screenInfo
+{
+  return nil;
+}
+
+- (NSString *)customDeviceSetPath
 {
   return nil;
 }
@@ -112,11 +115,20 @@
   return FBiOSTargetComparison(self, target);
 }
 
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return NSDictionary.dictionary;
+}
+
+- (BOOL) requiresBundlesToBeSigned {
+  return YES;
+}
+
 #pragma mark NSObject
 
 - (NSString *)description
 {
-  return [FBiOSTargetFormat.fullFormat format:self];
+  return FBiOSTargetDescribe(self);
 }
 
 #pragma mark FBDevice Class Properties
@@ -297,6 +309,7 @@
       FBDeviceScreenshotCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
+      FBXCTraceRecordCommands.class,
       FBInstrumentsCommands.class,
     ];
   });

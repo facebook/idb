@@ -175,9 +175,8 @@
       );
       if (status != 0) {
         NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-        return [[[FBDeviceControlError
+        return [[FBDeviceControlError
           describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
-          logger:self.logger]
           failFuture];
       }
       FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithConnection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];

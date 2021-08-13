@@ -42,19 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSArray<FBSimulator *> *> *)killSimulators:(NSArray<FBSimulator *> *)simulators;
 
-/**
- Kills all of the Simulators that are not launched by `FBSimulatorControl`.
- This can mean Simulators that were launched via Xcode or Instruments.
- Getting a Simulator host into a clean state improves the general reliability of Simulator management and launching.
- In addition, performance should increase as these Simulators won't take up any system resources.
-
- To make the runtime environment more predicatable, it is best to avoid using FBSimulatorControl in conjuction with tradition Simulator launching systems at the same time.
- This method will not kill Simulators that are launched by FBSimulatorControl in another, or the same process.
-
- @return A future that resolves when the simulators are killed.
- */
-- (FBFuture<NSNull *> *)killSpuriousSimulators;
-
 @end
 
 NS_ASSUME_NONNULL_END

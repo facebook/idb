@@ -12,7 +12,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulator.h"
-#import "FBSimulatorConnection.h"
 
 static NSString *const KeyEventClass = @"class";
 static NSString *const KeyDirection = @"direction";

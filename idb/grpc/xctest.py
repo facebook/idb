@@ -17,7 +17,7 @@ from idb.common.types import (
     TestRunFailureInfo,
     TestRunInfo,
 )
-from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse
+from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse, Payload
 from idb.grpc.xctest_log_parser import XCTestLogParser
 
 
@@ -103,6 +103,8 @@ def make_request(
     report_activities: bool,
     report_attachments: bool,
     collect_coverage: bool,
+    collect_logs: bool,
+    wait_for_debugger: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -117,30 +119,32 @@ def make_request(
         mode = Mode(application=Application(app_bundle_id=app_bundle_id))
 
     return XctestRunRequest(
+        arguments=args,
+        collect_coverage=collect_coverage,
+        environment=env,
         mode=mode,
+        report_activities=report_activities,
+        report_attachments=report_attachments,
         test_bundle_id=test_bundle_id,
         tests_to_run=list(tests_to_run or []),
         tests_to_skip=list(tests_to_skip or []),
-        environment=env,
-        arguments=args,
-        report_activities=report_activities,
-        collect_coverage=collect_coverage,
-        report_attachments=report_attachments,
+        timeout=(timeout if timeout is not None else 0),
+        collect_logs=collect_logs,
+        wait_for_debugger=wait_for_debugger,
     )
 
 
-async def write_result_bundle(
-    response: XctestRunResponse, output_path: str, logger: Logger
+async def untar_into_path(
+    payload: Payload, description: str, output_path: str, logger: Logger
 ) -> None:
-    payload = response.result_bundle
     if not payload:
         return
     data = payload.data
     if not len(data):
         return
-    logger.info(f"Writing result bundle to {output_path}")
+    logger.info(f"Writing {description} to {output_path}")
     await untar(data=data, output_path=output_path)
-    logger.info(f"Finished writing result bundle to {output_path}")
+    logger.info(f"Finished writing {description} to {output_path}")
 
 
 def make_results(

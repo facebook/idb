@@ -11,7 +11,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-#import "ReporterEvents.h"
+#import "FBXCTestConstants.h"
 #import "XCTestPrivate.h"
 
 #pragma clang diagnostic push
@@ -432,7 +432,7 @@ static void XCWaitForDebuggerIfNeeded()
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     NSDictionary<NSString *, NSString *> *env = [[NSProcessInfo processInfo] environment];
-    BOOL waitForDebugger = [env[@"XCTOOL_WAIT_FOR_DEBUGGER"] isEqualToString:@"YES"];
+    BOOL waitForDebugger = [env[kEnv_WaitForDebugger] isEqualToString:@"YES"];
     if (waitForDebugger) {
       int pid = [[NSProcessInfo processInfo] processIdentifier];
       NSString *beginMessage = [NSString stringWithFormat:@"Waiting for debugger to be attached to pid '%d' ...", pid];

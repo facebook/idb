@@ -107,6 +107,7 @@
   NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
   dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss Z";
   dateFormatter.lenient = YES;
+  dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
   return dateFormatter;
 }
 

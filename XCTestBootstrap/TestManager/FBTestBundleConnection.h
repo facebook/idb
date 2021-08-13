@@ -11,13 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class DTXConnection;
-@class DVTDevice;
-@class FBTestBundleResult;
 @class FBTestManagerContext;
-@class XCTestBootstrapError;
 
-@protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
 
 /**
@@ -28,47 +23,17 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Constructs a Test Bundle Connection.
+ Constructs a Test Bundle Connection and runs the test plan to completion
 
  @param context the Context of the Test Manager.
  @param target the iOS Target.
  @param interface the interface to delegate to.
+ @param testHostApplication the hosting
  @param requestQueue the queue for asynchronous deliver.
  @param logger the Logger to Log to.
- @return a new Bundle Connection instance.
+ @return a Future that resolves successfully when the test plan has completed.
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
-
-#pragma mark Lifecycle
-
-/**
- Asynchronously Connects the to the Bundle
-
- @return a Future that resolves when the Bundle Connection is established.
- */
-- (FBFuture<FBTestBundleResult *> *)connect;
-
-/**
- Starts the Test Plan.
- Test Events will be delivered asynchronously to the interface.
-
- @return a Future that resolves when the Test Plan has completed.
- */
-- (FBFuture<FBTestBundleResult *> *)startTestPlan;
-
-/**
- A future for the end of the test run.
-
- @return a Future that resolves when the Test Run has completed.
- */
-- (FBFuture<FBTestBundleResult *> *)completeTestRun;
-
-/**
- Disconnects any active connection.
-
- @return a Future that resolves when the connection has been disconnected.
- */
-- (FBFuture *)disconnect;
++ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 

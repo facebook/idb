@@ -9,13 +9,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBBinaryDescriptor;
-@class FBProcessOutputConfiguration;
+@class FBProcessIO;
 
 /**
- An abstract value object for launching both agents and applications
+ An abstract value object for launching both regular and applications processes.
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying>
+@interface FBProcessLaunchConfiguration : NSObject
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
@@ -30,33 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Process Output Configuration.
  */
-@property (nonatomic, copy, readonly) FBProcessOutputConfiguration *output;
-
-/**
- Creates a copy of the receiver, with the environment applied.
-
- @param environment the environment to use.
- @return a copy of the receiver, with the environment applied.
- */
-- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
-
-/**
- Creates a copy of the receiver, with the arguments applied.
-
- @param arguments the arguments to use.
- @return a copy of the receiver, with the arguments applied.
- */
-- (instancetype)withArguments:(NSArray<NSString *> *)arguments;
+@property (nonatomic, strong, readonly) FBProcessIO *io;
 
 /**
  The Designated Initializer.
 
  @param arguments the Arguments.
  @param environment the Environment.
- @param output the Output Configuration.
+ @param io the IO object.
  @return a new FBProcessLaunchConfiguration Instance.
  */
-- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io;
 
 @end
 

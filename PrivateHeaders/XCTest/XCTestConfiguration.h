@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSArray, NSDictionary, NSNumber, NSSet, NSString, NSURL, NSUUID, XCTAggregateSuiteRunStatistics;
+@class NSArray, NSDictionary, NSNumber, NSString, NSURL, NSUUID, XCTAggregateSuiteRunStatistics;
 
 @interface XCTestConfiguration : NSObject <NSSecureCoding, NSCopying>
 {
@@ -20,11 +20,10 @@
     _Bool _initializeForUITesting;
     _Bool _gatherLocalizableStringsData;
     _Bool _emitOSLogs;
-    NSString *_absolutePath;
     NSString *_testBundleRelativePath;
     NSURL *_testBundleURL;
-    NSSet *_testsToRun;
-    NSSet *_testsToSkip;
+    id _testsToRun;
+    id _testsToSkip;
     NSUUID *_sessionIdentifier;
     NSURL *_baselineFileURL;
     NSString *_baselineFileRelativePath;
@@ -72,11 +71,15 @@
 @property(copy) NSString *baselineFileRelativePath; // @synthesize baselineFileRelativePath=_baselineFileRelativePath;
 @property(copy, nonatomic) NSURL *baselineFileURL; // @synthesize baselineFileURL=_baselineFileURL;
 @property(copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
-@property(copy) NSSet *testsToSkip; // @synthesize testsToSkip=_testsToSkip;
-@property(copy) NSSet *testsToRun; // @synthesize testsToRun=_testsToRun;
+@property(copy) id testsToSkip; // @synthesize testsToSkip=_testsToSkip;
+@property(copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
 @property(copy, nonatomic) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
 @property(copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
-@property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+
+// `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
+// @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+// @property (copy,nonatomic) NSString *basePathForTestBundleResolution;
+
 @property(readonly) long long testMode;
 - (_Bool)isEqual:(id)arg1;
 - (unsigned long long)hash;
@@ -88,4 +91,3 @@
 - (id)init;
 
 @end
-

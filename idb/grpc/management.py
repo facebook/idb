@@ -9,7 +9,7 @@ import logging
 import os
 from typing import AsyncGenerator, Dict, List, Optional
 
-from idb.common.companion_spawner import CompanionSpawner
+from idb.common.companion import Companion
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.local_targets_manager import LocalTargetsManager
@@ -43,8 +43,12 @@ class ClientManager(ClientManagerBase):
         )
         self._direct_companion_manager = DirectCompanionManager(logger=self._logger)
         self._local_targets_manager = LocalTargetsManager(logger=self._logger)
-        self._companion_spawner: Optional[CompanionSpawner] = (
-            CompanionSpawner(companion_path=companion_path, logger=self._logger)
+        self._companion_spawner: Optional[Companion] = (
+            Companion(
+                companion_path=companion_path,
+                device_set_path=device_set_path,
+                logger=self._logger,
+            )
             if companion_path is not None
             else None
         )
