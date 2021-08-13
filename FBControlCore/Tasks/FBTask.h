@@ -19,7 +19,7 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : NSObject <FBLaunchedProcess>
+@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBLaunchedProcess
 
 #pragma mark Initializers
 

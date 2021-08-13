@@ -57,21 +57,27 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return YES;
 }
 
-@interface FBTaskProcessPosixSpawn : NSObject <FBLaunchedProcess>
+@implementation FBTask
 
-@property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
+#pragma mark Initializers
 
-@end
++ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
+  return [[configuration.io
+    attach]
+    onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
+      // Everything is setup, launch the process now.
+      NSError *error = nil;
+      FBTask *task = [FBTask taskWithConfiguration:configuration attachment:attachment logger:logger error:&error];
+      if (!task) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:task];
+    }];
+}
 
-@implementation FBTaskProcessPosixSpawn
-
-@synthesize configuration = _configuration;
-@synthesize exitCode = _exitCode;
-@synthesize processIdentifier = _processIdentifier;
-
-+ (FBFuture<FBTaskProcessPosixSpawn *> *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment logger:(id<FBControlCoreLogger>)logger
++ (FBTask *)taskWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -97,15 +103,14 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawn_file_actions_t fileActions;
   posix_spawn_file_actions_init(&fileActions);
 
-  NSError *error = nil;
-  if (!AddInputFileActions(&fileActions, attachment.stdIn, STDIN_FILENO, &error)) {
-    return [FBFuture futureWithError:error];
+  if (!AddInputFileActions(&fileActions, attachment.stdIn, STDIN_FILENO, error)) {
+    return nil;
   }
-  if (!AddOutputFileActions(&fileActions, attachment.stdOut, STDOUT_FILENO, &error)) {
-    return [FBFuture futureWithError:error];
+  if (!AddOutputFileActions(&fileActions, attachment.stdOut, STDOUT_FILENO, error)) {
+    return nil;
   }
-  if (!AddOutputFileActions(&fileActions, attachment.stdErr, STDERR_FILENO, &error)) {
-    return [FBFuture futureWithError:error];
+  if (!AddOutputFileActions(&fileActions, attachment.stdErr, STDERR_FILENO, error)) {
+    return nil;
   }
 
   // Make the spawn attributes
@@ -131,7 +136,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if (status != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]
-      failFuture];
+      fail:error];
   }
   [logger logFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier];
 
@@ -139,8 +144,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
   [self resolveProcessCompletion:processIdentifier attachment:attachment statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
-  FBTaskProcessPosixSpawn *process = [[self alloc] initWithConfiguration:configuration processIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal];
-  return [FBFuture futureWithResult:process];
+  return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration];
 }
 
 + (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
@@ -177,147 +181,21 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   dispatch_resume(source);
 }
 
-- (instancetype)initWithConfiguration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-  _processIdentifier = processIdentifier;
-  _statLoc = statLoc;
-  _exitCode = exitCode;
-  _signal = signal;
-
-  return self;
-}
-
-- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
-{
-  return [FBProcessSpawnCommandHelpers exitedWithCode:self.exitCode isAcceptable:exitCodes];
-}
-
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo
-{
-  return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
-}
-
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
-{
-  return [FBProcessSpawnCommandHelpers sendSignal:signo backingOffToKillWithTimeout:timeout toProcess:self logger:logger];
-}
-
-@end
-
-@interface FBTask ()
-
-@property (nonatomic, strong, readonly) FBProcessIOAttachment *attachment;
-@property (nonatomic, strong, readonly) FBTaskProcessPosixSpawn *process;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-
-@end
-
-@implementation FBTask
-
-@synthesize exitCode = _exitCode;
-@synthesize signal = _signal;
-@synthesize statLoc = _statLoc;
-
-#pragma mark Initializers
-
-+ (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
-{
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  return [[configuration.io
-    attach]
-    onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
-      // Everything is setup, launch the process now.
-      return [[FBTaskProcessPosixSpawn
-        processWithConfiguration:configuration attachment:attachment logger:logger]
-        onQueue:queue map:^(FBTaskProcessPosixSpawn *process) {
-          return [[self alloc]
-            initWithProcess:process
-            queue:queue
-            logger:logger];
-        }];
-    }];
-}
-
-- (instancetype)initWithProcess:(FBTaskProcessPosixSpawn *)process queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _process = process;
-  _queue = queue;
-
-  // The IO Teardown and Sequencing is priced-in the pass from above.
-  _statLoc = process.statLoc;
-  _exitCode = process.exitCode;
-  _signal = process.signal;
-
-  return self;
-}
-
-#pragma mark - FBLaunchedProcess
-
-#pragma mark Public
-
-- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
-{
-  return [self.process exitedWithCodes:exitCodes];
-}
-
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo
-{
-  return [self.process sendSignal:signo];
-}
-
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
-{
-  return [self.process sendSignal:signo backingOffToKillWithTimeout:timeout logger:logger];
-}
-
 #pragma mark Accessors
-
-- (FBProcessSpawnConfiguration *)configuration
-{
-  return self.process.configuration;
-}
-
-- (pid_t)processIdentifier
-{
-  return self.process.processIdentifier;
-}
 
 - (nullable id)stdIn
 {
-  return [self.process.configuration.io.stdIn contents];
+  return [self.configuration.io.stdIn contents];
 }
 
 - (nullable id)stdOut
 {
-  return [self.process.configuration.io.stdOut contents];
+  return [self.configuration.io.stdOut contents];
 }
 
 - (nullable id)stdErr
 {
-  return [self.process.configuration.io.stdErr contents];
-}
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"%@ | Exit Code %@ | Signalled %@",
-    self.process.configuration.description,
-    self.exitCode.result,
-    self.signal.result
-  ];
+  return [self.configuration.io.stdErr contents];
 }
 
 @end
