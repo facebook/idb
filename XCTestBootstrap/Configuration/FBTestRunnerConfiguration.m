@@ -103,12 +103,8 @@
 
   // This directory will contain XCTest.framework, built for the target platform.
   NSString *platformDeveloperFrameworksPath = [platformRoot stringByAppendingPathComponent:@"Developer/Library/Frameworks"];
-  // See if the injector lib is present, not that this may not be present on certain versions of Xcode.
-  NSString *xctTargetBootstrapInjectPath = [platformRoot stringByAppendingPathComponent:@"Developer/usr/lib/libXCTTargetBootstrapInject.dylib"];
   // Container directory for XCTest related Frameworks.
   NSString *developerLibraryPath = [runtimeRoot stringByAppendingPathComponent:@"Developer/Library"];
-  // A Framework needed for UI based test
-  NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
   // Contains other frameworks, depended on by XCTest and Instruments
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
@@ -116,12 +112,16 @@
     platformDeveloperFrameworksPath,
   ];
 
-  NSDictionary *testedApplicationAdditionalEnvironment = @{
-    @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
-  };
-  if (![NSFileManager.defaultManager fileExistsAtPath:automationFrameworkPath] && ![NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
+  NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:automationFrameworkPath]) {
     automationFrameworkPath = nil;
-    testedApplicationAdditionalEnvironment = nil;
+  }
+
+  NSMutableDictionary *testedApplicationAdditionalEnvironment = NSMutableDictionary.dictionary;
+  NSString *xctTargetBootstrapInjectPath = [platformRoot stringByAppendingPathComponent:@"Developer/usr/lib/libXCTTargetBootstrapInject.dylib"];
+  // Xcode > 12.5 does not have this file neither requires it's injection in the target test app.
+  if([NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
+    testedApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = xctTargetBootstrapInjectPath;
   }
 
   // Prepare XCTest bundle
@@ -192,7 +192,7 @@
         initWithSessionIdentifier:sessionIdentifier
         testRunner:hostApplication.bundle
         launchEnvironment:launchEnvironment
-        testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]];
     }];
 }
 
