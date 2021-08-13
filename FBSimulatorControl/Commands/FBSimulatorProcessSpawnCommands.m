@@ -14,7 +14,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchedProcess.h"
 
 @interface FBSimulatorProcessSpawnCommands ()
 
@@ -74,7 +73,7 @@
 
 #pragma mark Private
 
-+ (FBFuture<FBSimulatorLaunchedProcess *> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
++ (FBFuture<id<FBLaunchedProcess>> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
 {
   // Prepare captured futures
   id<FBControlCoreLogger> logger = simulator.logger;
@@ -135,7 +134,7 @@
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       // Wrap in the container object
       pid_t processIdentifier = processIdentifierNumber.intValue;
-      return [[FBSimulatorLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration];
+      return [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration];
     }];
 }
 

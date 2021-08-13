@@ -12,7 +12,6 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchedProcess.h"
 
 @interface FBSimulatorLogCommands ()
 
@@ -47,8 +46,8 @@
 {
   return [[self
     startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorLaunchedProcess *operation) {
-      return [[FBProcessLogOperation alloc] initWithProcess:operation consumer:consumer];
+    onQueue:self.simulator.workQueue map:^(id<FBLaunchedProcess> process) {
+      return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer];
     }];
 }
 

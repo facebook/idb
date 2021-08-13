@@ -106,4 +106,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ An implementation of FBLaunchedProcess that takes all properties via the constructor..
+ */
+@interface FBLaunchedProcess : NSObject <FBLaunchedProcess>
+
+/**
+ The Designated Initializer.
+
+ @param processIdentifier the process identifier of the launched process
+ @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
+ @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
+ @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
+ @param configuration the configuration the process was launched with.
+ @return an implementation of FBLaunchedProcess.
+ */
+- (id<FBLaunchedProcess>)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration;
+
+@end
+
 NS_ASSUME_NONNULL_END

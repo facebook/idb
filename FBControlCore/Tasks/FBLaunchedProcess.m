@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBSimulatorLaunchedProcess.h"
+#import "FBLaunchedProcess.h"
 
-@implementation FBSimulatorLaunchedProcess
+#import "FBProcessSpawnCommands.h"
+#import "FBProcessSpawnConfiguration.h"
+
+@implementation FBLaunchedProcess
 
 @synthesize configuration = _configuration;
 @synthesize exitCode = _exitCode;
@@ -54,7 +57,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Simulator Process %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
+  return [NSString stringWithFormat:@"Process %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
 }
 
 @end
