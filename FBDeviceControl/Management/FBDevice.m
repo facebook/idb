@@ -128,7 +128,7 @@
 
 - (NSString *)description
 {
-  return [FBiOSTargetFormat.defaultFormat format:self];
+  return FBiOSTargetDescribe(self);
 }
 
 #pragma mark FBDevice Class Properties

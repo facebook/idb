@@ -52,8 +52,6 @@
 		AA0CA38720643CCF00347424 /* FBCrashLogCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0CA38620643C6800347424 /* FBCrashLogCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0EB2831F16905400ABBD7E /* FBBundleDescriptor+Simulator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0EB2811F16905400ABBD7E /* FBBundleDescriptor+Simulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0EB2841F16905400ABBD7E /* FBBundleDescriptor+Simulator.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0EB2821F16905400ABBD7E /* FBBundleDescriptor+Simulator.m */; };
-		AA0EE66D1D06A7E300422361 /* FBiOSTargetFormat.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0EE66B1D06A7E300422361 /* FBiOSTargetFormat.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0EE66E1D06A7E300422361 /* FBiOSTargetFormat.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0EE66C1D06A7E300422361 /* FBiOSTargetFormat.m */; };
 		AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0F6F2B1CA3DCF700926518 /* FBWeakFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */; };
 		AA111CCE1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m in Sources */ = {isa = PBXBuildFile; fileRef = AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */; };
@@ -720,8 +718,6 @@
 		AA0CA38620643C6800347424 /* FBCrashLogCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCrashLogCommands.h; sourceTree = "<group>"; };
 		AA0EB2811F16905400ABBD7E /* FBBundleDescriptor+Simulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBBundleDescriptor+Simulator.h"; sourceTree = "<group>"; };
 		AA0EB2821F16905400ABBD7E /* FBBundleDescriptor+Simulator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "FBBundleDescriptor+Simulator.m"; sourceTree = "<group>"; };
-		AA0EE66B1D06A7E300422361 /* FBiOSTargetFormat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetFormat.h; sourceTree = "<group>"; };
-		AA0EE66C1D06A7E300422361 /* FBiOSTargetFormat.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetFormat.m; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
 		AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFrameworkLoader.m; sourceTree = "<group>"; };
 		AA111CCC1BBE7C5A0054AFDD /* CoreSimulatorDoubles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreSimulatorDoubles.h; sourceTree = "<group>"; };
@@ -1874,8 +1870,6 @@
 			children = (
 				AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */,
 				AA2942801D00AB0800880984 /* FBiOSTarget.m */,
-				AA0EE66B1D06A7E300422361 /* FBiOSTargetFormat.h */,
-				AA0EE66C1D06A7E300422361 /* FBiOSTargetFormat.m */,
 				AAF9D3EA257E7D4100E6541D /* FBiOSTargetOperation.h */,
 				AA970CC725836C7F0088B5CC /* FBiOSTargetOperation.m */,
 				AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */,
@@ -2902,7 +2896,6 @@
 				C0B32FC91E4E459700A48CF4 /* FBArchitecture.h in Headers */,
 				AA08487B1F3F499800A4BA60 /* FBFuture.h in Headers */,
 				AA14B5571DF73EFF00085855 /* FBVideoRecordingCommands.h in Headers */,
-				AA0EE66D1D06A7E300422361 /* FBiOSTargetFormat.h in Headers */,
 				AAF026F01F25ED1A0091FDAB /* FBSocketServer.h in Headers */,
 				AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */,
 				AA5D012F2003F38B005FF117 /* FBProcessStream.h in Headers */,
@@ -3493,7 +3486,6 @@
 				EEBD60651C9062E900298A07 /* FBProcessInfo.m in Sources */,
 				AA5449961CFF4A6700443C2F /* FBiOSTargetConfiguration.m in Sources */,
 				AACB5E6825E6674F00EC1FBD /* FBXCTraceConfiguration.m in Sources */,
-				AA0EE66E1D06A7E300422361 /* FBiOSTargetFormat.m in Sources */,
 				AACB5E5B25E6672F00EC1FBD /* FBXCTraceRecordCommands.m in Sources */,
 				AA7728AF1E5238A6008FCF7C /* FBFileWriter.m in Sources */,
 				AACB5E7525E6677A00EC1FBD /* FBXCTraceOperation.m in Sources */,

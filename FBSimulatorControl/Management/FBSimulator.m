@@ -242,7 +242,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 - (NSString *)description
 {
-  return [FBiOSTargetFormat.defaultFormat format:self];
+  return FBiOSTargetDescribe(self);
 }
 
 #pragma mark Forwarding

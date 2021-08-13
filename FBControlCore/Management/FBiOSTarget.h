@@ -225,6 +225,11 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
  */
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
 
+/**
+ Constructs a string description of the provided target.
+ */
+extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
+
 #if defined __cplusplus
 };
 #endif
