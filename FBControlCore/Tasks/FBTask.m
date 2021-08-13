@@ -69,7 +69,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     onQueue:queue fmap:^(FBProcessIOAttachment *attachment) {
       // Everything is setup, launch the process now.
       NSError *error = nil;
-      FBTask *task = [FBTask taskWithConfiguration:configuration attachment:attachment logger:logger error:&error];
+      FBTask *task = [FBTask taskWithConfiguration:configuration attachment:attachment queue:queue logger:logger error:&error];
       if (!task) {
         return [FBFuture futureWithError:error];
       }
@@ -77,7 +77,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }];
 }
 
-+ (FBTask *)taskWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBTask *)taskWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Convert the arguments to the argv expected by posix_spawn
   NSArray<NSString *> *arguments = configuration.arguments;
@@ -144,7 +144,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
   [self resolveProcessCompletion:processIdentifier attachment:attachment statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
-  return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration];
+  return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:queue];
 }
 
 + (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger

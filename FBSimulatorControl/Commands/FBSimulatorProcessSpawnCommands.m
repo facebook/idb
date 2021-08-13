@@ -134,7 +134,7 @@
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       // Wrap in the container object
       pid_t processIdentifier = processIdentifierNumber.intValue;
-      return [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration];
+      return [[FBLaunchedProcess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:simulator.workQueue];
     }];
 }
 

@@ -7,8 +7,18 @@
 
 #import "FBLaunchedProcess.h"
 
+#import "FBControlCoreError.h"
+
+#import "FBCollectionInformation.h"
+#import "FBControlCoreLogger.h"
 #import "FBProcessSpawnCommands.h"
 #import "FBProcessSpawnConfiguration.h"
+
+@interface FBLaunchedProcess ()
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
 
 @implementation FBLaunchedProcess
 
@@ -20,7 +30,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -32,25 +42,60 @@
   _exitCode = exitCode;
   _signal = signal;
   _statLoc = statLoc;
+  _queue = queue;
 
   return self;
 }
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes
 {
-  return [FBProcessSpawnCommandHelpers exitedWithCode:self.exitCode isAcceptable:exitCodes];
+  return [self.exitCode
+    onQueue:self.queue fmap:^(NSNumber *exitCode) {
+      return [[FBLaunchedProcess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
+    }];
 }
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo
 {
-  return [FBProcessSpawnCommandHelpers sendSignal:signo toProcess:self];
+  return [[FBFuture
+    onQueue:self.queue resolve:^{
+      // Do not kill if the process is already dead.
+      if (self.statLoc.hasCompleted) {
+        return self.statLoc;
+      }
+      kill(self.processIdentifier, signo);
+      return self.statLoc;
+    }]
+    mapReplace:@(signo)];
 }
 
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
 {
-  return [FBProcessSpawnCommandHelpers sendSignal:signo backingOffToKillWithTimeout:timeout toProcess:self logger:logger];
+  return [[[self
+    sendSignal:signo]
+    onQueue:self.queue timeout:timeout handler:^{
+      [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", self.processIdentifier, timeout, signo];
+      return [self sendSignal:SIGKILL];
+    }]
+    mapReplace:@(signo)];
+}
+
+#pragma mark Private
+
++ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(NSSet<NSNumber *> *)acceptableExitCodes
+{
+  // If exit codes are defined, check them.
+  if (acceptableExitCodes == nil) {
+    return FBFuture.empty;
+  }
+  if ([acceptableExitCodes containsObject:@(exitCode)]) {
+    return FBFuture.empty;
+  }
+  return [[FBControlCoreError
+    describeFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]
+    failFuture];
 }
 
 #pragma mark NSObject

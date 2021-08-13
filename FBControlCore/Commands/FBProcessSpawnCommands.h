@@ -59,28 +59,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
 
 /**
- Signal a launched process.
- The future returned will resolve when the process has terminated and can be ignored if not required.
-
- @param signo the signal number to send.
- @param process the process to signal
- @return a successful Future that resolves to the signal number when the process has terminated.
- */
-+ (FBFuture<NSNumber *> *)sendSignal:(int)signo toProcess:(id<FBLaunchedProcess>)process;
-
-/**
- A mechanism for sending an signal to a task, backing off to a kill.
- If the process does not die before the timeout is hit, a SIGKILL will be sent.
-
- @param signo the signal number to send.
- @param timeout the timeout to wait before sending a SIGKILL.
- @param process the process to kill.
- @param logger used for log information when timeout happened, may be nil.
- @return a future that resolves to the signal sent when the process has been terminated.
- */
-+ (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout toProcess:(id<FBLaunchedProcess>)process logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
  Resolves an exitCode future from a statLoc.
  Performs the necessary unwapping of the statLoc bitmask.
  
@@ -95,24 +73,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  */
 + (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
-/**
- Confirms that an exit code is acceptable from the provided set
-
- @param exitCode the exit code of the process.
- @param acceptableExitCodes the status code set, if checked.
- @return a future that resolves if the exit code is acceptable.
- */
-+ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(nullable NSSet<NSNumber *> *)acceptableExitCodes;
-
-/**
- Confirms that an exit code is acceptable from the provided set
-
- @param exitCodeFuture the exit code of the process.
- @param acceptableExitCodes the permissable exit codes..
- @return a future that resolves if the exit code is acceptable.
- */
-+ (FBFuture<NSNumber *> *)exitedWithCode:(FBFuture<NSNumber *> *)exitCodeFuture isAcceptable:(nullable NSSet<NSNumber *> *)acceptableExitCodes;
 
 @end
 

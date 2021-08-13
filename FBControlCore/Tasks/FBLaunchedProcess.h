@@ -79,10 +79,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Confirms that the process exited with a defined set of status codes.
  
- @param exitCodes the exit codes to check for, must not be nil.
+ @param acceptableExitCodes the exit codes to check for, must not be nil.
  @return a Future with the same base behaviour as -[FBLaunchedProcess exitCode] with additional checking of codes.
  */
-- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)exitCodes;
+- (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes;
 
 /**
  Signal the process.
@@ -119,9 +119,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
  @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
  @param configuration the configuration the process was launched with.
+ @param queue the queue to perform actions on.
  @return an implementation of FBLaunchedProcess.
  */
-- (id<FBLaunchedProcess>)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration;
+- (id<FBLaunchedProcess>)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
 
 @end
 
