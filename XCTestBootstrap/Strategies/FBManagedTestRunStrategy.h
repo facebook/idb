@@ -12,12 +12,10 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBSimulator;
 @class FBTestLaunchConfiguration;
-@class FBTestManager;
-@class FBTestManagerResult;
-@protocol FBTestManagerTestReporter;
-@protocol FBXCTestPreparationStrategy;
+
+@protocol FBXCTestReporter;
+@protocol FBXCTestExtendedCommands;
 
 /**
  A Strategy that encompasses a Single Test Run on a Simulator.
@@ -33,19 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use.
  @param reporter the reporter to use.
  @param logger the logger to use.
- @param testPreparationStrategy Test preparation strategy to use
  @return a new Test Run Strategy instance.
  */
-+ (instancetype)strategyWithTarget:(id<FBiOSTarget>)target configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testPreparationStrategy:(id<FBXCTestPreparationStrategy>)testPreparationStrategy;
-
-#pragma mark Public Methods
-
-/**
- Starts the Connection to the Test Host.
-
- @return A future that resolves with the Test Manager.
- */
-- (FBFuture<FBTestManager *> *)connectAndStart;
++ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

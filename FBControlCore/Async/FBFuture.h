@@ -220,6 +220,15 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
 
+
+/**
+ Returns a copy of this future that'll resolve on a specific queue
+
+ @param queue the queue to resolve on
+ @returns a copy of this future that'll resolve on the specified queue
+ */
+- (FBFuture<T> *)onQueue:(dispatch_queue_t)queue;
+
 /**
  Attempt to handle an error.
 
@@ -231,12 +240,24 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
+ The chained future is resolved in error, with the provided error message.
 
  @param timeout the amount of time to time out the receiver in
- @param format the description of the timeout
+ @param format the description of the timeout.
  @return the current future with a timeout applied.
  */
 - (FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
+
+/**
+ Cancels the receiver if it doesn't resolve within the timeout.
+ The chained future is resolved based upon the value returned within the handler.
+
+ @param queue the queue to call the handler on.
+ @param timeout the amount of time to time out the receiver in
+ @param handler the block that will be fired on timeout.
+ @return the current future with a timeout applied.
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture * (^)(void))handler;
 
 /**
  Replaces the value on a successful future.
@@ -522,6 +543,17 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a Context derived from the replace with the current context stacked below.
  */
 - (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext * (^)(T result))replace;
+
+/**
+ Continue to keep the context alive, but handleError: a new future.
+ The receiver's teardown will not occur after the `handleError`'s Future has resolved.
+
+ @param queue the queue to chain on.
+ @param handler the function to re-map the error to a new future, only executed if caller resolves to a failure.
+ @return a Context derived from the handleError.
+ */
+
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue handleError:(nonnull FBFuture * _Nonnull (^)(NSError * _Nonnull))handler;
 
 /**
  Adds a teardown to the context

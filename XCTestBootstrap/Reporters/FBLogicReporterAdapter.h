@@ -7,10 +7,10 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTestBootstrap/FBLogicXCTestReporter.h>
+#import <XCTestBootstrap/FBXCTestReporter.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBXCTestReporter;
 @protocol FBControlCoreLogger;
 
 /**

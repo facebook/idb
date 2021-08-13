@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <CoreSimulator/SimDevice.h>
 #import "FBSimulatorLocationCommands.h"
 
 #import "FBSimulator.h"
@@ -41,6 +42,18 @@
 
 - (FBFuture<NSNull *> *)overrideLocationWithLongitude:(double)longitude latitude:(double)latitude
 {
+  if ([self.simulator.device respondsToSelector:(@selector(setLocationWithLatitude:andLongitude:error:))]) {
+    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
+      NSError *error = nil;
+      BOOL succeeded = [self.simulator.device setLocationWithLatitude:latitude andLongitude:longitude error:&error];
+      if (!succeeded) {
+        return [FBFuture futureWithError:error];
+      }
+      
+      return FBFuture.empty;
+    }];
+  }
+  
   return [[self.simulator
     connectToBridge]
     onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {

@@ -82,22 +82,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
 
-/**
- Sets the return codes of the task that are considered non-erroneous when the task has completed.
- If any status code is resolved outside of these, then the task will error.
-
- @param exitCodes the non-erroneous stats codes.
- @return the receiver, for chaining.
- */
-- (instancetype)withAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes;
-
-/**
- Any status code is permitted in the created task.
-
- @return the receiver, for chaining.
- */
-- (instancetype)withNoUnacceptableStatusCodes;
-
 #pragma mark stdin
 
 /**
@@ -256,29 +240,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTaskBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
 
-#pragma mark Loggers
+#pragma mark Logging
 
 /**
- Enables logging of the task lifecycle
+ Enables logging of the task lifecycle to the provided logger.
+ By default the task will be constructed without this logging.
+ To get detailed information, pass a logger to this method.
+ Logging can be disabled by passing nil.
 
- @param logger the logger to log to.
+ @param logger the logger to log to. Nil may be passed to disable task lifecycle logging, which is the default.
  @return the receiver for chaining.
  */
-- (instancetype)withLoggingTo:(id<FBControlCoreLogger>)logger;
-
-/**
- Disables logging of the task lifecycle
-
- @return the receiver for chaining.
- */
-- (instancetype)withNoLogging;
-
-/**
- Custom program name
-
- @return the receiver for chaining.
- */
-- (instancetype)withProgramName:(NSString *)programName;
+- (instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Building
 
@@ -296,7 +269,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the task on completion.
  */
-- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)runUntilCompletion;
+- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 
 @end
 

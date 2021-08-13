@@ -20,18 +20,31 @@
   NSString *testHostPath = @"/tmp/test_host_path.app";
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
 
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:@"com.bundle.id"
+  FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:@"com.bundle.id"
     bundleName:@"BundleName"
     arguments:@[]
     environment:@{}
     waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    io:FBProcessIO.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
 
-  FBTestLaunchConfiguration *configuration = [[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:testBundlePath]
-    withTestHostPath:testHostPath]
-    withApplicationLaunchConfiguration:appLaunch];
+  FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:testBundlePath
+    applicationLaunchConfiguration:appLaunch
+    testHostPath:testHostPath
+    timeout:0
+    initializeUITesting:NO
+    useXcodebuild:NO
+    testsToRun:nil
+    testsToSkip:nil
+    targetApplicationPath:nil
+    targetApplicationBundleID:nil
+    xcTestRunProperties:nil
+    resultBundlePath:nil
+    reportActivities:NO
+    coveragePath:nil
+    logDirectoryPath:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];

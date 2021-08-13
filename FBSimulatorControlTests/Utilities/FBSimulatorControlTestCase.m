@@ -81,16 +81,9 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   FBSimulatorBootOptions options = 0;
   if (self.useDirectLaunching) {
-    options = options | FBSimulatorBootOptionsEnableDirectLaunch;
+    options = options | FBSimulatorBootOptionsTieToProcessLifecycle;
   }
   return options;
-}
-
-+ (FBVideoEncoderConfiguration *)defaultEncoderConfiguration
-{
-  return [NSProcessInfo.processInfo.environment[RecordVideoEnvKey] boolValue]
-    ? [FBVideoEncoderConfiguration withOptions:FBVideoEncoderConfiguration.defaultConfiguration.options | FBVideoEncoderOptionsAutorecord]
-    : [FBVideoEncoderConfiguration defaultConfiguration];
 }
 
 + (NSString *)defaultDeviceSetPath

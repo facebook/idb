@@ -183,7 +183,7 @@ struct __va_list_tag {
 - (SEL)selector;
 - (instancetype)initWithSelector:(SEL)arg1;
 - (instancetype)initWithInvocation:(id)arg1;
-- (id)init;
+- (instancetype)init;
 
 @end
 
@@ -255,9 +255,8 @@ struct __va_list_tag {
 {
   NSURL *_testBundleURL;
   NSString *_testBundleRelativePath;
-  NSString *_absolutePath;
-  NSSet *_testsToSkip;
-  NSSet *_testsToRun;
+  id _testsToSkip;
+  id _testsToRun;
   BOOL _reportResultsToIDE;
   NSUUID *_sessionIdentifier;
   NSString *_pathToXcodeReportingSocket;
@@ -295,18 +294,21 @@ struct __va_list_tag {
 @property(copy) NSString *baselineFileRelativePath; // @synthesize baselineFileRelativePath=_baselineFileRelativePath;
 @property(copy) NSString *pathToXcodeReportingSocket; // @synthesize pathToXcodeReportingSocket=_pathToXcodeReportingSocket;
 @property(copy) NSUUID *sessionIdentifier; // @synthesize sessionIdentifier=_sessionIdentifier;
-@property(copy) NSSet *testsToSkip; // @synthesize testsToSkip=_testsToSkip;
-@property(copy) NSSet *testsToRun; // @synthesize testsToRun=_testsToRun;
+@property(copy) id testsToSkip; // @synthesize testsToSkip=_testsToSkip;
+@property(copy) id testsToRun; // @synthesize testsToRun=_testsToRun;
 @property(copy, nonatomic) NSURL *testBundleURL; // @synthesize testBundleURL=_testBundleURL;
 @property(copy) NSString *testBundleRelativePath; // @synthesize testBundleRelativePath=_testBundleRelativePath;
-@property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+
+// `absolutePath` has been replaced by `basePathForTestBundleResolution` on XCode 13.0. We don't use either.
+// @property(copy) NSString *absolutePath; // @synthesize absolutePath=_absolutePath;
+// @property (copy,nonatomic) NSString *basePathForTestBundleResolution;
 
 + (id)configurationWithContentsOfFile:(id)arg1;
 + (id)activeTestConfiguration;
 + (void)setActiveTestConfiguration:(id)arg1;
 
 - (BOOL)writeToFile:(id)arg1;
-- (id)init;
+- (instancetype)init;
 
 @end
 

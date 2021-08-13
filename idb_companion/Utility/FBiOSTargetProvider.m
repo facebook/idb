@@ -9,6 +9,7 @@
 
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBError.h"
 
@@ -53,6 +54,11 @@
   if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [FBFuture futureWithResult:target];;
   }
+  
+  if (FBXcodeConfiguration.isXcode12_5OrGreater) {
+    return [FBFuture futureWithResult:target];
+  }
+  
   return [[lifecycle
     connectToBridge]
     mapReplace:target];

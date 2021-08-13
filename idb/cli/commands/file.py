@@ -4,16 +4,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import functools
 import json
 import os
 import sys
 import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
+from logging import Logger
 from typing import Any, List, NamedTuple, Optional, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand
+from idb.common.signal import signal_handler_event
 from idb.common.types import Client, FileContainer, FileContainerType
 
 
@@ -22,11 +25,15 @@ class BundleWithPath(NamedTuple):
     path: str
 
     @classmethod
-    def parse(cls, argument: str) -> "BundleWithPath":
+    def parse(cls, argument: str, logger: Logger) -> "BundleWithPath":
         split = argument.split(sep=":", maxsplit=1)
         if len(split) == 1:
             return BundleWithPath(bundle_id=None, path=split[0])
-        return BundleWithPath(bundle_id=split[0], path=split[1])
+        (bundle_id, path) = split
+        logger.error(
+            f"file commands of form {bundle_id}:{path} are deprecated, please use --bundle-id instead."
+        )
+        return BundleWithPath(bundle_id=bundle_id, path=path)
 
 
 def _extract_bundle_id(args: Namespace) -> FileContainer:
@@ -104,6 +111,27 @@ class FSCommand(ClientCommand):
             const=FileContainerType.PROVISIONING_PROFILES,
             help="Use the provisioning profiles container",
         )
+        group.add_argument(
+            "--mdm-profiles",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.MDM_PROFILES,
+            help="Use the mdm profiles container",
+        )
+        group.add_argument(
+            "--springboard-icons",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.SPRINGBOARD_ICONS,
+            help="Use the springboard icons container",
+        )
+        group.add_argument(
+            "--wallpaper",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.WALLPAPER,
+            help="Use the wallpaper container",
+        )
         super().add_parser_arguments(parser)
 
     @abstractmethod
@@ -138,7 +166,7 @@ class FSListCommand(FSCommand):
             help="Source path",
             nargs="+",
             default="./",
-            type=BundleWithPath.parse,
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         parser.add_argument(
             "--force-new-output",
@@ -187,7 +215,9 @@ class FSMkdirCommand(FSCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         super().add_parser_arguments(parser)
         parser.add_argument(
-            "path", help="Path to directory to create", type=BundleWithPath.parse
+            "path",
+            help="Path to directory to create",
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
 
     async def run_with_container(
@@ -214,12 +244,12 @@ class FSMoveCommand(FSCommand):
             "src",
             help="Source paths relative to Container",
             nargs="+",
-            type=BundleWithPath.parse,
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         parser.add_argument(
             "dst",
             help="Destination path relative to Container",
-            type=BundleWithPath.parse,
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         super().add_parser_arguments(parser)
 
@@ -247,7 +277,7 @@ class FSRemoveCommand(FSCommand):
             "path",
             help="Path of item to remove (A directory will be recursively deleted)",
             nargs="+",
-            type=BundleWithPath.parse,
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         super().add_parser_arguments(parser)
 
@@ -276,7 +306,7 @@ class FSPushCommand(FSCommand):
                 "Directory relative to the data container of the application\n"
                 "to copy the files into. Will be created if non-existent"
             ),
-            type=BundleWithPath.parse,
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         super().add_parser_arguments(parser)
 
@@ -301,7 +331,9 @@ class FSPullCommand(FSCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "src", help="Relative Container source path", type=BundleWithPath.parse
+            "src",
+            help="Relative Container source path",
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
@@ -329,7 +361,9 @@ class FBSReadCommand(FSCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "src", help="Relatve Container source path", type=BundleWithPath.parse
+            "src",
+            help="Relatve Container source path",
+            type=functools.partial(BundleWithPath.parse, logger=self.logger),
         )
         super().add_parser_arguments(parser)
 
@@ -380,3 +414,26 @@ class FSWriteCommand(FSCommand):
                 container=container,
                 dest_path=destination_directory,
             )
+
+
+class FSTailCommand(FSCommand):
+    @property
+    def description(self) -> str:
+        return "Tails a remote file to stdout"
+
+    @property
+    def name(self) -> str:
+        return "tail"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("src", help="Relatve container source path", type=str)
+        super().add_parser_arguments(parser)
+
+    async def run_with_container(
+        self, container: FileContainer, args: Namespace, client: Client
+    ) -> None:
+        async for data in client.tail(
+            container=container, path=args.src, stop=signal_handler_event("tail")
+        ):
+            sys.stdout.buffer.write(data)
+            sys.stdout.flush()

@@ -163,16 +163,6 @@ class TargetDescription:
 
 
 @dataclass(frozen=True)
-class DaemonInfo:
-    host: str
-    port: int
-    targets: List[TargetDescription]
-
-
-ConnectResponse = Union[CompanionInfo, DaemonInfo]
-
-
-@dataclass(frozen=True)
 class FileEntryInfo:
     path: str
 
@@ -305,6 +295,7 @@ class HIDSwipe:
     start: Point
     end: Point
     delta: Optional[float]
+    duration: Optional[float]
 
 
 @dataclass(frozen=True)
@@ -327,9 +318,18 @@ class FileContainerType(Enum):
     MEDIA = "media"
     CRASHES = "crashes"
     PROVISIONING_PROFILES = "provisioning_profiles"
+    MDM_PROFILES = "mdm_profiles"
+    SPRINGBOARD_ICONS = "springboard_icons"
+    WALLPAPER = "wallpaper"
+    DISK_IMAGES = "disk_images"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]
+
+
+class Compression(Enum):
+    GZIP = 0
+    ZSTD = 1
 
 
 class Companion(ABC):
@@ -446,12 +446,16 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        log_directory_path: Optional[str] = None,
+        wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         yield
 
     @abstractmethod
     async def install(
-        self, bundle: Union[str, IO[bytes]]
+        self,
+        bundle: Union[str, IO[bytes]],
+        compression: Optional[Compression] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -621,6 +625,27 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def xctrace_record(
+        self,
+        stop: asyncio.Event,
+        output: str,
+        template_name: str,
+        all_processes: bool = False,
+        time_limit: Optional[float] = None,
+        package: Optional[str] = None,
+        process_to_attach: Optional[str] = None,
+        process_to_launch: Optional[str] = None,
+        process_env: Optional[Dict[str, str]] = None,
+        launch_args: Optional[List[str]] = None,
+        target_stdin: Optional[str] = None,
+        target_stdout: Optional[str] = None,
+        post_args: Optional[List[str]] = None,
+        stop_timeout: Optional[float] = None,
+        started: Optional[asyncio.Event] = None,
+    ) -> List[str]:
+        pass
+
+    @abstractmethod
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         pass
 
@@ -691,6 +716,12 @@ class Client(ABC):
         self, src_paths: List[str], container: FileContainer, dest_path: str
     ) -> None:
         pass
+
+    @abstractmethod
+    async def tail(
+        self, stop: asyncio.Event, container: FileContainer, path: str
+    ) -> AsyncIterator[bytes]:
+        yield
 
 
 class ClientManager:

@@ -10,16 +10,11 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorAgentCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorFileCommands.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
 #import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-#import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
-#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -30,14 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessFetcher;
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
-@class FBSimulatorDiagnostics;
 @class FBSimulatorSet;
 @class SimDevice;
 
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBCrashLogCommands, FBLocationCommands, FBScreenshotCommands, FBAccessibilityCommands, FBSimulatorAgentCommands, FBFileCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBFileCommands, FBLocationCommands, FBProcessSpawnCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands, FBXCTestExtendedCommands>
 
 #pragma mark Properties
 
@@ -47,19 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nonnull) SimDevice *device;
 
 /**
- Whether the Simulator is allocated or not.
- */
-@property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
-
-/**
  The Simulator Set that the Simulator belongs to.
  */
 @property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
-
-/**
- The State of the allocated Simulator.
- */
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
 
 /**
  The Product Family of the Simulator.
@@ -80,16 +64,6 @@ NS_ASSUME_NONNULL_BEGIN
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
-
-/**
- The FBProcessInfo associated with the Container Application that launched the Simulator.
- */
-@property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
-
-/**
- The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
- */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *simulatorDiagnostics;
 
 /**
  A command executor for simctl

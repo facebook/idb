@@ -12,6 +12,8 @@
 @synthesize architecture;
 @synthesize logger;
 @synthesize screenInfo;
+@synthesize runtimeRootDirectory;
+@synthesize platformRootDirectory;
 
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {
@@ -39,6 +41,11 @@
 }
 
 #pragma mark Protocol Inheritance
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return @{};
+}
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
@@ -100,7 +107,7 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   return nil;
 }
@@ -163,6 +170,16 @@
 - (nonnull FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBBundleDescriptor *)application port:(in_port_t)port
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
+- (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+{
+  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
+}
+
+- (BOOL) requiresBundlesToBeSigned
+{
+  return NO;
 }
 
 @end

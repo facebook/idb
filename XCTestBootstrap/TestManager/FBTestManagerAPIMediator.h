@@ -11,12 +11,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class DTXConnection;
 @class FBTestManagerContext;
-@class FBTestManagerResult;
 
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
-@protocol FBTestManagerTestReporter;
+@protocol FBXCTestReporter;
 
 extern const NSInteger FBProtocolVersion;
 extern const NSInteger FBProtocolMinimumVersion;
@@ -31,46 +31,21 @@ extern const NSInteger FBProtocolMinimumVersion;
  */
 @interface FBTestManagerAPIMediator : NSObject
 
-#pragma mark Initializers
+#pragma mark Public
 
 /**
- Creates and returns a mediator with given paramenters
+ Performs the entire process of test execution.
+ This incorporates the connection to the 'testmanagerd' daemon, the test bundle and the test execution itself.
+ An "error" in the future represents any reason why the test bundle could not be run until completion.
+ If the bundle was executed correctly and there are test failures, this does not represent an error.
 
  @param context the Context of the Test Manager.
  @param target the target.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
- @param testedApplicationAdditionalEnvironment Additional Environment Variables to pass to the application under test
- @return Prepared FBTestRunnerConfiguration
+ @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
-
-#pragma mark Lifecycle
-
-/**
- Establishes a connection between the host, testmanagerd and the Test Bundle.
- This connection is established synchronously, until a timeout occurs.
-
- @return A TestManager Result if an early-error occured, nil otherwise.
- */
-- (FBFuture<FBTestManagerResult *> *)connect;
-
-/**
- Executes the Test Plan over the established connection.
- This should be called after `-[FBTestManagerAPIMediator connectToTestManagerDaemonAndBundleWithTimeout:]`
- has successfully completed.
- Events will be delivered to the reporter asynchronously.
-
- @return A TestManager Result if an early-error occured, nil otherwise.
- */
-- (FBFuture<FBTestManagerResult *> *)execute;
-
-/**
- Terminates connection between test runner(XCTest bundle) and testmanagerd.
-
- @return the TestManager Result.
- */
-- (FBFuture<FBTestManagerResult *> *)disconnect;
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

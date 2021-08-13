@@ -57,6 +57,7 @@ async def _get_client(
             address=_parse_address(companion),
             is_local=args.companion_local,
             logger=logger,
+            use_tls=args.companion_tls,
         ) as client:
             yield client
     else:

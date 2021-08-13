@@ -6,9 +6,12 @@
  */
 
 #import "FBXcodeBuildOperation.h"
-#import "XCTestBootstrapError.h"
 
 #import <FBControlCore/FBControlCore.h>
+
+#import "XCTestBootstrapError.h"
+#import "FBXCTestReporter.h"
+#import "FBXCTestResultBundleParser.h"
 
 static NSString *const XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
 static NSString *const XcodebuildEnvironmentDeviceSetPath = @"SIM_DEVICE_SET_PATH";
@@ -17,7 +20,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
 @implementation FBXcodeBuildOperation
 
-+ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(NSString *)simDeviceSetPath macOSTestShimPath:(NSString *)macOSTestShimPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[
@@ -47,15 +50,15 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   
   // Add environments for xcodebuild method swizzling if a simulator device set is provided
   if (simDeviceSetPath) {
-    if (!configuration.shims || !configuration.shims.macOSTestShimPath) {
+    if (!macOSTestShimPath) {
       return [[XCTestBootstrapError describe:@"Failed to locate the shim file for xcodebuild method swizzling"] failFuture];
     }
     environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath;
     if (environment[XcodebuildEnvironmentInsertDylib]) {
-      environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", configuration.shims.macOSTestShimPath];
+      environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", macOSTestShimPath];
     }
     else {
-      environment[XcodebuildEnvironmentInsertDylib] = configuration.shims.macOSTestShimPath;
+      environment[XcodebuildEnvironmentInsertDylib] = macOSTestShimPath;
     }
   }
 
@@ -63,7 +66,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   FBTaskBuilder *builder = [[[FBTaskBuilder
     withLaunchPath:xcodeBuildPath arguments:arguments]
     withEnvironment:environment]
-    withAcceptableExitCodes:[NSSet setWithObjects:@0, @65, nil]];
+    withTaskLifecycleLoggingTo:logger];
   if (logger) {
     [builder withStdOutToLoggerAndErrorMessage:logger];
     [builder withStdErrToLoggerAndErrorMessage:logger];
@@ -157,6 +160,29 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
     mutableTestRunProperties[testId] = mutableTestProperties;
   }
   return [mutableTestRunProperties copy];
+}
+
++ (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[[task
+    exitedWithCodes:[NSSet setWithObjects:@0, @65, nil]]
+    onQueue:target.workQueue respondToCancellation:^{
+      return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:logger];
+    }]
+    onQueue:target.workQueue fmap:^(id _) {
+      // This will execute only if the operation completes successfully.
+      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+      if (configuration.resultBundlePath) {
+        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger];
+      }
+      [logger log:@"No result bundle to parse"];
+      return FBFuture.empty;
+    }]
+    onQueue:target.workQueue fmap:^(id _) {
+      [logger log:@"Reporting test results"];
+      [reporter didFinishExecutingTestPlan];
+      return FBFuture.empty;
+    }];
 }
 
 #pragma mark Private

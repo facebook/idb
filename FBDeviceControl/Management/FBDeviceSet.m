@@ -11,8 +11,6 @@
 #import <FBControlCore/FBiOSTargetSet.h>
 #import <FBControlCore/FBiOSTarget.h>
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
 #import <objc/runtime.h>
 
 #import "FBAMDevice+Private.h"

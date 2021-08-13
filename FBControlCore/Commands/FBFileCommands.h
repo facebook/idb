@@ -15,7 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBProvisioningProfileCommands;
 
 /**
- Defines an interface for interacting with the Data Container of Applications.
+  Defines an interface for obtaining "File Containers" for a variety of uses.
+  When a file container has been obtained, it can be manipulated using the FBFileContainer protocol.
  */
 @protocol FBFileCommands <NSObject, FBiOSTargetCommand>
 

@@ -14,10 +14,11 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
-#import "FBXCTestSimulatorFetcher.h"
-#import "FBXCTestContext.h"
+#import "FBTestRunStrategy.h"
 #import "FBXCTestCommandLine.h"
+#import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
+#import "FBXCTestSimulatorFetcher.h"
 
 @interface FBXCTestBaseRunner ()
 
@@ -76,17 +77,16 @@
   FBMacDevice *device = [[FBMacDevice alloc] initWithLogger:self.context.logger];
 
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBMacTestPreparationStrategy.class] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
+    return [[[FBTestRunStrategy strategyWithTarget:device configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute] onQueue:device.workQueue chain:^(FBFuture *future) {
       return [[device restorePrimaryDeviceState] chainReplace:future];
     }];
   }
 
-  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithMacDevice:device shims:self.configuration.shims];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
+    return [[[[FBListTestStrategy alloc] initWithTarget:device configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
-  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
+  return [[[FBLogicTestRunStrategy alloc] initWithTarget:device configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
 - (FBFuture<NSNull *> *)runiOSTest
@@ -107,14 +107,13 @@
 - (FBFuture<NSNull *> *)runTestWithSimulator:(FBSimulator *)simulator
 {
   if ([self.configuration isKindOfClass:FBTestManagerTestConfiguration.class]) {
-    return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger testPreparationStrategyClass:FBSimulatorTestPreparationStrategy.class] execute];
+    return [[FBTestRunStrategy strategyWithTarget:simulator configuration:(FBTestManagerTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] execute];
   }
-  id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator shims:self.configuration.shims];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
+    return [[[[FBListTestStrategy alloc] initWithTarget:simulator configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] execute];
   }
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:self.context.reporter logger:self.context.logger];
-  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
+  return [[[FBLogicTestRunStrategy alloc] initWithTarget:simulator configuration:(FBLogicTestConfiguration *)self.configuration reporter:adapter logger:self.context.logger] execute];
 }
 
 @end

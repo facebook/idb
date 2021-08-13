@@ -7,11 +7,10 @@
 
 #import "FBIDBStorageManager.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
-
 #import "FBIDBError.h"
 #import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
+#import "FBXCTestRunFileReader.h"
 
 NSString *const IdbTestBundlesFolder = @"idb-test-bundles";
 NSString *const IdbApplicationsFolder = @"idb-applications";
@@ -153,7 +152,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
-  if (!self.relocateLibraries) {
+  if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned]) {
     return [FBFuture futureWithResult:artifact];
   }
   bundle = [FBBundleDescriptor bundleFromPath:destinationBundlePath.path error:&error];
@@ -623,24 +622,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [self.xctest clean:error] && [self.application clean:error] && [self.dylib clean:error] && [self.dsym clean:error] && [self.framework clean:error];
 }
 
-- (NSDictionary<NSString *, NSString *> *)interpolateEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment
-{
-  [self.logger logFormat:@"Original environment: %@", environment];
-  NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
-  [self.logger logFormat:@"Existing replacement mapping: %@", nameToPath];
-  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
-  for (NSString *name in environment.allKeys) {
-    NSString *value = environment[name];
-    for (NSString *interpolationName in nameToPath.allKeys) {
-      NSString *interpolationValue = nameToPath[interpolationName];
-      value = [value stringByReplacingOccurrencesOfString:interpolationName withString:interpolationValue];
-    }
-    interpolatedEnvironment[name] = value;
-  }
-  [self.logger logFormat:@"Interpolated environment: %@", interpolatedEnvironment];
-  return interpolatedEnvironment;
-}
-
 - (NSArray<NSString *> *)interpolateArgumentReplacements:(NSArray<NSString *> *)arguments
 {
   [self.logger logFormat:@"Original arguments: %@", arguments];
@@ -653,8 +634,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
   [self.logger logFormat:@"Interpolated arguments: %@", interpolatedArguments];
   return interpolatedArguments;
 }
-
-#pragma mark Private
 
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {

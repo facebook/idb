@@ -7,6 +7,9 @@
 
 #import "FBIDBXCTestReporter.h"
 
+#import "FBXCTestDescriptor.h"
+#import "FBXCTestReporterConfiguration.h"
+
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
@@ -14,7 +17,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *appUnderTestExitedMutable;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *processUnderTestExitedMutable;
 
 @property (nonatomic, nullable, copy, readwrite) NSString *currentBundleName;
 @property (nonatomic, nullable, copy, readwrite) NSString *currentTestClass;
@@ -29,7 +32,7 @@
 
 #pragma mark Initializer
 
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer reportAttachments:(BOOL)reportAttachments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -37,12 +40,13 @@
   }
 
   _writer = writer;
-  _reportAttachments = reportAttachments;
   _queue = queue;
   _logger = logger;
+
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binaryPath:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
-  _appUnderTestExitedMutable = FBMutableFuture.future;
+  _processUnderTestExitedMutable = FBMutableFuture.future;
 
   return self;
 }
@@ -98,7 +102,7 @@
 
 - (void)didCrashDuringTest:(NSError *)error
 {
-  const idb::XctestRunResponse response = [self responseForCrashMessage:error.description];
+  const idb::XctestRunResponse response = [self responseForCrashMessage:error.localizedDescription];
   [self writeResponse:response];
 }
 
@@ -120,8 +124,8 @@
   [self writeResponse:response];
 }
 
-- (void)appUnderTestExited {
-  [self.appUnderTestExitedMutable resolveWithResult:NSNull.null];
+- (void)processUnderTestDidExit {
+  [self.processUnderTestExitedMutable resolveWithResult:NSNull.null];
 }
 
 #pragma mark FBXCTestReporter (Unused)
@@ -133,10 +137,14 @@
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
 {
-}
-
-- (void)debuggerAttached
-{
+  [self.logger.info logFormat:@"Tests waiting for debugger. To debug run: lldb -p %d", pid];
+  idb::XctestRunResponse response;
+  response.set_status(idb::XctestRunResponse_Status_RUNNING);
+  
+  idb::DebuggerInfo *debugger_info = response.mutable_debugger();
+  debugger_info->set_pid(pid);
+  
+  [self writeResponse:response];
 }
 
 - (void)didBeginExecutingTestPlan
@@ -274,6 +282,7 @@
   info->set_class_name(self.currentTestClass.UTF8String ?: "");
   info->set_method_name(self.currentTestMethod.UTF8String ?: "");
   info->mutable_failure_info()->CopyFrom(self.failureInfo);
+  info->mutable_failure_info()->set_failure_message(message.UTF8String);
   info->set_status(idb::XctestRunResponse_TestRunInfo_Status_CRASHED);
   [self resetCurrentTestState];
   return response;
@@ -323,7 +332,7 @@
   // https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al#L212
   __block idb::XctestRunResponse responseCaptured = response;
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-  if (self.resultBundlePath) {
+  if (self.configuration.resultBundlePath) {
     [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
@@ -335,16 +344,29 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.coveragePath) {
+  if (self.configuration.coveragePath) {
     [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
       NSString *coverageData = future.result;
       if (coverageData) {
         responseCaptured.set_coverage_json(coverageData.UTF8String ?: "");
       } else {
-        [self.logger.info logFormat:@"Failed to get coverage data %@", future];
+        [self.logger.info logFormat:@"Failed to get coverage data: %@", future.error.localizedDescription];
       }
       return [FBFuture futureWithResult:NSNull.null];
     }]];
+  }
+  if (self.configuration.logDirectoryPath) {
+      [futures addObject:[[self getLogDirectoryData] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
+        NSData *data = future.result;
+        if (data) {
+          idb::Payload *payload = responseCaptured.mutable_log_directory();
+          payload->set_data(data.bytes, data.length);
+        } else {
+          [self.logger.info logFormat:@"Failed to get log drectory: %@", future.error.localizedDescription];
+        }
+        return [FBFuture futureWithResult:NSNull.null];
+      }]];
+
   }
   if (futures.count == 0) {
     [self writeResponseFinal:responseCaptured];
@@ -362,7 +384,7 @@
   {
     // Break out if the terminating condition happens twice.
     if (self.reportingTerminated.hasCompleted || self.writer == nil) {
-      [self.logger.error log:@"writeResponse called, but the last response has already be written!!"];
+      [self.logger.error log:@"writeResponse called, but the last response has already been written!!"];
       return;
     }
 
@@ -384,26 +406,50 @@
 
 - (FBFuture<NSString *> *)getCoverageData
 {
-  NSString *profdataPath = [[self.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
-  return [self.appUnderTestExitedMutable onQueue:self.queue fmap:^FBFuture<NSString *> *(NSNull* _) {
-    return [[[[FBTaskBuilder
-      withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.coveragePath]]
-      runUntilCompletion]
-      onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSData *> *> *(id result) {
-        return [[[FBTaskBuilder
-          withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.binaryPath]]
-          withStdOutInMemoryAsString]
-          runUntilCompletion];
-      }] onQueue:self.queue map:^NSString *(FBTask<NSNull *, NSString *, NSData *> *task) {
-          return task.stdOut;
-      }];
-  }];
+  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBTask<NSNull *, NSData *, NSString *> *) =
+    ^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (FBTask<NSNull *, NSData *, NSString *> *task) {
+      NSNumber *exitCode = task.exitCode.result;
+      if ([exitCode isEqual:@0]) {
+        return [FBFuture futureWithResult:task];
+      } else {
+        return [[FBControlCoreError
+          describeFormat:@"xcrun failed to export code coverage data %@, %@", exitCode, task.stdErr]
+          failFuture];
+      }
+    };
+
+  NSString *profdataPath = [[self.configuration.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
+
+  return [[[[[self.processUnderTestExitedMutable
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      return [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.configuration.coveragePath]]
+        withStdOutInMemoryAsString]
+        withStdErrInMemoryAsString]
+        runUntilCompletionWithAcceptableExitCodes:nil];
+    }]
+    onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      return [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.configuration.binaryPath]]
+        withStdOutInMemoryAsString]
+        withStdErrInMemoryAsString]
+        runUntilCompletionWithAcceptableExitCodes:nil];
+    }]
+    onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
+      return task.stdOut;
+    }];
 }
 
 - (FBFuture<NSData *> *)getResultsBundle
 {
-  return [FBArchiveOperations createGzippedTarDataForPath:self.resultBundlePath queue:self.queue logger:self.logger];
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
 }
 
+- (FBFuture<NSData *> *)getLogDirectoryData
+{
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
+}
 
 @end

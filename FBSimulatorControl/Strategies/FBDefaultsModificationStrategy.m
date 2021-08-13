@@ -13,7 +13,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBAgentLaunchStrategy.h"
 
 @interface FBDefaultsModificationStrategy ()
 
@@ -39,7 +38,7 @@
   return self;
 }
 
-- (FBBinaryDescriptor *)defaultsBinary
+- (NSString *)defaultsBinary
 {
   NSString *path = [[[self.simulator.device.runtime.root
     stringByAppendingPathComponent:@"usr"]
@@ -48,7 +47,7 @@
   NSError *error = nil;
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:&error];
   NSAssert(binary, @"Could not locate defaults at expected location '%@', error %@", path, error);
-  return binary;
+  return binary.path;
 }
 
 - (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults
@@ -102,17 +101,16 @@
 - (FBFuture<NSString *> *)performDefaultsCommandWithArguments:(NSArray<NSString *> *)arguments
 {
   // Make the Launch Config
-  FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
-    configurationWithBinary:self.defaultsBinary
+  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
+    initWithLaunchPath:self.defaultsBinary
     arguments:arguments
     environment:@{}
-    output:FBProcessOutputConfiguration.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    io:FBProcessIO.outputToDevNull
+    mode:FBProcessSpawnModeDefault];
 
   // Run the defaults command.
-  return [[[FBAgentLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    launchConsumingStdout:configuration]
+  return [[FBProcessSpawnCommandHelpers
+    launchConsumingStdout:configuration withCommands:self.simulator]
     onQueue:self.simulator.asyncQueue map:^(NSString *output) {
       return [output stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
     }];

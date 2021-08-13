@@ -43,9 +43,11 @@
 
 - (void)testTrueExit
 {
-  FBFuture *futureTask = [[FBTaskBuilder
+  FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"true"]]
-    runUntilCompletion];
+    withTaskLifecycleLoggingTo:FBControlCoreGlobalConfiguration.defaultLogger]
+    runUntilCompletionWithAcceptableExitCodes:nil];
+
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
   XCTAssertEqualObjects(task.exitCode.result, @0);
@@ -53,10 +55,9 @@
 
 - (void)testFalseExit
 {
-  FBFuture *futureTask = [[[FBTaskBuilder
+  FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
-    withAcceptableExitCodes:[NSSet setWithObject:@1]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@1]];
 
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
   XCTAssertEqualObjects(task.exitCode.result, @1);
@@ -67,24 +68,11 @@
   NSError *error = nil;
   id result = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     await:&error];
 
   XCTAssertNil(result);
   XCTAssertNotNil(error);
-}
-
-- (void)testErrorMessageContainingLastLinesOfOutput
-{
-  NSError *error = nil;
-  id result = [[[[FBTaskBuilder
-    withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"echo A BAD BAD >&2; false"]]
-    withStdErrToLoggerAndErrorMessage:[FBControlCoreLoggerDouble new]]
-    runUntilCompletion]
-    await:&error];
-
-  XCTAssertNil(result);
-  XCTAssertTrue([error.localizedDescription containsString:@"A BAD BAD"]);
 }
 
 - (void)testEnvironment
@@ -99,7 +87,7 @@
   FBFuture *futureTask = [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/env"]
     withEnvironment:environment]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
 
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
   XCTAssertEqualObjects(task.exitCode.result, @0);
@@ -116,10 +104,12 @@
 
   FBFuture *futureTask = [[FBTaskBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertEqualObjects(task.stdOut, expected);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 }
@@ -131,11 +121,14 @@
   NSString *binaryPath = [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
 
   FBFuture *futureTask = [[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]] runUntilCompletion];
+    withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertTrue([task.stdOut containsString:NSStringFromSelector(_cmd)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 }
@@ -146,10 +139,13 @@
   NSString *resourcesPath = [[bundle bundlePath] stringByAppendingPathComponent:@"Contents/Resources"];
 
   FBFuture *futureTask = [[FBTaskBuilder
-    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]] runUntilCompletion];
+    withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
   NSArray<NSString *> *fileNames = [task.stdOut componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
@@ -171,10 +167,12 @@
     withStdOutLineReader:^(NSString *line) {
       [lines addObject:line];
     }]
-  runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBDataConsumer)]);
   XCTAssertGreaterThan(task.processIdentifier, 1);
 
@@ -191,10 +189,12 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertTrue([task.stdOut isKindOfClass:FBControlCoreLoggerDouble.class]);
   XCTAssertTrue([task.stdErr isKindOfClass:FBControlCoreLoggerDouble.class]);
 }
@@ -207,10 +207,12 @@
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runUntilCompletion];
+    runUntilCompletionWithAcceptableExitCodes:nil];
   FBTask *task = [self runAndWaitForTaskFuture:futureTask];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
   XCTAssertNil(task.stdOut);
   XCTAssertNil(task.stdErr);
 }
@@ -222,7 +224,7 @@
     startSynchronously];
 
   NSError *error = nil;
-  BOOL success = [task.completed awaitWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout error:&error] != nil;
+  BOOL success = [task.exitCode awaitWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -233,8 +235,10 @@
     withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
     startSynchronously];
 
-  XCTAssertNotNil([task.completed awaitWithTimeout:1 error:nil]);
-  XCTAssertEqual(task.completed.state, FBFutureStateDone);
+  XCTAssertNotNil([task.exitCode awaitWithTimeout:1 error:nil]);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateDone);
+  XCTAssertEqual(task.signal.state, FBFutureStateFailed);
 }
 
 - (void)testCallsHandlerWithAsynchronousTermination
@@ -242,7 +246,7 @@
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
       [expectation fulfill];
     }];
@@ -258,15 +262,17 @@
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     startSynchronously];
 
-  [task.completed onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
+  [task.statLoc onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
     [expectation fulfill];
   }];
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertFalse(waitSuccess);
   XCTAssertNotNil(error);
-  XCTAssertFalse(task.completed.hasCompleted);
+  XCTAssertFalse(task.statLoc.hasCompleted);
+  XCTAssertFalse(task.exitCode.hasCompleted);
+  XCTAssertFalse(task.signal.hasCompleted);
 
   [self waitForExpectations:@[expectation] timeout:2];
 }
@@ -287,7 +293,7 @@
   [task.stdIn consumeEndOfFile];
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(waitSuccess);
 
@@ -315,7 +321,7 @@
   [stream close];
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(waitSuccess);
 
@@ -346,7 +352,7 @@
   XCTAssertNotNil(stream.streamError);
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(waitSuccess);
 
@@ -380,7 +386,7 @@
   XCTAssertEqualObjects(expected, actual);
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(waitSuccess);
 }
@@ -397,30 +403,11 @@
     startSynchronously];
 
   NSError *error = nil;
-  BOOL waitSuccess = [task.completed awaitWithTimeout:2 error:&error] != nil;
+  BOOL waitSuccess = [task.exitCode awaitWithTimeout:2 error:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(waitSuccess);
 
   XCTAssertEqualObjects(expected, task.stdOut);
-}
-
-- (void)testCancellationIsSignalling
-{
-  FBTask *task = [[FBTaskBuilder
-    withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
-    startSynchronously];
-
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
-
-  NSError *error = nil;
-  BOOL success = [[task.completed cancel] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateCancelled);
-  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
-  XCTAssertEqual(task.signal.state, FBFutureStateDone);
-  XCTAssertEqualObjects(task.signal.result, @(SIGTERM));
 }
 
 - (void)testSendingSIGINT
@@ -429,8 +416,9 @@
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateRunning);
   XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+  XCTAssertEqual(task.signal.state, FBFutureStateRunning);
 
   NSError *error = nil;
   FBFuture *future = [task sendSignal:SIGINT];
@@ -448,14 +436,15 @@
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateRunning);
   XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+  XCTAssertEqual(task.signal.state, FBFutureStateRunning);
 
   NSError *error = nil;
   BOOL success = [[task sendSignal:SIGKILL] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateFailed);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
   XCTAssertEqual(task.signal.state, FBFutureStateDone);
   XCTAssertEqualObjects(task.signal.result, @(SIGKILL));
@@ -467,21 +456,23 @@
     withLaunchPath:@"/usr/bin/nohup" arguments:@[@"/bin/sleep", @"10000000"]]
     startSynchronously];
 
-  XCTAssertEqual(task.completed.state, FBFutureStateRunning);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateRunning);
   XCTAssertEqual(task.exitCode.state, FBFutureStateRunning);
+  XCTAssertEqual(task.signal.state, FBFutureStateRunning);
 
   NSError *error = nil;
   BOOL success = [[task sendSignal:SIGHUP backingOffToKillWithTimeout:0.5 logger:[FBControlCoreLoggerDouble new]] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
   XCTAssertEqual(task.signal.state, FBFutureStateDone);
   XCTAssertEqual(task.signal.result, @(SIGKILL));
 
-  success = [task.completed await:&error] != nil;
-  XCTAssertNotNil(error);
-  XCTAssertFalse(success);
-  XCTAssertEqual(task.completed.state, FBFutureStateFailed);
+  success = [task.statLoc await:&error] != nil;
+  XCTAssertEqual(task.statLoc.state, FBFutureStateDone);
+  XCTAssertEqual(task.exitCode.state, FBFutureStateFailed);
+  XCTAssertEqual(task.signal.state, FBFutureStateDone);
 }
 
 - (void)testPipingInputToSuccessivelyRunTasksSucceeds
@@ -499,7 +490,7 @@
     withArguments:@[@"-zcvf", tarSource, FBControlCoreFixtures.bundleResource]]
     withStdOutToDevNull]
     withStdErrToDevNull]
-    runUntilCompletion]
+    runUntilCompletionWithAcceptableExitCodes:nil]
     mapReplace:NSNull.null]
     await:&error] != nil;
   XCTAssertNil(error);
@@ -514,7 +505,7 @@
       withStdInFromData:tarData]
       withStdOutToDevNull]
       withStdErrToDevNull]
-      runUntilCompletion]
+      runUntilCompletionWithAcceptableExitCodes:nil]
       mapReplace:NSNull.null]
       await:&error] != nil;
     XCTAssertNil(error);

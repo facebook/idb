@@ -11,26 +11,27 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
+#import <CoreSimulator/SimRuntime.h>
 
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
-#import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
-#import "FBSimulatorFileCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLocationCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorMediaCommands.h"
+#import "FBSimulatorProcessSpawnCommands.h"
 #import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -41,28 +42,28 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
+static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
+
 @implementation FBSimulator
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize logger = _logger;
+@dynamic xctestPath;
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess set:(FBSimulatorSet *)set
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set
 {
   return [[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
-    processFetcher:set.processFetcher
-    launchdSimProcess:launchdSimProcess
-    containerApplicationProcess:containerApplicationProcess
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
     logger:set.logger
     reporter:set.reporter];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -72,10 +73,7 @@
   _device = device;
   _configuration = configuration;
   _set = set;
-  _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
-  _launchdProcess = launchdSimProcess;
-  _containerApplication = containerApplicationProcess;
   _logger = [logger withName:device.UDID.UUIDString];
   _forwarder = [FBLoggingWrapper
     wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
@@ -128,6 +126,16 @@
   return self.configuration.os;
 }
 
+- (NSString *)runtimeRootDirectory
+{
+  return self.device.runtime.root;
+}
+
+- (NSString *)platformRootDirectory
+{
+  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"];
+}
+
 - (FBiOSTargetScreenInfo *)screenInfo
 {
   SimDeviceType *deviceType = self.device.deviceType;
@@ -152,6 +160,17 @@
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
+}
+
+- (NSDictionary<NSString *, NSString *> *)replacementMapping
+{
+  return @{
+    @"%%SIM_ROOT%%": self.dataDirectory,
+  };
+}
+
+- (BOOL) requiresBundlesToBeSigned {
+  return YES;
 }
 
 #pragma mark Properties
@@ -183,6 +202,11 @@
   return self.device.dataPath;
 }
 
+- (NSString *)customDeviceSetPath
+{
+  return [self.device.deviceSet.setPath isEqualToString:[DefaultDeviceSet stringByExpandingTildeInPath]] ? nil : self.device.deviceSet.setPath;
+}
+
 - (FBAppleSimctlCommandExecutor *)simctlExecutor
 {
   return [FBAppleSimctlCommandExecutor executorForSimulator:self];
@@ -193,6 +217,12 @@
   return [[NSHomeDirectory()
     stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
     stringByAppendingPathComponent:self.udid];
+}
+
+- (NSString *)xctestBinaryPath
+{
+  return [FBXcodeConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
 }
 
 #pragma mark NSObject
@@ -208,11 +238,11 @@
     return NO;
   }
   return [self.device isEqual:simulator.device];
-} 
+}
 
 - (NSString *)description
 {
-  return [FBiOSTargetFormat.fullFormat format:self];
+  return FBiOSTargetDescribe(self);
 }
 
 #pragma mark Forwarding
@@ -235,21 +265,22 @@
     commandClasses = @[
       FBInstrumentsCommands.class,
       FBSimulatorAccessibilityCommands.class,
-      FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
-      FBSimulatorFileCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
+      FBSimulatorFileCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,
       FBSimulatorLocationCommands.class,
       FBSimulatorLogCommands.class,
       FBSimulatorMediaCommands.class,
+      FBSimulatorProcessSpawnCommands.class,
       FBSimulatorScreenshotCommands.class,
       FBSimulatorSettingsCommands.class,
       FBSimulatorVideoRecordingCommands.class,
       FBSimulatorXCTestCommands.class,
+      FBXCTraceRecordCommands.class,
     ];
   });
   return commandClasses;
@@ -275,6 +306,7 @@
       FBSimulatorLifecycleCommands.class,
       FBSimulatorScreenshotCommands.class,
       FBSimulatorVideoRecordingCommands.class,
+      FBSimulatorXCTestCommands.class,
     ]];
   });
   return statefulCommands;

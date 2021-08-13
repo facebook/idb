@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -15,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The implementation of the FBSimulatorXCTestCommands instance.
  */
-@interface FBSimulatorXCTestCommands : NSObject <FBXCTestCommands>
+@interface FBSimulatorXCTestCommands : NSObject <FBXCTestExtendedCommands>
 
 @end
 

@@ -18,12 +18,12 @@
 
 + (NSString *)developerDirectory
 {
-  static dispatch_once_t onceToken;
-  static NSString *directory;
-  dispatch_once(&onceToken, ^{
-    directory = [self findXcodeDeveloperDirectoryOrAssert];
-  });
-  return directory;
+  return [self findXcodeDeveloperDirectoryOrAssert];
+}
+
++ (NSString *)getDeveloperDirectoryIfExists
+{
+  return [self findXcodeDeveloperDirectoryFromXcodeSelect:nil];
 }
 
 + (NSString *)contentsDirectory
@@ -99,6 +99,11 @@
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.0"]] != NSOrderedAscending;
 }
 
++ (BOOL)isXcode12_5OrGreater
+{
+  return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.5"]] != NSOrderedAscending;
+}
+
 + (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -133,8 +138,24 @@
 + (NSString *)findXcodeDeveloperDirectoryOrAssert
 {
   NSError *error = nil;
-  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine.xcodePath await:&error];
-  NSAssert(directory, error.description);
+  NSString *directory = [self findXcodeDeveloperDirectoryFromXcodeSelect:&error];
+  NSAssert(directory, @"Failed to get developer directory from xcode-select: %@", error.description);
+  return directory;
+}
+
++ (NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
+{
+  static dispatch_once_t onceToken;
+  static NSString *directory;
+  static NSError *savedError;
+  dispatch_once(&onceToken, ^{
+    NSError *innerError = nil;
+    directory = [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&innerError];
+    savedError = innerError;
+  });
+  if (error) {
+    *error = savedError;
+  }
   return directory;
 }
 

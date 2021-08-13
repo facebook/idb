@@ -97,11 +97,11 @@ static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *ta
     }
     T response;
     idb::Payload *payload = response.mutable_payload();
-    payload->set_data(buffer, size);
+    payload->set_data(reinterpret_cast<void *>(buffer), size);
     stream->Write(response);
   }
   [inputStream close];
-  NSNumber *exitCode = [task.completed block:&error];
+  NSNumber *exitCode = [task.exitCode block:&error];
   if (exitCode.integerValue != 0) {
     NSString *errorString = [NSString stringWithFormat:@"Draining operation failed with exit code %ld", (long)exitCode.integerValue];
     return Status(grpc::StatusCode::INTERNAL, errorString.UTF8String);
@@ -164,13 +164,25 @@ static FBProcessInput<NSOutputStream *> *pipe_to_input_output(const idb::Payload
 return input;
 }
 
-static id<FBDataConsumerLifecycle> pipe_output(const idb::LaunchResponse::Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
+static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::ProcessOutput_Interface interface, dispatch_queue_t queue, grpc::ServerReaderWriter<idb::LaunchResponse, idb::LaunchRequest> *stream)
 {
-  id<FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::LaunchResponse response;
-    response.set_interface(interface);
+    switch (interface) {
+      case idb::ProcessOutput_Interface_STDOUT:
+        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT);
+        break;
+      case idb::ProcessOutput_Interface_STDERR:
+        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR);
+        break;
+      default:
+        break;
+    }
     idb::LaunchResponse_Pipe *pipe = response.mutable_pipe();
     pipe->set_data(data.bytes, data.length);
+    idb::ProcessOutput *output = response.mutable_output();
+    output->set_data(data.bytes, data.length);
+    output->set_interface(interface);
     stream->Write(response);
   }];
   return consumer;
@@ -196,7 +208,7 @@ static FBFuture<NSArray<NSURL *> *> *filepaths_from_stream(const idb::Payload in
 static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input];
+  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP];
   if (extract_from_subdir) {
     // Extract from subdirectories
     return [temporaryDirectory filesFromSubdirs:tarContext];
@@ -262,6 +274,9 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   NSString *testBundleID = nsstring_from_c_string(request->test_bundle_id());
   BOOL reportActivities = request->report_activities();
   BOOL collectCoverage = request->collect_coverage();
+  BOOL collectLogs = request->collect_logs();
+  BOOL waitForDebugger = request->wait_for_debugger();
+  BOOL reportAttachments = request->report_attachments();
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -278,18 +293,18 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
       NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
       NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities collectCoverage:collectCoverage];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
     }
     default:
       return nil;
@@ -394,6 +409,23 @@ static FBInstrumentsConfiguration *translate_instruments_configuration(idb::Inst
     ];
 }
 
+static FBXCTraceRecordConfiguration *translate_xctrace_record_configuration(idb::XctraceRecordRequest_Start request)
+{
+  return [FBXCTraceRecordConfiguration
+    RecordWithTemplateName:nsstring_from_c_string(request.template_name())
+    timeLimit:request.time_limit() ?: DefaultXCTraceRecordOperationTimeLimit
+    package:nsstring_from_c_string(request.package())
+    allProcesses:request.target().all_processes()
+    processToAttach:nsstring_from_c_string(request.target().process_to_attach())
+    processToLaunch:nsstring_from_c_string(request.target().launch_process().process_to_launch())
+    launchArgs:extract_string_array(request.target().launch_process().launch_args())
+    targetStdin:nsstring_from_c_string(request.target().launch_process().target_stdin())
+    targetStdout:nsstring_from_c_string(request.target().launch_process().target_stdout())
+    processEnv:extract_str_dict(request.target().launch_process().process_env())
+    shim:nil
+  ];
+}
+
 static idb::DebugServerResponse translate_debugserver_status(id<FBDebugServer> debugServer)
 {
   idb::DebugServerResponse response;
@@ -442,6 +474,19 @@ static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter
   }
 }
 
+static FBCompressionFormat read_compression_format(const idb::Payload payload)
+{
+  idb::Payload_Compression comp = payload.compression();
+  switch (comp) {
+    case idb::Payload_Compression::Payload_Compression_GZIP:
+      return FBCompressionFormatGZIP;
+    case idb::Payload_Compression::Payload_Compression_ZSTD:
+      return FBCompressionFormatZSTD;
+    default:
+      return FBCompressionFormatGZIP;
+  }
+}
+
 #pragma mark Constructors
 
 FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter)
@@ -471,13 +516,19 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     stream->Read(&request);
   }
   payload = request.payload();
+  FBCompressionFormat compression = FBCompressionFormatGZIP;
+  if (payload.source_case() == idb::Payload::kCompression) {
+    compression = read_compression_format(payload);
+    stream->Read(&request);
+    payload = request.payload();
+  }
 
   switch (payload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:dataStream];
+          return [_commandExecutor install_app_stream:dataStream compression:compression];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -495,7 +546,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:download.input];
+          return [_commandExecutor install_app_stream:download.input compression:compression];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -874,36 +925,30 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   stream->Read(&request);
   idb::LaunchRequest_Start start = request.start();
   NSError *error = nil;
-  FBProcessOutputConfiguration *output = FBProcessOutputConfiguration.outputToDevNull;
+  FBProcessOutput *stdOut = FBProcessOutput.outputForNullDevice;
+  FBProcessOutput *stdErr = FBProcessOutput.outputForNullDevice;
   NSMutableArray<FBFuture *> *completions = NSMutableArray.array;
   if (start.wait_for()) {
     dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.idb.launch.write", DISPATCH_QUEUE_SERIAL);
-    id<FBDataConsumerLifecycle> consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT, writeQueue, stream);
+    id<FBDataConsumer, FBDataConsumerLifecycle> consumer = pipe_output(idb::ProcessOutput_Interface_STDOUT, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
-    output = [output withStdOut:consumer error:&error];
-    if (!output) {
-      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
-    consumer = pipe_output(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR, writeQueue, stream);
+    stdOut = [FBProcessOutput outputForDataConsumer:consumer];
+    consumer = pipe_output(idb::ProcessOutput_Interface_STDERR, writeQueue, stream);
     [completions addObject:consumer.finishedConsuming];
-    output = [output withStdErr:consumer error:&error];
-    if (!output) {
-      return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
-    }
+    stdErr = [FBProcessOutput outputForDataConsumer:consumer];
   }
-  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:nsstring_from_c_string(start.bundle_id())
+  FBProcessIO *io = [[FBProcessIO alloc]
+    initWithStdIn:nil
+    stdOut:stdOut
+    stdErr:stdErr];
+  FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:nsstring_from_c_string(start.bundle_id())
     bundleName:nil
     arguments:extract_string_array(start.app_args())
     environment:extract_str_dict(start.env())
-    output:output
+    waitForDebugger:(start.wait_for_debugger() ? YES : NO)
+    io:io
     launchMode:start.foreground_if_running() ? FBApplicationLaunchModeForegroundIfRunning : FBApplicationLaunchModeFailIfRunning];
-  if (start.wait_for_debugger()) {
-    configuration = [configuration withWaitForDebugger:&error];
-    if (error) {
-      return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
-    }
-  }
   id<FBLaunchedApplication> launchedApp = [[_commandExecutor launch_app:configuration] block:&error];
   if (!launchedApp) {
     if (error.code != 0) {
@@ -1004,14 +1049,13 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   }
   // Once the reporter is created, only it will perform writing to the writer.
   NSError *error = nil;
-  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response reportAttachments:request->report_attachments() queue:_target.workQueue logger:_target.logger];
+  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
-  reporter.resultBundlePath = operation.resultBundlePath;
-  reporter.coveragePath = operation.coveragePath;
-  reporter.binaryPath = operation.binaryPath;
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
+  reporter.configuration = operation.reporterConfiguration;
+
   // First wait for the test operation to finish
   [operation.completed block:&error];
   // Then make sure we've reported everything, otherwise we could write in the background (use-after-free)
@@ -1021,26 +1065,47 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
 
 Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *request, grpc::ServerWriter<idb::LogResponse> *response)
 {@autoreleasepool{
-  NSArray<NSString *> *arguments = extract_string_array(request->arguments());
-  FBMutableFuture<NSNull *> *clientClosed = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
-    if (clientClosed.hasCompleted) {
-      return;
-    }
+  // In the background, write out the log data. Prevent future writes if the client write fails.
+  // This will happen asynchronously with the server thread.
+  FBMutableFuture<NSNull *> *writingDone = FBMutableFuture.future;
+  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     idb::LogResponse item;
     item.set_output(data.bytes, data.length);
-    if (!response->Write(item)) {
-      [clientClosed resolveWithResult:NSNull.null];
+    if (writingDone.hasCompleted) {
+      return;
     }
+    bool success = response->Write(item);
+    if (success) {
+      return;
+    }
+    // The client write failed, the client has gone so don't write again.
+    [writingDone resolveWithResult:NSNull.null];
   }];
+
+  // Setup the log operation.
   NSError *error = nil;
   BOOL logFromCompanion = request->source() == idb::LogRequest::Source::LogRequest_Source_COMPANION;
+  NSArray<NSString *> *arguments = extract_string_array(request->arguments());
   id<FBLogOperation> operation = [(logFromCompanion ? [_commandExecutor tail_companion_logs:consumer] : [_target tailLog:arguments consumer:consumer]) block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  FBFuture<NSNull *> *completed = [FBFuture race:@[clientClosed, operation.completed]];
-  [completed block:nil];
+
+  // Poll on completion (logging happens asynchronously). This occurs when the stream is cancelled, the log operation is done, or the last write failed.
+  FBFuture<NSNull *> *completed = [FBFuture race:@[writingDone, operation.completed]];
+  while (completed.hasCompleted == NO && context->IsCancelled() == false) {
+    // Sleep for 200ms before polling again.
+    usleep(1000 * 200);
+  }
+
+  // Signal that we're done writing due to the operation completion or the client going away.
+  // This will also prevent the polling of the ClientContext.
+  [writingDone resolveWithResult:NSNull.null];
+
+  // Teardown the log operation now that we're done with it
+  FBFuture<NSNull *> *teardown = [operation.completed cancel];
+  [teardown block:nil];
+
   return Status::OK;
 }}
 
@@ -1145,7 +1210,7 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   NSString *path = nsstring_from_c_string(request->src_path());
   NSError *error = nil;
   if (request->dst_path().length() > 0) {
-    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:nsstring_from_c_string(request->dst_path()) containerType:file_container(request->container()) ] block:&error];
+    NSString *filePath = [[_commandExecutor pull_file_path:path destination_path:nsstring_from_c_string(request->dst_path()) containerType:file_container(request->container())] block:&error];
     if (error) {
       return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
     }
@@ -1165,6 +1230,37 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
   }
 }}
 
+Status FBIDBServiceHandler::tail(ServerContext* context, grpc::ServerReaderWriter<idb::TailResponse, idb::TailRequest>* stream)
+{@autoreleasepool{
+  idb::TailRequest request;
+  stream->Read(&request);
+  idb::TailRequest_Start start = request.start();
+  NSString *path = nsstring_from_c_string(start.path());
+  NSString *container = file_container(start.container());
+
+  FBMutableFuture<NSNull *> *finished = FBMutableFuture.future;
+  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+    if (finished.hasCompleted) {
+      return;
+    }
+    idb::TailResponse response;
+    response.set_data(data.bytes, data.length);
+    stream->Write(response);
+  }];
+
+  NSError *error = nil;
+  FBFuture<NSNull *> *tailOperation = [[_commandExecutor tail:path to_consumer:consumer in_container:container] block:&error];
+  if (!tailOperation) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+
+  stream->Read(&request);
+  [[tailOperation cancel] block:nil];
+  [finished resolveWithResult:NSNull.null];
+
+  return Status::OK;
+}}
+
 Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDescriptionRequest *request, idb::TargetDescriptionResponse *response)
 {@autoreleasepool{
   // Populate the default values
@@ -1180,7 +1276,7 @@ Status FBIDBServiceHandler::describe(ServerContext *context, const idb::TargetDe
   }
   description->set_udid(_target.udid.UTF8String);
   description->set_name(_target.name.UTF8String);
-  description->set_state(FBiOSTargetStateStringFromState(_target.state).lowercaseString.UTF8String);
+  description->set_state(FBiOSTargetStateStringFromState(_target.state).UTF8String);
   description->set_target_type(FBiOSTargetTypeStringsFromTargetType(_target.targetType).firstObject.lowercaseString.UTF8String);
   description->set_os_version(_target.osVersion.name.UTF8String);
   description->set_architecture(_target.architecture.UTF8String);
@@ -1345,4 +1441,75 @@ Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::Con
   populate_companion_info(info, _eventReporter, _target);
 
   return Status::OK;
+}}
+
+Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerReaderWriter<idb::XctraceRecordResponse, idb::XctraceRecordRequest> *stream)
+{@autoreleasepool{
+  __block idb::XctraceRecordRequest recordRequest;
+  __block pthread_mutex_t mutex;
+  pthread_mutex_init(&mutex, NULL);
+  __block bool finished_writing = NO;
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.xctrace.record", DISPATCH_QUEUE_SERIAL);
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordRequest request;
+    stream->Read(&request);
+    recordRequest = request;
+  });
+
+  FBXCTraceRecordConfiguration *configuration = translate_xctrace_record_configuration(recordRequest.start());
+
+  NSError *error = nil;
+  id<FBDataConsumer> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
+    idb::XctraceRecordResponse response;
+    response.set_log(data.bytes, data.length);
+    pthread_mutex_lock(&mutex);
+    if (!finished_writing) {
+      stream->Write(response);
+    }
+    pthread_mutex_unlock(&mutex);
+  }];
+  id<FBControlCoreLogger> logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
+    [FBControlCoreLogger loggerToConsumer:consumer],
+    _target.logger,
+  ]];
+
+  FBXCTraceRecordOperation *operation = [[_target startXctraceRecord:configuration logger:logger] block:&error];
+  if (!operation) {
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordResponse response;
+    response.set_state(idb::XctraceRecordResponse::State::XctraceRecordResponse_State_RUNNING);
+    stream->Write(response);
+    idb::XctraceRecordRequest request;
+    stream->Read(&request);
+    recordRequest = request;
+  });
+  NSTimeInterval stopTimeout = recordRequest.stop().timeout() ?: DefaultXCTraceRecordStopTimeout;
+  if (![[operation stopWithTimeout:stopTimeout] succeeds:&error]) {
+    pthread_mutex_lock(&mutex);
+    finished_writing = YES;
+    pthread_mutex_unlock(&mutex);
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  NSArray<NSString *> *postProcessArgs = extract_string_array(recordRequest.stop().args());
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  dispatch_sync(queue, ^{
+    idb::XctraceRecordResponse response;
+    response.set_state(idb::XctraceRecordResponse::State::XctraceRecordResponse_State_PROCESSING);
+    stream->Write(response);
+  });
+  NSURL *processed = [[FBInstrumentsOperation postProcess:postProcessArgs traceDir:operation.traceDir queue:queue logger:logger] block:&error];
+  pthread_mutex_lock(&mutex);
+  finished_writing = YES;
+  pthread_mutex_unlock(&mutex);
+  if (!processed) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
 }}

@@ -9,6 +9,7 @@ import asyncio
 import concurrent.futures
 import logging
 import os
+import shutil
 import sys
 from typing import List, Optional, Set
 
@@ -46,6 +47,7 @@ from idb.cli.commands.file import (
     FSPushCommand,
     FSWriteCommand,
     FSRemoveCommand,
+    FSTailCommand,
     FBSReadCommand,
 )
 from idb.cli.commands.focus import FocusCommand
@@ -67,6 +69,7 @@ from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import SetCommand, GetCommand, ListCommand
+from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
     TargetBootCommand,
@@ -89,8 +92,9 @@ from idb.cli.commands.xctest import (
     XctestRunCommand,
     XctestsListBundlesCommand,
 )
+from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException, ExitWithCodeException
+from idb.common.types import IdbException, ExitWithCodeException, Compression
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
@@ -101,6 +105,12 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] - %(name)s - %(message)s"
 )
 logger: logging.Logger = logging.getLogger()
+
+
+def get_default_companion_path() -> Optional[str]:
+    if sys.platform != "darwin":
+        return None
+    return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
 
 
 async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
@@ -120,6 +130,15 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         help="Set the logging level",
     )
     parser.add_argument(
+        "--compression",
+        dest="compression",
+        choices=[str(key) for (key, _) in Compression.__members__.items()],
+        default=None,
+        help="Compression algorithm, default: GZIP. "
+        "Compressor should be available at this host. "
+        "Decompressor should be available at the destination site (where IDB companion is hosted)",
+    )
+    parser.add_argument(
         "--companion",
         type=str,
         default=os.environ.get("IDB_COMPANION"),
@@ -129,7 +148,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--companion-path",
         type=str,
-        default="/usr/local/bin/idb_companion" if sys.platform == "darwin" else None,
+        default=get_default_companion_path(),
         help="The path to the idb companion binary. This is only valid when running on macOS platforms",
     )
     parser.add_argument(
@@ -142,12 +161,20 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         "Can also be set with the IDB_COMPANION_LOCAL environment variable",
     )
     parser.add_argument(
+        "--companion-tls",
+        action="store_true",
+        default=bool(os.environ.get("IDB_COMPANION_TLS")),
+        help="Will force idb client to use TLS encrypted connection to companion."
+        "Can also be set with the IDB_COMPANION_TLS environment variable",
+    )
+    parser.add_argument(
         "--no-prune-dead-companion",
         dest="prune_dead_companion",
         action="store_false",
         default=True,
         help="If flagged will not modify local state when a companion is known to be unresponsive",
     )
+    shell_command = ShellCommand(parser=parser)
     commands: List[Command] = [
         AppInstallCommand(),
         AppUninstallCommand(),
@@ -176,6 +203,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
                 FSListCommand(),
                 FBSReadCommand(),
                 FSWriteCommand(),
+                FSTailCommand(),
             ],
         ),
         CommandGroup(
@@ -256,9 +284,15 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             description="commands related to the companion",
             commands=[CompanionLogCommand()],
         ),
+        CommandGroup(
+            name="xctrace",
+            description="Run xctrace commands",
+            commands=[XctraceRecordCommand()],
+        ),
         SetCommand,
         GetCommand,
         ListCommand,
+        shell_command,
     ]
     commands.extend(plugin.get_commands())
     root_command = CommandGroup(
@@ -267,6 +301,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         commands=sorted(commands, key=lambda command: command.name),
     )
     root_command.add_parser_arguments(parser)
+    shell_command.root_command = root_command
 
     # Parse input and run
     cmd_input = cmd_input or sys.argv[1:]
@@ -284,6 +319,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         return 1
     except ExitWithCodeException as e:
         return e.exit_code
+    except SystemExit as e:
+        return e.code
     except Exception:
         logger.exception("Exception thrown in main")
         return 1

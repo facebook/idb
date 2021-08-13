@@ -101,9 +101,6 @@
   for (FBSimulator *simulator in simulators) {
     [self assertSimulatorBooted:simulator];
   }
-
-  XCTAssertEqual([NSSet setWithArray:[simulators valueForKeyPath:@"launchdProcess.processIdentifier"]].count, 3u);
-
   FBFuture *shutdownFuture = [FBFuture futureWithFutures:@[
     [simulator1 shutdown],
     [simulator2 shutdown],

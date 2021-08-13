@@ -14,35 +14,26 @@
 
 @implementation FBXcodeDirectory
 
-#pragma mark Initializers
-
-+ (FBXcodeDirectory *)xcodeSelectFromCommandLine
-{
-  return [self new];
-}
-
-#pragma mark Public Methods
-
-- (FBFuture<NSString *> *)xcodePath
++ (FBFuture<NSString *> *)xcodeSelectDeveloperDirectory
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
-  return [[[FBTaskBuilder
+  return [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    runUntilCompletion]
-    onQueue:queue fmap:^(FBTask *task) {
-      NSString *directory = [task stdOut];
+    withStdOutInMemoryAsString]
+    withStdErrInMemoryAsString]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+    onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+      NSString *directory = task.stdOut;
       if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {
         directory = NSProcessInfo.processInfo.environment[@"FBXCTEST_XCODE_PATH_OVERRIDE"];
       }
-
       if (!directory) {
         return [[FBControlCoreError
           describeFormat:@"Xcode Path could not be determined from `xcode-select`: %@", directory]
           failFuture];
       }
       directory = [directory stringByResolvingSymlinksInPath];
-
 
       NSString *helpText = @".\n\n============================\n"
         "%@\n"
@@ -52,7 +43,7 @@
 
       if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
         return [[FBControlCoreError
-          describeFormat:helpText, @"No Xcode Directory returned from `xcode-select -p`."]
+          describeFormat:helpText, @"Empty output for xcode directory returned from `xcode-select -p`: %@", task.stdErr]
           failFuture];
       }
       if ([directory isEqual:@"/Library/Developer/CommandLineTools"]) {
@@ -71,7 +62,8 @@
           failFuture];
       }
       return [FBFuture futureWithResult:directory];
-    }];
+    }]
+    timeout:10 waitingFor:@"xcode-select to complete"];
 }
 
 @end

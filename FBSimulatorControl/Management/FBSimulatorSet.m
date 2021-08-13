@@ -19,8 +19,6 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBCoreSimulatorTerminationStrategy.h"
-#import "FBSimulatorContainerApplicationLifecycleStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -64,9 +62,7 @@
   _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
   _allSimulators = @[];
-  _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
   _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
-  _containerApplicationStrategy = [FBSimulatorContainerApplicationLifecycleStrategy strategyForSet:self];
   _notificationUpdateStrategy = [FBSimulatorNotificationUpdateStrategy strategyWithSet:self];
 
   return self;
@@ -92,18 +88,16 @@
   NSError *innerError = nil;
   SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
-    return [[[[FBSimulatorError
+    return [[[FBSimulatorError
       describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
       causedBy:innerError]
-      logger:self.logger]
       failFuture];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
-    return [[[[FBSimulatorError
+    return [[[FBSimulatorError
       describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
       causedBy:innerError]
-      logger:self.logger]
       failFuture];
   }
 
@@ -220,11 +214,6 @@
 
 #pragma mark Private Methods
 
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
-{
-  return [[self.simulatorTerminationStrategy killSpuriousSimulators] await:error] != nil;
-}
-
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators
 {
   NSMutableDictionary<NSString *, FBSimulator *> *dictionary = [NSMutableDictionary dictionary];
@@ -239,9 +228,8 @@
   // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
   FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   if (!simulator) {
-    return [[[FBSimulatorError
+    return [[FBSimulatorError
       describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
-      logger:self.logger]
       failFuture];
   }
   return [FBFuture futureWithResult:simulator];
@@ -257,11 +245,6 @@
   return _allSimulators;
 }
 
-- (NSArray<FBSimulator *> *)launchedSimulators
-{
-  return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
-}
-
 #pragma mark FBiOSTargetSet Implementation
 
 - (NSArray<id<FBiOSTarget>> *)allTargetInfos
@@ -274,11 +257,6 @@
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
   return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
-
-- (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
-{
-  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher workQueue:self.workQueue logger:self.logger];
 }
 
 - (FBSimulatorEraseStrategy *)eraseStrategy

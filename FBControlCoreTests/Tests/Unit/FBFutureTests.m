@@ -651,6 +651,22 @@
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testRemappedTimeout
+{
+  FBFuture<NSNumber *> *future = [[[FBFuture
+    futureWithResult:@0]
+    delay:10]
+    onQueue:self.queue timeout:0.1 handler:^{
+      return [FBFuture futureWithResult:@1];
+    }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@1],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 - (void)testFallback
 {
   NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
@@ -860,7 +876,7 @@
   XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
   XCTestExpectation *teardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Teardown"];
 
-  [[[[[FBFuture
+  [[[[[[FBFuture
     futureWithResult:@1]
     onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
       XCTAssertTrue(fmapCalled);
@@ -873,6 +889,11 @@
     onQueue:self.queue pend:^(id value) {
       XCTAssertEqualObjects(value, @1);
       return [FBFuture futureWithResult:@2];
+    }]
+    onQueue:self.queue handleError:^(NSError *error) {
+      // should not be called and should not affect teardowns
+      XCTAssertTrue(NO);
+      return [FBFuture futureWithError:error];
     }]
     onQueue:self.queue pop:^(id value) {
       XCTAssertFalse(teardownCalled);
@@ -887,6 +908,73 @@
     }];
 
   [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testContextualTeardownWithErrorHandling
+{
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *teardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Teardown"];
+  XCTestExpectation *errorHandlingExpectation = [[XCTestExpectation alloc] initWithDescription:@"Handled Error"];
+
+  [[[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
+      XCTAssertEqualObjects(value, @1);
+      XCTAssertEqual(state, FBFutureStateDone);
+      [teardownExpectation fulfill];
+      return FBFuture.empty;
+    }]
+    onQueue:self.queue pend:^FBFuture * _Nonnull(id  _Nonnull result) {
+      return [FBFuture futureWithError:[NSError errorWithDomain:@"e" code:0 userInfo:nil]];
+    }]
+    onQueue:self.queue handleError:^FBFuture * _Nonnull(NSError * _Nonnull error) {
+      [errorHandlingExpectation fulfill];
+      return [FBFuture futureWithResult:@2];
+    }]
+    onQueue:self.queue pop:^(id value) {
+      return [FBFuture futureWithResult:value];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqualObjects(future.result, @2);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[errorHandlingExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testContextualTeardownWithErrorMapping
+{
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  XCTestExpectation *teardownExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Teardown"];
+  XCTestExpectation *errorHandlingExpectation = [[XCTestExpectation alloc] initWithDescription:@"Handled Error"];
+
+  [[[[[[FBFuture
+    futureWithResult:@1]
+    onQueue:self.queue contextualTeardown:^(id value, FBFutureState state){
+      [teardownExpectation fulfill];
+      return FBFuture.empty;
+    }]
+    onQueue:self.queue pend:^FBFuture * _Nonnull(id  _Nonnull result) {
+      return [FBFuture futureWithError:[NSError errorWithDomain:@"e" code:0 userInfo:nil]];
+    }]
+    onQueue:self.queue handleError:^FBFuture * _Nonnull(NSError * _Nonnull error) {
+      [errorHandlingExpectation fulfill];
+      return [FBFuture futureWithError:[NSError errorWithDomain:@"e" code:42 userInfo:nil]];
+    }]
+    onQueue:self.queue pop:^(id value) {
+      return [FBFuture futureWithResult:value];
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertNotNil(future.error);
+      XCTAssertEqual(future.error.code, 42);
+      [completionExpectation fulfill];
+    }];
+
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  [self waitForExpectations:@[errorHandlingExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 

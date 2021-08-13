@@ -89,9 +89,9 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
   }
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
 {
-  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input]];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -101,7 +101,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream
 {
-  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream]];
+  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream compression:FBCompressionFormatGZIP]];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dylib_file_path:(NSString *)filePath
@@ -121,7 +121,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_framework_stream:(FBProcessInput *)input
 {
-  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.framework];
+  return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.framework];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath
@@ -131,7 +131,7 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 - (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input
 {
-  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input] intoStorage:self.storageManager.dsym];
+  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.dsym];
 }
 
 #pragma mark Public Methods
@@ -209,10 +209,18 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
     }];
 }
 
-- (FBFuture<NSNull *> *)clean
+- (FBFuture<NSNull *> *)remove_all_storage_and_clear_keychain
 {
-  // Kill and uninstall all apps
-  return [[[self list_apps:NO] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSDictionary<FBInstalledApplication *,id> *apps) {
+  NSError *error = nil;
+  if (![self.storageManager clean:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  return [self clear_keychain];
+}
+
+- (FBFuture<NSNull *> *)uninstall_all_applications
+{
+  return [[self list_apps:NO] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSDictionary<FBInstalledApplication *,id> *apps) {
     NSMutableArray<FBFuture<NSNull *> *> *uninstall_futures = NSMutableArray.array;
     for (FBInstalledApplication *app in apps) {
       if (app.installType == FBApplicationInstallTypeUser){
@@ -222,13 +230,17 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
       }
     }
     return [FBFuture futureWithFutures:uninstall_futures];
-  // Remove all storage and clear keychain
-  }] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-    NSError *error = nil;
-    if (![self.storageManager clean:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return [self clear_keychain];
+  }];
+}
+
+- (FBFuture<NSNull *> *)clean
+{
+  if (self.target.state == FBiOSTargetStateShutdown) {
+    return [self remove_all_storage_and_clear_keychain];
+  }
+
+  return [[self uninstall_all_applications] onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(id _) {
+    return [self remove_all_storage_and_clear_keychain];
   }];
 }
 
@@ -270,14 +282,27 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   if ([appPath isEqualToString:@""]) {
     appPath = nil;
   }
-  return [FBFuture onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
-    NSError *error = nil;
-    id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
-    if (!testDescriptor) {
-      return [FBFuture futureWithError:error];
-    }
-    return [self.target listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:appPath];
-  }];
+
+  if ([self.storageManager.application.persistedBundleIDs containsObject:appPath]) {
+    // appPath is actually an app bundle ID
+    appPath = self.storageManager.application.persistedBundles[appPath].path;
+  }
+
+  return [FBFuture
+    onQueue:self.target.workQueue resolve:^ FBFuture<NSArray<NSString *> *> * {
+      NSError *error = nil;
+      id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:bundleID error:&error];
+      if (!testDescriptor) {
+        return [FBFuture futureWithError:error];
+      }
+      id<FBXCTestExtendedCommands> commands = (id<FBXCTestExtendedCommands>) self.target;
+      if (![commands conformsToProtocol:@protocol(FBXCTestExtendedCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"%@ does not conform to FBXCTestExtendedCommands", commands]
+          failFuture];
+      }
+      return [commands listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:appPath];
+    }];
 }
 
 - (FBFuture<NSNull *> *)uninstall_application:(NSString *)bundleID
@@ -292,7 +317,37 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [self.target launchApplication:[configuration withEnvironment:[self.storageManager interpolateEnvironmentReplacements:configuration.environment]]];
+  NSMutableDictionary<NSString *, NSString *> *replacements = NSMutableDictionary.dictionary;
+  [replacements addEntriesFromDictionary:self.storageManager.replacementMapping];
+  [replacements addEntriesFromDictionary:self.target.replacementMapping];
+  NSDictionary<NSString *, NSString *> *environment = [self applyEnvironmentReplacements:configuration.environment replacements:replacements];
+
+  FBApplicationLaunchConfiguration *derived = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:configuration.bundleID
+    bundleName:configuration.bundleName
+    arguments:configuration.arguments
+    environment:environment
+    waitForDebugger:configuration.waitForDebugger
+    io:configuration.io
+    launchMode:configuration.launchMode];
+  return [self.target launchApplication:derived];
+}
+
+- (NSDictionary<NSString *, NSString *> *)applyEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment replacements:(NSDictionary<NSString *, NSString *> *)replacements
+{
+  [self.logger logFormat:@"Original environment: %@", environment];
+  [self.logger logFormat:@"Existing replacement mapping: %@", replacements];
+  NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
+  for (NSString *name in environment.allKeys) {
+    NSString *value = environment[name];
+    for (NSString *interpolationName in replacements.allKeys) {
+      NSString *interpolationValue = replacements[interpolationName];
+      value = [value stringByReplacingOccurrencesOfString:interpolationName withString:interpolationValue];
+    }
+    interpolatedEnvironment[name] = value;
+  }
+  [self.logger logFormat:@"Interpolated environment: %@", interpolatedEnvironment];
+  return interpolatedEnvironment;
 }
 
 - (FBFuture<FBIDBTestOperation *> *)xctest_run:(FBXCTestRunRequest *)request reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
@@ -462,7 +517,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
       NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
       for (NSString *originPath in originPaths) {
-        [futures addObject:[container movePath:originPath toDestinationPath:destinationPath]];
+        [futures addObject:[container moveFrom:originPath to:destinationPath]];
       }
       return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
     }];
@@ -491,7 +546,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
         onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
           NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
           for (NSURL *originPath in paths) {
-            [futures addObject:[container copyPathOnHost:originPath toDestination:destinationPath]];
+            [futures addObject:[container copyFromHost:originPath toContainer:destinationPath]];
           }
           return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
         }];
@@ -503,7 +558,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     applicationDataContainerCommands:containerType]
     onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> commands) {
-      return [commands copyItemInContainer:path toDestinationOnHost:destinationPath];
+      return [commands copyFromContainer:path toHost:destinationPath];
     }];
 }
 
@@ -518,11 +573,20 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       return [[self
         applicationDataContainerCommands:containerType]
         onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
-          return [container copyItemInContainer:path toDestinationOnHost:tempPath];
+          return [container copyFromContainer:path toHost:tempPath];
         }];
     }]
     onQueue:self.target.workQueue pop:^(id _) {
       return [FBArchiveOperations createGzippedTarDataForPath:tempPath queue:self.target.workQueue logger:self.target.logger];
+    }];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path to_consumer:(id<FBDataConsumer>)consumer in_container:(nullable NSString *)containerType
+{
+  return [[self
+    applicationDataContainerCommands:containerType]
+    onQueue:self.target.workQueue pop:^(id<FBFileContainer> container) {
+      return [container tail:path toConsumer:consumer];
     }];
 }
 
@@ -542,7 +606,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     onQueue:self.target.workQueue pop:^FBFuture *(id<FBFileContainer> container) {
       NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
       for (NSString *path in paths) {
-        [futures addObject:[container removePath:path]];
+        [futures addObject:[container remove:path]];
       }
       return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
     }];
@@ -682,27 +746,18 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [FBFuture futureWithResult:commands];
 }
 
-- (FBFuture<FBSimulatorConnection *> *)connectToSimulatorConnection
+- (FBFuture<FBSimulatorHID *> *)connectToHID
 {
   return [[self
     lifecycleCommands]
-    onQueue:self.target.workQueue fmap:^ FBFuture<FBSimulatorConnection *> * (id<FBSimulatorLifecycleCommands> commands) {
+    onQueue:self.target.workQueue fmap:^ FBFuture<FBSimulatorHID *> * (id<FBSimulatorLifecycleCommands> commands) {
       NSError *error = nil;
       if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
         return [[FBIDBError
           describeFormat:@"SimulatorKit is required for HID interactions: %@", error]
           failFuture];
       }
-      return [commands connect];
-    }];
-}
-
-- (FBFuture<FBSimulatorHID *> *)connectToHID
-{
-  return [[self
-    connectToSimulatorConnection]
-    onQueue:self.target.workQueue fmap:^(FBSimulatorConnection *connection) {
-      return [connection connectToHID];
+      return [commands connectToHID];
     }];
 }
 
@@ -716,8 +771,8 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext
 {
-  return [[bundleContext
-    onQueue:self.target.workQueue pend:^(FBBundleDescriptor *appBundle){
+  return [bundleContext
+    onQueue:self.target.asyncQueue pop:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
         return [FBFuture futureWithError:[FBControlCoreError errorForDescription:@"No app bundle could be extracted"]];
       }
@@ -725,12 +780,13 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (![self.storageManager.application checkArchitecture:appBundle error:&error]) {
         return [FBFuture futureWithError:error];
       }
-      return [[self.target installApplicationWithPath:appBundle.path] mapReplace:appBundle];
-    }]
-    onQueue:self.target.workQueue pop:^(FBBundleDescriptor *appBundle){
-      [self.logger logFormat:@"Persisting application bundle %@", appBundle];
-      return [self.storageManager.application saveBundle:appBundle];
-    }];
+      return [[FBFuture futureWithFutures:@[
+        [[self.target installApplicationWithPath:appBundle.path] onQueue:self.target.workQueue],
+        [self.storageManager.application saveBundle:appBundle],
+      ]] onQueue:self.target.asyncQueue map:^FBInstalledArtifact *(NSArray *results) {
+        return results[1];
+      }];
+  }];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest

@@ -50,9 +50,8 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
   NSString *shimPath = [directory stringByAppendingPathComponent:filename];
   if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"No shim located at expected location of %@", shimPath]
-      noLogging]
       failFuture];
   }
   if (!signingRequired) {
@@ -72,12 +71,13 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
       NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride];
       if (environmentDefinedDirectory) {
         [searchPaths addObject:environmentDefinedDirectory];
+      } else {
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
+        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
+        [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
       }
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
-      [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
-      [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
 
       NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
       for (NSString *path in searchPaths) {
@@ -92,8 +92,9 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
             }
             return [FBFuture futureWithResult:path];
           }
+          NSArray<NSString *> *shimNames = self.canonicalShimNameToShimFilenames.allValues;
           return [[FBControlCoreError
-            describeFormat:@"Could not find shims in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
+            describeFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
             failFuture];
         }];
     }];
@@ -102,9 +103,8 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (FBFuture<NSString *> *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-    return [[[FBControlCoreError
+    return [[FBControlCoreError
       describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
-      noLogging]
       failFuture];
   }
   NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
@@ -114,6 +114,16 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   return [[FBFuture
     futureWithFutures:futures]
     mapReplace:directory];
+}
+
++ (FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(id<FBControlCoreLogger>)logger
+{
+  static dispatch_once_t onceToken;
+  static FBFuture<FBXCTestShimConfiguration *> *future;
+  dispatch_once(&onceToken, ^{
+    future = [self defaultShimConfigurationWithLogger:logger];
+  });
+  return future;
 }
 
 + (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfigurationWithLogger:(id<FBControlCoreLogger>)logger

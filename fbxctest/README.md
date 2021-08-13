@@ -1,8 +1,5 @@
 # `fbxctest`
 
-`fbxctest` is an experimental test runner for running iOS testing bundles for the iOS Simulator Platform. `fbxctest` will provide the following features:
-- Structured Output of Test Results
-- Support for concurrent running against Simulators.
-- A Test Runner independent of a Full Build Chain.
+`fbxctest` acts as a commandline for leveraging `XCTestBootrap` via `xctool`'s command line interface and json output.
 
-Please note that not all features are implemented at the present time. For more information, consult the [Details Document.](Documentation/Details.md)
+Over time, the test execution aspects of `idb` will come to replace all of it's functionality in a single place. For now, it acts as a replacement for `xctool` that is integrated directly in `buck`.

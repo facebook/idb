@@ -189,6 +189,8 @@
 - (BOOL)setActiveIDSRelayDevice:(id)arg1 error:(id *)arg2;
 - (BOOL)disconnectIDSRelayToDevice:(id)arg1 error:(id *)arg2;
 - (BOOL)connectIDSRelayToDevice:(id)arg1 disconnectMonitorPort:(unsigned int *)arg2 error:(id *)arg3;
+- (id)setHardwareKeyboardEnabled:(_Bool)arg2 keyboardType:(unsigned char)arg2 error:(NSError **)arg3;
+- (BOOL)setLocationWithLatitude:(double)arg1 andLongitude:(double)arg2 error:(NSError **)arg3;
 
 // In Xcode 12, this replaces SimulatorBridge related accessibility requests .
 

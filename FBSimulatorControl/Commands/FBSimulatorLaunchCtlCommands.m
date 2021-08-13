@@ -10,18 +10,16 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorLaunchCtlCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBBinaryDescriptor *launchCtlBinary;
+@property (nonatomic, copy, readonly) NSString *launchctlLaunchPath;
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary;
+- (instancetype)initWithSimulator:(FBSimulator *)simulator launchctlLaunchPath:(NSString *)launchctlLaunchPath;
 
 @end
 
@@ -29,23 +27,27 @@
 
 #pragma mark Initializers
 
-+ (FBBinaryDescriptor *)launchCtlBinaryForSimulator:(FBSimulator *)simulator error:(NSError **)error
++ (NSString *)launchCtlLaunchPathForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSString *path = [[simulator.device.runtime.root
     stringByAppendingPathComponent:@"bin"]
     stringByAppendingPathComponent:@"launchctl"];
-  return [FBBinaryDescriptor binaryWithPath:path error:error];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
+  if (!binary) {
+    return nil;
+  }
+  return binary.path;
 }
 
 + (instancetype)commandsWithTarget:(FBSimulator *)target
 {
   NSError *error = nil;
-  FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:target error:&error];
-  NSAssert(launchCtlBinary, @"Could not find path for launchctl binary with error %@", error);
-  return [[FBSimulatorLaunchCtlCommands alloc] initWithSimulator:target launchCtlBinary:launchCtlBinary];
+  NSString *launchctlLaunchPath = [self launchCtlLaunchPathForSimulator:target error:&error];
+  NSAssert(launchctlLaunchPath, @"Could not find path for launchctl binary with error %@", error);
+  return [[FBSimulatorLaunchCtlCommands alloc] initWithSimulator:target launchctlLaunchPath:launchctlLaunchPath];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary
+- (instancetype)initWithSimulator:(FBSimulator *)simulator launchctlLaunchPath:(NSString *)launchctlLaunchPath
 {
   self = [super init];
   if (!self) {
@@ -53,20 +55,9 @@
   }
 
   _simulator = simulator;
-  _launchCtlBinary = launchCtlBinary;
+  _launchctlLaunchPath = launchctlLaunchPath;
 
   return self;
-}
-
-#pragma mark Processes
-
-- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
-{
-  FBProcessInfo *launchdSim = self.simulator.launchdProcess;
-  if (!launchdSim) {
-    return @[];
-  }
-  return [self.simulator.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
 }
 
 #pragma mark Querying Services
@@ -239,15 +230,15 @@
 - (FBFuture<NSString *> *)runWithArguments:(NSArray<NSString *> *)arguments
 {
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
-  FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
-    configurationWithBinary:self.launchCtlBinary
+  FBProcessSpawnConfiguration *launchConfiguration = [[FBProcessSpawnConfiguration alloc]
+    initWithLaunchPath:self.launchctlLaunchPath
     arguments:arguments
     environment:@{}
-    output:FBProcessOutputConfiguration.outputToDevNull
-    mode:FBAgentLaunchModeDefault];
+    io:FBProcessIO.outputToDevNull
+    mode:FBProcessSpawnModeDefault];
 
   // Spawn and get the output
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchConsumingStdout:launchConfiguration];
+  return [FBProcessSpawnCommandHelpers launchConsumingStdout:launchConfiguration withCommands:self.simulator];
 }
 
 @end

@@ -1,4 +1,4 @@
-/*
+  /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -11,6 +11,14 @@
 #import <FBControlCore/FBTask.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ An enum for Compression types
+ */
+typedef NSString *FBCompressionFormat NS_STRING_ENUM;
+extern FBCompressionFormat const FBCompressionFormatGZIP;
+extern FBCompressionFormat const FBCompressionFormatZSTD;
+
 
 @class FBProcessInput;
 
@@ -39,15 +47,17 @@ NS_ASSUME_NONNULL_BEGIN
  The stream can be a:
  - An uncompressed tar.
  - A gzipped tar.
+ - A zstd compressed tar
  - A zip.
 
  @param stream the stream of the archive.
  @param extractPath the extraction path
  @param queue the queue to do work on
  @param logger the logger to log to
+ @param compression compression format used by client
  @return a Future wrapping the extracted tar destination.
  */
-+ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression;
 
 /**
  Extracts a gzip from a stream to a single file.
@@ -65,6 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
  A plain gzip wrapping a single file is preferred when there's only a single file to transfer.
  Read the input stream to obtain all of the gzip output of the file.
+ To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
  @param queue the queue to do work on
@@ -76,6 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a gzipped tar archive, returning an task that has an NSInputStream attached to stdout.
  Read the input stream to obtain the gzipped tar output.
+ To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
  @param queue the queue to do work on

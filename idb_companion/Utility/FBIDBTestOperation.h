@@ -10,6 +10,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBXCTestReporterConfiguration;
+
 @protocol FBXCTestReporter;
 
 typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
@@ -28,7 +30,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
  */
 @interface FBIDBTestOperation : NSObject <FBiOSTargetOperation>
 
-- (instancetype)initWithConfiguration:(id)configuration resultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
+- (instancetype)initWithConfiguration:(id)configuration reporterConfiguration:(FBXCTestReporterConfiguration *)reporterConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger completed:(FBFuture<NSNull *> *)completed queue:(dispatch_queue_t)queue;
 
 /**
  The Execution State.
@@ -46,24 +48,14 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 /**
- The path to the result bundle
-*/
-@property (nonatomic, nullable, copy, readonly) NSString *resultBundlePath;
-
-/**
  The reporter to report to.
 */
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 
 /**
- The path to the coverage file
+ The configuration of the reporter.
 */
-@property (nonatomic, nullable, copy, readonly) NSString *coveragePath;
-
-/**
- The path to the app binary
-*/
-@property (nonatomic, nullable, copy, readonly) NSString *binaryPath;
+@property (nonatomic, strong, readonly) FBXCTestReporterConfiguration *reporterConfiguration;
 
 @end
 

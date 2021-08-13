@@ -7,7 +7,6 @@
 
 #import <FBSimulatorControl/FBSimulatorSet.h>
 
-@class FBSimulatorContainerApplicationLifecycleStrategy;
 @class FBSimulatorInflationStrategy;
 @class FBSimulatorNotificationUpdateStrategy;
 
@@ -18,7 +17,6 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 @property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 @property (nonatomic, strong, readonly) FBSimulatorInflationStrategy *inflationStrategy;
-@property (nonatomic, strong, readonly) FBSimulatorContainerApplicationLifecycleStrategy *containerApplicationStrategy;
 @property (nonatomic, strong, readonly) FBSimulatorNotificationUpdateStrategy *notificationUpdateStrategy;
 
 @end

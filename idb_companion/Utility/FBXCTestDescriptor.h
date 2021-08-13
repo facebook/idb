@@ -20,26 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- Read and expand contents of a xctestrun file
- */
-@interface FBXCTestRunFileReader : NSObject
-
-#pragma mark Public Methods
-
-/**
- Read a xctestrun file and expand placeholders
-
- @param xctestrunURL URL of a xctestrun file
- @param path auxiliary directory for the test target
- @param error an error out for any oeeor that occurs
- @return a dictionary with expanded xctestrun contents if the xctestrun file could be read successfully
- */
-+ (nullable NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error;
-
-@end
-
-
-/**
  Describes the necessary information to start a test run.
  */
 @interface FBXCTestRunRequest : NSObject
@@ -57,9 +37,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
  @param reportActivities if set activities and their data will be reported
  @param collectCoverage will collect llvm coverage data
+ @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
 
 /**
 The Initializer for App Tests.
@@ -75,7 +56,7 @@ The Initializer for App Tests.
  @param collectCoverage will collect llvm coverage data
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities collectCoverage:(BOOL)collectCoverage;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
 
 /**
 The Initializer for UI Tests.
@@ -92,7 +73,7 @@ The Initializer for UI Tests.
  @param collectCoverage will collect llvm coverage data
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities  collectCoverage:(BOOL)collectCoverage;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
 
 #pragma mark Properties
 
@@ -146,16 +127,30 @@ The Initializer for UI Tests.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *testTimeout;
 
-
 /**
  If set activities and their data will be reported
  */
 @property (nonatomic, assign, readonly) BOOL reportActivities;
 
 /**
+ Whether to report activities or not.
+ */
+@property (nonatomic, assign, readonly) BOOL reportAttachments;
+
+/**
  If set llvm coverage data will be collected
  */
 @property (nonatomic, assign, readonly) BOOL collectCoverage;
+
+/**
+ If set tests' output logs will be collected
+ */
+@property (nonatomic, assign, readonly) BOOL collectLogs;
+
+/**
+ If set tests' would stop after Run and wait for a debugger to be attached.
+ */
+@property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 /**
  Starts the test operation.
@@ -221,12 +216,12 @@ The Initializer for UI Tests.
 
  @param request the xctest run request
  @param testApps the materialized Applications that are used as a part of testing.
- @param shims the shims to use for relevant test runs
  @param logger the logger to log to
- @param error an error out for any error that occurs
- @return a test launch configuration if constructed successfully.
+ @param logDirectoryPath the path to the log directory, if present.
+ @param queue the queue to be used for async operations
+ @return a Future wrapping the test launch configuration if constructed successfully or an error.
  */
-- (nullable FBTestLaunchConfiguration *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps shims:(nullable FBXCTestShimConfiguration *)shims logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(nullable NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 /**
  Obtains the Test Application Components for the provided target and request

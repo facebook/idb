@@ -65,12 +65,11 @@
   }
   [derived addObjectsFromArray:arguments];
 
-  return [[[[FBTaskBuilder
+  return [[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/xcrun"
     arguments:derived]
     withStdOutToLogger:self.logger]
-    withStdErrToLogger:self.logger]
-    withAcceptableExitCodes:[NSSet setWithObject:@(0)]];
+    withStdErrToLogger:self.logger];
 }
 
 @end

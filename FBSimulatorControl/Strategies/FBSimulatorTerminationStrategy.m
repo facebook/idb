@@ -14,28 +14,21 @@
 
 #import <FBControlCore/FBControlCoreLogger.h>
 
-#import <XCTestBootstrap/FBTestManager.h>
-
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorConnection.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorPredicates.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
 
@@ -45,15 +38,12 @@
 
 + (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:set.processFetcher.processFetcher workQueue:dispatch_get_main_queue() logger:set.logger];
-  return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
+  return [[self alloc] initWithSet:set configuration:set.configuration logger:set.logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
-  NSParameterAssert(processFetcher);
   NSParameterAssert(configuration);
-  NSParameterAssert(processTerminationStrategy);
 
   self = [super init];
   if (!self) {
@@ -62,9 +52,7 @@
 
   _set = set;
   _configuration = configuration;
-  _processFetcher = processFetcher;
   _logger = logger;
-  _processTerminationStrategy = processTerminationStrategy;
 
   return self;
 }
@@ -76,9 +64,8 @@
   // Confirm that the Simulators belong to the set
   for (FBSimulator *simulator in simulators) {
     if (simulator.set != self.set) {
-      return [[[FBSimulatorError
+      return [[FBSimulatorError
         describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
-        inSimulator:simulator]
         failFuture];
     }
   }
@@ -105,74 +92,21 @@
   return [FBFuture futureWithFutures:futures];
 }
 
-- (FBFuture<NSNull *> *)killSpuriousSimulators
-{
-  NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
-    [NSCompoundPredicate andPredicateWithSubpredicates:@[
-      [FBSimulatorProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-      [FBSimulatorProcessFetcher simulatorApplicationProcessesLaunchedBySimulatorControl]
-    ]
-  ]];
-
-  return [[self
-    killSimulatorProcessesMatchingPredicate:predicate]
-    rephraseFailure:@"Could not kill spurious simulators"];
-}
-
 #pragma mark Private
 
 - (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
-  // The Simulator Connection for this process should be tidied up first.
-  FBFuture<NSNull *> *disconnectFuture = [simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger];
-
-  // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
-  // This prevents 'Zombie' Simulator.app from existing.
-  FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
-  FBFuture<NSNull *> *simulatorAppProcessKillFuture = nil;
-  if (simulatorProcess) {
-    [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.description, simulatorProcess];
-    simulatorAppProcessKillFuture = [[self.processTerminationStrategy
-      killProcess:simulatorProcess]
-      onQueue:simulator.workQueue map:^(id _) {
-        simulator.containerApplication = nil;
-        return NSNull.null;
-      }];
-  } else {
-    [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.description];
-    simulatorAppProcessKillFuture = FBFuture.empty;
-  }
-
   // Shutdown will:
   // 1) Wait for the Connection to the Simulator to Disconnect.
   // 2) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
   // 3) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-  return [[[disconnectFuture
-    chainReplace:simulatorAppProcessKillFuture]
+  return [[simulator
+    disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger]
     onQueue:simulator.workQueue fmap:^(id _) {
       return [[FBSimulatorShutdownStrategy
         strategyWithSimulator:simulator]
         shutdown];
-    }]
-    onQueue:simulator.workQueue map:^(id _) {
-      simulator.launchdProcess = nil;
-      return simulator;
     }];
-}
-
-- (FBFuture<NSNull *> *)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate
-{
-  NSArray<FBProcessInfo *> *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
-  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-
-  for (FBProcessInfo *process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    FBFuture<NSNull *> *future = [[self.processTerminationStrategy
-      killProcess:process]
-      delay:1];
-    [futures addObject:future];
-  }
-  return [FBFuture futureWithFutures:futures];
 }
 
 @end

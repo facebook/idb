@@ -3,14 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		71B9E0D9268C61B800D40A91 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
 		EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
 		EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
-		EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* ReporterEvents.h */; };
-		EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* ReporterEvents.h */; };
+		EED62EE220D12242006E86E5 /* FBXCTestConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* FBXCTestConstants.h */; };
+		EED62EE320D12242006E86E5 /* FBXCTestConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EE020D12242006E86E5 /* FBXCTestConstants.h */; };
 		EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
 		EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE120D12242006E86E5 /* XCTestReporterShim.m */; };
 		EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
@@ -34,7 +35,7 @@
 		EED62ED820D12209006E86E5 /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
 		EED62ED920D12209006E86E5 /* Shimulator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shimulator.xcconfig; sourceTree = "<group>"; };
 		EED62EDB20D12217006E86E5 /* XCTestPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestPrivate.h; sourceTree = "<group>"; };
-		EED62EE020D12242006E86E5 /* ReporterEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
+		EED62EE020D12242006E86E5 /* FBXCTestConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBXCTestConstants.h; path = ../Tools/FBXCTestConstants.h; sourceTree = "<group>"; };
 		EED62EE120D12242006E86E5 /* XCTestReporterShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestReporterShim.m; sourceTree = "<group>"; };
 		EED62EE620D1224C006E86E5 /* TestCrashShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestCrashShim.m; sourceTree = "<group>"; };
 		EED62EE920D12431006E86E5 /* FBRuntimeTools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBRuntimeTools.m; sourceTree = "<group>"; };
@@ -116,7 +117,7 @@
 		EED62ED720D12147006E86E5 /* TestReporterShim */ = {
 			isa = PBXGroup;
 			children = (
-				EED62EE020D12242006E86E5 /* ReporterEvents.h */,
+				EED62EE020D12242006E86E5 /* FBXCTestConstants.h */,
 				EED62EE120D12242006E86E5 /* XCTestReporterShim.m */,
 			);
 			path = TestReporterShim;
@@ -140,7 +141,7 @@
 			files = (
 				EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */,
-				EED62EE220D12242006E86E5 /* ReporterEvents.h in Headers */,
+				EED62EE220D12242006E86E5 /* FBXCTestConstants.h in Headers */,
 				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -152,7 +153,7 @@
 			files = (
 				EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */,
-				EED62EE320D12242006E86E5 /* ReporterEvents.h in Headers */,
+				EED62EE320D12242006E86E5 /* FBXCTestConstants.h in Headers */,
 				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -169,6 +170,7 @@
 				AA017F3D1BD7776B00F45E9D /* Sources */,
 				AA017F3E1BD7776B00F45E9D /* Frameworks */,
 				AA017F3F1BD7776B00F45E9D /* Headers */,
+				71B9E0DB268C792900D40A91 /* Print Shim Path */,
 			);
 			buildRules = (
 			);
@@ -186,6 +188,7 @@
 				AA56EADE1EEF08720062C2BC /* Sources */,
 				AA56EADF1EEF08720062C2BC /* Frameworks */,
 				AA56EAE01EEF08720062C2BC /* Headers */,
+				71B9E0DC268C7A4600D40A91 /* Print Shim Path */,
 			);
 			buildRules = (
 			);
@@ -245,7 +248,47 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi";
+			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi\n";
+		};
+		71B9E0DB268C792900D40A91 /* Print Shim Path */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Print Shim Path";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo SHIM_DYLIB_PATH=$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+			showEnvVarsInLog = 0;
+		};
+		71B9E0DC268C7A4600D40A91 /* Print Shim Path */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Print Shim Path";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo SHIM_DYLIB_PATH=$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -269,6 +312,7 @@
 				EED62EEE20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
 				EED62EFA20D1243E006E86E5 /* FBXCTestMain.m in Sources */,
 				EED62EF420D12432006E86E5 /* FBDebugLog.m in Sources */,
+				71B9E0D9268C61B800D40A91 /* TestCrashShim.m in Sources */,
 				EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

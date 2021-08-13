@@ -119,9 +119,8 @@
     onQueue:queue resolveUntil:^{
       FBProcessInfo *process = [self processInfoFor:processIdentifier];
       if (!process) {
-        return [[[FBControlCoreError
+        return [[FBControlCoreError
           describeFormat:@"Could not obtain process info for %d", processIdentifier]
-          noLogging]
           failFuture];
       }
       return [FBFuture futureWithResult:process];

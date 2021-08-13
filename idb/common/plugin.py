@@ -8,11 +8,12 @@ import asyncio
 import importlib
 import logging
 import os
+import ssl
 from argparse import ArgumentParser
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from idb.common.command import Command
 from idb.common.types import LoggingMetadata
@@ -166,3 +167,13 @@ def get_commands() -> List[Command]:
         commands.extend(method())
 
     return commands
+
+
+def channel_ssl_context() -> Optional[ssl.SSLContext]:
+    for plugin in PLUGINS:
+        method = getattr(plugin, "channel_ssl_context", None)
+        if not method:
+            continue
+        return method()
+
+    return None

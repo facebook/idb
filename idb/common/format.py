@@ -24,17 +24,24 @@ from idb.common.types import (
 from treelib import Tree
 
 
+def test_info_to_status(test: TestRunInfo) -> str:
+    if test.passed:
+        return "passed"
+    if test.crashed:
+        return "crashed"
+    return "failed"
+
+
 def human_format_test_info(test: TestRunInfo) -> str:
     output = ""
 
     info_list = [
         f"{test.bundle_name} - {test.class_name}/{test.method_name}",
-        f"Passed: {test.passed}",
-        f"Crashed: {test.crashed}",
+        f"Status: {test_info_to_status(test)}",
         f"Duration: {test.duration}",
     ]
     failure_info = test.failure_info
-    if failure_info:
+    if failure_info is not None and len(failure_info.message):
         info_list += [
             f"Failure message: {failure_info.message}",
             f"Location {failure_info.file}:{failure_info.line}",
@@ -45,8 +52,9 @@ def human_format_test_info(test: TestRunInfo) -> str:
         log_lines = indent("\n".join(test.logs), " " * 4)
         output += "\n" + indent("Logs:\n" + log_lines, " " * 4)
 
-    if test.activityLogs:
-        output += f"\n{human_format_activities(test.activityLogs)}"
+    activities = test.activityLogs
+    if activities is not None and len(activities):
+        output += f"\n{human_format_activities(activities)}"
     return output
 
 
@@ -79,8 +87,7 @@ def human_format_activities(activities: List[TestActivity]) -> str:
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
-    failure_info = test.failure_info
-    data = {
+    data: Dict[str, Any] = {
         "bundleName": test.bundle_name,
         "className": test.class_name,
         "methodName": test.method_name,
@@ -88,17 +95,20 @@ def json_format_test_info(test: TestRunInfo) -> str:
         "duration": test.duration,
         "passed": test.passed,
         "crashed": test.crashed,
-        "failureInfo": {
+        "status": test_info_to_status(test),
+    }
+    failure_info = test.failure_info
+    if failure_info is not None and len(failure_info.message):
+        data["failureInfo"] = {
             "message": failure_info.message,
             "file": failure_info.file,
             "line": failure_info.line,
         }
-        if failure_info
-        else None,
-        "activityLogs": [
-            json_format_activity(activity) for activity in (test.activityLogs or [])
-        ],
-    }
+    activities = test.activityLogs
+    if activities is not None and len(activities):
+        data["activityLogs"] = [
+            json_format_activity(activity) for activity in activities
+        ]
     return json.dumps(data)
 
 

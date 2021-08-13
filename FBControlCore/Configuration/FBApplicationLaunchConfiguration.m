@@ -5,35 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBProcessLaunchConfiguration.h"
-#import "FBProcessOutputConfiguration.h"
-
-#import <FBControlCore/FBControlCore.h>
+#import "FBApplicationLaunchConfiguration.h"
 
 @implementation FBApplicationLaunchConfiguration
 
-+ (instancetype)configurationWithApplication:(FBBundleDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger io:(FBProcessIO *)io launchMode:(FBApplicationLaunchMode)launchMode
 {
-  return [self configurationWithBundleID:application.identifier bundleName:application.name arguments:arguments environment:environment output:output launchMode:FBApplicationLaunchModeFailIfRunning];
-}
-
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
-{
-  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output launchMode:FBApplicationLaunchModeFailIfRunning];
-}
-
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
-{
-  if (!bundleID || !arguments || !environment) {
-    return nil;
-  }
-
-  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:NO output:output launchMode:launchMode];
-}
-
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output launchMode:(FBApplicationLaunchMode)launchMode
-{
-  self = [super initWithArguments:arguments environment:environment output:output];
+  self = [super initWithArguments:arguments environment:environment io:io];
   if (!self) {
     return nil;
   }
@@ -44,49 +22,6 @@
   _launchMode = launchMode;
 
   return self;
-}
-
-- (instancetype)withWaitForDebugger:(NSError **)error
-{
-  if (self.launchMode == FBApplicationLaunchModeForegroundIfRunning) {
-    return [[FBControlCoreError
-      describe:@"Can't wait for a debugger when launchMode = FBApplicationLaunchModeForegroundIfRunning"]
-      fail:error];
-  }
-  return [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:self.bundleID
-    bundleName:self.bundleName
-    arguments:self.arguments
-    environment:self.environment
-    waitForDebugger:YES
-    output:self.output
-    launchMode:self.launchMode];
-}
-
-- (instancetype)withOutput:(FBProcessOutputConfiguration *)output
-{
-  return [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:self.bundleID
-    bundleName:self.bundleName
-    arguments:self.arguments
-    environment:self.environment
-    waitForDebugger:self.waitForDebugger
-    output:output
-    launchMode:self.launchMode];
-}
-
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return [[self.class alloc]
-    initWithBundleID:self.bundleID
-    bundleName:self.bundleName
-    arguments:self.arguments
-    environment:self.environment
-    waitForDebugger:self.waitForDebugger
-    output:self.output
-    launchMode:self.launchMode];
 }
 
 #pragma mark NSObject

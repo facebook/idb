@@ -14,7 +14,6 @@
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
-#import "FBTask+Helpers.h"
 #import "FBTaskBuilder.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
@@ -122,11 +121,12 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
-  return [[[[[[[FBTaskBuilder
+  return [[[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/instruments"]
     withArguments:arguments]
     withStdOutToLogger:compositeLogger]
     withStdErrToLogger:compositeLogger]
+    withTaskLifecycleLoggingTo:logger]
     start]
     onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
@@ -178,7 +178,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
       return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:self.configuration.timings.terminateTimeout logger:self.logger];
     }] chainReplace:[[self.task exitCode]
     onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
-      if ([exitCode isEqualToNumber:@(0)]) {
+      if ([exitCode isEqualToNumber:@0]) {
         return [FBFuture futureWithResult:self.traceDir];
       } else {
         return [[FBControlCoreError describeFormat:@"Instruments exited with failure - status: %@", exitCode] failFuture];
@@ -205,22 +205,10 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     withStdInConnected]
     withStdOutToLogger:logger]
     withStdErrToLogger:logger]
-    withAcceptableExitCodes:[NSSet setWithObject:@0]]
-    runUntilCompletion]
+    withTaskLifecycleLoggingTo:logger]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue map:^(id _) {
       return outputTraceFile;
-    }];
-}
-
-#pragma mark FBiOSTargetOperation
-
-- (FBFuture<NSNull *> *)completed
-{
-  return [[[self.task.completed
-    mapReplace:NSNull.null]
-    shieldCancellation]
-    onQueue:self.queue respondToCancellation:^{
-      return [[self stop] mapReplace:NSNull.null];
     }];
 }
 

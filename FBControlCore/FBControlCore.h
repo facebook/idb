@@ -7,15 +7,12 @@
 
 #import <FBControlCore/FBAccessibilityCommands.h>
 #import <FBControlCore/FBAccessibilityTraits.h>
-#import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBBundleDescriptor+Application.h>
-#import <FBControlCore/FBBundleDescriptor.h>
-#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBCodesignProvider.h>
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
@@ -40,7 +37,6 @@
 #import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBFileCommands.h>
 #import <FBControlCore/FBFileContainer.h>
-#import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFileWriter.h>
 #import <FBControlCore/FBFuture+Sync.h>
@@ -53,7 +49,6 @@
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
-#import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
@@ -68,20 +63,20 @@
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessIO.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
-#import <FBControlCore/FBProcessOutputConfiguration.h>
+#import <FBControlCore/FBProcessSpawnCommands.h>
+#import <FBControlCore/FBProcessSpawnConfiguration.h>
 #import <FBControlCore/FBProcessStream.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBProvisioningProfileCommands.h>
-#import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBServiceManagement.h>
-#import <FBControlCore/FBSettingsApproval.h>
+#import <FBControlCore/FBSettingsCommands.h>
 #import <FBControlCore/FBSocketServer.h>
-#import <FBControlCore/FBTask+Helpers.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBVideoFileWriter.h>
 #import <FBControlCore/FBVideoStream.h>
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
@@ -91,4 +86,7 @@
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTestShimConfiguration.h>
+#import <FBControlCore/FBXCTraceConfiguration.h>
+#import <FBControlCore/FBXCTraceOperation.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>

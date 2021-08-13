@@ -21,7 +21,7 @@
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, nullable, readwrite) id<FBiOSTargetOperation> operation;
+@property (nonatomic, assign, readwrite) BOOL runningXcodeBuildOperation;
 
 @end
 
@@ -50,39 +50,31 @@
 
 #pragma mark FBXCTestCommands Implementation
 
-- (FBFuture<id<FBiOSTargetOperation>> *)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
-  if (self.operation) {
+  if (self.runningXcodeBuildOperation) {
     return [[FBDeviceControlError
       describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
       failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
-  return [[[FBXcodeBuildOperation
+  return [[[[FBXcodeBuildOperation
     terminateAbandonedXcodebuildProcessesForUDID:self.device.udid processFetcher:self.processFetcher queue:self.device.workQueue logger:logger]
     onQueue:self.device.workQueue fmap:^(id _) {
+      self.runningXcodeBuildOperation = YES;
       // Then start the task. This future will yield when the task has *started*.
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
-    onQueue:self.device.workQueue map:^(FBTask *task) {
+    onQueue:self.device.workQueue fmap:^(FBTask *task) {
       // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
-      return [self _testOperationStarted:task configuration:testLaunchConfiguration reporter:reporter logger:logger];
+      return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.device logger:logger];
+    }]
+    onQueue:self.device.workQueue chain:^(FBFuture *future) {
+      self.runningXcodeBuildOperation = NO;
+      return future;
     }];
-}
-
-- (NSArray<id<FBiOSTargetOperation>> *)testOperations
-{
-  id<FBiOSTargetOperation> operation = self.operation;
-  return operation ? @[operation] : @[];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
-{
-  return [[FBDeviceControlError
-    describeFormat:@"Cannot list the tests in bundle %@ as this is not supported on devices", bundlePath]
-    failFuture];
 }
 
 - (FBFutureContext<NSNumber *> *)transportForTestManagerService
@@ -118,39 +110,9 @@
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath
     simDeviceSet:nil
+    macOSTestShimPath:nil
     queue:self.device.workQueue
     logger:[logger withName:@"xcodebuild"]];
-}
-
-- (id<FBiOSTargetOperation>)_testOperationStarted:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
-{
-  FBFuture<NSNull *> *completed = [[[[task
-    completed]
-    onQueue:self.device.workQueue fmap:^FBFuture<NSNull *> *(id _) {
-      // This will execute only if the operation completes successfully.
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:self.device reporter:reporter logger:logger];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      [logger log:@"Reporting test results"];
-      [reporter testManagerMediatorDidFinishExecutingTestPlan:nil];
-      return FBFuture.empty;
-    }]
-    onQueue:self.device.workQueue chain:^(FBFuture *future) {
-      // Always perform this, whether the operation was successful or not.
-      [logger logFormat:@"Test Operation has completed for %@, with state '%@' removing it as the sole operation for this target", future, configuration];
-      self.operation = nil;
-      return future;
-    }];
-
-  self.operation = FBiOSTargetOperationFromFuture(completed);
-  [logger logFormat:@"Test Operation %@ has started for %@, storing it as the sole operation for this target", task, configuration];
-
-  return self.operation;
 }
 
 @end

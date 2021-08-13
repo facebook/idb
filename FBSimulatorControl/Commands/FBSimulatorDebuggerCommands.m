@@ -37,10 +37,18 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-property-ivar"
+
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.task.completed mapReplace:NSNull.null];
+  FBTask *task = self.task;
+  return [[[task
+    statLoc]
+    mapReplace:NSNull.null]
+    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) respondToCancellation:^{
+      return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
+    }];
 }
+
 #pragma clang diagnostic pop
 
 @end
@@ -85,11 +93,14 @@
 
 - (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
-  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:application arguments:@[]
+  FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:application.identifier
+    bundleName:application.name
+    arguments:@[]
     environment:@{}
     waitForDebugger:YES
-    output:FBProcessOutputConfiguration.outputToDevNull];
+    io:FBProcessIO.outputToDevNull
+    launchMode:FBApplicationLaunchModeFailIfRunning];
   return [[[self.simulator
     launchApplication:configuration]
     onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedApplication> process) {

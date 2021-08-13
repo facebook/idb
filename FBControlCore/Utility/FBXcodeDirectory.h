@@ -19,18 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Implementations
 
 /**
- The Xcode install path, using xcode-select(1).
+ The Xcode developer directory, from using xcode-select(1).
  */
-@property (nonatomic, copy, class, readonly) FBXcodeDirectory *xcodeSelectFromCommandLine;
-
-#pragma mark Public Methods
-
-/**
- Finds the file path of the Xcode install.
-
- @return a future that resolves with the path
- */
-- (FBFuture<NSString *> *)xcodePath;
++ (FBFuture<NSString *> *)xcodeSelectDeveloperDirectory;
 
 @end
 

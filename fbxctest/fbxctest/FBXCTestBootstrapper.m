@@ -49,7 +49,7 @@
   [self.logger.debug logFormat:@"xcode configuration: %@", FBXcodeConfiguration.description];
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine
     commandLineFromArguments:arguments
-    processUnderTestEnvironment:@{}
+    processUnderTestEnvironment:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment
     workingDirectory:workingDirectory
     error:&error];
   if (!commandLine) {

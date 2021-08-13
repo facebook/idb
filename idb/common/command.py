@@ -36,6 +36,9 @@ class Command(metaclass=ABCMeta):
     async def run(self, args: Namespace) -> None:
         ...
 
+    def resolve_command_from_args(self, args: Namespace) -> "Command":
+        return self
+
 
 class CompositeCommand(Command, metaclass=ABCMeta):
     def __init__(self) -> None:
@@ -72,7 +75,7 @@ class CompositeCommand(Command, metaclass=ABCMeta):
             )
             command.add_parser_arguments(sub_parser)
 
-    def _get_subcommand_for_args(self, args: Namespace) -> Command:
+    def resolve_command_from_args(self, args: Namespace) -> Command:
         subcmd_name = getattr(args, self.name)
         parser = self.parser
         if parser is not None and subcmd_name is None:
@@ -81,10 +84,10 @@ class CompositeCommand(Command, metaclass=ABCMeta):
             raise Exception("Should not reach here")
         subcmd = self.subcommands_by_name[subcmd_name]
         assert subcmd is not None, "subcommand %r doesn't exist" % subcmd_name
-        return subcmd
+        return subcmd.resolve_command_from_args(args)
 
     async def run(self, args: Namespace) -> None:
-        return await self._get_subcommand_for_args(args).run(args)
+        return await self.resolve_command_from_args(args).run(args)
 
 
 class CommandGroup(CompositeCommand):

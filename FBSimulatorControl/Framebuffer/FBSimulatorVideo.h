@@ -12,46 +12,34 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBAppleSimctlCommandExecutor;
-@class FBFramebuffer;
-@class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
 
 /**
- Controls the Recording of a Simulator's Framebuffer to a Video.
+ Implementations of recording a Simulator's screen to a video file.
  */
 @interface FBSimulatorVideo : NSObject <FBiOSTargetOperation>
-
-/**
- The Designated Initializer.
-
- @param configuration the configuration to use for encoding.
- @param framebuffer the Framebuffer to consume
- @param logger the logger object to log events to, may be nil.
- @return a new FBSimulatorVideo instance.
- */
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration framebuffer:(FBFramebuffer *)framebuffer logger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Initializer, for doing simulator video recording using Apple's simctl
 
  @param simctlExecutor the simctl executor
+ @param filePath the file path to write to.
  @param logger the logger object to log events to, may be nil.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
 /**
- Starts Recording Video.
+ Starts recording video.
 
- @param filePath the file path to record to.
  @return A Future that resolves when recording has started.
  */
-- (FBFuture<NSNull *> *)startRecordingToFile:(NSString *)filePath;
+- (FBFuture<NSNull *> *)startRecording;
 
 /**
- Stops Recording Video.
+ Stops recording video.
 
  @return A Future that resolves when recording has stopped.
  */

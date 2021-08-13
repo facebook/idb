@@ -64,26 +64,6 @@ extern NSString *const FBControlCoreErrorDomain;
 - (instancetype)noRecursiveDescription;
 
 /**
- Attaches a Logger to the error.
- A logger will will receive error messages for any errors that occur.
- By default this will be the Global Debug logger.
- Logging can be suppressed by providing a nil logger argument.
-
- @param logger the logger to log to
- @return the receiver, for chaining.
- */
-- (instancetype)logger:(id<FBControlCoreLogger>)logger;
-
-/**
- Prevents automatic logging of the error.
- This is important for errors that are expected or otherwise handled.
- In particular is useful for tight-loops that generate errors, but should not be logged on every iteration.
-
- @return the receiver, for chaining.
- */
-- (instancetype)noLogging;
-
-/**
  Updates the Error Domain of the receiver.
 
  @param domain the error domain to update with.

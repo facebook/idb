@@ -16,11 +16,6 @@
 
 #pragma mark Private
 
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  return [self bundleFromPath:[self pathForSystemApplicationNamed:appName simulator:simulator] error:error];
-}
-
 + (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
@@ -30,15 +25,6 @@
 }
 
 #pragma mark Private
-
-+ (NSString *)pathForSystemApplicationNamed:(NSString *)name simulator:(FBSimulator *)simulator
-{
-  NSString *runtimeRoot = simulator.device.runtime.root;
-  return [[[runtimeRoot
-    stringByAppendingPathComponent:@"Applications"]
-    stringByAppendingPathComponent:name]
-    stringByAppendingPathExtension:@"app"];
-}
 
 + (NSString *)pathForSimulatorApplication
 {

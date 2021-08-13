@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A composite of all attachments.
+ A result of "attaching" to an IO object, realized as file descriptors.
  */
 @interface FBProcessIOAttachment : NSObject
 
@@ -33,10 +33,39 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, nullable, readonly) FBProcessStreamAttachment *stdErr;
 
+/**
+ Detach from all the streams.
+ This may be called multiple times, the underlying streams will only detach once per instance.
+ */
+- (FBFuture<NSNull *> *)detach;
+
 @end
 
 /**
- A composite of FBProcessStream.
+ A result of "attaching" to an IO object, realized as file paths.
+ */
+@interface FBProcessFileAttachment : NSObject
+
+/**
+ The attachment for stdout.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdOut;
+
+/**
+ The attachment for stderr.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdErr;
+
+/**
+ Detach from all the streams.
+ This may be called multiple times, the underlying streams will only detach once per instance.
+ */
+- (FBFuture<NSNull *> *)detach;
+
+@end
+
+/**
+ A composite of streams for the stdin, stdout and stderr streams connected to a process.
  */
 @interface FBProcessIO : NSObject
 
@@ -51,6 +80,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBProcessIO instance.
  */
 - (instancetype)initWithStdIn:(nullable FBProcessInput *)stdIn stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr;
+
+/**
+ An IO object that accepts no input and returns no output.
+ */
++ (instancetype)outputToDevNull;
 
 #pragma mark Properties
 
@@ -77,16 +111,19 @@ The FBProcessOutput for stdout.
 #pragma mark Methods
 
 /**
- Attach to all the streams, returning the composite attachment.
+ Attach to all the streams, returning the composite attachment for file descriptors.
  Will error if any of the stream attachments error.
  If any of the stream attachments error, then any succeeding attachments will detach.
+ This should only be called once. Calling attach more than once per instance will fail.
  */
 - (FBFuture<FBProcessIOAttachment *> *)attach;
 
 /**
- Detach from all the streams.
+ Attach to all the streams, returning the composite attachment for file paths.
+ Will error if any of the stream attachments error.
+ If any of the stream attachments error, then any succeeding attachments will detach.
  */
-- (FBFuture<NSNull *> *)detach;
+- (FBFuture<FBProcessFileAttachment *> *)attachViaFile;
 
 @end
 

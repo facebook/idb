@@ -87,17 +87,31 @@ using namespace std;
   FBMutableFuture<NSDictionary<NSString *, id> *> *serverStarted = FBMutableFuture.future;
   dispatch_async(queue, ^(void){
     NSString *domainSocket = self.ports.grpcDomainSocket;
+    NSString *tlsCertPath = self.ports.tlsCertPath;
     std::string server_address("0.0.0.0:" + std::to_string(self.ports.grpcPort));
     if (domainSocket) {
       server_address = "unix:" + std::string(self.ports.grpcDomainSocket.UTF8String);
       [self.logger logFormat:@"Starting GRPC server at path %@", domainSocket];
     } else {
       [self.logger logFormat:@"Starting GRPC server on port %u", self.ports.grpcPort];
+      if (tlsCertPath) {
+        [self.logger logFormat:@"Starting GRPC server with TLS path %@", tlsCertPath];
+      }
     }
     FBIDBServiceHandler service = FBIDBServiceHandler(self.commandExecutor, self.target, self.eventReporter);
     int selectedPort = 0;
+    std::shared_ptr<grpc::ServerCredentials> server_cred = grpc::InsecureServerCredentials();
+    if (tlsCertPath && !domainSocket) {
+      grpc::SslServerCredentialsOptions sslOpts;
+      NSData *rawCertData = [NSData dataWithContentsOfFile:tlsCertPath];
+      NSString *certAsString = [[NSString alloc] initWithData:rawCertData encoding:NSUTF8StringEncoding];
+      std::string key = [certAsString UTF8String];
+      std::string cert = [certAsString UTF8String];
+      sslOpts.pem_key_cert_pairs.push_back({key, cert});
+      server_cred = grpc::SslServerCredentials(sslOpts);
+    }
     unique_ptr<Server> server(ServerBuilder()
-      .AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selectedPort)
+      .AddListeningPort(server_address, server_cred, &selectedPort)
       .RegisterService(&service)
       .SetResourceQuota(ResourceQuota("idb_resource.quota").SetMaxThreads(10))
       .SetMaxReceiveMessageSize(16777216) // 16MB (16 * 1024 * 1024). Default is 4MB (4 * 1024 * 1024)

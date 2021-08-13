@@ -13,6 +13,7 @@
 #import "FBConcurrentCollectionOperations.h"
 #import "NSPredicate+FBControlCore.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreLogger.h"
 
 @implementation FBCrashLog
 
@@ -31,6 +32,11 @@
   return self;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Crash Info: %@ \n Crash Report: %@\n", _info, _contents];
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -45,14 +51,18 @@
 
 #pragma mark Initializers
 
-+ (instancetype)fromCrashLogAtPath:(NSString *)crashPath
++ (instancetype)fromCrashLogAtPath:(NSString *)crashPath error:(NSError **)error
 {
   if (!crashPath) {
-    return nil;
+    return [[FBControlCoreError
+      describe:@"No crash path provided"]
+      fail:error];
   }
   FILE *file = fopen(crashPath.UTF8String, "r");
   if (!file) {
-    return nil;
+    return [[FBControlCoreError
+      describeFormat:@"Could not open file at path %@: %s", crashPath, strerror(errno)]
+      fail:error];
   }
 
   NSString *executablePath = nil;
@@ -63,7 +73,7 @@
   pid_t processIdentifier = -1;
   pid_t parentProcessIdentifier = -1;
 
-  if (![self extractFromFile:file executablePathOut:&executablePath identifierOut:&identifier processNameOut:&processName parentProcessNameOut:&parentProcessName processIdentifierOut:&processIdentifier parentProcessIdentifierOut:&parentProcessIdentifier dateOut:&date]) {
+  if (![self extractFromFile:file executablePathOut:&executablePath identifierOut:&identifier processNameOut:&processName parentProcessNameOut:&parentProcessName processIdentifierOut:&processIdentifier parentProcessIdentifierOut:&parentProcessIdentifier dateOut:&date error:error]) {
     fclose(file);
     return nil;
   }
@@ -113,7 +123,7 @@
     if (!file) {
       return NO;
     }
-    BOOL parsable = [self extractFromFile:file executablePathOut:nil identifierOut:nil processNameOut:nil parentProcessNameOut:nil processIdentifierOut:nil parentProcessIdentifierOut:nil dateOut:nil];
+    BOOL parsable = [self extractFromFile:file executablePathOut:nil identifierOut:nil processNameOut:nil parentProcessNameOut:nil processIdentifierOut:nil parentProcessIdentifierOut:nil dateOut:nil error:nil];
     fclose(file);
     return parsable;
   } else {
@@ -158,7 +168,7 @@
 
 #pragma mark Bulk Collection
 
-+ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
++ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date logger:(id<FBControlCoreLogger>)logger
 {
   NSMutableArray<FBCrashLogInfo *> *allCrashInfos = NSMutableArray.new;
 
@@ -168,7 +178,12 @@
       predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
       map:^ FBCrashLogInfo * (NSString *fileName) {
         NSString *path = [basePath stringByAppendingPathComponent:fileName];
-        return [FBCrashLogInfo fromCrashLogAtPath:path];
+        NSError *error = nil;
+        FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
+        if (!info) {
+          [logger logFormat:@"Error parsing log %@", error];
+        }
+        return info;
       }]
       filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
 
@@ -249,7 +264,7 @@
 
 static NSUInteger MaxLineSearch = 20;
 
-+ (BOOL)extractFromFile:(FILE *)file executablePathOut:(NSString **)executablePathOut identifierOut:(NSString **)identifierOut processNameOut:(NSString **)processNameOut parentProcessNameOut:(NSString **)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate **)dateOut
++ (BOOL)extractFromFile:(FILE *)file executablePathOut:(NSString **)executablePathOut identifierOut:(NSString **)identifierOut processNameOut:(NSString **)processNameOut parentProcessNameOut:(NSString **)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate **)dateOut error:(NSError **)error
 {
   // Buffers for the sscanf
   size_t lineSize = sizeof(char) * 4098;
@@ -291,8 +306,40 @@ static NSUInteger MaxLineSearch = 20;
   }
 
   free(line);
-  if (processName == nil || identifier == nil || parentProcessName == nil || executablePath == nil || processIdentifier == -1 || parentProcessIdentifier == -1 || date == nil) {
-    return NO;
+  if (processName == nil) {
+    return [[FBControlCoreError
+      describe:@"Missing process name in crash log"]
+      failBool:error];
+  }
+  if (identifier == nil) {
+    return [[FBControlCoreError
+      describe:@"Missing identifier in crash log"]
+      failBool:error];
+  }
+  if (parentProcessName == nil) {
+    return [[FBControlCoreError
+      describe:@"Missing process name in crash log"]
+      failBool:error];
+  }
+  if (executablePath == nil) {
+    return [[FBControlCoreError
+      describe:@"Missing executable path in crash log"]
+      failBool:error];
+  }
+  if (processIdentifier == -1) {
+    return [[FBControlCoreError
+      describe:@"Missing process identifier in crash log"]
+      failBool:error];
+  }
+  if (parentProcessIdentifier == -1) {
+    return [[FBControlCoreError
+      describe:@"Missing parent process identifier in crash log"]
+      failBool:error];
+  }
+  if (date == nil) {
+    return [[FBControlCoreError
+      describe:@"Missing date in crash log"]
+      failBool:error];
   }
   if (executablePathOut) {
     *executablePathOut = executablePath;
@@ -326,7 +373,7 @@ static NSUInteger MaxLineSearch = 20;
   if ([executablePath containsString:@".app"]) {
     return FBCrashLogInfoProcessTypeApplication;
   }
-  return FBCrashLogInfoProcessTypeCustomAgent;
+  return FBCrashLogInfoProcessTypeCustom;
 }
 
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
@@ -353,6 +400,8 @@ static NSUInteger MaxLineSearch = 20;
   dispatch_once(&onceToken, ^{
     dateFormatter = [NSDateFormatter new];
     dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS Z";
+    dateFormatter.lenient = YES;
+    dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
   });
   return dateFormatter;
 }

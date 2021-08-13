@@ -65,9 +65,10 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   if ([self hasIngestedCrashLogWithName:path.lastPathComponent]) {
     return nil;
   }
-  FBCrashLogInfo *crashLog = [FBCrashLogInfo fromCrashLogAtPath:path];
+  NSError *error = nil;
+  FBCrashLogInfo *crashLog = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
   if (!crashLog) {
-    [self.logger logFormat:@"Could not obtain crash info for %@", path];
+    [self.logger logFormat:@"Could not obtain crash info %@", error];
     return nil;
   }
   return  [self ingestCrashLog:crashLog];

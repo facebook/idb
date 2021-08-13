@@ -18,6 +18,7 @@ service CompanionService {
   rpc install (stream InstallRequest) returns (stream InstallResponse) {}
   rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
   rpc log (LogRequest) returns (stream LogResponse) {}
+  rpc xctrace_record (stream XctraceRecordRequest) returns (stream XctraceRecordResponse) {}
   // Interaction
   rpc accessibility_info (AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
   rpc focus (FocusRequest) returns (FocusResponse) {}
@@ -53,9 +54,10 @@ service CompanionService {
   rpc ls (LsRequest) returns (LsResponse) {}
   rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
   rpc mv (MvRequest) returns (MvResponse) {}
+  rpc rm (RmRequest) returns (RmResponse) {}
   rpc pull (PullRequest) returns (stream PullResponse) {}
   rpc push (stream PushRequest) returns (PushResponse) {}
-  rpc rm (RmRequest) returns (RmResponse) {}
+  rpc tail (stream TailRequest) returns (stream TailResponse) {}
 }
 
 message Payload {
@@ -63,7 +65,21 @@ message Payload {
     string file_path = 1;
     bytes data = 2;
     string url = 3;
+    Compression compression = 4;
   }
+  enum Compression {
+    GZIP = 0;
+    ZSTD = 1;
+  }
+}
+
+message ProcessOutput {
+  enum Interface {
+    STDOUT = 0;
+    STDERR = 1;
+  }
+  Interface interface = 1;
+  bytes data = 2;
 }
 
 message CompanionInfo {
@@ -436,6 +452,7 @@ message LaunchResponse {
   }
   Interface interface = 1;
   Pipe pipe = 2;
+  ProcessOutput output = 3;
 }
 
 message AddMediaRequest {
@@ -477,6 +494,50 @@ message InstrumentsRunResponse {
   }
   oneof output {
     bytes log_output = 1;
+    Payload payload = 2;
+    State state = 3;
+  }
+}
+
+message XctraceRecordRequest {
+  message LauchProcess {
+    string process_to_launch = 1;
+    repeated string launch_args = 2;
+    string target_stdin = 3;
+    string target_stdout = 4;
+    map<string, string> process_env = 5;
+  }
+  message Target {
+    oneof target {
+      bool all_processes = 1;
+      string process_to_attach = 2;
+      LauchProcess launch_process = 3;
+    }
+  }
+  message Start {
+    string template_name = 1;
+    double time_limit = 2;
+    string package = 3;
+    Target target = 4;
+  }
+  message Stop {
+    double timeout = 1;
+    repeated string args = 2;
+  }
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+message XctraceRecordResponse {
+  enum State {
+    UNKNOWN = 0;
+    RUNNING = 1;
+    PROCESSING = 2;
+  }
+  oneof output {
+    bytes log = 1;
     Payload payload = 2;
     State state = 3;
   }
@@ -597,6 +658,8 @@ message XctestRunRequest {
   bool report_activities = 8;
   bool collect_coverage = 9;
   bool report_attachments = 10;
+  bool collect_logs = 11;
+  bool wait_for_debugger = 12;
 }
 
 message XctestRunResponse {
@@ -647,6 +710,8 @@ message XctestRunResponse {
   repeated string log_output = 3;
   Payload result_bundle = 4;
   string coverage_json = 5;
+  Payload log_directory = 6;
+  DebuggerInfo debugger = 7;
 }
 
 // File
@@ -683,14 +748,12 @@ message LsResponse {
 }
 
 message LsRequest {
-  string bundle_id = 1;
   string path = 2;
   FileContainer container = 3;
   repeated string paths = 4;
 }
 
 message MkdirRequest {
-  string bundle_id = 1;
   string path = 2;
   FileContainer container = 3;
 }
@@ -699,7 +762,6 @@ message MkdirResponse {
 }
 
 message MvRequest {
-  string bundle_id = 1;
   repeated string src_paths = 2;
   string dst_path = 3;
   FileContainer container = 4;
@@ -709,7 +771,6 @@ message MvResponse {
 }
 
 message RmRequest {
-  string bundle_id = 1;
   repeated string paths = 2;
   FileContainer container = 3;
 }
@@ -719,7 +780,6 @@ message RmResponse {
 
 message PushRequest {
   message Inner {
-    string bundle_id = 1;
     string dst_path = 2;
     FileContainer container = 3;
   }
@@ -733,7 +793,6 @@ message PushResponse {
 }
 
 message PullRequest {
-  string bundle_id = 1;
   string src_path = 2;
   string dst_path = 3;
   FileContainer container = 4;
@@ -741,4 +800,28 @@ message PullRequest {
 
 message PullResponse {
   Payload payload = 1;
+}
+
+message TailRequest {
+  message Start {
+    FileContainer container = 1;
+    string path = 2;
+  }
+  message Stop {
+
+  }
+  oneof control {
+     Start start = 1;
+     Stop stop = 2;
+  }
+}
+
+message TailResponse {
+  bytes data = 1;
+}
+
+message DebuggerInfo{
+    uint64 pid = 1;
+    string host = 2;
+    uint64 port = 3;
 }

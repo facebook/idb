@@ -104,6 +104,8 @@
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
   NSArray<NSArray<NSString *> *> *expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationFailing"],
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationPassing"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
@@ -117,6 +119,7 @@
   ];
   XCTAssertEqualObjects(expected, self.reporter.startedTests);
   expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationPassing"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
@@ -125,6 +128,7 @@
   ];
   XCTAssertEqualObjects(expected, self.reporter.passedTests);
   expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testAsyncExpectationFailing"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
     @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],

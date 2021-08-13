@@ -12,8 +12,8 @@ from typing import Any, Optional, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.main import gen_main as cli_main
-from idb.common.constants import XCTEST_TIMEOUT
 from idb.common.types import (
+    Compression,
     CrashLogQuery,
     DomainSocketAddress,
     HIDButtonType,
@@ -148,8 +148,24 @@ class TestParser(TestCase):
     async def test_install(self) -> None:
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
+        compression = None
         await cli_main(cmd_input=["install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path)
+        self.client_mock.install.assert_called_once_with(app_path, compression)
+
+    async def test_install_with_bad_compression(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.app"
+        exit_code = await cli_main(
+            cmd_input=["--compression", "PZSTD", "install", app_path]
+        )
+        self.assertEqual(exit_code, 2)
+        self.client_mock.install.assert_not_called()
+
+    async def test_install_with_compression(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.app"
+        await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
+        self.client_mock.install.assert_called_once_with(app_path, Compression.ZSTD)
 
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()
@@ -164,10 +180,15 @@ class TestParser(TestCase):
 
     async def test_list_apps_direct_companion_tcp(self) -> None:
         self.client_mock.list_apps = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["--companion", "thehost:123", "list-apps"])
+        await cli_main(
+            cmd_input=["--companion", "thehost:123", "--companion-tls", "list-apps"]
+        )
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
-            address=TCPAddress(host="thehost", port=123), is_local=False, logger=ANY
+            address=TCPAddress(host="thehost", port=123),
+            is_local=False,
+            logger=ANY,
+            use_tls=True,
         )
 
     async def test_list_apps_direct_companion_uxd(self) -> None:
@@ -175,7 +196,10 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["--companion", "/foo/sock", "list-apps"])
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
-            address=DomainSocketAddress(path="/foo/sock"), is_local=False, logger=ANY
+            address=DomainSocketAddress(path="/foo/sock"),
+            is_local=False,
+            logger=ANY,
+            use_tls=False,
         )
 
     async def test_connect_with_host_and_port(self) -> None:
@@ -430,6 +454,7 @@ class TestParser(TestCase):
         namespace.companion_path = COMPANION_PATH
         namespace.companion = None
         namespace.companion_local = False
+        namespace.compression = None
         namespace.prune_dead_companion = True
         namespace.log_level = "WARNING"
         namespace.log_level_deprecated = None
@@ -451,7 +476,10 @@ class TestParser(TestCase):
         namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.log_directory_path = None
+        namespace.wait_for_debugger = False
         namespace.install = False
+        namespace.companion_tls = False
         return namespace
 
     async def test_xctest_run_app(self) -> None:
@@ -467,7 +495,7 @@ class TestParser(TestCase):
             )
             namespace = self.xctest_run_namespace("app", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_ui(self) -> None:
@@ -492,7 +520,7 @@ class TestParser(TestCase):
             namespace = self.xctest_run_namespace("ui", test_bundle_id)
             namespace.app_bundle_id = app_under_test_id
             namespace.test_host_app_bundle_id = test_host_app_bundle_id
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_run_logic(self) -> None:
@@ -504,7 +532,7 @@ class TestParser(TestCase):
             test_bundle_id = "com.me.tests"
             await cli_main(cmd_input=["xctest", "run", "logic", test_bundle_id])
             namespace = self.xctest_run_namespace("logic", test_bundle_id)
-            namespace.timeout = XCTEST_TIMEOUT
+            namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
     async def test_xctest_list(self) -> None:
@@ -532,6 +560,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.daemon_port = port
             namespace.daemon_grpc_port = grpc_port
@@ -542,6 +571,7 @@ class TestParser(TestCase):
             namespace.reply_fd = None
             namespace.prefer_ipv6 = False
             namespace.notifier_path = None
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_terminate(self) -> None:
@@ -559,6 +589,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -566,6 +597,7 @@ class TestParser(TestCase):
             namespace.udid = "1234"
             namespace.json = False
             namespace.log_arguments = []
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_log_arguments(self) -> None:
@@ -576,6 +608,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -583,6 +616,7 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.log_arguments = ["--", "--style", "json"]
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_clear_keychain(self) -> None:
@@ -630,6 +664,7 @@ class TestParser(TestCase):
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
             namespace.companion_local = False
+            namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
@@ -637,6 +672,7 @@ class TestParser(TestCase):
             namespace.udid = None
             namespace.json = False
             namespace.output_file = output_file
+            namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
 
     async def test_video_stream(self) -> None:
@@ -651,6 +687,7 @@ class TestParser(TestCase):
                     companion=None,
                     companion_path=COMPANION_PATH,
                     companion_local=False,
+                    compression=None,
                     prune_dead_companion=True,
                     log_level="WARNING",
                     format="h264",
@@ -662,6 +699,7 @@ class TestParser(TestCase):
                     udid=None,
                     json=False,
                     output_file=output_file,
+                    companion_tls=False,
                 )
             )
 
@@ -977,3 +1015,391 @@ class TestParser(TestCase):
         self.client_mock.debugserver_status = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["debugserver", "status"])
         self.client_mock.debugserver_status.assert_called_once()
+
+    async def test_xctrace_record_with_package(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        package = "fb_signpost"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--package",
+                package,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=package,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_launch_args(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        process_to_launch = "com.facebook.Wilde"
+        launch_args = ["foo", "bar"]
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--template",
+                template_name,
+                "--launch",
+                process_to_launch,
+                *launch_args,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=False,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=process_to_launch,
+            process_env={},
+            launch_args=launch_args,
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_process_env(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        process_to_launch = "com.facebook.Wilde"
+        process_env = {"foo": "bar", "baz": "qux"}
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--template",
+                template_name,
+                "--launch",
+                process_to_launch,
+                "--env",
+                "foo=bar",
+                "--env",
+                "baz=qux",
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=False,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=process_to_launch,
+            process_env=process_env,
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_time_limit(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        time_limit = "4m"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--time-limit",
+                time_limit,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=240.0,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_stop_timeout(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        stop_timeout = "60s"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--stop-timeout",
+                stop_timeout,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=60.0,
+        )
+
+    async def test_xctrace_record_with_attach(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        process_to_attach = "123"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--template",
+                template_name,
+                "--attach",
+                process_to_attach,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=False,
+            time_limit=None,
+            package=None,
+            process_to_attach=process_to_attach,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_target_stdin(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        target_stdin = "-"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--target-stdin",
+                target_stdin,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=target_stdin,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_target_stdout(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        target_stdout = "-"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--target-stdout",
+                target_stdout,
+                "--output",
+                trace_path,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=target_stdout,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_post_args(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        post_args = ["instrumental", "convert"]
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--output",
+                trace_path,
+                "--post-args",
+                *post_args,
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=post_args,
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_with_ignored_options(self) -> None:
+        self.client_mock.xctrace_record = AsyncMock()
+        template_name = "Time Profiler"
+        device = "9d86342f4761d4c28d99c7ed5df95d2d641fb3c4"
+        trace_path = "trace.trace"
+        await cli_main(
+            cmd_input=[
+                "xctrace",
+                "record",
+                "--all-processes",
+                "--template",
+                template_name,
+                "--output",
+                trace_path,
+                "--device",
+                device,
+                "--append-run",
+            ]
+        )
+        self.client_mock.xctrace_record.assert_called_once_with(
+            stop=ANY,
+            output="trace",
+            template_name=template_name,
+            all_processes=True,
+            time_limit=None,
+            package=None,
+            process_to_attach=None,
+            process_to_launch=None,
+            process_env={},
+            launch_args=[],
+            target_stdin=None,
+            target_stdout=None,
+            post_args=[],
+            stop_timeout=None,
+        )
+
+    async def test_xctrace_record_without_target(self) -> None:
+        self.assertEqual(
+            await cli_main(
+                cmd_input=[
+                    "xctrace",
+                    "record",
+                    "--template",
+                    "Time Profiler",
+                    "--output",
+                    "trace.trace",
+                ]
+            ),
+            2,  # error code when the required arguemt is not provided
+        )
+
+    async def test_xctrace_record_with_duplicated_targets(self) -> None:
+        self.assertEqual(
+            await cli_main(
+                cmd_input=[
+                    "xctrace",
+                    "record",
+                    "--all-processes",
+                    "--launch",
+                    "com.facebook.Wilde",
+                    "--template",
+                    "Time Profiler",
+                    "--output",
+                    "trace.trace",
+                ]
+            ),
+            2,  # error code when mutually exclusive arguments are provided
+        )
