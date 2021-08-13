@@ -26,7 +26,7 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
-#import "FBTestReporterForwarder.h"
+#import "FBTestReporterAdapter.h"
 #import "FBXCTestProcess.h"
 #import "FBXCTestReporter.h"
 
@@ -41,7 +41,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
-@property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
+@property (nonatomic, strong, readonly) FBTestReporterAdapter *reporterAdapter;
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
 @end
@@ -71,7 +71,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
-  _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
+  _reporterAdapter = [FBTestReporterAdapter withReporter:reporter];
 
   return self;
 }
@@ -103,7 +103,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
       return [[[FBTestBundleConnection
         connectAndRunBundleToCompletionWithContext:self.context
         target:self.target
-        interface:(id)self.reporterForwarder
+        interface:(id)self
         testHostApplication:launchedApplication
         requestQueue:self.requestQueue
         logger:logger]
@@ -274,10 +274,10 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 #pragma mark Test Suite Progress
 
-- (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
+- (id)_XCT_testSuite:(NSString *)testSuite didStartAt:(NSString *)time
 {
-  [self.logger logFormat:@"Test Suite %@ started", tests];
-  if (tests.length == 0) {
+  [self.logger logFormat:@"Test Suite %@ started", testSuite];
+  if (testSuite.length == 0) {
     NSError *error = [[[[XCTestBootstrapError
       describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
       inDomain:@"IDETestOperationsObserverErrorDomain"]
@@ -285,6 +285,8 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
       build];
     [self.logger logFormat:@"%@", error];
   }
+  
+  [self.reporterAdapter _XCT_testSuite:testSuite didStartAt:time];
 
   return nil;
 }
@@ -292,12 +294,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_didBeginExecutingTestPlan
 {
   [self.logger logFormat:@"Test Plan Started"];
+  [self.reporterAdapter _XCT_didBeginExecutingTestPlan];
   return nil;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
   [self.logger logFormat:@"Test Plan Ended"];
+  [self.reporterAdapter _XCT_didFinishExecutingTestPlan];
   return nil;
 }
 
@@ -309,12 +313,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
   [self.logger logFormat:@"Test Case %@/%@ did start", testClass, method];
+  [self.reporterAdapter _XCT_testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
   [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
+  [self.reporterAdapter _XCT_testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line];
   return nil;
 }
 
@@ -332,22 +338,26 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
   [self.logger logFormat:@"Test Case %@/%@ did finish (%@)", testClass, method, statusString];
+  [self.reporterAdapter _XCT_testCaseDidFinishForTestClass:testClass method:method withStatus:statusString duration:duration];
   return nil;
 }
 
-- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
+- (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  [self.logger logFormat:@"Test Suite Did Finish %@", arg1];
+  [self.logger logFormat:@"Test Suite Did Finish %@", testSuite];
+  [self. reporterAdapter _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
   return nil;
 }
 
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3
+- (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method didFinishActivity:(XCActivityRecord *)activity
 {
+  [self.reporterAdapter _XCT_testCase:testCase method:method didFinishActivity:activity];
   return nil;
 }
 
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3
+- (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method willStartActivity:(XCActivityRecord *)activity
 {
+  [self.reporterAdapter _XCT_testCase:testCase method:method willStartActivity:activity];
   return nil;
 }
 
