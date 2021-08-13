@@ -7,16 +7,6 @@
 
 #import "FBSimulatorLaunchedProcess.h"
 
-#import "FBSimulator+Private.h"
-#import "FBSimulator.h"
-
-@interface FBSimulatorLaunchedProcess ()
-
-@property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-
-@end
-
 @implementation FBSimulatorLaunchedProcess
 
 @synthesize configuration = _configuration;
@@ -27,17 +17,15 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _simulator = simulator;
   _configuration = configuration;
   _processIdentifier = processIdentifier;
-  _queue = simulator.asyncQueue;
   _exitCode = exitCode;
   _signal = signal;
   _statLoc = statLoc;

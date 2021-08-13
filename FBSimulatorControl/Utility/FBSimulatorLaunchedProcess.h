@@ -22,15 +22,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param simulator the Simulator the Process is launched in.
- @param configuration the configuration the process was launched with.
  @param processIdentifier the process identifier of the launched process
  @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
  @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
  @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
+ @param configuration the configuration the process was launched with.
  @return a Future that resolves when the process is launched.
  */
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration processIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal;
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration;
 
 @end
 
