@@ -333,7 +333,7 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBLaunchedProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
@@ -346,7 +346,7 @@
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ id<FBLaunchedProcess> (FBTask *task) {
+    onQueue:self.workQueue map:^ FBLaunchedProcess * (FBTask *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
       return task;
     }];
@@ -500,9 +500,9 @@
     failFuture];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+- (FBFuture<FBLaunchedProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
+  return (FBFuture<FBLaunchedProcess *> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
 }
 
 @end

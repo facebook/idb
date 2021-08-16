@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  An in-memory representation of a launched process.
  This is distinct from FBLaunchedApplication, as the exit code for the process is available.
  */
-@protocol FBLaunchedProcess <NSObject>
+@interface FBLaunchedProcess : NSObject
 
 #pragma mark Properties
 
@@ -74,6 +74,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
 
+#pragma mark Initializers
+
+/**
+ The Designated Initializer.
+
+ @param processIdentifier the process identifier of the launched process
+ @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
+ @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
+ @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
+ @param configuration the configuration the process was launched with.
+ @param queue the queue to perform actions on.
+ @return an implementation of FBLaunchedProcess.
+ */
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
+
 #pragma mark Methods
 
 /**
@@ -103,26 +118,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves to the signal sent when the process has been terminated.
  */
 - (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
-
-@end
-
-/**
- An implementation of FBLaunchedProcess that takes all properties via the constructor..
- */
-@interface FBLaunchedProcess : NSObject <FBLaunchedProcess>
-
-/**
- The Designated Initializer.
-
- @param processIdentifier the process identifier of the launched process
- @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
- @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
- @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
- @param configuration the configuration the process was launched with.
- @param queue the queue to perform actions on.
- @return an implementation of FBLaunchedProcess.
- */
-- (id<FBLaunchedProcess>)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
 
 @end
 

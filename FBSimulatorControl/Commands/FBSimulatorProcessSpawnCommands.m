@@ -44,7 +44,7 @@
 
 #pragma mark FBSimulatorProcessSpawnCommands Implementation
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+- (FBFuture<FBLaunchedProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   FBSimulator *simulator = self.simulator;
 
@@ -73,7 +73,7 @@
 
 #pragma mark Private
 
-+ (FBFuture<id<FBLaunchedProcess>> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
++ (FBFuture<FBLaunchedProcess *> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
 {
   // Prepare captured futures
   id<FBControlCoreLogger> logger = simulator.logger;

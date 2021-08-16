@@ -319,7 +319,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
   return [[self.target
     launchProcess:configuration]
-    onQueue:queue map:^ FBFuture<NSNumber *> * (id<FBLaunchedProcess> process) {
+    onQueue:queue map:^ FBFuture<NSNumber *> * (FBLaunchedProcess *process) {
       return [[FBLogicTestRunStrategy
         fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
         onQueue:queue fmap:^(id _) {

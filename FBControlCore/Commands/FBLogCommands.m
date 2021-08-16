@@ -13,7 +13,7 @@
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithProcess:(id<FBLaunchedProcess>)process consumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer
 {
   self = [self init];
   if (!self) {

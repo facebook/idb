@@ -239,7 +239,7 @@
     
   return [[target
     launchProcess:spawnConfiguration]
-    onQueue:target.asyncQueue map:^(id<FBLaunchedProcess> process) {
+    onQueue:target.asyncQueue map:^(FBLaunchedProcess *process) {
       return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
     }];
 }

@@ -25,7 +25,7 @@
 {
   return [[commands
     launchProcess:configuration]
-    onQueue:self.queue fmap:^(id<FBLaunchedProcess> process) {
+    onQueue:self.queue fmap:^(FBLaunchedProcess *process) {
       return [process exitCode];
     }];
 }

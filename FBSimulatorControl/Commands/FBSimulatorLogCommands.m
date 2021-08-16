@@ -46,14 +46,14 @@
 {
   return [[self
     startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
-    onQueue:self.simulator.workQueue map:^(id<FBLaunchedProcess> process) {
+    onQueue:self.simulator.workQueue map:^(FBLaunchedProcess *process) {
       return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<id<FBLaunchedProcess>> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBLaunchedProcess *> *)startLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   NSError *error = nil;
   NSString *launchPath = [self logExecutablePathWithError:&error];
