@@ -19,7 +19,7 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBLaunchedProcess
+@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBLaunchedProcess <StdInType, StdOutType, StdErrType>
 
 #pragma mark Initializers
 
@@ -31,29 +31,6 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
  @return a future that resolves when the task has been started.
  */
 + (FBFuture<FBTask *> *)startTaskWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
-
-#pragma mark Accessors
-
-/**
- Returns the stdin of the task.
- May be called from any thread.
- The valid types for these values are the wrapped types in FBProcessInput.
- */
-@property (nonatomic, strong, nullable, readonly) StdInType stdIn;
-
-/**
- Returns the stdout of the task.
- May be called from any thread.
- The valid types for these values are the wrapped types in FBProcessOutput.
- */
-@property (nonatomic, strong, nullable, readonly) StdOutType stdOut;
-
-/**
- Returns the stdout of the task.
- May be called from any thread.
- The valid types for these values are the wrapped types in FBProcessOutput.
- */
-@property (nonatomic, strong, nullable, readonly) StdErrType stdErr;
 
 @end
 

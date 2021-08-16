@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  An in-memory representation of a launched process.
  This is distinct from FBLaunchedApplication, as the exit code for the process is available.
  */
-@interface FBLaunchedProcess : NSObject
+@interface FBLaunchedProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Properties
 
@@ -73,6 +73,28 @@ NS_ASSUME_NONNULL_BEGIN
  The IO Object attached to the process.
  */
 @property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
+
+/**
+ Returns the stdin of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessInput.
+ */
+@property (nonatomic, strong, nullable, readonly) StdInType stdIn;
+
+/**
+ Returns the stdout of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessOutput.
+ */
+@property (nonatomic, strong, nullable, readonly) StdOutType stdOut;
+
+/**
+ Returns the stdout of the task.
+ May be called from any thread.
+ The valid types for these values are the wrapped types in FBProcessOutput.
+ */
+@property (nonatomic, strong, nullable, readonly) StdErrType stdErr;
+
 
 #pragma mark Initializers
 

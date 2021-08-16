@@ -181,21 +181,4 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   dispatch_resume(source);
 }
 
-#pragma mark Accessors
-
-- (nullable id)stdIn
-{
-  return [self.configuration.io.stdIn contents];
-}
-
-- (nullable id)stdOut
-{
-  return [self.configuration.io.stdOut contents];
-}
-
-- (nullable id)stdErr
-{
-  return [self.configuration.io.stdErr contents];
-}
-
 @end

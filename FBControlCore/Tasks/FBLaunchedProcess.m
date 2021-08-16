@@ -11,6 +11,7 @@
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreLogger.h"
+#import "FBProcessIO.h"
 #import "FBProcessSpawnCommands.h"
 #import "FBProcessSpawnConfiguration.h"
 
@@ -80,6 +81,23 @@
       return [self sendSignal:SIGKILL];
     }]
     mapReplace:@(signo)];
+}
+
+#pragma mark Properties
+
+- (nullable id)stdIn
+{
+  return [self.configuration.io.stdIn contents];
+}
+
+- (nullable id)stdOut
+{
+  return [self.configuration.io.stdOut contents];
+}
+
+- (nullable id)stdErr
+{
+  return [self.configuration.io.stdErr contents];
 }
 
 #pragma mark Private

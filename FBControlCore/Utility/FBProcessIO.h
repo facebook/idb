@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A composite of streams for the stdin, stdout and stderr streams connected to a process.
  */
-@interface FBProcessIO : NSObject
+@interface FBProcessIO <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Initializers
 
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErr the stderr.
  @return a new FBProcessIO instance.
  */
-- (instancetype)initWithStdIn:(nullable FBProcessInput *)stdIn stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr;
+- (instancetype)initWithStdIn:(nullable FBProcessInput<StdInType> *)stdIn stdOut:(nullable FBProcessOutput<StdOutType> *)stdOut stdErr:(nullable FBProcessOutput<StdErrType> *)stdErr;
 
 /**
  An IO object that accepts no input and returns no output.
@@ -91,17 +91,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBProcessInput for stdin.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessInput *stdIn;
+@property (nonatomic, strong, nullable, readonly) FBProcessInput<StdInType> *stdIn;
 
 /**
 The FBProcessOutput for stdout.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput<StdOutType> *stdOut;
 
 /**
  The FBProcessOutput for stderr.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput<StdErrType> *stdErr;
 
 /**
  The queue to use.
