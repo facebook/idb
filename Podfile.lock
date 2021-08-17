@@ -352,16 +352,16 @@ PODS:
     - abseil/base/base_internal
     - abseil/base/config
     - abseil/meta/type_traits
-  - BoringSSL-GRPC (0.0.18):
-    - BoringSSL-GRPC/Implementation (= 0.0.18)
-    - BoringSSL-GRPC/Interface (= 0.0.18)
-  - BoringSSL-GRPC/Implementation (0.0.18):
-    - BoringSSL-GRPC/Interface (= 0.0.18)
-  - BoringSSL-GRPC/Interface (0.0.18)
-  - "gRPC-C++ (1.38.1)":
-    - "gRPC-C++/Implementation (= 1.38.1)"
-    - "gRPC-C++/Interface (= 1.38.1)"
-  - "gRPC-C++/Implementation (1.38.1)":
+  - BoringSSL-GRPC (0.0.19):
+    - BoringSSL-GRPC/Implementation (= 0.0.19)
+    - BoringSSL-GRPC/Interface (= 0.0.19)
+  - BoringSSL-GRPC/Implementation (0.0.19):
+    - BoringSSL-GRPC/Interface (= 0.0.19)
+  - BoringSSL-GRPC/Interface (0.0.19)
+  - "gRPC-C++ (1.39.0)":
+    - "gRPC-C++/Implementation (= 1.39.0)"
+    - "gRPC-C++/Interface (= 1.39.0)"
+  - "gRPC-C++/Implementation (1.39.0)":
     - abseil/base/base (= 1.20210324.0)
     - abseil/container/flat_hash_map (= 1.20210324.0)
     - abseil/container/inlined_vector (= 1.20210324.0)
@@ -374,15 +374,15 @@ PODS:
     - abseil/synchronization/synchronization (= 1.20210324.0)
     - abseil/time/time (= 1.20210324.0)
     - abseil/types/optional (= 1.20210324.0)
-    - "gRPC-C++/Interface (= 1.38.1)"
-    - gRPC-Core (= 1.38.1)
-  - "gRPC-C++/Interface (1.38.1)"
-  - "gRPC-C++/Protobuf (1.38.1)":
-    - "gRPC-C++/Interface (= 1.38.1)"
-  - gRPC-Core (1.38.1):
-    - gRPC-Core/Implementation (= 1.38.1)
-    - gRPC-Core/Interface (= 1.38.1)
-  - gRPC-Core/Implementation (1.38.1):
+    - "gRPC-C++/Interface (= 1.39.0)"
+    - gRPC-Core (= 1.39.0)
+  - "gRPC-C++/Interface (1.39.0)"
+  - "gRPC-C++/Protobuf (1.39.0)":
+    - "gRPC-C++/Interface (= 1.39.0)"
+  - gRPC-Core (1.39.0):
+    - gRPC-Core/Implementation (= 1.39.0)
+    - gRPC-Core/Interface (= 1.39.0)
+  - gRPC-Core/Implementation (1.39.0):
     - abseil/base/base (= 1.20210324.0)
     - abseil/container/flat_hash_map (= 1.20210324.0)
     - abseil/container/inlined_vector (= 1.20210324.0)
@@ -395,9 +395,9 @@ PODS:
     - abseil/synchronization/synchronization (= 1.20210324.0)
     - abseil/time/time (= 1.20210324.0)
     - abseil/types/optional (= 1.20210324.0)
-    - BoringSSL-GRPC (= 0.0.18)
-    - gRPC-Core/Interface (= 1.38.1)
-  - gRPC-Core/Interface (1.38.1)
+    - BoringSSL-GRPC (= 0.0.19)
+    - gRPC-Core/Interface (= 1.39.0)
+  - gRPC-Core/Interface (1.39.0)
   - "Protobuf-C++ (3.17.3)"
 
 DEPENDENCIES:
@@ -424,9 +424,9 @@ CHECKOUT OPTIONS:
 
 SPEC CHECKSUMS:
   abseil: c12cac4b0b499c3335ac47ac46adf303f0618d13
-  BoringSSL-GRPC: 7e40b384c402232a29badbfd6093e7bda8e3ef87
-  "gRPC-C++": 72567dc69da737240387ead8b0aa62c91127d22e
-  gRPC-Core: 901b231f16411ded693ab489cb3e49388b7c5e22
+  BoringSSL-GRPC: a1ddc6446c98c7a0766cd2bab41a0713e80fa7d0
+  "gRPC-C++": eefb08df432d7dd44caba1d2bc9fdf7686e1a3ad
+  gRPC-Core: 36cd647e4e4f0dd3071bf3379cf159d32e1bd690
   "Protobuf-C++": 09467b43c30aeea730319291bb12048b4ae28352
 
 PODFILE CHECKSUM: 9781d66d53387d429f53a652871715cd4c11474d
