@@ -84,6 +84,13 @@ class FSCommand(ClientCommand):
             default=None,
         )
         group.add_argument(
+            "--group",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.GROUP,
+            help="Use the group containers. Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari')",
+        )
+        group.add_argument(
             "--root",
             action="store_const",
             dest="container_type",

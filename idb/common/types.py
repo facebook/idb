@@ -314,14 +314,16 @@ class InstalledArtifact:
 
 
 class FileContainerType(Enum):
-    ROOT = "root"
-    MEDIA = "media"
+    APPLICATION = "application"
     CRASHES = "crashes"
-    PROVISIONING_PROFILES = "provisioning_profiles"
+    DISK_IMAGES = "disk_images"
+    GROUP = "group"
     MDM_PROFILES = "mdm_profiles"
+    MEDIA = "media"
+    PROVISIONING_PROFILES = "provisioning_profiles"
+    ROOT = "root"
     SPRINGBOARD_ICONS = "springboard_icons"
     WALLPAPER = "wallpaper"
-    DISK_IMAGES = "disk_images"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]

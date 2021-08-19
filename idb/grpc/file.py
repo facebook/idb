@@ -29,4 +29,6 @@ def container_to_grpc(container: FileContainer) -> GrpcFileContainer:
         return GrpcFileContainer(kind=GrpcFileContainer.WALLPAPER)
     if container == FileContainerType.DISK_IMAGES:
         return GrpcFileContainer(kind=GrpcFileContainer.DISK_IMAGES)
+    if container == FileContainerType.GROUP:
+        return GrpcFileContainer(kind=GrpcFileContainer.GROUP_CONTAINER)
     return GrpcFileContainer(kind=GrpcFileContainer.NONE)
