@@ -445,6 +445,13 @@ static NSString *const MountedDeveloperDirectory = @"Developer";
     }];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
   return [[FBControlCoreError

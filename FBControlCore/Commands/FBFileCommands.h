@@ -29,6 +29,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID;
 
 /**
+ Returns a file container for the given group container.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers;
+
+/**
  Returns a file container for the root of the filesystem
 
  @return a Future context that resolves with an implementation of the file container.

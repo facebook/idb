@@ -18,13 +18,14 @@
 #import "FBTemporaryDirectory.h"
 
 FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
-FBFileContainerKind const FBFileContainerKindMedia = @"media";
-FBFileContainerKind const FBFileContainerKindRoot = @"root";
-FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
+FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
+FBFileContainerKind const FBFileContainerKindGroup = @"group";
 FBFileContainerKind const FBFileContainerKindMDMProfiles = @"mdm_profiles";
+FBFileContainerKind const FBFileContainerKindMedia = @"media";
+FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
+FBFileContainerKind const FBFileContainerKindRoot = @"root";
 FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
 FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
-FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 @interface FBIDBCommandExecutor ()
 
@@ -650,6 +651,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     return [[FBControlCoreError
       describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
       failFutureContext];
+  }
+  if ([containerType hasPrefix:FBFileContainerKindGroup]) {
+    return [commands fileCommandsForGroupContainers];
   }
   if ([containerType isEqualToString:FBFileContainerKindMedia]) {
     return [commands fileCommandsForMediaDirectory];

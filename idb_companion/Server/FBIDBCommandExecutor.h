@@ -26,13 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NSString *FBFileContainerKind NS_STRING_ENUM;
 
 extern FBFileContainerKind const FBFileContainerKindCrashes;
-extern FBFileContainerKind const FBFileContainerKindMedia;
-extern FBFileContainerKind const FBFileContainerKindRoot;
-extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
+extern FBFileContainerKind const FBFileContainerKindDiskImages;
+extern FBFileContainerKind const FBFileContainerKindGroup;
 extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
+extern FBFileContainerKind const FBFileContainerKindMedia;
+extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
+extern FBFileContainerKind const FBFileContainerKindRoot;
 extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
 extern FBFileContainerKind const FBFileContainerKindWallpaper;
-extern FBFileContainerKind const FBFileContainerKindDiskImages;
 
 @interface FBIDBCommandExecutor : NSObject
 

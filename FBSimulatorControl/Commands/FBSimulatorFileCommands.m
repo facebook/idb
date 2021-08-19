@@ -260,6 +260,13 @@
     }];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
   return [FBFutureContext futureContextWithResult:[[FBSimulatorBasePathFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];

@@ -728,6 +728,7 @@ message FileContainer {
     SPRINGBOARD_ICONS = 7;
     WALLPAPER = 8;
     DISK_IMAGES = 9;
+    GROUP_CONTAINER = 10;
   }
   Kind kind = 1;
   string bundle_id = 2;
