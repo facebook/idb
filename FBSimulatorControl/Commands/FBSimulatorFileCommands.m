@@ -10,23 +10,21 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorFileContainer ()
+@interface FBSimulatorFileContainer : NSObject <FBFileContainer>
 
-@property (nonatomic, strong, readonly) NSString *containerPath;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
 @implementation FBSimulatorFileContainer
 
-- (instancetype)initWithContainerPath:(NSString *)containerPath queue:(dispatch_queue_t)queue
+- (instancetype)initWithQueue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-
-  _containerPath = containerPath;
+  
   _queue = queue;
 
   return self;
@@ -37,10 +35,10 @@
 - (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
+    mappedPath:destinationPath]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *mappedPath) {
       NSError *error;
-      NSURL *basePathURL =  [NSURL fileURLWithPathComponents:@[dataContainer, destinationPath]];
+      NSURL *basePathURL = [NSURL fileURLWithPath:mappedPath];
       NSFileManager *fileManager = NSFileManager.defaultManager;
       NSURL *destURL = [basePathURL URLByAppendingPathComponent:sourcePath.lastPathComponent];
       // Attempt to delete first to overwrite
@@ -59,9 +57,8 @@
 {
   __block NSString *dstPath = destinationPath;
   return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSString *dataContainer) {
-      NSString *source = [dataContainer stringByAppendingPathComponent:containerPath];
+    mappedPath:containerPath]
+    onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSString *source) {
       BOOL srcIsDirecory = NO;
       if (![NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
         return [[FBSimulatorError
@@ -103,9 +100,8 @@
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[[self
-    dataContainer]
-    onQueue:self.queue fmap:^(NSString *dataContainer) {
-      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:containerPath];
+    mappedPath:containerPath]
+    onQueue:self.queue fmap:^(NSString *fullSourcePath) {
       return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/tail"]
         withArguments:@[@"-c+1", @"-f", fullSourcePath]]
@@ -123,13 +119,12 @@
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
+    mappedPath:directoryPath]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *fullPath) {
       NSError *error;
-      NSString *fullPath = [dataContainer stringByAppendingPathComponent:directoryPath];
       if (![NSFileManager.defaultManager createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:&error]) {
         return [[[FBSimulatorError
-          describeFormat:@"Could not create directory %@ in container %@: %@", directoryPath, dataContainer, error]
+          describeFormat:@"Could not create directory %@ at container %@: %@", directoryPath, fullPath, error]
           causedBy:error]
           failFuture];
       }
@@ -139,12 +134,15 @@
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
-  return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
-      NSError *error;
-      NSString *fullDestinationPath = [dataContainer stringByAppendingPathComponent:destinationPath];
-      NSString *fullSourcePath = [dataContainer stringByAppendingPathComponent:sourcePath];
+  return [[FBFuture
+    futureWithFutures:@[
+      [self mappedPath:sourcePath],
+      [self mappedPath:destinationPath],
+    ]]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSArray<NSString *> *mappedPaths) {
+      NSString *fullSourcePath = mappedPaths[0];
+      NSString *fullDestinationPath = mappedPaths[1];
+      NSError *error = nil;
       if (![NSFileManager.defaultManager moveItemAtPath:fullSourcePath toPath:fullDestinationPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not move item at %@ to %@: %@", fullSourcePath, fullDestinationPath, error]
@@ -158,10 +156,9 @@
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *dataContainer) {
+    mappedPath:path]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *fullPath) {
       NSError *error;
-      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
       if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
@@ -175,9 +172,8 @@
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
   return [[self
-    dataContainer]
-    onQueue:self.queue fmap:^(NSString *dataContainer) {
-      NSString *fullPath = [dataContainer stringByAppendingPathComponent:path];
+    mappedPath:path]
+    onQueue:self.queue fmap:^(NSString *fullPath) {
       NSError *error;
       NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:fullPath error:&error];
       if (!contents) {
@@ -187,11 +183,39 @@
     }];
 }
 
-- (FBFuture<NSString *> *)dataContainer
+- (FBFuture<NSString *> *)mappedPath:(NSString *)path
 {
-  return [FBFuture futureWithResult:self.containerPath];
+  return [[FBControlCoreError
+    describeFormat:@"-[%@ %@] must be implemented by subclasses", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
+@end
+
+@interface FBSimulatorBasePathFileContainer : FBSimulatorFileContainer
+
+@property (nonatomic, copy, readonly) NSString *containerPath;
+
+@end
+
+@implementation FBSimulatorBasePathFileContainer
+
+- (instancetype)initWithContainerPath:(NSString *)containerPath queue:(dispatch_queue_t)queue
+{
+  self = [super initWithQueue:queue];
+  if (!self) {
+    return nil;
+  }
+
+  _containerPath = containerPath;
+
+  return self;
+}
+
+- (FBFuture<NSString *> *)mappedPath:(NSString *)path
+{
+  return [FBFuture futureWithResult:[self.containerPath stringByAppendingPathComponent:path]];
+}
 @end
 
 @interface FBSimulatorFileCommands ()
@@ -228,7 +252,7 @@
   return [[[self
     dataContainerForBundleID:bundleID]
     onQueue:self.simulator.asyncQueue map:^(NSString *containerPath) {
-      return [[FBSimulatorFileContainer alloc] initWithContainerPath:containerPath queue:self.simulator.asyncQueue];
+      return [[FBSimulatorBasePathFileContainer alloc] initWithContainerPath:containerPath queue:self.simulator.asyncQueue];
     }]
     onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
       // Do nothing.
@@ -238,12 +262,12 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
-  return [FBFutureContext futureContextWithResult:[[FBSimulatorFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
+  return [FBFutureContext futureContextWithResult:[[FBSimulatorBasePathFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
 {
-  return [FBFutureContext futureContextWithResult:[[FBSimulatorFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
+  return [FBFutureContext futureContextWithResult:[[FBSimulatorBasePathFileContainer alloc] initWithContainerPath:self.simulator.dataDirectory queue:self.simulator.asyncQueue]];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
