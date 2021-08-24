@@ -13,6 +13,7 @@
 @interface FBSimulatorFileContainer : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) NSFileManager *fileManager;
 
 @end
 
@@ -26,6 +27,7 @@
   }
   
   _queue = queue;
+  _fileManager = NSFileManager.defaultManager;
 
   return self;
 }
@@ -38,14 +40,12 @@
     mappedPath:destinationPath]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *mappedPath) {
       NSError *error;
-      NSURL *basePathURL = [NSURL fileURLWithPath:mappedPath];
-      NSFileManager *fileManager = NSFileManager.defaultManager;
-      NSURL *destURL = [basePathURL URLByAppendingPathComponent:sourcePath.lastPathComponent];
+      NSString *destPath = [mappedPath stringByAppendingPathComponent:sourcePath.lastPathComponent];
       // Attempt to delete first to overwrite
-      [fileManager removeItemAtURL:destURL error:nil];
-      if (![fileManager copyItemAtURL:sourcePath toURL:destURL error:&error]) {
+      [self removeItemAtPath:destPath error:nil];
+      if (![self copyItemAtPath:sourcePath.path toPath:destPath error:&error]) {
         return [[[FBSimulatorError
-          describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destURL, error]
+          describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destPath, error]
           causedBy:error]
           failFuture];
       }
@@ -55,19 +55,19 @@
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
-  __block NSString *dstPath = destinationPath;
   return [[self
     mappedPath:containerPath]
     onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSString *source) {
       BOOL srcIsDirecory = NO;
-      if (![NSFileManager.defaultManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
+      if (![self.fileManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
         return [[FBSimulatorError
           describeFormat:@"Source path does not exist: %@", source]
           failFuture];
       }
+      NSString *dstPath = destinationPath;
       if (!srcIsDirecory) {
         NSError *createDirectoryError;
-        if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:nil error:&createDirectoryError]) {
+        if (![self createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:nil error:&createDirectoryError]) {
           return [[[FBSimulatorError
             describeFormat:@"Could not create temporary directory: %@", createDirectoryError]
             causedBy:createDirectoryError]
@@ -76,9 +76,9 @@
         dstPath = [dstPath stringByAppendingPathComponent:[source lastPathComponent]];
       }
       // if it already exists at the destination path we should remove it before copying again
-      if ([NSFileManager.defaultManager fileExistsAtPath:dstPath]) {
+      if ([self.fileManager fileExistsAtPath:dstPath]) {
         NSError *removeError;
-        if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
+        if (![self removeItemAtPath:dstPath error:&removeError]) {
           return [[[FBSimulatorError
             describeFormat:@"Could not remove %@", dstPath]
             causedBy:removeError]
@@ -87,7 +87,7 @@
       }
 
       NSError *copyError;
-      if (![NSFileManager.defaultManager copyItemAtPath:source toPath:dstPath error:&copyError]) {
+      if (![self copyItemAtPath:source toPath:dstPath error:&copyError]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]
           causedBy:copyError]
@@ -122,7 +122,7 @@
     mappedPath:directoryPath]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *fullPath) {
       NSError *error;
-      if (![NSFileManager.defaultManager createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+      if (![self createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not create directory %@ at container %@: %@", directoryPath, fullPath, error]
           causedBy:error]
@@ -143,7 +143,7 @@
       NSString *fullSourcePath = mappedPaths[0];
       NSString *fullDestinationPath = mappedPaths[1];
       NSError *error = nil;
-      if (![NSFileManager.defaultManager moveItemAtPath:fullSourcePath toPath:fullDestinationPath error:&error]) {
+      if (![self moveItemAtPath:fullSourcePath toPath:fullDestinationPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not move item at %@ to %@: %@", fullSourcePath, fullDestinationPath, error]
           causedBy:error]
@@ -159,7 +159,7 @@
     mappedPath:path]
     onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSString *fullPath) {
       NSError *error;
-      if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&error]) {
+      if (![self removeItemAtPath:fullPath error:&error]) {
         return [[[FBSimulatorError
           describeFormat:@"Could not remove item at path %@: %@", fullPath, error]
           causedBy:error]
@@ -175,7 +175,7 @@
     mappedPath:path]
     onQueue:self.queue fmap:^(NSString *fullPath) {
       NSError *error;
-      NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:fullPath error:&error];
+      NSArray<NSString *> *contents = [self contentsOfDirectoryAtPath:fullPath error:&error];
       if (!contents) {
         return [FBFuture futureWithError:error];
       }
@@ -183,11 +183,38 @@
     }];
 }
 
+#pragma mark Private
+
 - (FBFuture<NSString *> *)mappedPath:(NSString *)path
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] must be implemented by subclasses", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
     failFuture];
+}
+
+- (NSArray<NSString *> *)contentsOfDirectoryAtPath:(NSString *)fullPath error:(NSError **)error
+{
+  return [self.fileManager contentsOfDirectoryAtPath:fullPath error:error];
+}
+
+- (BOOL)removeItemAtPath:(NSString *)path error:(NSError **)error
+{
+  return [self.fileManager removeItemAtPath:path error:error];
+}
+
+- (BOOL)moveItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error
+{
+  return [self.fileManager moveItemAtPath:srcPath toPath:dstPath error:error];
+}
+
+- (BOOL)copyItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error
+{
+  return [self.fileManager copyItemAtPath:srcPath toPath:dstPath error:error];
+}
+
+- (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates attributes:(NSDictionary<NSFileAttributeKey, id> *)attributes error:(NSError **)error
+{
+  return [self.fileManager createDirectoryAtPath:path withIntermediateDirectories:createIntermediates attributes:attributes error:error];
 }
 
 @end
