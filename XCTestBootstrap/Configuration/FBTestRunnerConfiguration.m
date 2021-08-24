@@ -123,17 +123,6 @@
   if([NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     testedApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = xctTargetBootstrapInjectPath;
   }
-  
-  NSDictionary *testApplicationDependencies = nil;
-  if(testLaunchConfiguration.targetApplicationBundleID != nil && testLaunchConfiguration.targetApplicationPath != nil) {
-    // Explicitly setting the target application bundle id and path as a dependency triggers XCTest to request
-    // the launch of target application via XCTestManager_IDEInterface/XCTMessagingChannel_RunnerToIDE protocols
-    testApplicationDependencies = @{
-      testLaunchConfiguration.targetApplicationBundleID : testLaunchConfiguration.targetApplicationPath
-    };
-  }
-
-  
 
   // Prepare XCTest bundle
   NSError *error;
@@ -156,7 +145,6 @@
     testsToSkip:testLaunchConfiguration.testsToSkip
     targetApplicationPath:testLaunchConfiguration.targetApplicationPath
     targetApplicationBundleID:testLaunchConfiguration.targetApplicationBundleID
-    testApplicationDependencies:testApplicationDependencies
     automationFrameworkPath:automationFrameworkPath
     reportActivities:testLaunchConfiguration.reportActivities
     error:&error];
