@@ -8,6 +8,7 @@
 #import "FBSimulatorFileCommands.h"
 
 #import "FBSimulator.h"
+#import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorFileContainer : NSObject <FBFileContainer>
@@ -25,7 +26,7 @@
   if (!self) {
     return nil;
   }
-  
+
   _queue = queue;
   _fileManager = NSFileManager.defaultManager;
 
@@ -245,6 +246,181 @@
 }
 @end
 
+@interface FBSimulatorMappedFileContainer : FBSimulatorFileContainer;
+
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *pathMapping;
+@property (nonatomic, copy, readonly) NSSet<NSString *> *mappedPaths;
+
+@end
+
+@implementation FBSimulatorMappedFileContainer
+
+- (instancetype)initWithPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping queue:(dispatch_queue_t)queue
+{
+  self = [super initWithQueue:queue];
+  if (!self) {
+    return nil;
+  }
+
+  _pathMapping = pathMapping;
+  _mappedPaths = [NSSet setWithArray:pathMapping.allValues];
+
+  return self;
+}
+
+- (FBFuture<NSString *> *)mappedPath:(NSString *)path
+{
+  NSArray<NSString *> *pathComponents = path.pathComponents;
+  // If we're the root, there's nothing to map to.
+  if ([self isRootPathOfContainer:pathComponents]) {
+    return [FBFuture futureWithResult:path];
+  }
+  // Otherwise, take the first path component, which must be name of the container, so it must have a mapping.
+  NSString *firstPath = pathComponents.firstObject;
+  NSString *mappedPath = self.pathMapping[firstPath];
+  if (!mappedPath) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a valid container id in %@", firstPath, [FBCollectionInformation oneLineDescriptionFromArray:self.pathMapping.allKeys]]
+      failFuture];
+  }
+  // Re-assemble the mapped path, discarding the re-mapped first path component.
+  BOOL isFirstPathComponent = YES;
+  for (NSString *pathComponent in pathComponents) {
+    if (isFirstPathComponent) {
+      isFirstPathComponent = NO;
+      continue;
+    }
+    mappedPath = [mappedPath stringByAppendingPathComponent:pathComponent];
+  }
+  return [FBFuture futureWithResult:mappedPath];
+}
+
+#pragma mark Private
+
+- (NSArray<NSString *> *)contentsOfDirectoryAtPath:(NSString *)fullPath error:(NSError **)error
+{
+  NSArray<NSString *> *pathComponents = fullPath.pathComponents;
+  // Request for the root container, list all mapped names.
+  if ([self isRootPathOfContainer:pathComponents]) {
+    return self.pathMapping.allKeys;
+  }
+  return [super contentsOfDirectoryAtPath:fullPath error:error];
+}
+
+- (BOOL)removeItemAtPath:(NSString *)path error:(NSError **)error
+{
+  NSArray<NSString *> *pathComponents = path.pathComponents;
+  if ([self isRootPathOfContainer:pathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot remove mapped container root at path %@", path]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:pathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot remove mapped container at path %@", path]
+      failBool:error];
+  }
+  return [super removeItemAtPath:path error:error];
+}
+
+- (BOOL)moveItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error
+{
+  NSArray<NSString *> *srcPathComponents = srcPath.pathComponents;
+  NSArray<NSString *> *dstPathComponents = dstPath.pathComponents;
+  if ([self isRootPathOfContainer:srcPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot move mapped container root at path %@", srcPath]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:srcPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot move mapped container at path %@", srcPath]
+      failBool:error];
+  }
+  if ([self isRootPathOfContainer:dstPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot move to mapped container root at path %@", dstPath]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:dstPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot move to mapped container at path %@", dstPath]
+      failBool:error];
+  }
+  return [super moveItemAtPath:srcPath toPath:dstPath error:error];
+}
+
+- (BOOL)copyItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error
+{
+  NSArray<NSString *> *srcPathComponents = srcPath.pathComponents;
+  NSArray<NSString *> *dstPathComponents = dstPath.pathComponents;
+  if ([self isRootPathOfContainer:srcPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot copy mapped container root at path %@", srcPath]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:srcPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot copy mapped container at path %@", srcPath]
+      failBool:error];
+  }
+  if ([self isRootPathOfContainer:dstPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot copy to mapped container root at path %@", dstPath]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:dstPathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot copy to mapped container at path %@", dstPath]
+      failBool:error];
+  }
+  return [super copyItemAtPath:srcPath toPath:dstPath error:error];
+}
+
+- (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates attributes:(NSDictionary<NSFileAttributeKey, id> *)attributes error:(NSError **)error
+{
+  NSArray<NSString *> *pathComponents = path.pathComponents;
+  if ([self isRootPathOfContainer:pathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot create mapped container root at path %@", path]
+      failBool:error];
+  }
+  if ([self isGroupContainerRoot:pathComponents]) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot create mapped container at path %@", path]
+      failBool:error];
+  }
+  return [super createDirectoryAtPath:path withIntermediateDirectories:createIntermediates attributes:attributes error:error];
+}
+
+- (BOOL)isRootPathOfContainer:(NSArray<NSString *> *)pathComponents
+{
+  // If no path components this must be the root
+  if (pathComponents.count == 0) {
+    return YES;
+  }
+  // The root is also signified by a query for the root of the container.
+  NSString *firstPath = pathComponents.firstObject;
+  if (pathComponents.count == 1 && ([firstPath isEqualToString:@"."] || [firstPath isEqualToString:@"/"])) {
+    return YES;
+  }
+  // Otherwise we can't be the root path.
+  return NO;
+}
+
+- (BOOL)isGroupContainerRoot:(NSArray<NSString *> *)pathComponents
+{
+  // Re-assemble the path, confirming whether it matches with one of the mapped paths
+  NSString *reassembled = [NSURL fileURLWithPathComponents:pathComponents].path;
+  if ([self.mappedPaths containsObject:reassembled]) {
+    return YES;
+  }
+  // If the canonical path does not match the known paths this can't be the group container root.
+  return NO;
+}
+
+@end
+
 @interface FBSimulatorFileCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
@@ -272,6 +448,13 @@
   return self;
 }
 
+#pragma mark Public Methods
+
++ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping queue:(dispatch_queue_t)queue
+{
+  return [[FBSimulatorMappedFileContainer alloc] initWithPathMapping:pathMapping queue:queue];
+}
+
 #pragma mark FBFileCommands Implementation
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID
@@ -289,9 +472,19 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
 {
-  return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+  return [[[FBSimulatorApplicationCommands
+    groupContainerToPathMappingForSimulator:self.simulator]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSURL *> *pathMappingURLs) {
+      NSMutableDictionary<NSString *, NSString *> *pathMapping = NSMutableDictionary.dictionary;
+      for (NSString *identifier in pathMappingURLs.allKeys) {
+        pathMapping[identifier] = pathMappingURLs[identifier].path;
+      }
+      return [FBSimulatorFileCommands fileContainerForPathMapping:pathMapping queue:self.simulator.asyncQueue];
+    }]
+    onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
+      // Do nothing.
+      return FBFuture.empty;
+    }];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
