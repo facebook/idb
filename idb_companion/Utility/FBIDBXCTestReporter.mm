@@ -329,7 +329,7 @@
 - (void)insertFinalDataThenWriteResponse:(const idb::XctestRunResponse &)response
 {
   // Passing a reference to the response on the stack will lead to garbage memory unless we make a copy for the block.
-  // https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al#L212
+  // https://github.com/facebook/infer/blob/main/infer/lib/linter_rules/linters.al#L212
   __block idb::XctestRunResponse responseCaptured = response;
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   if (self.configuration.resultBundlePath) {

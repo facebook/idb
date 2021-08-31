@@ -98,13 +98,13 @@ In Xcode 7, Apple deprecated `UIAutomation` and replaced it with UI Testing supp
 
 As part of the security model of running these tests, the Test Bundle cannot manipulate the User Interface un-aided. The bundle running inside the application process coordinates with Xcode via a daemon process called `testmanagerd`.
 
-This mediated connection between the injected application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/master/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
+This mediated connection between the injected application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/main/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
 
 ## idb and Shims
 
 In order for idb to extract structured output from a test process, it uses a "shim": a dynamically linked library that can interpose some of the functionality of `XCTest.framework`.
 
-The default installation instructions for idb will create shims for you. If you're re-locating the `idb_companion` you should take a [look at this class](https://github.com/facebook/idb/blob/master/XCTestBootstrap/Configuration/FBXCTestShimConfiguration.m), which describes how idb finds these binaries.
+The default installation instructions for idb will create shims for you. If you're re-locating the `idb_companion` you should take a [look at this class](https://github.com/facebook/idb/blob/main/XCTestBootstrap/Configuration/FBXCTestShimConfiguration.m), which describes how idb finds these binaries.
 
 ## What about `fbxctest`?
 

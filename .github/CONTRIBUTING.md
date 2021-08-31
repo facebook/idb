@@ -22,7 +22,7 @@ There's a number of goals that we had in mind when building this out:
 ## Pull Requests
 We actively welcome your pull requests.
 
-1. Fork the repo and create your branch from `master`.
+1. Fork the repo and create your branch from `main`.
 2. If you've changed the gRPC interface, the Pull Request should contain changes to the client and the server to support this.
 3. Changes to the the gRPC interface in the companion should be backwards compatible with older clients as far as possible. Any breaking changes will be versioned in minor releases.
 4. Changes to the CLI that are additive are fine, breaking changes will need to be backwards compatible.

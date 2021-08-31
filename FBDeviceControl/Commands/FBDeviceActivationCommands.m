@@ -194,7 +194,7 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
   request.HTTPBody = body;
   [request setValue:@"application/x-apple-plist" forHTTPHeaderField:@"Content-Type"];
   [request setValue:@"application/xml" forHTTPHeaderField:@"Accept"];
-  [request setValue:@"idb (https://github.com/facebook/idb/blob/master/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
+  [request setValue:@"idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
 
   return [[self
     responseForRequest:request]
@@ -232,7 +232,7 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
   request.HTTPMethod = @"POST";
   request.HTTPBody = [self multipartDataFromRequestPayload:payloadData key:@"activation-info" boundary:boundaryConstant];
   [request setValue:contentType forHTTPHeaderField:@"Content-Type"];
-  [request setValue:@"idb (https://github.com/facebook/idb/blob/master/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
+  [request setValue:@"idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
 
   return [[self
     responseForRequest:request]

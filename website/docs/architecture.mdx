@@ -109,19 +109,19 @@ The majority of what the `idb_companion` does is to act as a gRPC server to all 
 
 It does have a handful of components that are important to the way that it operates.
 
-### [`main`](https://github.com/facebook/idb/blob/master/idb_companion/main.m)
+### [`main`](https://github.com/facebook/idb/blob/main/idb_companion/main.m)
 
 This is the entrypoint to the `idb_companion` and includes all of the various flags that are supported by it. This is used for specifying how the gRPC server should be started for a given iOS Target.
 
 Additionally, it exposes a number of "CRUD" commands that are destructive for managing Simulators and Devices. These commands are intentionally left out of the gRPC interface, to prevent unwanted behaviour. If you wish to perform destructive commands, these must be performed on the host where the iOS Simulators or Devices are present.
 
-### [`FBIDBServiceHandler`](https://github.com/facebook/idb/blob/master/idb_companion/Server/FBIDBServiceHandler.mm)
+### [`FBIDBServiceHandler`](https://github.com/facebook/idb/blob/main/idb_companion/Server/FBIDBServiceHandler.mm)
 
-This is an C++ class that [implements the gRPC interface](https://github.com/facebook/idb/blob/master/proto/idb.proto). This is a C++ class as the `idb_companion` is using the gRPC library for C++.
+This is an C++ class that [implements the gRPC interface](https://github.com/facebook/idb/blob/main/proto/idb.proto). This is a C++ class as the `idb_companion` is using the gRPC library for C++.
 
 Requests are forwarded to the handler on a thread pool that is internal to the gRPC C++ library. The overwhelming majority of calls made to the companion will call out to APIs that are backed by an `FBFuture`. This means that the handler thread is then responsible for awaiting the resolution of that `FBFuture`. Each handler call is wrapped in an autorelease pool to prevent memory leakage. The calls to the underlying Frameworks will serialize work appropriately, due to their usage of Futures.
 
-### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/master/idb_companion/Server/FBIDBCommandExecutor.h)
+### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/idb_companion/Server/FBIDBCommandExecutor.h)
 
 This is a pure Objective-C class that provides a facade over the many APIs in the underlying Framework, so that the service handler does not need to be aware of how they operate. This also means that C++ only needs to be used where it is necessary, so that if the gRPC handler is ever migrated to Swift there will be minimal implementation in the handler.
 
