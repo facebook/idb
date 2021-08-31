@@ -175,7 +175,7 @@ class FileListing:
 
 @dataclass(frozen=True)
 class AccessibilityInfo:
-    json: Optional[str]
+    json: str
 
 
 @dataclass(frozen=True)
