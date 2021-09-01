@@ -7,8 +7,6 @@
 
 #import "FBProcessTerminationStrategy.h"
 
-#import <Cocoa/Cocoa.h>
-
 #import "FBProcessFetcher.h"
 #import "FBProcessFetcher+Helpers.h"
 #import "FBProcessInfo.h"
@@ -36,59 +34,13 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @end
 
-@interface FBProcessTerminationStrategy_WorkspaceQuit : FBProcessTerminationStrategy
-
-@end
-
-@implementation FBProcessTerminationStrategy_WorkspaceQuit
-
-- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process
-{
-  // Obtain the NSRunningApplication for the given Application.
-  NSRunningApplication *application = [self.processFetcher runningApplicationForProcess:process];
-  // If the Application Handle doesn't exist, assume it isn't an Application and use good-ole kill(2)
-  if ([application isKindOfClass:NSNull.class]) {
-    [self.logger.debug logFormat:@"Application Handle for %@ does not exist, falling back to kill(2)", process.description];
-    return [super killProcess:process];
-  }
-  // Terminate and return if successful.
-  if ([application terminate]) {
-    [self.logger.debug logFormat:@"Terminated %@ with Application Termination", process.description];
-    return FBFuture.empty;
-  }
-  // If the App is already terminated, everything is ok.
-  if (application.isTerminated) {
-    [self.logger.debug logFormat:@"Application %@ is Terminated", process.description];
-    return FBFuture.empty;
-  }
-  // I find your lack of termination disturbing.
-  if ([application forceTerminate]) {
-    [self.logger.debug logFormat:@"Terminated %@ with Forced Application Termination", process.description];
-    return FBFuture.empty;
-  }
-  // If the App is already terminated, everything is ok.
-  if (application.isTerminated) {
-    [self.logger.debug logFormat:@"Application %@ terminated after Forced Application Termination", process.description];
-    return FBFuture.empty;
-  }
-  return [[[FBControlCoreError
-    describeFormat:@"Could not terminate Application %@", application]
-    attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
-    failFuture];
-}
-
-@end
-
 @implementation FBProcessTerminationStrategy
 
 #pragma mark Initializers
 
 + (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
 {
-  BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
-  return useWorkspaceKilling
-    ? [[FBProcessTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processFetcher:processFetcher workQueue:workQueue logger:logger]
-    : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher workQueue:workQueue logger:logger];
+  return [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher workQueue:workQueue logger:logger];
 }
 
 + (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger

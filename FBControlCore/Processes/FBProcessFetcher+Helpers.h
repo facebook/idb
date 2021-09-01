@@ -39,14 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessIdentifierToDie:(pid_t)processIdentifier;
 
-/**
- Returns the NSRunningApplication for the provided FBProcessInfo *.
-
- @param process the application process to obtain the NSRunningApplication instance for.
- @return a FBProcessInfo for the running application, nil if one could not be found.
- */
-- (nullable NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process;
-
 @end
 
 NS_ASSUME_NONNULL_END

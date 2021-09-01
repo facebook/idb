@@ -36,31 +36,4 @@
   }];
 }
 
-- (nullable NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process
-{
-  NSRunningApplication *application = [[self
-    runningApplicationsForProcesses:@[process]]
-    firstObject];
-
-  if (![application isKindOfClass:NSRunningApplication.class]) {
-    return nil;
-  }
-
-  return application;
-}
-
-#pragma mark Private
-
-- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes
-{
-  return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
-}
-
-- (NSDictionary *)processIdentifiersToApplications
-{
-  NSArray *applications = NSWorkspace.sharedWorkspace.runningApplications;
-  NSArray *processIdentifiers = [applications valueForKey:@"processIdentifier"];
-  return [NSDictionary dictionaryWithObjects:applications forKeys:processIdentifiers];
-}
-
 @end
