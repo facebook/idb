@@ -80,14 +80,6 @@ typedef struct {
  */
 - (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process;
 
-/**
- Terminates a number of Processes.
-
- @param processes an Array of FBProcessInfo of processes to terminate.
- @return a Future that resolves when the all processes have been killed.
- */
-- (FBFuture<NSNull *> *)killProcesses:(NSArray<FBProcessInfo *> *)processes;
-
 @end
 
 NS_ASSUME_NONNULL_END

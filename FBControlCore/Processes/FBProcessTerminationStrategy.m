@@ -178,16 +178,6 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   return [self killProcessIdentifier:process.processIdentifier];
 }
 
-- (FBFuture<NSNull *> *)killProcesses:(NSArray<FBProcessInfo *> *)processes
-{
-  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-  for (FBProcessInfo *process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    [futures addObject:[self killProcess:process]];
-  }
-  return [FBFuture futureWithFutures:futures];
-}
-
 #pragma mark Private
 
 - (FBProcessTerminationStrategy *)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration
