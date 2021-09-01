@@ -27,7 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param filePath the filepath to write the updates to. This
  @param targetSets the FBiOSTargetSets to monitor
- @param deviceSet the device set to monitor.
  @param logger the logger to log to.
  @return a future that resolves when the notifier is created.
  */

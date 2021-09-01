@@ -172,7 +172,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  Returns the accessibility info of a point on the screen
 
  @param point location on the screen (NSValue<NSPoint> *), returns info for the whole screen if nil
- @param legacyFormat YES if the legacy format should be used, NO otherwise.
+ @param nestedFormat YES if the legacy format should be used, NO otherwise.
  @return A Future that resolves with the accessibility info
  */
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
@@ -459,7 +459,7 @@ This allows to avoid the permission popup the first time we open a deeplink
 
 /**
  Lists path within the container. The api exists for backwards-compatibility
- 
+
  @param path relative path to the container where data resides
  @param containerType the Bundle Identifier of the Container.
  @return A future that resolves with the list of files.
