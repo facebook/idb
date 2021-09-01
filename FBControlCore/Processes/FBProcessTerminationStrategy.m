@@ -8,7 +8,6 @@
 #import "FBProcessTerminationStrategy.h"
 
 #import <Cocoa/Cocoa.h>
-#import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessFetcher.h"
 #import "FBProcessFetcher+Helpers.h"

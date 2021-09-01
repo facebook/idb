@@ -22,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBAppleSimctlCommandExecutor;
 @class FBControlCoreLogger;
-@class FBProcessFetcher;
-@class FBProcessInfo;
 @class FBSimulatorConfiguration;
 @class FBSimulatorSet;
 @class SimDevice;
