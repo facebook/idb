@@ -223,25 +223,6 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
   return [subprocesses copy];
 }
 
-- (NSArray<FBProcessInfo *> *)processesWithLaunchPathSubstring:(NSString *)substring
-{
-  NSMutableArray *subprocesses = [NSMutableArray array];
-
-  IterateAllProcesses(self.pidBuffer, self.pidBufferSize, ^ BOOL (pid_t pid) {
-    FBProcessInfo *info = [self processInfoFor:pid];
-    if (!info) {
-      return YES;
-    }
-    if ([info.launchPath rangeOfString:substring].location == NSNotFound) {
-      return YES;
-    }
-    [subprocesses addObject:info];
-    return YES;
-  });
-
-  return [subprocesses copy];
-}
-
 - (NSArray<FBProcessInfo *> *)processesWithProcessName:(NSString *)processName
 {
   NSMutableArray *subprocesses = [NSMutableArray array];

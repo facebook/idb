@@ -37,18 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<FBProcessInfo *> *)subprocessesOf:(pid_t)parent;
 
 /**
- A Query for returning processes with a given subtring in their launch path.
-
- @param substring the substring that must exist in the launch path.
- @return an NSArray<FBProcessInfo> of the found processes.
- */
-- (NSArray<FBProcessInfo *> *)processesWithLaunchPathSubstring:(NSString *)substring;
-
-/**
  A Query for returning the processes with a given name.
-
- Note that this is more optimal than `processesWithLaunchPathSubstring:`
- since only the process name is fetched in the syscall.
 
  @param processName the name of the processes to fetch.
  @return an NSArray<FBProcessInfo> of the found processes.
