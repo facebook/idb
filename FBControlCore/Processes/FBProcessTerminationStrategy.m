@@ -10,9 +10,19 @@
 #import "FBProcessFetcher.h"
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
-#import "FBControlCoreError+Process.h"
 #import "FBControlCoreLogger.h"
 #import "FBControlCoreGlobalConfiguration.h"
+
+@implementation FBControlCoreError (FBProcessTerminationStrategy)
+
+- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher
+{
+  return [self
+    extraInfo:[NSString stringWithFormat:@"%d_process", processIdentifier]
+    value:[processFetcher processInfoFor:processIdentifier] ?: @"No Process Info"];
+}
+
+@end
 
 static NSTimeInterval ProcessTableRemovalTimeout = 20.0;
 
