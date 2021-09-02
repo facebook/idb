@@ -8,7 +8,6 @@
 #import "FBProcessTerminationStrategy.h"
 
 #import "FBProcessFetcher.h"
-#import "FBProcessFetcher+Helpers.h"
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreError+Process.h"
@@ -72,7 +71,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 {
   BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
   NSError *innerError = nil;
-  if (checkExists && ![self.processFetcher processIdentifierExists:processIdentifier error:&innerError]) {
+  if (checkExists && ![self processIdentifierExists:processIdentifier processFetcher:self.processFetcher error:&innerError]) {
     return [[[FBControlCoreError
       describeFormat:@"Could not find that process %d exists", processIdentifier]
       causedBy:innerError]
@@ -98,8 +97,8 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   // well behaved when responding to other terminating signals.
   // There's nothing more than can be done with a SIGKILL.
   [self.logger.debug logFormat:@"Waiting on %d to dissappear from the process table", processIdentifier];
-  return [[[self.processFetcher
-    onQueue:self.workQueue waitForProcessIdentifierToDie:processIdentifier]
+  return [[[self
+    onQueue:self.workQueue waitForProcessIdentifierToDie:processIdentifier processFetcher:self.processFetcher]
     timeout:ProcessTableRemovalTimeout waitingFor:@"Process %d to be removed from the process table", processIdentifier]
     onQueue:self.workQueue chain:^FBFuture *(FBFuture *future) {
       if (future.result) {
@@ -135,6 +134,25 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 - (FBProcessTerminationStrategy *)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration
 {
   return [FBProcessTerminationStrategy strategyWithConfiguration:configuration processFetcher:self.processFetcher workQueue:self.workQueue logger:self.logger];
+}
+
+- (BOOL)processIdentifierExists:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error
+{
+  FBProcessInfo *actual = [processFetcher processInfoFor:processIdentifier];
+  if (!actual) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not find the with pid %d", processIdentifier]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue waitForProcessIdentifierToDie:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher
+{
+  return [FBFuture onQueue:queue resolveWhen:^ BOOL {
+    FBProcessInfo *polledProcess = [processFetcher processInfoFor:processIdentifier];
+    return polledProcess == nil;
+  }];
 }
 
 @end
