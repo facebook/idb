@@ -1,8 +1,0 @@
-// Import Shared & Framework Configuration
-#include "../Configuration/Shared.xcconfig"
-#include "../Configuration/Framework.xcconfig"
-
-// Target-Specific Settings
-INFOPLIST_FILE = $(SRCROOT)/FBControlCore/FBControlCore-Info.plist
-PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore
-PRODUCT_NAME = FBControlCore
