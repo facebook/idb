@@ -12,9 +12,6 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
-FBCompressionFormat const FBCompressionFormatGZIP = @"gzip";
-FBCompressionFormat const FBCompressionFormatZSTD = @"zstd";
-
 static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 @implementation FBArchiveOperations
@@ -33,7 +30,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 + (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
 {
-  NSArray *extractCommand = @[@"-zxp", @"-C", extractPath, @"-f", @"-"];
+  NSArray<NSString *> *extractCommand = @[@"-zxp", @"-C", extractPath, @"-f", @"-"];
   if (compression == FBCompressionFormatZSTD) {
     extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-xp", @"-C", extractPath, @"-f", @"-"];
   }

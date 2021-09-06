@@ -1,4 +1,4 @@
-  /*
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -13,12 +13,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An enum for Compression types
+ An enum representing the compression types available.
  */
-typedef NSString *FBCompressionFormat NS_STRING_ENUM;
-extern FBCompressionFormat const FBCompressionFormatGZIP;
-extern FBCompressionFormat const FBCompressionFormatZSTD;
-
+typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
+  FBCompressionFormatGZIP = 1,
+  FBCompressionFormatZSTD = 2,
+};
 
 @class FBProcessInput;
 
