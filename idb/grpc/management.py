@@ -43,7 +43,7 @@ class ClientManager(ClientManagerBase):
         )
         self._direct_companion_manager = DirectCompanionManager(logger=self._logger)
         self._local_targets_manager = LocalTargetsManager(logger=self._logger)
-        self._companion_spawner: Optional[Companion] = (
+        self._companion: Optional[Companion] = (
             Companion(
                 companion_path=companion_path,
                 device_set_path=device_set_path,
@@ -55,14 +55,14 @@ class ClientManager(ClientManagerBase):
         self._prune_dead_companion = prune_dead_companion
 
     async def _spawn_notifier(self) -> None:
-        companion_spawner = self._companion_spawner
-        if companion_spawner is None:
+        companion = self._companion
+        if companion is None:
             return
-        await companion_spawner.spawn_notifier()
+        await companion.spawn_notifier()
 
     async def _spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
-        companion_spawner = self._companion_spawner
-        if companion_spawner is None:
+        companion = self._companion
+        if companion is None:
             return None
         local_target_available = (
             await self._local_targets_manager.is_local_target_available(
@@ -71,7 +71,7 @@ class ClientManager(ClientManagerBase):
         )
         if local_target_available or target_udid == "mac":
             self._logger.info(f"will attempt to spawn a companion for {target_udid}")
-            port = await companion_spawner.spawn_companion(target_udid=target_udid)
+            port = await companion.spawn_companion(target_udid=target_udid)
             if port:
                 self._logger.info(f"spawned a companion for {target_udid}")
                 host = "localhost"
