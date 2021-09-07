@@ -14,7 +14,7 @@ from datetime import timedelta
 from logging import Logger, DEBUG as LOG_LEVEL_DEBUG
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union, Tuple
 
-from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
+from idb.common.constants import IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
 from idb.common.format import (
     target_description_from_json,
@@ -222,36 +222,9 @@ class Companion(CompanionBase):
             arguments=[f"--{command}", udid], timeout=timeout
         )
 
-        self._pid_saver = PidSaver(logger=self.logger)
-
     def _log_file_path(self, target_udid: str) -> str:
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
-
-    def _is_notifier_running(self) -> bool:
-        pid = self._pid_saver.get_notifier_pid()
-        # Taken from https://fburl.com/ibk820b6
-        if pid <= 0:
-            return False
-        try:
-            # no-op if process exists
-            os.kill(pid, 0)
-            return True
-        except OSError as err:
-            # EPERM clearly means there's a process to deny access to
-            # otherwise proc doesn't exist
-            return err.errno == errno.EPERM
-        except Exception:
-            return False
-
-    async def _read_notifier_output(self, stream: asyncio.StreamReader) -> None:
-        while True:
-            line = await stream.readline()
-            if line is None:
-                return
-            update = parse_json_line(line)
-            if update["report_initial_state"]:
-                return
 
     def check_okay_to_spawn(self) -> None:
         if os.getuid() == 0:
@@ -275,27 +248,6 @@ class Companion(CompanionBase):
         )
         self._pid_saver.save_companion_pid(pid=process.pid)
         return port
-
-    async def spawn_notifier(self, targets_file: str = IDB_LOCAL_TARGETS_FILE) -> None:
-        if self._is_notifier_running():
-            return
-
-        self.check_okay_to_spawn()
-        cmd = [self._companion_path, "--notify", targets_file]
-        log_path = self._log_file_path("notifier")
-        with open(log_path, "a") as log_file:
-            process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
-            )
-        try:
-            self._pid_saver.save_notifier_pid(pid=process.pid)
-            await self._read_notifier_output(stream=none_throws(process.stdout))
-            logging.debug(f"started notifier at process id {process.pid}")
-        except Exception as e:
-            raise CompanionSpawnerException(
-                "Failed to spawn the idb notifier. "
-                f"Stderr: {get_last_n_lines(log_path, 30)}"
-            ) from e
 
     @log_call()
     async def create(

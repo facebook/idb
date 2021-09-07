@@ -18,7 +18,6 @@ class PidSaver:
         self, logger: logging.Logger, pids_file_path: str = IDB_PID_PATH
     ) -> None:
         self.companion_pids: List[int] = []
-        self.notifier_pid = 0
         self.logger = logger
         self.pids_file_path = pids_file_path
 
@@ -28,19 +27,10 @@ class PidSaver:
         self._save()
         self.logger.info(f"saved companion pid {pid}")
 
-    def save_notifier_pid(self, pid: int) -> None:
-        self.notifier_pid = pid
-        self._save()
-        self.logger.info(f"saved notifier pids {pid}")
-
-    def get_notifier_pid(self) -> int:
-        self._load()
-        return self.notifier_pid
-
     def _save(self) -> None:
         with open(self.pids_file_path, "w+") as pid_file:
             json.dump(
-                {"companions": self.companion_pids, "notifier": self.notifier_pid},
+                {"companions": self.companion_pids},
                 pid_file,
             )
             pid_file.flush()
@@ -50,7 +40,6 @@ class PidSaver:
             with open(self.pids_file_path) as pid_file:
                 dictionary = json.load(pid_file)
                 self.companion_pids = dictionary["companions"]
-                self.notifier_pid = dictionary["notifier"]
         except Exception as e:
             self.logger.info(
                 f"failed to open pid file {self.pids_file_path} because of {e}"
@@ -58,15 +47,11 @@ class PidSaver:
 
     def _clear_saved_pids(self) -> None:
         self.companion_pids = []
-        self.notifier_pid = 0
         self._save()
 
     def kill_saved_pids(self) -> None:
         self._load()
-        all_pids = list(self.companion_pids)
-        if self.notifier_pid != 0:
-            all_pids.append(self.notifier_pid)
-        for pid in all_pids:
+        for pid in list(self.companion_pids):
             try:
                 os.kill(pid, signal.SIGTERM)
                 self.logger.info(f"stopped with pid {pid}")

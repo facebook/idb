@@ -12,7 +12,6 @@ from typing import AsyncGenerator, Dict, List, Optional
 from idb.common.companion import Companion
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
-from idb.common.local_targets_manager import LocalTargetsManager
 from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.types import (
@@ -42,7 +41,6 @@ class ClientManager(ClientManagerBase):
             logger if logger else logging.getLogger("idb_grpc_client")
         )
         self._direct_companion_manager = DirectCompanionManager(logger=self._logger)
-        self._local_targets_manager = LocalTargetsManager(logger=self._logger)
         self._companion: Optional[Companion] = (
             Companion(
                 companion_path=companion_path,
@@ -54,21 +52,11 @@ class ClientManager(ClientManagerBase):
         )
         self._prune_dead_companion = prune_dead_companion
 
-    async def _spawn_notifier(self) -> None:
-        companion = self._companion
-        if companion is None:
-            return
-        await companion.spawn_notifier()
-
     async def _spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
         companion = self._companion
         if companion is None:
             return None
-        local_target_available = (
-            await self._local_targets_manager.is_local_target_available(
-                target_udid=target_udid
-            )
-        )
+        local_target_available = await self._is_local_target_available(udid=target_udid)
         if local_target_available or target_udid == "mac":
             self._logger.info(f"will attempt to spawn a companion for {target_udid}")
             port = await companion.spawn_companion(target_udid=target_udid)
@@ -83,6 +71,17 @@ class ClientManager(ClientManagerBase):
                 await self._direct_companion_manager.add_companion(companion_info)
                 return companion_info
         return None
+
+    async def _list_local_targets(self) -> List[TargetDescription]:
+        companion = self._companion
+        if companion is None:
+            return []
+        return await companion.list_targets()
+
+    async def _is_local_target_available(self, udid: str) -> bool:
+        targets = await self._list_local_targets()
+        udids = {target.udid for target in targets}
+        return udid in udids
 
     async def _companion_to_target(
         self, companion: CompanionInfo
@@ -104,7 +103,6 @@ class ClientManager(ClientManagerBase):
 
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
-        await self._spawn_notifier()
         try:
             companion_info = await self._direct_companion_manager.get_companion_info(
                 target_udid=udid
@@ -136,10 +134,9 @@ class ClientManager(ClientManagerBase):
 
     @log_call()
     async def list_targets(self) -> List[TargetDescription]:
-        await self._spawn_notifier()
         (companions, local_targets) = await asyncio.gather(
             self._direct_companion_manager.get_companions(),
-            self._local_targets_manager.get_local_targets(),
+            self._list_local_targets(),
         )
         connected_targets = [
             target
@@ -188,5 +185,4 @@ class ClientManager(ClientManagerBase):
     @log_call()
     async def kill(self) -> None:
         await self._direct_companion_manager.clear()
-        await self._local_targets_manager.clear()
         PidSaver(logger=self._logger).kill_saved_pids()
