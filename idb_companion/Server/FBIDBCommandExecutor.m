@@ -486,12 +486,30 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+    return [commands setPreference:name value:value domain:domain];
+    }];
+}
+
+- (FBFuture<NSString *> *)get_preference:(NSString *)name domain:(nullable NSString *)domain
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+    return [commands getCurrentPreference:name domain:domain];
+    }];
+}
+
 - (FBFuture<NSNull *> *)set_locale_with_identifier:(NSString *)identifier
 {
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands setLocaleWithIdentifier:identifier];
+      return [commands setPreference:@"AppleLocale" value:identifier domain:nil];
     }];
 }
 
@@ -500,7 +518,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands getCurrentLocaleIdentifier];
+      return [commands getCurrentPreference:@"AppleLocale" domain:nil];
     }];
 }
 

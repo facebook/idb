@@ -371,6 +371,25 @@ This allows to avoid the permission popup the first time we open a deeplink
 - (FBFuture<NSNull *> *)set_hardware_keyboard_enabled:(BOOL)enabled;
 
 /**
+ Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
+
+ @param name preference name
+ @param value preference value
+ @param domain preference domain - optional
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+
+/**
+ Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
+
+ @param name preference name
+ @param domain domain to search - optional
+ @return a Future that resolves with the current preference value
+ */
+- (FBFuture<NSString *> *)get_preference:(NSString *)name domain:(nullable NSString *)domain;
+
+/**
  Sets the Locale with a Locale Identifier.
 
  @param identifier the locale identifier.

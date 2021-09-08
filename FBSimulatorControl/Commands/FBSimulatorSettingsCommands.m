@@ -64,18 +64,18 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }];
 }
 
-- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)identifier
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
 {
-  return [[FBLocaleModificationStrategy
+  return [[FBPreferenceModificationStrategy
     strategyWithSimulator:self.simulator]
-    setLocaleWithIdentifier:identifier];
+    setPreference:name value:value domain:domain];
 }
 
-- (FBFuture<NSString *> *)getCurrentLocaleIdentifier
+- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;
 {
-  return [[FBLocaleModificationStrategy
+  return [[FBPreferenceModificationStrategy
     strategyWithSimulator:self.simulator]
-    getCurrentLocaleIdentifier];
+    getCurrentPreference:name domain:domain];
 }
 
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
