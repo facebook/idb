@@ -68,7 +68,11 @@ from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
-from idb.cli.commands.settings import SetCommand, GetCommand, ListCommand
+from idb.cli.commands.settings import (
+    SetPreferenceCommand,
+    GetPreferenceCommand,
+    ListCommand,
+)
 from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
@@ -289,8 +293,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             description="Run xctrace commands",
             commands=[XctraceRecordCommand()],
         ),
-        SetCommand,
-        GetCommand,
+        SetPreferenceCommand(),
+        GetPreferenceCommand(),
         ListCommand,
         shell_command,
     ]

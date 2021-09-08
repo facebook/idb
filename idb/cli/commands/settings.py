@@ -15,64 +15,82 @@ _ENABLE = "enable"
 _DISABLE = "disable"
 
 
-class SetHardwareKeyboardCommand(ClientCommand):
+class SetPreferenceCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "Set the hardware keyboard"
+        return "Sets a preference"
 
     @property
     def name(self) -> str:
-        return "hardware-keyboard"
+        return "set"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "setting",
-            help="Whether to enable or disable the hardware keyboard",
-            choices=[_ENABLE, _DISABLE],
+            "--domain",
+            type=str,
+            default=None,
+            help="Preference domain, assumed to be Apple Global Domain if not specified",
         )
-        super().add_parser_arguments(parser)
-
-    async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.set_hardware_keyboard(
-            enabled=(True if args.setting == _ENABLE else False)
-        )
-
-
-class SetLocaleCommand(ClientCommand):
-    @property
-    def description(self) -> str:
-        return "Sets the locale of the simulator"
-
-    @property
-    def name(self) -> str:
-        return "locale"
-
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "locale_identifier",
-            help="The locale identifier",
+            "name",
+            help="Preference name",
+            type=str,
+        )
+        parser.add_argument(
+            "value",
+            help="Preference value",
             type=str,
         )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.set_locale(
-            locale_identifier=args.locale_identifier,
-        )
+        # special handling for locale and hardware-keyboard preference names
+        # for backwards compatibility
+        if args.name == "locale":
+            await client.set_locale(
+                locale_identifier=args.value,
+            )
+        elif args.name == "hardware-keyboard":
+            if args.value not in [_ENABLE, _DISABLE]:
+                raise Exception(
+                    f"Invalid value for hardware-keyboard. Must be one of {[_ENABLE, _DISABLE]}"
+                )
+            await client.set_hardware_keyboard(args.value == _ENABLE)
+        else:
+            raise Exception(f"Unsupported preference name: {args.name}")
 
 
-class GetLocaleCommand(ClientCommand):
+class GetPreferenceCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "Gets the locale of the simulator"
+        return "Gets a preference value"
 
     @property
     def name(self) -> str:
-        return "locale"
+        return "get"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--domain",
+            type=str,
+            default=None,
+            help="Preference domain, assumed to be Apple Global Domain if not specified",
+        )
+        parser.add_argument(
+            "name",
+            help="Preference name",
+            type=str,
+        )
+        super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        locale_identifier = await client.get_locale()
-        print(locale_identifier)
+        # special handling for locale reference name
+        # for backwards compatibility
+        if args.name == "locale":
+            locale_identifier = await client.get_locale()
+            print(locale_identifier)
+        else:
+            raise Exception(f"Unsupported preference name: {args.name}")
 
 
 class ListLocaleCommand(ClientCommand):
@@ -89,18 +107,6 @@ class ListLocaleCommand(ClientCommand):
         for locale_identifier in locale_identifiers:
             print(locale_identifier)
 
-
-SetCommand = CommandGroup(
-    name="set",
-    description="Sets a preference on the target",
-    commands=[SetHardwareKeyboardCommand(), SetLocaleCommand()],
-)
-
-GetCommand = CommandGroup(
-    name="get",
-    description="Gets a value from the target",
-    commands=[GetLocaleCommand()],
-)
 
 ListCommand = CommandGroup(
     name="list",
