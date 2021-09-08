@@ -90,6 +90,7 @@ message CompanionInfo {
 
 enum Setting {
   LOCALE = 0;
+  ANY = 1; // any kind of app or global setting
 }
 
 message SettingRequest {
@@ -99,6 +100,8 @@ message SettingRequest {
   message StringSetting {
     Setting setting = 1;
     string value = 2;
+    string name = 3; // iff setting == ANY
+    string domain = 4; // assumed "Apple Global Domain" if empty
   }
   oneof setting {
     HardwareKeyboard hardwareKeyboard = 1;
@@ -111,6 +114,8 @@ message SettingResponse {
 
 message GetSettingRequest {
   Setting setting = 1;
+  string name = 2; // iff setting == ANY
+  string domain = 3; // assumed "Apple Global Domain" if empty
 }
 
 message GetSettingResponse {
