@@ -57,7 +57,9 @@ class SetPreferenceCommand(ClientCommand):
                 )
             await client.set_hardware_keyboard(args.value == _ENABLE)
         else:
-            raise Exception(f"Unsupported preference name: {args.name}")
+            await client.set_preference(
+                name=args.name, value=args.value, domain=args.domain
+            )
 
 
 class GetPreferenceCommand(ClientCommand):
@@ -90,7 +92,8 @@ class GetPreferenceCommand(ClientCommand):
             locale_identifier = await client.get_locale()
             print(locale_identifier)
         else:
-            raise Exception(f"Unsupported preference name: {args.name}")
+            value = await client.get_preference(name=args.name, domain=args.domain)
+            print(value)
 
 
 class ListLocaleCommand(ClientCommand):

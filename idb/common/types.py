@@ -524,7 +524,17 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def set_preference(
+        self, name: str, value: str, domain: Optional[str]
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def get_locale(self) -> str:
+        pass
+
+    @abstractmethod
+    async def get_preference(self, name: str, domain: Optional[str]) -> str:
         pass
 
     @abstractmethod

@@ -103,6 +103,7 @@ from idb.grpc.idb_pb2 import (
     LsRequest,
     GetSettingRequest,
     LOCALE as LocaleSetting,
+    ANY as AnySetting,
     ListSettingRequest,
     MkdirRequest,
     MvRequest,
@@ -1107,8 +1108,27 @@ class Client(ClientBase):
         )
 
     @log_and_handle_exceptions
+    async def set_preference(
+        self, name: str, value: str, domain: Optional[str]
+    ) -> None:
+        await self.stub.setting(
+            SettingRequest(
+                stringSetting=SettingRequest.StringSetting(
+                    setting=AnySetting, value=value, name=name, domain=domain
+                )
+            )
+        )
+
+    @log_and_handle_exceptions
     async def get_locale(self) -> str:
         response = await self.stub.get_setting(GetSettingRequest(setting=LocaleSetting))
+        return response.value
+
+    @log_and_handle_exceptions
+    async def get_preference(self, name: str, domain: Optional[str]) -> str:
+        response = await self.stub.get_setting(
+            GetSettingRequest(setting=AnySetting, name=name, domain=domain)
+        )
         return response.value
 
     @log_and_handle_exceptions
