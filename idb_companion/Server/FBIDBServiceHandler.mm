@@ -868,6 +868,20 @@ Status FBIDBServiceHandler::setting(ServerContext* context, const idb::SettingRe
           }
           return Status::OK;
         }
+        case idb::Setting::ANY: {
+          NSError *error = nil;
+          NSString *name = nsstring_from_c_string(stringSetting.name().c_str());
+          NSString *value = nsstring_from_c_string(stringSetting.value().c_str());
+          NSString *domain = nil;
+          if (stringSetting.domain().length() > 0) {
+            domain = nsstring_from_c_string(stringSetting.domain().c_str());
+          }
+          NSNull *result = [[_commandExecutor set_preference:name value:value domain:domain] await:&error];
+          if (!result) {
+            return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+          }
+          return Status::OK;
+        }
         default:
           return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
       }
@@ -887,6 +901,20 @@ Status FBIDBServiceHandler::get_setting(ServerContext* context, const idb::GetSe
         return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
       }
       response->set_value(localeIdentifier.UTF8String);
+      return Status::OK;
+    }
+    case idb::Setting::ANY: {
+      NSError *error = nil;
+      NSString *name = nsstring_from_c_string(request->name().c_str());
+      NSString *domain = nil;
+      if (request->domain().length() > 0) {
+        domain = nsstring_from_c_string(request->domain().c_str());
+      }
+      NSString *value = [[_commandExecutor get_preference:name domain:domain] await:&error];
+      if (error) {
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+      }
+      response->set_value(value.UTF8String);
       return Status::OK;
     }
     default:
