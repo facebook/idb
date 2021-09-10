@@ -21,7 +21,7 @@
 
 @implementation FBTestConfiguration
 
-+ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString*> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error
 {
   // Construct the XCTestConfiguration class.
   XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
@@ -37,6 +37,10 @@
   testConfiguration.targetApplicationBundleID = targetApplicationBundleID;
   testConfiguration.automationFrameworkPath = automationFrameworkPath;
   testConfiguration.reportActivities = reportActivities;
+  testConfiguration.testsDrivenByIDE = NO;
+  testConfiguration.testApplicationDependencies = testApplicationDependencies;
+  
+
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
 
   // Write it to file.
