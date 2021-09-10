@@ -166,8 +166,17 @@
 
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
 {
+  static dispatch_once_t onceToken;
+  static NSRegularExpression *regex;
+  dispatch_once(&onceToken, ^{
+    NSError *error = nil;
+    regex = [NSRegularExpression regularExpressionWithPattern:@"UIKitApplication:" options:0 error:&error];
+    NSCAssert(error == nil, @"Invalid regular expression");
+  });
+
+
   return [[self.simulator
-    serviceNamesAndProcessIdentifiersForSubstring:@"UIKitApplication"]
+    serviceNamesAndProcessIdentifiersMatching:regex]
     onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
       NSMutableDictionary<NSString *, NSNumber *> *mapping = [NSMutableDictionary dictionary];
       for (NSString *serviceName in serviceNameToProcessIdentifier.allKeys) {
@@ -183,10 +192,17 @@
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
+  NSError *error = nil;
+  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@\\[|$",[NSRegularExpression escapedPatternForString:bundleID]];
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
+  if (error) {
+    return [[FBSimulatorError
+             describeFormat:@"Couldn't build search pattern for '%@'", bundleID]
+             failFuture];
+  }
   return [[FBFuture
     onQueue:self.simulator.workQueue resolve:^{
-      NSString *serviceName = [NSString stringWithFormat:@"UIKitApplication:%@", bundleID];
-      return [self.simulator serviceNameAndProcessIdentifierForSubstring:serviceName];
+      return [self.simulator firstServiceNameAndProcessIdentifierMatching:regex];
     }]
     onQueue:self.simulator.workQueue map:^(NSArray<id> *result) {
       return result[1];

@@ -64,14 +64,23 @@
 
 - (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process
 {
+  NSError *error = nil;
+  NSString *pattern = [NSString stringWithFormat:@"^%@\t", [NSRegularExpression escapedPatternForString:@(process.processIdentifier).stringValue]];
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
+  if (error) {
+    return [[FBSimulatorError
+             describeFormat:@"Couldn't build search pattern for '%@'", process]
+             failFuture];
+  }
+
   return [[self
-    serviceNameAndProcessIdentifierForSubstring:@(process.processIdentifier).stringValue]
+    firstServiceNameAndProcessIdentifierMatching:regex]
     onQueue:self.simulator.asyncQueue map:^(NSArray<id> *tuple) {
       return [tuple firstObject];
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersForSubstring:(NSString *)substring
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersMatching:(NSRegularExpression *)regex
 {
   return [[self
     runWithArguments:@[@"list"]]
@@ -79,7 +88,7 @@
       NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
       NSMutableDictionary<NSString *, NSNumber *> *mapping = [NSMutableDictionary dictionary];
       for (NSString *line in lines) {
-        if (![line containsString:substring]) {
+        if (![regex firstMatchInString:line options:0 range:NSMakeRange(0, line.length)]) {
           continue;
         }
         NSError *error = nil;
@@ -94,19 +103,19 @@
     }];
 }
 
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring
+- (FBFuture<NSArray<id> *> *)firstServiceNameAndProcessIdentifierMatching:(NSRegularExpression *)regex
 {
   return [[self
-    serviceNamesAndProcessIdentifiersForSubstring:substring]
+    serviceNamesAndProcessIdentifiersMatching:regex]
     onQueue:self.simulator.asyncQueue fmap:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
       if (serviceNameToProcessIdentifier.count == 0) {
         return [[FBSimulatorError
-          describeFormat:@"No Matching processes for %@", substring]
+          describeFormat:@"No Matching processes for '%@'", regex.pattern ]
           failFuture];
       }
       if (serviceNameToProcessIdentifier.count > 1) {
         return [[FBSimulatorError
-          describeFormat:@"Multiple Matching processes for '%@' %@", substring, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]
+          describeFormat:@"Multiple Matching processes for '%@' %@", regex.pattern, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]
           failFuture];
       }
       NSString *serviceName = serviceNameToProcessIdentifier.allKeys.firstObject;
