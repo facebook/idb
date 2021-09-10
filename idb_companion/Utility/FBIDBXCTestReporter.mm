@@ -13,7 +13,6 @@
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
-@property (nonatomic, assign, readonly) BOOL reportAttachments;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
@@ -226,7 +225,7 @@
   activityOut->set_start(activity.start.timeIntervalSince1970);
   activityOut->set_finish(activity.finish.timeIntervalSince1970);
   activityOut->set_name(activity.name.UTF8String ?: "");
-  if (self.reportAttachments) {
+  if (self.configuration.reportAttachments) {
     for (FBAttachment *attachment in activity.attachments) {
       idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
       attachmentOut->set_payload(attachment.payload.bytes, attachment.payload.length);

@@ -9,6 +9,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ A value object that contains configuration for idb's xctest reporter.
+ */
 @interface FBXCTestReporterConfiguration : NSObject
 
 /**

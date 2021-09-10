@@ -25,4 +25,9 @@
   return self;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Result Bundle %@ | Coverage Path %@ | Log Path %@ | Binary Path %@ | Report Attachments %d", self.resultBundlePath, self.coveragePath, self.logDirectoryPath, self.binaryPath, self.reportAttachments];
+}
+
 @end
