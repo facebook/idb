@@ -182,6 +182,12 @@
         NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
         NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];
         hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = hostCoveragePath;
+
+        if (testLaunchConfiguration.targetApplicationBundle != nil) {
+          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier];
+          NSString *targetAppCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:targetCoverageFile];
+          testedApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = targetAppCoveragePath;
+        }
       }
       NSString *logDirectoryPath = testLaunchConfiguration.logDirectoryPath;
       if (logDirectoryPath) {
