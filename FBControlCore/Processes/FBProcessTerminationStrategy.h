@@ -71,14 +71,6 @@ typedef struct {
  */
 - (FBFuture<NSNull *> *)killProcessIdentifier:(pid_t)processIdentifier;
 
-/**
- Terminates a Process of the provided Process Info.
-
- @param process the process to terminate, must not be nil.
- @return a Future that resolves when the process was killed.
- */
-- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process;
-
 @end
 
 NS_ASSUME_NONNULL_END

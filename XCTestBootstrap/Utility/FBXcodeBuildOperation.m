@@ -129,7 +129,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher workQueue:queue logger:logger];
   NSMutableArray<FBFuture<FBProcessInfo *> *> *futures = [NSMutableArray array];
   for (FBProcessInfo *process in processes) {
-    FBFuture<FBProcessInfo *> *termination = [[strategy killProcess:process] mapReplace:process];
+    FBFuture<FBProcessInfo *> *termination = [[strategy killProcessIdentifier:process.processIdentifier] mapReplace:process];
     [futures addObject:termination];
   }
   return [FBFuture futureWithFutures:futures];

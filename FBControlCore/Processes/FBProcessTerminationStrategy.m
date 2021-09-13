@@ -134,11 +134,6 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     }];
 }
 
-- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process
-{
-  return [self killProcessIdentifier:process.processIdentifier];
-}
-
 #pragma mark Private
 
 - (FBProcessTerminationStrategy *)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration
