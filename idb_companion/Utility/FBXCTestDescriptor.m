@@ -172,25 +172,29 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 + (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[target
-    installedApplicationWithBundleID:configuration.targetApplicationBundleID ?: configuration.applicationLaunchConfiguration.bundleID]
-    onQueue:target.workQueue map:^(FBInstalledApplication *installedApp) {
-      NSString *binaryPath = installedApp.bundle.binary.path;
-      FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
-      FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
-        initWithResultBundlePath:configuration.resultBundlePath
-        coveragePath:configuration.coveragePath
-        logDirectoryPath:logDirectoryPath
-        binariesPaths:@[binaryPath]
-        reportAttachments:reportAttachments];
-      return [[FBIDBTestOperation alloc]
-        initWithConfiguration:configuration
-        reporterConfiguration:reporterConfiguration
-        reporter:reporter
-        logger:logger
-        completed:testCompleted
-        queue:target.workQueue];
-    }];
+
+  NSMutableArray<NSString *> *binariesPaths = [NSMutableArray arrayWithObject:configuration.testBundle.binary.path];
+  if (configuration.testHostBundle.binary.path) {
+    [binariesPaths addObject:configuration.testHostBundle.binary.path];
+  }
+  if (configuration.targetApplicationBundle.binary.path) {
+    [binariesPaths addObject:configuration.targetApplicationBundle.binary.path];
+  }
+
+  FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
+  FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
+    initWithResultBundlePath:configuration.resultBundlePath
+    coveragePath:configuration.coveragePath
+    logDirectoryPath:logDirectoryPath
+    binariesPaths:binariesPaths
+    reportAttachments:reportAttachments];
+  return [FBFuture futureWithResult:[[FBIDBTestOperation alloc]
+    initWithConfiguration:configuration
+    reporterConfiguration:reporterConfiguration
+    reporter:reporter
+    logger:logger
+    completed:testCompleted
+    queue:target.workQueue]];
 }
 
 @end
