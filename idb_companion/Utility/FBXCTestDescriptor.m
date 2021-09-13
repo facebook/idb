@@ -126,7 +126,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     initWithResultBundlePath:nil
     coveragePath:configuration.coveragePath
     logDirectoryPath:logDirectoryPath
-    binaryPath:configuration.binaryPath
+    binariesPaths:@[configuration.binaryPath]
     reportAttachments:self.reportAttachments];
   FBIDBTestOperation *operation = [[FBIDBTestOperation alloc]
     initWithConfiguration:configuration
@@ -181,7 +181,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
         initWithResultBundlePath:configuration.resultBundlePath
         coveragePath:configuration.coveragePath
         logDirectoryPath:logDirectoryPath
-        binaryPath:binaryPath
+        binariesPaths:@[binaryPath]
         reportAttachments:reportAttachments];
       return [[FBIDBTestOperation alloc]
         initWithConfiguration:configuration

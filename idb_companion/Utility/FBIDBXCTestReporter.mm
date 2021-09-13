@@ -42,7 +42,7 @@
   _queue = queue;
   _logger = logger;
 
-  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binaryPath:nil reportAttachments:NO];
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -139,10 +139,10 @@
   [self.logger.info logFormat:@"Tests waiting for debugger. To debug run: lldb -p %d", pid];
   idb::XctestRunResponse response;
   response.set_status(idb::XctestRunResponse_Status_RUNNING);
-  
+
   idb::DebuggerInfo *debugger_info = response.mutable_debugger();
   debugger_info->set_pid(pid);
-  
+
   [self writeResponse:response];
 }
 
@@ -429,8 +429,13 @@
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
     onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      NSMutableArray<NSString *> *arguments = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
+      for (NSString *binary in self.configuration.binariesPaths) {
+        [arguments addObject:@"-object"];
+        [arguments addObject:binary];
+      }
       return [[[[FBTaskBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.configuration.binaryPath]]
+        withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
         withStdOutInMemoryAsString]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];
