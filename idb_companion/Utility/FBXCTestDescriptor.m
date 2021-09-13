@@ -436,15 +436,10 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 - (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   BOOL uiTesting = NO;
-  NSString *targetApplicationPath = nil;
-  NSString *targetApplicationBundleID = nil;
   FBFuture<FBApplicationLaunchConfiguration *> *appLaunchConfigFuture = nil;
   if (request.isUITest) {
     appLaunchConfigFuture = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger, logDirectoryPath, queue);
-    // Test config
     uiTesting = YES;
-    targetApplicationPath = testApps.applicationUnderTest.bundle.path;
-    targetApplicationBundleID = testApps.applicationUnderTest.bundle.identifier;
   } else {
     appLaunchConfigFuture = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, logDirectoryPath, queue);
   }
@@ -456,16 +451,15 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
   return [appLaunchConfigFuture onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
     return [[FBTestLaunchConfiguration alloc]
-      initWithTestBundlePath:self.testBundle.path
+      initWithTestBundle:self.testBundle
       applicationLaunchConfiguration:applicationLaunchConfiguration
-      testHostPath:nil
+      testHostBundle:testApps.testHostApp.bundle
       timeout:(request.testTimeout ? request.testTimeout.doubleValue : 0)
       initializeUITesting:uiTesting
       useXcodebuild:NO
       testsToRun:request.testsToRun
       testsToSkip:request.testsToSkip
-      targetApplicationPath:targetApplicationPath
-      targetApplicationBundleID:targetApplicationBundleID
+      targetApplicationBundle:testApps.applicationUnderTest.bundle
       xcTestRunProperties:nil
       resultBundlePath:nil
       reportActivities:request.reportActivities
@@ -549,16 +543,15 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   return [BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, nil, queue)
    onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *launchConfig) {
     return [[FBTestLaunchConfiguration alloc]
-      initWithTestBundlePath:self.testBundle.path
+      initWithTestBundle:self.testBundle
       applicationLaunchConfiguration:launchConfig
-      testHostPath:self.testHostBundle.path
+      testHostBundle:self.testHostBundle
       timeout:0
       initializeUITesting:request.isUITest
       useXcodebuild:YES
       testsToRun:request.testsToRun
       testsToSkip:request.testsToSkip
-      targetApplicationPath:nil
-      targetApplicationBundleID:nil
+      targetApplicationBundle:nil
       xcTestRunProperties:properties
       resultBundlePath:resultBundlePath
       reportActivities:request.reportActivities

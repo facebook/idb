@@ -62,16 +62,22 @@
     }
   }
 
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:self.configuration.testBundlePath error:&error];
+  if (!testBundle) {
+    [self.logger logFormat:@"Failed to open test bundle: %@", error];
+    return [FBFuture futureWithError:error];
+  }
+
   return [[self.target
     installApplicationWithPath:testRunnerApp.path]
     onQueue:self.target.workQueue fmap:^(id _) {
-      return [self startTestWithTestRunnerApp:testRunnerApp testTargetApp:testTargetApp];
+    return [self startTestWithTestBundle:testBundle testRunnerApp:testRunnerApp testTargetApp:testTargetApp];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)startTestWithTestRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp
+- (FBFuture<NSNull *> *)startTestWithTestBundle:(FBBundleDescriptor *)testBundle testRunnerApp:(FBBundleDescriptor *)testRunnerApp testTargetApp:(FBBundleDescriptor *)testTargetApp
 {
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration alloc]
     initWithBundleID:testRunnerApp.identifier
@@ -83,16 +89,15 @@
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.configuration.testBundlePath
+    initWithTestBundle:testBundle
     applicationLaunchConfiguration:appLaunch
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:(testTargetApp ? YES : NO)
     useXcodebuild:NO
     testsToRun:(self.configuration.testFilter ? [NSSet setWithObject:self.configuration.testFilter] : nil)
     testsToSkip:nil
-    targetApplicationPath:testTargetApp.path
-    targetApplicationBundleID:testTargetApp.identifier
+    targetApplicationBundle:testTargetApp
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO

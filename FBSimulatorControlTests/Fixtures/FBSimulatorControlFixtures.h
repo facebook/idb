@@ -87,9 +87,9 @@ NS_ASSUME_NONNULL_BEGIN
  An iOS Unit Test XCTest Target.
  Will check that the bundle is codesigned, and sign it if is not.
 
- @return path to the Unit Test Bundle.
+ @return Unit Test Bundle Descriptor.
  */
-- (nullable NSString *)iOSUnitTestBundlePath;
+- (nullable FBBundleDescriptor *)iOSUnitTestBundle;
 
 @end
 

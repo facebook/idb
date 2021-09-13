@@ -93,16 +93,15 @@
     io:io
     launchMode:self.safariAppLaunch.launchMode];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    initWithTestBundle:self.testLaunchSafari.testBundle
     applicationLaunchConfiguration:applicationLaunchConfiguration
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:nil
     testsToSkip:nil
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
@@ -130,16 +129,15 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    initWithTestBundle:self.testLaunchSafari.testBundle
     applicationLaunchConfiguration:self.safariAppLaunch
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
     testsToSkip:nil
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
@@ -155,16 +153,15 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.testLaunchSafari.testBundlePath
+    initWithTestBundle:self.testLaunchSafari.testBundle
     applicationLaunchConfiguration:self.safariAppLaunch
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:nil
     testsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
