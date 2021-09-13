@@ -180,9 +180,9 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 @property (nonatomic, readonly) FBLogicTestMirrorLogs mirroring;
 
 /**
- The path to the coverage file
+ The path to the coverage directory
 */
-@property (nonatomic, nullable, copy, readonly) NSString *coveragePath;
+@property (nonatomic, nullable, copy, readonly) NSString *coverageDirectoryPath;
 
 /**
  The path to the test bundle binary
@@ -197,7 +197,7 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
 
 @end
 

@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable, readonly) NSString *resultBundlePath;
 
 /**
- Coverage file path
+ Coverage directory path
  */
-@property (nonatomic, copy, nullable, readonly) NSString *coveragePath;
+@property (nonatomic, copy, nullable, readonly) NSString *coverageDirectoryPath;
 
 /**
  Log directory path
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) BOOL reportAttachments;
 
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments;
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments;
 
 @end
 

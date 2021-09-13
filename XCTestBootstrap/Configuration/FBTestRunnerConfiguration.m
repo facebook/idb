@@ -123,7 +123,7 @@
   if([NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     testedApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = xctTargetBootstrapInjectPath;
   }
-  
+
   NSDictionary *testApplicationDependencies = nil;
   if(testLaunchConfiguration.targetApplicationBundleID != nil && testLaunchConfiguration.targetApplicationPath != nil) {
     // Explicitly setting the target application bundle id and path as a dependency triggers XCTest to request
@@ -133,7 +133,7 @@
     };
   }
 
-  
+
 
   // Prepare XCTest bundle
   NSError *error;
@@ -178,9 +178,10 @@
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[kEnv_ShimStartXCTest] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
-      NSString *coveragePath = testLaunchConfiguration.coveragePath;
-      if (coveragePath) {
-        hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = testLaunchConfiguration.coveragePath;
+      if (testLaunchConfiguration.coverageDirectoryPath) {
+        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
+        NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];
+        hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = hostCoveragePath;
       }
       NSString *logDirectoryPath = testLaunchConfiguration.logDirectoryPath;
       if (logDirectoryPath) {

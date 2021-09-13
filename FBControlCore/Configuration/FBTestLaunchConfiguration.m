@@ -17,7 +17,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath
 {
   self = [super init];
   if (!self) {
@@ -36,7 +36,7 @@
   _xcTestRunProperties = xcTestRunProperties;
   _resultBundlePath = resultBundlePath;
   _reportActivities = reportActivities;
-  _coveragePath = coveragePath;
+  _coverageDirectoryPath = coverageDirectoryPath;
   _logDirectoryPath = logDirectoryPath;
 
   return self;
@@ -88,19 +88,19 @@
          self.shouldUseXcodebuild == configuration.shouldUseXcodebuild &&
          (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
          (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]) &&
-         (self.coveragePath == configuration.coveragePath || [self.coveragePath isEqualToString:configuration.coveragePath]) &&
+         (self.coverageDirectoryPath == configuration.coverageDirectoryPath || [self.coverageDirectoryPath isEqualToString:configuration.coverageDirectoryPath]) &&
          (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath]);
 }
 
 - (NSUInteger)hash
 {
-  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coveragePath.hash ^ self.logDirectoryPath.hash;
+  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coverageDirectoryPath.hash ^ self.logDirectoryPath.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CollectCoverage %@ | LogDirectoryPath %@" ,
+    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | LogDirectoryPath %@" ,
     self.testBundlePath,
     self.applicationLaunchConfiguration,
     self.testHostPath,
@@ -111,7 +111,7 @@
     self.targetApplicationBundle,
     self.xcTestRunProperties,
     self.resultBundlePath,
-    self.coveragePath,
+    self.coverageDirectoryPath,
     self.logDirectoryPath
   ];
 }

@@ -42,7 +42,7 @@
   _queue = queue;
   _logger = logger;
 
-  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageDirectoryPath:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -343,7 +343,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.configuration.coveragePath) {
+  if (self.configuration.coverageDirectoryPath) {
     [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
       NSString *coverageData = future.result;
       if (coverageData) {
@@ -417,12 +417,30 @@
       }
     };
 
-  NSString *profdataPath = [[self.configuration.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
+  NSString *coverageDirectoryPath = self.configuration.coverageDirectoryPath;
+  NSString *profdataPath = [coverageDirectoryPath stringByAppendingPathComponent:@"coverage.profdata"];
+
+  NSError *error = nil;
+  NSArray<NSString *> *profraws = [NSFileManager.defaultManager contentsOfDirectoryAtPath:coverageDirectoryPath error:&error];
+  if (profraws == nil) {
+    return [[FBControlCoreError
+      describeFormat:@"Couldn't find code coverage raw data: %@", error]
+      failFuture];
+  }
+  profraws = [profraws filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *evaluatedObject, NSDictionary<NSString *,id> *_) {
+    return [[evaluatedObject pathExtension] isEqualToString:@"profraw"];
+  }]];
+
 
   return [[[[[self.processUnderTestExitedMutable
     onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+      NSMutableArray<NSString *> *arguments = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
+      for (NSString *profraw in profraws) {
+        [arguments addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
+      }
+
       return [[[[FBTaskBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.configuration.coveragePath]]
+        withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
         withStdOutInMemoryAsString]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];

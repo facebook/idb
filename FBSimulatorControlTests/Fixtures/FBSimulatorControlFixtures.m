@@ -70,7 +70,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 }
 
@@ -89,7 +89,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 }
 

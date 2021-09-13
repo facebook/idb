@@ -101,7 +101,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;

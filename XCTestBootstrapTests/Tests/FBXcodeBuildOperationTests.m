@@ -45,7 +45,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];

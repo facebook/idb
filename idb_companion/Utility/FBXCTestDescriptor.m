@@ -76,11 +76,11 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     return [FBFuture futureWithError:error];
   }
 
-  NSString *coveragePath = nil;
+  NSString *coverageDirPath = nil;
   if (self.collectCoverage) {
     NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
-    NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
-    coveragePath = [dir.path stringByAppendingPathComponent:coverageFileName];
+    NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
+    coverageDirPath = [dir.path stringByAppendingPathComponent:coverageDirName];
   }
 
   NSString *testFilter = nil;
@@ -107,7 +107,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     timeout:timeout
     testFilter:testFilter
     mirroring:FBLogicTestMirrorFileLogs
-    coveragePath:coveragePath
+    coverageDirectoryPath:coverageDirPath
     binaryPath:testDescriptor.testBundle.binary.path
     logDirectoryPath:logDirectoryPath];
 
@@ -124,7 +124,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   }
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
     initWithResultBundlePath:nil
-    coveragePath:configuration.coveragePath
+    coverageDirectoryPath:configuration.coverageDirectoryPath
     logDirectoryPath:logDirectoryPath
     binariesPaths:@[configuration.binaryPath]
     reportAttachments:self.reportAttachments];
@@ -184,7 +184,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
     initWithResultBundlePath:configuration.resultBundlePath
-    coveragePath:configuration.coveragePath
+    coverageDirectoryPath:configuration.coverageDirectoryPath
     logDirectoryPath:logDirectoryPath
     binariesPaths:binariesPaths
     reportAttachments:reportAttachments];
@@ -447,10 +447,10 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   } else {
     appLaunchConfigFuture = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, logDirectoryPath, queue);
   }
-  NSString *coveragePath = nil;
+  NSString *coverageDirPath = nil;
   if (request.collectCoverage) {
-    NSString *coverageFileName = [NSString stringWithFormat:@"coverage_%@.profraw", NSUUID.UUID.UUIDString];
-    coveragePath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageFileName];
+    NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
+    coverageDirPath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageDirName];
   }
 
   return [appLaunchConfigFuture onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
@@ -467,7 +467,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       xcTestRunProperties:nil
       resultBundlePath:nil
       reportActivities:request.reportActivities
-      coveragePath:coveragePath
+      coverageDirectoryPath:coverageDirPath
       logDirectoryPath:logDirectoryPath];
   }];
 }
@@ -559,7 +559,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       xcTestRunProperties:properties
       resultBundlePath:resultBundlePath
       reportActivities:request.reportActivities
-      coveragePath:nil
+      coverageDirectoryPath:nil
       logDirectoryPath:logDirectoryPath];
   }];
 }

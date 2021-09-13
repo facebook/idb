@@ -105,7 +105,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
@@ -141,7 +141,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -165,7 +165,7 @@
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
