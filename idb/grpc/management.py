@@ -17,6 +17,7 @@ from idb.common.pid_saver import PidSaver
 from idb.common.types import (
     ClientManager as ClientManagerBase,
     CompanionInfo,
+    OnlyFilter,
     ConnectionDestination,
     DomainSocketAddress,
     IdbException,
@@ -72,14 +73,16 @@ class ClientManager(ClientManagerBase):
                 return companion_info
         return None
 
-    async def _list_local_targets(self) -> List[TargetDescription]:
+    async def _list_local_targets(
+        self, only: Optional[OnlyFilter]
+    ) -> List[TargetDescription]:
         companion = self._companion
         if companion is None:
             return []
-        return await companion.list_targets()
+        return await companion.list_targets(only=only)
 
     async def _is_local_target_available(self, udid: str) -> bool:
-        targets = await self._list_local_targets()
+        targets = await self._list_local_targets(only=None)
         udids = {target.udid for target in targets}
         return udid in udids
 
@@ -133,10 +136,12 @@ class ClientManager(ClientManagerBase):
                 yield client
 
     @log_call()
-    async def list_targets(self) -> List[TargetDescription]:
+    async def list_targets(
+        self, only: Optional[OnlyFilter] = None
+    ) -> List[TargetDescription]:
         (companions, local_targets) = await asyncio.gather(
             self._direct_companion_manager.get_companions(),
-            self._list_local_targets(),
+            self._list_local_targets(only=only),
         )
         connected_targets = [
             target

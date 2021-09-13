@@ -6,13 +6,14 @@
 
 import json
 from argparse import SUPPRESS, ArgumentParser, Namespace
-from typing import Union
+from typing import Union, Mapping
 
 import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
 from idb.common.types import Client, ClientManager, Companion, IdbException, TCPAddress
+from idb.common.types import TargetType
 from idb.common.udid import is_udid
 
 
@@ -158,17 +159,33 @@ class TargetDescribeCommand(ClientCommand):
             print(description)
 
 
+_STRING_TO_ONLY: Mapping[str, TargetType] = {
+    target_type.name.lower(): target_type for target_type in list(TargetType)
+}
+
+
 class TargetListCommand(ManagementCommand):
     @property
     def description(self) -> str:
-        return "List the connected targets"
+        return "Lists connected and available targets"
 
     @property
     def name(self) -> str:
         return "list-targets"
 
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--only",
+            help="Which device types to list. Specifying a filter will make this command run faster.",
+            choices=list(_STRING_TO_ONLY.keys()),
+            default=None,
+            required=False,
+        )
+        super().add_parser_arguments(parser)
+
     async def run_with_manager(self, args: Namespace, manager: ClientManager) -> None:
-        targets = await manager.list_targets()
+        only = _STRING_TO_ONLY[args.only] if args.only is not None else None
+        targets = await manager.list_targets(only=only)
         if len(targets) == 0:
             if not args.json:
                 print("No available targets")

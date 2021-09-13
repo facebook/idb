@@ -750,7 +750,9 @@ class ClientManager:
         pass
 
     @abstractmethod
-    async def list_targets(self) -> List[TargetDescription]:
+    async def list_targets(
+        self, only: Optional[OnlyFilter] = None
+    ) -> List[TargetDescription]:
         pass
 
     @abstractmethod
