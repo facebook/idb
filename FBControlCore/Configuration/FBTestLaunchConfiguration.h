@@ -29,11 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, retain, readonly, nullable) FBBundleDescriptor *testBundle;
 
 /**
- Path to XCTest bundle used for testing
- */
-@property (nonatomic, copy, readonly, nullable) NSString *testBundlePath;
-
-/**
  Configuration used to launch test runner application.
  */
 @property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
@@ -42,11 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  Host app bundle.
  */
 @property (nonatomic, copy, readonly, nullable) FBBundleDescriptor *testHostBundle;
-
-/**
- Path to host app.
- */
-@property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
 
 /**
  Timeout for the Test Launch.
@@ -77,16 +67,6 @@ NS_ASSUME_NONNULL_BEGIN
  Bundle of the target application for UI tests
  */
 @property (nonatomic, strong, readonly, nullable) FBBundleDescriptor *targetApplicationBundle;
-
-/*
- Bundle ID of the target application for UI tests
- */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
-
-/*
- Path to the target application for UI tests
- */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
 
 /*
  A dictionary with xctestrun file contents to use.

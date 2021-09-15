@@ -85,8 +85,8 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 {
   return @{
     @"StubBundleId" : @{
-      @"TestHostPath" : testLaunch.testHostPath,
-      @"TestBundlePath" : testLaunch.testBundlePath,
+      @"TestHostPath" : testLaunch.testHostBundle.path,
+      @"TestBundlePath" : testLaunch.testBundle.path,
       @"UseUITargetAppProvidedByTests" : @YES,
       @"IsUITestBundle" : @YES,
       @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,

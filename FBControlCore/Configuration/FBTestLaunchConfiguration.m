@@ -42,25 +42,6 @@
   return self;
 }
 
-- (NSString *)testBundlePath
-{
-  return self.testBundle.path;
-}
-
-- (NSString *)testHostPath
-{
-  return self.testHostBundle.path;
-}
-
-- (NSString *)targetApplicationPath
-{
-  return self.targetApplicationBundle.path;
-}
-
-- (NSString *)targetApplicationBundleID
-{
-  return self.targetApplicationBundle.identifier;
-}
 
 #pragma mark NSCopying
 
@@ -77,9 +58,9 @@
     return NO;
   }
 
-  return (self.testBundlePath == configuration.testBundlePath || [self.testBundlePath isEqualToString:configuration.testBundlePath]) &&
+  return (self.testBundle == configuration.testBundle || [self.testBundle isEqualTo:configuration.testBundle]) &&
          (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration  || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration]) &&
-         (self.testHostPath == configuration.testHostPath || [self.testHostPath isEqualToString:configuration.testHostPath]) &&
+         (self.testHostBundle == configuration.testHostBundle || [self.testHostBundle isEqual:configuration.testHostBundle]) &&
          (self.targetApplicationBundle == configuration.targetApplicationBundle || [self.targetApplicationBundle isEqual:configuration.targetApplicationBundle]) &&
          (self.testsToRun == configuration.testsToRun || [self.testsToRun isEqual:configuration.testsToRun]) &&
          (self.testsToSkip == configuration.testsToSkip || [self.testsToSkip isEqual:configuration.testsToSkip]) &&
@@ -94,16 +75,16 @@
 
 - (NSUInteger)hash
 {
-  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coverageDirectoryPath.hash ^ self.logDirectoryPath.hash;
+  return self.testBundle.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostBundle.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coverageDirectoryPath.hash ^ self.logDirectoryPath.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | LogDirectoryPath %@" ,
-    self.testBundlePath,
+    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | LogDirectoryPath %@" ,
+    self.testBundle,
     self.applicationLaunchConfiguration,
-    self.testHostPath,
+    self.testHostBundle,
     self.shouldInitializeUITesting,
     self.shouldUseXcodebuild,
     self.testsToRun,

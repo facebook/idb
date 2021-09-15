@@ -22,7 +22,7 @@
 {
   NSParameterAssert(target);
   NSParameterAssert(configuration.applicationLaunchConfiguration);
-  NSParameterAssert(configuration.testBundlePath);
+  NSParameterAssert(configuration.testBundle.path);
 
   NSError *error = nil;
   if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:target.logger error:&error]) {

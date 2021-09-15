@@ -36,8 +36,8 @@
 {
   if (codesign) {
     return [[[codesign
-      cdHashForBundleAtPath:testLaunchConfiguration.testBundlePath]
-      rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundlePath]
+      cdHashForBundleAtPath:testLaunchConfiguration.testBundle.path]
+      rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundle.path]
       onQueue:target.asyncQueue fmap:^(id _) {
         return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory];
       }];
@@ -125,11 +125,11 @@
   }
 
   NSDictionary *testApplicationDependencies = nil;
-  if(testLaunchConfiguration.targetApplicationBundleID != nil && testLaunchConfiguration.targetApplicationPath != nil) {
+  if(testLaunchConfiguration.targetApplicationBundle.identifier != nil && testLaunchConfiguration.targetApplicationBundle.path != nil) {
     // Explicitly setting the target application bundle id and path as a dependency triggers XCTest to request
     // the launch of target application via XCTestManager_IDEInterface/XCTMessagingChannel_RunnerToIDE protocols
     testApplicationDependencies = @{
-      testLaunchConfiguration.targetApplicationBundleID : testLaunchConfiguration.targetApplicationPath
+      testLaunchConfiguration.targetApplicationBundle.identifier : testLaunchConfiguration.targetApplicationBundle.path
     };
   }
 
@@ -138,7 +138,7 @@
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testLaunchConfiguration.testBundlePath error:&error];
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testLaunchConfiguration.testBundle.path error:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test bundle"]
@@ -154,8 +154,8 @@
     uiTesting:testLaunchConfiguration.shouldInitializeUITesting
     testsToRun:testLaunchConfiguration.testsToRun
     testsToSkip:testLaunchConfiguration.testsToSkip
-    targetApplicationPath:testLaunchConfiguration.targetApplicationPath
-    targetApplicationBundleID:testLaunchConfiguration.targetApplicationBundleID
+    targetApplicationPath:testLaunchConfiguration.targetApplicationBundle.path
+    targetApplicationBundleID:testLaunchConfiguration.targetApplicationBundle.identifier
     testApplicationDependencies:testApplicationDependencies
     automationFrameworkPath:automationFrameworkPath
     reportActivities:testLaunchConfiguration.reportActivities
