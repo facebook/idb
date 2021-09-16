@@ -37,13 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBOSVersion *os;
 
 /**
- The Location to store auxillary files in.
- Auxillary files are stored per-simulator, so will be nested inside directories for each Simulator.
- If no path is provided, a default Auxillary directory inside the Simulator's data directory will be used.
- */
-@property (nonatomic, copy, nullable, readonly) NSString *auxillaryDirectory;
-
-/**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */

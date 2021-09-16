@@ -24,7 +24,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithNamedDevice:(FBDeviceType *)device os:(FBOSVersion *)os auxillaryDirectory:(NSString *)auxillaryDirectory
+- (instancetype)initWithNamedDevice:(FBDeviceType *)device os:(FBOSVersion *)os
 {
   NSParameterAssert(device);
   NSParameterAssert(os);
@@ -36,7 +36,6 @@
 
   _device = device;
   _os = os;
-  _auxillaryDirectory = auxillaryDirectory;
 
   return self;
 }
@@ -63,24 +62,21 @@
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersionsForDevice:device]],
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersions]]
   );
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc]
-    initWithNamedDevice:self.device
-    os:self.os
-    auxillaryDirectory:self.auxillaryDirectory];
+  return [[self.class alloc] initWithNamedDevice:self.device os:self.os];
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return self.deviceModel.hash ^ self.osVersionString.hash ^ self.auxillaryDirectory.hash;
+  return self.deviceModel.hash ^ self.osVersionString.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorConfiguration *)object
@@ -90,17 +86,16 @@
   }
 
   return [self.deviceModel isEqualToString:object.deviceModel] &&
-         [self.osVersionString isEqualToString:object.osVersionString] &&
-         (self.auxillaryDirectory == object.auxillaryDirectory || [self.auxillaryDirectory isEqualToString:object.auxillaryDirectory]);
+         [self.osVersionString isEqualToString:object.osVersionString];
+  
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@' | Aux Directory %@ | Architecture '%@'",
+    @"Device '%@' | OS Version '%@' | Architecture '%@'",
     self.deviceModel,
     self.osVersionString,
-    self.auxillaryDirectory,
     self.architecture
   ];
 }
@@ -128,7 +123,7 @@
 - (instancetype)withOS:(FBOSVersion *)os
 {
   NSParameterAssert(os);
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os auxillaryDirectory:self.auxillaryDirectory];
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os ];
 }
 
 - (instancetype)withDevice:(FBDeviceType *)device
@@ -137,11 +132,11 @@
   // Use the current os if compatible
   FBOSVersion *os = self.os;
   if ([FBSimulatorConfiguration device:device andOSPairSupported:os]) {
-    return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
+    return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
   }
   // Attempt to find the newest OS for this device, otherwise use what we had before.
   os = [FBSimulatorConfiguration newestAvailableOSForDevice:device] ?: os;
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
 }
 
 #pragma mark Private

@@ -58,7 +58,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
-    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
+    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
     logger:set.logger
     reporter:set.reporter];
 }
@@ -288,12 +288,9 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 #pragma mark Private
 
-+ (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
++ (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device
 {
-  if (!configuration.auxillaryDirectory) {
-    return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
-  }
-  return [configuration.auxillaryDirectory stringByAppendingPathComponent:device.UDID.UUIDString];
+  return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
 }
 
 + (NSSet<Class> *)statefulCommands
