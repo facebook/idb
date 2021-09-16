@@ -105,11 +105,30 @@
   ];
 }
 
-#pragma mark - Devices
+#pragma mark Models
 
-+ (instancetype)withDevice:(FBDeviceType *)device
+- (instancetype)withDeviceModel:(FBDeviceModel)model
 {
-  return [self.defaultConfiguration withDevice:device];
+  FBDeviceType *device = FBiOSTargetConfiguration.nameToDevice[model];
+  device = device ?: [FBDeviceType genericWithName:model];
+  return [self withDevice:device];
+}
+
+#pragma mark OS Versions
+
+- (instancetype)withOSNamed:(FBOSVersionName)osName
+{
+  FBOSVersion *os = FBiOSTargetConfiguration.nameToOSVersion[osName];
+  os = os ?: [FBOSVersion genericWithName:osName];
+  return [self withOS:os];
+}
+
+#pragma mark Private
+
+- (instancetype)withOS:(FBOSVersion *)os
+{
+  NSParameterAssert(os);
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os auxillaryDirectory:self.auxillaryDirectory];
 }
 
 - (instancetype)withDevice:(FBDeviceType *)device
@@ -123,50 +142,6 @@
   // Attempt to find the newest OS for this device, otherwise use what we had before.
   os = [FBSimulatorConfiguration newestAvailableOSForDevice:device] ?: os;
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
-}
-
-+ (instancetype)withDeviceModel:(FBDeviceModel)model
-{
-  return [self.defaultConfiguration withDeviceModel:model];
-}
-
-- (instancetype)withDeviceModel:(FBDeviceModel)model
-{
-  FBDeviceType *device = FBiOSTargetConfiguration.nameToDevice[model];
-  device = device ?: [FBDeviceType genericWithName:model];
-  return [self withDevice:device];
-}
-
-#pragma mark - OS Versions
-
-+ (instancetype)withOS:(FBOSVersion *)os
-{
-  return [self.defaultConfiguration withOS:os];
-}
-
-- (instancetype)withOS:(FBOSVersion *)os
-{
-  NSParameterAssert(os);
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os auxillaryDirectory:self.auxillaryDirectory];
-}
-
-+ (instancetype)withOSNamed:(FBOSVersionName)osName
-{
-  return [self.defaultConfiguration withOSNamed:osName];
-}
-
-- (instancetype)withOSNamed:(FBOSVersionName)osName
-{
-  FBOSVersion *os = FBiOSTargetConfiguration.nameToOSVersion[osName];
-  os = os ?: [FBOSVersion genericWithName:osName];
-  return [self withOS:os];
-}
-
-#pragma mark Auxillary Directory
-
-- (instancetype)withAuxillaryDirectory:(NSString *)auxillaryDirectory
-{
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:self.os auxillaryDirectory:self.auxillaryDirectory];
 }
 
 #pragma mark Private
