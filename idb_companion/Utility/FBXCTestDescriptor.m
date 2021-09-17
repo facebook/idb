@@ -111,10 +111,10 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     binaryPath:testDescriptor.testBundle.binary.path
     logDirectoryPath:logDirectoryPath];
 
-  return [self startTestExecution:configuration logDirectoryPath:logDirectoryPath target:target reporter:reporter logger:logger];
+  return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
 }
 
-- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBLogicTestConfiguration *)configuration target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBLogicReporterAdapter *adapter = [[FBLogicReporterAdapter alloc] initWithReporter:reporter logger:logger];
   FBLogicTestRunStrategy *runner = [[FBLogicTestRunStrategy alloc] initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:configuration reporter:adapter logger:logger];
@@ -125,7 +125,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
     initWithResultBundlePath:nil
     coverageDirectoryPath:configuration.coverageDirectoryPath
-    logDirectoryPath:logDirectoryPath
+    logDirectoryPath:configuration.logDirectoryPath
     binariesPaths:@[configuration.binaryPath]
     reportAttachments:self.reportAttachments];
   FBIDBTestOperation *operation = [[FBIDBTestOperation alloc]
@@ -166,11 +166,11 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     }]
     onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestLaunchConfiguration *testConfig) {
       [logger logFormat:@"Obtained launch configuration %@", testConfig];
-      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig logDirectoryPath:logDirectoryPath reportAttachments:self.reportAttachments target:target reporter:reporter logger:logger];
+      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig reportAttachments:self.reportAttachments target:target reporter:reporter logger:logger];
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *binariesPaths = NSMutableArray.array;
   NSString *binaryPath = configuration.testBundle.binary.path;
@@ -190,7 +190,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
     initWithResultBundlePath:configuration.resultBundlePath
     coverageDirectoryPath:configuration.coverageDirectoryPath
-    logDirectoryPath:logDirectoryPath
+    logDirectoryPath:configuration.logDirectoryPath
     binariesPaths:binariesPaths
     reportAttachments:reportAttachments];
   return [FBFuture futureWithResult:[[FBIDBTestOperation alloc]
