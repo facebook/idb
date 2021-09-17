@@ -16,73 +16,46 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootVerificationStrategy.h"
 
-@interface FBSimulatorBootStrategy ()
-
-@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
-
-@end
-
 @implementation FBSimulatorBootStrategy
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator];
-}
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-  _simulator = simulator;
-
-  return self;
-}
-
-#pragma mark Public
-
-- (FBFuture<NSNull *> *)boot
++ (FBFuture<NSNull *> *)boot:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   // Return early depending on Simulator state.
-  if (self.simulator.state == FBiOSTargetStateBooted) {
+  if (simulator.state == FBiOSTargetStateBooted) {
     return FBFuture.empty;
   }
-  if (self.simulator.state != FBiOSTargetStateShutdown) {
+  if (simulator.state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot Boot Simulator when in %@ state", self.simulator.stateString]
+      describeFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]
       failFuture];
   }
 
   // Boot via CoreSimulator.
   return [[self
-    bootSimulatorWithConfiguration:self.configuration]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      return [self verifySimulatorIsBooted];
+    performSimulatorBoot:simulator withConfiguration:configuration]
+    onQueue:simulator.workQueue fmap:^(id _) {
+      return [self verifySimulatorIsBooted:simulator withConfiguration:configuration];
     }];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)verifySimulatorIsBooted
++ (FBFuture<NSNull *> *)verifySimulatorIsBooted:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   // Return early if we're not awaiting services.
-  if ((self.configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
+  if ((configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
     return FBFuture.empty;
   }
 
   // Now wait for the services.
   return [[FBSimulatorBootVerificationStrategy
-    strategyWithSimulator:self.simulator]
+    strategyWithSimulator:simulator]
     verifySimulatorIsBooted];
 }
 
-- (FBFuture<NSNull *> *)bootSimulatorWithConfiguration:(FBSimulatorBootConfiguration *)configuration
++ (FBFuture<NSNull *> *)performSimulatorBoot:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   // "Persisting" means that the booted Simulator should live beyond the lifecycle of the process that calls the boot API.
   // The inverse of this is `FBSimulatorBootOptionsTieToProcessLifecycle`, which means that the Simulator should shutdown when the process that calls the boot API dies.
@@ -99,7 +72,7 @@
   };
 
   FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-  [self.simulator.device bootAsyncWithOptions:options completionQueue:self.simulator.workQueue completionHandler:^(NSError *error){
+  [simulator.device bootAsyncWithOptions:options completionQueue:simulator.workQueue completionHandler:^(NSError *error){
     if (error) {
       [future resolveWithError:error];
     } else {

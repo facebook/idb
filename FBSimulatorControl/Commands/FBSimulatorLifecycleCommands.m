@@ -56,9 +56,7 @@
 
 - (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration
 {
-  return [[FBSimulatorBootStrategy
-    strategyWithConfiguration:configuration simulator:self.simulator]
-    boot];
+  return [FBSimulatorBootStrategy boot:self.simulator withConfiguration:configuration];
 }
 
 #pragma mark FBPowerCommands
