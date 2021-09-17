@@ -359,11 +359,6 @@
       describeFormat:@"Cannot copy mapped container root at path %@", srcPath]
       failBool:error];
   }
-  if ([self isGroupContainerRoot:srcPathComponents]) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot copy mapped container at path %@", srcPath]
-      failBool:error];
-  }
   if ([self isRootPathOfContainer:dstPathComponents]) {
     return [[FBSimulatorError
       describeFormat:@"Cannot copy to mapped container root at path %@", dstPath]
