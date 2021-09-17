@@ -90,9 +90,9 @@
   FBSimulator *simulator3 = simulators[2];
 
   FBFuture *bootFuture = [FBFuture futureWithFutures:@[
-    [simulator1 bootWithConfiguration:self.bootConfiguration],
-    [simulator2 bootWithConfiguration:self.bootConfiguration],
-    [simulator3 bootWithConfiguration:self.bootConfiguration],
+    [simulator1 boot:self.bootConfiguration],
+    [simulator2 boot:self.bootConfiguration],
+    [simulator3 boot:self.bootConfiguration],
   ]];
   BOOL success = [bootFuture await:&error] != nil;
   XCTAssertNil(error);

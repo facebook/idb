@@ -28,21 +28,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Boot/Shutdown
 
 /**
- Boots the Simulator with the default Simulator Launch Configuration.
- Will fail if the Simulator is currently booted.
-
- @return a Future that resolves when the Simulator is booted.
- */
-- (FBFuture<NSNull *> *)boot;
-
-/**
- Boots the Simulator with the default Simulator Launch Configuration.
+ Boots the Simulator with the provided configuration.
  Will fail if the Simulator is currently booted.
 
  @param configuration the configuration to boot with.
  @return a Future that resolves when the Simulator is booted.
  */
-- (FBFuture<NSNull *> *)bootWithConfiguration:(FBSimulatorBootConfiguration *)configuration;
+- (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration;
 
 #pragma mark States
 

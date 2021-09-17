@@ -227,7 +227,7 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
         options = options & ~FBSimulatorBootOptionsVerifyUsable;
       }
       FBSimulatorBootConfiguration *config = [[FBSimulatorBootConfiguration alloc] initWithOptions:options environment:@{}];
-      return [[simulator bootWithConfiguration:config] mapReplace:simulator];
+      return [[simulator boot:config] mapReplace:simulator];
     }]
     onQueue:dispatch_get_main_queue() map:^ FBFuture<NSNull *> * (FBSimulator *simulator) {
       // Write the boot success to stdout

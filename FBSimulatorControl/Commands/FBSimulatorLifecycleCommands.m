@@ -48,17 +48,13 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
 #pragma mark Boot/Shutdown
 
-- (FBFuture<NSNull *> *)boot
-{
-  return [self bootWithConfiguration:FBSimulatorBootConfiguration.defaultConfiguration];
-}
-
-- (FBFuture<NSNull *> *)bootWithConfiguration:(FBSimulatorBootConfiguration *)configuration
+- (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration
 {
   return [[FBSimulatorBootStrategy
     strategyWithConfiguration:configuration simulator:self.simulator]
@@ -77,7 +73,7 @@
   return [[self
     shutdown]
     onQueue:self.simulator.workQueue fmap:^(id _) {
-      return [self boot];
+      return [self boot:FBSimulatorBootConfiguration.defaultConfiguration];
     }];
 }
 

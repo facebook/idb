@@ -108,7 +108,7 @@
   return [[self
     fetchSimulatorForLogicTest:destination]
     onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
-      return [[simulator bootWithConfiguration:bootConfiguration] mapReplace:simulator];
+      return [[simulator boot:bootConfiguration] mapReplace:simulator];
     }];
 }
 
