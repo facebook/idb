@@ -20,17 +20,6 @@
 
 @implementation FBSimulatorControlValueTypeTests
 
-- (void)testLaunchConfigurations
-{
-  NSArray<FBSimulatorBootConfiguration *> *values = @[
-    [FBSimulatorBootConfiguration.defaultConfiguration
-      withOptions:FBSimulatorBootOptionsTieToProcessLifecycle],
-    [FBSimulatorBootConfiguration.defaultConfiguration
-      withBootEnvironment:@{@"FOO": @"BAR"}]
-  ];
-  [self assertEqualityOfCopy:values];
-}
-
 - (void)testHIDEvents
 {
   NSArray<FBSimulatorHIDEvent *> *values = @[

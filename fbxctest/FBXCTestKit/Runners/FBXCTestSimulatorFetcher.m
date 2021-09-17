@@ -101,9 +101,9 @@
 
 - (FBFuture<FBSimulator *> *)fetchSimulatorForApplicationTest:(FBXCTestDestinationiPhoneSimulator *)destination
 {
-  FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
-    defaultConfiguration]
-    withOptions:FBSimulatorBootOptionsTieToProcessLifecycle | FBSimulatorBootOptionsVerifyUsable];
+  FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration alloc]
+    initWithOptions:(FBSimulatorBootOptionsTieToProcessLifecycle | FBSimulatorBootOptionsVerifyUsable)
+    environment:@{}];
 
   return [[self
     fetchSimulatorForLogicTest:destination]

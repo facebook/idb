@@ -211,21 +211,22 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
   return [[SimulatorFuture(udid, userDefaults, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
       // Boot the simulator with the options provided.
-      FBSimulatorBootConfiguration *config = FBSimulatorBootConfiguration.defaultConfiguration;
+      FBSimulatorBootOptions options = FBSimulatorBootConfiguration.defaultConfiguration.options;
       if (headless) {
         [logger logFormat:@"Booting %@ headlessly", udid];
-        config = [config withOptions:(config.options | FBSimulatorBootOptionsTieToProcessLifecycle)];
+        options = options | FBSimulatorBootOptionsTieToProcessLifecycle;
       } else {
         [logger logFormat:@"Booting %@ normally", udid];
-        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsTieToProcessLifecycle)];
+        options = options & ~FBSimulatorBootOptionsTieToProcessLifecycle;
       }
       if (verifyBooted) {
         [logger logFormat:@"Booting %@ with verification", udid];
-        config = [config withOptions:(config.options | FBSimulatorBootOptionsVerifyUsable)];
+        options = options | FBSimulatorBootOptionsVerifyUsable;
       } else {
         [logger logFormat:@"Booting %@ without verification", udid];
-        config = [config withOptions:(config.options & ~FBSimulatorBootOptionsVerifyUsable)];
+        options = options & ~FBSimulatorBootOptionsVerifyUsable;
       }
+      FBSimulatorBootConfiguration *config = [[FBSimulatorBootConfiguration alloc] initWithOptions:options environment:@{}];
       return [[simulator bootWithConfiguration:config] mapReplace:simulator];
     }]
     onQueue:dispatch_get_main_queue() map:^ FBFuture<NSNull *> * (FBSimulator *simulator) {

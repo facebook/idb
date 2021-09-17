@@ -65,7 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Connection
 
-
 /**
  Disconnects from all of the underlying connection objects.
  This should be called on shutdown of the Simulator.

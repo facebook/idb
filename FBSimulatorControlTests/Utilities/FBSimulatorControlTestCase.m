@@ -77,7 +77,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return ![NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp];
 }
 
-+ (FBSimulatorBootOptions)launchOptions
++ (FBSimulatorBootOptions)bootOptions
 {
   FBSimulatorBootOptions options = 0;
   if (self.useDirectLaunching) {
@@ -97,7 +97,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 + (FBSimulatorBootConfiguration *)defaultBootConfiguration
 {
-  return [FBSimulatorBootConfiguration.defaultConfiguration withOptions:self.launchOptions];
+  return [[FBSimulatorBootConfiguration alloc] initWithOptions:self.bootOptions environment:@{}];
 }
 
 #pragma mark XCTestCase
@@ -106,7 +106,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   self.continueAfterFailure = NO;
   self.simulatorConfiguration = [FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModeliPhoneSE_1stGeneration];
-  self.bootConfiguration = FBSimulatorControlTestCase.defaultBootConfiguration;
+  self.bootConfiguration = [[FBSimulatorBootConfiguration alloc] initWithOptions:FBSimulatorControlTestCase.bootOptions environment:@{}];
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
 }
 
