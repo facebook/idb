@@ -172,13 +172,18 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 
 + (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration logDirectoryPath:(NSString *)logDirectoryPath reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-
-  NSMutableArray<NSString *> *binariesPaths = [NSMutableArray arrayWithObject:configuration.testBundle.binary.path];
-  if (configuration.testHostBundle.binary.path) {
-    [binariesPaths addObject:configuration.testHostBundle.binary.path];
+  NSMutableArray<NSString *> *binariesPaths = NSMutableArray.array;
+  NSString *binaryPath = configuration.testBundle.binary.path;
+  if (binaryPath) {
+    [binariesPaths addObject:binaryPath];
   }
-  if (configuration.targetApplicationBundle.binary.path) {
-    [binariesPaths addObject:configuration.targetApplicationBundle.binary.path];
+  binaryPath = configuration.testHostBundle.binary.path;
+  if (binaryPath) {
+    [binariesPaths addObject:binaryPath];
+  }
+  binaryPath = configuration.targetApplicationBundle.binary.path;
+  if (binaryPath) {
+    [binariesPaths addObject:binaryPath];
   }
 
   FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
