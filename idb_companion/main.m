@@ -43,6 +43,7 @@ Usage: \n \
     --activate ecid:ECID       Causes the device to activate\n\
     --notify PATH|stdout       Launches a companion notifier which will stream availability updates to the specified path, or stdout.\n\
     --list 1                   Lists all available devices and simulators in the current context. If Xcode is not correctly installed, only devices will be listed.\n\
+    --version                  Writes companion version information to stdout.\n\
     --help                     Show this help message and exit.\n\
 \n\
   Options:\n\
@@ -559,6 +560,10 @@ int main(int argc, const char *argv[]) {
     if ([arguments containsObject:@"--help"]) {
       fprintf(stderr, "%s", kUsageHelpMessage);
       return 1;
+    }
+    if ([arguments containsObject:@"--version"]) {
+      WriteJSONToStdOut(@{@"build_time": @(__TIME__), @"build_date": @(__DATE__)});
+      return 0;
     }
 
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
