@@ -653,6 +653,14 @@ message XctestRunRequest {
       UI ui = 3;
     }
   }
+  message CodeCoverage {
+    enum Format {
+        EXPORTED = 0;
+        RAW = 1;
+    }
+    bool collect = 1;
+    Format format = 2;
+  }
   Mode mode = 1;
   string test_bundle_id = 2;
   repeated string tests_to_run = 3;
@@ -665,6 +673,7 @@ message XctestRunRequest {
   bool report_attachments = 10;
   bool collect_logs = 11;
   bool wait_for_debugger = 12;
+  CodeCoverage code_coverage = 13;
 }
 
 message XctestRunResponse {
@@ -717,6 +726,7 @@ message XctestRunResponse {
   string coverage_json = 5;
   Payload log_directory = 6;
   DebuggerInfo debugger = 7;
+  Payload code_coverage_data = 8;
 }
 
 // File
