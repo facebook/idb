@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBCodeCoverageRequest;
 @class FBIDBTestOperation;
 @class FBTemporaryDirectory;
 @class FBTestApplicationsPair;
@@ -36,11 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
  @param reportActivities if set activities and their data will be reported
- @param collectCoverage will collect llvm coverage data
+ @param coverageRequest information about llvm code coverage collection
  @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
 
 /**
 The Initializer for App Tests.
@@ -53,10 +54,10 @@ The Initializer for App Tests.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
  @param reportActivities if set activities and their data will be reported
- @param collectCoverage will collect llvm coverage data
+ @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs;
 
 /**
 The Initializer for UI Tests.
@@ -70,10 +71,10 @@ The Initializer for UI Tests.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
  @param reportActivities if set activities and their data will be reported
- @param collectCoverage will collect llvm coverage data
+ @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments collectCoverage:(BOOL)collectCoverage collectLogs:(BOOL)collectLogs;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs;
 
 #pragma mark Properties
 
@@ -140,7 +141,7 @@ The Initializer for UI Tests.
 /**
  If set llvm coverage data will be collected
  */
-@property (nonatomic, assign, readonly) BOOL collectCoverage;
+@property (nonatomic, retain, readonly) FBCodeCoverageRequest *coverageRequest;
 
 /**
  If set tests' output logs will be collected
