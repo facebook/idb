@@ -77,7 +77,7 @@
       timeout:timeout
       testFilter:testFilter
       mirroring:FBLogicTestMirrorFileLogs
-      coverageDirectoryPath:nil
+      coverageConfiguration:nil
       binaryPath:nil
       logDirectoryPath:nil];
   } else if ([argumentSet containsObject:@"-appTest"]) {

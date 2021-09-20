@@ -24,6 +24,8 @@
 		2F8294D31FBC798C0011E722 /* FBLogicXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2F8294C81FBC571A0011E722 /* FBLogicXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2FB811101FB5C97400A848FB /* FBDeviceLogCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = 2FB8110E1FB5C97400A848FB /* FBDeviceLogCommands.h */; };
 		2FB811111FB5C97400A848FB /* FBDeviceLogCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = 2FB8110F1FB5C97400A848FB /* FBDeviceLogCommands.m */; };
+		713C709826F534050086D8DF /* FBCodeCoverageConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709626F534050086D8DF /* FBCodeCoverageConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		713C709926F534050086D8DF /* FBCodeCoverageConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C709726F534050086D8DF /* FBCodeCoverageConfiguration.m */; };
 		71B9E099268C5FB600D40A91 /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		71B9E09A268C5FB600D40A91 /* libMaculator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */; };
 		71C4D3192638555E00DD186B /* FBOToolOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 71C4D3172638555D00DD186B /* FBOToolOperation.m */; };
@@ -688,6 +690,8 @@
 		30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifier.h; sourceTree = "<group>"; };
 		30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSet.h; sourceTree = "<group>"; };
 		30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSetBuilder.h; sourceTree = "<group>"; };
+		713C709626F534050086D8DF /* FBCodeCoverageConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageConfiguration.h; sourceTree = "<group>"; };
+		713C709726F534050086D8DF /* FBCodeCoverageConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageConfiguration.m; sourceTree = "<group>"; };
 		71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Shimulator.xcodeproj; sourceTree = "<group>"; };
 		71C4D3172638555D00DD186B /* FBOToolOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolOperation.m; sourceTree = "<group>"; };
 		71C4D3182638555D00DD186B /* FBOToolOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBOToolOperation.h; sourceTree = "<group>"; };
@@ -2229,6 +2233,8 @@
 		AAE5A0901EDF96CB00A1A811 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
+				713C709626F534050086D8DF /* FBCodeCoverageConfiguration.h */,
+				713C709726F534050086D8DF /* FBCodeCoverageConfiguration.m */,
 				AAFD455525E54161001407CC /* FBTestConfiguration.h */,
 				AAFD455325E54161001407CC /* FBTestConfiguration.m */,
 				AAFD455625E54161001407CC /* FBTestRunnerConfiguration.h */,
@@ -2793,6 +2799,7 @@
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
 				EE48229D1FBD91C500AAA56E /* FBManagedTestRunStrategy.h in Headers */,
 				AA7414F01CE3102F00C9641D /* FBTestBundleConnection.h in Headers */,
+				713C709826F534050086D8DF /* FBCodeCoverageConfiguration.h in Headers */,
 				AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */,
 				AAE5A0851EDF90DB00A1A811 /* FBXCTestReporter.h in Headers */,
 				AAE5A0811EDF8C9C00A1A811 /* FBXCTestLogger.h in Headers */,
@@ -3414,6 +3421,7 @@
 				AA6872911EE1232200D559E6 /* FBListTestStrategy.m in Sources */,
 				AA7FA7AB1CDCF26E00614A61 /* FBTestManagerResultSummary.m in Sources */,
 				842A2B741F6AC89C00063EB1 /* FBActivityRecord.m in Sources */,
+				713C709926F534050086D8DF /* FBCodeCoverageConfiguration.m in Sources */,
 				AA46BF611D6DDC6A00C41DAF /* FBTestManagerContext.m in Sources */,
 				1F6F440F239B6A55001C7F72 /* FBXCTestResultToolOperation.m in Sources */,
 				AA1F2C8B1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.m in Sources */,

@@ -8,13 +8,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/FBCodeCoverageConfiguration.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
-  FBCodeCoverageExported,
-  FBCodeCoverageRaw,
-};
 
 /**
  Describes the client's request for code coverage collection.

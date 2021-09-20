@@ -121,7 +121,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
         shimOutputFilePath:outputs.shimOutput.filePath
         shimPath:shimPath
         bundlePath:self.configuration.testBundlePath
-        coverageDirectoryPath:self.configuration.coverageDirectoryPath
+        coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
         logDirectoryPath:self.configuration.logDirectoryPath
         waitForDebugger:self.configuration.waitForDebugger];
 
