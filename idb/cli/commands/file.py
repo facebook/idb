@@ -4,73 +4,18 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import functools
 import json
 import os
 import sys
 import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
-from logging import Logger
-from typing import Any, List, NamedTuple, Optional, Tuple
+from typing import List
 
 import aiofiles
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
 from idb.common.types import Client, FileContainer, FileContainerType
-
-
-class BundleWithPath(NamedTuple):
-    bundle_id: Optional[str]
-    path: str
-
-    @classmethod
-    def parse(cls, argument: str, logger: Logger) -> "BundleWithPath":
-        split = argument.split(sep=":", maxsplit=1)
-        if len(split) == 1:
-            return BundleWithPath(bundle_id=None, path=split[0])
-        (bundle_id, path) = split
-        logger.error(
-            f"file commands of form {bundle_id}:{path} are deprecated, please use --bundle-id instead."
-        )
-        return BundleWithPath(bundle_id=bundle_id, path=path)
-
-
-def _extract_bundle_id(args: Namespace) -> FileContainer:
-    if args.bundle_id is not None:
-        return args.bundle_id
-    values = []
-    for value in vars(args).values():
-        if isinstance(value, List):
-            values.extend(value)
-        else:
-            values.append(value)
-    for value in values:
-        if not isinstance(value, BundleWithPath):
-            continue
-        bundle_id = value.bundle_id
-        if bundle_id is None:
-            continue
-        args.bundle_id = bundle_id
-    return args.bundle_id
-
-
-def _convert_args(args: Namespace) -> Tuple[Namespace, FileContainer]:
-    def convert_value(value: Any) -> Any:  # pyre-ignore
-        if isinstance(value, List):
-            return [convert_value(x) for x in value]
-        return value.path if isinstance(value, BundleWithPath) else value
-
-    bundle_id = _extract_bundle_id(args)
-    args = Namespace(
-        **{
-            key: convert_value(value)
-            for (key, value) in vars(args).items()
-            if key != "bundle_id"
-        }
-    )
-    file_container = bundle_id or args.container_type
-    return (args, file_container)
 
 
 class FSCommand(ClientCommand):
@@ -148,7 +93,11 @@ class FSCommand(ClientCommand):
         pass
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        (args, container) = _convert_args(args)
+        bundle_id = args.bundle_id
+        if bundle_id is not None:
+            container = bundle_id
+        else:
+            container = args.container_type
         return await self.run_with_container(
             container=container, args=args, client=client
         )
@@ -173,7 +122,7 @@ class FSListCommand(FSCommand):
             help="Source path",
             nargs="+",
             default="./",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument(
             "--force-new-output",
@@ -224,7 +173,7 @@ class FSMkdirCommand(FSCommand):
         parser.add_argument(
             "path",
             help="Path to directory to create",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
 
     async def run_with_container(
@@ -251,12 +200,12 @@ class FSMoveCommand(FSCommand):
             "src",
             help="Source paths relative to Container",
             nargs="+",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument(
             "dst",
             help="Destination path relative to Container",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -284,7 +233,7 @@ class FSRemoveCommand(FSCommand):
             "path",
             help="Path of item to remove (A directory will be recursively deleted)",
             nargs="+",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -313,7 +262,7 @@ class FSPushCommand(FSCommand):
                 "Directory relative to the data container of the application\n"
                 "to copy the files into. Will be created if non-existent"
             ),
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -340,7 +289,7 @@ class FSPullCommand(FSCommand):
         parser.add_argument(
             "src",
             help="Relative Container source path",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
@@ -370,7 +319,7 @@ class FBSReadCommand(FSCommand):
         parser.add_argument(
             "src",
             help="Relatve Container source path",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 

@@ -241,21 +241,13 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.mkdir.assert_called_once_with(container=None, path=src)
 
-    async def test_bundled_file_mkdir_flag(self) -> None:
+    async def test_bundled_file_mkdir(self) -> None:
         self.client_mock.mkdir = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "mkdir", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.mkdir.assert_called_once_with(container=bundle_id, path=src)
-
-    async def test_bundled_file_mkdir_colon(self) -> None:
-        self.client_mock.mkdir = AsyncMock()
-        cmd_input = ["file", "mkdir", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.mkdir.assert_called_once_with(
-            container="com.bundle.id", path="path"
-        )
 
     async def test_rm(self) -> None:
         self.client_mock.rm = AsyncMock()
@@ -264,7 +256,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=None, paths=[src])
 
-    async def test_bundled_file_rmpath_flag(self) -> None:
+    async def test_bundled_file_rmpath(self) -> None:
         self.client_mock.rm = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
@@ -272,21 +264,13 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=[src])
 
-    async def test_bundled_file_rmpath_flag_multiple(self) -> None:
+    async def test_bundled_file_rmpath_multiple(self) -> None:
         self.client_mock.rm = AsyncMock()
         srcs = ["pathA", "pathB"]
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "remove", srcs[0], srcs[1], "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=srcs)
-
-    async def test_bundled_file_rmpath_colon(self) -> None:
-        self.client_mock.rm = AsyncMock()
-        cmd_input = ["file", "remove", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.rm.assert_called_once_with(
-            container="com.bundle.id", paths=["path"]
-        )
 
     async def test_list(self) -> None:
         self.client_mock.ls_single = AsyncMock(return_value=[])
@@ -295,7 +279,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.ls_single.assert_called_once_with(container=None, path=src)
 
-    async def test_bundled_file_list_flag(self) -> None:
+    async def test_bundled_file_list(self) -> None:
         self.client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         bundle_id = "com.bundle.id"
@@ -303,14 +287,6 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.ls_single.assert_called_once_with(
             container=bundle_id, path=src
-        )
-
-    async def test_bundled_file_list_colon(self) -> None:
-        self.client_mock.ls_single = AsyncMock(return_value=[])
-        cmd_input = ["file", "list", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.ls_single.assert_called_once_with(
-            container="com.bundle.id", path="path"
         )
 
     async def test_file_move(self) -> None:
@@ -323,7 +299,7 @@ class TestParser(TestCase):
             container=None, src_paths=[src], dest_path=dst
         )
 
-    async def test_bundled_file_move_flag(self) -> None:
+    async def test_bundled_file_move(self) -> None:
         self.client_mock.mv = AsyncMock(return_value=[])
         src = "a"
         dst = "b"
@@ -334,7 +310,7 @@ class TestParser(TestCase):
             container=bundle_id, src_paths=[src], dest_path=dst
         )
 
-    async def test_bundled_file_move_flag_multiple(self) -> None:
+    async def test_bundled_file_move_multiple(self) -> None:
         self.client_mock.mv = AsyncMock(return_value=[])
         srcs = ["src1", "src2"]
         dst = "b"
@@ -343,15 +319,6 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.mv.assert_called_once_with(
             container=bundle_id, src_paths=srcs, dest_path=dst
-        )
-
-    async def test_bundled_file_move_colon(self) -> None:
-        self.client_mock.mv = AsyncMock(return_value=[])
-        src = "a"
-        cmd_input = ["file", "move", src, "com.bundle.id:b"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.mv.assert_called_once_with(
-            container="com.bundle.id", src_paths=[src], dest_path="b"
         )
 
     async def test_file_push(self) -> None:
@@ -364,7 +331,7 @@ class TestParser(TestCase):
             container=None, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
-    async def test_bundled_file_push_single_flag(self) -> None:
+    async def test_bundled_file_push_single(self) -> None:
         self.client_mock.push = AsyncMock()
         bundle_id = "com.myapp"
         src = "Library/myFile.txt"
@@ -375,7 +342,7 @@ class TestParser(TestCase):
             container=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
         )
 
-    async def test_bundled_file_push_multi_flag(self) -> None:
+    async def test_bundled_file_push_multi(self) -> None:
         self.client_mock.push = AsyncMock(return_value=[])
         bundle_id = "com.myapp"
         src1 = "Library/myFile.txt"
@@ -387,29 +354,6 @@ class TestParser(TestCase):
             container=bundle_id,
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path=dst,
-        )
-
-    async def test_bundled_file_push_single_colon(self) -> None:
-        self.client_mock.push = AsyncMock(return_value=[])
-        src = "Library/myFile.txt"
-        cmd_input = ["file", "push", src, "com.bundle.id:someOutputDir"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.push.assert_called_once_with(
-            container="com.bundle.id",
-            src_paths=[os.path.abspath(src)],
-            dest_path="someOutputDir",
-        )
-
-    async def test_bundled_file_push_multi_colon(self) -> None:
-        self.client_mock.push = AsyncMock(return_value=[])
-        src1 = "Library/myFile.txt"
-        src2 = "Library/myFile2.txt"
-        cmd_input = ["file", "push", src1, src2, "com.bundle.id:someOutputDir"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.push.assert_called_once_with(
-            container="com.bundle.id",
-            src_paths=[os.path.abspath(path) for path in [src1, src2]],
-            dest_path="someOutputDir",
         )
 
     async def test_file_pull(self) -> None:
