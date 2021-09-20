@@ -12,6 +12,8 @@
 		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
 		713C709426F52F970086D8DF /* FBCodeCoverageRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */; };
 		713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */; };
+		713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */; };
+		713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */; };
 		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
 		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
@@ -100,6 +102,8 @@
 		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
 		713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageRequest.h; sourceTree = "<group>"; };
 		713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageRequest.m; sourceTree = "<group>"; };
+		713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunRequest.h; sourceTree = "<group>"; };
+		713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunRequest.m; sourceTree = "<group>"; };
 		716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<absolute>"; };
 		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
@@ -186,6 +190,8 @@
 		713C709126F52F970086D8DF /* Request */ = {
 			isa = PBXGroup;
 			children = (
+				713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */,
+				713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */,
 				713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */,
 				713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */,
 			);
@@ -350,6 +356,7 @@
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
 				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
 				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
+				713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */,
 				AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */,
 				AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */,
 				D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */,
@@ -557,6 +564,7 @@
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
 				AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */,
+				713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

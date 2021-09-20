@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBIDBLogger;
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
+@class FBIDBTestOperation;
 @class FBInstalledArtifact;
 @class FBSimulatorHIDEvent;
 @class FBTemporaryDirectory;

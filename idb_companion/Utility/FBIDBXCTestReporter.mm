@@ -7,7 +7,6 @@
 
 #import "FBIDBXCTestReporter.h"
 
-#import "FBXCTestDescriptor.h"
 #import "FBXCTestReporterConfiguration.h"
 
 @interface FBIDBXCTestReporter ()

@@ -10,6 +10,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+#import "FBXCTestRunRequest.h"
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
