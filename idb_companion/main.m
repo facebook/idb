@@ -64,11 +64,6 @@ Usage: \n \
     ecid:ECID                  Limit interactions to a specific Device ECID\n\
 ";
 
-static BOOL shouldPrintUsage(void)
-{
-  return [NSProcessInfo.processInfo.arguments containsObject:@"--help"];
-}
-
 static void WriteJSONToStdOut(id json)
 {
   NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:json options:0 error:nil];
@@ -558,13 +553,14 @@ static NSString *EnvDescription()
 }
 
 int main(int argc, const char *argv[]) {
-  if (shouldPrintUsage()) {
-    fprintf(stderr, "%s", kUsageHelpMessage);
-    return 1;
-  }
-
   @autoreleasepool
   {
+    NSArray<NSString *> *arguments = NSProcessInfo.processInfo.arguments;
+    if ([arguments containsObject:@"--help"]) {
+      fprintf(stderr, "%s", kUsageHelpMessage);
+      return 1;
+    }
+
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
     [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
