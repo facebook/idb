@@ -9,6 +9,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBCodeCoverageConfiguration;
+
 /**
  A value object that contains configuration for idb's xctest reporter.
  */
@@ -22,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Coverage directory path
  */
-@property (nonatomic, copy, nullable, readonly) NSString *coverageDirectoryPath;
+@property (nonatomic, retain, nullable, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
 
 /**
  Log directory path
@@ -39,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) BOOL reportAttachments;
 
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments;
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments;
 
 @end
 

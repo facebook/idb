@@ -10,6 +10,7 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBCodeCoverageRequest.h"
+#import "FBIDBAppHostedTestConfiguration.h"
 #import "FBIDBError.h"
 #import "FBTestApplicationsPair.h"
 #import "FBXCTestRunFileReader.h"
@@ -168,7 +169,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     }];
 }
 
-- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
+- (FBFuture<FBIDBAppHostedTestConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   BOOL uiTesting = NO;
   FBFuture<FBApplicationLaunchConfiguration *> *appLaunchConfigFuture = nil;
@@ -185,8 +186,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:request.coverageRequest.format];
   }
 
-  return [appLaunchConfigFuture onQueue:queue map:^ FBTestLaunchConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
-    return [[FBTestLaunchConfiguration alloc]
+  return [appLaunchConfigFuture onQueue:queue map:^ FBIDBAppHostedTestConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
+    FBTestLaunchConfiguration *testLaunchConfig = [[FBTestLaunchConfiguration alloc]
       initWithTestBundle:self.testBundle
       applicationLaunchConfiguration:applicationLaunchConfiguration
       testHostBundle:testApps.testHostApp.bundle
@@ -201,6 +202,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
       reportActivities:request.reportActivities
       coverageDirectoryPath:coverageConfig.coverageDirectory
       logDirectoryPath:logDirectoryPath];
+    return [[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfig coverageConfiguration:coverageConfig];
   }];
 }
 

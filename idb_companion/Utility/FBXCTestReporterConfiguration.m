@@ -8,10 +8,11 @@
 #import "FBXCTestReporterConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation FBXCTestReporterConfiguration
 
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments
 {
   self = [super init];
   if (!self) {
@@ -19,7 +20,7 @@
   }
 
   _resultBundlePath = resultBundlePath;
-  _coverageDirectoryPath = coverageDirectoryPath;
+  _coverageConfiguration = coverageConfiguration;
   _logDirectoryPath = logDirectoryPath;
   _binariesPaths = binariesPaths;
   _reportAttachments = reportAttachments;
@@ -29,7 +30,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Result Bundle %@ | Coverage Directory Path %@ | Log Path %@ | Binaries Paths %@ | Report Attachments %d", self.resultBundlePath, self.coverageDirectoryPath, self.logDirectoryPath, [FBCollectionInformation oneLineDescriptionFromArray:self.binariesPaths], self.reportAttachments];
+  return [NSString stringWithFormat:@"Result Bundle %@ | Coverage %@ | Log Path %@ | Binaries Paths %@ | Report Attachments %d", self.resultBundlePath, self.coverageConfiguration, self.logDirectoryPath, [FBCollectionInformation oneLineDescriptionFromArray:self.binariesPaths], self.reportAttachments];
 }
 
 @end

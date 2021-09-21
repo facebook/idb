@@ -9,6 +9,8 @@
 
 #import "FBXCTestReporterConfiguration.h"
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
@@ -41,7 +43,7 @@
   _queue = queue;
   _logger = logger;
 
-  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageDirectoryPath:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageConfiguration:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -342,7 +344,7 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.configuration.coverageDirectoryPath) {
+  if (self.configuration.coverageConfiguration.coverageDirectory) {
     [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
       NSString *coverageData = future.result;
       if (coverageData) {
@@ -416,7 +418,7 @@
       }
     };
 
-  NSString *coverageDirectoryPath = self.configuration.coverageDirectoryPath;
+  NSString *coverageDirectoryPath = self.configuration.coverageConfiguration.coverageDirectory;
   NSString *profdataPath = [coverageDirectoryPath stringByAppendingPathComponent:@"coverage.profdata"];
 
   NSError *error = nil;

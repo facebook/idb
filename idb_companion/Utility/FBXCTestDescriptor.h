@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBIDBAppHostedTestConfiguration;
 @class FBTestApplicationsPair;
 @class FBXCTestRunRequest;
 
@@ -69,9 +70,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to
  @param logDirectoryPath the path to the log directory, if present.
  @param queue the queue to be used for async operations
- @return a Future wrapping the test launch configuration if constructed successfully or an error.
+ @return a Future wrapping the app-hosted test configuration if constructed successfully or an error.
  */
-- (FBFuture<FBTestLaunchConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(nullable NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
+- (FBFuture<FBIDBAppHostedTestConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(nullable NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
 /**
  Obtains the Test Application Components for the provided target and request

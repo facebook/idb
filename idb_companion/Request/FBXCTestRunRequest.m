@@ -14,6 +14,7 @@
 #import "FBTemporaryDirectory.h"
 #import "FBCodeCoverageRequest.h"
 #import "FBXCTestReporterConfiguration.h"
+#import "FBIDBAppHostedTestConfiguration.h"
 #import "FBIDBTestOperation.h"
 #import "FBIDBStorageManager.h"
 
@@ -93,7 +94,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   }
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
     initWithResultBundlePath:nil
-    coverageDirectoryPath:configuration.coverageConfiguration.coverageDirectory
+    coverageConfiguration:configuration.coverageConfiguration
     logDirectoryPath:configuration.logDirectoryPath
     binariesPaths:@[configuration.binaryPath]
     reportAttachments:self.reportAttachments];
@@ -129,42 +130,44 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 {
   return [[[testDescriptor
     testAppPairForRequest:self target:target]
-    onQueue:target.workQueue fmap:^ FBFuture<FBTestLaunchConfiguration *> * (FBTestApplicationsPair *pair) {
+    onQueue:target.workQueue fmap:^ FBFuture<FBIDBAppHostedTestConfiguration *> * (FBTestApplicationsPair *pair) {
       [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
       return [testDescriptor testConfigWithRunRequest:self testApps:pair logDirectoryPath:logDirectoryPath logger:logger queue:target.workQueue];
     }]
-    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBTestLaunchConfiguration *testConfig) {
-      [logger logFormat:@"Obtained launch configuration %@", testConfig];
-      return [FBXCTestRunRequest_AppTest startTestExecution:testConfig reportAttachments:self.reportAttachments target:target reporter:reporter logger:logger];
+    onQueue:target.workQueue fmap:^ FBFuture<FBIDBTestOperation *> * (FBIDBAppHostedTestConfiguration *appHostedTestConfig) {
+      [logger logFormat:@"Obtained app-hosted test configuration %@", appHostedTestConfig];
+      return [FBXCTestRunRequest_AppTest startTestExecution:appHostedTestConfig reportAttachments:self.reportAttachments target:target reporter:reporter logger:logger];
     }];
 }
 
-+ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBTestLaunchConfiguration *)configuration reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBTestOperation *> *)startTestExecution:(FBIDBAppHostedTestConfiguration *)configuration reportAttachments:(BOOL)reportAttachments target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
+  FBTestLaunchConfiguration *testLaunchConfiguration = configuration.testLaunchConfiguration;
+  FBCodeCoverageConfiguration *coverageConfiguration = configuration.coverageConfiguration;
 
   NSMutableArray<NSString *> *binariesPaths = NSMutableArray.array;
-  NSString *binaryPath = configuration.testBundle.binary.path;
+  NSString *binaryPath = testLaunchConfiguration.testBundle.binary.path;
   if (binaryPath) {
     [binariesPaths addObject:binaryPath];
   }
-  binaryPath = configuration.testHostBundle.binary.path;
+  binaryPath = testLaunchConfiguration.testHostBundle.binary.path;
   if (binaryPath) {
     [binariesPaths addObject:binaryPath];
   }
-  binaryPath = configuration.targetApplicationBundle.binary.path;
+  binaryPath = testLaunchConfiguration.targetApplicationBundle.binary.path;
   if (binaryPath) {
     [binariesPaths addObject:binaryPath];
   }
 
-  FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:configuration reporter:reporter logger:logger];
+  FBFuture<NSNull *> *testCompleted = [target runTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter logger:logger];
   FBXCTestReporterConfiguration *reporterConfiguration = [[FBXCTestReporterConfiguration alloc]
-    initWithResultBundlePath:configuration.resultBundlePath
-    coverageDirectoryPath:configuration.coverageDirectoryPath
-    logDirectoryPath:configuration.logDirectoryPath
+    initWithResultBundlePath:testLaunchConfiguration.resultBundlePath
+    coverageConfiguration:coverageConfiguration
+    logDirectoryPath:testLaunchConfiguration.logDirectoryPath
     binariesPaths:binariesPaths
     reportAttachments:reportAttachments];
   return [FBFuture futureWithResult:[[FBIDBTestOperation alloc]
-    initWithConfiguration:configuration
+    initWithConfiguration:testLaunchConfiguration
     reporterConfiguration:reporterConfiguration
     reporter:reporter
     logger:logger
