@@ -465,6 +465,23 @@
     }];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
+{
+  return [[[FBSimulatorApplicationCommands
+    applicationContainerToPathMappingForSimulator:self.simulator]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSURL *> *pathMappingURLs) {
+      NSMutableDictionary<NSString *, NSString *> *pathMapping = NSMutableDictionary.dictionary;
+      for (NSString *identifier in pathMappingURLs.allKeys) {
+        pathMapping[identifier] = pathMappingURLs[identifier].path;
+      }
+      return [FBSimulatorFileCommands fileContainerForPathMapping:pathMapping queue:self.simulator.asyncQueue];
+    }]
+    onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
+      // Do nothing.
+      return FBFuture.empty;
+    }];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
 {
   return [[[FBSimulatorApplicationCommands

@@ -18,6 +18,7 @@
 #import "FBStorageUtils.h"
 #import "FBTemporaryDirectory.h"
 
+FBFileContainerKind const FBFileContainerKindApplication = @"application";
 FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
 FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 FBFileContainerKind const FBFileContainerKindGroup = @"group";
@@ -671,7 +672,10 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
       failFutureContext];
   }
-  if ([containerType hasPrefix:FBFileContainerKindGroup]) {
+  if ([containerType isEqualToString:FBFileContainerKindApplication]) {
+    return [commands fileCommandsForApplicationContainers];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindGroup]) {
     return [commands fileCommandsForGroupContainers];
   }
   if ([containerType isEqualToString:FBFileContainerKindMedia]) {

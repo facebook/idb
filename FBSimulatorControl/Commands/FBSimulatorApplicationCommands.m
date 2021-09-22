@@ -217,6 +217,12 @@
   return [commands groupContainerToPathMapping];
 }
 
++ (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMappingForSimulator:(FBSimulator *)simulator
+{
+  FBSimulatorApplicationCommands *commands = [[FBSimulatorApplicationCommands alloc] initWithSimulator:simulator];
+  return [commands applicationContainerToPathMapping];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSDictionary<NSString *, NSURL *> *> *)groupContainerToPathMapping
@@ -226,16 +232,36 @@
       return [self.simulator.device installedAppsWithError:error];
     }]
     onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
-      NSMutableDictionary<NSString *, NSString *> *groupContainerToPathMapping = NSMutableDictionary.dictionary;
+      NSMutableDictionary<NSString *, NSURL *> *mapping = NSMutableDictionary.dictionary;
       for (NSString *key in installedApps.allKeys) {
         NSDictionary<NSString *, id> *app = installedApps[key];
         NSDictionary<NSString *, id> *appContainers = app[@"GroupContainers"];
         if (!appContainers) {
           continue;
         }
-        [groupContainerToPathMapping addEntriesFromDictionary:appContainers];
+        [mapping addEntriesFromDictionary:appContainers];
       }
-      return [groupContainerToPathMapping copy];
+      return [mapping copy];
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMapping
+{
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id>  * (NSError **error) {
+      return [self.simulator.device installedAppsWithError:error];
+    }]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
+      NSMutableDictionary<NSString *, NSURL *> *mapping = NSMutableDictionary.dictionary;
+      for (NSString *bundleID in installedApps.allKeys) {
+        NSDictionary<NSString *, id> *app = installedApps[bundleID];
+        NSURL *dataContainer = app[KeyDataContainer];
+        if (!dataContainer) {
+          continue;
+        }
+        mapping[bundleID] = dataContainer;
+      }
+      return [mapping copy];
     }];
 }
 
