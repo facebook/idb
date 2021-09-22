@@ -23,10 +23,17 @@ class FSCommand(ClientCommand):
         group = parser.add_mutually_exclusive_group()
         group.add_argument(
             "--bundle-id",
-            help="Bundle ID of application. If not provided, the 'root' of the target will be used",
+            help="Bundle ID of application. If not provided, the 'root' of the target will be used. This will eventually be deprecated",
             type=str,
             required=False,
             default=None,
+        )
+        group.add_argument(
+            "--application",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.APPLICATION,
+            help="Use the container of application containers. Applications containers are presented, by bundle-id in the root.",
         )
         group.add_argument(
             "--group",
