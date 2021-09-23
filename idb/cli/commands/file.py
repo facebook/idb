@@ -64,6 +64,13 @@ class FSCommand(ClientCommand):
             help="Use the crashes container",
         )
         group.add_argument(
+            "--disk-images",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.DISK_IMAGES,
+            help="Use the disk images",
+        )
+        group.add_argument(
             "--provisioning-profiles",
             action="store_const",
             dest="container_type",
