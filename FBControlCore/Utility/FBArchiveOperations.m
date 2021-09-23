@@ -34,7 +34,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   if (compression == FBCompressionFormatZSTD) {
     extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-xp", @"-C", extractPath, @"-f", @"-"];
   }
-  
+
   return [[[[[[[[FBTaskBuilder
     withLaunchPath:BSDTarPath]
     withArguments:extractCommand]
@@ -68,6 +68,19 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     withStdOutToInputStream]
     withTaskLifecycleLoggingTo:logger]
     start];
+}
+
++ (FBFuture<FBTask<NSData *, NSData *, id> *> *)createGzipDataFromData:(NSData *)data logger:(id<FBControlCoreLogger>)logger
+{
+  return (FBFuture<FBTask<NSData *, NSData *, id> *> *) [[[[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/gzip"]
+    withArguments:@[@"-", @"--to-stdout"]]
+    withStdInFromData:data]
+    withStdErrToLoggerAndErrorMessage:logger]
+    withStdOutInMemoryAsData]
+    withTaskLifecycleLoggingTo:logger]
+    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]
+  ];
 }
 
 + (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
