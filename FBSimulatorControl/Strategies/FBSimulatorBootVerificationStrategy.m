@@ -18,21 +18,6 @@
 @interface FBSimulatorBootVerificationStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-
-@end
-
-@interface FBSimulatorBootVerificationStrategy_LaunchCtlServices : FBSimulatorBootVerificationStrategy
-
-@property (nonatomic, copy, readonly) NSArray<NSString *> *requiredServiceNames;
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator requiredServiceNames:(NSArray<NSString *> *)requiredServiceNames;
-
-+ (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted:(FBSimulator *)simulator;
-
-@end
-
-@interface FBSimulatorBootVerificationStrategy_SimDeviceBootInfo : FBSimulatorBootVerificationStrategy
-
 @property (nonatomic, strong, nullable, readwrite) SimDeviceBootInfo *lastBootInfo;
 @property (nonatomic, strong, nullable, readwrite) NSDate *lastInfoUpdateDate;
 
@@ -44,12 +29,7 @@
 
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
-  if ([simulator.device respondsToSelector:@selector(bootStatus)]) {
-    return [[FBSimulatorBootVerificationStrategy_SimDeviceBootInfo alloc] initWithSimulator:simulator];
-  } else {
-    NSArray<NSString *> *requiredServiceNames = [FBSimulatorBootVerificationStrategy_LaunchCtlServices requiredLaunchdServicesToVerifyBooted:simulator];
-    return [[FBSimulatorBootVerificationStrategy_LaunchCtlServices alloc] initWithSimulator:simulator requiredServiceNames:requiredServiceNames];
-  }
+  return [[FBSimulatorBootVerificationStrategy alloc] initWithSimulator:simulator];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -85,16 +65,6 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)performBootVerification
- {
-   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-   return nil;
- }
-
-@end
-
-@implementation FBSimulatorBootVerificationStrategy_SimDeviceBootInfo
-
-- (FBFuture<NSNull *> *)performBootVerification
 {
   SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
   if (!bootInfo) {
@@ -126,9 +96,9 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
     if (updateInterval < stallInterval) {
       return;
     }
-    [logger logFormat:@"Boot Status has not changed from '%@' for %f seconds", [FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo], updateInterval];
+    [logger logFormat:@"Boot Status has not changed from '%@' for %f seconds", [FBSimulatorBootVerificationStrategy describeBootInfo:bootInfo], updateInterval];
   } else {
-    [logger.debug logFormat:@"Boot Status Changed: %@", [FBSimulatorBootVerificationStrategy_SimDeviceBootInfo describeBootInfo:bootInfo]];
+    [logger.debug logFormat:@"Boot Status Changed: %@", [FBSimulatorBootVerificationStrategy describeBootInfo:bootInfo]];
     self.lastBootInfo = bootInfo;
     self.lastInfoUpdateDate = NSDate.date;
   }
@@ -183,76 +153,6 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
     bootInfo.migrationPhaseDescription,
     bootInfo.migrationElapsedTime
   ];
-}
-
-@end
-
-@implementation FBSimulatorBootVerificationStrategy_LaunchCtlServices
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator requiredServiceNames:(NSArray<NSString *> *)requiredServiceNames
-{
-  self = [super initWithSimulator:simulator];
-  if (!self) {
-    return nil;
-  }
-
-  _requiredServiceNames = requiredServiceNames;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)performBootVerification
-{
-  return [[self.simulator
-    listServices]
-    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSNull *> * (NSDictionary<NSString *, id> *services) {
-      NSDictionary<id, NSString *> *processIdentifiers = [NSDictionary
-        dictionaryWithObjects:self.requiredServiceNames
-        forKeys:[services objectsForKeys:self.requiredServiceNames notFoundMarker:NSNull.null]];
-      if (processIdentifiers[NSNull.null]) {
-        return [[FBSimulatorError
-          describeFormat:@"Service %@ has not started", processIdentifiers[NSNull.null]]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
-}
-
-/*
- A Set of launchd_sim service names that are used to determine whether relevant System daemons are available after booting.
-
- There is a period of time between when CoreSimulator says that the Simulator is 'Booted'
- and when it is stable enough state to launch Applications/Daemons, these Service Names
- represent the Services that are known to signify readyness.
-
- @return the required Service Names.
- */
-+ (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted:(FBSimulator *)simulator
-{
-  FBControlCoreProductFamily family = simulator.productFamily;
-  if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBXcodeConfiguration.isXcode9OrGreater) {
-      return @[
-        @"com.apple.backboardd",
-        @"com.apple.mobile.installd",
-        @"com.apple.CoreSimulator.bridge",
-        @"com.apple.SpringBoard",
-      ];
-    }
-      return @[
-        @"com.apple.backboardd",
-        @"com.apple.mobile.installd",
-        @"com.apple.SimulatorBridge",
-        @"com.apple.SpringBoard",
-      ];
-  }
-  if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
-    return @[
-      @"com.apple.mobileassetd",
-      @"com.apple.nsurlsessiond",
-    ];
-  }
-  return @[];
 }
 
 @end
