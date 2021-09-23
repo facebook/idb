@@ -27,9 +27,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator
++ (FBFuture<NSNull *> *)verifySimulatorIsBooted:(FBSimulator *)simulator
 {
-  return [[FBSimulatorBootVerificationStrategy alloc] initWithSimulator:simulator];
+  return [[[FBSimulatorBootVerificationStrategy alloc] initWithSimulator:simulator] verifySimulatorIsBooted];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator

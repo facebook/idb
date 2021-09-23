@@ -44,15 +44,13 @@
 
 + (FBFuture<NSNull *> *)verifySimulatorIsBooted:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
-  // Return early if we're not awaiting services.
+  // Return early if the option to verify boot is not set..
   if ((configuration.options & FBSimulatorBootOptionsVerifyUsable) != FBSimulatorBootOptionsVerifyUsable) {
     return FBFuture.empty;
   }
 
-  // Now wait for the services.
-  return [[FBSimulatorBootVerificationStrategy
-    strategyWithSimulator:simulator]
-    verifySimulatorIsBooted];
+  // Otherwise actually perform the boot verification.
+  return [FBSimulatorBootVerificationStrategy verifySimulatorIsBooted:simulator];
 }
 
 + (FBFuture<NSNull *> *)performSimulatorBoot:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration
