@@ -23,7 +23,7 @@ class FSCommand(ClientCommand):
         group = parser.add_mutually_exclusive_group()
         group.add_argument(
             "--bundle-id",
-            help="Bundle ID of application. If not provided, the 'root' of the target will be used. This will eventually be deprecated",
+            help="DEPRECATED: Use --application instead. Bundle ID of application. If not provided, the 'root' of the target will be used.",
             type=str,
             required=False,
             default=None,
@@ -103,6 +103,9 @@ class FSCommand(ClientCommand):
         bundle_id = args.bundle_id
         if bundle_id is not None:
             container = bundle_id
+            self.logger.warn(
+                f"'--bundle-id {bundle_id}' is deprecated, please use --application prefixing '{bundle_id}' in the file path/s provided to this command."
+            )
         else:
             container = args.container_type
         return await self.run_with_container(
