@@ -279,10 +279,15 @@ class Client(ClientBase):
                             metadata=metadata_to_companion, local_file_path=f.name
                         )
                     )
+                    if is_local is None:
+                        is_local = response.companion.is_local
                 except Exception as ex:
                     raise IdbException(
                         f"Failed to connect to companion at address {address}: {ex}"
                     )
+            logger.debug(
+                f"Companion at {address} {'is' if is_local else 'is not'} local"
+            )
             companion = companion_to_py(
                 companion=response.companion, address=address, is_local=is_local
             )
