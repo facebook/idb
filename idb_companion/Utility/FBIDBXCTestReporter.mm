@@ -28,6 +28,32 @@
 
 @end
 
+@interface CodeCoverageResponseData : NSObject
+
+@property(nonatomic, copy, nullable, readonly) NSString *jsonString;
+
+@property(nonatomic, copy, nullable, readonly) NSData *data;
+
+- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString;
+
+@end
+
+@implementation CodeCoverageResponseData
+
+- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString
+{
+  self = [super init];
+  if (self) {
+    _data = data;
+    _jsonString = jsonString;
+  }
+  return self;
+}
+
+@end
+
+
+
 @implementation FBIDBXCTestReporter
 
 #pragma mark Initializer
@@ -328,15 +354,21 @@
 
 - (void)insertFinalDataThenWriteResponse:(const idb::XctestRunResponse &)response
 {
-  // Passing a reference to the response on the stack will lead to garbage memory unless we make a copy for the block.
-  // https://github.com/facebook/infer/blob/main/infer/lib/linter_rules/linters.al#L212
-  __block idb::XctestRunResponse responseCaptured = response;
+  // This method can make changes to the response object, however the reference is `const` so
+  //   it's necessary to make a copy of the object and use the copy throughout this method.
+  // As the changes to the request (copy) will effectivelly happen inside blocks the reference to the copy
+  //   needs to be declared as __block otherwise the (reference to the) copy object will be destroyed
+  //   (together with the stack frame) before the blocks try to change it, causing memory access errors.
+
+  __block idb::XctestRunResponse responseCopy;
+  responseCopy.CopyFrom(response);
+
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   if (self.configuration.resultBundlePath) {
     [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
-        idb::Payload *payload = responseCaptured.mutable_result_bundle();
+        idb::Payload *payload = responseCopy.mutable_result_bundle();
         payload->set_data(data.bytes, data.length);
       } else {
         [self.logger.info logFormat:@"Failed to create result bundle %@", future];
@@ -345,21 +377,30 @@
     }]];
   }
   if (self.configuration.coverageConfiguration.coverageDirectory) {
-    [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
-      NSString *coverageData = future.result;
-      if (coverageData) {
-        responseCaptured.set_coverage_json(coverageData.UTF8String ?: "");
-      } else {
-        [self.logger.info logFormat:@"Failed to get coverage data: %@", future.error.localizedDescription];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }]];
+    [futures addObject:[[[self getCoverageResponseData]
+      onQueue:self.queue map:^NSNull *(CodeCoverageResponseData *coverageResponseData) {
+        NSData *data = coverageResponseData.data;
+        if (data) {
+          idb::Payload *payload = responseCopy.mutable_code_coverage_data();
+          payload->set_data(data.bytes, data.length);
+        }
+        NSString *jsonString = coverageResponseData.jsonString;
+        if (jsonString) {
+          // for backwards compatibility
+          responseCopy.set_coverage_json(jsonString.UTF8String ?: "");
+        }
+        return NSNull.null;
+      }]
+      onQueue:self.queue handleError:^FBFuture<NSNull *> *(NSError *error) {
+        [self.logger.info logFormat:@"Failed to get coverage data: %@", error.localizedDescription];
+        return FBFuture.empty;
+      }]];
   }
   if (self.configuration.logDirectoryPath) {
       [futures addObject:[[self getLogDirectoryData] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
         NSData *data = future.result;
         if (data) {
-          idb::Payload *payload = responseCaptured.mutable_log_directory();
+          idb::Payload *payload = responseCopy.mutable_log_directory();
           payload->set_data(data.bytes, data.length);
         } else {
           [self.logger.info logFormat:@"Failed to get log drectory: %@", future.error.localizedDescription];
@@ -369,11 +410,11 @@
 
   }
   if (futures.count == 0) {
-    [self writeResponseFinal:responseCaptured];
+    [self writeResponseFinal:responseCopy];
     return;
   }
   [[FBFuture futureWithFutures:futures] onQueue:self.queue map:^NSNull *(id _) {
-    [self writeResponseFinal:responseCaptured];
+    [self writeResponseFinal:responseCopy];
     return NSNull.null;
   }];
 }
@@ -404,7 +445,54 @@
   }
 }
 
-- (FBFuture<NSString *> *)getCoverageData
+- (FBFuture<NSData *> *)getResultsBundle
+{
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
+}
+
+- (FBFuture<NSData *> *)getLogDirectoryData
+{
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
+}
+
+#pragma mark Code Coverage
+
+- (FBFuture<CodeCoverageResponseData *> *)getCoverageResponseData
+{
+  switch (self.configuration.coverageConfiguration.format) {
+    case FBCodeCoverageExported:
+      return [[self getCoverageDataExported]
+        onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
+          return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
+          onQueue:self.queue map:^CodeCoverageResponseData *(FBTask<NSData *,NSData *,id> *task) {
+            return [[CodeCoverageResponseData alloc]
+                initWithData:task.stdOut
+                jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
+              ];
+            }];
+        }];
+    case FBCodeCoverageRaw:
+      return [[self getCoverageDataDirectory]
+        onQueue:self.queue map:^CodeCoverageResponseData *(NSData *coverageTarball) {
+          return [[CodeCoverageResponseData alloc] initWithData:coverageTarball jsonString:nil];
+        }];
+    default:
+      return [[FBControlCoreError
+        describeFormat:@"Unsupported code coverage format"]
+        failFuture];
+  }
+}
+
+
+- (FBFuture<NSData *> *)getCoverageDataDirectory
+{
+  return [FBArchiveOperations
+    createGzippedTarDataForPath:self.configuration.coverageConfiguration.coverageDirectory
+    queue:self.queue
+    logger:self.logger];
+}
+
+- (FBFuture<NSData *> *)getCoverageDataExported
 {
   FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBTask<NSNull *, NSData *, NSString *> *) =
     ^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (FBTask<NSNull *, NSData *, NSString *> *task) {
@@ -434,7 +522,7 @@
 
 
   return [[[[[self.processUnderTestExitedMutable
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSData *, NSString *> *> *(id _) {
       NSMutableArray<NSString *> *arguments = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
       for (NSString *profraw in profraws) {
         [arguments addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
@@ -442,12 +530,12 @@
 
       return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
-        withStdOutInMemoryAsString]
+        withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
+    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSData *, NSString *> *> *(id _) {
       NSMutableArray<NSString *> *arguments = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
       for (NSString *binary in self.configuration.binariesPaths) {
         [arguments addObject:@"-object"];
@@ -455,24 +543,15 @@
       }
       return [[[[FBTaskBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
-        withStdOutInMemoryAsString]
+        withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
+    onQueue:self.queue map:^NSData *(FBTask<NSNull *,NSData *,NSString *> *task) {
       return task.stdOut;
     }];
 }
 
-- (FBFuture<NSData *> *)getResultsBundle
-{
-  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
-}
-
-- (FBFuture<NSData *> *)getLogDirectoryData
-{
-  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
-}
 
 @end
