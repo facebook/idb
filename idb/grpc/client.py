@@ -349,11 +349,17 @@ class Client(ClientBase):
                 else:
                     file_path = str(Path(bundle).resolve(strict=True))
                     if self.is_local:
+                        self.logger.debug(
+                            f"Companion is local, sending local file by path {file_path}"
+                        )
                         # send file_path
                         generator = generate_requests(
                             [InstallRequest(payload=Payload(file_path=file_path))]
                         )
                     else:
+                        self.logger.debug(
+                            f"Companion is remote, generating binary chunks for {file_path}"
+                        )
                         # chunk file from file_path
                         generator = generate_binary_chunks(
                             path=file_path,
@@ -364,6 +370,7 @@ class Client(ClientBase):
 
             else:
                 # chunk file from memory
+                self.logger.debug("Sending file data from input stream")
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
@@ -375,6 +382,7 @@ class Client(ClientBase):
                 )
             async for message in generator:
                 await stream.send_message(message)
+            self.logger.debug("Finished sending install payload to companion")
             await stream.end()
             async for response in stream:
                 yield InstalledArtifact(
