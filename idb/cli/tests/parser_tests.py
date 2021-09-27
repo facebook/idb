@@ -186,7 +186,6 @@ class TestParser(TestCase):
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
             address=TCPAddress(host="thehost", port=123),
-            is_local=False,
             logger=ANY,
             use_tls=True,
         )
@@ -197,7 +196,6 @@ class TestParser(TestCase):
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
             address=DomainSocketAddress(path="/foo/sock"),
-            is_local=False,
             logger=ANY,
             use_tls=False,
         )
@@ -397,7 +395,6 @@ class TestParser(TestCase):
         namespace = Namespace()
         namespace.companion_path = COMPANION_PATH
         namespace.companion = None
-        namespace.companion_local = False
         namespace.compression = None
         namespace.prune_dead_companion = True
         namespace.log_level = "WARNING"
@@ -503,7 +500,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.daemon_port = port
@@ -532,7 +528,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -551,7 +546,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -607,7 +601,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -630,7 +623,6 @@ class TestParser(TestCase):
                 Namespace(
                     companion=None,
                     companion_path=COMPANION_PATH,
-                    companion_local=False,
                     compression=None,
                     prune_dead_companion=True,
                     log_level="WARNING",

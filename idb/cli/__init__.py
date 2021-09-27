@@ -55,7 +55,6 @@ async def _get_client(
     if companion is not None:
         async with GrpcClient.build(
             address=_parse_address(companion),
-            is_local=args.companion_local,
             logger=logger,
             use_tls=args.companion_tls,
         ) as client:
