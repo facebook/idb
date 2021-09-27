@@ -32,7 +32,7 @@ from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
-from idb.common.gzip import drain_gzip_decompress
+from idb.common.gzip import drain_gzip_decompress, gunzip
 from idb.common.hid import (
     button_press_to_events,
     iterator_to_async_iterator,
@@ -49,6 +49,7 @@ from idb.common.types import (
     Address,
     AppProcessState,
     Client as ClientBase,
+    CodeCoverageFormat,
     Companion,
     CompanionInfo,
     Compression,
@@ -124,6 +125,7 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
     XctraceRecordRequest,
+    XctestRunResponse,
 )
 from idb.grpc.install import (
     Bundle,
@@ -994,6 +996,38 @@ class Client(ClientBase):
                 )
                 await stream.end()
 
+    async def _handle_code_coverage_in_response(
+        self,
+        response: XctestRunResponse,
+        coverage_output_path: Optional[str],
+        coverage_format: CodeCoverageFormat,
+    ) -> None:
+        if (
+            response.code_coverage_data
+            and response.code_coverage_data.data
+            and response.code_coverage_data.data.count
+            and coverage_output_path
+        ):
+            output_path: str = coverage_output_path
+            self.logger.info(f"Decompressing code coverage to {output_path}")
+            if coverage_format == CodeCoverageFormat.EXPORTED:
+                await gunzip(
+                    response.code_coverage_data.data,
+                    output_path=output_path,
+                )
+            elif coverage_format == CodeCoverageFormat.RAW:
+                await untar_into_path(
+                    payload=response.code_coverage_data,
+                    description="raw code coverage directory",
+                    output_path=output_path,
+                    logger=self.logger,
+                )
+            self.logger.info(f"Finished decompression to {output_path}")
+        elif response.coverage_json and coverage_output_path:
+            # handle deprecated response field
+            with open(coverage_output_path, "w") as f:
+                f.write(response.coverage_json)
+
     @log_and_handle_exceptions
     async def run_xctest(
         self,
@@ -1014,6 +1048,7 @@ class Client(ClientBase):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
@@ -1037,6 +1072,7 @@ class Client(ClientBase):
                 ),
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
+                coverage_format=coverage_format,
                 collect_logs=log_directory_path is not None,
                 wait_for_debugger=wait_for_debugger,
             )
@@ -1070,9 +1106,10 @@ class Client(ClientBase):
                         output_path=log_directory_path,
                         logger=self.logger,
                     )
-                if response.coverage_json and coverage_output_path:
-                    with open(coverage_output_path, "w") as f:
-                        f.write(response.coverage_json)
+
+                await self._handle_code_coverage_in_response(
+                    response, coverage_output_path, coverage_format
+                )
 
                 if wait_for_debugger and response.debugger.pid:
                     print("Tests waiting for debugger. To debug run:")

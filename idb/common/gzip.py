@@ -60,3 +60,14 @@ async def generate_gzip(path: str) -> AsyncIterator[bytes]:
             if not data:
                 return
             yield data
+
+
+async def _stream_from_data(data: bytes) -> AsyncIterator[bytes]:
+    yield data
+
+
+async def gunzip(data: bytes, output_path: str) -> None:
+    await drain_gzip_decompress(
+        stream=_stream_from_data(data=data),
+        output_path=output_path,
+    )

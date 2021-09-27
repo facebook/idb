@@ -16,6 +16,7 @@ from idb.common.types import (
     TestAttachment,
     TestRunFailureInfo,
     TestRunInfo,
+    CodeCoverageFormat,
 )
 from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse, Payload
 from idb.grpc.xctest_log_parser import XCTestLogParser
@@ -25,6 +26,13 @@ Mode = XctestRunRequest.Mode
 Logic = XctestRunRequest.Logic
 Application = XctestRunRequest.Application
 UI = XctestRunRequest.UI
+
+CODE_COVERAGE_FORMAT_MAP: Dict[
+    CodeCoverageFormat, "XctestRunRequest.CodeCoverage.Format"
+] = {
+    CodeCoverageFormat.EXPORTED: XctestRunRequest.CodeCoverage.EXPORTED,
+    CodeCoverageFormat.RAW: XctestRunRequest.CodeCoverage.RAW,
+}
 
 
 class XCTestException(Exception):
@@ -103,6 +111,7 @@ def make_request(
     report_activities: bool,
     report_attachments: bool,
     collect_coverage: bool,
+    coverage_format: CodeCoverageFormat,
     collect_logs: bool,
     wait_for_debugger: bool,
 ) -> XctestRunRequest:
@@ -118,6 +127,14 @@ def make_request(
     else:
         mode = Mode(application=Application(app_bundle_id=app_bundle_id))
 
+    coverage_object = None
+    if collect_coverage:
+
+        coverage_object = XctestRunRequest.CodeCoverage(
+            collect=True,
+            format=CODE_COVERAGE_FORMAT_MAP[coverage_format],
+        )
+
     return XctestRunRequest(
         arguments=args,
         collect_coverage=collect_coverage,
@@ -131,6 +148,7 @@ def make_request(
         timeout=(timeout if timeout is not None else 0),
         collect_logs=collect_logs,
         wait_for_debugger=wait_for_debugger,
+        code_coverage=coverage_object,
     )
 
 
