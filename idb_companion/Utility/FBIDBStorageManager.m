@@ -8,7 +8,6 @@
 #import "FBIDBStorageManager.h"
 
 #import "FBIDBError.h"
-#import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
 #import "FBXCTestRunFileReader.h"
 

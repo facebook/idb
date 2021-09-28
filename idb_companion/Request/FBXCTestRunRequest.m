@@ -11,7 +11,6 @@
 
 #import "FBIDBError.h"
 #import "FBXCTestDescriptor.h"
-#import "FBTemporaryDirectory.h"
 #import "FBCodeCoverageRequest.h"
 #import "FBXCTestReporterConfiguration.h"
 #import "FBIDBAppHostedTestConfiguration.h"

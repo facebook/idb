@@ -7,7 +7,7 @@
 
 #import "FBTemporaryDirectory.h"
 
-#import "FBIDBError.h"
+#import "FBControlCoreError.h"
 #import "FBStorageUtils.h"
 
 @interface FBTemporaryDirectory ()
@@ -152,7 +152,7 @@
   [self.logger logFormat:@"Creating Temp Dir %@", tempDirectory];
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtURL:tempDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-    return [[[FBIDBError
+    return [[[FBControlCoreError
       describeFormat:@"Failed to create Temp Dir %@", tempDirectory]
       causedBy:error]
       failFutureContext];

@@ -7,9 +7,7 @@
 
 #import "FBStorageUtils.h"
 
-#import <FBControlCore/FBControlCore.h>
-
-#import "FBIDBError.h"
+#import "FBControlCoreError.h"
 
 @implementation FBStorageUtils
 
@@ -50,7 +48,7 @@
     return nil;
   }
   if (files.count != 1) {
-    return [[FBIDBError
+    return [[FBControlCoreError
       describeFormat:@"%lu files with extension .%@ in %@", (unsigned long)files.count, extension, url]
       fail:error];
   }
@@ -70,7 +68,7 @@
     return nil;
   }
   if (filesInDirectory.count != 1) {
-    return [[FBIDBError
+    return [[FBControlCoreError
       describeFormat:@"Expected one top level file, found %lu: %@", filesInDirectory.count, [FBCollectionInformation oneLineDescriptionFromArray:filesInDirectory]]
       fail:error];
   }
@@ -82,7 +80,7 @@
   NSError *innerError;
   NSArray<NSURL *> *filesInDirectory = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&innerError];
   if (filesInDirectory == nil) {
-    return [[[FBIDBError
+    return [[[FBControlCoreError
       describeFormat:@"Failed to list files in directory %@", directory]
       causedBy:innerError]
       fail:error];

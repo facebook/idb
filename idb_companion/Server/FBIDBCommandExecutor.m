@@ -15,8 +15,6 @@
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
-#import "FBStorageUtils.h"
-#import "FBTemporaryDirectory.h"
 
 FBFileContainerKind const FBFileContainerKindApplication = @"application";
 FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";

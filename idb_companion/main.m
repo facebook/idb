@@ -19,8 +19,6 @@
 #import "FBIDBPortsConfiguration.h"
 #import "FBiOSTargetProvider.h"
 #import "FBiOSTargetStateChangeNotifier.h"
-#import "FBStorageUtils.h"
-#import "FBTemporaryDirectory.h"
 #import "FBiOSTargetDescription.h"
 #import "FBIDBStorageManager.h"
 #import "FBIDBCommandExecutor.h"

@@ -20,8 +20,6 @@
 #import "FBIDBStorageManager.h"
 #import "FBIDBTestOperation.h"
 #import "FBIDBXCTestReporter.h"
-#import "FBStorageUtils.h"
-#import "FBTemporaryDirectory.h"
 #import "FBXCTestRunRequest.h"
 
 using grpc::Server;
