@@ -84,9 +84,8 @@
     return mac;
   }
   // Otherwise query the input target sets
-  FBiOSTargetQuery *query = [FBiOSTargetQuery udid:udid];
   for (id<FBiOSTargetSet> targetSet in targetSets) {
-    id<FBiOSTargetInfo> targetInfo = [[query filter:targetSet.allTargetInfos] firstObject];
+    id<FBiOSTargetInfo> targetInfo = [targetSet targetWithUDID:udid];
     if (!targetInfo) {
       continue;
     }

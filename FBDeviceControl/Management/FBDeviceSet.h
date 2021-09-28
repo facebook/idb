@@ -33,14 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Querying
 
 /**
- Fetches the Simulators from the Set, matching the query.
-
- @param query the Query to query with.
- @return an array of matching Simulators.
- */
-- (NSArray<FBDevice *> *)query:(FBiOSTargetQuery *)query;
-
-/**
  Fetches a Device with by a UDID.
 
  @param udid the UDID of the Device to Fetch.

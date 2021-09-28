@@ -89,19 +89,14 @@
 
 #pragma mark Querying
 
-- (NSArray<FBDevice *> *)query:(FBiOSTargetQuery *)query
+- (id<FBiOSTargetInfo>)targetWithUDID:(NSString *)udid
 {
-  if ([query excludesAll:FBiOSTargetTypeDevice]) {
-    return @[];
-  }
-  return (NSArray<FBDevice *> *)[query filter:self.allDevices];
+  return [self deviceWithUDID:udid];
 }
 
-- (nullable FBDevice *)deviceWithUDID:(NSString *)udid
+- (FBDevice *)deviceWithUDID:(NSString *)udid
 {
-  FBiOSTargetQuery *query = [FBiOSTargetQuery udids:@[udid]];
-  return [[self query:query] firstObject];
-}
+  return [[self.allDevices filteredArrayUsingPredicate:[FBiOSTargetPredicates udid:udid]] firstObject];}
 
 #pragma mark FBiOSTargetSet Implementation
 

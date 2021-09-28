@@ -297,13 +297,13 @@ static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *use
       if ([udidOrAll.lowercaseString isEqualToString:@"all"]) {
         return [set deleteAll];
       }
-      NSArray<FBSimulator *> *simulators = [set query:[FBiOSTargetQuery udid:udidOrAll]];
-      if (simulators.count != 1) {
+      FBSimulator *simulator = [set simulatorWithUDID:udidOrAll];
+      if (!simulator) {
         return [[FBIDBError
-          describeFormat:@"Could not find a simulator with udid %@ got %@", udidOrAll, [FBCollectionInformation oneLineDescriptionFromArray:simulators]]
+          describeFormat:@"Could not find a simulator with udid %@", udidOrAll]
           failFuture];
       }
-      return [set deleteSimulator:simulators.firstObject];
+      return [set deleteSimulator:simulator];
     }]
     mapReplace:NSNull.null];
 }
