@@ -76,19 +76,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath;
 
 /**
- Extracts a tar file to a temporary location or returns filePaths if non-null.
- The tar is expected to be of the format
- tar/UDID1/file1
-    /UDID2/file2
-    /...
-
- @param tarData NSData representation of the tar to extract
- @param filePaths NSArray<NSString *> representation of the files in the tar
- @return a Context Future containing paths to the files within the tar or filePaths
- */
-- (FBFutureContext<NSArray<NSURL *> *> *)withFilesInTar:(nullable NSData *)tarData orFilePaths:(nullable NSArray<NSString *> *)filePaths;
-
-/**
  Takes the extraction directory of a tar and returns a list of files contained
  in the subfolders.
  The tar is expected to be of the format
@@ -109,7 +96,6 @@ NS_ASSUME_NONNULL_BEGIN
  A URL for a temporary directory.
  @return a url for the directory
  */
-
 - (NSURL *)temporaryDirectory;
 
 /**

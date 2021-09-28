@@ -99,19 +99,6 @@
     }];
 }
 
-- (FBFutureContext<NSArray<NSURL *> *> *)withFilesInTar:(NSData *)tarData orFilePaths:(nullable NSArray<NSString *> *)filePaths
-{
-  if (filePaths){
-    NSMutableArray<NSURL *> *urls = [NSMutableArray arrayWithCapacity:filePaths.count];
-    for (NSString *filePath in filePaths) {
-      [urls addObject:[NSURL fileURLWithPath:filePath]];
-    }
-    return [FBFutureContext futureContextWithResult:urls];
-  }
-
-  return [self filesFromSubdirs:[self withArchiveExtracted:tarData]];
-}
-
 - (FBFutureContext<NSArray<NSURL *> *> *)filesFromSubdirs:(FBFutureContext<NSURL *> *)extractionDirContext
 {
   return [extractionDirContext
