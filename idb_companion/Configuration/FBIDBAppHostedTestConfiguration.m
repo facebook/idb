@@ -11,7 +11,7 @@
 
 @implementation FBIDBAppHostedTestConfiguration
 
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration coverageConfiguration:(FBCodeCoverageConfiguration *)coverageConfiguration
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration
 {
   self = [super init];
   if (!self) {

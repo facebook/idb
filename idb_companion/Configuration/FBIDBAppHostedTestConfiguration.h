@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(nonatomic, strong, retain, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
 
-@property(nonatomic, strong, retain, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
+@property(nonatomic, strong, retain, nullable, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
 
-- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration coverageConfiguration:(FBCodeCoverageConfiguration *)coverageConfig;
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfig;
 
 @end
 
