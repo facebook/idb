@@ -216,11 +216,6 @@ extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString s
 extern NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
 
 /**
- The canonical enum representation of the state string.
- */
-extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings);
-
-/**
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.
  */
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
