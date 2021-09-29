@@ -61,7 +61,7 @@
 
   // Cull Simulators
   if (simulatorsToCull.count > 0) {
-    NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:[FBiOSTargetPredicates udids:simulatorsToCull.allObjects]];
+    NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:FBiOSTargetPredicateForUDIDs(simulatorsToCull.allObjects)];
     simulators = [simulators filteredArrayUsingPredicate:predicate];
   }
 

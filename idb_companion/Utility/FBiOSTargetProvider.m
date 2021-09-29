@@ -15,12 +15,29 @@
 
 @implementation FBiOSTargetProvider
 
+static const NSUInteger TargetTypeCount = 3;
+static const FBiOSTargetType AllTargetTypes[TargetTypeCount] = {FBiOSTargetTypeDevice, FBiOSTargetTypeSimulator, FBiOSTargetTypeLocalMac};
+
++ (NSPredicate *)udidsOfType:(FBiOSTargetType)targetType
+{
+  NSMutableString *format = [@"FALSEPREDICATE" mutableCopy];
+  if (targetType & FBiOSTargetTypeDevice) {
+    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{40}$' OR SELF MATCHES '00ac00[[:xdigit:]]{4}-00[[:xdigit:]]*$'"];
+  }
+  if (targetType & FBiOSTargetTypeSimulator) {
+    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'"];
+  }
+  if (targetType & FBiOSTargetTypeLocalMac) {
+    [format appendString:@" OR SELF MATCHES '^[[:alnum:]]{12}$'"];
+  }
+  return [NSPredicate predicateWithFormat:format];
+}
+
 + (FBiOSTargetType)targetTypeForUDID:(NSString *)udid
 {
-  const FBiOSTargetType types[3] = {FBiOSTargetTypeDevice, FBiOSTargetTypeSimulator, FBiOSTargetTypeLocalMac};
-  for (NSUInteger idx = 0; idx < 3; idx++) {
-    FBiOSTargetType type = types[idx];
-    NSPredicate *devicePredicate = [FBiOSTargetPredicates udidsOfType:type];
+  for (NSUInteger index = 0; index < TargetTypeCount; index++) {
+    FBiOSTargetType type = AllTargetTypes[index];
+    NSPredicate *devicePredicate = [self udidsOfType:type];
     if ([devicePredicate evaluateWithObject:udid]) {
       return type;
     }

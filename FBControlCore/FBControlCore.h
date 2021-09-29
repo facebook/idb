@@ -50,7 +50,6 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
-#import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetSet.h>
 #import <FBControlCore/FBLaunchedProcess.h>
 #import <FBControlCore/FBLocationCommands.h>

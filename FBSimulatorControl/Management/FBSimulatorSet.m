@@ -77,7 +77,7 @@
 
 - (FBSimulator *)simulatorWithUDID:(NSString *)udid
 {
-  return [[self.allSimulators filteredArrayUsingPredicate:[FBiOSTargetPredicates udid:udid]] firstObject];
+  return [[self.allSimulators filteredArrayUsingPredicate:FBiOSTargetPredicateForUDID(udid)] firstObject];
 }
 
 #pragma mark Creation

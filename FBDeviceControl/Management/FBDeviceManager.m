@@ -136,7 +136,7 @@
 
 - (id<FBiOSTargetInfo>)targetWithUDID:(NSString *)udid
 {
-  return [[self.allTargetInfos filteredArrayUsingPredicate:[FBiOSTargetPredicates udid:udid]] firstObject];
+  return [[self.allTargetInfos filteredArrayUsingPredicate:FBiOSTargetPredicateForUDID(udid)] firstObject];
 }
 
 - (NSString *)description

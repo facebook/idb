@@ -114,7 +114,7 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
   return [left.udid compare:right.udid];
 }
 
-extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
+NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
 {
   return [NSString stringWithFormat:
     @"%@ | %@ | %@ | %@ | %@ | %@",
@@ -125,4 +125,19 @@ extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
     target.osVersion,
     target.architecture
   ];
+}
+
+
+NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid)
+{
+  return FBiOSTargetPredicateForUDIDs(@[udid]);
+}
+
+NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids)
+{
+  NSSet<NSString *> *udidsSet = [NSSet setWithArray:udids];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+    return [udidsSet containsObject:candidate.udid];
+  }];
 }

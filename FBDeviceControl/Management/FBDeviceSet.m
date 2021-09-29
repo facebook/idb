@@ -96,7 +96,8 @@
 
 - (FBDevice *)deviceWithUDID:(NSString *)udid
 {
-  return [[self.allDevices filteredArrayUsingPredicate:[FBiOSTargetPredicates udid:udid]] firstObject];}
+  return [[self.allDevices filteredArrayUsingPredicate:FBiOSTargetPredicateForUDID(udid)] firstObject];
+}
 
 #pragma mark FBiOSTargetSet Implementation
 

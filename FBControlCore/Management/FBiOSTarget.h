@@ -225,6 +225,16 @@ extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTa
  */
 extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
 
+/**
+ Constructs an NSPredicate matching the specified UDID.
+ */
+extern NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
+
+/**
+ Constructs an NSPredicate matching the specified UDIDs.
+ */
+extern NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
+
 #if defined __cplusplus
 };
 #endif
