@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDeviceType;
 @class FBOSVersion;
 @class FBProcessInfo;
+@class FBTemporaryDirectory;
 @class FBiOSTargetDiagnostics;
 @class FBiOSTargetScreenInfo;
 @protocol FBControlCoreLogger;
@@ -140,7 +141,14 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, nullable, readonly) NSString *customDeviceSetPath;
 
 /**
- The Directory that the target uses to store per-target files on the host.
+ The directory that the target uses to store scratch files on the host.
+ */
+@property (nonatomic, strong, readonly) FBTemporaryDirectory *temporaryDirectory;
+
+/**
+ The directory that the target uses to store per-target files on the host.
+ This should only be used for storing files that need to be preserved over the lifespan of the target.
+ For example scratch or temporary files should *not* be stored here and -[FBiOSTarget temporaryDirectory] should be used instead..
  */
 @property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
 

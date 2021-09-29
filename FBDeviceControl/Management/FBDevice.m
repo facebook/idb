@@ -49,6 +49,7 @@
 @synthesize restorableDevice = _restorableDevice;
 @synthesize state = _state;
 @synthesize targetType = _targetType;
+@synthesize temporaryDirectory = _temporaryDirectory;
 @synthesize udid = _udid;
 @synthesize uniqueIdentifier = _uniqueIdentifier;
 
@@ -82,6 +83,15 @@
 - (dispatch_queue_t)asyncQueue
 {
   return self.amDevice.asyncQueue ?: self.restorableDevice.asyncQueue;
+}
+
+- (FBTemporaryDirectory *)temporaryDirectory
+{
+  if (_temporaryDirectory) {
+    return _temporaryDirectory;
+  }
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  return _temporaryDirectory;
 }
 
 - (NSString *)auxillaryDirectory

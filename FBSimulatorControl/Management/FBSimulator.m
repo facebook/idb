@@ -47,6 +47,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 @implementation FBSimulator
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;
+@synthesize temporaryDirectory = _temporaryDirectory;
 @synthesize logger = _logger;
 @dynamic xctestPath;
 
@@ -140,6 +141,15 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 {
   SimDeviceType *deviceType = self.device.deviceType;
   return [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:(NSUInteger)deviceType.mainScreenSize.width heightPixels:(NSUInteger)deviceType.mainScreenSize.height scale:deviceType.mainScreenScale];
+}
+
+- (FBTemporaryDirectory *)temporaryDirectory
+{
+  if (_temporaryDirectory) {
+    return _temporaryDirectory;
+  }
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  return _temporaryDirectory;
 }
 
 - (dispatch_queue_t)workQueue

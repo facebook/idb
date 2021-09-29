@@ -11,9 +11,10 @@
 
 @synthesize architecture;
 @synthesize logger;
-@synthesize screenInfo;
-@synthesize runtimeRootDirectory;
 @synthesize platformRootDirectory;
+@synthesize runtimeRootDirectory;
+@synthesize screenInfo;
+@synthesize temporaryDirectory;
 
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {

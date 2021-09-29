@@ -21,6 +21,7 @@
 @end
 
 @interface FBMacDevice()
+
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBBundleDescriptor *> *bundleIDToProductMap;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
@@ -29,6 +30,8 @@
 @end
 
 @implementation FBMacDevice
+
+@synthesize temporaryDirectory = _temporaryDirectory;
 
 + (NSString *)applicationInstallDirectory
 {
@@ -71,6 +74,7 @@
     _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
+    _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _screenInfo = nil;
     _osVersion = [FBOSVersion genericWithName:FBOSVersionNamemac];
