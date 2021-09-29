@@ -12,7 +12,6 @@
 @implementation FBOToolDynamicLibs
 
 + (FBFuture<NSArray *> *)findFullPathForSanitiserDyldInBundle:(NSString *)bundlePath onQueue:(nonnull dispatch_queue_t)queue {
-    
     return [[FBOToolOperation listSanitiserDylibsRequiredByBundle:bundlePath onQueue:queue] onQueue:queue map:^id _Nonnull(NSArray<NSString *> * _Nonnull libsList) {
       
         NSString *clanLocation = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Toolchains/XcodeDefault.xctoolchain/usr/lib/clang"];
@@ -26,11 +25,29 @@
         }
         
         NSString *libsFolder = [NSString pathWithComponents: @[[fileList[0] path], @"lib/darwin/"]];
+      
+        NSMutableSet<NSString *> *bundleLibsNames = nil;
+        NSString *bundleFrameworksFolder = [bundlePath stringByAppendingPathComponent:@"Frameworks"];
+        NSArray<NSURL *> *bundleLibs = [self filesInDirectory:[NSURL fileURLWithPath:bundleFrameworksFolder] error:&error];
+        if (bundleLibs) {
+          bundleLibsNames = [NSMutableSet setWithCapacity:bundleLibs.count];
+          for(NSURL *libURL in bundleLibs) {
+            NSString *libName = libURL.pathComponents.lastObject;
+            if (libName) {
+              [bundleLibsNames addObject:libName];
+            }
+          }
+        }
 
         NSMutableArray *libraries = [[NSMutableArray alloc] init];
         for (NSString* lib in libsList) {
-            NSString *libPath = [libsFolder stringByAppendingPathComponent:lib];
-            [libraries addObject:libPath];
+          NSString *libPath = nil;
+          if ([bundleLibsNames member:lib]) {
+            libPath = [bundleFrameworksFolder stringByAppendingPathComponent:lib];
+          } else {
+            libPath = [libsFolder stringByAppendingPathComponent:lib];
+          }
+          [libraries addObject:libPath];
         }
         
         return libraries;
