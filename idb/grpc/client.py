@@ -243,7 +243,6 @@ class Client(ClientBase):
         cls,
         address: Address,
         logger: logging.Logger,
-        is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
         extra_metadata: Optional[Dict[str, str]] = None,
         use_tls: bool = False,
@@ -281,18 +280,14 @@ class Client(ClientBase):
                             metadata=metadata_to_companion, local_file_path=f.name
                         )
                     )
-                    if is_local is None:
-                        is_local = response.companion.is_local
                 except Exception as ex:
                     raise IdbException(
                         f"Failed to connect to companion at address {address}: {ex}"
                     )
             logger.debug(
-                f"Companion at {address} {'is' if is_local else 'is not'} local"
+                f"Companion at {address} {'is' if response.companion.is_local else 'is not'} local"
             )
-            companion = companion_to_py(
-                companion=response.companion, address=address, is_local=is_local
-            )
+            companion = companion_to_py(companion=response.companion, address=address)
             if exchange_metadata:
                 metadata_from_companion = {
                     key: value
@@ -320,7 +315,6 @@ class Client(ClientBase):
                 udid=udid, path=temp.name, only=only
             ) as resolved_path, Client.build(
                 address=DomainSocketAddress(path=resolved_path),
-                is_local=True,
                 logger=logger,
             ) as client:
                 yield client

@@ -39,14 +39,12 @@ def target_to_py(
     )
 
 
-def companion_to_py(
-    companion: GrpcCompanionInfo, address: Address, is_local: bool
-) -> CompanionInfo:
+def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> CompanionInfo:
     metadata = companion.metadata
     return CompanionInfo(
         address=address,
         udid=companion.udid,
-        is_local=(companion.is_local if companion.is_local is not None else is_local),
+        is_local=companion.is_local,
         metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
     )
 

@@ -91,7 +91,7 @@ class ClientManager(ClientManagerBase):
     ) -> Optional[TargetDescription]:
         try:
             async with Client.build(
-                address=companion.address, is_local=False, logger=self._logger
+                address=companion.address, logger=self._logger
             ) as client:
                 return await client.describe()
         except Exception:
@@ -113,7 +113,6 @@ class ClientManager(ClientManagerBase):
             self._logger.debug(f"Got existing companion {companion_info}")
             async with Client.build(
                 address=companion_info.address,
-                is_local=companion_info.is_local,
                 logger=self._logger,
             ) as client:
                 self._logger.debug(f"Constructed client for companion {udid}")
@@ -129,7 +128,6 @@ class ClientManager(ClientManagerBase):
             self._logger.debug(f"Got newly launched {companion_info} for udid {udid}")
             async with Client.build(
                 address=companion_info.address,
-                is_local=companion_info.is_local,
                 logger=self._logger,
             ) as client:
                 self._logger.debug(f"Constructed client for companion {udid}")
@@ -169,9 +167,7 @@ class ClientManager(ClientManagerBase):
         if isinstance(destination, TCPAddress) or isinstance(
             destination, DomainSocketAddress
         ):
-            async with Client.build(
-                address=destination, is_local=False, logger=self._logger
-            ) as client:
+            async with Client.build(address=destination, logger=self._logger) as client:
                 companion = client.companion
             self._logger.debug(f"Connected directly to {companion}")
             await self._direct_companion_manager.add_companion(companion)
