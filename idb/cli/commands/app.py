@@ -28,7 +28,9 @@ class AppInstallCommand(ClientCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "bundle_path", help="Path to the .app/.ipa to install", type=str
+            "bundle_path",
+            help="Path to the .app/.ipa to install. Note that .app bundles will usually be faster to install than .ipa files.",
+            type=str,
         )
         super().add_parser_arguments(parser)
 
