@@ -26,14 +26,10 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
 }
 
-static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
-{
-  [device.logger logFormat:@"Transfer Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
-}
-
 @interface FBDeviceApplicationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, copy, readonly) NSURL *deltaUpdateDirectory;
 
 - (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier;
 
@@ -82,10 +78,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 + (instancetype)commandsWithTarget:(FBDevice *)target
 {
-  return [[self alloc] initWithDevice:target];
+  NSURL *deltaUpdateDirectory = [target.temporaryDirectory temporaryDirectory];
+  return [[self alloc] initWithDevice:target deltaUpdateDirectory:deltaUpdateDirectory];
 }
 
-- (instancetype)initWithDevice:(FBDevice *)device
+- (instancetype)initWithDevice:(FBDevice *)device deltaUpdateDirectory:(NSURL *)deltaUpdateDirectory
 {
   self = [super init];
   if (!self) {
@@ -93,7 +90,8 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   }
 
   _device = device;
-
+  _deltaUpdateDirectory = deltaUpdateDirectory;
+  
   return self;
 }
 
@@ -101,13 +99,18 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
+  // 'PackageType=Developer' signifies that the passed payload is a .app
+  // 'AMDeviceSecureInstallApplicationBundle' performs:
+  // 1) The transfer of the application bundle to the device.
+  // 2) The installation of the application after the transfer.
+  // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
+  // 'ShadowParentKey' must be provided in 'AMDeviceSecureInstallApplicationBundle' if 'Developer' is the 'PackageType
   NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
-  NSDictionary *options = @{@"PackageType" : @"Developer"};
-  return [[self
-    transferAppURL:appURL options:options]
-    onQueue:self.device.workQueue fmap:^(NSNull *_) {
-      return [self secureInstallApplication:appURL options:options];
-    }];
+  NSDictionary<NSString *, id> *options = @{
+    @"PackageType" : @"Developer",
+    @"ShadowParentKey": self.deltaUpdateDirectory,
+  };
+  return [self secureInstallApplicationBundle:appURL options:options];
 }
 
 - (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID
@@ -258,39 +261,15 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
-{
-  return [[self.device
-    connectToDeviceWithPurpose:@"transfer_app"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      int status = self.device.calls.SecureTransferPath(
-        0,
-        device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(appURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) TransferCallback,
-        (__bridge void *) (device)
-      );
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to transfer '%@' with error 0x%x (%@)", appURL, status, internalMessage]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
-}
-
-- (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
+- (FBFuture<NSNull *> *)secureInstallApplicationBundle:(NSURL *)hostAppURL options:(NSDictionary<NSString *, id> *)options
 {
   return [[self.device
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      [self.device.logger logFormat:@"Installing Application %@", appURL];
-      int status = device.calls.SecureInstallApplication(
-        0,
+      [self.device.logger logFormat:@"Installing Application %@", hostAppURL];
+      int status = device.calls.SecureInstallApplicationBundle(
         device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFURLRef _Nonnull)(hostAppURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
         (AMDeviceProgressCallback) InstallCallback,
         (__bridge void *) (device)
@@ -298,10 +277,10 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
+          describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
           failFuture];
       }
-      [self.device.logger logFormat:@"Installed Application %@", appURL];
+      [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
       return FBFuture.empty;
     }];
 }

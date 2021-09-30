@@ -129,6 +129,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->RestorableDeviceUnregisterForNotifications = FBGetSymbolFromHandle(handle, "AMRestorableDeviceUnregisterForNotifications");
   calls->Retain = FBGetSymbolFromHandle(handle, "AMDeviceRetain");
   calls->SecureInstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
+  calls->SecureInstallApplicationBundle = FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplicationBundle");
   calls->SecureStartService = FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
   calls->SecureTransferPath = FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
   calls->SecureUninstallApplication = FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
