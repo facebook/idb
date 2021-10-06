@@ -617,7 +617,46 @@
 
   [self waitForExpectations:@[
     [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:NSNull.null],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testResolveOrFailWhenFailureCase
+{
+  __block NSInteger resolveCount = 2;
+  NSError *expectedError = [NSError errorWithDomain:@"user error" code:1 userInfo:nil];
+  FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveOrFailWhen:^FBFutureLoopState (NSError **error) {
+    --resolveCount;
+    if (resolveCount == 0) {
+      *error = expectedError;
+      return FBFutureLoopFailed;
+    }
+    return FBFutureLoopContinue;
+  }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"error" expectedValue:expectedError],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateFailed)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testResolveOrFailWhenSuccessCase
+{
+  __block NSInteger resolveCount = 2;
+  NSError *expectedError = [NSError errorWithDomain:@"user error" code:1 userInfo:nil];
+  FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveOrFailWhen:^FBFutureLoopState (NSError **error) {
+    --resolveCount;
+    if (resolveCount == 0) {
+      return FBFutureLoopFinished;
+    }
+    return FBFutureLoopContinue;
+  }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:NSNull.null],
     [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
