@@ -645,7 +645,6 @@
 - (void)testResolveOrFailWhenSuccessCase
 {
   __block NSInteger resolveCount = 2;
-  NSError *expectedError = [NSError errorWithDomain:@"user error" code:1 userInfo:nil];
   FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveOrFailWhen:^FBFutureLoopState (NSError **error) {
     --resolveCount;
     if (resolveCount == 0) {

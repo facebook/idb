@@ -134,7 +134,6 @@
   }
 
 
-
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
@@ -178,6 +177,7 @@
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[kEnv_ShimStartXCTest] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
+      hostApplicationAdditionalEnvironment[kEnv_WaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? @"YES" : @"NO";
       if (testLaunchConfiguration.coverageDirectoryPath) {
         NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
         NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];

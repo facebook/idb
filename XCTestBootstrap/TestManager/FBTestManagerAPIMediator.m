@@ -30,6 +30,7 @@
 #import "FBXCTestProcess.h"
 #import "FBXCTestReporter.h"
 
+
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
 
@@ -119,30 +120,16 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [[[self
     startAndRunApplicationTestHost]
     onQueue:queue pop:^(id<FBLaunchedApplication> launchedApplication) {
-      return [[[FBTestBundleConnection
-        connectAndRunBundleToCompletionWithContext:self.context
-        target:self.target
-        interface:(id)self
-        testHostApplication:launchedApplication
-        requestQueue:self.requestQueue
-        logger:logger]
-        onQueue:queue fmap:^(NSNull *_) {
-          // The bundle has disconnected at this point, but we also need to terminate any processes
-          // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
-          return [[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated];
-        }]
-        onQueue:queue timeout:timeout handler:^{
-          // The timeout is applied to the lifecycle of the entire application.
-          [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
-          return [[FBXCTestProcess
-            performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier
-            forTimeout:timeout
-            queue:queue
-            logger:logger]
-          onQueue:queue chain:^FBFuture *(FBFuture *future) {
-            return [[self terminateSpawnedProcesses] chainReplace:future];
-          }];
-        }];
+      bool waitForDebugger = self.context.testHostLaunchConfiguration.waitForDebugger;
+      FBFuture *future = FBFuture.empty;
+      if (waitForDebugger) {
+        [reporter processWaitingForDebuggerWithProcessIdentifier:launchedApplication.processIdentifier];
+        future = [FBProcessFetcher waitForDebuggerToAttachAndContinueFor:launchedApplication.processIdentifier];
+      }
+      
+      return [future onQueue:queue fmap:^(id _) {
+        return [self runUntilCompletion:launchedApplication logger:logger queue:queue timeout:timeout];
+      }];
     }]
     onQueue:queue chain:^(FBFuture<NSNull *> *future) {
       [reporter processUnderTestDidExit];
@@ -153,6 +140,33 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         [reporter didCrashDuringTest:error];
       }
       return future;
+    }];
+}
+
+- (FBFuture<NSNull *> *) runUntilCompletion:(id<FBLaunchedApplication>)launchedApplication logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout {
+  return [[[FBTestBundleConnection
+    connectAndRunBundleToCompletionWithContext:self.context
+    target:self.target
+    interface:(id)self
+    testHostApplication:launchedApplication
+    requestQueue:self.requestQueue
+    logger:logger]
+    onQueue:queue fmap:^(NSNull *_) {
+      // The bundle has disconnected at this point, but we also need to terminate any processes
+      // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
+      return [[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated];
+    }]
+    onQueue:queue timeout:timeout handler:^{
+      // The timeout is applied to the lifecycle of the entire application.
+      [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
+      return [[FBXCTestProcess
+        performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier
+        forTimeout:timeout
+        queue:queue
+        logger:logger]
+      onQueue:queue chain:^FBFuture *(FBFuture *future) {
+        return [[self terminateSpawnedProcesses] chainReplace:future];
+      }];
     }];
 }
 

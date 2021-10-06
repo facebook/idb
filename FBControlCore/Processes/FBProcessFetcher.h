@@ -6,10 +6,12 @@
  */
 
 #import <Foundation/Foundation.h>
-
-@class FBProcessInfo;
+#include <sys/sysctl.h>
 
 NS_ASSUME_NONNULL_BEGIN
+@class FBProcessInfo;
+
+@class FBFuture<T>;
 
 /**
  Queries for Processes running on the Host.
@@ -70,6 +72,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (pid_t)processWithOpenFileTo:(const char *)filePath;
 
+/**
+ Wait for a debugger to attach to the process and the process to be up running again.
+
+ @param processIdentifier the Process Identifier of the process.
+ @return A future waitting for the debugger and process up running again.
+ */
++ (FBFuture<NSNull *> *) waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier;
 @end
 
 NS_ASSUME_NONNULL_END

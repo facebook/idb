@@ -6,6 +6,8 @@
  */
 
 #import "FBProcessFetcher.h"
+#import "FBControlCoreError.h"
+#import "FBFuture.h"
 
 #include <libproc.h>
 #include <limits.h>
@@ -287,6 +289,58 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
     return -1;
   }
   return proc.kp_eproc.e_ppid;
+}
+
+
+- (BOOL) isProcessRunning:(pid_t)processIdentifier error:(NSError **)error
+{
+  struct kinfo_proc proc_info;
+  if (!ProcInfoForProcessIdentifier(processIdentifier, &proc_info)) {
+    return [[FBControlCoreError
+             describeFormat:@"Failed fetching process info (pid %d)", processIdentifier]
+             failBool:error];
+  }
+  
+  return proc_info.kp_proc.p_stat == SRUN;
+}
+
+- (BOOL) isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError **)error
+{
+  struct kinfo_proc proc_info;
+  if (!ProcInfoForProcessIdentifier(processIdentifier, &proc_info)) {
+    return [[FBControlCoreError
+             describeFormat:@"Process cannot be found. Failed waiting for debugger for process (pid %d)", processIdentifier]
+             failBool:error];
+  }
+  if (proc_info.kp_proc.p_pid != processIdentifier) {
+    return [[FBControlCoreError
+             describeFormat:@"Process (pid %d) seems to have died before a debugger was attached", processIdentifier]
+             failBool:error];
+  }
+  // When a debugger (a.k.a tracer) attaches to the test proccess, the parent of tracee will
+  // change to tracer's pid with the original parent pid being store in `p_oppid`.
+  // We detect debugger attachment by checking that parent pid has changed.
+  return proc_info.kp_proc.p_oppid != 0 && proc_info.kp_eproc.e_ppid != proc_info.kp_proc.p_oppid;
+}
+
++ (FBFuture<NSNull *> *) waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier
+{
+  FBProcessFetcher *processFetcher = [[FBProcessFetcher alloc] init];
+  // Report from the current queue, but wait in a special queue.
+  dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.corecontrol.debugger_wait", DISPATCH_QUEUE_SERIAL);
+  return [FBFuture
+    onQueue:waitQueue resolveOrFailWhen:^FBFutureLoopState (NSError **error){
+    if (
+        [processFetcher isDebuggerAttachedTo:processIdentifier error:error] &&
+        [processFetcher isProcessRunning:processIdentifier error:error]
+        ) {
+      return FBFutureLoopFinished;
+    } else if (*error != nil){
+      return FBFutureLoopFailed;
+    } else {
+      return FBFutureLoopContinue;
+    }
+    }];
 }
 
 @end
