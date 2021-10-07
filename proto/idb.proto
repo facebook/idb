@@ -12,52 +12,61 @@ package idb;
 // The idb companion service definition.
 service CompanionService {
   // Management
-  rpc connect (ConnectRequest) returns (ConnectResponse) {}
-  rpc debugserver (stream DebugServerRequest) returns (stream DebugServerResponse) {}
-  rpc describe (TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
-  rpc install (stream InstallRequest) returns (stream InstallResponse) {}
-  rpc instruments_run (stream InstrumentsRunRequest) returns (stream InstrumentsRunResponse) {}
-  rpc log (LogRequest) returns (stream LogResponse) {}
-  rpc xctrace_record (stream XctraceRecordRequest) returns (stream XctraceRecordResponse) {}
+  rpc connect(ConnectRequest) returns (ConnectResponse) {}
+  rpc debugserver(stream DebugServerRequest)
+      returns (stream DebugServerResponse) {}
+  rpc describe(TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
+  rpc install(stream InstallRequest) returns (stream InstallResponse) {}
+  rpc instruments_run(stream InstrumentsRunRequest)
+      returns (stream InstrumentsRunResponse) {}
+  rpc log(LogRequest) returns (stream LogResponse) {}
+  rpc xctrace_record(stream XctraceRecordRequest)
+      returns (stream XctraceRecordResponse) {}
   // Interaction
-  rpc accessibility_info (AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
-  rpc focus (FocusRequest) returns (FocusResponse) {}
-  rpc hid (stream HIDEvent) returns (HIDResponse) {}
-  rpc open_url (OpenUrlRequest) returns (OpenUrlRequest) {}
-  rpc set_location (SetLocationRequest) returns (SetLocationResponse) {}
+  rpc accessibility_info(AccessibilityInfoRequest)
+      returns (AccessibilityInfoResponse) {}
+  rpc focus(FocusRequest) returns (FocusResponse) {}
+  rpc hid(stream HIDEvent) returns (HIDResponse) {}
+  rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
+  rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
   // Settings
-  rpc approve (ApproveRequest) returns (ApproveResponse) {}
-  rpc clear_keychain (ClearKeychainRequest) returns (ClearKeychainResponse) {}
-  rpc contacts_update (ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
-  rpc setting (SettingRequest) returns (SettingResponse) {} // Sets settings
-  rpc get_setting (GetSettingRequest) returns (GetSettingResponse) {} // Gets current setting
-  rpc list_settings (ListSettingRequest) returns (ListSettingResponse) {} // Lists available settings
+  rpc approve(ApproveRequest) returns (ApproveResponse) {}
+  rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
+  rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
+  rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
+  rpc get_setting(GetSettingRequest) returns (GetSettingResponse) {
+  } // Gets current setting
+  rpc list_settings(ListSettingRequest) returns (ListSettingResponse) {
+  } // Lists available settings
   // App
-  rpc launch (stream LaunchRequest) returns (stream LaunchResponse) {}
-  rpc list_apps (ListAppsRequest) returns (ListAppsResponse) {}
-  rpc terminate (TerminateRequest) returns (TerminateResponse) {}
-  rpc uninstall (UninstallRequest) returns (UninstallResponse) {}
+  rpc launch(stream LaunchRequest) returns (stream LaunchResponse) {}
+  rpc list_apps(ListAppsRequest) returns (ListAppsResponse) {}
+  rpc terminate(TerminateRequest) returns (TerminateResponse) {}
+  rpc uninstall(UninstallRequest) returns (UninstallResponse) {}
   // Video/Audio
-  rpc add_media (stream AddMediaRequest) returns (AddMediaResponse) {}
-  rpc record (stream RecordRequest) returns (stream RecordResponse) {}
-  rpc screenshot (ScreenshotRequest) returns (ScreenshotResponse) {}
-  rpc video_stream (stream VideoStreamRequest) returns (stream VideoStreamResponse) {}
+  rpc add_media(stream AddMediaRequest) returns (AddMediaResponse) {}
+  rpc record(stream RecordRequest) returns (stream RecordResponse) {}
+  rpc screenshot(ScreenshotRequest) returns (ScreenshotResponse) {}
+  rpc video_stream(stream VideoStreamRequest)
+      returns (stream VideoStreamResponse) {}
   // Crash Operations
-  rpc crash_delete (CrashLogQuery) returns (CrashLogResponse) {}
-  rpc crash_list (CrashLogQuery) returns (CrashLogResponse) {}
-  rpc crash_show (CrashShowRequest) returns (CrashShowResponse) {}
+  rpc crash_delete(CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_list(CrashLogQuery) returns (CrashLogResponse) {}
+  rpc crash_show(CrashShowRequest) returns (CrashShowResponse) {}
   // xctest operations
-  rpc xctest_list_bundles (XctestListBundlesRequest) returns (XctestListBundlesResponse) {}
-  rpc xctest_list_tests (XctestListTestsRequest) returns (XctestListTestsResponse) {}
-  rpc xctest_run (XctestRunRequest) returns (stream XctestRunResponse) {}
+  rpc xctest_list_bundles(XctestListBundlesRequest)
+      returns (XctestListBundlesResponse) {}
+  rpc xctest_list_tests(XctestListTestsRequest)
+      returns (XctestListTestsResponse) {}
+  rpc xctest_run(XctestRunRequest) returns (stream XctestRunResponse) {}
   // File Operations
-  rpc ls (LsRequest) returns (LsResponse) {}
-  rpc mkdir (MkdirRequest) returns (MkdirResponse) {}
-  rpc mv (MvRequest) returns (MvResponse) {}
-  rpc rm (RmRequest) returns (RmResponse) {}
-  rpc pull (PullRequest) returns (stream PullResponse) {}
-  rpc push (stream PushRequest) returns (PushResponse) {}
-  rpc tail (stream TailRequest) returns (stream TailResponse) {}
+  rpc ls(LsRequest) returns (LsResponse) {}
+  rpc mkdir(MkdirRequest) returns (MkdirResponse) {}
+  rpc mv(MvRequest) returns (MvResponse) {}
+  rpc rm(RmRequest) returns (RmResponse) {}
+  rpc pull(PullRequest) returns (stream PullResponse) {}
+  rpc push(stream PushRequest) returns (PushResponse) {}
+  rpc tail(stream TailRequest) returns (stream TailResponse) {}
 }
 
 message Payload {
@@ -109,8 +118,7 @@ message SettingRequest {
   }
 }
 
-message SettingResponse {
-}
+message SettingResponse {}
 
 message GetSettingRequest {
   Setting setting = 1;
@@ -174,19 +182,16 @@ message InstallResponse {
   double progress = 3;
 }
 
-message ScreenshotRequest {
-}
+message ScreenshotRequest {}
 
 message ScreenshotResponse {
   bytes image_data = 1;
   string image_format = 2;
 }
 
-message FocusRequest {
-}
+message FocusRequest {}
 
-message FocusResponse {
-}
+message FocusResponse {}
 
 message Point {
   double x = 1;
@@ -220,14 +225,11 @@ message ApproveRequest {
   string scheme = 3;
 }
 
-message ApproveResponse {
-}
+message ApproveResponse {}
 
-message ClearKeychainRequest {
-}
+message ClearKeychainRequest {}
 
-message ClearKeychainResponse {
-}
+message ClearKeychainResponse {}
 
 message SetLocationRequest {
   Location location = 1;
@@ -238,36 +240,31 @@ message Location {
   double longitude = 2;
 }
 
-message SetLocationResponse {
-}
+message SetLocationResponse {}
 
 message UninstallRequest {
   string bundle_id = 1;
 }
 
-message UninstallResponse {
-}
+message UninstallResponse {}
 
 message TerminateRequest {
   string bundle_id = 1;
 }
 
-message TerminateResponse {
-}
+message TerminateResponse {}
 
 message OpenUrlRequest {
   string url = 1;
 }
 
-message OpenUrlResponse {
-}
+message OpenUrlResponse {}
 
 message ContactsUpdateRequest {
   Payload payload = 1;
 }
 
-message ContactsUpdateResponse {
-}
+message ContactsUpdateResponse {}
 
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;
@@ -335,9 +332,7 @@ message HIDEvent {
   }
 }
 
-message HIDResponse {
-}
-
+message HIDResponse {}
 
 message ConnectRequest {
   map<string, string> metadata = 1;
@@ -345,7 +340,7 @@ message ConnectRequest {
 }
 
 message ConnectResponse {
-   CompanionInfo companion = 1;
+  CompanionInfo companion = 1;
 }
 
 message ScreenDimensions {
@@ -385,8 +380,7 @@ message RecordRequest {
   message Start {
     string file_path = 1;
   }
-  message Stop {
-  }
+  message Stop {}
   oneof control {
     Start start = 1;
     Stop stop = 2;
@@ -414,8 +408,7 @@ message VideoStreamRequest {
     double compression_quality = 4;
     double scale_factor = 5;
   }
-  message Stop {
-  }
+  message Stop {}
   oneof control {
     Start start = 1;
     Stop stop = 2;
@@ -438,9 +431,7 @@ message LaunchRequest {
     bool wait_for = 5;
     bool wait_for_debugger = 6;
   }
-  message Stop {
-
-  }
+  message Stop {}
   oneof control {
     Start start = 1;
     Stop stop = 2;
@@ -464,8 +455,7 @@ message AddMediaRequest {
   Payload payload = 1;
 }
 
-message AddMediaResponse {
-}
+message AddMediaResponse {}
 
 message InstrumentsRunRequest {
   message InstrumentsTimings {
@@ -552,11 +542,8 @@ message DebugServerRequest {
   message Start {
     string bundle_id = 1;
   }
-  message Status {
-  }
-  message Stop {
-
-  }
+  message Status {}
+  message Stop {}
   message Pipe {
     bytes data = 1;
   }
@@ -615,8 +602,7 @@ message CrashLogQuery {
 
 // xctest
 
-message XctestListBundlesRequest {
-}
+message XctestListBundlesRequest {}
 
 message XctestListBundlesResponse {
   message Bundles {
@@ -637,8 +623,7 @@ message XctestListTestsResponse {
 }
 
 message XctestRunRequest {
-  message Logic {
-  }
+  message Logic {}
   message Application {
     string app_bundle_id = 1;
   }
@@ -655,8 +640,8 @@ message XctestRunRequest {
   }
   message CodeCoverage {
     enum Format {
-        EXPORTED = 0;
-        RAW = 1;
+      EXPORTED = 0;
+      RAW = 1;
     }
     bool collect = 1;
     Format format = 2;
@@ -775,8 +760,7 @@ message MkdirRequest {
   FileContainer container = 3;
 }
 
-message MkdirResponse {
-}
+message MkdirResponse {}
 
 message MvRequest {
   repeated string src_paths = 2;
@@ -784,16 +768,14 @@ message MvRequest {
   FileContainer container = 4;
 }
 
-message MvResponse {
-}
+message MvResponse {}
 
 message RmRequest {
   repeated string paths = 2;
   FileContainer container = 3;
 }
 
-message RmResponse {
-}
+message RmResponse {}
 
 message PushRequest {
   message Inner {
@@ -806,8 +788,7 @@ message PushRequest {
   }
 }
 
-message PushResponse {
-}
+message PushResponse {}
 
 message PullRequest {
   string src_path = 2;
@@ -824,12 +805,10 @@ message TailRequest {
     FileContainer container = 1;
     string path = 2;
   }
-  message Stop {
-
-  }
+  message Stop {}
   oneof control {
-     Start start = 1;
-     Stop stop = 2;
+    Start start = 1;
+    Stop stop = 2;
   }
 }
 
@@ -837,8 +816,8 @@ message TailResponse {
   bytes data = 1;
 }
 
-message DebuggerInfo{
-    uint64 pid = 1;
-    string host = 2;
-    uint64 port = 3;
+message DebuggerInfo {
+  uint64 pid = 1;
+  string host = 2;
+  uint64 port = 3;
 }
