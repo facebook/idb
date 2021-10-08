@@ -170,16 +170,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (FBFuture<NSNull *> *)cancel;
 
 /**
- Removes existing cancellation propogation.
- Deriving new futures will propogate cancellation within the chain.
- However, this may be undesirable if you wish to prevent a default cancellation from propogating.
- This is useful when you wish to override the default cancellation behaviour of chained futures.
-
- @return the receiver, for chaining.
- */
-- (instancetype)shieldCancellation;
-
-/**
  Respond to the cancellation of the receiver.
  Since the cancellation handler can itself return a future, asynchronous cancellation is permitted.
  This can be called multiple times for the same Future if multiple cleanup operations need to occur.

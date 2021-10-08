@@ -52,7 +52,8 @@
 
 - (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes
 {
-  return [self.exitCode
+  return [[FBMutableFuture.future
+    resolveFromFuture:self.exitCode]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
       return [[FBLaunchedProcess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
     }];

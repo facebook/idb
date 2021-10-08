@@ -115,6 +115,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Confirms that the process exited with a defined set of status codes.
+ Cancelling this future will have no effect.
  
  @param acceptableExitCodes the exit codes to check for, must not be nil.
  @return a Future with the same base behaviour as -[FBLaunchedProcess exitCode] with additional checking of codes.
