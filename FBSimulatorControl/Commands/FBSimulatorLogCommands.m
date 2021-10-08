@@ -47,7 +47,7 @@
   return [[self
     startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
     onQueue:self.simulator.workQueue map:^(FBLaunchedProcess *process) {
-      return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer];
+      return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer queue:self.simulator.asyncQueue];
     }];
 }
 

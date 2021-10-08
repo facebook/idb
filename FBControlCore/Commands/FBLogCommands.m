@@ -9,11 +9,17 @@
 
 #import "FBLaunchedProcess.h"
 
+@interface FBProcessLogOperation ()
+
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
 @implementation FBProcessLogOperation
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [self init];
   if (!self) {
@@ -22,13 +28,20 @@
 
   _process = process;
   _consumer = consumer;
+  _queue = queue;
 
   return self;
 }
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.process.statLoc mapReplace:NSNull.null];
+  FBLaunchedProcess *process = self.process;
+  return [[[process
+    exitedWithCodes:[NSSet setWithObject:@0]]
+    mapReplace:NSNull.null]
+    onQueue:self.queue respondToCancellation:^{
+      return [process sendSignal:SIGTERM backingOffToKillWithTimeout:5 logger:nil];
+    }];
 }
 
 + (NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(NSArray<NSString *> *)arguments

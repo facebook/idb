@@ -44,8 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param process the wrapped process.
  @param consumer the wrapped consumer.
+ @param queue the queue to perform work on.
+ @return an initialized FBProcessLogOperation instance.
  */
-- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer;
+- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue;
 
 /**
  Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.
