@@ -15,29 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessSpawnConfiguration;
 
 /**
- An in-memory representation of a launched application.
- This is distinct from FBLaunchedProcess, as exit codes for the process are not available.
- However, an event for when termination of the application occurs is communicated through a Future.
- */
-@protocol FBLaunchedApplication <NSObject>
-
-/**
- The Process Idenfifer of the Launched Application.
- */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
-
-/**
- A future that resolves when the Application has terminated.
- Cancelling this Future will cause the application to terminate.
- Exit code/Signal status of the launched process is not available.
- */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *applicationTerminated;
-
-@end
-
-/**
- An in-memory representation of a launched process.
- This is distinct from FBLaunchedApplication, as the exit code for the process is available.
+ A representation of a process that has been launched.
  */
 @interface FBLaunchedProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 

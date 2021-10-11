@@ -47,6 +47,7 @@
 		AA08487B1F3F499800A4BA60 /* FBFuture.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0848791F3F499800A4BA60 /* FBFuture.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA08487C1F3F499800A4BA60 /* FBFuture.m in Sources */ = {isa = PBXBuildFile; fileRef = AA08487A1F3F499800A4BA60 /* FBFuture.m */; };
 		AA08487E1F3F49D600A4BA60 /* FBFutureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA08487D1F3F49D600A4BA60 /* FBFutureTests.m */; };
+		AA093C52270758D200CC76F8 /* FBLaunchedApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = AA093C4F2707585400CC76F8 /* FBLaunchedApplication.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA09736C24A38484003E4A40 /* FBSimulatorAccessibilityCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA09736A24A38484003E4A40 /* FBSimulatorAccessibilityCommands.m */; };
 		AA09736D24A38484003E4A40 /* FBSimulatorAccessibilityCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA09736B24A38484003E4A40 /* FBSimulatorAccessibilityCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0CA38720643CCF00347424 /* FBCrashLogCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0CA38620643C6800347424 /* FBCrashLogCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -710,6 +711,7 @@
 		AA0848791F3F499800A4BA60 /* FBFuture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFuture.h; sourceTree = "<group>"; };
 		AA08487A1F3F499800A4BA60 /* FBFuture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFuture.m; sourceTree = "<group>"; };
 		AA08487D1F3F49D600A4BA60 /* FBFutureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFutureTests.m; sourceTree = "<group>"; };
+		AA093C4F2707585400CC76F8 /* FBLaunchedApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBLaunchedApplication.h; sourceTree = "<group>"; };
 		AA09736A24A38484003E4A40 /* FBSimulatorAccessibilityCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorAccessibilityCommands.m; sourceTree = "<group>"; };
 		AA09736B24A38484003E4A40 /* FBSimulatorAccessibilityCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorAccessibilityCommands.h; sourceTree = "<group>"; };
 		AA0CA38620643C6800347424 /* FBCrashLogCommands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCrashLogCommands.h; sourceTree = "<group>"; };
@@ -2578,6 +2580,7 @@
 		EEBD603F1C9062E900298A07 /* Tasks */ = {
 			isa = PBXGroup;
 			children = (
+				AA093C4F2707585400CC76F8 /* FBLaunchedApplication.h */,
 				AAC5C66D1FD71F1800A735BF /* FBLaunchedProcess.h */,
 				AA57804226C54B7100847769 /* FBLaunchedProcess.m */,
 				EEBD60411C9062E900298A07 /* FBTask.h */,
@@ -2881,6 +2884,7 @@
 				AA6155DB224BB53F007D1C22 /* FBInstrumentsCommands.h in Headers */,
 				8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */,
 				AACC503C1EAA230F0034A987 /* FBVideoStreamConfiguration.h in Headers */,
+				AA093C52270758D200CC76F8 /* FBLaunchedApplication.h in Headers */,
 				AA70F5262701F1AA0023A36A /* FBTemporaryDirectory.h in Headers */,
 				EEBD607C1C9062E900298A07 /* FBConcurrentCollectionOperations.h in Headers */,
 				C0B32FC91E4E459700A48CF4 /* FBArchitecture.h in Headers */,
