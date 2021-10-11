@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBLaunchedProcess.h>
+#import <FBControlCore/FBProcess.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +19,7 @@ static const size_t FBTaskOutputErrorMessageLength = 200;
 /**
  Programmatic interface to a Task.
  */
-@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBLaunchedProcess <StdInType, StdOutType, StdErrType>
+@interface FBTask <StdInType : id, StdOutType : id, StdErrType : id> : FBProcess <StdInType, StdOutType, StdErrType>
 
 #pragma mark Initializers
 

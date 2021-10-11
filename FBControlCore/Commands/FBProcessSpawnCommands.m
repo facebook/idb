@@ -10,7 +10,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
-#import "FBLaunchedProcess.h"
+#import "FBProcess.h"
 #import "FBProcessIO.h"
 #import "FBProcessSpawnConfiguration.h"
 
@@ -25,7 +25,7 @@
 {
   return [[commands
     launchProcess:configuration]
-    onQueue:self.queue fmap:^(FBLaunchedProcess *process) {
+    onQueue:self.queue fmap:^(FBProcess *process) {
       return [process exitCode];
     }];
 }

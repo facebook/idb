@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBLaunchedProcess.h"
+#import "FBProcess.h"
 
 #import "FBControlCoreError.h"
 
@@ -15,13 +15,13 @@
 #import "FBProcessSpawnCommands.h"
 #import "FBProcessSpawnConfiguration.h"
 
-@interface FBLaunchedProcess ()
+@interface FBProcess ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
 
-@implementation FBLaunchedProcess
+@implementation FBProcess
 
 @synthesize configuration = _configuration;
 @synthesize exitCode = _exitCode;
@@ -55,7 +55,7 @@
   return [[FBMutableFuture.future
     resolveFromFuture:self.exitCode]
     onQueue:self.queue fmap:^(NSNumber *exitCode) {
-      return [[FBLaunchedProcess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
+      return [[FBProcess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
     }];
 }
 

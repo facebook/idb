@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBLaunchedProcess;
+@class FBProcess;
 
 @protocol FBDataConsumer;
 
@@ -30,14 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A log operation that is contained within an FBLaunchedProcess
+ A log operation that is contained within an FBProcess
  */
 @interface FBProcessLogOperation : NSObject <FBLogOperation>
 
 /**
  The wrapped launched process.
  */
-@property (nonatomic, strong, readonly) FBLaunchedProcess *process;
+@property (nonatomic, strong, readonly) FBProcess *process;
 
 /**
  The Designated Initializer
@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to perform work on.
  @return an initialized FBProcessLogOperation instance.
  */
-- (instancetype)initWithProcess:(FBLaunchedProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue;
+- (instancetype)initWithProcess:(FBProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue;
 
 /**
  Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.

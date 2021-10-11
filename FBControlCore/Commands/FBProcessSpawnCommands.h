@@ -12,7 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBLaunchedProcess;
+@class FBProcess;
 @class FBProcessIOAttachment;
 @class FBProcessSpawnConfiguration;
 
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration of the process to launch.
  @return A future wrapping the launched process.
  */
-- (FBFuture<FBLaunchedProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration;
+- (FBFuture<FBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration;
 
 @end
 

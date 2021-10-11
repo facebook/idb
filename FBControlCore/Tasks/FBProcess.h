@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A representation of a process that has been launched.
  */
-@interface FBLaunchedProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
+@interface FBProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Properties
 
@@ -81,11 +81,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param processIdentifier the process identifier of the launched process
  @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
- @param exitCode a future that will fire when the process exits. See -[FBLaunchedProcess exitCode]
- @param signal a future that will fire when the process is signalled. See -[FBLaunchedProcess signal]
+ @param exitCode a future that will fire when the process exits. See -[FBProcess exitCode]
+ @param signal a future that will fire when the process is signalled. See -[FBProcess signal]
  @param configuration the configuration the process was launched with.
  @param queue the queue to perform actions on.
- @return an implementation of FBLaunchedProcess.
+ @return an implementation of FBProcess.
  */
 - (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
 
@@ -96,7 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
  Cancelling this future will have no effect.
  
  @param acceptableExitCodes the exit codes to check for, must not be nil.
- @return a Future with the same base behaviour as -[FBLaunchedProcess exitCode] with additional checking of codes.
+ @return a Future with the same base behaviour as -[FBProcess exitCode] with additional checking of codes.
  */
 - (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes;
 
