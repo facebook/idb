@@ -149,9 +149,6 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
 
 static FBFuture<id<FBiOSTarget>> *TargetForUDID(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, BOOL warmUp, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
-  if ([udid isEqualToString:@"mac"]) {
-    udid = [FBMacDevice resolveDeviceUDID];
-  }
   return [DefaultTargetSets(userDefaults, xcodeAvailable, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
       return [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets warmUp:warmUp logger:logger];

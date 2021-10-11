@@ -15,36 +15,6 @@
 
 @implementation FBiOSTargetProvider
 
-static const NSUInteger TargetTypeCount = 3;
-static const FBiOSTargetType AllTargetTypes[TargetTypeCount] = {FBiOSTargetTypeDevice, FBiOSTargetTypeSimulator, FBiOSTargetTypeLocalMac};
-
-+ (NSPredicate *)udidsOfType:(FBiOSTargetType)targetType
-{
-  NSMutableString *format = [@"FALSEPREDICATE" mutableCopy];
-  if (targetType & FBiOSTargetTypeDevice) {
-      [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{40}$' OR SELF MATCHES '00ac00[[:xdigit:]]{4}-00[[:xdigit:]]*$' OR SELF MATCHES '0000[[:xdigit:]]{4}-00[[:xdigit:]]*$'"];
-  }
-  if (targetType & FBiOSTargetTypeSimulator) {
-    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'"];
-  }
-  if (targetType & FBiOSTargetTypeLocalMac) {
-    [format appendString:@" OR SELF MATCHES '^[[:alnum:]]{12}$'"];
-  }
-  return [NSPredicate predicateWithFormat:format];
-}
-
-+ (FBiOSTargetType)targetTypeForUDID:(NSString *)udid
-{
-  for (NSUInteger index = 0; index < TargetTypeCount; index++) {
-    FBiOSTargetType type = AllTargetTypes[index];
-    NSPredicate *devicePredicate = [self udidsOfType:type];
-    if ([devicePredicate evaluateWithObject:udid]) {
-      return type;
-    }
-  }
-  return FBiOSTargetTypeNone;
-}
-
 #pragma mark Public
 
 + (FBFuture<id<FBiOSTarget>> *)targetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets warmUp:(BOOL)warmUp logger:(id<FBControlCoreLogger>)logger
@@ -85,20 +55,9 @@ static const FBiOSTargetType AllTargetTypes[TargetTypeCount] = {FBiOSTargetTypeD
 
 + (id<FBiOSTarget>)fetchTargetWithUDID:(NSString *)udid targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  // Obtain the Target Type for the input UDID
-  FBiOSTargetType targetType = [self targetTypeForUDID:udid];
-  if (targetType == FBiOSTargetTypeNone) {
-    return [[FBControlCoreError
-      describeFormat:@"%@ is not valid UDID", udid]
-      fail:error];
-  }
   // Get a mac device if one was requested
-  if (targetType == FBiOSTargetTypeLocalMac) {
-    FBMacDevice *mac = [[FBMacDevice alloc] initWithLogger:logger];
-    if (![mac.udid isEqual:udid]) {
-      return nil;
-    }
-    return mac;
+  if ([udid.lowercaseString isEqualToString:@"mac"]) {
+    return [[FBMacDevice alloc] initWithLogger:logger];
   }
   // Otherwise query the input target sets
   for (id<FBiOSTargetSet> targetSet in targetSets) {
