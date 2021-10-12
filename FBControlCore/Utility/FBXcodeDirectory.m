@@ -8,7 +8,7 @@
 #import "FBXcodeDirectory.h"
 
 #import "FBProcess.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 
@@ -18,7 +18,7 @@
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]

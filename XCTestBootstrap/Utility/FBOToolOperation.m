@@ -22,7 +22,7 @@
     return [FBFuture futureWithError:[[XCTestBootstrapError describe:message] build]];
   }
   
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/otool"]
     withArguments:@[@"-L", [bundle executablePath]]]
     withStdOutInMemoryAsString]

@@ -350,8 +350,8 @@
 		AABA7CF620BB450B00C1E73A /* FBDeviceFileCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AABA7CF420BB450B00C1E73A /* FBDeviceFileCommands.h */; };
 		AABA7CF920BB45B900C1E73A /* FBDeviceCrashLogCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AABA7CF720BB45B900C1E73A /* FBDeviceCrashLogCommands.m */; };
 		AABA7CFA20BB45B900C1E73A /* FBDeviceCrashLogCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AABA7CF820BB45B900C1E73A /* FBDeviceCrashLogCommands.h */; };
-		AABBF3231DAC110000E2B6AF /* FBTaskBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */; };
+		AABBF3231DAC110000E2B6AF /* FBProcessBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3211DAC110000E2B6AF /* FBProcessBuilder.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AABBF3241DAC110000E2B6AF /* FBProcessBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = AABBF3221DAC110000E2B6AF /* FBProcessBuilder.m */; };
 		AABCA13B222A7C360015DBAB /* FBDataBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AABCA139222A7C360015DBAB /* FBDataBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AABCA13C222A7C360015DBAB /* FBDataBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AABCA13A222A7C360015DBAB /* FBDataBuffer.m */; };
 		AABD06B31EE7B84F00135D27 /* FBXcodeBuildOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AABD06B11EE7B84F00135D27 /* FBXcodeBuildOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1124,8 +1124,8 @@
 		AABA7CF420BB450B00C1E73A /* FBDeviceFileCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceFileCommands.h; sourceTree = "<group>"; };
 		AABA7CF720BB45B900C1E73A /* FBDeviceCrashLogCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceCrashLogCommands.m; sourceTree = "<group>"; };
 		AABA7CF820BB45B900C1E73A /* FBDeviceCrashLogCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceCrashLogCommands.h; sourceTree = "<group>"; };
-		AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTaskBuilder.h; sourceTree = "<group>"; };
-		AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskBuilder.m; sourceTree = "<group>"; };
+		AABBF3211DAC110000E2B6AF /* FBProcessBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessBuilder.h; sourceTree = "<group>"; };
+		AABBF3221DAC110000E2B6AF /* FBProcessBuilder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessBuilder.m; sourceTree = "<group>"; };
 		AABCA139222A7C360015DBAB /* FBDataBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDataBuffer.h; sourceTree = "<group>"; };
 		AABCA13A222A7C360015DBAB /* FBDataBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDataBuffer.m; sourceTree = "<group>"; };
 		AABD06B11EE7B84F00135D27 /* FBXcodeBuildOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXcodeBuildOperation.h; sourceTree = "<group>"; };
@@ -2579,8 +2579,8 @@
 				AA093C4F2707585400CC76F8 /* FBLaunchedApplication.h */,
 				AAC5C66D1FD71F1800A735BF /* FBProcess.h */,
 				AA57804226C54B7100847769 /* FBProcess.m */,
-				AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */,
-				AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */,
+				AABBF3211DAC110000E2B6AF /* FBProcessBuilder.h */,
+				AABBF3221DAC110000E2B6AF /* FBProcessBuilder.m */,
 			);
 			path = Tasks;
 			sourceTree = "<group>";
@@ -2854,7 +2854,7 @@
 				EEBD607E1C9062E900298A07 /* FBControlCoreError.h in Headers */,
 				AA685CD32550299200E2DD9D /* FBDeveloperDiskImageCommands.h in Headers */,
 				AA5B3DD61FE3134D00B77376 /* FBScreenshotCommands.h in Headers */,
-				AABBF3231DAC110000E2B6AF /* FBTaskBuilder.h in Headers */,
+				AABBF3231DAC110000E2B6AF /* FBProcessBuilder.h in Headers */,
 				AA805F7F1F0D0E0000AB31DE /* FBLogCommands.h in Headers */,
 				AACB5E7425E6677A00EC1FBD /* FBXCTraceOperation.h in Headers */,
 				AAF9D3BE257E76D000E6541D /* FBCrashLog.h in Headers */,
@@ -3452,7 +3452,7 @@
 				AABCA13C222A7C360015DBAB /* FBDataBuffer.m in Sources */,
 				7352B4DB1F44BE4100B6D0EA /* FBXcodeConfiguration.m in Sources */,
 				AA34F3D020B72B3C0068420F /* FBCrashLogStore.m in Sources */,
-				AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */,
+				AABBF3241DAC110000E2B6AF /* FBProcessBuilder.m in Sources */,
 				AA4424CD1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m in Sources */,
 				AA685CB32550252100E2DD9D /* FBDeveloperDiskImage.m in Sources */,
 				EE9E1E4A1D6CB2CC00860830 /* FBProcessLaunchConfiguration.m in Sources */,

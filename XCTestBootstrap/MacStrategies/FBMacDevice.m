@@ -345,7 +345,7 @@
       describeFormat:@"Could not find application for %@", configuration.bundleID]
       failFuture];
   }
-  return [[[[[FBTaskBuilder
+  return [[[[[FBProcessBuilder
     withLaunchPath:bundle.binary.path]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]

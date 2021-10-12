@@ -19,39 +19,39 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInput;
 
 /**
- An interface to building FBTask instances.
+ An interface to building FBProcess instances.
  */
-@interface FBTaskBuilder <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
+@interface FBProcessBuilder <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Initializers
 
 /**
- Creates a new Task Builder with the provided launch path.
+ Creates a new Process Builder with the provided launch path.
  stdin is not not connected.
  stdout is written to NSData.
  stderr is written to NSData.
 
  @param launchPath the launch path to use. Must not be nil.
- @return a new Task Builder.
+ @return a new Process Builder.
  */
-+ (FBTaskBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath;
++ (FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath;
 
 /**
- Creates a new Task Builder with the provided launch path.
+ Creates a new Process Builder with the provided launch path.
  stdin is not not connected.
  stdout is written to NSData.
  stderr is written to NSData.
 
  @param launchPath the launch path to use. Must not be nil.
  @param arguments the arguments to launch with.
- @return a new Task Builder.
+ @return a new Process Builder.
  */
-+ (FBTaskBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
++ (FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
 
 #pragma mark Spawn Configuration
 
 /**
- The Launch Path of the Task. Will override any shell command set with `shellCommand`.
+ The Launch Path of the Proces
 
  @param launchPath the Launch Path. Will remove shellCommand.
  @return the receiver, for chaining.
@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withLaunchPath:(NSString *)launchPath;
 
 /**
- The Arguments of the Task. Will override any shell command set with `shellCommand`.
+ The Arguments of the Process..
 
  @param arguments the arguments for the launch path.
  @return the receiver, for chaining.
@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withArguments:(NSArray<NSString *> *)arguments;
 
 /**
- Replaces the Subprocess Environment with the provided Environment.
+ Replaces the environment with the provided environment dictionary.
 
  @param environment an Environment Dictionary. Must not be nil.
  @return the receiver, for chaining.
@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
 
 /**
- Adds the provided dictionary to the environment of the built task.
+ Adds the provided dictionary to the environment of the built process.
 
  @param environment an Environment Dictionary. Must not be nil.
  @return the receiver, for chaining.
@@ -90,14 +90,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param input the input to pass
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<id, StdOutType, StdErrType> *)withStdIn:(FBProcessInput *)input;
+- (FBProcessBuilder<id, StdOutType, StdErrType> *)withStdIn:(FBProcessInput *)input;
 
 /**
  Creates a Data Consumer for stdin.
 
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
+- (FBProcessBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
 
 /**
  Creates a Data Consumer for stdin.
@@ -105,7 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param data the data to send.
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<NSData *, StdOutType, StdErrType> *)withStdInFromData:(NSData *)data;
+- (FBProcessBuilder<NSData *, StdOutType, StdErrType> *)withStdInFromData:(NSData *)data;
 
 #pragma mark stdout
 
@@ -114,14 +114,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, NSData *, StdErrType> *)withStdOutInMemoryAsData;
+- (FBProcessBuilder<StdInType, NSData *, StdErrType> *)withStdOutInMemoryAsData;
 
 /**
  Reads stdout into memory, as a String.
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, NSString *, StdErrType> *)withStdOutInMemoryAsString;
+- (FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutInMemoryAsString;
 
 /**
  Assigns a path to write stdout to.
@@ -129,21 +129,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdOutPath the path to write stdout to. Must not be nil.
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, NSString *, StdErrType> *)withStdOutPath:(NSString *)stdOutPath;
+- (FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutPath:(NSString *)stdOutPath;
 
 /**
  Redirects stdout to /dev/null
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
+- (FBProcessBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
 
 /**
  Redirects stdout to an input stream.
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
+- (FBProcessBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
 
 /**
  Redirects stdout data to the consumer.
@@ -151,7 +151,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(id<FBDataConsumer>)consumer;
+- (FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Redirects stdout to the reader block, on a per line basis.
@@ -159,7 +159,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
+- (FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
 
 /**
  Redirects stdout to the provided logger, on a per line basis.
@@ -167,7 +167,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(id<FBControlCoreLogger>)logger;
+- (FBProcessBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  Redirects stdout to the provided logger and prints the output in any error message that occurs.
@@ -175,7 +175,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
+- (FBProcessBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
 
 #pragma mark stderr
 
@@ -184,14 +184,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
+- (FBProcessBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
 
 /**
  Reads stderr into memory, as a String.
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, NSString *> *)withStdErrInMemoryAsString;
+- (FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrInMemoryAsString;
 
 /**
  Assigns a path to write stderr to.
@@ -199,14 +199,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErrPath the path to write stderr to. Must not be nil.
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, NSString *> *)withStdErrPath:(NSString *)stdErrPath;
+- (FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrPath:(NSString *)stdErrPath;
 
 /**
  Redirects stderr to /dev/null
 
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, NSNull *> *)withStdErrToDevNull;
+- (FBProcessBuilder<StdInType, StdOutType, NSNull *> *)withStdErrToDevNull;
 
 /**
  Redirects stderr data to the consumer.
@@ -214,7 +214,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(id<FBDataConsumer>)consumer;
+- (FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Redirects stderr to the reader block, on a per line basis.
@@ -222,7 +222,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
+- (FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
 
 /**
  Redirects stderr to the provided logger, on a per line basis.
@@ -230,7 +230,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
+- (FBProcessBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  Redirects stderr to the provided logger and prints the output in any error message that occurs.
@@ -238,12 +238,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBTaskBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
+- (FBProcessBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Logging
 
 /**
- Enables logging of the task lifecycle to the provided logger.
+ Enables logging of the process lifecycle to the provided logger.
  By default the task will be constructed without this logging.
  To get detailed information, pass a logger to this method.
  Logging can be disabled by passing nil.
@@ -256,18 +256,18 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Building
 
 /**
- Builds and Starts the Task.
+ Builds and starts the process.
 
- @return a FBTask.
+ @return A future that resolves with the started process..
  */
 - (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)start;
 
 /**
- Builds and Starts Task, wrapping it in a future.
- The future will resolve when the task has finished executing.
- Cancelling the future will cancel the task.
+ Builds and starts the process, then waits for it to complete with the provided exit codes.
+ The future will resolve when the process has finished executing.
+ Cancelling the process will cancel the task.
 
- @return a Future, encapsulating the task on completion.
+ @return a Future, encapsulating the process on completion.
  */
 - (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 

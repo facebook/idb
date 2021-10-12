@@ -446,7 +446,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 {
   arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
   [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]

@@ -528,7 +528,7 @@
         [arguments addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
       }
 
-      return [[[[FBTaskBuilder
+      return [[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
         withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]
@@ -541,7 +541,7 @@
         [arguments addObject:@"-object"];
         [arguments addObject:binary];
       }
-      return [[[[FBTaskBuilder
+      return [[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
         withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]

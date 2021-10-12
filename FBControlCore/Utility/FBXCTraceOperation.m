@@ -13,7 +13,7 @@
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
 #import "FBiOSTarget.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 #import "FBXcodeConfiguration.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTraceConfiguration.h"
@@ -77,7 +77,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     environment[@"DYLD_INSERT_LIBRARIES"] = configuration.shim.macOSTestShimPath;
   }
 
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:xctracePath]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
@@ -138,7 +138,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]

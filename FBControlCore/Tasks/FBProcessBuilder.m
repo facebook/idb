@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -16,7 +16,7 @@
 #import "FBProcess.h"
 #import "FBProcessSpawnConfiguration.h"
 
-@interface FBTaskBuilder ()
+@interface FBProcessBuilder ()
 
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
@@ -28,7 +28,7 @@
 
 @end
 
-@implementation FBTaskBuilder
+@implementation FBProcessBuilder
 
 #pragma mark Initializers
 
@@ -41,7 +41,7 @@
 
   _launchPath = launchPath;
   _arguments = @[];
-  _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
+  _environment = FBProcessBuilder.defaultEnvironmentForSubprocess;
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
@@ -240,8 +240,8 @@
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:queue fmap:^(FBProcess *task) {
-      return [[task exitedWithCodes:exitCodes] mapReplace:task];
+    onQueue:queue fmap:^(FBProcess *process) {
+      return [[process exitedWithCodes:exitCodes] mapReplace:process];
     }];
 }
 

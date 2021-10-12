@@ -68,7 +68,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
   
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
@@ -136,7 +136,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]

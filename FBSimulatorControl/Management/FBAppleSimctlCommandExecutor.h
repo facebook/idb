@@ -48,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param command the command name.
  @param arguments the arguments of the command.
  */
-- (FBTaskBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments;
+- (FBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments;
 
 @end
 

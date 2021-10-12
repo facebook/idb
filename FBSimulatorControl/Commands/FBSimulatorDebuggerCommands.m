@@ -118,7 +118,7 @@
 
 - (FBFuture<FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *)debugServerTaskForPort:(in_port_t)port processIdentifier:(pid_t)processIdentifier
 {
-  return [[[[[FBTaskBuilder
+  return [[[[[FBProcessBuilder
     withLaunchPath:self.debugServerPath]
     withArguments:@[[NSString stringWithFormat:@"localhost:%d", port], @"--attach", [NSString stringWithFormat:@"%d", processIdentifier]]]
     withStdOutToLogger:self.simulator.logger]

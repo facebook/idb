@@ -14,7 +14,7 @@
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
 const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
@@ -121,7 +121,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/instruments"]
     withArguments:arguments]
     withStdOutToLogger:compositeLogger]
@@ -199,7 +199,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]

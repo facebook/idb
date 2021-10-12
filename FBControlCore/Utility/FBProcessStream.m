@@ -15,7 +15,7 @@
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
 #import "FBProcess.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 #import "FBFuture+Sync.h"
 
 static NSTimeInterval ProcessDetachDrainTimeout = 4;
@@ -137,7 +137,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
           describeFormat:@"Cannot start reading, already reading"]
           failFuture];
       }
-      return [[[[FBTaskBuilder
+      return [[[[FBProcessBuilder
         withLaunchPath:@"/bin/cat" arguments:@[self.filePath]]
         withStdOutConsumer:self.consumer]
         withStdErrToDevNull]

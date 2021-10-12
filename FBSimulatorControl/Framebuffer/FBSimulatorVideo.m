@@ -202,7 +202,7 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
 
 - (FBFuture<NSDecimalNumber *> *)simctlVersionNumber
 {
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/what"
     arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
     withStdOutInMemoryAsString]

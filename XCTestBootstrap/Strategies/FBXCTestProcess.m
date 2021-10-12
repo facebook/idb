@@ -76,7 +76,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
 + (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", processIdentifier, timeout];
-  return [[[[FBTaskBuilder
+  return [[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
     runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:queue handleError:^(NSError *error) {

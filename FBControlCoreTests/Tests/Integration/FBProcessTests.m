@@ -12,11 +12,11 @@
 #import "FBControlCoreFixtures.h"
 #import "FBControlCoreLoggerDouble.h"
 
-@interface FBTaskBuilder (FBProcessTests)
+@interface FBProcessBuilder (FBProcessTests)
 
 @end
 
-@implementation FBTaskBuilder (FBProcessTests)
+@implementation FBProcessBuilder (FBProcessTests)
 
 - (FBProcess *)startSynchronously
 {
@@ -43,7 +43,7 @@
 
 - (void)testTrueExit
 {
-  FBFuture *futureProcess = [[[FBTaskBuilder
+  FBFuture *futureProcess = [[[FBProcessBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"true"]]
     withTaskLifecycleLoggingTo:FBControlCoreGlobalConfiguration.defaultLogger]
     runUntilCompletionWithAcceptableExitCodes:nil];
@@ -55,7 +55,7 @@
 
 - (void)testFalseExit
 {
-  FBFuture *futureProcess = [[FBTaskBuilder
+  FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@1]];
 
@@ -66,7 +66,7 @@
 - (void)testFalseExitWithStatusCodeError
 {
   NSError *error = nil;
-  id result = [[[FBTaskBuilder
+  id result = [[[FBProcessBuilder
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     await:&error];
@@ -84,7 +84,7 @@
     @"FOO3": @"BAR3",
     @"FOO4": @"BAR4",
   };
-  FBFuture *futureProcess = [[[FBTaskBuilder
+  FBFuture *futureProcess = [[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/env"]
     withEnvironment:environment]
     runUntilCompletionWithAcceptableExitCodes:nil];
@@ -102,7 +102,7 @@
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
   NSString *expected = [[NSData dataWithContentsOfFile:filePath] base64EncodedStringWithOptions:0];
 
-  FBFuture *futureProcess = [[FBTaskBuilder
+  FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
   FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
@@ -120,7 +120,7 @@
   NSString *binaryName = [[bundlePath lastPathComponent] stringByDeletingPathExtension];
   NSString *binaryPath = [[bundlePath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName];
 
-  FBFuture *futureProcess = [[FBTaskBuilder
+  FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
   FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
@@ -138,7 +138,7 @@
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
   NSString *resourcesPath = [[bundle bundlePath] stringByAppendingPathComponent:@"Contents/Resources"];
 
-  FBFuture *futureProcess = [[FBTaskBuilder
+  FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
   FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
@@ -162,7 +162,7 @@
   NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
   NSMutableArray<NSString *> *lines = [NSMutableArray array];
 
-  FBFuture *futureProcess = [[[FBTaskBuilder
+  FBFuture *futureProcess = [[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/grep" arguments:@[@"CoreFoundation", filePath]]
     withStdOutLineReader:^(NSString *line) {
       [lines addObject:line];
@@ -185,7 +185,7 @@
 {
   NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
 
-  FBFuture *futureProcess = [[[[FBTaskBuilder
+  FBFuture *futureProcess = [[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
@@ -203,7 +203,7 @@
 {
   NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
 
-  FBFuture *futureProcess = [[[[FBTaskBuilder
+  FBFuture *futureProcess = [[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
     withStdOutToDevNull]
     withStdErrToDevNull]
@@ -219,7 +219,7 @@
 
 - (void)testUpdatesStateWithAsynchronousTermination
 {
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     startSynchronously];
 
@@ -231,7 +231,7 @@
 
 - (void)testAwaitingTerminationOfShortLivedProcess
 {
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
     startSynchronously];
 
@@ -244,7 +244,7 @@
 - (void)testCallsHandlerWithAsynchronousTermination
 {
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
-  [[[FBTaskBuilder
+  [[[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:dispatch_get_main_queue() notifyOfCompletion:^(id _) {
@@ -258,7 +258,7 @@
 {
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   expectation.inverted = YES;
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     startSynchronously];
 
@@ -281,7 +281,7 @@
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBProcess *process = [[[[[FBTaskBuilder
+  FBProcess *process = [[[[[FBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdInConnected]
     withStdOutInMemoryAsData]
@@ -307,7 +307,7 @@
   FBProcessInput<NSOutputStream *> *input = FBProcessInput.inputFromStream;
   NSOutputStream *stream = input.contents;
 
-  FBProcess *process = [[[[[FBTaskBuilder
+  FBProcess *process = [[[[[FBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdIn:input]
     withStdOutInMemoryAsString]
@@ -335,7 +335,7 @@
   FBProcessInput<NSOutputStream *> *input = FBProcessInput.inputFromStream;
   NSOutputStream *stream = input.contents;
 
-  FBProcess *process = [[[[[FBTaskBuilder
+  FBProcess *process = [[[[[FBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdIn:input]
     withStdOutInMemoryAsString]
@@ -363,7 +363,7 @@
 {
   NSString *expected = @"FOO BAR BAZ";
 
-  FBProcess *process = [[[[FBTaskBuilder
+  FBProcess *process = [[[[FBProcessBuilder
     withLaunchPath:@"/bin/echo" arguments:@[@"FOO BAR BAZ"]]
     withStdErrToDevNull]
     withStdOutToInputStream]
@@ -395,7 +395,7 @@
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBProcess *process = [[[[[FBTaskBuilder
+  FBProcess *process = [[[[[FBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdInFromData:expected]
     withStdOutInMemoryAsData]
@@ -412,7 +412,7 @@
 
 - (void)testSendingSIGINT
 {
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
@@ -432,7 +432,7 @@
 
 - (void)testSendingSIGKILL
 {
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
@@ -452,7 +452,7 @@
 
 - (void)testHUPBackoffToKILL
 {
-  FBProcess *process = [[FBTaskBuilder
+  FBProcess *process = [[FBProcessBuilder
     withLaunchPath:@"/usr/bin/nohup" arguments:@[@"/bin/sleep", @"10000000"]]
     startSynchronously];
 
@@ -485,7 +485,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  success = [[[[[[[FBTaskBuilder
+  success = [[[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/tar"]
     withArguments:@[@"-zcvf", tarSource, FBControlCoreFixtures.bundleResource]]
     withStdOutToDevNull]
@@ -499,7 +499,7 @@
   NSData *tarData = [NSData dataWithContentsOfFile:tarSource];
 
   for (NSUInteger count = 0; count < 10; count++) {
-    success = [[[[[[[[FBTaskBuilder
+    success = [[[[[[[[FBProcessBuilder
       withLaunchPath:@"/usr/bin/tar"]
       withArguments:@[@"-C", tarDestination, @"-zxpf", @"-"]]
       withStdInFromData:tarData]

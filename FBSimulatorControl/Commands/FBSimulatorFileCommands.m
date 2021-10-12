@@ -103,7 +103,7 @@
   return [[[self
     mappedPath:containerPath]
     onQueue:self.queue fmap:^(NSString *fullSourcePath) {
-      return [[[[FBTaskBuilder
+      return [[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/tail"]
         withArguments:@[@"-c+1", @"-f", fullSourcePath]]
         withStdOutConsumer:consumer]
