@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+static const size_t FBProcessOutputErrorMessageLength = 200;
+
 @class FBProcessSpawnConfiguration;
 
 /**
@@ -88,6 +90,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return an implementation of FBProcess.
  */
 - (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
+
+/**
+ Launches a process with the provided configuration.
+
+ @param configuration the configuration to use.
+ @param logger an optional logger to log process lifecycle events to.
+ @return a future that resolves with the launched process once it has been started.
+ */
++ (FBFuture<FBProcess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 

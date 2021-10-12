@@ -37,7 +37,7 @@ Export file from the XCTest result bundle
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBTask *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBProcess *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Export a JPEG image from the XCTest result bundle.
@@ -51,7 +51,7 @@ Export a JPEG image from the XCTest result bundle.
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBTask *> *)exportJPEGFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId type:(NSString *)encodeType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBProcess *> *)exportJPEGFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId type:(NSString *)encodeType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Export directory from the XCTest result bundle
@@ -63,7 +63,7 @@ Export directory from the XCTest result bundle
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBTask *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (FBFuture<FBProcess *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Describe the format of the result bundle

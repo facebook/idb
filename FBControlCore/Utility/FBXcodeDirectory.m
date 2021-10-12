@@ -7,7 +7,7 @@
 
 #import "FBXcodeDirectory.h"
 
-#import "FBTask.h"
+#import "FBProcess.h"
 #import "FBTaskBuilder.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
@@ -23,7 +23,7 @@
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+    onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
       NSString *directory = task.stdOut;
       if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {
         directory = NSProcessInfo.processInfo.environment[@"FBXCTEST_XCODE_PATH_OVERRIDE"];

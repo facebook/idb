@@ -23,7 +23,7 @@
 @interface FBMacDevice()
 
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBBundleDescriptor *> *bundleIDToProductMap;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, FBProcess *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
 @property (nonatomic, copy) NSString *workingDirectory;
 
@@ -208,7 +208,7 @@
 
 - (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID
 {
-  FBTask *task = self.bundleIDToRunningTask[bundleID];
+  FBProcess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
@@ -327,7 +327,7 @@
 
 - (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID
 {
-  FBTask *task = self.bundleIDToRunningTask[bundleID];
+  FBProcess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
@@ -350,7 +350,7 @@
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ FBProcess * (FBTask *task) {
+    onQueue:self.workQueue map:^ FBProcess * (FBProcess *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
       return task;
     }];
@@ -361,7 +361,7 @@
   NSMutableDictionary<NSString *, FBProcessInfo *> *runningProcesses = @{}.mutableCopy;
   FBProcessFetcher *fetcher = [FBProcessFetcher new];
   for (NSString *bundleId in self.bundleIDToRunningTask.allKeys) {
-    FBTask *task = self.bundleIDToRunningTask[bundleId];
+    FBProcess *task = self.bundleIDToRunningTask[bundleId];
     runningProcesses[bundleId] = [fetcher processInfoFor:task.processIdentifier];
   }
   return [FBFuture futureWithResult:runningProcesses];
@@ -506,7 +506,7 @@
 
 - (FBFuture<FBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  return (FBFuture<FBProcess *> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
+  return [FBProcess launchProcessWithConfiguration:configuration logger:self.logger];
 }
 
 @end

@@ -77,10 +77,10 @@ static id<FBDataConsumer, FBDataConsumerStackConsuming> consumer_from_request(gr
 }
 
 template <class T>
-static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
+static Status drain_writer(FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
 {
   NSError *error = nil;
-  FBTask<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
+  FBProcess<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
   if (!task) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

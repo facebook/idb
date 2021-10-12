@@ -452,7 +452,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     withStdErrInMemoryAsString]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
-    onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+    onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
           return [[FBSimulatorError
             describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]

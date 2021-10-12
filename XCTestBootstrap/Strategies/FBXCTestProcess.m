@@ -85,7 +85,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
         causedBy:error]
         failFuture];
     }]
-    onQueue:queue fmap:^(FBTask<NSNull *, NSData *, NSData *> *task) {
+    onQueue:queue fmap:^(FBProcess<NSNull *, NSData *, NSData *> *task) {
       [logger logFormat:@"Stackshot completed of process %d", processIdentifier];
       return [[FBXCTestError
         describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, task.stdOut]

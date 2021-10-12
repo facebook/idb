@@ -71,7 +71,7 @@
 #import <FBControlCore/FBSettingsCommands.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBStorageUtils.h>
-#import <FBControlCore/FBTask.h>
+#import <FBControlCore/FBProcess.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTemporaryDirectory.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>

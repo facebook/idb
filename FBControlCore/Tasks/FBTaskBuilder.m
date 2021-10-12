@@ -13,7 +13,7 @@
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
-#import "FBTask.h"
+#import "FBProcess.h"
 #import "FBProcessSpawnConfiguration.h"
 
 @interface FBTaskBuilder ()
@@ -166,7 +166,7 @@
 
 - (instancetype)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
 {
-  self.stdOut = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBTaskOutputErrorMessageLength] logger:logger];
+  self.stdOut = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBProcessOutputErrorMessageLength] logger:logger];
   return self;
 }
 
@@ -216,7 +216,7 @@
 
 - (instancetype)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
 {
-  self.stdErr = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBTaskOutputErrorMessageLength] logger:logger];
+  self.stdErr = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBProcessOutputErrorMessageLength] logger:logger];
   return self;
 }
 
@@ -230,17 +230,17 @@
 
 #pragma mark Building
 
-- (FBFuture<FBTask *> *)start
+- (FBFuture<FBProcess *> *)start
 {
-  return [FBTask startTaskWithConfiguration:self.buildConfiguration logger:self.logger];
+  return [FBProcess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
-- (FBFuture<FBTask *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
+- (FBFuture<FBProcess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:queue fmap:^(FBTask *task) {
+    onQueue:queue fmap:^(FBProcess *task) {
       return [[task exitedWithCodes:exitCodes] mapReplace:task];
     }];
 }

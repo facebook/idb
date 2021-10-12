@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBTask.h>
+#import <FBControlCore/FBProcess.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -260,7 +260,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a FBTask.
  */
-- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)start;
+- (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)start;
 
 /**
  Builds and Starts Task, wrapping it in a future.
@@ -269,7 +269,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the task on completion.
  */
-- (FBFuture<FBTask<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
+- (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 
 @end
 

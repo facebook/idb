@@ -9,7 +9,7 @@
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBTask.h"
+#import "FBProcess.h"
 #import "FBTaskBuilder.h"
 
 static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
@@ -59,9 +59,9 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     mapReplace:extractPath];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *) [[[[[[FBTaskBuilder
+  return (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *) [[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"--to-stdout", path]]
     withStdErrToLoggerAndErrorMessage:logger]
@@ -70,9 +70,9 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     start];
 }
 
-+ (FBFuture<FBTask<NSData *, NSData *, id> *> *)createGzipDataFromData:(NSData *)data logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBProcess<NSData *, NSData *, id> *> *)createGzipDataFromData:(NSData *)data logger:(id<FBControlCoreLogger>)logger
 {
-  return (FBFuture<FBTask<NSData *, NSData *, id> *> *) [[[[[[[FBTaskBuilder
+  return (FBFuture<FBProcess<NSData *, NSData *, id> *> *) [[[[[[[FBTaskBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"-", @"--to-stdout"]]
     withStdInFromData:data]
@@ -83,7 +83,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   ];
 }
 
-+ (FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
   FBTaskBuilder<NSNull *, NSData *, id> *builder = [self createGzippedTarTaskBuilderForPath:path queue:queue logger:logger error:&error];
@@ -104,7 +104,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   }
   return [[builder
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(FBTask<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
+    onQueue:queue map:^(FBProcess<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
       return [result stdOut];
     }];
 }

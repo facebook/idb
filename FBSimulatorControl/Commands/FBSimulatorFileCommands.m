@@ -109,7 +109,7 @@
         withStdOutConsumer:consumer]
         start];
     }]
-    onQueue:self.queue map:^(FBTask *task) {
+    onQueue:self.queue map:^(FBProcess *task) {
       return [task.statLoc
         onQueue:self.queue respondToCancellation:^{
           return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];

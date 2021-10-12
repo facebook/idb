@@ -464,7 +464,7 @@
       return [[self getCoverageDataExported]
         onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
           return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
-          onQueue:self.queue map:^CodeCoverageResponseData *(FBTask<NSData *,NSData *,id> *task) {
+          onQueue:self.queue map:^CodeCoverageResponseData *(FBProcess<NSData *,NSData *,id> *task) {
             return [[CodeCoverageResponseData alloc]
                 initWithData:task.stdOut
                 jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
@@ -494,8 +494,8 @@
 
 - (FBFuture<NSData *> *)getCoverageDataExported
 {
-  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBTask<NSNull *, NSData *, NSString *> *) =
-    ^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (FBTask<NSNull *, NSData *, NSString *> *task) {
+  FBFuture<FBProcess<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBProcess<NSNull *, NSData *, NSString *> *) =
+    ^FBFuture<FBProcess<NSNull *, NSString *, NSString *> *> * (FBProcess<NSNull *, NSData *, NSString *> *task) {
       NSNumber *exitCode = task.exitCode.result;
       if ([exitCode isEqual:@0]) {
         return [FBFuture futureWithResult:task];
@@ -522,7 +522,7 @@
 
 
   return [[[[[self.processUnderTestExitedMutable
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSData *, NSString *> *> *(id _) {
+    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
       NSMutableArray<NSString *> *arguments = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
       for (NSString *profraw in profraws) {
         [arguments addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
@@ -535,7 +535,7 @@
         runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSData *, NSString *> *> *(id _) {
+    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
       NSMutableArray<NSString *> *arguments = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
       for (NSString *binary in self.configuration.binariesPaths) {
         [arguments addObject:@"-object"];
@@ -548,7 +548,7 @@
         runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue map:^NSData *(FBTask<NSNull *,NSData *,NSString *> *task) {
+    onQueue:self.queue map:^NSData *(FBProcess<NSNull *,NSData *,NSString *> *task) {
       return task.stdOut;
     }];
 }

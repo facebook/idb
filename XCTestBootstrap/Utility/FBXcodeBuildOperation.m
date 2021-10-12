@@ -20,7 +20,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
 @implementation FBXcodeBuildOperation
 
-+ (FBFuture<FBTask *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(NSString *)simDeviceSetPath macOSTestShimPath:(NSString *)macOSTestShimPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<FBProcess *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(NSString *)simDeviceSetPath macOSTestShimPath:(NSString *)macOSTestShimPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[
@@ -73,7 +73,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   }
   return [[builder
     start]
-    onQueue:queue map:^(FBTask *task) {
+    onQueue:queue map:^(FBProcess *task) {
       [logger logFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]];
       return task;
     }];
@@ -162,7 +162,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   return [mutableTestRunProperties copy];
 }
 
-+ (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBTask *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBProcess *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[task
     exitedWithCodes:[NSSet setWithObjects:@0, @65, nil]]
