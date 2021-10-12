@@ -10,7 +10,6 @@ import re
 SIMULATOR_UDID = r"^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$"
 OLD_DEVICE_UDID = r"^[0-9a-f]{40}$"
 NEW_DEVICE_UDID = r"^[0-9]{8}-[0-9A-F]{16}$"
-# pyre-fixme[5]: Global expression must be annotated.
 UDID = fr"({SIMULATOR_UDID}|{OLD_DEVICE_UDID}|{NEW_DEVICE_UDID})"
 
 
