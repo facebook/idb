@@ -14,7 +14,7 @@ from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 @ignoreTaskLeaks
 class CompanionTests(TestCase):
-    async def test_spawn_companion(self) -> None:
+    async def test_spawn_tcp_server(self) -> None:
         spawner = Companion(
             companion_path="idb_path", device_set_path=None, logger=mock.Mock()
         )
@@ -32,7 +32,14 @@ class CompanionTests(TestCase):
                 ).encode("utf-8")
             )
             exec_mock.return_value = process_mock
-            port = await spawner.spawn_companion(udid)
+            (_, port) = await spawner.spawn_tcp_server(
+                udid=udid,
+                log_file_path=None,
+                port=None,
+                cwd=None,
+                tmp_path=None,
+                reparent=True,
+            )
             exec_mock.assert_called_once_with(
                 "idb_path",
                 "--udid",

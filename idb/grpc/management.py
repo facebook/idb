@@ -53,24 +53,30 @@ class ClientManager(ClientManagerBase):
         )
         self._prune_dead_companion = prune_dead_companion
 
-    async def _spawn_companion(self, target_udid: str) -> Optional[CompanionInfo]:
+    async def _spawn_tcp_server(self, udid: str) -> Optional[CompanionInfo]:
         companion = self._companion
         if companion is None:
             return None
-        local_target_available = await self._is_local_target_available(udid=target_udid)
-        if local_target_available or target_udid == "mac":
-            self._logger.info(f"will attempt to spawn a companion for {target_udid}")
-            port = await companion.spawn_companion(target_udid=target_udid)
-            if port:
-                self._logger.info(f"spawned a companion for {target_udid}")
-                host = "localhost"
-                companion_info = CompanionInfo(
-                    address=TCPAddress(host=host, port=port),
-                    udid=target_udid,
-                    is_local=True,
-                )
-                await self._direct_companion_manager.add_companion(companion_info)
-                return companion_info
+        local_target_available = await self._is_local_target_available(udid=udid)
+        if local_target_available or udid == "mac":
+            self._logger.info(f"will attempt to spawn a companion for {udid}")
+            (_, port) = await companion.spawn_tcp_server(
+                udid=udid,
+                log_file_path=None,
+                port=None,
+                cwd=None,
+                tmp_path=None,
+                reparent=True,
+            )
+            self._logger.info(f"Companion at port {port} spawned for {udid}")
+            host = "localhost"
+            companion_info = CompanionInfo(
+                address=TCPAddress(host=host, port=port),
+                udid=udid,
+                is_local=True,
+            )
+            await self._direct_companion_manager.add_companion(companion_info)
+            return companion_info
         return None
 
     async def _list_local_targets(
@@ -122,7 +128,7 @@ class ClientManager(ClientManagerBase):
             # will try to spawn a companion if on mac.
             if udid is None:
                 raise e
-            companion_info = await self._spawn_companion(target_udid=udid)
+            companion_info = await self._spawn_tcp_server(udid=udid)
             if companion_info is None:
                 raise e
             self._logger.debug(f"Got newly launched {companion_info} for udid {udid}")
@@ -173,7 +179,7 @@ class ClientManager(ClientManagerBase):
             await self._direct_companion_manager.add_companion(companion)
             return companion
         else:
-            companion = await self._spawn_companion(target_udid=destination)
+            companion = await self._spawn_tcp_server(udid=destination)
             if companion:
                 return companion
             else:
