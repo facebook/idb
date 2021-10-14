@@ -8,7 +8,7 @@ import json
 import os
 from unittest import mock
 
-from idb.common.companion import Companion
+from idb.common.companion import Companion, CompanionServerConfig
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 
@@ -33,12 +33,14 @@ class CompanionTests(TestCase):
             )
             exec_mock.return_value = process_mock
             (_, port) = await spawner.spawn_tcp_server(
-                udid=udid,
-                log_file_path=None,
+                config=CompanionServerConfig(
+                    udid=udid,
+                    log_file_path=None,
+                    cwd=None,
+                    tmp_path=None,
+                    reparent=True,
+                ),
                 port=None,
-                cwd=None,
-                tmp_path=None,
-                reparent=True,
             )
             exec_mock.assert_called_once_with(
                 "idb_path",

@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import subprocess
+from dataclasses import dataclass
 from datetime import timedelta
 from logging import Logger, DEBUG as LOG_LEVEL_DEBUG
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union, Tuple
@@ -91,6 +92,15 @@ async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> 
     return int(update["grpc_port"])
 
 
+@dataclass(frozen=True)
+class CompanionServerConfig:
+    udid: str
+    log_file_path: Optional[str]
+    cwd: Optional[str]
+    tmp_path: Optional[str]
+    reparent: bool
+
+
 class Companion(CompanionBase):
     def __init__(
         self, companion_path: str, device_set_path: Optional[str], logger: Logger
@@ -167,12 +177,8 @@ class Companion(CompanionBase):
 
     async def spawn_tcp_server(
         self,
-        udid: str,
-        log_file_path: Optional[str],
+        config: CompanionServerConfig,
         port: Optional[int],
-        cwd: Optional[str],
-        tmp_path: Optional[str],
-        reparent: bool,
         tls_cert_path: Optional[str] = None,
     ) -> Tuple[asyncio.subprocess.Process, int]:
         if os.getuid() == 0:
@@ -184,12 +190,13 @@ class Companion(CompanionBase):
         arguments: List[str] = [
             self._companion_path,
             "--udid",
-            udid,
+            config.udid,
             "--grpc-port",
             str(port) if port is not None else "0",
         ]
+        log_file_path = config.log_file_path
         if log_file_path is None:
-            log_file_path = self._log_file_path(udid)
+            log_file_path = self._log_file_path(config.udid)
         if tls_cert_path is not None:
             arguments.extend(["--tls-cert-path", tls_cert_path])
         device_set_path = self._device_set_path
@@ -197,18 +204,18 @@ class Companion(CompanionBase):
             arguments.extend(["--device-set-path", device_set_path])
 
         env = dict(os.environ)
-        if tmp_path:
-            env["TMPDIR"] = tmp_path
+        if config.tmp_path:
+            env["TMPDIR"] = config.tmp_path
 
         with open(log_file_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(
                 *arguments,
                 stdout=asyncio.subprocess.PIPE,
-                stdin=asyncio.subprocess.PIPE if reparent else None,
+                stdin=asyncio.subprocess.PIPE if config.reparent else None,
                 stderr=log_file,
-                cwd=cwd,
+                cwd=config.cwd,
                 env=env,
-                preexec_fn=os.setpgrp if reparent else None,
+                preexec_fn=os.setpgrp if config.reparent else None,
             )
             logging.debug(f"started companion at process id {process.pid}")
             stdout = none_throws(process.stdout)

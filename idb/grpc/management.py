@@ -9,7 +9,7 @@ import logging
 import os
 from typing import AsyncGenerator, Dict, List, Optional
 
-from idb.common.companion import Companion
+from idb.common.companion import Companion, CompanionServerConfig
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
@@ -61,12 +61,14 @@ class ClientManager(ClientManagerBase):
         if local_target_available or udid == "mac":
             self._logger.info(f"will attempt to spawn a companion for {udid}")
             (_, port) = await companion.spawn_tcp_server(
-                udid=udid,
-                log_file_path=None,
+                config=CompanionServerConfig(
+                    udid=udid,
+                    log_file_path=None,
+                    cwd=None,
+                    tmp_path=None,
+                    reparent=True,
+                ),
                 port=None,
-                cwd=None,
-                tmp_path=None,
-                reparent=True,
             )
             self._logger.info(f"Companion at port {port} spawned for {udid}")
             host = "localhost"
