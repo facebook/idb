@@ -97,7 +97,7 @@
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
   return [[FBFuture
-    resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
       return [self.simulator.device installedAppsWithError:error];
     }]
     onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
