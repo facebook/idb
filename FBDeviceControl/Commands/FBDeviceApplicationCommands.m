@@ -205,15 +205,6 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     }];
 }
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [[self
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.device.workQueue chain:^(FBFuture *future) {
-      return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
-    }];
-}
-
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
   return [[self

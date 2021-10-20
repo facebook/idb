@@ -40,14 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID;
 
 /**
- Queries to see if an Application is installed on iOS.
-
- @param bundleID The Bundle ID of the application.
- @return A future that identifies if the application was installed.
- */
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID;
-
-/**
  Launches an Application with the provided Application Launch Configuration.
 
  @param configuration the Application Launch Configuration to use.

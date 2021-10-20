@@ -50,16 +50,6 @@
   return [self installExtractedApplicationWithPath:path];
 }
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [FBFuture
-    onQueue:self.simulator.workQueue resolveValue:^ NSNumber * (NSError ** error) {
-      NSString *applicationType = nil;
-      BOOL applicationIsInstalled = [self.simulator.device applicationIsInstalled:bundleID type:&applicationType error:error];
-      return @(applicationIsInstalled);
-    }];
-}
-
 - (FBFuture<FBSimulatorLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBSimulator *simulator = self.simulator;

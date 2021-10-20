@@ -320,11 +320,6 @@
   return [FBFuture futureWithResult:installedApp];
 }
 
-- (nonnull FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(nonnull NSString *)bundleID
-{
-  return [FBFuture futureWithResult:@(self.bundleIDToProductMap[bundleID] != nil)];
-}
-
 - (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID
 {
   FBProcess *task = self.bundleIDToRunningTask[bundleID];

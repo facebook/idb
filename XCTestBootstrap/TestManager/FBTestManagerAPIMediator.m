@@ -186,7 +186,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
       describeFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]
       failFuture];
   }
-  return [[[[self.target
+  return [[[[self
     isApplicationInstalledWithBundleID:configuration.bundleID]
     onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
       if (!isInstalled.boolValue) {
@@ -213,6 +213,15 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         return [self.target launchApplication:configuration];
       }
       return [self installAndLaunchApplication:configuration atPath:path];
+    }];
+}
+
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
+{
+  return [[self.target
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.target.asyncQueue chain:^(FBFuture<FBInstalledApplication *> *future) {
+      return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
     }];
 }
 
