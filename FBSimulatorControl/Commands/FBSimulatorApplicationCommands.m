@@ -144,23 +144,31 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  return [[self
-    confirmApplicationIsInstalled:bundleID]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<FBInstalledApplication *> * (id _) {
+  SimDevice *device = self.simulator.device;
+
+  return [FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ FBInstalledApplication * (NSError **error) {
+      // -[SimDevice propertiesOfApplication:error:] will return in success if the app could not be found.
+      // The dictionary only contains one element, which is the bundle id of the non-existant app.
+      // This internal helper method understands this, so we can just re-use it here.
+      NSString *applicationType = nil;
+      BOOL applicationIsInstalled = [device applicationIsInstalled:bundleID type:&applicationType error:error];
+      if (!applicationIsInstalled) {
+        return [[FBSimulatorError
+          describeFormat:@"Cannot get app information for '%@', it is not installed", bundleID]
+          fail:error];
+      }
       // appInfo is usually always returned, even if there is no app installed.
-      NSError *error = nil;
-      NSDictionary<NSString *, id> *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
+      NSDictionary<NSString *, id> *appInfo = [device propertiesOfApplication:bundleID error:error];
       if (!appInfo) {
-        return [FBFuture futureWithError:error];
+        return nil;
       }
       // Therefore we have to parse the app info to see that it is actually a real app.
-      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
+      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
       if (!application) {
-        return [[FBSimulatorError
-          describeFormat:@"Application Info %@ could not be parsed (it's probably not installed): %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
-          failFuture];
+        return nil;
       }
-      return [FBFuture futureWithResult:application];
+      return application;
     }];
 }
 
@@ -498,20 +506,6 @@ static NSString *const KeyDataContainer = @"DataContainer";
           failFuture];
       }
       return [FBFuture futureWithResult:application];
-    }];
-}
-
-- (FBFuture<NSNull *> *)confirmApplicationIsInstalled:(NSString *)bundleID
-{
-  return [[self
-    isApplicationInstalledWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNumber *installed) {
-      if (installed.boolValue == NO) {
-        return [[FBSimulatorError
-          describeFormat:@"%@ is not installed", bundleID]
-          failFuture];
-      }
-      return FBFuture.empty;
     }];
 }
 
