@@ -53,7 +53,7 @@ class ClientManager(ClientManagerBase):
         )
         self._prune_dead_companion = prune_dead_companion
 
-    async def _spawn_tcp_server(self, udid: str) -> Optional[CompanionInfo]:
+    async def _spawn_companion_server(self, udid: str) -> Optional[CompanionInfo]:
         companion = self._companion
         if companion is None:
             return None
@@ -130,7 +130,7 @@ class ClientManager(ClientManagerBase):
             # will try to spawn a companion if on mac.
             if udid is None:
                 raise e
-            companion_info = await self._spawn_tcp_server(udid=udid)
+            companion_info = await self._spawn_companion_server(udid=udid)
             if companion_info is None:
                 raise e
             self._logger.debug(f"Got newly launched {companion_info} for udid {udid}")
@@ -181,7 +181,7 @@ class ClientManager(ClientManagerBase):
             await self._direct_companion_manager.add_companion(companion)
             return companion
         else:
-            companion = await self._spawn_tcp_server(udid=destination)
+            companion = await self._spawn_companion_server(udid=destination)
             if companion:
                 return companion
             else:

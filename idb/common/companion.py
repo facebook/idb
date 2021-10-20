@@ -175,12 +175,11 @@ class Companion(CompanionBase):
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
 
-    async def spawn_tcp_server(
+    async def _spawn_server(
         self,
         config: CompanionServerConfig,
-        port: Optional[int],
-        tls_cert_path: Optional[str] = None,
-    ) -> Tuple[asyncio.subprocess.Process, int]:
+        bind_arguments: List[str],
+    ) -> Tuple[asyncio.subprocess.Process, str]:
         if os.getuid() == 0:
             logging.warning(
                 "idb should not be run as root. "
@@ -191,14 +190,10 @@ class Companion(CompanionBase):
             self._companion_path,
             "--udid",
             config.udid,
-            "--grpc-port",
-            str(port) if port is not None else "0",
-        ]
+        ] + bind_arguments
         log_file_path = config.log_file_path
         if log_file_path is None:
             log_file_path = self._log_file_path(config.udid)
-        if tls_cert_path is not None:
-            arguments.extend(["--tls-cert-path", tls_cert_path])
         device_set_path = self._device_set_path
         if device_set_path is not None:
             arguments.extend(["--device-set-path", device_set_path])
@@ -218,26 +213,41 @@ class Companion(CompanionBase):
                 preexec_fn=os.setpgrp if config.reparent else None,
             )
             logging.debug(f"started companion at process id {process.pid}")
-            stdout = none_throws(process.stdout)
-            try:
-                extracted_port = await _extract_port_from_spawned_companion(stdout)
-            except Exception as e:
-                raise CompanionSpawnerException(
-                    f"Failed to spawn companion, couldn't read port "
-                    f"stderr: {get_last_n_lines(log_file_path, 30)}"
-                ) from e
-            if extracted_port == 0:
-                raise CompanionSpawnerException(
-                    f"Failed to spawn companion, port is zero"
-                    f"stderr: {get_last_n_lines(log_file_path, 30)}"
-                )
-            if port is not None and extracted_port != port:
-                raise CompanionSpawnerException(
-                    "Failed to spawn companion, port is not correct "
-                    f"(expected {port} got {extracted_port})"
-                    f"stderr: {get_last_n_lines(log_file_path, 30)}"
-                )
-            return (process, extracted_port)
+            return (process, log_file_path)
+
+    async def spawn_tcp_server(
+        self,
+        config: CompanionServerConfig,
+        port: Optional[int],
+        tls_cert_path: Optional[str] = None,
+    ) -> Tuple[asyncio.subprocess.Process, int]:
+        bind_arguments = ["--grpc-port", str(port) if port is not None else "0"]
+        if tls_cert_path is not None:
+            bind_arguments.extend(["--tls-cert-path", tls_cert_path])
+        (process, log_file_path) = await self._spawn_server(
+            config=config,
+            bind_arguments=bind_arguments,
+        )
+        stdout = none_throws(process.stdout)
+        try:
+            extracted_port = await _extract_port_from_spawned_companion(stdout)
+        except Exception as e:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, couldn't read port output "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            ) from e
+        if extracted_port == 0:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, port zero is invalid "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        if port is not None and extracted_port != port:
+            raise CompanionSpawnerException(
+                "Failed to spawn companion, invalid port "
+                f"(expected {port} got {extracted_port})"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        return (process, extracted_port)
 
     @log_call()
     async def create(
