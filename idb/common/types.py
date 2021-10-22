@@ -53,8 +53,8 @@ class Permission(Enum):
 
 
 class TargetType(Enum):
-    DEVICE = 1
-    SIMULATOR = 2
+    DEVICE = "device"
+    SIMULATOR = "simulator"
 
 
 @dataclass(frozen=True)

@@ -68,7 +68,7 @@ async def _terminate_process(
 
 def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
     if isinstance(only, TargetType):
-        return ["--only", "simulator" if only is TargetType.SIMULATOR else "device"]
+        return ["--only", only.value]
     elif isinstance(only, ECIDFilter):
         return ["--only", f"ecid:{only.ecid}"]
     return []
