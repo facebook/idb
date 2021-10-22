@@ -97,8 +97,15 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 
 #pragma mark FBApplicationCommands Implementation
 
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
+  // We need to get the bundle identifier of the installed application, in order that we can get install info later.
+  NSError *error = nil;
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:&error];
+  if (!bundle) {
+    return [FBFuture futureWithError:error];
+  }
+
   // 'PackageType=Developer' signifies that the passed payload is a .app
   // 'AMDeviceSecureInstallApplicationBundle' performs:
   // 1) The transfer of the application bundle to the device.
@@ -110,7 +117,13 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     @"PackageType" : @"Developer",
     @"ShadowParentKey": self.deltaUpdateDirectory,
   };
-  return [self secureInstallApplicationBundle:appURL options:options];
+ 
+  // Perform the install and lookup the app after.
+  return [[self
+    secureInstallApplicationBundle:appURL options:options]
+    onQueue:self.device.asyncQueue fmap:^(id _) {
+      return [self installedApplicationWithBundleID:bundle.identifier];
+    }];
 }
 
 - (FBFuture<id> *)uninstallApplicationWithBundleID:(NSString *)bundleID

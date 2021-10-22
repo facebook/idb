@@ -250,7 +250,7 @@
   return nil;
 }
 
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
   NSFileManager *fm = [NSFileManager defaultManager];
@@ -274,7 +274,7 @@
     return [FBFuture futureWithResult:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;
-  return FBFuture.empty;
+  return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown]];
 }
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
