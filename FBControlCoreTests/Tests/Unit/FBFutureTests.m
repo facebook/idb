@@ -1262,6 +1262,30 @@
   [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
+- (void)testContextToFutureError
+{
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  NSError *expectedError = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+
+  [[[[FBFuture
+    futureWithError:expectedError]
+    onQueue:self.queue contextualTeardown:^(id foo, FBFutureState _) {
+      XCTFail(@"contextualTeardown should not be called when the base future errors");
+      return FBFuture.empty;
+    }]
+    onQueue:self.queue enter:^(id value, FBMutableFuture<NSNull *> *innerTeardown) {
+      XCTFail(@"enter should not be called when the base future errors");
+      return value;
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future){
+      XCTAssertEqualObjects(future.error, expectedError);
+      [completionExpectation fulfill];
+    }];
+
+  // Wait for the base future to resolve and confirm there's no teardown called yet.
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 #pragma mark - Helpers
 
 - (void)assertSynchronousResolutionWithBlock:(void (^)(FBMutableFuture *))resolveBlock expectedState:(FBFutureState)state expectedResult:(id)expectedResult expectedError:(NSError *)expectedError

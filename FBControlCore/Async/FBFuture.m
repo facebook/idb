@@ -341,12 +341,17 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   FBMutableFuture *started = FBMutableFuture.future;
 
-  [self onQueue:queue pop:^(id contextValue){
-    FBMutableFuture<NSNull *> *completed = FBMutableFuture.future;
-    id mappedValue = enter(contextValue, completed);
-    [started resolveWithResult:mappedValue];
-    return completed;
-  }];
+  [[self
+    onQueue:queue pop:^(id contextValue){
+      FBMutableFuture<NSNull *> *completed = FBMutableFuture.future;
+      id mappedValue = enter(contextValue, completed);
+      [started resolveWithResult:mappedValue];
+      return completed;
+    }]
+    onQueue:queue handleError:^(NSError *error) {
+      [started resolveWithError:error];
+      return [FBFuture futureWithError:error];
+    }];
 
   return started;
 }
