@@ -536,10 +536,17 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
   idb::InstallRequest request;
   stream->Read(&request);
 
-  // The name hint may be provided, if it is not then default to some UUID, then advance the stream
+  // The name hint may be provided, if it is not then default to some UUID, then advance the stream.
   NSString *name = NSUUID.UUID.UUIDString;
   if (request.value_case() == idb::InstallRequest::ValueCase::kNameHint) {
     name = nsstring_from_c_string(request.name_hint());
+    stream->Read(&request);
+  }
+
+  // A debuggable flag may be provided, if it is, then obtain that value, then advance that stream.
+  BOOL makeDebuggable = NO;
+  if (request.value_case() == idb::InstallRequest::ValueCase::kMakeDebuggable) {
+    makeDebuggable = (request.make_debuggable() == true);
     stream->Read(&request);
   }
 
@@ -564,7 +571,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:dataStream compression:compression];
+          return [_commandExecutor install_app_stream:dataStream compression:compression make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -582,7 +589,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:download.input compression:compression];
+          return [_commandExecutor install_app_stream:download.input compression:compression make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -599,7 +606,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       NSString *filePath = nsstring_from_c_string(payload.file_path());
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_file_path:filePath];
+          return [_commandExecutor install_app_file_path:filePath make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:

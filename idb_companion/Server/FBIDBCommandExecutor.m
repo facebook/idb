@@ -80,19 +80,19 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable
 {
   // Use .app directly, or extract an .ipa
   if ([FBBundleDescriptor isApplicationAtPath:filePath]) {
-    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]]];
+    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]] makeDebuggable:makeDebuggable];
   } else {
-    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath]];
+    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath] makeDebuggable:makeDebuggable];
   }
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable
 {
-  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression] makeDebuggable:makeDebuggable];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -786,16 +786,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installExtractedApp:(FBFutureContext<NSURL *> *)extractedAppContext
+- (FBFuture<FBInstalledArtifact *> *)installExtractedApp:(FBFutureContext<NSURL *> *)extractedAppContext makeDebuggable:(BOOL)makeDebuggable
 {
-  FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
-       return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
-  }];
-  return [self installAppBundle:bundleContext];
+  FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext
+    onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
+      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
+    }];
+  return [self installAppBundle:bundleContext makeDebuggable:makeDebuggable];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext
+- (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext makeDebuggable:(BOOL)makeDebuggable
 {
+  BOOL userDevelopmentAppIsRequired = [self.target isKindOfClass:FBDevice.class];
+
   return [bundleContext
     onQueue:self.target.asyncQueue pop:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
@@ -805,13 +808,23 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (![self.storageManager.application checkArchitecture:appBundle error:&error]) {
         return [FBFuture futureWithError:error];
       }
-      return [[FBFuture futureWithFutures:@[
-        [[self.target installApplicationWithPath:appBundle.path] onQueue:self.target.workQueue],
-        [self.storageManager.application saveBundle:appBundle],
-      ]] onQueue:self.target.asyncQueue map:^FBInstalledArtifact *(NSArray *results) {
-        return results[1];
-      }];
-  }];
+      return [[FBFuture
+        futureWithFutures:@[
+          [self.target installApplicationWithPath:appBundle.path],
+          makeDebuggable ? (FBFuture<id> *) [self.storageManager.application saveBundle:appBundle] : (FBFuture<id> *) FBFuture.empty,
+        ]]
+        onQueue:self.target.asyncQueue fmap:^(NSArray<id> *tuple) {
+          if (makeDebuggable) {
+            FBInstalledApplication *installedApp = tuple[0];
+            if (installedApp.installType != FBApplicationInstallTypeUserDevelopment && userDevelopmentAppIsRequired) {
+              return [[FBIDBError
+                describeFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]
+                failFuture];
+            }
+          }
+          return [FBFuture futureWithResult:[[FBInstalledArtifact alloc] initWithName:appBundle.identifier uuid:appBundle.binary.uuid]];
+        }];
+    }];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest

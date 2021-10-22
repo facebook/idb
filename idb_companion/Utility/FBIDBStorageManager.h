@@ -32,6 +32,14 @@ extern NSString *const IdbFrameworksFolder;
  */
 @property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
 
+/**
+ The designated initializer.
+
+ @param name the name of the installed artifact.
+ @param udid the udid of the installed artifact.
+ */
+- (instancetype)initWithName:(NSString *)name uuid:(nullable NSUUID *)uuid;
+
 @end
 
 /**

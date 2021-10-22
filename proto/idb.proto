@@ -173,6 +173,7 @@ message InstallRequest {
     Destination destination = 1;
     Payload payload = 2;
     string name_hint = 3;
+    bool make_debuggable = 4;
   }
 }
 

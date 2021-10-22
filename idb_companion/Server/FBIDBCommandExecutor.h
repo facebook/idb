@@ -84,18 +84,20 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  Install an App via a File Path.
 
  @param filePath the path to a file on disk with the file.
+ @param makeDebuggable whether the app should be installed in a debuggable state or not.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable;
 
 /**
  Install an App via a Data stream.
 
  @param input the input to pipe.
  @param compression the compression type to use
+ @param makeDebuggable whether the app should be installed in a debuggable state or not.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable;
 
 /**
  Installs an xctest bundle by file path.
