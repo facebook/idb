@@ -68,6 +68,8 @@ async def _terminate_process(
 
 def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
     if isinstance(only, TargetType):
+        if only == TargetType.MAC:
+            return []
         return ["--only", only.value]
     elif isinstance(only, ECIDFilter):
         return ["--only", f"ecid:{only.ecid}"]

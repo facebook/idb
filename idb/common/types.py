@@ -55,6 +55,7 @@ class Permission(Enum):
 class TargetType(Enum):
     DEVICE = "device"
     SIMULATOR = "simulator"
+    MAC = "mac"
 
 
 @dataclass(frozen=True)
