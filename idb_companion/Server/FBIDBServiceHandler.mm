@@ -15,6 +15,7 @@
 #import "FBCodeCoverageRequest.h"
 #import "FBDataDownloadInput.h"
 #import "FBIDBCommandExecutor.h"
+#import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBIDBServiceHandler.h"
 #import "FBIDBStorageManager.h"
@@ -531,16 +532,27 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
 
 FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
 {@autoreleasepool{
+  // Read the initial request
   idb::InstallRequest request;
   stream->Read(&request);
-  idb::Payload payload;
+
+  // The name hint may be provided, if it is not then default to some UUID, then advance the stream
   NSString *name = NSUUID.UUID.UUIDString;
-  if (request.name_hint().length()) {
+  if (request.value_case() == idb::InstallRequest::ValueCase::kNameHint) {
     name = nsstring_from_c_string(request.name_hint());
     stream->Read(&request);
   }
-  payload = request.payload();
+
+  // Now that we've read the header, the next item in the stream must be the payload.
+  if (request.value_case() != idb::InstallRequest::ValueCase::kPayload) {
+    return [[FBIDBError
+      describeFormat:@"Expected the next item in the stream to be a payload"]
+      failFuture];
+  }
+
+  // The first item in the payload stream may be the compression format, if it's not assume the default.
   FBCompressionFormat compression = FBCompressionFormatGZIP;
+  idb::Payload payload = request.payload();
   if (payload.source_case() == idb::Payload::kCompression) {
     compression = read_compression_format(payload);
     stream->Read(&request);
