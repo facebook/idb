@@ -20,14 +20,14 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Private
 
-+ (NSArray<FBDeveloperDiskImage *> *)allDiskImagesFromSearchPath:(NSString *)searchPath logger:(id<FBControlCoreLogger>)logger
++ (NSArray<FBDeveloperDiskImage *> *)allDiskImagesFromSearchPath:(NSString *)searchPath xcodeVersion:(NSOperatingSystemVersion)xcodeVersion logger:(id<FBControlCoreLogger>)logger
 {
   NSMutableArray<FBDeveloperDiskImage *> *images = NSMutableArray.array;
   [logger logFormat:@"Attempting to find Disk Images at path %@", searchPath];
   for (NSString *fileName in [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil] ?: @[]) {
     NSString *resolvedPath = [searchPath stringByAppendingPathComponent:fileName];
     NSError *error = nil;
-    FBDeveloperDiskImage *image = [self diskImageAtPath:resolvedPath error:&error];
+    FBDeveloperDiskImage *image = [self diskImageAtPath:resolvedPath xcodeVersion:xcodeVersion error:&error];
     if (!image) {
       [logger logFormat:@"%@ does not contain a valid disk image", error];
       continue;
@@ -37,7 +37,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   return images;
 }
 
-+ (nullable FBDeveloperDiskImage *)diskImageAtPath:(NSString *)path error:(NSError **)error
++ (nullable FBDeveloperDiskImage *)diskImageAtPath:(NSString *)path xcodeVersion:(NSOperatingSystemVersion)xcodeVersion error:(NSError **)error
 {
   NSString *diskImagePath = [path stringByAppendingPathComponent:@"DeveloperDiskImage.dmg"];
   if (![NSFileManager.defaultManager fileExistsAtPath:diskImagePath]) {
@@ -53,7 +53,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
       fail:error];
   }
   NSOperatingSystemVersion version = [FBOSVersion operatingSystemVersionFromName:path.lastPathComponent];
-  return [[FBDeveloperDiskImage alloc] initWithDiskImagePath:diskImagePath signature:signature version:version];
+  return [[FBDeveloperDiskImage alloc] initWithDiskImagePath:diskImagePath signature:signature version:version xcodeVersion:xcodeVersion];
 }
 
 #pragma mark Initializers
@@ -69,12 +69,12 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   static dispatch_once_t onceToken;
   static NSArray<FBDeveloperDiskImage *> *images = nil;
   dispatch_once(&onceToken, ^{
-    images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"] logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
   });
   return images;
 }
 
-- (instancetype)initWithDiskImagePath:(NSString *)diskImagePath signature:(NSData *)signature version:(NSOperatingSystemVersion)version
+- (instancetype)initWithDiskImagePath:(NSString *)diskImagePath signature:(NSData *)signature version:(NSOperatingSystemVersion)version xcodeVersion:(NSOperatingSystemVersion)xcodeVersion
 {
   self = [super init];
   if (!self) {
@@ -84,6 +84,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   _diskImagePath = diskImagePath;
   _signature = signature;
   _version = version;
+  _xcodeVersion = xcodeVersion;
 
   return self;
 }
