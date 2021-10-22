@@ -53,7 +53,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, id<F
 
 #pragma mark FBDeveloperDiskImageCommands Implementation
 
-static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
+static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
 
 - (FBFuture<NSArray<FBDeveloperDiskImage *> *> *)mountedDiskImages
 {
@@ -66,7 +66,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
 
 - (FBFuture<FBDeveloperDiskImage *> *)mountDiskImage:(FBDeveloperDiskImage *)diskImage
 {
-  return [self mountDeveloperDiskImage:diskImage imageType:DiskImageTypeDeveloper failIfMounted:YES];
+  return [self mountDeveloperDiskImage:diskImage imageType:DiskImageTypeDeveloper];
 }
 
 - (FBFuture<NSNull *> *)unmountDiskImage:(FBDeveloperDiskImage *)diskImage
@@ -101,7 +101,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
   if (!diskImage) {
     return [FBFuture futureWithError:error];
   }
-  return [self mountDeveloperDiskImage:diskImage imageType:DiskImageTypeDeveloper failIfMounted:NO];
+  return [self mountDeveloperDiskImage:diskImage imageType:DiskImageTypeDeveloper];
 }
 
 #pragma mark Private
@@ -152,7 +152,7 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
     }];
 }
 
-- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType failIfMounted:(BOOL)failIfMounted
+- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
 {
   return [[self.device
     connectToDeviceWithPurpose:@"mount_disk_image"]
@@ -168,13 +168,10 @@ static const int DiskImageAlreadyMountedCode = -402653066;  // 0xe8000076 in hex
         (AMDeviceProgressCallback) MountCallback,
         (__bridge void *) (device)
       );
-      if (status == DiskImageAlreadyMountedCode) {
-        if (failIfMounted) {
-          return [[FBDeviceControlError
-            describeFormat:@"Failed to mount image '%@', a disk image is already mounted", diskImage]
-            failFuture];
-        }
-        [device.logger logFormat:@"There is a disk image already mounted. Assuming that it is correct...."];
+      if (status == DiskImageMountingError) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]
+          failFuture];
       }
       else if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
