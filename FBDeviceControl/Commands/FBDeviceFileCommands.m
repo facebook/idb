@@ -304,7 +304,7 @@
 
 @end
 
-static NSString *const MountedDeveloperDirectory = @"Developer";
+static NSString *const MountRootPath = @"mounted";
 
 @interface FBDeviceFileCommands_DiskImages : NSObject <FBFileContainer>
 
@@ -358,54 +358,122 @@ static NSString *const MountedDeveloperDirectory = @"Developer";
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
-  if (![destinationPath hasPrefix:MountedDeveloperDirectory]) {
+  if (![destinationPath hasPrefix:MountRootPath]) {
     return [[FBDeviceControlError
-      describeFormat:@"%@ only mounts can be moved", destinationPath]
+      describeFormat:@"%@ only moving into mounts is supported.", destinationPath]
       failFuture];
   }
-  NSArray<FBDeveloperDiskImage *> *images = self.commands.availableDeveloperDiskImages;
-  NSDictionary<NSString *, FBDeveloperDiskImage *> *imagesByPath = [NSDictionary dictionaryWithObjects:images forKeys:[images valueForKey:@"diskImagePath"]];
-  FBDeveloperDiskImage *image = imagesByPath[sourcePath];
+  NSDictionary<NSString *, FBDeveloperDiskImage *> *mountableImagesByPath = self.mountableDiskImagesByPath;
+  FBDeveloperDiskImage *image = mountableImagesByPath[sourcePath];
   if (!image) {
     return [[FBControlCoreError
-      describeFormat:@"%@ is not one of %@", sourcePath, [FBCollectionInformation oneLineDescriptionFromArray:images]]
+      describeFormat:@"%@ is not one of %@", sourcePath, [FBCollectionInformation oneLineDescriptionFromArray:mountableImagesByPath.allKeys]]
       failFuture];
   }
   return [[self.commands
-    mountDeveloperDiskImage:image]
+    mountDiskImage:image]
     mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
-  if (![path hasPrefix:MountedDeveloperDirectory]) {
+  if (![path hasPrefix:MountRootPath]) {
     return [[FBDeviceControlError
       describeFormat:@"%@ cannot be removed, only mounts can be removed", path]
       failFuture];
   }
-  return [[self.commands
-    unmountDeveloperDiskImage]
-    mapReplace:NSNull.null];
+  return [[self
+    mountedDiskImages]
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSDictionary<NSString *, FBDeveloperDiskImage *> *mountedImages) {
+      FBDeveloperDiskImage *image = mountedImages[path];
+      if (!image) {
+        return [[FBDeviceControlError
+          describeFormat:@"%@ is not one of the available mounts %@", path, [FBCollectionInformation oneLineDescriptionFromArray:mountedImages.allKeys]]
+          failFuture];
+      }
+      return [self.commands unmountDiskImage:image];
+    }];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
-  if ([path isEqualToString:MountedDeveloperDirectory]) {
-    return [[self.commands
-      mountedDeveloperDiskImage]
-      onQueue:self.queue map:^(FBDeveloperDiskImage *image) {
-        return @[image.diskImagePath];
-      }];
-  }
-  return [[self.commands
-    mountedDeveloperDiskImage]
-    onQueue:self.queue chain:^(FBFuture *result) {
-      NSMutableArray<NSString *> *images = [[self.commands.availableDeveloperDiskImages valueForKey:@"diskImagePath"] mutableCopy];
-      if (result.result) {
-        [images addObject:MountedDeveloperDirectory];
+  return [[self
+    allDiskImagePaths]
+    onQueue:self.queue fmap:^(NSArray<NSString *> *diskImagePaths) {
+      NSError *error = nil;
+      NSArray<NSString *> *traversedPaths = [FBDeviceFileCommands_DiskImages traverseAndDescendPaths:diskImagePaths path:path error:&error];
+      if (!traversedPaths) {
+        return [FBFuture futureWithError:error];
       }
-      return [FBFuture futureWithResult:images];
+      return  [FBFuture futureWithResult:traversedPaths];
     }];
+}
+
+#pragma mark Private
+
+- (NSDictionary<NSString *, FBDeveloperDiskImage *> *)mountableDiskImagesByPath
+{
+  NSArray<FBDeveloperDiskImage *> *images = self.commands.mountableDiskImages;
+  NSMutableDictionary<NSString *, FBDeveloperDiskImage *> *mapping = NSMutableDictionary.dictionary;
+  for (FBDeveloperDiskImage *image in images) {
+    NSString *mapped = [FBDeviceFileCommands_DiskImages filePathForImage:image];
+    mapping[mapped] = image;
+  }
+  return mapping;
+}
+
+- (FBFuture<NSDictionary<NSString *, FBDeveloperDiskImage *> *> *)mountedDiskImages
+{
+  return [[self.commands
+    mountedDiskImages]
+    onQueue:self.queue map:^(NSArray<FBDeveloperDiskImage *> *mountedImages) {
+      NSMutableDictionary<NSString *, FBDeveloperDiskImage *> *imagesByPath = NSMutableDictionary.dictionary;
+      for (FBDeveloperDiskImage *image in mountedImages) {
+        NSString *mountedFilePath = [MountRootPath stringByAppendingPathComponent:[FBDeviceFileCommands_DiskImages filePathForImage:image]];
+        imagesByPath[mountedFilePath] = image;
+      }
+      return [imagesByPath copy];
+    }];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)allDiskImagePaths
+{
+  return [[self
+    mountedDiskImages]
+    onQueue:self.queue map:^(NSDictionary<NSString *, FBDeveloperDiskImage *> *mountedDiskImages) {
+      // Construct the full list of all paths, including the mounted & available images.
+      NSMutableArray<NSString *> *paths = NSMutableArray.array;
+      [paths addObjectsFromArray:self.mountableDiskImagesByPath.allKeys];
+      [paths addObject:MountRootPath];
+      [paths addObjectsFromArray:mountedDiskImages.allKeys];
+      return [paths copy];
+    }];
+}
+
++ (NSArray<NSString *> *)traverseAndDescendPaths:(NSArray<NSString *> *)paths path:(NSString *)path error:(NSError **)error
+{
+  NSArray<NSString *> *pathComponents = [path pathComponents];
+  NSString *firstPath = [pathComponents firstObject];
+  if (pathComponents.count == 1 && ([firstPath isEqualToString:@"."] || [firstPath isEqualToString:@"/"])) {
+    return paths;
+  }
+  NSMutableArray<NSString *> *traversedPaths = NSMutableArray.array;
+  for (NSString *candidatePath in paths) {
+    if (![candidatePath hasPrefix:path]) {
+      continue;
+    }
+    NSString *relativePath = [candidatePath substringFromIndex:path.length];
+    if ([relativePath hasPrefix:@"/"]) {
+      relativePath = [relativePath substringFromIndex:1];
+    }
+    [traversedPaths addObject:relativePath];
+  }
+  return [traversedPaths copy];
+}
+
++ (NSString *)filePathForImage:(FBDeveloperDiskImage *)image
+{
+  return [NSString stringWithFormat:@"%ld.%ld/%@", image.version.majorVersion, image.version.minorVersion, image.diskImagePath.lastPathComponent];
 }
 
 @end
