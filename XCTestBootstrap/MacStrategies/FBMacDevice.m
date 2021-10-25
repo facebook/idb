@@ -274,7 +274,7 @@
     return [FBFuture futureWithResult:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;
-  return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown]];
+  return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown dataContainer:nil]];
 }
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
@@ -303,7 +303,7 @@
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
-    [result addObject:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac]];
+    [result addObject:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac dataContainer:nil]];
   }
   return [FBFuture futureWithResult:result];
 }
@@ -316,7 +316,7 @@
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
-  FBInstalledApplication *installedApp = [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac];
+  FBInstalledApplication *installedApp = [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac dataContainer:nil];
   return [FBFuture futureWithResult:installedApp];
 }
 

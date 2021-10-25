@@ -350,7 +350,8 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:installType];
+    installType:installType
+    dataContainer:nil];
 }
 
 + (NSArray<NSString *> *)installedApplicationLookupAttributes

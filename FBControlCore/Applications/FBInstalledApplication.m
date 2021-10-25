@@ -26,11 +26,6 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
 
 #pragma mark Initializers
 
-+ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType
-{
-  return [self installedApplicationWithBundle:bundle installType:installType dataContainer:nil];
-}
-
 + (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
 {
   return [[self alloc] initWithBundle:bundle installType:installType dataContainer:dataContainer];
