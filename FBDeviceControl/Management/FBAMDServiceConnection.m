@@ -93,25 +93,6 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
   return [self receiveMessageWithError:error];
 }
 
-#pragma mark Streams
-
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
-{
-  return [FBFuture
-    onQueue:queue resolve:^{
-      void *buffer = alloca(ReadBufferSize);
-      while (true) {
-        ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, ReadBufferSize);
-        if (readBytes < 1) {
-          [consumer consumeEndOfFile];
-          return FBFuture.empty;
-        }
-        NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
-        [consumer consumeData:data];
-      }
-    }];
-}
-
 #pragma mark Lifecycle
 
 - (BOOL)invalidateWithError:(NSError **)error
@@ -282,6 +263,23 @@ static size_t ReadBufferSize = 1024 * 4;
   }
   memcpy(destination, data.bytes, data.length);
   return YES;
+}
+
+- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
+{
+  return [FBFuture
+    onQueue:queue resolve:^{
+      void *buffer = alloca(ReadBufferSize);
+      while (true) {
+        ssize_t readBytes = [self recieve:buffer size:ReadBufferSize];
+        if (readBytes < 1) {
+          [consumer consumeEndOfFile];
+          return FBFuture.empty;
+        }
+        NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
+        [consumer consumeData:data];
+      }
+    }];
 }
 
 @end

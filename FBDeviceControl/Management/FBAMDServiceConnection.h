@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBAMDServiceConnectionTransfer <NSObject>
 
+#pragma mark Read/Write
+
 /**
  Synchronously send bytes on the connection.
 
@@ -56,6 +58,17 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if all bytes read, NO otherwise.
  */
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
+
+#pragma mark Streams
+
+/**
+ Reads the stream on the given queue, until exhausted.
+
+ @param consumer the consumer to use.
+ @param queue the queue to consume on.
+ @return a Future that resolves once consumption has finished.
+*/
+- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
 @end
 
@@ -123,17 +136,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return the message received, if successful.
  */
 - (nullable id)sendAndReceiveMessage:(id)message error:(NSError **)error;
-
-#pragma mark Streams
-
-/**
- Reads the stream on the given queue, until exhausted.
-
- @param consumer the consumer to use.
- @param queue the queue to consume on.
- @return a Future that resolves once consumption has finished.
-*/
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
 #pragma mark Lifecycle
 
