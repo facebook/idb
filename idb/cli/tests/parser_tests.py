@@ -150,7 +150,9 @@ class TestParser(TestCase):
         app_path = "testApp.app"
         compression = None
         await cli_main(cmd_input=["install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path, compression)
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path, make_debuggable=None, compression=compression
+        )
 
     async def test_install_with_bad_compression(self) -> None:
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
@@ -165,7 +167,9 @@ class TestParser(TestCase):
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
         await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path, Compression.ZSTD)
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path, make_debuggable=None, compression=Compression.ZSTD
+        )
 
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()

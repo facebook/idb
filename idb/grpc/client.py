@@ -336,7 +336,8 @@ class Client(ClientBase):
         self,
         bundle: Bundle,
         destination: Destination,
-        compression: Optional[Compression] = None,
+        compression: Optional[Compression],
+        make_debuggable: Optional[bool],
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -375,6 +376,10 @@ class Client(ClientBase):
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
+            if make_debuggable is not None:
+                await stream.send_message(
+                    InstallRequest(make_debuggable=make_debuggable)
+                )
             if compression is not None:
                 await stream.send_message(
                     InstallRequest(
@@ -591,30 +596,43 @@ class Client(ClientBase):
         self,
         bundle: Bundle,
         compression: Optional[Compression] = None,
+        make_debuggable: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=bundle, destination=InstallRequest.APP, compression=compression
+            bundle=bundle,
+            destination=InstallRequest.APP,
+            compression=compression,
+            make_debuggable=make_debuggable,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=xctest, destination=InstallRequest.XCTEST
+            bundle=xctest,
+            destination=InstallRequest.XCTEST,
+            compression=None,
+            make_debuggable=None,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=dylib, destination=InstallRequest.DYLIB
+            bundle=dylib,
+            destination=InstallRequest.DYLIB,
+            compression=None,
+            make_debuggable=None,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=dsym, destination=InstallRequest.DSYM
+            bundle=dsym,
+            destination=InstallRequest.DSYM,
+            compression=None,
+            make_debuggable=None,
         ):
             yield response
 
@@ -623,7 +641,10 @@ class Client(ClientBase):
         self, framework_path: Bundle
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=framework_path, destination=InstallRequest.FRAMEWORK
+            bundle=framework_path,
+            destination=InstallRequest.FRAMEWORK,
+            compression=None,
+            make_debuggable=None,
         ):
             yield response
 
