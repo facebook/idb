@@ -358,10 +358,17 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBDebugServer>> *)debugserver_start:(NSString *)bundleID
 {
+  id<FBDebuggerCommands> commands = (id<FBDebuggerCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDebuggerCommands)]) {
+    return [[FBControlCoreError
+      describeFormat:@"Target doesn't conform to FBDebuggerCommands protocol %@", commands]
+      failFuture];
+  }
+
   return [[self
     debugserver_prepare:bundleID]
     onQueue:self.target.workQueue fmap:^(FBBundleDescriptor *application) {
-      return [self.target launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
+      return [commands launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
     }];
 }
 
