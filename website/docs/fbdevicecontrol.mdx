@@ -55,11 +55,66 @@ On non-jailbroken devices, there is no way of getting an `AFC` connection for th
 
 ## Developer Disk Images
 
-Whilst iOS by default has a number of different services, not all of them are present on the device. In order to augment the iOS Device with additional functionality to an attached macOS host, [Xcode bundles a "Developer Disk Image"](https://github.com/facebook/idb/blob/main/FBControlCore/Utility/FBDeveloperDiskImage.m).
+Whilst iOS by default has a number of different lockdown services provided within the base iOS image, not all of the functionality that is available within Xcode is implemented from services in the base OS. In order to augment the iOS Device with additional functionality to an attached macOS host, [Xcode bundles a "Developer Disk Image"](https://github.com/facebook/idb/blob/main/FBControlCore/Utility/FBDeveloperDiskImage.m).
 
-This is a regular `.dmg` file, which can be opened on macOS. Within this disk image is a number of executables, libraries and `plist`s describing the lockdown services that get added to the iOS Device upon mounting them on the device. `FBDeviceControl` provides an API for manipulating the [disk image manipulation functions in `MobileDevice.framework`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceDeveloperDiskImageCommands.m). It is not possible to mount arbitrary disk image on an iOS Device. Every disk image and it's binaries are signed by Apple. There are also different disk images for different versions of iOS, presumably because the lockdown services interact with APIs that can change over iOS versions.
+This is a regular `.dmg` file, which can be opened on macOS. Within this disk image is a number of executables, libraries and `plist`s describing the lockdown services that get added to the iOS Device upon mounting them on the device. `FBDeviceControl` provides an API for manipulating the [disk image manipulation functions in `MobileDevice.framework`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceDeveloperDiskImageCommands.m). It is not possible to mount arbitrary disk image on an iOS Device as every disk image and it's binaries are signed by Apple, only disk images that have genuine Apple signing are allowed to be mounted. There's some evidence within `MobileDevice.framework` to suggest that Apple uses these Disk Images internally for developing iOS itself.
+The "Developer Disk Image"s may be different for each major/minor iOS verion. This is presumably because the lockdown services interact with APIs on the device that can change in iOS versions. The services that are contained within the Developer Disk Image are associated with functionality that is specific to Xcode, Instruments and Accessibility Inspector. The [usage of and availability of these services can change over Xcode versions](https://github.com/facebook/idb/commit/5b4415a4fa20a49e03f7596cf5fc296efd25df42), so there may be differences in the implementation of clients depending on the protocol version of the service that the client is communicating with.
 
-The services that are contained within the Developer Disk Image are associated with functionality that is specific to Xcode, Instruments and Accessibility Inspector. This also means that the usage of these services can vary over versions of Xcode (therefore the Disk Images) instead of over iOS versions. As a result, there may be differences in the client-side implementation of the client depending on the protocol version of the service to which the client is communicating.
+### Manipulating Disk Images
+
+Any `FBDeviceControl` functionality that depends on a service provided by a "Developer Disk Image" will implicitly search for and subsequently mount the most appropriate disk image for the attached iOS device. `idb` also provides ways of manually managing the mounting of these disk images through the "disk image container" of file commands:
+
+```
+# List all of the available disk images that are present within the current Xcode, as well as the current mounted image/s (if present).
+# No images are mounted as the "mounted" path is empty.
+$ idb file ls --disk-images .
+15.0/DeveloperDiskImage.dmg
+12.1/DeveloperDiskImage.dmg
+10.0/DeveloperDiskImage.dmg
+9.2/DeveloperDiskImage.dmg
+9.1/DeveloperDiskImage.dmg
+14.2/DeveloperDiskImage.dmg
+13.4/DeveloperDiskImage.dmg
+11.3/DeveloperDiskImage.dmg
+13.0/DeveloperDiskImage.dmg
+12.2/DeveloperDiskImage.dmg
+10.1/DeveloperDiskImage.dmg
+13.1/DeveloperDiskImage.dmg
+11.0/DeveloperDiskImage.dmg
+14.3/DeveloperDiskImage.dmg
+13.5/DeveloperDiskImage.dmg
+11.4/DeveloperDiskImage.dmg
+12.3/DeveloperDiskImage.dmg
+10.2/DeveloperDiskImage.dmg
+14.0/DeveloperDiskImage.dmg
+13.2/DeveloperDiskImage.dmg
+11.1/DeveloperDiskImage.dmg
+14.4/DeveloperDiskImage.dmg
+13.6/DeveloperDiskImage.dmg
+12.0/DeveloperDiskImage.dmg
+14.5/DeveloperDiskImage.dmg
+12.4/DeveloperDiskImage.dmg
+10.3/DeveloperDiskImage.dmg
+14.1/DeveloperDiskImage.dmg
+11.2/DeveloperDiskImage.dmg
+13.3/DeveloperDiskImage.dmg
+9.0/DeveloperDiskImage.dmg
+9.3/DeveloperDiskImage.dmg
+13.7/DeveloperDiskImage.dmg
+
+$ idb file ls --disk-images mounted
+
+# Mounting for the current iOS Version of the attached device (iOS 15.0 succeeds).
+$ idb file mv --disk-images 15.0/DeveloperDiskImage.dmg mounted
+
+# Now we can see that the image is mounted.
+$ idb file ls --disk-images mounted
+15.0/DeveloperDiskImage.dmg
+
+# Unmount the disk image by rm'ing it. The disk image is kept intact on the host, but is unmounted from the device.
+$ idb file rm --disk-images mounted/15.0/DeveloperDiskImage.dmg
+$ idb file ls --disk-images mounted
+```
 
 ## Instruments Service
 
