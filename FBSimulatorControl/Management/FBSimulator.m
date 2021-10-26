@@ -179,7 +179,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   };
 }
 
-- (BOOL) requiresBundlesToBeSigned {
+- (BOOL)requiresBundlesToBeSigned {
   return YES;
 }
 
