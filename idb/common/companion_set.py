@@ -46,7 +46,7 @@ async def _open_lockfile(filename: str) -> AsyncGenerator[None, None]:
         os.unlink(lock_path)
 
 
-class DirectCompanionManager:
+class CompanionSet:
     def __init__(
         self, logger: logging.Logger, state_file_path: str = IDB_STATE_FILE_PATH
     ) -> None:

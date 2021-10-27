@@ -10,8 +10,8 @@ import os
 from typing import AsyncGenerator, Dict, List, Optional
 
 from idb.common.companion import Companion, CompanionServerConfig
+from idb.common.companion_set import CompanionSet
 from idb.common.constants import BASE_IDB_FILE_PATH
-from idb.common.direct_companion_manager import DirectCompanionManager
 from idb.common.logging import log_call
 from idb.common.pid_saver import PidSaver
 from idb.common.types import (
@@ -41,7 +41,7 @@ class ClientManager(ClientManagerBase):
         self._logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
-        self._direct_companion_manager = DirectCompanionManager(logger=self._logger)
+        self._companion_set = CompanionSet(logger=self._logger)
         self._companion: Optional[Companion] = (
             Companion(
                 companion_path=companion_path,
@@ -77,7 +77,7 @@ class ClientManager(ClientManagerBase):
                 udid=udid,
                 is_local=True,
             )
-            await self._direct_companion_manager.add_companion(companion_info)
+            await self._companion_set.add_companion(companion_info)
             return companion_info
         return None
 
@@ -109,13 +109,13 @@ class ClientManager(ClientManagerBase):
                 )
                 return None
             self._logger.warning(f"Failed to describe {companion}, removing it")
-            await self._direct_companion_manager.remove_companion(companion.address)
+            await self._companion_set.remove_companion(companion.address)
             return None
 
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
         try:
-            companion_info = await self._direct_companion_manager.get_companion_info(
+            companion_info = await self._companion_set.get_companion_info(
                 target_udid=udid
             )
             self._logger.debug(f"Got existing companion {companion_info}")
@@ -146,7 +146,7 @@ class ClientManager(ClientManagerBase):
         self, only: Optional[OnlyFilter] = None
     ) -> List[TargetDescription]:
         (companions, local_targets) = await asyncio.gather(
-            self._direct_companion_manager.get_companions(),
+            self._companion_set.get_companions(),
             self._list_local_targets(only=only),
         )
         connected_targets = [
@@ -178,7 +178,7 @@ class ClientManager(ClientManagerBase):
             async with Client.build(address=destination, logger=self._logger) as client:
                 companion = client.companion
             self._logger.debug(f"Connected directly to {companion}")
-            await self._direct_companion_manager.add_companion(companion)
+            await self._companion_set.add_companion(companion)
             return companion
         else:
             companion = await self._spawn_companion_server(udid=destination)
@@ -189,9 +189,9 @@ class ClientManager(ClientManagerBase):
 
     @log_call()
     async def disconnect(self, destination: ConnectionDestination) -> None:
-        await self._direct_companion_manager.remove_companion(destination)
+        await self._companion_set.remove_companion(destination)
 
     @log_call()
     async def kill(self) -> None:
-        await self._direct_companion_manager.clear()
+        await self._companion_set.clear()
         PidSaver(logger=self._logger).kill_saved_pids()
