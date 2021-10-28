@@ -17,6 +17,7 @@ module.exports = {
     "fbsimulatorcontrol",
     "fbdevicecontrol",
     "test-execution",
+    "file-containers",
     "accessibility",
     "faqs"
   ]

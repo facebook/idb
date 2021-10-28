@@ -185,67 +185,7 @@ Please consult the [Test Execution section](test-execution) for understanding mo
 
 ## File commands
 
-The `idb file` commands allow for managing manipulating files on a target. File operations are applied to "containers", which allow manipulation of different iOS subsystems.
-
-| Switch | Description | Simulators | Devices |
-|--------|-------------|------------|---------|
-|`--bundle-id`|Apply file operations to the "Application Container" of the provided Bundle ID. This is otherwise known as the "Application Sandbox"| ✅ | ✅ (Only for Applications signed with a Developer Profile) |
-|`--media`|The container for Photos/Videos| ✅ | ✅ |
-|`--crashes`|The container for Crash/Diagnostic reports. This can be used to view and pull crash logs from a device | ❌ | ✅ |
-
-Not all commands will make sense for each container. For example, crash containers are read only. However, file operations provide a consisent abstraction on top of views of heirarchical data.
-
-### Copying files into a container
-
-```
-idb file push --bundle-id com.foo.bar src1.jpg src2.jpg dest_1
-```
-
-Copies one or more files from the host to the relative destination path within the container.
-
-
-### Copying files out of a container
-
-```
-idb file pull --bundle-id com.foo.bar src.txt dest.txt
-```
-
-Copies a single file from the container to the host.
-
-### Moving files within the container
-
-```
-idb file mv --bundle-id com.foo.bar src1.jpg src2.jpg dest_1
-```
-
-This will move two image files from the root of the container, to a destination subdirectory within the container.
-
-
-### Make a new directory
-
-```
-idb file mkdir --bundle-id com.foo.bar newdir
-```
-
-Creates a new folder within the apps data container.
-
-### Remove a path on a target
-
-```
-idb file rm PATH_A PATH_B --bundle-id BUNDLE_ID
-```
-
-Removes the specified paths within an apps data container.
-
-If a folder is specified to be deleted, all of its contents will be removed recursively.
-
-### List a path on a target
-
-```
-idb file ls --bundle-id com.foo.bar directory1 directory2
-```
-
-Returns a list of all the files present within one or more directories.
+The `idb file` commands allow for managing manipulating files on a target. File operations are applied to "containers", which allow manipulation of different iOS subsystems. File commands are documented within the [File Containers section](file-containers).
 
 ## Debug an app
 
