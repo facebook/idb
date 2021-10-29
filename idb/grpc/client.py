@@ -512,7 +512,10 @@ class Client(ClientBase):
             target=target,
             # Use the local understanding of the companion instead of the remote's.
             companion=CompanionInfo(
-                address=self.address, udid=target.udid, is_local=self.is_local
+                address=self.address,
+                udid=target.udid,
+                is_local=self.is_local,
+                pid=None,
             ),
             # Extract the companion metadata from the response.
             metadata=response.companion.metadata,

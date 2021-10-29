@@ -46,6 +46,7 @@ def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> Companion
         address=address,
         udid=companion.udid,
         is_local=companion.is_local,
+        pid=None,
         metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
     )
 

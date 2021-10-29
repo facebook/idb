@@ -59,7 +59,10 @@ INSTALLED_APP_INFO_FIXTURE = InstalledAppInfo(
     debuggable=True,
 )
 COMPANION_INFO_FIXTURE = CompanionInfo(
-    udid="MyUdid", address=TCPAddress(host="ThisMac", port=1234), is_local=False
+    udid="MyUdid",
+    address=TCPAddress(host="ThisMac", port=1234),
+    is_local=False,
+    pid=123,
 )
 TARGET_DESCRIPTION_FIXTURE = TargetDescription(
     udid="MyUdid",

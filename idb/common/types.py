@@ -126,6 +126,7 @@ ConnectionDestination = Union[str, Address]
 class CompanionInfo:
     udid: str
     is_local: bool
+    pid: Optional[int]
     address: Address
     metadata: LoggingMetadata = field(default_factory=dict)
 

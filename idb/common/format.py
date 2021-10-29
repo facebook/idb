@@ -232,12 +232,13 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
 
 def json_data_companions(
     companions: List[CompanionInfo],
-) -> List[Dict[str, Union[str, int]]]:
-    data: List[Dict[str, Union[str, int]]] = []
+) -> List[Dict[str, Union[str, Optional[int]]]]:
+    data: List[Dict[str, Union[str, Optional[int]]]] = []
     for companion in companions:
-        item: Dict[str, Union[str, int]] = {
+        item: Dict[str, Union[str, Optional[int]]] = {
             "udid": companion.udid,
             "is_local": companion.is_local,
+            "pid": companion.pid,
         }
         address = companion.address
         if isinstance(address, TCPAddress):
@@ -259,6 +260,7 @@ def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
                 else DomainSocketAddress(path=item["path"])
             ),
             is_local=item["is_local"],
+            pid=item.get("pid"),
         )
         for item in data
     ]

@@ -61,7 +61,7 @@ class ClientManager(ClientManagerBase):
         if target_type is None:
             return None
         self._logger.info(f"will attempt to spawn a companion for {udid}")
-        (_, port) = await companion.spawn_tcp_server(
+        (process, port) = await companion.spawn_tcp_server(
             config=CompanionServerConfig(
                 udid=udid,
                 only=target_type,
@@ -78,6 +78,7 @@ class ClientManager(ClientManagerBase):
             address=TCPAddress(host=host, port=port),
             udid=udid,
             is_local=True,
+            pid=process.pid,
         )
         await self._companion_set.add_companion(companion_info)
         return companion_info
