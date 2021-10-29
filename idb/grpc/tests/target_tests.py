@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from idb.common.types import CompanionInfo, TargetDescription, TCPAddress
+from idb.common.types import CompanionInfo, TargetDescription, TCPAddress, TargetType
 from idb.grpc.target import merge_connected_targets
 
 
@@ -18,7 +18,7 @@ class TargetTests(TestCase):
                     udid="a",
                     name="aa",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=None,
@@ -28,7 +28,7 @@ class TargetTests(TestCase):
                     udid="b",
                     name="bb",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=None,
@@ -38,7 +38,7 @@ class TargetTests(TestCase):
                     udid="c",
                     name="cc",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=None,
@@ -50,7 +50,7 @@ class TargetTests(TestCase):
                     udid="a",
                     name="aa",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
@@ -64,7 +64,7 @@ class TargetTests(TestCase):
                     udid="d",
                     name="dd",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
@@ -83,7 +83,7 @@ class TargetTests(TestCase):
                     udid="a",
                     name="aa",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(
@@ -97,7 +97,7 @@ class TargetTests(TestCase):
                     udid="b",
                     name="bb",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=None,
@@ -107,7 +107,7 @@ class TargetTests(TestCase):
                     udid="c",
                     name="cc",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=None,
@@ -117,7 +117,7 @@ class TargetTests(TestCase):
                     udid="d",
                     name="dd",
                     state=None,
-                    target_type=None,
+                    target_type=TargetType.SIMULATOR,
                     os_version=None,
                     architecture=None,
                     companion_info=CompanionInfo(

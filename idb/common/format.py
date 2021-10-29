@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
+    IdbException,
     AppProcessState,
     CompanionInfo,
     DomainSocketAddress,
@@ -20,8 +21,18 @@ from idb.common.types import (
     TCPAddress,
     TestActivity,
     TestRunInfo,
+    TargetType,
 )
 from treelib import Tree
+
+
+def target_type_from_string(output: str) -> TargetType:
+    normalized = output.lower()
+    if "sim" in normalized:
+        return TargetType.SIMULATOR
+    if "dev" in normalized:
+        return TargetType.DEVICE
+    raise IdbException(f"Could not interpret target type from {output}")
 
 
 def test_info_to_status(test: TestRunInfo) -> str:
@@ -183,7 +194,7 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
 def human_format_target_info(target: TargetDescription) -> str:
     target_info = (
         f"{target.name} | {target.udid} | {target.state}"
-        f" | {target.target_type} | {target.os_version} | {target.architecture} | "
+        f" | {target.target_type.value} | {target.os_version} | {target.architecture} | "
     )
     companion_info = target.companion_info
     if companion_info is None:
@@ -200,7 +211,7 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "name": target.name,
         "udid": target.udid,
         "state": target.state,
-        "type": target.target_type,
+        "type": target.target_type.value,
         "os_version": target.os_version,
         "architecture": target.architecture,
     }
@@ -269,7 +280,7 @@ def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescript
         name=parsed["name"],
         model=parsed.get("model"),
         state=parsed.get("state"),
-        target_type=parsed.get("type"),
+        target_type=target_type_from_string(parsed["type"]),
         os_version=parsed.get("os_version"),
         architecture=parsed.get("architecture"),
         companion_info=None,

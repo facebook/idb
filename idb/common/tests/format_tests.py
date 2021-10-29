@@ -18,6 +18,7 @@ from idb.common.types import (
     TargetDescription,
     TCPAddress,
     TestActivity,
+    TargetType,
     TestRunFailureInfo,
     TestRunInfo,
 )
@@ -64,7 +65,7 @@ TARGET_DESCRIPTION_FIXTURE = TargetDescription(
     udid="MyUdid",
     name="MyName",
     state="Started?",
-    target_type="iOS",
+    target_type=TargetType.SIMULATOR,
     os_version="1",
     architecture="arm89",
     companion_info=None,

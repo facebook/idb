@@ -146,8 +146,8 @@ DeviceDetails = Mapping[str, Union[int, str]]
 class TargetDescription:
     udid: str
     name: str
+    target_type: TargetType
     state: Optional[str]
-    target_type: Optional[str]
     os_version: Optional[str]
     architecture: Optional[str]
     companion_info: Optional[CompanionInfo]

@@ -160,7 +160,7 @@ class TargetDescribeCommand(ClientCommand):
 
 
 _STRING_TO_ONLY: Mapping[str, TargetType] = {
-    target_type.name.lower(): target_type for target_type in list(TargetType)
+    target_type.value: target_type for target_type in list(TargetType)
 }
 
 
