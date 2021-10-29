@@ -21,7 +21,6 @@ from idb.common.format import (
     target_descriptions_from_json,
 )
 from idb.common.logging import log_call
-from idb.common.pid_saver import PidSaver
 from idb.common.types import (
     Companion as CompanionBase,
     ECIDFilter,
@@ -111,7 +110,6 @@ class Companion(CompanionBase):
         self._companion_path = companion_path
         self._device_set_path = device_set_path
         self._logger = logger
-        self._pid_saver = PidSaver(logger=logger)
 
     @asynccontextmanager
     async def _start_companion_command(

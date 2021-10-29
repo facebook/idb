@@ -20,7 +20,6 @@ class CompanionTests(TestCase):
             companion_path="idb_path", device_set_path=None, logger=mock.Mock()
         )
         spawner._log_file_path = mock.Mock()
-        spawner._pid_saver = mock.Mock()
         udid = "someUdid"
         with mock.patch(
             "idb.common.companion.asyncio.create_subprocess_exec",

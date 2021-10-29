@@ -13,7 +13,6 @@ from idb.common.companion import Companion, CompanionServerConfig
 from idb.common.companion_set import CompanionSet
 from idb.common.constants import BASE_IDB_FILE_PATH
 from idb.common.logging import log_call
-from idb.common.pid_saver import PidSaver
 from idb.common.types import (
     ClientManager as ClientManagerBase,
     CompanionInfo,
@@ -202,4 +201,3 @@ class ClientManager(ClientManagerBase):
     @log_call()
     async def kill(self) -> None:
         await self._companion_set.clear()
-        PidSaver(logger=self._logger).kill_saved_pids()
