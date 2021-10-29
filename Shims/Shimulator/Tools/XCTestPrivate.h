@@ -176,6 +176,7 @@ struct __va_list_tag {
 - (void)recordFailureWithDescription:(id)arg1 inFile:(id)arg2 atLine:(NSUInteger)arg3 expected:(BOOL)arg4;
 - (void)setInvocation:(id)arg1;
 - (id)invocation;
+- (NSString *)languageAgnosticTestMethodName;
 - (void)dealloc;
 - (id)description;
 - (id)name;
