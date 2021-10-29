@@ -9,6 +9,7 @@ import os
 from unittest import mock
 
 from idb.common.companion import Companion, CompanionServerConfig
+from idb.common.types import TargetType
 from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
 
 
@@ -35,6 +36,7 @@ class CompanionTests(TestCase):
             (_, port) = await spawner.spawn_tcp_server(
                 config=CompanionServerConfig(
                     udid=udid,
+                    only=TargetType.SIMULATOR,
                     log_file_path=None,
                     cwd=None,
                     tmp_path=None,
@@ -48,6 +50,8 @@ class CompanionTests(TestCase):
                 "someUdid",
                 "--grpc-port",
                 "0",
+                "--only",
+                "simulator",
                 stdout=mock.ANY,
                 stderr=mock.ANY,
                 stdin=mock.ANY,

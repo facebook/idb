@@ -97,6 +97,7 @@ async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> 
 @dataclass(frozen=True)
 class CompanionServerConfig:
     udid: str
+    only: OnlyFilter
     log_file_path: Optional[str]
     cwd: Optional[str]
     tmp_path: Optional[str]
@@ -188,11 +189,15 @@ class Companion(CompanionBase):
                 "Listing available targets on this host and spawning "
                 "companions will not work"
             )
-        arguments: List[str] = [
-            self._companion_path,
-            "--udid",
-            config.udid,
-        ] + bind_arguments
+        arguments: List[str] = (
+            [
+                self._companion_path,
+                "--udid",
+                config.udid,
+            ]
+            + bind_arguments
+            + _only_arg_from_filter(config.only)
+        )
         log_file_path = config.log_file_path
         if log_file_path is None:
             log_file_path = self._log_file_path(config.udid)

@@ -21,6 +21,7 @@ from idb.common.types import (
     ConnectionDestination,
     DomainSocketAddress,
     IdbException,
+    TargetType,
     TargetDescription,
     TCPAddress,
 )
@@ -57,29 +58,30 @@ class ClientManager(ClientManagerBase):
         companion = self._companion
         if companion is None:
             return None
-        local_target_available = await self._is_local_target_available(udid=udid)
-        if local_target_available or udid == "mac":
-            self._logger.info(f"will attempt to spawn a companion for {udid}")
-            (_, port) = await companion.spawn_tcp_server(
-                config=CompanionServerConfig(
-                    udid=udid,
-                    log_file_path=None,
-                    cwd=None,
-                    tmp_path=None,
-                    reparent=True,
-                ),
-                port=None,
-            )
-            self._logger.info(f"Companion at port {port} spawned for {udid}")
-            host = "localhost"
-            companion_info = CompanionInfo(
-                address=TCPAddress(host=host, port=port),
+        target_type = await self._local_target_type(udid=udid)
+        if target_type is None:
+            return None
+        self._logger.info(f"will attempt to spawn a companion for {udid}")
+        (_, port) = await companion.spawn_tcp_server(
+            config=CompanionServerConfig(
                 udid=udid,
-                is_local=True,
-            )
-            await self._companion_set.add_companion(companion_info)
-            return companion_info
-        return None
+                only=target_type,
+                log_file_path=None,
+                cwd=None,
+                tmp_path=None,
+                reparent=True,
+            ),
+            port=None,
+        )
+        self._logger.info(f"Companion at port {port} spawned for {udid}")
+        host = "localhost"
+        companion_info = CompanionInfo(
+            address=TCPAddress(host=host, port=port),
+            udid=udid,
+            is_local=True,
+        )
+        await self._companion_set.add_companion(companion_info)
+        return companion_info
 
     async def _list_local_targets(
         self, only: Optional[OnlyFilter]
@@ -89,10 +91,16 @@ class ClientManager(ClientManagerBase):
             return []
         return await companion.list_targets(only=only)
 
-    async def _is_local_target_available(self, udid: str) -> bool:
-        targets = await self._list_local_targets(only=None)
-        udids = {target.udid for target in targets}
-        return udid in udids
+    async def _local_target_type(self, udid: str) -> Optional[TargetType]:
+        if udid == "mac":
+            return TargetType.MAC
+        targets = {
+            target.udid: target for target in await self._list_local_targets(only=None)
+        }
+        target = targets.get(udid)
+        if target is None:
+            return None
+        return target.target_type
 
     async def _companion_to_target(
         self, companion: CompanionInfo
