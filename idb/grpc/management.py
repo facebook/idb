@@ -7,6 +7,7 @@
 import asyncio
 import logging
 import os
+import signal
 from typing import AsyncGenerator, Dict, List, Optional
 
 from idb.common.companion import Companion, CompanionServerConfig
@@ -201,4 +202,11 @@ class ClientManager(ClientManagerBase):
 
     @log_call()
     async def kill(self) -> None:
-        await self._companion_set.clear()
+        cleared = await self._companion_set.clear()
+        self._logger.info(f"Cleared stored companion set {cleared}")
+        for companion in cleared:
+            pid = companion.pid
+            if pid is None:
+                continue
+            self._logger.info(f"Killing spawned companion {companion}")
+            os.kill(pid, signal.SIGKILL)

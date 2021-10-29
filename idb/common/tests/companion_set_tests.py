@@ -130,18 +130,26 @@ class CompanionSetTests(TestCase):
 
     async def test_add_then_clear(self) -> None:
         async for manager in self._managers():
-            companion = CompanionInfo(
+            first = CompanionInfo(
                 udid="asdasda",
                 address=TCPAddress(host="foohost", port=123),
                 is_local=False,
                 pid=None,
             )
-            await manager.add_companion(companion)
+            second = CompanionInfo(
+                udid="fooo",
+                address=DomainSocketAddress(path="/bar/bar"),
+                is_local=False,
+                pid=324,
+            )
+            await manager.add_companion(first)
+            await manager.add_companion(second)
             companions = await manager.get_companions()
-            self.assertEqual(companions, [companion])
-            await manager.clear()
+            self.assertEqual(companions, [first, second])
+            cleared = await manager.clear()
             companions = await manager.get_companions()
             self.assertEqual(companions, [])
+            self.assertEqual(cleared, [first, second])
 
     async def test_ambiguity_when_no_udid_multiple_companions(self) -> None:
         async for manager in self._managers():

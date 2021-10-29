@@ -109,9 +109,11 @@ class CompanionSet:
             companions.append(companion)
             return None
 
-    async def clear(self) -> None:
+    async def clear(self) -> List[CompanionInfo]:
         async with self._use_stored_companions() as companions:
+            cleared = list(companions)
             companions.clear()
+            return cleared
 
     async def get_companion_info(self, target_udid: Optional[str]) -> CompanionInfo:
         async with self._use_stored_companions() as companions:
