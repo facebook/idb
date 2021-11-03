@@ -101,6 +101,7 @@ from idb.grpc.idb_pb2 import (
     ListAppsRequest,
     Location,
     LogRequest,
+    SendNotificationRequest,
     LsRequest,
     GetSettingRequest,
     LOCALE as LocaleSetting,
@@ -496,6 +497,15 @@ class Client(ClientBase):
         await self.stub.set_location(
             SetLocationRequest(
                 location=Location(latitude=latitude, longitude=longitude)
+            )
+        )
+
+    @log_and_handle_exceptions
+    async def send_notification(self, bundle_id: str, json_payload: str) -> None:
+        await self.stub.send_notification(
+            SendNotificationRequest(
+                bundle_id=bundle_id,
+                json_payload=json_payload,
             )
         )
 

@@ -67,6 +67,7 @@ from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
+from idb.cli.commands.notification import SendNotificationCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import (
     SetPreferenceCommand,
@@ -217,6 +218,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         UrlOpenCommand(),
         KeychainClearCommand(),
         LocationSetCommand(),
+        SendNotificationCommand(),
         ApproveCommand(),
         TargetConnectCommand(),
         TargetDisconnectCommand(),

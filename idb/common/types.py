@@ -565,6 +565,10 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def send_notification(self, bundle_id: str, json_payload: str) -> None:
+        pass
+
+    @abstractmethod
     async def approve(
         self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
     ) -> None:
