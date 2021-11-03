@@ -14,6 +14,7 @@ from idb.common.types import (
     IdbException,
     AppProcessState,
     CompanionInfo,
+    DebuggerInfo,
     DomainSocketAddress,
     InstalledAppInfo,
     InstalledTestInfo,
@@ -310,5 +311,12 @@ def json_format_installed_test_info(test: InstalledTestInfo) -> str:
         "bundle_id": test.bundle_id,
         "name": test.name,
         "architectures": list(test.architectures) if test.architectures else None,
+    }
+    return json.dumps(data)
+
+
+def json_format_debugger_info(info: DebuggerInfo) -> str:
+    data = {
+        "pid": info.pid,
     }
     return json.dumps(data)

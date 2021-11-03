@@ -257,6 +257,11 @@ class InstalledTestInfo:
     architectures: Optional[Set[str]]
 
 
+@dataclass(frozen=True)
+class DebuggerInfo:
+    pid: int
+
+
 class HIDDirection(Enum):
     DOWN = 0
     UP = 1

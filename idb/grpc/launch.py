@@ -7,6 +7,8 @@
 import asyncio
 import sys
 
+from idb.common.format import json_format_debugger_info
+from idb.common.types import DebuggerInfo
 from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse
 from idb.grpc.stream import Stream
 
@@ -21,6 +23,11 @@ async def drain_launch_stream(stream: Stream[LaunchRequest, LaunchResponse]) -> 
             elif message.interface == LaunchResponse.STDERR:
                 sys.stderr.buffer.write(pipe.data)
                 sys.stderr.buffer.flush()
+        debugger_info = message.debugger
+        if debugger_info:
+            info = DebuggerInfo(pid=debugger_info.pid)
+            sys.stdout.buffer.write(json_format_debugger_info(info).encode())
+            sys.stdout.buffer.flush()
 
 
 async def end_launch_stream(
