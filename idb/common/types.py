@@ -7,11 +7,13 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
+from asyncio import StreamWriter, StreamReader
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
+    TextIO,
     IO,
     AsyncContextManager,
     AsyncGenerator,
@@ -691,6 +693,15 @@ class Client(ABC):
     @abstractmethod
     async def focus(self) -> None:
         pass
+
+    async def dap(
+        self,
+        dap_path: str,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+        stop: asyncio.Event,
+    ) -> None:
+        raise NotImplementedError("Dap command not implemented")
 
     @abstractmethod
     async def debugserver_start(self, bundle_id: str) -> List[str]:

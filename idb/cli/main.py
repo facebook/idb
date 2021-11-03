@@ -32,6 +32,7 @@ from idb.cli.commands.crash import (
     CrashShowCommand,
 )
 from idb.cli.commands.daemon import DaemonCommand
+from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
     DebugServerStatusCommand,
@@ -256,6 +257,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         KillCommand(),
         MediaAddCommand(),
         FocusCommand(),
+        DapCommand(),
         CommandGroup(
             name="debugserver",
             description="debugserver interactions",

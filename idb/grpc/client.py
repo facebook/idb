@@ -12,9 +12,12 @@ import os
 import shutil
 import tempfile
 import urllib.parse
+from asyncio import StreamWriter, StreamReader
 from io import StringIO
 from pathlib import Path
 from typing import (
+    TextIO,
+    IO,
     Any,
     AsyncGenerator,
     AsyncIterable,
@@ -45,6 +48,7 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
+    FileContainerType,
     AccessibilityInfo,
     Address,
     AppProcessState,
@@ -80,6 +84,7 @@ from idb.grpc.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
+from idb.grpc.dap import RemoteDapServer
 from idb.grpc.file import container_to_grpc as file_container_to_grpc
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -127,6 +132,8 @@ from idb.grpc.idb_pb2 import (
     XctestListTestsRequest,
     XctraceRecordRequest,
     XctestRunResponse,
+    DapResponse,
+    DapRequest,
 )
 from idb.grpc.install import (
     Bundle,
@@ -142,6 +149,7 @@ from idb.grpc.instruments import (
 )
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
 from idb.grpc.stream import (
+    Stream,
     cancel_wrapper,
     drain_to_stream,
     generate_bytes,
@@ -1319,3 +1327,37 @@ class Client(ClientBase):
                         self.logger.info(f"Trace written to {trace_file}")
 
             return result
+
+    @log_and_handle_exceptions
+    async def dap(
+        self,
+        dap_path: str,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+        stop: asyncio.Event,
+    ) -> None:
+        path = Path(dap_path)
+        pkg_id = path.stem
+        self.logger.debug("Creating dap subfolder for different pkg of dap server.")
+        await self.mkdir(container=FileContainerType.ROOT, path="dap")
+
+        ls_response = await self.ls(container=FileContainerType.ROOT, paths=["dap"])
+        installed_daps = [entry.path for entry in ls_response[0].entries]
+        if pkg_id in installed_daps:
+            self.logger.info(f"Dap pkg already exist. Id: f{pkg_id}")
+        else:
+            self.logger.info(f"Pushing {path.absolute()} to simulator dap subfolder.")
+            await self.push(
+                src_paths=[str(path.absolute())],
+                container=FileContainerType.ROOT,
+                dest_path="dap",
+            )
+
+        async with RemoteDapServer.start(self.stub, self.logger, pkg_id) as dap_server:
+            self.logger.debug("Dap server started. Waiting for input from stdin...")
+
+            await dap_server.pipe(
+                input_stream=input_stream,
+                output_stream=output_stream,
+                stop=stop,
+            )
