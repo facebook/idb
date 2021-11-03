@@ -514,13 +514,22 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<NSNull *> *)clean;
 
-
 /**
  Sends a notification
 
  @return null future
  */
 - (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload;
+
+/**
+ Spawn a dap protocol server from dapPath
+ 
+ @param dapPath relative path to the root container where dap is installed
+ @param stdIn where the dap process reads
+ @param stdOut where the dap process writes
+ @return A Future that resolves when the dap server is spawned. Returns the dap server process.
+ */
+- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
 
 @end
 

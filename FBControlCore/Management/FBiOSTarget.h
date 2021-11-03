@@ -12,6 +12,7 @@
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBCrashLogCommands.h>
 #import <FBControlCore/FBDebuggerCommands.h>
+#import <FBControlCore/FBDapServerCommands.h>
 #import <FBControlCore/FBInstrumentsCommands.h>
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBScreenshotCommands.h>

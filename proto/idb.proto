@@ -15,6 +15,7 @@ service CompanionService {
   rpc connect(ConnectRequest) returns (ConnectResponse) {}
   rpc debugserver(stream DebugServerRequest)
       returns (stream DebugServerResponse) {}
+  rpc dap(stream DapRequest) returns (stream DapResponse) {}
   rpc describe(TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
   rpc install(stream InstallRequest) returns (stream InstallResponse) {}
   rpc instruments_run(stream InstrumentsRunRequest)
@@ -832,3 +833,33 @@ message SendNotificationRequest {
 }
 
 message SendNotificationResponse {}
+
+message DapRequest {
+  message Start {
+    string debugger_pkg_id = 1;
+  }
+  message Pipe {
+    bytes data = 1;
+  }
+  message Stop {}
+  oneof control {
+    Start start = 1;
+    Pipe pipe = 2;
+    Stop stop = 3;
+  }
+}
+
+message DapResponse {
+  message Event {
+    string desc = 1;
+  }
+  message Pipe {
+    bytes data = 1;
+  }
+
+  oneof event {
+    Event started = 1;
+    Pipe stdout = 2;
+    Event stopped = 3;
+  }
+}

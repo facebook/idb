@@ -664,6 +664,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut
+{
+  id<FBDapServerCommand> commands = (id<FBDapServerCommand>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDapServerCommand)]) {
+    return [[FBControlCoreError
+      describeFormat:@"Target doesn't conform to FBDapServerCommand protocol %@", commands]
+      failFuture];
+  }
+  
+  return [commands launchDapServer:dapPath stdIn:stdIn stdOut:stdOut];
+}
+
+
 #pragma mark Private Methods
 
 - (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)containerType

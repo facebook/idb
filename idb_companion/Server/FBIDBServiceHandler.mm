@@ -22,6 +22,7 @@
 #import "FBIDBTestOperation.h"
 #import "FBIDBXCTestReporter.h"
 #import "FBXCTestRunRequest.h"
+#import <FBControlCore/FBFuture.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -1499,6 +1500,78 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
     }
   }
 }}
+
+Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::DapResponse, idb::DapRequest> *stream)
+{@autoreleasepool{
+  idb::DapRequest initial_request;
+  stream->Read(&initial_request);
+  if (initial_request.control_case() != idb::DapRequest::ControlCase::kStart) {
+    return Status(grpc::StatusCode::FAILED_PRECONDITION, "Dap command expected a Start messaged in the beginning of the Stream");
+  }
+  idb::DapRequest_Start start = initial_request.start();
+  NSString *pkg_id = nsstring_from_c_string(start.debugger_pkg_id());
+  NSString *lldb_vscode = [@"dap" stringByAppendingPathComponent:[pkg_id stringByAppendingPathComponent: @"usr/bin/lldb-vscode"]];
+  
+  id<FBDataConsumer> reader = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+    idb::DapResponse response;
+    idb::DapResponse_Pipe *stdout = response.mutable_stdout();
+    stdout->set_data(data.bytes, data.length);
+    stream->Write(response);
+    [_target.logger.debug logFormat:@"Dap server stdout consumer: sent %lu bytes.", data.length];
+  }];
+  
+  
+  [_target.logger.debug logFormat:@"Starting dap server with path %@", lldb_vscode];
+  NSError *error = nil;
+  FBProcessInput<id<FBDataConsumer>> *writer = [FBProcessInput inputFromConsumer];
+  FBProcess *process = [[_commandExecutor dapServerWithPath:lldb_vscode stdIn:writer stdOut:reader] awaitWithTimeout:600 error:&error];
+  if (error){
+    NSString *errorMsg = [NSString stringWithFormat:@"Failed to spaw DAP server. Error: %@", error.localizedDescription];
+    return Status(grpc::StatusCode::INTERNAL, errorMsg.UTF8String);
+  }
+  [_target.logger.debug logFormat:@"Dap server spawn with PID: %d", process.processIdentifier];
+  idb::DapResponse response;
+  response.mutable_started();
+  stream->Write(response);
+  
+  dispatch_queue_t write_queue = dispatch_queue_create("com.facebook.idb.dap.write", DISPATCH_QUEUE_SERIAL);
+  auto writeFuture = [FBFuture onQueue:write_queue resolveWhen:^BOOL {
+    idb::DapRequest request;
+    stream->Read(&request);
+    if (request.control_case() == idb::DapRequest::ControlCase::kStop){
+      [_target.logger.debug logFormat:@"Received stop from Dap Request"];
+      [_target.logger.debug logFormat:@"Dap server with pid %d. Stderr: %@", process.processIdentifier, process.stdErr];
+      return YES;
+    }
+    
+    idb::DapRequest_Pipe pipe = request.pipe();
+    auto raw_data = pipe.data();
+    NSData *data = [NSData dataWithBytes:raw_data.c_str() length:raw_data.length()];
+    if (data.length == 0) {
+      [_target.logger.debug logFormat:@"Dap Request. Receiving empty messages. Transmission finished."];
+      return YES;
+    }
+    [_target.logger.debug logFormat:@"Dap Request. Received %lu bytes from client", data.length];
+    [writer.contents consumeData:data];
+    return NO;
+  }];
+  
+  //  Debug session shouln't be longer than 10hours
+  [writeFuture awaitWithTimeout:36000 error:&error];
+  if (error){
+    NSString *errorMsg = [NSString stringWithFormat:@"Error in writting to dap server stdout: %@", error.localizedDescription];
+    return Status(grpc::StatusCode::INTERNAL, errorMsg.UTF8String);
+  }
+  
+  idb::DapResponse_Event *stopped = response.mutable_stopped();
+  stopped->set_desc(@"Dap server stopped.".UTF8String);
+  stream->Write(response);
+  
+  return Status::OK;
+}}
+
+
+
 
 Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response)
 {@autoreleasepool{

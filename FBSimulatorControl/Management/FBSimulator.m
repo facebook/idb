@@ -24,6 +24,7 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
+#import "FBSimulatorDapServerCommands.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
@@ -279,6 +280,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBSimulatorApplicationCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
+      FBSimulatorDapServerCommand.class,
       FBSimulatorFileCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,

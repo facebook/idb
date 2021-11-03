@@ -28,6 +28,7 @@
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBDebuggerCommands.h>
+#import <FBControlCore/FBDapServerCommands.h>
 #import <FBControlCore/FBDeveloperDiskImage.h>
 #import <FBControlCore/FBDeveloperDiskImageCommands.h>
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
