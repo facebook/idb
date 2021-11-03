@@ -1586,3 +1586,13 @@ Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerRe
   }
   return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
 }}
+
+Status FBIDBServiceHandler::send_notification(grpc::ServerContext *context, const idb::SendNotificationRequest *request, idb::SendNotificationResponse *response)
+{@autoreleasepool{
+  NSError *error = nil;
+  [[_commandExecutor sendPushNotificationForBundleID:nsstring_from_c_string(request->bundle_id()) jsonPayload:nsstring_from_c_string(request->json_payload())] block:&error];
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
+  }
+  return Status::OK;
+}}

@@ -73,6 +73,7 @@
 #import <FBControlCore/FBStorageUtils.h>
 #import <FBControlCore/FBProcess.h>
 #import <FBControlCore/FBProcessBuilder.h>
+#import <FBControlCore/FBNotificationCommands.h>
 #import <FBControlCore/FBTemporaryDirectory.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBVideoFileWriter.h>

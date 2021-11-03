@@ -29,6 +29,8 @@ service CompanionService {
   rpc hid(stream HIDEvent) returns (HIDResponse) {}
   rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
   rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
+  rpc send_notification(SendNotificationRequest)
+      returns (SendNotificationResponse) {}
   // Settings
   rpc approve(ApproveRequest) returns (ApproveResponse) {}
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
@@ -823,3 +825,10 @@ message DebuggerInfo {
   string host = 2;
   uint64 port = 3;
 }
+
+message SendNotificationRequest {
+  string bundle_id = 1;
+  string json_payload = 2;
+}
+
+message SendNotificationResponse {}

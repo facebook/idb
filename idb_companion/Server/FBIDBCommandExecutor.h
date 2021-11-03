@@ -514,6 +514,14 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<NSNull *> *)clean;
 
+
+/**
+ Sends a notification
+
+ @return null future
+ */
+- (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload;
+
 @end
 
 NS_ASSUME_NONNULL_END

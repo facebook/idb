@@ -876,4 +876,15 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload
+{
+  id<FBNotificationCommands> commands = (id<FBNotificationCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBNotificationCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not conform to FBNotificationCommands", commands]
+      failFuture];
+  }
+  return [commands sendPushNotificationForBundleID:bundleID jsonPayload:jsonPayload];
+}
+
 @end
