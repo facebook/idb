@@ -158,8 +158,18 @@ def human_format_installed_app_info(app: InstalledAppInfo) -> str:
             ", ".join(app.architectures or ["no archs available"]),
             app_process_state_to_string(app.process_state),
             "Debuggable" if app.debuggable else "Not Debuggable",
+            f"pid={app_process_id_based_on_state(app.process_id, app.process_state)}",
         ]
     )
+
+
+def app_process_id_based_on_state(
+    pid: int,
+    state: AppProcessState,
+) -> Optional[str]:
+    if state is AppProcessState.RUNNING:
+        return str(pid)
+    return None
 
 
 def app_process_state_to_string(state: Optional[AppProcessState]) -> str:
@@ -188,6 +198,7 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
         "architectures": list(app.architectures) if app.architectures else None,
         "process_state": app_process_state_to_string(app.process_state),
         "debuggable": app.debuggable,
+        "pid": app_process_id_based_on_state(app.process_id, app.process_state),
     }
     return json.dumps(data)
 

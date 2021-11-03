@@ -101,6 +101,7 @@ class InstalledAppInfo:
     install_type: str
     process_state: AppProcessState
     debuggable: bool
+    process_id: int
 
 
 @dataclass(frozen=True)

@@ -417,6 +417,7 @@ class Client(ClientBase):
                 install_type=app.install_type,
                 process_state=AppProcessState(app.process_state),
                 debuggable=app.debuggable,
+                process_id=app.process_identifier,
             )
             for app in response.apps
         ]

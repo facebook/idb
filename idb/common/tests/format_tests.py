@@ -57,6 +57,7 @@ INSTALLED_APP_INFO_FIXTURE = InstalledAppInfo(
     install_type="System",
     process_state=AppProcessState.RUNNING,
     debuggable=True,
+    process_id=0,
 )
 COMPANION_INFO_FIXTURE = CompanionInfo(
     udid="MyUdid",
