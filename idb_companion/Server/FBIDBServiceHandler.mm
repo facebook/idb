@@ -1030,6 +1030,8 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
   }
   if (!start.wait_for()) {
     idb::LaunchResponse response;
+    idb::DebuggerInfo *debugger_info = response.mutable_debugger();
+    debugger_info->set_pid(launchedApp.processIdentifier);
     stream->Write(response);
     return Status::OK;
   }
