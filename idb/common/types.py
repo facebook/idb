@@ -54,7 +54,7 @@ class Permission(Enum):
     NOTIFICATION = 5
 
 
-class TargetType(Enum):
+class TargetType(str, Enum):
     DEVICE = "device"
     SIMULATOR = "simulator"
     MAC = "mac"
