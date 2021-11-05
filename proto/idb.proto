@@ -179,6 +179,7 @@ message InstallRequest {
     Payload payload = 2;
     string name_hint = 3;
     bool make_debuggable = 4;
+    string bundle_id = 5; // dSYM for app
   }
 }
 

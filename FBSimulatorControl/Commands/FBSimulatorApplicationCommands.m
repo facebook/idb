@@ -54,7 +54,6 @@
         @"CFBundleIdentifier": appBundle.identifier
       };
       NSURL *appURL = [NSURL fileURLWithPath:appBundle.path];
-
       NSError *error = nil;
       if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
         return [self installedApplicationWithBundleID:appBundle.identifier];
