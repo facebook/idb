@@ -567,6 +567,10 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def simulate_memory_warning(self) -> None:
+        pass
+
+    @abstractmethod
     async def send_notification(self, bundle_id: str, json_payload: str) -> None:
         pass
 

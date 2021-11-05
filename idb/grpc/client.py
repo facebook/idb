@@ -106,6 +106,7 @@ from idb.grpc.idb_pb2 import (
     ListAppsRequest,
     Location,
     LogRequest,
+    SimulateMemoryWarningRequest,
     SendNotificationRequest,
     LsRequest,
     GetSettingRequest,
@@ -507,6 +508,10 @@ class Client(ClientBase):
                 location=Location(latitude=latitude, longitude=longitude)
             )
         )
+
+    @log_and_handle_exceptions
+    async def simulate_memory_warning(self) -> None:
+        await self.stub.simulate_memory_warning(SimulateMemoryWarningRequest())
 
     @log_and_handle_exceptions
     async def send_notification(self, bundle_id: str, json_payload: str) -> None:
