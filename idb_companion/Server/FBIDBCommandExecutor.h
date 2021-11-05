@@ -152,17 +152,19 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  Installs a dSYM from a file path.
 
  @param filePath the input to pipe.
+ @param linkToApp if specified installed dsym will be linked into the app bundle container.
  @return A future that resolves with the dSYM Name
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID;
 
 /**
  Installs dSYM(s) from a zip stream.
 
  @param input the input to pipe.
+ @param linkToApp if specified installed dsym will be linked into the app bundle container.
  @return A future that resolves with the directory containing the dSYM(s)
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID;
 
 /**
  Takes a Screenshot

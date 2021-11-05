@@ -125,14 +125,14 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.framework];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID
 {
-  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
+  return [self installAndLinkDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID
 {
-  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.dsym];
+  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
 #pragma mark Public Methods
@@ -838,15 +838,13 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
           [self.storageManager.application saveBundle:appBundle]
         ]]
         onQueue:self.target.asyncQueue fmap:^(NSArray<id> *tuple) {
-          if (makeDebuggable) {
-            FBInstalledApplication *installedApp = tuple[0];
-            if (installedApp.installType != FBApplicationInstallTypeUserDevelopment && userDevelopmentAppIsRequired) {
-              return [[FBIDBError
-                describeFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]
-                failFuture];
-            }
+          FBInstalledApplication *installedApp = tuple[0];
+          if (makeDebuggable && installedApp.installType != FBApplicationInstallTypeUserDevelopment && userDevelopmentAppIsRequired) {
+                return [[FBIDBError
+                  describeFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]
+                  failFuture];
           }
-          return [FBFuture futureWithResult:[[FBInstalledArtifact alloc] initWithName:appBundle.identifier uuid:appBundle.binary.uuid]];
+          return [FBFuture futureWithResult:[[FBInstalledArtifact alloc] initWithName:appBundle.identifier uuid:appBundle.binary.uuid path:[NSURL fileURLWithPath:installedApp.bundle.path]]];
         }];
     }];
 }
@@ -878,6 +876,59 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       }
       return [FBFuture futureWithResult:artifact];
     }];
+}
+
+// To navigate directly to the dSYM directory instead of the parent tmp directory
+// created while unzipping
+- (FBFutureContext<NSURL *> *)dsymDirnameFromUnzipDir:(FBFutureContext<NSURL *> *)extractedFileContext {
+  return [extractedFileContext
+    onQueue:self.target.workQueue pend:^(NSURL *parentDir) {
+    NSError *error = nil;
+    NSArray<NSURL *> *subDirs = [NSFileManager.defaultManager contentsOfDirectoryAtURL:parentDir includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
+    if (!subDirs) {
+      return [FBFuture futureWithError:error];
+    }
+    // TODO: support cases when more than one dSYM is included in the archive
+    if ([subDirs count] != 1) {
+      return [FBFuture futureWithError:[FBControlCoreError errorForDescription:[NSString stringWithFormat:@"Expected only one dSYM directory: found: %tu", [subDirs count]]]];
+    }
+    return [FBFuture futureWithResult:subDirs[0]];
+  }];
+}
+
+// Will install the dsym under standard dsym location
+// if linkToApp app is passed:
+// after installation it will create a symlink in the app bundle
+- (FBFuture<FBInstalledArtifact *> *)installAndLinkDsym:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage linkToApp:(nullable NSString *)bundleID
+{
+  return [extractedFileContext
+    onQueue:self.target.workQueue pop:^(NSURL *extractionDir) {
+      NSError *error = nil;
+      FBInstalledArtifact *artifact = [storage saveFileInUniquePath:extractionDir error:&error];
+      if (!artifact) {
+        return [FBFuture futureWithError:error];
+      }
+      if (!bundleID) {
+        return [FBFuture futureWithResult:artifact];
+      }
+      
+      return [[self.target installedApplicationWithBundleID:bundleID]
+        onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
+          [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];
+          NSURL *appPath = [NSURL fileURLWithPath:linkToApp.bundle.path];
+          NSURL *appDsymURL = [appPath URLByAppendingPathComponent:artifact.path.lastPathComponent];
+          // delete a simlink if already exists
+          // TODO: check if what we are deleting is a symlink
+          [NSFileManager.defaultManager removeItemAtURL:appDsymURL error:nil];
+          [self.logger logFormat:@"Deleted a symlink for dsym if it already exists: %@", appDsymURL];
+          NSError *createLinkError = nil;
+          if (![NSFileManager.defaultManager createSymbolicLinkAtURL:appDsymURL withDestinationURL:artifact.path error:&createLinkError]){
+            return [FBFuture futureWithError:error];
+          }
+          [self.logger logFormat:@"Created a symlink for dsym from: %@ to %@", appDsymURL, artifact.path];
+          return [FBFuture futureWithResult:artifact];
+      }];
+  }];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage

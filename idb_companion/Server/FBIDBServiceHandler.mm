@@ -536,7 +536,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
   // Read the initial request
   idb::InstallRequest request;
   stream->Read(&request);
-
+  
   // The name hint may be provided, if it is not then default to some UUID, then advance the stream.
   NSString *name = NSUUID.UUID.UUIDString;
   if (request.value_case() == idb::InstallRequest::ValueCase::kNameHint) {
@@ -548,6 +548,13 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
   BOOL makeDebuggable = NO;
   if (request.value_case() == idb::InstallRequest::ValueCase::kMakeDebuggable) {
     makeDebuggable = (request.make_debuggable() == true);
+    stream->Read(&request);
+  }
+  // A bundle id might be provided, if it is, then obtain the installed app if exists, then advance that stream.
+  // It can be used to determine where debug symbols should be linked
+  NSString *bundleID = nil;
+  if (request.value_case() == idb::InstallRequest::ValueCase::kBundleId) {
+    bundleID = nsstring_from_c_string(request.bundle_id());
     stream->Read(&request);
   }
 
@@ -576,7 +583,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:dataStream];
+          return [_commandExecutor install_dsym_stream:dataStream linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:dataStream name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -594,7 +601,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:download.input];
+          return [_commandExecutor install_dsym_stream:download.input linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:download.input name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -611,7 +618,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_file_path:filePath];
+          return [_commandExecutor install_dsym_file_path:filePath linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:

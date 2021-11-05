@@ -33,12 +33,18 @@ extern NSString *const IdbFrameworksFolder;
 @property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
 
 /**
+ The absolute path to the artifact
+ */
+@property (nonatomic, copy, readonly) NSURL *path;
+
+/**
  The designated initializer.
 
  @param name the name of the installed artifact.
- @param udid the udid of the installed artifact.
+ @param udid the udid of the installed artifact
+ @param path the absolute path to the installed artifact
  */
-- (instancetype)initWithName:(NSString *)name uuid:(nullable NSUUID *)uuid;
+- (instancetype)initWithName:(NSString *)name uuid:(nullable NSUUID *)uuid path:(NSURL *)path;
 
 @end
 
@@ -99,6 +105,15 @@ extern NSString *const IdbFrameworksFolder;
  @return the installed artifact info.
  */
 - (nullable FBInstalledArtifact *)saveFile:(NSURL *)url error:(NSError **)error;
+
+/**
+ Relocates the file into storage and places it into UUID like parent directory to prevent overwrites.
+
+ @param url the url to relocate.
+ @param error an error out for any error that occurs
+ @return the installed artifact info.
+ */
+- (nullable FBInstalledArtifact *)saveFileInUniquePath:(NSURL *)url error:(NSError **)error;
 
 @end
 
