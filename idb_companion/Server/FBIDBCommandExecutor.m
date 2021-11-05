@@ -831,7 +831,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       return [[FBFuture
         futureWithFutures:@[
           [self.target installApplicationWithPath:appBundle.path],
-          makeDebuggable ? (FBFuture<id> *) [self.storageManager.application saveBundle:appBundle] : (FBFuture<id> *) FBFuture.empty,
+          // TODO: currently we have to persist it even if app is not used for debugging
+          // as installed apps are referenced from xctestrun files and expanded by idb
+          // by using its own application storage. Fix this by replacing xctestrun
+          // placeholders by app bundle paths instead
+          [self.storageManager.application saveBundle:appBundle]
         ]]
         onQueue:self.target.asyncQueue fmap:^(NSArray<id> *tuple) {
           if (makeDebuggable) {
