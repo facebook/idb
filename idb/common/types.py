@@ -486,7 +486,9 @@ class Client(ABC):
 
     @abstractmethod
     async def install_dsym(
-        self, dsym: Union[str, IO[bytes]]
+        self,
+        dsym: Union[str, IO[bytes]],
+        bundle_id: Optional[str],
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 

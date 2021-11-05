@@ -348,6 +348,7 @@ class Client(ClientBase):
         destination: Destination,
         compression: Optional[Compression],
         make_debuggable: Optional[bool],
+        bundle_id: Optional[str],
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -396,6 +397,8 @@ class Client(ClientBase):
                         payload=Payload(compression=COMPRESSION_MAP[compression])
                     )
                 )
+            if bundle_id is not None:
+                await stream.send_message(InstallRequest(bundle_id=bundle_id))
             async for message in generator:
                 await stream.send_message(message)
             self.logger.debug("Finished sending install payload to companion")
@@ -630,6 +633,7 @@ class Client(ClientBase):
             destination=InstallRequest.APP,
             compression=compression,
             make_debuggable=make_debuggable,
+            bundle_id=None,
         ):
             yield response
 
@@ -640,6 +644,7 @@ class Client(ClientBase):
             destination=InstallRequest.XCTEST,
             compression=None,
             make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
@@ -650,16 +655,20 @@ class Client(ClientBase):
             destination=InstallRequest.DYLIB,
             compression=None,
             make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
     @log_and_handle_exceptions
-    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install_dsym(
+        self, dsym: Bundle, bundle_id: Optional[str]
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
             destination=InstallRequest.DSYM,
             compression=None,
             make_debuggable=None,
+            bundle_id=bundle_id,
         ):
             yield response
 
@@ -672,6 +681,7 @@ class Client(ClientBase):
             destination=InstallRequest.FRAMEWORK,
             compression=None,
             make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
