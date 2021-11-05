@@ -30,6 +30,7 @@
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLocationCommands.h"
+#import "FBSimulatorMemoryCommands.h"
 #import "FBSimulatorNotificationCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorMediaCommands.h"
@@ -295,6 +296,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBSimulatorXCTestCommands.class,
       FBXCTraceRecordCommands.class,
       FBSimulatorNotificationCommands.class,
+      FBSimulatorMemoryCommands.class,
     ];
   });
   return commandClasses;

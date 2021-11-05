@@ -531,6 +531,13 @@ This allows to avoid the permission popup the first time we open a deeplink
  */
 - (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
 
+/**
+ Simulates a memory warning
+
+ @return null future
+ */
+- (FBFuture<NSNull *> *)simulateMemoryWarning;
+
 @end
 
 NS_ASSUME_NONNULL_END

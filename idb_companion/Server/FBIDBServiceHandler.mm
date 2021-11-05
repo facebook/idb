@@ -1669,3 +1669,13 @@ Status FBIDBServiceHandler::send_notification(grpc::ServerContext *context, cons
   }
   return Status::OK;
 }}
+
+Status FBIDBServiceHandler::simulate_memory_warning(grpc::ServerContext *context, const idb::SimulateMemoryWarningRequest *request, idb::SimulateMemoryWarningResponse *response)
+{@autoreleasepool{
+  NSError *error = nil;
+  [[_commandExecutor simulateMemoryWarning] block:&error];
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
+  }
+  return Status::OK;
+}}

@@ -32,6 +32,8 @@ service CompanionService {
   rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
   rpc send_notification(SendNotificationRequest)
       returns (SendNotificationResponse) {}
+  rpc simulate_memory_warning(SimulateMemoryWarningRequest)
+      returns (SimulateMemoryWarningResponse) {}
   // Settings
   rpc approve(ApproveRequest) returns (ApproveResponse) {}
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
@@ -863,3 +865,7 @@ message DapResponse {
     Event stopped = 3;
   }
 }
+
+message SimulateMemoryWarningRequest {}
+
+message SimulateMemoryWarningResponse {}

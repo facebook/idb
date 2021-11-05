@@ -904,4 +904,15 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [commands sendPushNotificationForBundleID:bundleID jsonPayload:jsonPayload];
 }
 
+- (FBFuture<NSNull *> *)simulateMemoryWarning
+{
+  id<FBMemoryCommands> commands = (id<FBMemoryCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBMemoryCommands)]) {
+    return [[FBIDBError
+             describeFormat:@"%@ does not conform to FBMemoryCommands", commands]
+            failFuture];
+  }
+  return [commands simulateMemoryWarning];
+}
+
 @end
