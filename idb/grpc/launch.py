@@ -24,7 +24,8 @@ async def drain_launch_stream(stream: Stream[LaunchRequest, LaunchResponse]) -> 
                 sys.stderr.buffer.write(pipe.data)
                 sys.stderr.buffer.flush()
         debugger_info = message.debugger
-        if debugger_info:
+        debugger_pid = debugger_info.pid
+        if debugger_pid is not None and debugger_pid != 0:
             info = DebuggerInfo(pid=debugger_info.pid)
             sys.stdout.buffer.write(json_format_debugger_info(info).encode())
             sys.stdout.buffer.flush()
