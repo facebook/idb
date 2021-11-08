@@ -523,6 +523,11 @@ static NSString *const MountRootPath = @"mounted";
     }];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary
+{
+  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.device.auxillaryDirectory]];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
 {
   return [[FBControlCoreError

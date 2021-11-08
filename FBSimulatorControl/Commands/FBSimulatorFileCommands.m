@@ -53,6 +53,11 @@
     }];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary
+{
+  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.simulator.auxillaryDirectory]];
+}
+
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
 {
   return [[[FBSimulatorApplicationCommands
