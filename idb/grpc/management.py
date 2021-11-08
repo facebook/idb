@@ -30,6 +30,20 @@ from idb.grpc.target import merge_connected_targets
 from idb.utils.contextlib import asynccontextmanager
 
 
+async def _local_target_type(companion: Companion, udid: str) -> TargetType:
+    if udid == "mac":
+        return TargetType.MAC
+    targets = {
+        target.udid: target for target in await companion.list_targets(only=None)
+    }
+    target = targets.get(udid)
+    if target is None:
+        raise IdbException(
+            f"Cannot spawn companion for {udid}, no matching target in available udids {targets.keys()}"
+        )
+    return target.target_type
+
+
 class ClientManager(ClientManagerBase):
     def __init__(
         self,
@@ -54,13 +68,13 @@ class ClientManager(ClientManagerBase):
         )
         self._prune_dead_companion = prune_dead_companion
 
-    async def _spawn_companion_server(self, udid: str) -> Optional[CompanionInfo]:
+    async def _spawn_companion_server(self, udid: str) -> CompanionInfo:
         companion = self._companion
         if companion is None:
-            return None
-        target_type = await self._local_target_type(udid=udid)
-        if target_type is None:
-            return None
+            raise IdbException(
+                f"Cannot spawn companion for {udid}, no companion executable"
+            )
+        target_type = await _local_target_type(companion=companion, udid=udid)
         path = os.path.join(BASE_IDB_FILE_PATH, f"{udid}_companion.sock")
         self._logger.info(f"Attempting to spawn a companion at {path} for {udid}")
         process = await companion.spawn_domain_sock_server(
@@ -84,25 +98,6 @@ class ClientManager(ClientManagerBase):
         await self._companion_set.add_companion(companion_info)
         return companion_info
 
-    async def _list_local_targets(
-        self, only: Optional[OnlyFilter]
-    ) -> List[TargetDescription]:
-        companion = self._companion
-        if companion is None:
-            return []
-        return await companion.list_targets(only=only)
-
-    async def _local_target_type(self, udid: str) -> Optional[TargetType]:
-        if udid == "mac":
-            return TargetType.MAC
-        targets = {
-            target.udid: target for target in await self._list_local_targets(only=None)
-        }
-        target = targets.get(udid)
-        if target is None:
-            return None
-        return target.target_type
-
     async def _companion_to_target(
         self, companion: CompanionInfo
     ) -> Optional[TargetDescription]:
@@ -123,40 +118,49 @@ class ClientManager(ClientManagerBase):
 
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
-        try:
-            companion_info = await self._companion_set.get_companion_info(
-                target_udid=udid
+        companions = {
+            companion.udid: companion
+            for companion in await self._companion_set.get_companions()
+        }
+        if udid is not None and udid in companions:
+            companion = companions[udid]
+            self._logger.debug(f"Got existing companion {companion} for udid {udid}")
+        elif udid is not None:
+            self._logger.debug(f"No running companion for {udid}, spawning one")
+            companion = await self._spawn_companion_server(udid=udid)
+        elif len(companions) == 1:
+            self._logger.debug(
+                "No udid provided, and there is a sole companion, using it"
             )
-            self._logger.debug(f"Got existing companion {companion_info}")
-            async with Client.build(
-                address=companion_info.address,
-                logger=self._logger,
-            ) as client:
-                self._logger.debug(f"Constructed client for companion {udid}")
-                yield client
-        except IdbException as e:
-            self._logger.debug(f"No companion info for {udid}, spawning one...")
-            # will try to spawn a companion if on mac.
-            if udid is None:
-                raise e
-            companion_info = await self._spawn_companion_server(udid=udid)
-            if companion_info is None:
-                raise e
-            self._logger.debug(f"Got newly launched {companion_info} for udid {udid}")
-            async with Client.build(
-                address=companion_info.address,
-                logger=self._logger,
-            ) as client:
-                self._logger.debug(f"Constructed client for companion {udid}")
-                yield client
+            companion = list(companions.values())[0]
+        elif len(companions) == 0:
+            raise IdbException(
+                "No udid provided and there no companions, unclear which target to run against. Please specify a UDID"
+            )
+        else:
+            raise IdbException(
+                f"No udid provided and there are multiple companions to run against {companions.keys()}. Please specify a UDID unclear which target to run against"
+            )
+        async with Client.build(
+            address=companion.address,
+            logger=self._logger,
+        ) as client:
+            self._logger.debug(f"Constructed client for companion {companion}")
+            yield client
 
     @log_call()
     async def list_targets(
         self, only: Optional[OnlyFilter] = None
     ) -> List[TargetDescription]:
+        async def _list_local_targets() -> List[TargetDescription]:
+            companion = self._companion
+            if companion is None:
+                return []
+            return await companion.list_targets(only=only)
+
         (companions, local_targets) = await asyncio.gather(
             self._companion_set.get_companions(),
-            self._list_local_targets(only=only),
+            _list_local_targets(),
         )
         connected_targets = [
             target
