@@ -98,6 +98,22 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue;
 
+/**
+ A file container that relative to a path on the host.
+ 
+ @param basePath the base path to use.
+ @return a File Container implementation
+ */
++ (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath;
+
+/**
+ A file container that relative to a path on the host.
+ 
+ @param pathMapping the mapped base paths.
+ @return a File Container implementation
+ */
++ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
+
 @end
 
 NS_ASSUME_NONNULL_END

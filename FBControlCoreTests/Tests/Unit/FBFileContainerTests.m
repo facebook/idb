@@ -7,13 +7,13 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBControlCore/FBControlCore.h>
 
-@interface FBSimulatorFileCommandsTests : XCTestCase
+@interface FBFileContainerTests : XCTestCase
 
 @end
 
-@implementation FBSimulatorFileCommandsTests
+@implementation FBFileContainerTests
 
 - (void)testPathMapping
 {
@@ -27,7 +27,7 @@
   XCTAssertTrue([NSFileManager.defaultManager createDirectoryAtPath:fooPath withIntermediateDirectories:YES attributes:nil error:&error]);
   XCTAssertTrue([NSFileManager.defaultManager createDirectoryAtPath:barPath withIntermediateDirectories:YES attributes:nil error:&error]);
   XCTAssertTrue([NSFileManager.defaultManager createDirectoryAtPath:directoryInBar withIntermediateDirectories:YES attributes:nil error:&error]);
-  
+
   NSString *fileInFooText = @"Some Text";
   XCTAssertTrue([fileInFooText writeToFile:fileInFoo atomically:YES encoding:NSUTF8StringEncoding error:&error]);
 
@@ -35,7 +35,7 @@
   XCTAssertTrue([fileInDirectoryInBarText writeToFile:fileInDirectoryInBar atomically:YES encoding:NSUTF8StringEncoding error:&error]);
 
   NSDictionary<NSString *, NSString *> *pathMapping = @{@"foo": fooPath, @"bar": barPath};
-  id<FBFileContainer> container = [FBSimulatorFileCommands fileContainerForPathMapping:pathMapping queue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)];
+  id<FBFileContainer> container = [FBFileContainer fileContainerForPathMapping:pathMapping];
 
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"foo", @"bar"]];
   NSArray<NSString *> *actualFiles = [[container contentsOfDirectory:@"."] await:&error];
