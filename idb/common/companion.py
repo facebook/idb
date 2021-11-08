@@ -83,14 +83,28 @@ def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
         raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
 
 
-async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
+async def _extract_companion_report_from_spawned_companion(
+    stream: asyncio.StreamReader,
+) -> Dict[str, Union[int, str]]:
     # The first line of stdout should contain launch info,
     # otherwise something bad has happened
     line = await stream.readline()
     logging.debug(f"Read line from companion: {line}")
     update = parse_json_line(line)
     logging.debug(f"Got update from companion: {update}")
+    return update
+
+
+async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
+    update = await _extract_companion_report_from_spawned_companion(stream=stream)
     return int(update["grpc_port"])
+
+
+async def _extract_domain_sock_from_spawned_companion(
+    stream: asyncio.StreamReader,
+) -> str:
+    update = await _extract_companion_report_from_spawned_companion(stream=stream)
+    return str(update["grpc_path"])
 
 
 @dataclass(frozen=True)
@@ -253,6 +267,33 @@ class Companion(CompanionBase):
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             )
         return (process, extracted_port)
+
+    async def spawn_domain_sock_server(
+        self, config: CompanionServerConfig, path: str
+    ) -> asyncio.subprocess.Process:
+        (process, log_file_path) = await self._spawn_server(
+            config=config, bind_arguments=["--grpc-domain-sock", path]
+        )
+        stdout = none_throws(process.stdout)
+        try:
+            extracted_path = await _extract_domain_sock_from_spawned_companion(stdout)
+        except Exception as e:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, couldn't read port "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            ) from e
+        if not extracted_path:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, no extracted path"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        if extracted_path != path:
+            raise CompanionSpawnerException(
+                "Failed to spawn companion, extracted path is not correct "
+                f"(expected {path} got {extracted_path})"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        return process
 
     @log_call()
     async def create(

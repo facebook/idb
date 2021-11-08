@@ -61,8 +61,9 @@ class ClientManager(ClientManagerBase):
         target_type = await self._local_target_type(udid=udid)
         if target_type is None:
             return None
-        self._logger.info(f"will attempt to spawn a companion for {udid}")
-        (process, port) = await companion.spawn_tcp_server(
+        path = os.path.join(BASE_IDB_FILE_PATH, f"{udid}_companion.sock")
+        self._logger.info(f"Attempting to spawn a companion at {path} for {udid}")
+        process = await companion.spawn_domain_sock_server(
             config=CompanionServerConfig(
                 udid=udid,
                 only=target_type,
@@ -71,12 +72,11 @@ class ClientManager(ClientManagerBase):
                 tmp_path=None,
                 reparent=True,
             ),
-            port=None,
+            path=path,
         )
-        self._logger.info(f"Companion at port {port} spawned for {udid}")
-        host = "localhost"
+        self._logger.info(f"Companion at {path} spawned for {udid}")
         companion_info = CompanionInfo(
-            address=TCPAddress(host=host, port=port),
+            address=DomainSocketAddress(path=path),
             udid=udid,
             is_local=True,
             pid=process.pid,
