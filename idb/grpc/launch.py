@@ -9,19 +9,21 @@ import sys
 
 from idb.common.format import json_format_debugger_info
 from idb.common.types import DebuggerInfo
-from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse
+from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse, ProcessOutput
 from idb.grpc.stream import Stream
 
 
 async def drain_launch_stream(stream: Stream[LaunchRequest, LaunchResponse]) -> None:
     async for message in stream:
-        pipe = message.pipe
-        if pipe:
-            if message.interface == LaunchResponse.STDOUT:
-                sys.stdout.buffer.write(pipe.data)
+        output = message.output
+        data = output.data
+        if len(data):
+            interface = output.interface
+            if interface == ProcessOutput.STDOUT:
+                sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
-            elif message.interface == LaunchResponse.STDERR:
-                sys.stderr.buffer.write(pipe.data)
+            elif interface == ProcessOutput.STDERR:
+                sys.stderr.buffer.write(data)
                 sys.stderr.buffer.flush()
         debugger_info = message.debugger
         debugger_pid = debugger_info.pid
