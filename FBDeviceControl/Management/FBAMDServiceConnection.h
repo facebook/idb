@@ -66,9 +66,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param consumer the consumer to use.
  @param queue the queue to consume on.
- @return a Future that resolves once consumption has finished.
+ @return the FBFileReader instance, this can be used to start reading the reciever's connection.
 */
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
 @end
 

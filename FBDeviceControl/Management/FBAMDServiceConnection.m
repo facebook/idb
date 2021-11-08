@@ -13,6 +13,105 @@
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 
+// There's an upper limit on the number of bytes we can read at once
+static size_t ReadBufferSize = 1024 * 4;
+
+@interface FBAMDServiceConnection ()
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size;
+- (ssize_t)recieve:(void *)buffer size:(size_t)size;
+
+@end
+
+@interface FBAMDServiceConnection_FileReader : NSObject <FBFileReader>
+
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *finishedReadingMutable;
+
+@end
+
+@implementation FBAMDServiceConnection_FileReader
+
+@synthesize state = _state;
+
+- (instancetype)initWithServiceConnection:(FBAMDServiceConnection *)connection consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _connection = connection;
+  _consumer = consumer;
+  _queue = queue;
+  _state = FBFileReaderStateNotStarted;
+  _finishedReadingMutable = FBMutableFuture.future;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)startReading
+{
+  if (self.state != FBFileReaderStateNotStarted) {
+    return [[FBDeviceControlError
+      describeFormat:@"Cannot start reading in state %lu", (unsigned long)self.state]
+      failFuture];
+  }
+
+  FBAMDServiceConnection *connection = self.connection;
+  id<FBDataConsumer> consumer = self.consumer;
+  dispatch_async(self.queue, ^{
+    void *buffer = alloca(ReadBufferSize);
+    while (self.state == FBFileReaderStateReading && self.finishedReadingMutable.state == FBFutureStateRunning) {
+      ssize_t readBytes = [connection recieve:buffer size:ReadBufferSize];
+      if (readBytes < 1) {
+        break;
+      }
+      NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
+      [consumer consumeData:data];
+    }
+    [consumer consumeEndOfFile];
+    self->_state = FBFileReaderStateFinishedReadingNormally;
+  });
+  _state = FBFileReaderStateReading;
+
+  return FBFuture.empty;
+}
+
+- (FBFuture<NSNumber *> *)stopReading
+{
+  if (self.state == FBFileReaderStateNotStarted) {
+    return [[FBDeviceControlError
+      describe:@"Cannot stop reading when reading has not started"]
+      failFuture];
+  }
+  if (self.state != FBFileReaderStateReading) {
+    return self.finishedReadingMutable;
+  }
+  _state = FBFileReaderStateFinishedReadingByCancellation;
+  [self.finishedReadingMutable resolveWithResult:@(FBFileReaderStateFinishedReadingByCancellation)];
+  return self.finishedReadingMutable;
+}
+
+- (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout
+{
+  return [[[self
+    finishedReading]
+    timeout:timeout waitingFor:@"Process Reading to Finish"]
+    onQueue:self.queue handleError:^(NSError *_) {
+      return [self stopReading];
+    }];
+}
+
+- (FBFuture<NSNumber *> *)finishedReading
+{
+  return self.finishedReadingMutable;
+}
+
+@end
+
 @interface FBAMDServiceConnection_TransferRaw : FBAMDServiceConnection
 
 @end
@@ -197,9 +296,6 @@ static size_t SendBufferSize = 1024 * 4;
   return YES;
 }
 
-// There's an upper limit on the number of bytes we can read at once
-static size_t ReadBufferSize = 1024 * 4;
-
 - (NSData *)receive:(size_t)size error:(NSError **)error
 {
   // Create a buffer that contains the data to return and a temp buffer for reading into.
@@ -243,18 +339,6 @@ static size_t ReadBufferSize = 1024 * 4;
   return data;
 }
 
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
 {
   NSData *data = [self receive:size error:error];
@@ -265,21 +349,23 @@ static size_t ReadBufferSize = 1024 * 4;
   return YES;
 }
 
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
+- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
-  return [FBFuture
-    onQueue:queue resolve:^{
-      void *buffer = alloca(ReadBufferSize);
-      while (true) {
-        ssize_t readBytes = [self recieve:buffer size:ReadBufferSize];
-        if (readBytes < 1) {
-          [consumer consumeEndOfFile];
-          return FBFuture.empty;
-        }
-        NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
-        [consumer consumeData:data];
-      }
-    }];
+  return [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
+}
+
+#pragma mark Private
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
+}
+
+- (ssize_t)recieve:(void *)buffer size:(size_t)size
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return -1;
 }
 
 @end
