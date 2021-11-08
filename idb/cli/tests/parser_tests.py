@@ -65,7 +65,7 @@ class TestParser(TestCase):
             return_value=self.client_mock
         )
         self.client_manager_patch = patch(
-            "idb.cli.ClientManager", self.client_manager_mock
+            "idb.cli.GrpcClientManager", self.client_manager_mock
         )
         self.client_manager_patch.start()
         self.client_patch = patch("idb.cli.GrpcClient", self.client_mock)
