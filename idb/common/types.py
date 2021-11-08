@@ -325,6 +325,7 @@ class InstalledArtifact:
 
 class FileContainerType(Enum):
     APPLICATION = "application"
+    AUXILLARY = "auxillary"
     CRASHES = "crashes"
     DISK_IMAGES = "disk_images"
     GROUP = "group"

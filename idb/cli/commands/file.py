@@ -36,6 +36,13 @@ class FSCommand(ClientCommand):
             help="Use the container of application containers. Applications containers are presented, by bundle-id in the root.",
         )
         group.add_argument(
+            "--auxillary",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.AUXILLARY,
+            help="Use the auxillary container. This is where idb will store intermediate files.",
+        )
+        group.add_argument(
             "--group",
             action="store_const",
             dest="container_type",
