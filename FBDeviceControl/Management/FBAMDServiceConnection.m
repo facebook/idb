@@ -354,6 +354,13 @@ static size_t SendBufferSize = 1024 * 4;
   return [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
 }
 
+- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue
+{
+  return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
+    [self send:data error:nil];
+  }];
+}
+
 #pragma mark Private
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size

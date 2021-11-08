@@ -70,6 +70,14 @@ NS_ASSUME_NONNULL_BEGIN
 */
 - (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
 
+/**
+ Constructs a data consumer that writes to the underlying connection.
+
+ @param queue the queue to perform writes on.
+ @return a consumer that writes to the reciever's connection.
+*/
+- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue;
+
 @end
 
 /**
