@@ -27,6 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NSString *FBFileContainerKind NS_STRING_ENUM;
 
 extern FBFileContainerKind const FBFileContainerKindApplication;
+extern FBFileContainerKind const FBFileContainerKindAuxillary;
 extern FBFileContainerKind const FBFileContainerKindCrashes;
 extern FBFileContainerKind const FBFileContainerKindDiskImages;
 extern FBFileContainerKind const FBFileContainerKindGroup;

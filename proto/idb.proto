@@ -738,6 +738,7 @@ message FileContainer {
     DISK_IMAGES = 9;
     GROUP_CONTAINER = 10;
     APPLICATION_CONTAINER = 11;
+    AUXILLARY = 12;
   }
   Kind kind = 1;
   string bundle_id = 2;

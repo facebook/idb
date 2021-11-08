@@ -17,6 +17,7 @@
 #import "FBIDBPortsConfiguration.h"
 
 FBFileContainerKind const FBFileContainerKindApplication = @"application";
+FBFileContainerKind const FBFileContainerKindAuxillary = @"auxillary";
 FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
 FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 FBFileContainerKind const FBFileContainerKindGroup = @"group";
@@ -716,6 +717,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }
   if ([containerType isEqualToString:FBFileContainerKindDiskImages]) {
     return [commands fileCommandsForDiskImages];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindAuxillary]) {
+    return [commands fileCommandsForAuxillary];
   }
   if (containerType == nil || containerType.length == 0) {
     // The Default for no, or null container for back-compat.
