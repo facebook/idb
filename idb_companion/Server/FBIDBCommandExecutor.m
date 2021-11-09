@@ -919,7 +919,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       return [[self.target installedApplicationWithBundleID:bundleID]
         onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
           [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];
-          NSURL *appPath = [NSURL fileURLWithPath:linkToApp.bundle.path];
+          NSURL *appPath = [[NSURL fileURLWithPath:linkToApp.bundle.path] URLByDeletingLastPathComponent];
           NSURL *appDsymURL = [appPath URLByAppendingPathComponent:artifact.path.lastPathComponent];
           // delete a simlink if already exists
           // TODO: check if what we are deleting is a symlink
