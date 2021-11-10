@@ -356,7 +356,7 @@ static size_t SendBufferSize = 1024 * 4;
 
 - (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue
 {
-  return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
+  return [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     [self send:data error:nil];
   }];
 }
