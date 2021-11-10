@@ -12,6 +12,18 @@
 #import "FBProcessBuilder.h"
 #import "FBProvisioningProfileCommands.h"
 
+FBFileContainerKind const FBFileContainerKindApplication = @"application";
+FBFileContainerKind const FBFileContainerKindAuxillary = @"auxillary";
+FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
+FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
+FBFileContainerKind const FBFileContainerKindGroup = @"group";
+FBFileContainerKind const FBFileContainerKindMDMProfiles = @"mdm_profiles";
+FBFileContainerKind const FBFileContainerKindMedia = @"media";
+FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
+FBFileContainerKind const FBFileContainerKindRoot = @"root";
+FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
+FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
+
 @interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) id<FBProvisioningProfileCommands> commands;

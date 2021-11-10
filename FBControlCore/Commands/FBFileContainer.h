@@ -12,6 +12,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ An enumeration representing the existing file containers.
+ */
+typedef NSString *FBFileContainerKind NS_STRING_ENUM;
+extern FBFileContainerKind const FBFileContainerKindApplication;
+extern FBFileContainerKind const FBFileContainerKindAuxillary;
+extern FBFileContainerKind const FBFileContainerKindCrashes;
+extern FBFileContainerKind const FBFileContainerKindDiskImages;
+extern FBFileContainerKind const FBFileContainerKindGroup;
+extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
+extern FBFileContainerKind const FBFileContainerKindMedia;
+extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
+extern FBFileContainerKind const FBFileContainerKindRoot;
+extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
+extern FBFileContainerKind const FBFileContainerKindWallpaper;
+
 @protocol FBDataConsumer;
 @protocol FBProvisioningProfileCommands;
 
