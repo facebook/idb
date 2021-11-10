@@ -16,6 +16,7 @@ module.exports = {
     "commands",
     "fbsimulatorcontrol",
     "fbdevicecontrol",
+    "video",
     "test-execution",
     "file-containers",
     "accessibility",
