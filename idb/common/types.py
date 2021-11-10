@@ -13,7 +13,6 @@ from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
-    TextIO,
     IO,
     AsyncContextManager,
     AsyncGenerator,

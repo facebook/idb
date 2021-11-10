@@ -16,8 +16,6 @@ from asyncio import StreamWriter, StreamReader
 from io import StringIO
 from pathlib import Path
 from typing import (
-    TextIO,
-    IO,
     Any,
     AsyncGenerator,
     AsyncIterable,
@@ -133,8 +131,6 @@ from idb.grpc.idb_pb2 import (
     XctestListTestsRequest,
     XctraceRecordRequest,
     XctestRunResponse,
-    DapResponse,
-    DapRequest,
 )
 from idb.grpc.install import (
     Bundle,
@@ -150,7 +146,6 @@ from idb.grpc.instruments import (
 )
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
 from idb.grpc.stream import (
-    Stream,
     cancel_wrapper,
     drain_to_stream,
     generate_bytes,

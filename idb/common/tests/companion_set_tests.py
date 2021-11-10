@@ -13,7 +13,6 @@ from idb.common.companion_set import CompanionSet
 from idb.common.types import (
     CompanionInfo,
     DomainSocketAddress,
-    IdbException,
     TCPAddress,
 )
 from idb.utils.testing import TestCase, ignoreTaskLeaks
