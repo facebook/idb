@@ -9,10 +9,11 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FBProcessBuilder.h"
-#import "FBXcodeDirectory.h"
+#import "FBBundleDescriptor.h"
 #import "FBFuture+Sync.h"
 #import "FBiOSTargetConfiguration.h"
+#import "FBProcessBuilder.h"
+#import "FBXcodeDirectory.h"
 
 @implementation FBXcodeConfiguration
 
@@ -104,6 +105,14 @@
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.5"]] != NSOrderedAscending;
 }
 
++ (FBBundleDescriptor *)simulatorApp
+{
+  NSError *error = nil;
+  FBBundleDescriptor *application = [FBBundleDescriptor bundleFromPath:self.simulatorApplicationPath error:&error];
+  NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
+  return application;
+}
+
 + (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -120,6 +129,14 @@
 }
 
 #pragma mark Private
+
++ (NSString *)simulatorApplicationPath
+{
+  NSString *simulatorBinaryName =  @"Simulator";
+  return [[self.developerDirectory
+    stringByAppendingPathComponent:@"Applications"]
+    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
+}
 
 + (NSString *)iPhoneSimulatorPlatformInfoPlistPath
 {

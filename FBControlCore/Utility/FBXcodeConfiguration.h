@@ -9,6 +9,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBBundleDescriptor;
+
 /**
  XCode constants.
  These values can be accessed before the Private Frameworks are loaded.
@@ -74,6 +76,11 @@ NS_ASSUME_NONNULL_BEGIN
  A Description of the Current Configuration.
  */
 @property (nonatomic, copy, readonly, class) NSString *description;
+
+/**
+ A bundle descriptor representing SimulatorApp.
+ */
+@property (nonatomic, copy, readonly, class) FBBundleDescriptor *simulatorApp;
 
 
 /**

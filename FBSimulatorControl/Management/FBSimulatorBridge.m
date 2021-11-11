@@ -13,7 +13,6 @@
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
-#import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
@@ -46,7 +45,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
 
 + (NSString *)simulatorBridgeLaunchPathWithError:(NSError **)error
 {
-  FBBundleDescriptor *simulatorApp = [FBBundleDescriptor xcodeSimulator];
+  FBBundleDescriptor *simulatorApp = FBXcodeConfiguration.simulatorApp;
   if (FBXcodeConfiguration.isXcode12_5OrGreater) {
     return [[FBControlCoreError
       describe:@"Some idb functionality is not yet available with Xcode 12.5, downgrade your Xcode version and try again."]

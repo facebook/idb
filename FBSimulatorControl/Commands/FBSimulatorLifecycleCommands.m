@@ -11,7 +11,6 @@
 
 #import <AppKit/AppKit.h>
 
-#import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -142,7 +141,7 @@
 + (NSRunningApplication *)launchSimulatorApplicationForDefaultDeviceSetWithError:(NSError **)error
 {
   // Obtain the location of the SimulatorApp
-  FBBundleDescriptor *applicationBundle = FBBundleDescriptor.xcodeSimulator;
+  FBBundleDescriptor *applicationBundle = FBXcodeConfiguration.simulatorApp;
   NSURL *applicationURL = [NSURL fileURLWithPath:applicationBundle.path];
 
   // We only want to ever connect to the default SimulatorApp, including re-activating it rather than creating a new instance.
