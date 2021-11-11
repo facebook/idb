@@ -6,7 +6,6 @@
  */
 
 #import "FBSimulatorDapServerCommands.h"
-
 #import "FBSimulator.h"
 
 @interface FBSimulatorDapServerCommand ()
@@ -36,9 +35,38 @@
 }
 
 - (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) launchDapServer:dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut{
+  NSString *dap_log_dir = [self.simulator.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"dap"];
+  
+  NSError *error = nil;
+  BOOL createdDir = [[NSFileManager defaultManager] createDirectoryAtPath:dap_log_dir
+                    withIntermediateDirectories:YES
+                    attributes:nil
+                    error:&error];
+  
+  if (!createdDir) {
+    return [[FBControlCoreError
+             describeFormat:@"Dap Command: Failed to create log director on path %@. Error: %@", dap_log_dir, error.localizedDescription]
+      failFuture];
+  }
+  
+  NSString *log_string = [dap_log_dir stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".log"]];
+  BOOL createdLogFile = [[NSFileManager defaultManager] createFileAtPath:log_string
+                          contents:nil
+                          attributes:nil];
+  if (!createdLogFile) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to create log file on path %@", log_string]
+      failFuture];
+  }
+  
+  [self.simulator.logger.debug logFormat:@"Dap Command: Launching dap server logging at path %@", log_string];
+  NSDictionary<NSString *, NSString *> *envs = @{
+    @"LLDBVSCODE_LOG": log_string
+  };
   NSString *fullPath = [self.simulator.dataDirectory stringByAppendingPathComponent:dapPath];
-  return [[[[[FBProcessBuilder
+  return [[[[[[FBProcessBuilder
               withLaunchPath:fullPath]
+              withEnvironment:envs]
               withStdIn:stdIn]
               withStdOutConsumer: stdOut]
               withStdErrInMemoryAsString]
