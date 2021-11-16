@@ -43,7 +43,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterAdapter *reporterAdapter;
-@property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id<FBLaunchedApplication>> *tokenToLaunchedAppMap;
 
 @end
 
@@ -69,7 +69,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _reporter = reporter;
   _logger = logger;
 
-  _tokenToBundleIDMap = [NSMutableDictionary new];
+  _tokenToLaunchedAppMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
   _reporterAdapter = [FBTestReporterAdapter withReporter:reporter];
@@ -94,19 +94,19 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (FBFuture<NSNull *> *)terminateSpawnedProcesses
 {
 
-  NSArray<NSString *> *bundleIdsToKill = [self.tokenToBundleIDMap allValues];
-  [self.tokenToBundleIDMap removeAllObjects];
-  
-  if (bundleIdsToKill.count > 0) {
-    [self.logger logFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:bundleIdsToKill]];
+  NSArray<id<FBLaunchedApplication>> *appsToKill = [self.tokenToLaunchedAppMap allValues];
+  [self.tokenToLaunchedAppMap removeAllObjects];
 
-    NSMutableArray<FBFuture *> *futuresToWait = [NSMutableArray arrayWithCapacity:bundleIdsToKill.count];
-    for (NSString *bundleId in bundleIdsToKill) {
-      [futuresToWait addObject:[self.target killApplicationWithBundleID:bundleId]];
+  if (appsToKill.count > 0) {
+    [self.logger logFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:appsToKill]];
+
+    NSMutableArray<FBFuture *> *futuresToWait = [NSMutableArray arrayWithCapacity:appsToKill.count];
+    for (id<FBLaunchedApplication> app in appsToKill) {
+      [futuresToWait addObject:[self.target killApplicationWithBundleID:app.bundleID]];
     }
     return [FBFuture futureWithFutures:futuresToWait.copy];
   }
-  
+
   return FBFuture.empty;
 }
 
@@ -126,7 +126,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         [reporter processWaitingForDebuggerWithProcessIdentifier:launchedApplication.processIdentifier];
         future = [FBProcessFetcher waitForDebuggerToAttachAndContinueFor:launchedApplication.processIdentifier];
       }
-      
+
       return [future onQueue:queue fmap:^(id _) {
         return [self runUntilCompletion:launchedApplication logger:logger queue:queue timeout:timeout];
       }];
@@ -254,12 +254,12 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
   [[self
     launchApplication:launch atPath:path]
-    onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
+    onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<id<FBLaunchedApplication>> *future) {
       NSError *innerError = future.error;
       if (innerError) {
         [receipt invokeCompletionWithReturnValue:nil error:innerError];
       } else {
-        self.tokenToBundleIDMap[token] = bundleID;
+        self.tokenToLaunchedAppMap[token] = future.result;
         [receipt invokeCompletionWithReturnValue:token error:nil];
       }
     }];
@@ -286,7 +286,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
                             userInfo:@{NSLocalizedDescriptionKey : @"API violation: token was nil."}];
   }
   else {
-    NSString *bundleID = self.tokenToBundleIDMap[token];
+    NSString *bundleID = self.tokenToLaunchedAppMap[token].bundleID;
     if (!bundleID) {
       error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
                                   code:0x2
