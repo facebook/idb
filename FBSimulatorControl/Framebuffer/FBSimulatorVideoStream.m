@@ -18,6 +18,7 @@
 @protocol FBSimulatorVideoStreamFramePusher <NSObject>
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
+- (BOOL)tearDown:(NSError **)error;
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error;
 
 @end
@@ -85,6 +86,11 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 }
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
+{
+  return YES;
+}
+
+- (BOOL)tearDown:(NSError **)error
 {
   return YES;
 }
@@ -178,6 +184,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       failBool:error];
   }
   self.compressionSession = compressionSession;
+  return YES;
+}
+
+- (BOOL)tearDown:(NSError **)error
+{
+  if (self.compressionSession) {
+    VTCompressionSessionCompleteFrames(self.compressionSession, kCMTimeInvalid);
+    VTCompressionSessionInvalidate(self.compressionSession);
+    self.compressionSession = nil;
+  }
   return YES;
 }
 
@@ -341,6 +357,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       self.consumer = nil;
       [self.framebuffer detachConsumer:self];
       [consumer consumeEndOfFile];
+      if (self.framePusher) {
+        NSError *error = nil;
+        if (![self.framePusher tearDown:&error]) {
+          return [[FBSimulatorError
+                   describeFormat:@"Failed to tear down frame pusher: %@", error]
+                   failFuture];
+        }
+      }
       [self.stoppedFuture resolveWithResult:NSNull.null];
       return self.stoppedFuture;
     }];
@@ -540,6 +564,15 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 }
 
 #pragma mark Private
+
+- (FBFuture<NSNull *> *)stopStreaming
+{
+  if (self.timer != nil) {
+    [self.timer terminate];
+    self.timer = nil;
+  }
+  return [super stopStreaming];
+}
 
 - (BOOL)mountSurface:(IOSurface *)surface error:(NSError **)error
 {

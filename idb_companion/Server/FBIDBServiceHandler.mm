@@ -1259,10 +1259,11 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   FBFuture<NSNull *> *clientStopped = resolve_next_read(stream);
   [[FBFuture race:@[clientStopped, videoStream.completed]] block:nil];
 
-  // Stop the streaming for real. It may have stopped already in which case this returns instantly.
-  success = [[videoStream stopStreaming] block:&error] != nil;
   // Signal that we're done so we don't write to a dangling pointer.
   [done resolveWithResult:NSNull.null];
+  // Stop the streaming for real. It may have stopped already in which case this returns instantly.
+  success = [[videoStream stopStreaming] block:&error] != nil;
+  [_target.logger logFormat:@"The video stream is terminated"];
   if (success == NO) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
