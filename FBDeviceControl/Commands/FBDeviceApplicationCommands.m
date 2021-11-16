@@ -39,6 +39,8 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 
 @property (nonatomic, strong, readonly) FBDeviceApplicationCommands *commands;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *configuration;
+
 
 @end
 
@@ -46,7 +48,7 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 
 @synthesize processIdentifier = _processIdentifier;
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier commands:(FBDeviceApplicationCommands *)commands queue:(dispatch_queue_t)queue
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier configuration:(FBApplicationLaunchConfiguration *)configuration commands:(FBDeviceApplicationCommands *)commands queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -54,6 +56,7 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   }
 
   _processIdentifier = processIdentifier;
+  _configuration = configuration;
   _commands = commands;
   _queue = queue;
 
@@ -68,6 +71,11 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     onQueue:self.queue respondToCancellation:^ FBFuture<NSNull *> *{
       return [commands killApplicationWithProcessIdentifier:processIdentifier];
     }];
+}
+
+- (NSString *)bundleID
+{
+  return self.configuration.bundleID;
 }
 
 @end
@@ -250,7 +258,11 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
       return [client launchApplication:configuration];
     }]
     onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
-      return [[FBDeviceLaunchedApplication alloc] initWithProcessIdentifier:pid.intValue commands:self queue:self.device.workQueue];
+      return [[FBDeviceLaunchedApplication alloc]
+        initWithProcessIdentifier:pid.intValue
+        configuration:configuration
+        commands:self
+        queue:self.device.workQueue];
     }];
 }
 

@@ -17,6 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBLaunchedApplication <NSObject>
 
 /**
+ The Bundle Idenfifer of the Launched Application.
+ */
+@property (nonatomic, copy, readonly) NSString *bundleID;
+
+/**
  The Process Idenfifer of the Launched Application.
  */
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
