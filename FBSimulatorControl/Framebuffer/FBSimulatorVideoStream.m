@@ -333,7 +333,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
           describe:@"Cannot stop streaming, no consumer attached"]
           failFuture];
       }
-      if (![self.framebuffer.attachedConsumers containsObject:self]) {
+      if (![self.framebuffer isConsumerAttached:self]) {
         return [[FBSimulatorError
           describe:@"Cannot stop streaming, is not attached to a surface"]
           failFuture];
