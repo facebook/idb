@@ -25,22 +25,22 @@
 
 @interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer;
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerSync>)consumer;
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerSync> consumer;
 
 @end
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerSync>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
 
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerSync> consumer;
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
 @end
@@ -73,7 +73,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBDataConsumer, FBDataConsumerSync>)consumer
 {
   self = [super init];
   if (!self) {
@@ -113,7 +113,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerSync>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -253,7 +253,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
 @property (nonatomic, assign, readwrite) NSUInteger frameNumber;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerSync> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBSimulatorVideoStreamFramePusher> framePusher;
 
 - (void)pushFrame;
@@ -314,7 +314,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerSync>)consumer
 {
   return [[FBFuture
     onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
@@ -343,7 +343,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       if (self.stoppedFuture.hasCompleted) {
         return self.stoppedFuture;
       }
-      id<FBDataConsumer> consumer = self.consumer;
+      id<FBDataConsumer, FBDataConsumerSync> consumer = self.consumer;
       if (!consumer) {
         return [[FBSimulatorError
           describe:@"Cannot stop streaming, no consumer attached"]
@@ -423,7 +423,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       failBool:error];
   }
 
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = self.consumer;
+  id<FBDataConsumer, FBDataConsumerSync> consumer = self.consumer;
   if (!consumer) {
     return [[FBSimulatorError
       describe:@"Cannot mount surface when there is no consumer"]
@@ -457,7 +457,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 {
   // Ensure that we have all preconditions in place before pushing.
   CVPixelBufferRef pixelBufer = self.pixelBuffer;
-  id<FBDataConsumer> consumer = self.consumer;
+  id<FBDataConsumer, FBDataConsumerSync> consumer = self.consumer;
   id<FBSimulatorVideoStreamFramePusher> framePusher = self.framePusher;
   if (!pixelBufer || !consumer || !framePusher) {
     return;
@@ -475,7 +475,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.frameNumber = frameNumber + 1;
 }
 
-+ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer, FBDataConsumerSync>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Get the base compression session properties, and add the class-cluster properties to them.
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{

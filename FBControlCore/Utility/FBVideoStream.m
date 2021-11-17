@@ -27,7 +27,7 @@ static NSData *AnnexBNALUStartCodeData()
 
 static const int AVCCHeaderLength = 4;
 
-BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
+BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerSync> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
@@ -122,7 +122,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer,
   return YES;
 }
 
-BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
+BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerSync> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   // Enumerate the data buffer
   size_t dataLength = CMBlockBufferGetDataLength(jpegDataBuffer);
@@ -142,7 +142,7 @@ BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsum
         describeFormat:@"Failed to get Data Pointer %d", status]
         failBool:error];
     }
-    // Get our current position in the buffer.
+    // Get our current position in the buffer
     // The consumer will have finished it's use of the buffer upon return, so we don't need to create a copy of the data.
     NSData *data = [NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO];
     [consumer consumeData:data];
@@ -153,7 +153,7 @@ BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsum
   return YES;
 }
 
-BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error)
+BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerSync> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   // Write the header length first
   size_t dataLength = CMBlockBufferGetDataLength(jpegDataBuffer);
@@ -183,7 +183,7 @@ struct MinicapHeader {
 
 #pragma pack(pop)
 
-BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer, FBDataConsumerSync> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   struct MinicapHeader header = {
     .version = 1,

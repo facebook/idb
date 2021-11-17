@@ -52,7 +52,7 @@ static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T>
 }
 
 template <class T>
-static id<FBDataConsumer, FBDataConsumerStackConsuming> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
+static id<FBDataConsumer, FBDataConsumerSync> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
 {
   return [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     if (done.hasCompleted) {
@@ -66,7 +66,7 @@ static id<FBDataConsumer, FBDataConsumerStackConsuming> drain_consumer(grpc::int
 }
 
 template <class Write, class Read>
-static id<FBDataConsumer, FBDataConsumerStackConsuming> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
+static id<FBDataConsumer, FBDataConsumerSync> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
 {
   Read initial;
   stream->Read(&initial);
@@ -1151,7 +1151,7 @@ Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *r
   // In the background, write out the log data. Prevent future writes if the client write fails.
   // This will happen asynchronously with the server thread.
   FBMutableFuture<NSNull *> *writingDone = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     idb::LogResponse item;
     item.set_output(data.bytes, data.length);
     if (writingDone.hasCompleted) {
@@ -1220,7 +1220,7 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   NSError *error = nil;
   idb::VideoStreamRequest request;
   FBMutableFuture<NSNull *> *done = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = consumer_from_request(stream, request, done, &error);
+  id<FBDataConsumer, FBDataConsumerSync> consumer = consumer_from_request(stream, request, done, &error);
   if (!consumer) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -1323,7 +1323,7 @@ Status FBIDBServiceHandler::tail(ServerContext* context, grpc::ServerReaderWrite
   NSString *container = file_container(start.container());
 
   FBMutableFuture<NSNull *> *finished = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerSync> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     if (finished.hasCompleted) {
       return;
     }
