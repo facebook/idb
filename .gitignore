@@ -6,6 +6,8 @@
 build/
 fbsimctl/cli-tests/executable-under-test
 DerivedData
+libMaculator.dylib
+libShimulator.dylib
 
 ## Filesystem
 *.DS_Store
