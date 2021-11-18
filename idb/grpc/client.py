@@ -1360,6 +1360,7 @@ class Client(ClientBase):
         input_stream: StreamReader,
         output_stream: StreamWriter,
         stop: asyncio.Event,
+        compression: Optional[Compression],
     ) -> None:
         path = Path(dap_path)
         pkg_id = path.stem
@@ -1376,7 +1377,7 @@ class Client(ClientBase):
                 src_paths=[str(path.absolute())],
                 container=FileContainerType.ROOT,
                 dest_path="dap",
-                compression=None,
+                compression=compression,
             )
 
         async with RemoteDapServer.start(self.stub, self.logger, pkg_id) as dap_server:

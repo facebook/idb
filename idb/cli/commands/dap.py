@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client
+from idb.common.types import Client, Compression
 
 
 @dataclass
@@ -38,12 +38,16 @@ class DapCommand(ClientCommand):
         )
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
         stdStreams = await get_std_as_streams()
         await client.dap(
             dap_path=args.dap_pkg_path,
             input_stream=stdStreams.stdin,
             output_stream=stdStreams.stdout,
             stop=signal_handler_event("dap"),
+            compression=compression,
         )
 
 

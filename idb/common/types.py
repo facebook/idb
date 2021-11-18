@@ -706,6 +706,7 @@ class Client(ABC):
         input_stream: StreamReader,
         output_stream: StreamWriter,
         stop: asyncio.Event,
+        compression: Optional[Compression],
     ) -> None:
         raise NotImplementedError("Dap command not implemented")
 
