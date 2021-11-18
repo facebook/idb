@@ -682,7 +682,11 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions
     async def push(
-        self, src_paths: List[str], container: FileContainer, dest_path: str
+        self,
+        src_paths: List[str],
+        container: FileContainer,
+        dest_path: str,
+        compression: Optional[Compression],
     ) -> None:
         async with self.stub.push.open() as stream:
             await stream.send_message(
@@ -700,10 +704,21 @@ class Client(ClientBase):
                 await stream.end()
                 await stream.recv_message()
             else:
+                if compression is not None:
+                    await stream.send_message(
+                        PushRequest(
+                            payload=Payload(compression=COMPRESSION_MAP[compression])
+                        )
+                    )
+
                 await drain_to_stream(
                     stream=stream,
                     generator=stream_map(
-                        generate_tar(paths=src_paths, verbose=self._is_verbose),
+                        generate_tar(
+                            paths=src_paths,
+                            compression=compression or Compression.GZIP,
+                            verbose=self._is_verbose,
+                        ),
                         lambda chunk: PushRequest(payload=Payload(data=chunk)),
                     ),
                     logger=self.logger,
@@ -1361,6 +1376,7 @@ class Client(ClientBase):
                 src_paths=[str(path.absolute())],
                 container=FileContainerType.ROOT,
                 dest_path="dap",
+                compression=None,
             )
 
         async with RemoteDapServer.start(self.stub, self.logger, pkg_id) as dap_server:

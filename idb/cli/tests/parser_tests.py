@@ -330,7 +330,10 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.push.assert_called_once_with(
-            container=None, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=None,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=None,
         )
 
     async def test_bundled_file_push_single(self) -> None:
@@ -341,7 +344,33 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.push.assert_called_once_with(
-            container=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=bundle_id,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=None,
+        )
+
+    async def test_bundled_file_push_zstd(self) -> None:
+        self.client_mock.push = AsyncMock()
+        bundle_id = "com.myapp"
+        src = "Library/myFile.txt"
+        dst = "someOutputDir"
+        cmd_input = [
+            "--compression",
+            "ZSTD",
+            "file",
+            "push",
+            src,
+            dst,
+            "--bundle-id",
+            bundle_id,
+        ]
+        await cli_main(cmd_input=cmd_input)
+        self.client_mock.push.assert_called_once_with(
+            container=bundle_id,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=Compression.ZSTD,
         )
 
     async def test_bundled_file_push_multi(self) -> None:
@@ -356,6 +385,7 @@ class TestParser(TestCase):
             container=bundle_id,
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path=dst,
+            compression=None,
         )
 
     async def test_file_pull(self) -> None:

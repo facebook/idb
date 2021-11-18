@@ -761,7 +761,11 @@ class Client(ABC):
 
     @abstractmethod
     async def push(
-        self, src_paths: List[str], container: FileContainer, dest_path: str
+        self,
+        src_paths: List[str],
+        container: FileContainer,
+        dest_path: str,
+        compression: Optional[Compression],
     ) -> None:
         pass
 

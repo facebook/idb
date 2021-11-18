@@ -15,7 +15,7 @@ from typing import List
 import aiofiles
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, FileContainer, FileContainerType
+from idb.common.types import Client, FileContainer, FileContainerType, Compression
 
 
 class FSCommand(ClientCommand):
@@ -293,10 +293,14 @@ class FSPushCommand(FSCommand):
     async def run_with_container(
         self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
         return await client.push(
             container=container,
             src_paths=[os.path.abspath(path) for path in args.src_paths],
             dest_path=args.dest_path,
+            compression=compression,
         )
 
 
@@ -382,6 +386,9 @@ class FSWriteCommand(FSCommand):
     ) -> None:
         data = sys.stdin.buffer.read()
         (destination_directory, destination_file_path) = os.path.split(args.dst)
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_file_path = os.path.join(
@@ -393,6 +400,7 @@ class FSWriteCommand(FSCommand):
                 src_paths=[temporary_file_path],
                 container=container,
                 dest_path=destination_directory,
+                compression=compression,
             )
 
 
