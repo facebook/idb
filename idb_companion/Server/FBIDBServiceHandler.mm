@@ -38,6 +38,18 @@ static NSString *nsstring_from_c_string(const ::std::string& string)
 
 static int BufferOutputSize = 16384; //  # 16Kb
 
+static FBCompressionFormat read_compression_format(const idb::Payload_Compression comp)
+{
+  switch (comp) {
+    case idb::Payload_Compression::Payload_Compression_GZIP:
+      return FBCompressionFormatGZIP;
+    case idb::Payload_Compression::Payload_Compression_ZSTD:
+      return FBCompressionFormatZSTD;
+    default:
+      return FBCompressionFormatGZIP;
+  }
+}
+
 template <class T>
 static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T> *reader)
 {
@@ -207,10 +219,10 @@ static FBFuture<NSArray<NSURL *> *> *filepaths_from_stream(const idb::Payload in
   return future;
 }
 
-static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, id<FBControlCoreLogger> logger)
+static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, FBCompressionFormat compression, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP];
+  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:compression];
   if (extract_from_subdir) {
     // Extract from subdirectories
     return [temporaryDirectory filesFromSubdirs:tarContext];
@@ -233,10 +245,19 @@ static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_reader(FBTemporaryDir
   T request;
   reader->Read(&request);
   idb::Payload firstPayload = request.payload();
+  
+  // The first item in the payload stream may be the compression format, if it's not assume the default.
+  FBCompressionFormat compression = FBCompressionFormatGZIP;
+  if (firstPayload.source_case() == idb::Payload::kCompression) {
+    compression = read_compression_format(firstPayload.compression());
+    reader->Read(&request);
+    firstPayload = request.payload();
+  }
+  
   switch (firstPayload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *input = pipe_to_input(firstPayload, reader);
-      return filepaths_from_tar(temporaryDirectory, input, extract_from_subdir, logger);
+      return filepaths_from_tar(temporaryDirectory, input, extract_from_subdir, compression, logger);
     }
     case idb::Payload::kFilePath: {
       return [FBFutureContext futureContextWithFuture:filepaths_from_stream(firstPayload, reader)];
@@ -502,19 +523,6 @@ static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter
   }
 }
 
-static FBCompressionFormat read_compression_format(const idb::Payload payload)
-{
-  idb::Payload_Compression comp = payload.compression();
-  switch (comp) {
-    case idb::Payload_Compression::Payload_Compression_GZIP:
-      return FBCompressionFormatGZIP;
-    case idb::Payload_Compression::Payload_Compression_ZSTD:
-      return FBCompressionFormatZSTD;
-    default:
-      return FBCompressionFormatGZIP;
-  }
-}
-
 #pragma mark Constructors
 
 FBIDBServiceHandler::FBIDBServiceHandler(FBIDBCommandExecutor *commandExecutor, id<FBiOSTarget> target, id<FBEventReporter> eventReporter)
@@ -571,7 +579,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
   FBCompressionFormat compression = FBCompressionFormatGZIP;
   idb::Payload payload = request.payload();
   if (payload.source_case() == idb::Payload::kCompression) {
-    compression = read_compression_format(payload);
+    compression = read_compression_format(payload.compression());
     stream->Read(&request);
     payload = request.payload();
   }
