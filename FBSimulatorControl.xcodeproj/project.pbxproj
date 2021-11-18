@@ -40,7 +40,7 @@
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		8BD1AF4B212DB04E001F65E1 /* FBiOSTargetSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BD1AF46212DACDE001F65E1 /* FBiOSTargetSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A2FD7D012739885300542291 /* FBSimulatorDapServerCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = A2FD7CFD2739885200542291 /* FBSimulatorDapServerCommands.m */; };
-		A2FD7D022739885300542291 /* FBSimulatorDapServerCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = A2FD7D002739885200542291 /* FBSimulatorDapServerCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A2FD7D022739885300542291 /* FBSimulatorDapServerCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = A2FD7D002739885200542291 /* FBSimulatorDapServerCommands.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		A2FD7D042739887200542291 /* FBDapServerCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = A2FD7D032739887200542291 /* FBDapServerCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A2FD7D082739891900542291 /* FBMemoryCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = A2FD7D072739891900542291 /* FBMemoryCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A2FD7D0A27398B7900542291 /* FBNotificationCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = A2FD7D0927398B7900542291 /* FBNotificationCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -3135,11 +3135,11 @@
 			};
 			buildConfigurationList = 218C37090000000000000002 /* Build configuration list for PBXProject "FBSimulatorControl" */;
 			compatibilityVersion = "Xcode 6.3";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
+				Base,
 			);
 			mainGroup = B401C979EFB6AC4600000000 /* mainGroup */;
 			projectDirPath = "";

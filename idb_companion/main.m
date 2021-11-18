@@ -535,7 +535,7 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
   dispatch_resume(source);
   struct sigaction action = {{0}};
   action.sa_handler = SIG_IGN;
-  sigaction(signalCode, &action, NULL);
+  sigaction((int)signalCode, &action, NULL);
   return [future
     onQueue:queue notifyOfCompletion:^(FBFuture *_) {
       dispatch_cancel(source);

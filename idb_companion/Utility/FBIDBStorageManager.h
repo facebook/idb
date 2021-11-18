@@ -41,7 +41,7 @@ extern NSString *const IdbFrameworksFolder;
  The designated initializer.
 
  @param name the name of the installed artifact.
- @param udid the udid of the installed artifact
+ @param uuid the udid of the installed artifact
  @param path the absolute path to the installed artifact
  */
 - (instancetype)initWithName:(NSString *)name uuid:(nullable NSUUID *)uuid path:(NSURL *)path;
