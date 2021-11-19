@@ -62,6 +62,19 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Consumer which consumes the data asynchronously
+ The data passed in to this consumer should not contain a pointer to a stack allocated data and it should be copied instead
+ */
+@protocol FBDataConsumerAsync <NSObject>
+
+/**
+Number of submitted data that has not been consumed yet
+*/
+- (NSInteger)unprocessedDataCount;
+
+@end
+
+/**
  Observation of a Data Consumer's lifecycle
  */
 @protocol FBDataConsumerLifecycle <NSObject>
@@ -137,7 +150,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -146,7 +159,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
