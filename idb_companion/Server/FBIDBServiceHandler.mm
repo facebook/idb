@@ -1046,13 +1046,16 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
       return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
     }
   }
+  // Respond with the pid of the launched process
+  idb::LaunchResponse response;
+  idb::DebuggerInfo *debugger_info = response.mutable_debugger();
+  debugger_info->set_pid(launchedApp.processIdentifier);
+  stream->Write(response);
+  // Return early if not waiting for output
   if (!start.wait_for()) {
-    idb::LaunchResponse response;
-    idb::DebuggerInfo *debugger_info = response.mutable_debugger();
-    debugger_info->set_pid(launchedApp.processIdentifier);
-    stream->Write(response);
     return Status::OK;
   }
+  // Otherwise wait for the client to hang up.
   stream->Read(&request);
   [[launchedApp.applicationTerminated cancel] block:nil];
   [[FBFuture futureWithFutures:completions] block:nil];
