@@ -459,28 +459,32 @@
 
 - (FBFuture<CodeCoverageResponseData *> *)getCoverageResponseData
 {
-  switch (self.configuration.coverageConfiguration.format) {
-    case FBCodeCoverageExported:
-      return [[self getCoverageDataExported]
-        onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
-          return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
-          onQueue:self.queue map:^CodeCoverageResponseData *(FBProcess<NSData *,NSData *,id> *task) {
-            return [[CodeCoverageResponseData alloc]
-                initWithData:task.stdOut
-                jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
-              ];
+  return [self.processUnderTestExitedMutable
+    onQueue:self.queue fmap:^FBFuture<CodeCoverageResponseData *> *(id _) {
+    
+      switch (self.configuration.coverageConfiguration.format) {
+        case FBCodeCoverageExported:
+          return [[self getCoverageDataExported]
+            onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
+              return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
+              onQueue:self.queue map:^CodeCoverageResponseData *(FBProcess<NSData *,NSData *,id> *task) {
+                return [[CodeCoverageResponseData alloc]
+                    initWithData:task.stdOut
+                    jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
+                  ];
+                }];
             }];
-        }];
-    case FBCodeCoverageRaw:
-      return [[self getCoverageDataDirectory]
-        onQueue:self.queue map:^CodeCoverageResponseData *(NSData *coverageTarball) {
-          return [[CodeCoverageResponseData alloc] initWithData:coverageTarball jsonString:nil];
-        }];
-    default:
-      return [[FBControlCoreError
-        describeFormat:@"Unsupported code coverage format"]
-        failFuture];
-  }
+        case FBCodeCoverageRaw:
+          return [[self getCoverageDataDirectory]
+            onQueue:self.queue map:^CodeCoverageResponseData *(NSData *coverageTarball) {
+              return [[CodeCoverageResponseData alloc] initWithData:coverageTarball jsonString:nil];
+            }];
+        default:
+          return [[FBControlCoreError
+            describeFormat:@"Unsupported code coverage format"]
+            failFuture];
+      }
+  }];
 }
 
 
@@ -520,29 +524,26 @@
     return [[evaluatedObject pathExtension] isEqualToString:@"profraw"];
   }]];
 
+  NSMutableArray<NSString *> *mergeArgs = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
+  for (NSString *profraw in profraws) {
+    [mergeArgs addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
+  }
 
-  return [[[[[self.processUnderTestExitedMutable
-    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
-      NSMutableArray<NSString *> *arguments = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
-      for (NSString *profraw in profraws) {
-        [arguments addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
-      }
+  FBFuture *mergeFuture = [[[[FBProcessBuilder
+    withLaunchPath:@"/usr/bin/xcrun" arguments:mergeArgs.copy]
+    withStdOutInMemoryAsData]
+    withStdErrInMemoryAsString]
+    runUntilCompletionWithAcceptableExitCodes:nil];
 
-      return [[[[FBProcessBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
-        withStdOutInMemoryAsData]
-        withStdErrInMemoryAsString]
-        runUntilCompletionWithAcceptableExitCodes:nil];
-    }]
-    onQueue:self.queue fmap:[checkXcrunError copy]]
+  return [[[[mergeFuture onQueue:self.queue fmap:[checkXcrunError copy]]
     onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
-      NSMutableArray<NSString *> *arguments = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
+      NSMutableArray<NSString *> *exportArgs = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
       for (NSString *binary in self.configuration.binariesPaths) {
-        [arguments addObject:@"-object"];
-        [arguments addObject:binary];
+        [exportArgs addObject:@"-object"];
+        [exportArgs addObject:binary];
       }
       return [[[[FBProcessBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:arguments.copy]
+        withLaunchPath:@"/usr/bin/xcrun" arguments:exportArgs.copy]
         withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];
