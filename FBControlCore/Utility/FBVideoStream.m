@@ -90,7 +90,6 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     [consumer consumeData:spsData];
     [consumer consumeData:headerData];
     [consumer consumeData:ppsData];
-    [logger logFormat:@"Pushing Keyframe"];
   }
 
   // Get the underlying data buffer.

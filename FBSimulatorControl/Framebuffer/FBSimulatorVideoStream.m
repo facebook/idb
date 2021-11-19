@@ -239,7 +239,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @interface FBSimulatorVideoStream_Eager : FBSimulatorVideoStream
 
 @property (nonatomic, assign, readonly) NSUInteger framesPerSecond;
-@property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
+@property (nonatomic, strong, readwrite) NSThread *framePusherThread;
 
 - (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger;
 
@@ -574,29 +574,18 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)stopStreaming
-{
-  if (self.timer != nil) {
-    [self.timer terminate];
-    self.timer = nil;
-  }
-  return [super stopStreaming];
-}
-
 - (BOOL)mountSurface:(IOSurface *)surface error:(NSError **)error
 {
   if (![super mountSurface:surface error:error]) {
     return NO;
   }
 
-  if (self.timer) {
-    [self.timer terminate];
-    self.timer = nil;
-  }
-  uint64_t timeInterval = NSEC_PER_SEC / self.framesPerSecond;
-  self.timer = [FBDispatchSourceNotifier timerNotifierNotifierWithTimeInterval:timeInterval queue:self.writeQueue handler:^(FBDispatchSourceNotifier *_) {
-    [self pushFrame];
+  self.framePusherThread = [[NSThread alloc] initWithBlock:^{
+    [self runFramePushLoop];
   }];
+  [[NSThread currentThread] setThreadPriority:1.0]; //highest priority
+  self.framePusherThread.qualityOfService = NSQualityOfServiceUserInteractive;
+  [self.framePusherThread start];
 
   return YES;
 }
@@ -607,6 +596,40 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
   };
+}
+
+// nanosleep can be off up to 8x when invoked for very precise time intervals
+// to minimize the drift run a polling loop with shorter sleep interval
+// returning when total elapsed time reaches intended sleep interval
+- (void)sleep:(uint64_t)timeIntervalNano
+{
+  const uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  const long sleepInterval = (long)(timeIntervalNano/8);
+  const struct timespec sleepTime = {
+     .tv_sec = 0,
+     .tv_nsec = sleepInterval,
+  };
+  struct timespec remainingTime;
+  while (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) < startTime + timeIntervalNano) {
+    nanosleep(&sleepTime, &remainingTime);
+  }
+}
+
+- (void)runFramePushLoop
+{
+  const uint64_t frameInterval = NSEC_PER_SEC / self.framesPerSecond;
+  uint64_t lastPushedTime = 0;
+  while (self.stoppedFuture.state == FBFutureStateRunning) {
+    const uint64_t loopDuration = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - lastPushedTime;
+    if (lastPushedTime > 0 && loopDuration <= frameInterval) {
+      const uint64_t sleepInterval = frameInterval - loopDuration;
+      [self sleep:sleepInterval];
+    } else if (lastPushedTime > 0) {
+      [self.logger logFormat:@"Push duration exceeded budget"];
+    }
+    lastPushedTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    [self pushFrame];
+  }
 }
 
 @end
