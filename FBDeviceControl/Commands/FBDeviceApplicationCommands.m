@@ -202,17 +202,27 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 {
   return [[FBFuture
     futureWithFutures:@[
-      [self runningProcessNameToPID],
+      [self pidToRunningProcessName],
       [self installedApplicationsData:FBDeviceApplicationCommands.namingLookupAttributes],
     ]]
     onQueue:self.device.asyncQueue map:^ NSDictionary<NSString *, NSNumber *> * (NSArray<id> *tuple) {
-      NSDictionary<NSString *, NSNumber *> *runningProcessNameToPID = tuple[0];
+      // Obtain the requested mappings.
+      NSDictionary<NSNumber *, NSString *> *pidToRunningProcessName = tuple[0];
       NSDictionary<NSString *, id> *bundleIdentifierToAttributes = tuple[1];
+
+      // Flip the mappings
       NSMutableDictionary<NSString *, NSString *> *bundleNameToBundleIdentifier = NSMutableDictionary.dictionary;
       for (NSString *bundleIdentifier in bundleIdentifierToAttributes.allKeys) {
         NSString *bundleName = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyBundleName];
         bundleNameToBundleIdentifier[bundleName] = bundleIdentifier;
       }
+      NSMutableDictionary<NSString *, NSNumber *> *runningProcessNameToPID = NSMutableDictionary.dictionary;
+      for (NSNumber *processIdentifier in pidToRunningProcessName.allKeys) {
+        NSString *processName = pidToRunningProcessName[processIdentifier];
+        runningProcessNameToPID[processName] = processIdentifier;
+      }
+
+      // Compare bundle names with PIDs by using the inverted mappings.
       NSMutableDictionary<NSString *, NSNumber *> *bundleNameToPID = NSMutableDictionary.dictionary;
       for (NSString *processName in runningProcessNameToPID.allKeys) {
         NSString *bundleName = bundleNameToBundleIdentifier[processName];
@@ -223,7 +233,7 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
         bundleNameToPID[bundleName] = pid;
       }
       return bundleNameToPID;
-    }];
+    }]; 
 }
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
@@ -340,12 +350,47 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcessNameToPID
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)pidToRunningProcessName
 {
-  return [[self
-    remoteInstrumentsClient]
-    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
-      return [client runningApplications];
+  return [[self.device
+    startService:@"com.apple.os_trace_relay"]
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
+      NSError *error = nil;
+      BOOL success = [connection sendMessage:@{@"Request": @"PidList"} error:&error];
+      if (!success) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to request PidList %@", error]
+          failFuture];
+      }
+      NSData *data = [connection receive:1 error:&error];
+      if (!data) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to recieve 1 byte after PidList %@", error]
+          failFuture];
+      }
+      NSDictionary<NSString *, id> *response = [connection receiveMessageWithError:&error];
+      if (!response) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to recieve PidList response %@", error]
+          failFuture];
+      }
+      NSString *status = response[@"Status"];
+      if (![status isEqualToString:@"RequestSuccessful"]) {
+        return [[FBDeviceControlError
+          describeFormat:@"Request to PidList is not RequestSuccessful %@", error]
+          failFuture];
+      }
+      NSDictionary<NSNumber *, id> *payload = response[@"Payload"];
+      NSMutableDictionary<NSNumber *, NSString *> *pidToRunningProcessName = NSMutableDictionary.dictionary;
+      for (NSNumber *processIdentifer in payload.keyEnumerator) {
+        NSDictionary<NSString *, NSString *> *contents = payload[processIdentifer];
+        NSString *processName = contents[@"ProcessName"];
+        if (![processName isKindOfClass:NSString.class]) {
+          continue;
+        }
+        pidToRunningProcessName[processIdentifer] = processName;
+      }
+      return [FBFuture futureWithResult:pidToRunningProcessName];
     }];
 }
 

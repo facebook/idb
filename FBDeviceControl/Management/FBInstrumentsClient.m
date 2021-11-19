@@ -108,30 +108,6 @@ static const ResponsePayload InvalidResponsePayload = {
 
 #pragma mark Public Methods
 
-static NSString *const DeviceInfoChannel = @"com.apple.instruments.server.services.deviceinfo";
-
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
-{
-  return [FBFuture
-    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, NSNumber *> * (NSError **error) {
-      ResponsePayload response = [self onChannelIdentifier:DeviceInfoChannel performSelector:@"runningProcesses" argumentsData:nil error:error];
-      if (response.success == NO) {
-        return nil;
-      }
-      NSMutableDictionary<NSString *, NSNumber *> *nameToPid = NSMutableDictionary.dictionary;
-      for (NSDictionary<NSString *, id> *process in response.returnValue) {
-        BOOL isApplication = [process[@"isApplication"] boolValue];
-        if (isApplication == NO) {
-          continue;
-        }
-        NSNumber *pid = process[@"pid"];
-        NSString *processName = process[@"name"];
-        nameToPid[processName] = pid;
-      }
-      return nameToPid;
-    }];
-}
-
 static NSString *const ProcessControlChannel = @"com.apple.instruments.server.services.processcontrol";
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
