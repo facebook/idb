@@ -82,6 +82,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Wraps the AMDServiceConnection.
+ An AMDServiceConnection represents a connection to a "lockdown" service over USB.
  */
 @interface FBAMDServiceConnection : NSObject <FBAMDServiceConnectionTransfer>
 
@@ -91,13 +92,14 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
  Data transfer uses raw sockets.
 
- @param connection the connection to use.
+ @param name the name of the service connection.
+ @param connection the underlying AMDevice Service Connection to wrap.
  @param device the device to use.
  @param calls the calls to use.
  @param logger the logger to use.
  @return a FBAMDServiceConnection instance.
  */
-+ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark plist Messaging
 
@@ -166,6 +168,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger  queue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
+
+/**
+ The name of of the service.
+ */
+@property (nonatomic, copy, readonly) NSString *name;
 
 /**
  The Wrapped Connection.

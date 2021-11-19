@@ -124,24 +124,25 @@ static size_t ReadBufferSize = 1024 * 4;
 
 #pragma mark Initializers
 
-+ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
 {
   // Use Raw transfer when there's no Secure Context, otherwise we must use the service connection wrapping.
   AMSecureIOContext secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection);
   if (secureIOContext == NULL) {
-    return [[FBAMDServiceConnection_TransferRaw alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+    return [[FBAMDServiceConnection_TransferRaw alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
   } else {
-    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
   }
 }
 
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _name = name;
   _connection = connection;
   _device = device;
   _calls = calls;
@@ -154,7 +155,7 @@ static size_t ReadBufferSize = 1024 * 4;
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"%@", self.connection];
+  return [NSString stringWithFormat:@"%@ %@", self.name, self.connection];
 }
 
 #pragma mark plist Messaging

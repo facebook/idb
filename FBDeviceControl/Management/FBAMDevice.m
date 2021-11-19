@@ -179,7 +179,7 @@
           describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
           failFuture];
       }
-      FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithConnection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
+      FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
       [self.logger logFormat:@"Service %@ started", service];
       return [FBFuture futureWithResult:connection];
     }]
