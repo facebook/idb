@@ -62,7 +62,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerSync> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
 @end
@@ -156,7 +156,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public Methods
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerSync>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
 {
   if (self.consumer) {
     return [[FBDeviceControlError
@@ -224,8 +224,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
   void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
   size_t size = CVPixelBufferGetDataSize(pixelBuffer);
-  NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
-  [self.consumer consumeData:data];
+  if ([self.consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
+    NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
+    [self.consumer consumeData:data];
+  } else {
+    NSData *data = [NSData dataWithBytes:baseAddress length:size];
+    [self.consumer consumeData:data];
+  }
+
 
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
