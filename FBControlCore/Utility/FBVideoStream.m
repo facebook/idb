@@ -12,6 +12,21 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 
+static NSUInteger const MaxAllowedUnprocessedDataCounts = 10;
+
+BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger) {
+  if ([consumer conformsToProtocol:@protocol(FBDataConsumerAsync)]) {
+    id<FBDataConsumerAsync> asyncConsumer = (id<FBDataConsumerAsync>)consumer;
+    NSInteger framesInProcess = asyncConsumer.unprocessedDataCount;
+    // drop frames if consumer is overflown
+    if (framesInProcess > MaxAllowedUnprocessedDataCounts) {
+      [logger logFormat:@"Consumer is overflown. Number of unsent frames: %@", @(framesInProcess)];
+      return NO;
+    }
+  }
+  return YES;
+}
+
 static NSData *AnnexBNALUStartCodeData()
 {
   // https://www.programmersought.com/article/3901815022/

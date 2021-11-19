@@ -467,6 +467,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!pixelBufer || !consumer || !framePusher) {
     return;
   }
+  if (!checkConsumerBufferLimit(consumer, self.logger)) {
+    return;
+  }
+  
   NSUInteger frameNumber = self.frameNumber;
   if (frameNumber == 0) {
     self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();

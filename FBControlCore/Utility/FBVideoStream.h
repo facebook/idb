@@ -40,6 +40,14 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Returns true if consumer is ready to process another frame, false if consumer buffered data exceedes allowed limit
+ 
+ @param consumer consumer
+ @return True if next frame should be pushed; False if frame should be dropped
+ */
+extern BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger);
+
+/**
  Write an H264 frame to the stream, in the Annex-B stream format.
 
  @param sampleBuffer the Sample buffer to write.

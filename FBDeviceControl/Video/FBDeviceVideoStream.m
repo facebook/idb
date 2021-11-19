@@ -188,6 +188,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!self.consumer) {
     return;
   }
+  if (!checkConsumerBufferLimit(self.consumer, self.logger)) {
+    return;
+  }
+  
   [self.startFuture resolveWithResult:NSNull.null];
   [self consumeSampleBuffer:sampleBuffer];
 }
