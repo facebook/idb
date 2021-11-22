@@ -12,7 +12,7 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 
-static NSUInteger const MaxAllowedUnprocessedDataCounts = 10;
+static NSInteger const MaxAllowedUnprocessedDataCounts = 10;
 
 BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger) {
   if ([consumer conformsToProtocol:@protocol(FBDataConsumerAsync)]) {
