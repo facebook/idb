@@ -44,6 +44,39 @@ async def _local_target_type(companion: Companion, udid: str) -> TargetType:
     return target.target_type
 
 
+async def _realize_companions(
+    companion_set: CompanionSet,
+    prune_dead_companion: bool,
+    logger: logging.Logger,
+) -> List[TargetDescription]:
+    to_prune: List[Companion]
+
+    async def _companion_to_target(
+        companion: CompanionInfo,
+    ) -> Optional[TargetDescription]:
+        try:
+            async with Client.build(address=companion.address, logger=logger) as client:
+                return await client.describe()
+        except Exception:
+            if not prune_dead_companion:
+                logger.warning(f"Failed to describe {companion}, but not removing it")
+                return None
+            logger.warning(f"Failed to describe {companion}, removing it")
+            await companion_set.remove_companion(companion.address)
+            return None
+
+    companions = await companion_set.get_companions()
+    return [
+        target
+        for target in (
+            await asyncio.gather(
+                *(_companion_to_target(companion=companion) for companion in companions)
+            )
+        )
+        if target is not None
+    ]
+
+
 class ClientManager(ClientManagerBase):
     def __init__(
         self,
@@ -98,24 +131,6 @@ class ClientManager(ClientManagerBase):
         await self._companion_set.add_companion(companion_info)
         return companion_info
 
-    async def _companion_to_target(
-        self, companion: CompanionInfo
-    ) -> Optional[TargetDescription]:
-        try:
-            async with Client.build(
-                address=companion.address, logger=self._logger
-            ) as client:
-                return await client.describe()
-        except Exception:
-            if not self._prune_dead_companion:
-                self._logger.warning(
-                    f"Failed to describe {companion}, but not removing it"
-                )
-                return None
-            self._logger.warning(f"Failed to describe {companion}, removing it")
-            await self._companion_set.remove_companion(companion.address)
-            return None
-
     @asynccontextmanager
     async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
         companions = {
@@ -158,22 +173,14 @@ class ClientManager(ClientManagerBase):
                 return []
             return await companion.list_targets(only=only)
 
-        (companions, local_targets) = await asyncio.gather(
-            self._companion_set.get_companions(),
+        (local_targets, connected_targets) = await asyncio.gather(
             _list_local_targets(),
+            _realize_companions(
+                companion_set=self._companion_set,
+                prune_dead_companion=self._prune_dead_companion,
+                logger=self._logger,
+            ),
         )
-        connected_targets = [
-            target
-            for target in (
-                await asyncio.gather(
-                    *(
-                        self._companion_to_target(companion=companion)
-                        for companion in companions
-                    )
-                )
-            )
-            if target is not None
-        ]
         return merge_connected_targets(
             local_targets=local_targets, connected_targets=connected_targets
         )
