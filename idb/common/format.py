@@ -235,9 +235,11 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
             data["host"] = address.host
             data["port"] = address.port
             data["is_local"] = companion_info.is_local
+            data["companion"] = f"{address.host}:{address.port}"
         else:
             data["path"] = address.path
             data["is_local"] = True
+            data["companion"] = address.path
     if target.device is not None:
         data["device"] = target.device
     return data
