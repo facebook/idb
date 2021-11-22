@@ -77,6 +77,18 @@ async def _realize_companions(
     ]
 
 
+async def _check_domain_socket_is_bound(path: str) -> bool:
+    if not os.path.exists(path):
+        return False
+    try:
+        (_, writer) = await asyncio.open_unix_connection(path=path)
+        writer.close()
+        await writer.wait_closed()
+        return True
+    except Exception:
+        return False
+
+
 class ClientManager(ClientManagerBase):
     def __init__(
         self,
@@ -109,25 +121,34 @@ class ClientManager(ClientManagerBase):
             )
         target_type = await _local_target_type(companion=companion, udid=udid)
         path = os.path.join(BASE_IDB_FILE_PATH, f"{udid}_companion.sock")
-        self._logger.info(f"Attempting to spawn a companion at {path} for {udid}")
-        process = await companion.spawn_domain_sock_server(
-            config=CompanionServerConfig(
+        address = DomainSocketAddress(path=path)
+        self._logger.info(f"Checking whether domain sock {path} is bound for {udid}")
+        is_bound = await _check_domain_socket_is_bound(path=path)
+        if is_bound:
+            self._logger.info(
+                f"Domain socket {path} is bound for {udid}, connecting to it."
+            )
+            companion_info = await self.connect(destination=address)
+        else:
+            self._logger.info(f"No existing companion at {path}, spawning one...")
+            process = await companion.spawn_domain_sock_server(
+                config=CompanionServerConfig(
+                    udid=udid,
+                    only=target_type,
+                    log_file_path=None,
+                    cwd=None,
+                    tmp_path=None,
+                    reparent=True,
+                ),
+                path=path,
+            )
+            self._logger.info(f"Companion at {path} spawned for {udid}")
+            companion_info = CompanionInfo(
+                address=address,
                 udid=udid,
-                only=target_type,
-                log_file_path=None,
-                cwd=None,
-                tmp_path=None,
-                reparent=True,
-            ),
-            path=path,
-        )
-        self._logger.info(f"Companion at {path} spawned for {udid}")
-        companion_info = CompanionInfo(
-            address=DomainSocketAddress(path=path),
-            udid=udid,
-            is_local=True,
-            pid=process.pid,
-        )
+                is_local=True,
+                pid=process.pid,
+            )
         await self._companion_set.add_companion(companion_info)
         return companion_info
 
