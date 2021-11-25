@@ -284,7 +284,7 @@ static size_t SendBufferSize = 1024 * 4;
 - (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error
 {
   HeaderIntType length = (HeaderIntType) data.length;
-  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
+  HeaderIntType lengthWire = OSSwapHostToBigInt32(length); // The host (native) length should be converted endianness of remote (ARM/Apple Silicon).
   NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
   // Write the length data.
   if (![self send:lengthData error:error]) {
