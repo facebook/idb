@@ -446,15 +446,6 @@ message LaunchRequest {
 }
 
 message LaunchResponse {
-  message Pipe {
-    bytes data = 1;
-  }
-  enum Interface {
-    STDOUT = 0;
-    STDERR = 1;
-  }
-  Interface interface = 1;
-  Pipe pipe = 2;
   ProcessOutput output = 3;
   DebuggerInfo debugger = 4;
 }

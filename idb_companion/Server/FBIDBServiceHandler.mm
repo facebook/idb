@@ -182,18 +182,6 @@ static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::Proces
 {
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::LaunchResponse response;
-    switch (interface) {
-      case idb::ProcessOutput_Interface_STDOUT:
-        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT);
-        break;
-      case idb::ProcessOutput_Interface_STDERR:
-        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR);
-        break;
-      default:
-        break;
-    }
-    idb::LaunchResponse_Pipe *pipe = response.mutable_pipe();
-    pipe->set_data(data.bytes, data.length);
     idb::ProcessOutput *output = response.mutable_output();
     output->set_data(data.bytes, data.length);
     output->set_interface(interface);
