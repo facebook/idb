@@ -183,7 +183,7 @@ class CommonRunXcTestCommand(ClientCommand):
         parser.add_argument(
             "--wait-for-debugger",
             action="store_true",
-            help="Suspend test run process to wait for a debugger to be attached. (Only supported by logic test).",
+            help="Suspend test run process to wait for a debugger to be attached. (It is NOT supported by ui test).",
         )
         parser.add_argument(
             "--install",
@@ -209,9 +209,9 @@ class CommonRunXcTestCommand(ClientCommand):
         is_ui = args.run == "ui"
         is_logic = args.run == "logic"
 
-        if args.wait_for_debugger and not is_logic:
+        if args.wait_for_debugger and is_ui:
             print(
-                "--wait_for_debugger flag is only supported for logic tests. Default to False for app and ui tests."
+                "--wait_for_debugger flag is NOT supported for ui tests. It will default to False"
             )
 
         formatter = json_format_test_info if args.json else human_format_test_info
