@@ -33,17 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
-/**
- Starts 'testmanagerd' connection and creates socket to it.
-
- @return A future context wrapping the socket transport. The socket transport will be torn down when the context exits
- */
-- (FBFutureContext<NSNumber *> *)transportForTestManagerService;
-
 @end
 
 /**
  Supported on *some* platforms.
+ These commands require extensive platform support.
  */
 @protocol FBXCTestExtendedCommands <FBXCTestCommands>
 
@@ -60,6 +54,14 @@ NS_ASSUME_NONNULL_BEGIN
  Returns the platform specific shims.
  */
 - (FBFuture<NSString *> *)extendedTestShim;
+
+/**
+ Starts 'testmanagerd' connection and creates socket to it.
+ This can then be used in the process of test execution mediation.
+
+ @return A future context wrapping the socket transport. The socket transport will be torn down when the context exits
+ */
+- (FBFutureContext<NSNumber *> *)transportForTestManagerService;
 
 /**
  The Path to the xctest executable.

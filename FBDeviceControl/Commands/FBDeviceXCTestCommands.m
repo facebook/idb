@@ -77,15 +77,6 @@
     }];
 }
 
-- (FBFutureContext<NSNumber *> *)transportForTestManagerService
-{
-  return [[self.device
-    startService:@"com.apple.testmanagerd.lockdown"]
-    onQueue:self.device.workQueue pend:^(FBAMDServiceConnection *connection) {
-      return [FBFuture futureWithResult:@(connection.socket)];
-    }];
-}
-
 #pragma mark Private
 
 - (FBFuture<FBProcess *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger

@@ -37,7 +37,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<FBiOSTarget, FBXCTestExtendedCommands> target;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
@@ -51,13 +51,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger];
   return [mediator connectAndRunUntilCompletion];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -143,7 +143,8 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     }];
 }
 
-- (FBFuture<NSNull *> *) runUntilCompletion:(id<FBLaunchedApplication>)launchedApplication logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout {
+- (FBFuture<NSNull *> *)runUntilCompletion:(id<FBLaunchedApplication>)launchedApplication logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout
+{
   return [[[FBTestBundleConnection
     connectAndRunBundleToCompletionWithContext:self.context
     target:self.target
