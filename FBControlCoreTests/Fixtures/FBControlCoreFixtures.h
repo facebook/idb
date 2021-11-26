@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
-@class FBDiagnostic;
 @class FBProcessInfo;
 
 /**

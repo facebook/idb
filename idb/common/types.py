@@ -7,6 +7,7 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
+from asyncio import StreamWriter, StreamReader
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
@@ -52,9 +53,10 @@ class Permission(Enum):
     NOTIFICATION = 5
 
 
-class TargetType(Enum):
-    DEVICE = 1
-    SIMULATOR = 2
+class TargetType(str, Enum):
+    DEVICE = "device"
+    SIMULATOR = "simulator"
+    MAC = "mac"
 
 
 @dataclass(frozen=True)
@@ -100,6 +102,7 @@ class InstalledAppInfo:
     install_type: str
     process_state: AppProcessState
     debuggable: bool
+    process_id: int
 
 
 @dataclass(frozen=True)
@@ -125,6 +128,7 @@ ConnectionDestination = Union[str, Address]
 class CompanionInfo:
     udid: str
     is_local: bool
+    pid: Optional[int]
     address: Address
     metadata: LoggingMetadata = field(default_factory=dict)
 
@@ -145,8 +149,8 @@ DeviceDetails = Mapping[str, Union[int, str]]
 class TargetDescription:
     udid: str
     name: str
+    target_type: TargetType
     state: Optional[str]
-    target_type: Optional[str]
     os_version: Optional[str]
     architecture: Optional[str]
     companion_info: Optional[CompanionInfo]
@@ -175,7 +179,7 @@ class FileListing:
 
 @dataclass(frozen=True)
 class AccessibilityInfo:
-    json: Optional[str]
+    json: str
 
 
 @dataclass(frozen=True)
@@ -255,6 +259,11 @@ class InstalledTestInfo:
     architectures: Optional[Set[str]]
 
 
+@dataclass(frozen=True)
+class DebuggerInfo:
+    pid: int
+
+
 class HIDDirection(Enum):
     DOWN = 0
     UP = 1
@@ -314,14 +323,17 @@ class InstalledArtifact:
 
 
 class FileContainerType(Enum):
-    ROOT = "root"
-    MEDIA = "media"
+    APPLICATION = "application"
+    AUXILLARY = "auxillary"
     CRASHES = "crashes"
-    PROVISIONING_PROFILES = "provisioning_profiles"
+    DISK_IMAGES = "disk_images"
+    GROUP = "group"
     MDM_PROFILES = "mdm_profiles"
+    MEDIA = "media"
+    PROVISIONING_PROFILES = "provisioning_profiles"
+    ROOT = "root"
     SPRINGBOARD_ICONS = "springboard_icons"
     WALLPAPER = "wallpaper"
-    DISK_IMAGES = "disk_images"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]
@@ -330,6 +342,11 @@ FileContainer = Optional[Union[str, FileContainerType]]
 class Compression(Enum):
     GZIP = 0
     ZSTD = 1
+
+
+class CodeCoverageFormat(Enum):
+    EXPORTED = 0
+    RAW = 1
 
 
 class Companion(ABC):
@@ -446,6 +463,7 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
@@ -456,6 +474,7 @@ class Client(ABC):
         self,
         bundle: Union[str, IO[bytes]],
         compression: Optional[Compression] = None,
+        make_debuggable: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -467,7 +486,9 @@ class Client(ABC):
 
     @abstractmethod
     async def install_dsym(
-        self, dsym: Union[str, IO[bytes]]
+        self,
+        dsym: Union[str, IO[bytes]],
+        bundle_id: Optional[str],
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -522,7 +543,17 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def set_preference(
+        self, name: str, value: str, domain: Optional[str]
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def get_locale(self) -> str:
+        pass
+
+    @abstractmethod
+    async def get_preference(self, name: str, domain: Optional[str]) -> str:
         pass
 
     @abstractmethod
@@ -535,6 +566,14 @@ class Client(ABC):
 
     @abstractmethod
     async def set_location(self, latitude: float, longitude: float) -> None:
+        pass
+
+    @abstractmethod
+    async def simulate_memory_warning(self) -> None:
+        pass
+
+    @abstractmethod
+    async def send_notification(self, bundle_id: str, json_payload: str) -> None:
         pass
 
     @abstractmethod
@@ -661,6 +700,16 @@ class Client(ABC):
     async def focus(self) -> None:
         pass
 
+    async def dap(
+        self,
+        dap_path: str,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+        stop: asyncio.Event,
+        compression: Optional[Compression],
+    ) -> None:
+        raise NotImplementedError("Dap command not implemented")
+
     @abstractmethod
     async def debugserver_start(self, bundle_id: str) -> List[str]:
         pass
@@ -713,7 +762,11 @@ class Client(ABC):
 
     @abstractmethod
     async def push(
-        self, src_paths: List[str], container: FileContainer, dest_path: str
+        self,
+        src_paths: List[str],
+        container: FileContainer,
+        dest_path: str,
+        compression: Optional[Compression],
     ) -> None:
         pass
 
@@ -738,7 +791,9 @@ class ClientManager:
         pass
 
     @abstractmethod
-    async def list_targets(self) -> List[TargetDescription]:
+    async def list_targets(
+        self, only: Optional[OnlyFilter] = None
+    ) -> List[TargetDescription]:
         pass
 
     @abstractmethod

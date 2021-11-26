@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBXCTestConfiguration;
-
 /**
  A Template for Tests that Provide Value-Like Objects.
  */

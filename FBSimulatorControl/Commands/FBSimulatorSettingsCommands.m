@@ -64,18 +64,18 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }];
 }
 
-- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)identifier
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
 {
-  return [[FBLocaleModificationStrategy
+  return [[FBPreferenceModificationStrategy
     strategyWithSimulator:self.simulator]
-    setLocaleWithIdentifier:identifier];
+    setPreference:name value:value domain:domain];
 }
 
-- (FBFuture<NSString *> *)getCurrentLocaleIdentifier
+- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;
 {
-  return [[FBLocaleModificationStrategy
+  return [[FBPreferenceModificationStrategy
     strategyWithSimulator:self.simulator]
-    getCurrentLocaleIdentifier];
+    getCurrentPreference:name domain:domain];
 }
 
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
@@ -446,13 +446,13 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 {
   arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
   [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/sqlite3" arguments:arguments]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
-    onQueue:queue fmap:^(FBTask<NSNull *, NSString *, NSString *> *task) {
+    onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
           return [[FBSimulatorError
             describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]

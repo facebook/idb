@@ -1,0 +1,82 @@
+---
+id: file-containers
+title: File Containers
+---
+
+`idb` allows for the manipulation of files, or "file-like" entities on iOS Targets.
+
+
+## File Containers
+
+A "File Container" represents a view into an iOS target that behaves a lot like a remote or mounted filesystem. The files that are presented within a container can be manipulated in the same way, regardless of the type of the container for consistency of functionality between them. iOS Simulators & iOS Devices support different kinds of containers, as well as containers that are common to both Simulators and Devices.
+
+The table below lists all of the available containers and to which iOS targets they apply:
+
+| Switch | Description | Simulators | Devices |
+|--------|-------------|------------|---------|
+| `--application` | The container of all installed "Application Sandboxes". These are bundle ids corresponding to installed Application home directories | ✅ | ✅ (Only for Applications installed with a signed with a Developer Profile) |
+| `--crashes`|The container for Crash/Diagnostic reports. This can be used to view and pull crash logs from a device | ❌ | ✅ |
+| `--disk-images` | The [container for developer disk images](fbdevicecontrol#developer-disk-images) | ❌ | ✅ |
+| `--group` | Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari') | ✅ | ❌ |
+| `--mdm-profiles` | A container representing installed MDM Profiles | ❌ | ✅ |
+| `--media`|The container for Photos/Videos| ✅ | ✅ |
+| `--provisioning-profiles` | A container representing installed provisioning profiles on the device | ❌ | ✅ |
+| `--root` | The root filesystem of the target | ✅ | ❌ |
+| `--springboard-icons` | A container representing the layout of items on the home screen | ❌ | ✅ |
+| `--wallpaper` | A container representing wallpaper installed on the device | ❌ | ✅ | 
+
+## File Operations
+
+All operations on a File Container are relative to some "root". What this root represents will vary depending on the container type specified. For example a `--application` container will present a root with subdirectories for the "Application Containers" of installed Applications. The `--disk-images` container presents a root with all mountable ["Developer Disk Images"](fbdevicecontrol#developer-disk-images) as well as a directory representing the currently mounted disk image.
+
+### Copying files into a container
+
+```
+idb file push --application com.foo.bar/src1.jpg com.foo.bar/src2.jpg dest_1
+```
+
+Copies one or more files from the host to the relative destination path within the container.
+
+
+### Copying files out of a container
+
+```
+idb file pull --application com.foo.bar/src.txt dest.txt
+```
+
+Copies a single file from the container to the host.
+
+### Moving files within the container
+
+```
+idb file mv --application com.foo.bar/src1.jpg dest_1.jpg
+```
+
+This will move two image files from the root of the container, to a destination subdirectory within the container.
+
+
+### Make a new directory
+
+```
+idb file mkdir --application com.foo.bar/newdir
+```
+
+Creates a new folder within the apps data container.
+
+### Remove a path on a target
+
+```
+idb file rm --application com.foo.bar/Caches
+```
+
+Removes the specified paths within an apps data container.
+
+If a folder is specified to be deleted, all of its contents will be removed recursively.
+
+### List a path on a target
+
+```
+idb file ls --application com.foo.bar/Caches
+```
+
+Returns a list of all the files present within one or more directories.

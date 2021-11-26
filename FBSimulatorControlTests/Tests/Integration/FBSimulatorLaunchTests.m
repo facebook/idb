@@ -55,30 +55,30 @@
 
 - (void)testLaunchesiPhone
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]];
 }
 
 - (void)testLaunchesiPad
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]];
 }
 
 - (void)testLaunchesWatch
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleWatch42mm]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModelAppleWatch42mm]];
 }
 
 - (void)testLaunchesTV
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModelAppleTV]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModelAppleTV]];
 }
 
 - (void)testLaunchesMultipleSimulators
 {
   FBFuture<NSArray<FBSimulator *> *> *simulatorFutures = [FBFuture futureWithFutures:@[
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]],
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
+    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]],
   ]];
   NSError *error = nil;
   NSArray<FBSimulator *> *simulators = [simulatorFutures await:&error];
@@ -90,9 +90,9 @@
   FBSimulator *simulator3 = simulators[2];
 
   FBFuture *bootFuture = [FBFuture futureWithFutures:@[
-    [simulator1 bootWithConfiguration:self.bootConfiguration],
-    [simulator2 bootWithConfiguration:self.bootConfiguration],
-    [simulator3 bootWithConfiguration:self.bootConfiguration],
+    [simulator1 boot:self.bootConfiguration],
+    [simulator2 boot:self.bootConfiguration],
+    [simulator3 boot:self.bootConfiguration],
   ]];
   BOOL success = [bootFuture await:&error] != nil;
   XCTAssertNil(error);

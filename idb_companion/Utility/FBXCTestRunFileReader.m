@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBXCTestDescriptor.h"
+#import "FBXCTestRunFileReader.h"
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestRunFileReader.h"
 #import "FBIDBStorageManager.h"
 
 @implementation FBXCTestRunFileReader : NSObject

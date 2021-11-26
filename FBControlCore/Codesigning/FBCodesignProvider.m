@@ -68,13 +68,13 @@ static NSString *const CDHashPrefix = @"CDHash=";
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
   
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBTask<NSNull *, NSString *, NSString *> *task) {
+    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBProcess<NSNull *, NSString *, NSString *> *task) {
       NSNumber *exitCode = task.exitCode.result;
       if (![exitCode isEqualTo:@0]) {
         return [[FBControlCoreError
@@ -136,13 +136,13 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^ FBFuture<NSString *> * (FBTask<NSNull *,NSString *,NSString *> *task) {
+    onQueue:self.queue fmap:^ FBFuture<NSString *> * (FBProcess<NSNull *,NSString *,NSString *> *task) {
       NSNumber *exitCode = task.exitCode.result;
       if (![exitCode isEqualTo:@0]) {
         return [[FBControlCoreError

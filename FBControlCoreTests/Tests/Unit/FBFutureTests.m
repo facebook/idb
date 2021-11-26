@@ -478,6 +478,45 @@
   XCTAssertEqual(lateFuture2.state, FBFutureStateCancelled);
 }
 
+- (void)testRaceFailFutures
+{
+  XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
+  XCTestExpectation *late1Cancelled = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 1"];
+  XCTestExpectation *late2Cancelled = [[XCTestExpectation alloc] initWithDescription:@"Cancellation of late future 2"];
+
+  FBFuture<NSNumber *> *lateFuture1 = [[FBMutableFuture
+    future]
+    onQueue:self.queue respondToCancellation:^{
+      [late1Cancelled fulfill];
+      return FBFuture.empty;
+    }];
+  FBFuture<NSNumber *> *lateFuture2 = [[FBMutableFuture
+    future]
+    onQueue:self.queue respondToCancellation:^{
+      [late2Cancelled fulfill];
+      return FBFuture.empty;
+    }];
+  
+  NSError *error = [NSError errorWithDomain:@"Future with error" code:2 userInfo:nil];
+  FBFuture<NSNumber *> *raceFuture = [[FBFuture
+      race:@[
+        lateFuture1,
+        [FBFuture futureWithError:error],
+        lateFuture2,
+      ]]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
+      XCTAssertEqual(future.state, FBFutureStateFailed);
+      XCTAssertEqualObjects(future.error, error);
+      [completion fulfill];
+    }];
+
+  [self waitForExpectations:@[completion, late1Cancelled, late2Cancelled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(raceFuture.state, FBFutureStateFailed);
+  XCTAssertEqualObjects(raceFuture.error, error);
+  XCTAssertEqual(lateFuture1.state, FBFutureStateCancelled);
+  XCTAssertEqual(lateFuture2.state, FBFutureStateCancelled);
+}
+
 - (void)testAllCancelledPropogates
 {
   XCTestExpectation *completion = [[XCTestExpectation alloc] initWithDescription:@"Completion is called"];
@@ -617,7 +656,45 @@
 
   [self waitForExpectations:@[
     [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
-    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:NSNull.null],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testResolveOrFailWhenFailureCase
+{
+  __block NSInteger resolveCount = 2;
+  NSError *expectedError = [NSError errorWithDomain:@"user error" code:1 userInfo:nil];
+  FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveOrFailWhen:^FBFutureLoopState (NSError **error) {
+    --resolveCount;
+    if (resolveCount == 0) {
+      *error = expectedError;
+      return FBFutureLoopFailed;
+    }
+    return FBFutureLoopContinue;
+  }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"error" expectedValue:expectedError],
+    [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateFailed)]
+  ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testResolveOrFailWhenSuccessCase
+{
+  __block NSInteger resolveCount = 2;
+  FBFuture<NSNull *> *future = [FBFuture onQueue:self.queue resolveOrFailWhen:^FBFutureLoopState (NSError **error) {
+    --resolveCount;
+    if (resolveCount == 0) {
+      return FBFutureLoopFinished;
+    }
+    return FBFutureLoopContinue;
+  }];
+
+  [self waitForExpectations:@[
+    [self keyValueObservingExpectationForObject:future keyPath:@"hasCompleted" expectedValue:@YES],
+    [self keyValueObservingExpectationForObject:future keyPath:@"result" expectedValue:NSNull.null],
     [self keyValueObservingExpectationForObject:future keyPath:@"state" expectedValue:@(FBFutureStateDone)]
   ] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
@@ -1222,6 +1299,30 @@
   // Now teardown the context manually.
   [teardown resolveWithResult:NSNull.null];
   [self waitForExpectations:@[teardownExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
+- (void)testContextToFutureError
+{
+  XCTestExpectation *completionExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved Completion"];
+  NSError *expectedError = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+
+  [[[[FBFuture
+    futureWithError:expectedError]
+    onQueue:self.queue contextualTeardown:^(id foo, FBFutureState _) {
+      XCTFail(@"contextualTeardown should not be called when the base future errors");
+      return FBFuture.empty;
+    }]
+    onQueue:self.queue enter:^(id value, FBMutableFuture<NSNull *> *innerTeardown) {
+      XCTFail(@"enter should not be called when the base future errors");
+      return value;
+    }]
+    onQueue:self.queue notifyOfCompletion:^(FBFuture *future){
+      XCTAssertEqualObjects(future.error, expectedError);
+      [completionExpectation fulfill];
+    }];
+
+  // Wait for the base future to resolve and confirm there's no teardown called yet.
+  [self waitForExpectations:@[completionExpectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 #pragma mark - Helpers

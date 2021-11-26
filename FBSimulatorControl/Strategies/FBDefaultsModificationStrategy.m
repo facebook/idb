@@ -148,19 +148,24 @@
 
 @end
 
-@implementation FBLocaleModificationStrategy
+@implementation FBPreferenceModificationStrategy
 
 static NSString *const AppleGlobalDomain = @"Apple Global Domain";
-static NSString *const AppleLocaleKey = @"AppleLocale";
 
-- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)localeIdentifier
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
 {
-  return [self setDefaultInDomain:AppleGlobalDomain key:AppleLocaleKey value:localeIdentifier];
+  if (domain == nil) {
+    domain = AppleGlobalDomain;
+  }
+  return [self setDefaultInDomain:domain key:name value:value];
 }
 
-- (FBFuture<NSString *> *)getCurrentLocaleIdentifier
+- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain
 {
-  return [self getDefaultInDomain:AppleGlobalDomain key:AppleLocaleKey];
+  if (domain == nil) {
+    domain = AppleGlobalDomain;
+  }
+  return [self getDefaultInDomain:domain key:name];
 }
 
 @end

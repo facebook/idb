@@ -18,6 +18,7 @@ from idb.common.types import (
     TargetDescription,
     TCPAddress,
     TestActivity,
+    TargetType,
     TestRunFailureInfo,
     TestRunInfo,
 )
@@ -56,15 +57,19 @@ INSTALLED_APP_INFO_FIXTURE = InstalledAppInfo(
     install_type="System",
     process_state=AppProcessState.RUNNING,
     debuggable=True,
+    process_id=0,
 )
 COMPANION_INFO_FIXTURE = CompanionInfo(
-    udid="MyUdid", address=TCPAddress(host="ThisMac", port=1234), is_local=False
+    udid="MyUdid",
+    address=TCPAddress(host="ThisMac", port=1234),
+    is_local=False,
+    pid=123,
 )
 TARGET_DESCRIPTION_FIXTURE = TargetDescription(
     udid="MyUdid",
     name="MyName",
     state="Started?",
-    target_type="iOS",
+    target_type=TargetType.SIMULATOR,
     os_version="1",
     architecture="arm89",
     companion_info=None,

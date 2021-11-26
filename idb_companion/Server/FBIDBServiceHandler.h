@@ -69,4 +69,7 @@ public:
   Status xctest_list_tests(ServerContext *context, const idb::XctestListTestsRequest *request, idb::XctestListTestsResponse *response);
   Status xctest_run(ServerContext *context, const idb::XctestRunRequest *request, grpc::ServerWriter<idb::XctestRunResponse> *response);
   Status xctrace_record(ServerContext *context, grpc::ServerReaderWriter<idb::XctraceRecordResponse, idb::XctraceRecordRequest> *stream);
+  Status send_notification(ServerContext *context, const idb::SendNotificationRequest *request, idb::SendNotificationResponse *response);
+  Status dap(ServerContext *context,grpc::ServerReaderWriter<idb::DapResponse, idb::DapRequest> *stream);
+  Status simulate_memory_warning(ServerContext *context, const idb::SimulateMemoryWarningRequest *request, idb::SimulateMemoryWarningResponse *response);
 };

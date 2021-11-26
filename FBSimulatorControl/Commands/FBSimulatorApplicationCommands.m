@@ -45,18 +45,36 @@
 
 #pragma mark - FBApplicationCommands Implementation
 
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
-  return [self installExtractedApplicationWithPath:path];
-}
+  return [[self
+    confirmCompatibilityOfApplicationAtPath:path]
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<FBInstalledApplication *> * (FBBundleDescriptor *appBundle) {
+      NSDictionary *options = @{
+        @"CFBundleIdentifier": appBundle.identifier
+      };
+      NSURL *appURL = [NSURL fileURLWithPath:appBundle.path];
+      NSError *error = nil;
+      if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
+        return [self installedApplicationWithBundleID:appBundle.identifier];
+      }
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [FBFuture
-    onQueue:self.simulator.workQueue resolveValue:^ NSNumber * (NSError ** error) {
-      NSString *applicationType = nil;
-      BOOL applicationIsInstalled = [self.simulator.device applicationIsInstalled:bundleID type:&applicationType error:error];
-      return @(applicationIsInstalled);
+      // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
+      // This is to mitagate an error where the first install of an app after uninstalling it
+      // always fails.
+      // See Apple bug report 46691107
+      if ([error.description containsString:@"Failed to load Info.plist from bundle at path"]) {
+        [self.simulator.logger log:@"Retrying install due to reinstall bug"];
+        error = nil;
+        if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
+          return [self installedApplicationWithBundleID:appBundle.identifier];
+        }
+      }
+
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to install Application %@ with options %@", appBundle, options]
+        causedBy:error]
+        failFuture];
     }];
 }
 
@@ -97,7 +115,7 @@
 - (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications
 {
   return [[FBFuture
-    resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
       return [self.simulator.device installedAppsWithError:error];
     }]
     onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
@@ -144,30 +162,47 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  return [[self
-    confirmApplicationIsInstalled:bundleID]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<FBInstalledApplication *> * (id _) {
+  SimDevice *device = self.simulator.device;
+
+  return [FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ FBInstalledApplication * (NSError **error) {
+      // -[SimDevice propertiesOfApplication:error:] will return in success if the app could not be found.
+      // The dictionary only contains one element, which is the bundle id of the non-existant app.
+      // This internal helper method understands this, so we can just re-use it here.
+      NSString *applicationType = nil;
+      BOOL applicationIsInstalled = [device applicationIsInstalled:bundleID type:&applicationType error:error];
+      if (!applicationIsInstalled) {
+        return [[FBSimulatorError
+          describeFormat:@"Cannot get app information for '%@', it is not installed", bundleID]
+          fail:error];
+      }
       // appInfo is usually always returned, even if there is no app installed.
-      NSError *error = nil;
-      NSDictionary<NSString *, id> *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&error];
+      NSDictionary<NSString *, id> *appInfo = [device propertiesOfApplication:bundleID error:error];
       if (!appInfo) {
-        return [FBFuture futureWithError:error];
+        return nil;
       }
       // Therefore we have to parse the app info to see that it is actually a real app.
-      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:&error];
+      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
       if (!application) {
-        return [[FBSimulatorError
-          describeFormat:@"Application Info %@ could not be parsed (it's probably not installed): %@", [FBCollectionInformation oneLineDescriptionFromDictionary:appInfo], error]
-          failFuture];
+        return nil;
       }
-      return [FBFuture futureWithResult:application];
+      return application;
     }];
 }
 
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications
 {
+  static dispatch_once_t onceToken;
+  static NSRegularExpression *regex;
+  dispatch_once(&onceToken, ^{
+    NSError *error = nil;
+    regex = [NSRegularExpression regularExpressionWithPattern:@"UIKitApplication:" options:0 error:&error];
+    NSCAssert(error == nil, @"Invalid regular expression");
+  });
+
+
   return [[self.simulator
-    serviceNamesAndProcessIdentifiersForSubstring:@"UIKitApplication"]
+    serviceNamesAndProcessIdentifiersMatching:regex]
     onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
       NSMutableDictionary<NSString *, NSNumber *> *mapping = [NSMutableDictionary dictionary];
       for (NSString *serviceName in serviceNameToProcessIdentifier.allKeys) {
@@ -183,17 +218,78 @@
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
+  NSError *error = nil;
+  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@\\[|$",[NSRegularExpression escapedPatternForString:bundleID]];
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
+  if (error) {
+    return [[FBSimulatorError
+             describeFormat:@"Couldn't build search pattern for '%@'", bundleID]
+             failFuture];
+  }
   return [[FBFuture
     onQueue:self.simulator.workQueue resolve:^{
-      NSString *serviceName = [NSString stringWithFormat:@"UIKitApplication:%@", bundleID];
-      return [self.simulator serviceNameAndProcessIdentifierForSubstring:serviceName];
+      return [self.simulator firstServiceNameAndProcessIdentifierMatching:regex];
     }]
     onQueue:self.simulator.workQueue map:^(NSArray<id> *result) {
       return result[1];
     }];
 }
 
+#pragma mark Public
+
++ (FBFuture<NSDictionary<NSString *, NSURL *> *> *)groupContainerToPathMappingForSimulator:(FBSimulator *)simulator
+{
+  FBSimulatorApplicationCommands *commands = [[FBSimulatorApplicationCommands alloc] initWithSimulator:simulator];
+  return [commands groupContainerToPathMapping];
+}
+
++ (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMappingForSimulator:(FBSimulator *)simulator
+{
+  FBSimulatorApplicationCommands *commands = [[FBSimulatorApplicationCommands alloc] initWithSimulator:simulator];
+  return [commands applicationContainerToPathMapping];
+}
+
 #pragma mark Private
+
+- (FBFuture<NSDictionary<NSString *, NSURL *> *> *)groupContainerToPathMapping
+{
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+      return [self.simulator.device installedAppsWithError:error];
+    }]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
+      NSMutableDictionary<NSString *, NSURL *> *mapping = NSMutableDictionary.dictionary;
+      for (NSString *key in installedApps.allKeys) {
+        NSDictionary<NSString *, id> *app = installedApps[key];
+        NSDictionary<NSString *, id> *appContainers = app[@"GroupContainers"];
+        if (!appContainers) {
+          continue;
+        }
+        [mapping addEntriesFromDictionary:appContainers];
+      }
+      return [mapping copy];
+    }];
+}
+
+- (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMapping
+{
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id>  * (NSError **error) {
+      return [self.simulator.device installedAppsWithError:error];
+    }]
+    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
+      NSMutableDictionary<NSString *, NSURL *> *mapping = NSMutableDictionary.dictionary;
+      for (NSString *bundleID in installedApps.allKeys) {
+        NSDictionary<NSString *, id> *app = installedApps[bundleID];
+        NSURL *dataContainer = app[KeyDataContainer];
+        if (!dataContainer) {
+          continue;
+        }
+        mapping[bundleID] = dataContainer;
+      }
+      return [mapping copy];
+    }];
+}
 
 - (FBFuture<NSNumber *> *)ensureApplicationIsInstalled:(NSString *)bundleID
 {
@@ -362,40 +458,6 @@ static NSString *const KeyDataContainer = @"DataContainer";
     dataContainer:dataContainer.path];
 }
 
-- (FBFuture<NSNull *> *)installExtractedApplicationWithPath:(NSString *)path
-{
-  return [[self
-    confirmCompatibilityOfApplicationAtPath:path]
-    onQueue:self.simulator.workQueue fmap:^FBFuture *(FBBundleDescriptor *application) {
-      NSDictionary *options = @{
-        @"CFBundleIdentifier": application.identifier
-      };
-      NSURL *appURL = [NSURL fileURLWithPath:application.path];
-
-      NSError *error = nil;
-      if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-        return FBFuture.empty;
-      }
-
-      // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
-      // This is to mitagate an error where the first install of an app after uninstalling it
-      // always fails.
-      // See Apple bug report 46691107
-      if ([error.description containsString:@"Failed to load Info.plist from bundle at path"]) {
-        [self.simulator.logger log:@"Retrying install due to reinstall bug"];
-        error = nil;
-        if ([self.simulator.device installApplication:appURL withOptions:options error:&error]) {
-          return FBFuture.empty;
-        }
-      }
-
-      return [[[FBSimulatorError
-        describeFormat:@"Failed to install Application %@ with options %@", application, options]
-        causedBy:error]
-        failFuture];
-    }];
-}
-
 - (FBFuture<FBBundleDescriptor *> *)confirmCompatibilityOfApplicationAtPath:(NSString *)path
 {
   NSError *error = nil;
@@ -428,20 +490,6 @@ static NSString *const KeyDataContainer = @"DataContainer";
           failFuture];
       }
       return [FBFuture futureWithResult:application];
-    }];
-}
-
-- (FBFuture<NSNull *> *)confirmApplicationIsInstalled:(NSString *)bundleID
-{
-  return [[self
-    isApplicationInstalledWithBundleID:bundleID]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (NSNumber *installed) {
-      if (installed.boolValue == NO) {
-        return [[FBSimulatorError
-          describeFormat:@"%@ is not installed", bundleID]
-          failFuture];
-      }
-      return FBFuture.empty;
     }];
 }
 

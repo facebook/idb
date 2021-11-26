@@ -14,7 +14,7 @@
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
 const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
@@ -121,14 +121,14 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/instruments"]
     withArguments:arguments]
     withStdOutToLogger:compositeLogger]
     withStdErrToLogger:compositeLogger]
     withTaskLifecycleLoggingTo:logger]
     start]
-    onQueue:target.asyncQueue fmap:^ FBFuture * (FBTask *task) {
+    onQueue:target.asyncQueue fmap:^ FBFuture * (FBProcess *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
         onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
         [logger logFormat:@"Waiting for %f seconds for instruments to start properly", configuration.timings.launchErrorTimeout];
@@ -145,14 +145,14 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
         }];
     }]
     // Yay instruments started properly
-    onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBTask *task) {
+    onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBProcess *task) {
       [logger logFormat:@"Started instruments %@", task];
 
       return [[FBInstrumentsOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
     }];
 }
 
-- (instancetype)initWithTask:(FBTask *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithTask:(FBProcess *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -199,7 +199,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBTaskBuilder
+  return [[[[[[[[FBProcessBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]

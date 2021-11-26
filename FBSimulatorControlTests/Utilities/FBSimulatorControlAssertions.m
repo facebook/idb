@@ -122,7 +122,7 @@
   }
 
   NSError *error = nil;
-  BOOL success = [[simulator bootWithConfiguration:bootConfiguration] await:&error] != nil;
+  BOOL success = [[simulator boot:bootConfiguration] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;

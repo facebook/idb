@@ -11,8 +11,10 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
+    IdbException,
     AppProcessState,
     CompanionInfo,
+    DebuggerInfo,
     DomainSocketAddress,
     InstalledAppInfo,
     InstalledTestInfo,
@@ -20,8 +22,18 @@ from idb.common.types import (
     TCPAddress,
     TestActivity,
     TestRunInfo,
+    TargetType,
 )
 from treelib import Tree
+
+
+def target_type_from_string(output: str) -> TargetType:
+    normalized = output.lower()
+    if "sim" in normalized:
+        return TargetType.SIMULATOR
+    if "dev" in normalized:
+        return TargetType.DEVICE
+    raise IdbException(f"Could not interpret target type from {output}")
 
 
 def test_info_to_status(test: TestRunInfo) -> str:
@@ -62,6 +74,7 @@ def human_format_activities(activities: List[TestActivity]) -> str:
     tree: Tree = Tree()
     start = activities[0].start
 
+    # pyre-fixme[53]: Captured variable `start` is not annotated.
     def process_activity(activity: TestActivity, parent: Optional[str] = None) -> None:
         tree.create_node(
             f"{activity.name} ({activity.finish - start:.2f}s)",
@@ -146,8 +159,18 @@ def human_format_installed_app_info(app: InstalledAppInfo) -> str:
             ", ".join(app.architectures or ["no archs available"]),
             app_process_state_to_string(app.process_state),
             "Debuggable" if app.debuggable else "Not Debuggable",
+            f"pid={app_process_id_based_on_state(app.process_id, app.process_state)}",
         ]
     )
+
+
+def app_process_id_based_on_state(
+    pid: int,
+    state: AppProcessState,
+) -> Optional[str]:
+    if state is AppProcessState.RUNNING:
+        return str(pid)
+    return None
 
 
 def app_process_state_to_string(state: Optional[AppProcessState]) -> str:
@@ -176,6 +199,7 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
         "architectures": list(app.architectures) if app.architectures else None,
         "process_state": app_process_state_to_string(app.process_state),
         "debuggable": app.debuggable,
+        "pid": app_process_id_based_on_state(app.process_id, app.process_state),
     }
     return json.dumps(data)
 
@@ -183,7 +207,7 @@ def json_format_installed_app_info(app: InstalledAppInfo) -> str:
 def human_format_target_info(target: TargetDescription) -> str:
     target_info = (
         f"{target.name} | {target.udid} | {target.state}"
-        f" | {target.target_type} | {target.os_version} | {target.architecture} | "
+        f" | {target.target_type.value} | {target.os_version} | {target.architecture} | "
     )
     companion_info = target.companion_info
     if companion_info is None:
@@ -200,7 +224,7 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
         "name": target.name,
         "udid": target.udid,
         "state": target.state,
-        "type": target.target_type,
+        "type": target.target_type.value,
         "os_version": target.os_version,
         "architecture": target.architecture,
     }
@@ -211,9 +235,11 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
             data["host"] = address.host
             data["port"] = address.port
             data["is_local"] = companion_info.is_local
+            data["companion"] = f"{address.host}:{address.port}"
         else:
             data["path"] = address.path
             data["is_local"] = True
+            data["companion"] = address.path
     if target.device is not None:
         data["device"] = target.device
     return data
@@ -221,12 +247,13 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
 
 def json_data_companions(
     companions: List[CompanionInfo],
-) -> List[Dict[str, Union[str, int]]]:
-    data: List[Dict[str, Union[str, int]]] = []
+) -> List[Dict[str, Union[str, Optional[int]]]]:
+    data: List[Dict[str, Union[str, Optional[int]]]] = []
     for companion in companions:
-        item: Dict[str, Union[str, int]] = {
+        item: Dict[str, Union[str, Optional[int]]] = {
             "udid": companion.udid,
             "is_local": companion.is_local,
+            "pid": companion.pid,
         }
         address = companion.address
         if isinstance(address, TCPAddress):
@@ -248,6 +275,7 @@ def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
                 else DomainSocketAddress(path=item["path"])
             ),
             is_local=item["is_local"],
+            pid=item.get("pid"),
         )
         for item in data
     ]
@@ -269,7 +297,7 @@ def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescript
         name=parsed["name"],
         model=parsed.get("model"),
         state=parsed.get("state"),
-        target_type=parsed.get("type"),
+        target_type=target_type_from_string(parsed["type"]),
         os_version=parsed.get("os_version"),
         architecture=parsed.get("architecture"),
         companion_info=None,
@@ -297,5 +325,12 @@ def json_format_installed_test_info(test: InstalledTestInfo) -> str:
         "bundle_id": test.bundle_id,
         "name": test.name,
         "architectures": list(test.architectures) if test.architectures else None,
+    }
+    return json.dumps(data)
+
+
+def json_format_debugger_info(info: DebuggerInfo) -> str:
+    data = {
+        "pid": info.pid,
     }
     return json.dumps(data)

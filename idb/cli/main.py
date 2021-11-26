@@ -32,6 +32,7 @@ from idb.cli.commands.crash import (
     CrashShowCommand,
 )
 from idb.cli.commands.daemon import DaemonCommand
+from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
     DebugServerStatusCommand,
@@ -67,8 +68,14 @@ from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
+from idb.cli.commands.memory import SimulateMemoryWarningCommand
+from idb.cli.commands.notification import SendNotificationCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
-from idb.cli.commands.settings import SetCommand, GetCommand, ListCommand
+from idb.cli.commands.settings import (
+    SetPreferenceCommand,
+    GetPreferenceCommand,
+    ListCommand,
+)
 from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
     ConnectCommandException,
@@ -152,15 +159,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         help="The path to the idb companion binary. This is only valid when running on macOS platforms",
     )
     parser.add_argument(
-        "--companion-local",
-        action="store_true",
-        default=bool(os.environ.get("IDB_COMPANION_LOCAL")),
-        help="If set, any companion provided via IDB_COMPANION or --companion will be assumed to be running on this host."
-        "Even if the companion provided is 'localhost' idb will still assume it is remote."
-        "The reason for this is that idb shouldn't assume there are no tunnels from localhost to a remote host."
-        "Can also be set with the IDB_COMPANION_LOCAL environment variable",
-    )
-    parser.add_argument(
         "--companion-tls",
         action="store_true",
         default=bool(os.environ.get("IDB_COMPANION_TLS")),
@@ -222,6 +220,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         UrlOpenCommand(),
         KeychainClearCommand(),
         LocationSetCommand(),
+        SimulateMemoryWarningCommand(),
+        SendNotificationCommand(),
         ApproveCommand(),
         TargetConnectCommand(),
         TargetDisconnectCommand(),
@@ -259,6 +259,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         KillCommand(),
         MediaAddCommand(),
         FocusCommand(),
+        DapCommand(),
         CommandGroup(
             name="debugserver",
             description="debugserver interactions",
@@ -289,8 +290,8 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             description="Run xctrace commands",
             commands=[XctraceRecordCommand()],
         ),
-        SetCommand,
-        GetCommand,
+        SetPreferenceCommand(),
+        GetPreferenceCommand(),
         ListCommand,
         shell_command,
     ]

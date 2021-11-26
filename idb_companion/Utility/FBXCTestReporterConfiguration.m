@@ -7,9 +7,12 @@
 
 #import "FBXCTestReporterConfiguration.h"
 
+#import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 @implementation FBXCTestReporterConfiguration
 
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath binaryPath:(nullable NSString *)binaryPath reportAttachments:(BOOL)reportAttachments
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments
 {
   self = [super init];
   if (!self) {
@@ -17,12 +20,17 @@
   }
 
   _resultBundlePath = resultBundlePath;
-  _coveragePath = coveragePath;
+  _coverageConfiguration = coverageConfiguration;
   _logDirectoryPath = logDirectoryPath;
-  _binaryPath = binaryPath;
+  _binariesPaths = binariesPaths;
   _reportAttachments = reportAttachments;
 
   return self;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Result Bundle %@ | Coverage %@ | Log Path %@ | Binaries Paths %@ | Report Attachments %d", self.resultBundlePath, self.coverageConfiguration, self.logDirectoryPath, [FBCollectionInformation oneLineDescriptionFromArray:self.binariesPaths], self.reportAttachments];
 }
 
 @end

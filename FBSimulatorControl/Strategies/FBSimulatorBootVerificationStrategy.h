@@ -16,31 +16,20 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Strategy for determining that a Simulator is actually usable after it is booted.
  In some circumstances it will take some time for a Simulator to be usable for standard operations.
- This can be for a variety of reasons, but represents the time take for a Simulator to boot to the OS.
- In particular, the first boot of a Simulator after creation can take some time during the run of datamigrator.
- */
+ For instance, the first boot of a Simulator can take substantially longer than subsequent boots.
+ This is mainly due to the data migrators that are run upon a fresh OS install or upgrade.
+  */
 @interface FBSimulatorBootVerificationStrategy : NSObject
 
 #pragma mark Initializers
 
 /**
- The Designated Initializer.
+ Confirms that the Simulator is in a booted state to the home screen.
 
  @param simulator the Simulator.
- @return a Boot Verification Strategy.
+ @return a Future that resolves when the Simulator is booted to the home screen.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
-
-#pragma mark Public Methods.
-
-/**
- Verifies that the Simulator is booted.
- It can also be called on a Simulator after it has been booted for some time
- as a means of verifying the Simulator is in a known-good state.
-
- @return a Future that resolves when the Simulator is in a known-good state.
- */
-- (FBFuture<NSNull *> *)verifySimulatorIsBooted;
++ (FBFuture<NSNull *> *)verifySimulatorIsBooted:(FBSimulator *)simulator;
 
 @end
 

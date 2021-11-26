@@ -8,10 +8,108 @@
 #import "FBAMDServiceConnection.h"
 
 #import "FBDeviceControlError.h"
-#import "FBServiceConnectionClient.h"
 
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);
+
+// There's an upper limit on the number of bytes we can read at once
+static size_t ReadBufferSize = 1024 * 4;
+
+@interface FBAMDServiceConnection ()
+
+- (ssize_t)send:(const void *)buffer size:(size_t)size;
+- (ssize_t)recieve:(void *)buffer size:(size_t)size;
+
+@end
+
+@interface FBAMDServiceConnection_FileReader : NSObject <FBFileReader>
+
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *finishedReadingMutable;
+
+@end
+
+@implementation FBAMDServiceConnection_FileReader
+
+@synthesize state = _state;
+
+- (instancetype)initWithServiceConnection:(FBAMDServiceConnection *)connection consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _connection = connection;
+  _consumer = consumer;
+  _queue = queue;
+  _state = FBFileReaderStateNotStarted;
+  _finishedReadingMutable = FBMutableFuture.future;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)startReading
+{
+  if (self.state != FBFileReaderStateNotStarted) {
+    return [[FBDeviceControlError
+      describeFormat:@"Cannot start reading in state %lu", (unsigned long)self.state]
+      failFuture];
+  }
+
+  FBAMDServiceConnection *connection = self.connection;
+  id<FBDataConsumer> consumer = self.consumer;
+  dispatch_async(self.queue, ^{
+    void *buffer = alloca(ReadBufferSize);
+    while (self.state == FBFileReaderStateReading && self.finishedReadingMutable.state == FBFutureStateRunning) {
+      ssize_t readBytes = [connection recieve:buffer size:ReadBufferSize];
+      if (readBytes < 1) {
+        break;
+      }
+      NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
+      [consumer consumeData:data];
+    }
+    [consumer consumeEndOfFile];
+    self->_state = FBFileReaderStateFinishedReadingNormally;
+  });
+  _state = FBFileReaderStateReading;
+
+  return FBFuture.empty;
+}
+
+- (FBFuture<NSNumber *> *)stopReading
+{
+  if (self.state == FBFileReaderStateNotStarted) {
+    return [[FBDeviceControlError
+      describe:@"Cannot stop reading when reading has not started"]
+      failFuture];
+  }
+  if (self.state != FBFileReaderStateReading) {
+    return self.finishedReadingMutable;
+  }
+  _state = FBFileReaderStateFinishedReadingByCancellation;
+  [self.finishedReadingMutable resolveWithResult:@(FBFileReaderStateFinishedReadingByCancellation)];
+  return self.finishedReadingMutable;
+}
+
+- (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout
+{
+  return [[[self
+    finishedReading]
+    timeout:timeout waitingFor:@"Process Reading to Finish"]
+    onQueue:self.queue handleError:^(NSError *_) {
+      return [self stopReading];
+    }];
+}
+
+- (FBFuture<NSNumber *> *)finishedReading
+{
+  return self.finishedReadingMutable;
+}
+
+@end
 
 @interface FBAMDServiceConnection_TransferRaw : FBAMDServiceConnection
 
@@ -25,24 +123,25 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 
 #pragma mark Initializers
 
-+ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger
 {
   // Use Raw transfer when there's no Secure Context, otherwise we must use the service connection wrapping.
   AMSecureIOContext secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection);
   if (secureIOContext == NULL) {
-    return [[FBAMDServiceConnection_TransferRaw alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+    return [[FBAMDServiceConnection_TransferRaw alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
   } else {
-    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithServiceConnection:connection device:device calls:calls logger:logger];
+    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
   }
 }
 
-- (instancetype)initWithServiceConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _name = name;
   _connection = connection;
   _device = device;
   _calls = calls;
@@ -57,7 +156,7 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"%@", self.connection];
+  return [NSString stringWithFormat:@"%@ %@", self.name, self.connection];
 }
 
 #pragma mark plist Messaging
@@ -95,25 +194,6 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
   return [self receiveMessageWithError:error];
 }
 
-#pragma mark Streams
-
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
-{
-  return [FBFuture
-    onQueue:queue resolve:^{
-      void *buffer = alloca(self.readBufferSize);
-      while (true) {
-        ssize_t readBytes = self.calls.ServiceConnectionReceive(self.connection, buffer, (size_t)self.readBufferSize);
-        if (readBytes < 1) {
-          [consumer consumeEndOfFile];
-          return FBFuture.empty;
-        }
-        NSData *data = [[NSData alloc] initWithBytes:buffer length:(size_t) readBytes];
-        [consumer consumeData:data];
-      }
-    }];
-}
-
 #pragma mark Lifecycle
 
 - (BOOL)invalidateWithError:(NSError **)error
@@ -137,11 +217,6 @@ static const NSUInteger HeaderLength = sizeof(HeaderIntType);
   CFRelease(_connection);
   _connection = NULL;
   return YES;
-}
-
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
-{
-  return [FBServiceConnectionClient clientForServiceConnection:self queue:queue logger:logger];
 }
 
 #pragma mark Properties
@@ -205,7 +280,7 @@ static size_t SendBufferSize = 1024 * 4;
 - (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error
 {
   HeaderIntType length = (HeaderIntType) data.length;
-  HeaderIntType lengthWire = EndianU32_NtoB(length); // The native length should be converted to big-endian (ARM).
+  HeaderIntType lengthWire = OSSwapHostToBigInt32(length); // The host (native) length should be converted endianness of remote (ARM/Apple Silicon).
   NSData *lengthData = [[NSData alloc] initWithBytes:&lengthWire length:HeaderLength];
   // Write the length data.
   if (![self send:lengthData error:error]) {
@@ -217,9 +292,6 @@ static size_t SendBufferSize = 1024 * 4;
   }
   return YES;
 }
-
-// There's an upper limit on the number of bytes we can read at once
-static size_t ReadBufferSize = 1024 * 4;
 
 - (NSData *)receive:(size_t)size error:(NSError **)error
 {
@@ -264,6 +336,30 @@ static size_t ReadBufferSize = 1024 * 4;
   return data;
 }
 
+- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
+{
+  NSData *data = [self receive:size error:error];
+  if (!data) {
+    return NO;
+  }
+  memcpy(destination, data.bytes, data.length);
+  return YES;
+}
+
+- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
+{
+  return [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
+}
+
+- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue
+{
+  return [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
+    [self send:data error:nil];
+  }];
+}
+
+#pragma mark Private
+
 - (ssize_t)send:(const void *)buffer size:(size_t)size
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
@@ -274,16 +370,6 @@ static size_t ReadBufferSize = 1024 * 4;
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return -1;
-}
-
-- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
-{
-  NSData *data = [self receive:size error:error];
-  if (!data) {
-    return NO;
-  }
-  memcpy(destination, data.bytes, data.length);
-  return YES;
 }
 
 @end

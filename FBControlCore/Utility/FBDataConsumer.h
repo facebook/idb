@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Consumes the provided binary data.
- If the reciever implements FBDataConsumerStackConsuming, then stack allocated data is permitted.
+ If the reciever implements FBDataConsumerSync, then stack allocated data is permitted.
  Otherwise, the underlying buffer must survive data being consumed on a separate thread.
 
  @param data the data to consume.
@@ -52,11 +52,25 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Consumer which consumes the data synchronously in the same context as the caller invoking consumeData
  Members of this protocol will have any underlying data buffers that are passed in within `consumeData:`.
  This allows the caller to avoid copying data that may be stack-allocated.
  This is exposed as a more restrictive type in order to prevent non-stack consuming implementors performing a use-after-free.
  */
-@protocol FBDataConsumerStackConsuming <NSObject>
+@protocol FBDataConsumerSync <NSObject>
+
+@end
+
+/**
+ Consumer which consumes the data asynchronously
+ The data passed in to this consumer should not contain a pointer to a stack allocated data and it should be copied instead
+ */
+@protocol FBDataConsumerAsync <NSObject>
+
+/**
+Number of submitted data that has not been consumed yet
+*/
+- (NSInteger)unprocessedDataCount;
 
 @end
 
@@ -117,7 +131,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -126,7 +140,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -136,7 +150,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -145,7 +159,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
 
 /**
  Creates a Consumer of lines from a block.

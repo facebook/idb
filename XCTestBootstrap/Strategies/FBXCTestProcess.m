@@ -23,7 +23,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
 
 #pragma mark Public
 
-+ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)ensureProcess:(FBProcess *)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   // The start date of the process appear slightly older than we might think, so avoid missing it by a few seconds.
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
@@ -76,7 +76,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
 + (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", processIdentifier, timeout];
-  return [[[[FBTaskBuilder
+  return [[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
     runUntilCompletionWithAcceptableExitCodes:nil]
     onQueue:queue handleError:^(NSError *error) {
@@ -85,7 +85,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
         causedBy:error]
         failFuture];
     }]
-    onQueue:queue fmap:^(FBTask<NSNull *, NSData *, NSData *> *task) {
+    onQueue:queue fmap:^(FBProcess<NSNull *, NSData *, NSData *> *task) {
       [logger logFormat:@"Stackshot completed of process %d", processIdentifier];
       return [[FBXCTestError
         describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, task.stdOut]
@@ -95,7 +95,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
 
 #pragma mark Private
 
-+ (FBFuture<id> *)performSampleStackshotOnProcess:(id<FBLaunchedProcess>)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<id> *)performSampleStackshotOnProcess:(FBProcess *)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[self
     performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger]
@@ -109,7 +109,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
     }];
 }
 
-+ (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(id<FBLaunchedProcess>)process startDate:(NSDate *)startDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(FBProcess *)process startDate:(NSDate *)startDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   [logger logFormat:@"xctest process (%d) died prematurely, checking for crash log for %f seconds", process.processIdentifier, crashLogWaitTime];
   return [[[FBXCTestProcess
@@ -123,7 +123,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
     }];
 }
 
-+ (FBFuture<FBCrashLogInfo *> *)crashLogsForTerminationOfProcess:(id<FBLaunchedProcess>)process since:(NSDate *)sinceDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue
++ (FBFuture<FBCrashLogInfo *> *)crashLogsForTerminationOfProcess:(FBProcess *)process since:(NSDate *)sinceDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue
 {
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [FBCrashLogInfo predicateForCrashLogsWithProcessID:process.processIdentifier],

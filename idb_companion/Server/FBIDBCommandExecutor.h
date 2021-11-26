@@ -17,22 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBIDBLogger;
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
+@class FBIDBTestOperation;
 @class FBInstalledArtifact;
 @class FBSimulatorHIDEvent;
 @class FBTemporaryDirectory;
 
 @protocol FBXCTestReporter;
-
-typedef NSString *FBFileContainerKind NS_STRING_ENUM;
-
-extern FBFileContainerKind const FBFileContainerKindCrashes;
-extern FBFileContainerKind const FBFileContainerKindMedia;
-extern FBFileContainerKind const FBFileContainerKindRoot;
-extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
-extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
-extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
-extern FBFileContainerKind const FBFileContainerKindWallpaper;
-extern FBFileContainerKind const FBFileContainerKindDiskImages;
 
 @interface FBIDBCommandExecutor : NSObject
 
@@ -81,18 +71,20 @@ extern FBFileContainerKind const FBFileContainerKindDiskImages;
  Install an App via a File Path.
 
  @param filePath the path to a file on disk with the file.
+ @param makeDebuggable whether the app should be installed in a debuggable state or not.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable;
 
 /**
  Install an App via a Data stream.
 
  @param input the input to pipe.
  @param compression the compression type to use
+ @param makeDebuggable whether the app should be installed in a debuggable state or not.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable;
 
 /**
  Installs an xctest bundle by file path.
@@ -147,17 +139,19 @@ extern FBFileContainerKind const FBFileContainerKindDiskImages;
  Installs a dSYM from a file path.
 
  @param filePath the input to pipe.
+ @param bundleID if specified installed dsym will be linked into the app bundle container.
  @return A future that resolves with the dSYM Name
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID;
 
 /**
  Installs dSYM(s) from a zip stream.
 
  @param input the input to pipe.
+ @param bundleID if specified installed dsym will be linked into the app bundle container.
  @return A future that resolves with the directory containing the dSYM(s)
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID;
 
 /**
  Takes a Screenshot
@@ -171,7 +165,7 @@ extern FBFileContainerKind const FBFileContainerKindDiskImages;
  Returns the accessibility info of a point on the screen
 
  @param point location on the screen (NSValue<NSPoint> *), returns info for the whole screen if nil
- @param legacyFormat YES if the legacy format should be used, NO otherwise.
+ @param nestedFormat YES if the legacy format should be used, NO otherwise.
  @return A Future that resolves with the accessibility info
  */
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
@@ -370,6 +364,25 @@ This allows to avoid the permission popup the first time we open a deeplink
 - (FBFuture<NSNull *> *)set_hardware_keyboard_enabled:(BOOL)enabled;
 
 /**
+ Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
+
+ @param name preference name
+ @param value preference value
+ @param domain preference domain - optional
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+
+/**
+ Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
+
+ @param name preference name
+ @param domain domain to search - optional
+ @return a Future that resolves with the current preference value
+ */
+- (FBFuture<NSString *> *)get_preference:(NSString *)name domain:(nullable NSString *)domain;
+
+/**
  Sets the Locale with a Locale Identifier.
 
  @param identifier the locale identifier.
@@ -458,7 +471,7 @@ This allows to avoid the permission popup the first time we open a deeplink
 
 /**
  Lists path within the container. The api exists for backwards-compatibility
- 
+
  @param path relative path to the container where data resides
  @param containerType the Bundle Identifier of the Container.
  @return A future that resolves with the list of files.
@@ -489,6 +502,30 @@ This allows to avoid the permission popup the first time we open a deeplink
  @return null future
  */
 - (FBFuture<NSNull *> *)clean;
+
+/**
+ Sends a notification
+
+ @return null future
+ */
+- (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload;
+
+/**
+ Spawn a dap protocol server from dapPath
+ 
+ @param dapPath relative path to the root container where dap is installed
+ @param stdIn where the dap process reads
+ @param stdOut where the dap process writes
+ @return A Future that resolves when the dap server is spawned. Returns the dap server process.
+ */
+- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
+
+/**
+ Simulates a memory warning
+
+ @return null future
+ */
+- (FBFuture<NSNull *> *)simulateMemoryWarning;
 
 @end
 

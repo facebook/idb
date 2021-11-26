@@ -54,18 +54,9 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 /**
  The Designated Initializer.
 
- @param bundle the Application Bundle.
+ @param bundle the Application Bundle. This represents the bundle as-installed on the target, rather than pre-install.
  @param installType the Install Type.
- @return a new Installed Application Instance.
- */
-+ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType;
-
-/**
- The Designated Initializer.
-
- @param bundle the Application Bundle.
- @param installType the Install Type.
- @param dataContainer the Data Container Path.
+ @param dataContainer the Data Container Path, may be nil.
  @return a new Installed Application Instance.
  */
 + (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
@@ -73,12 +64,12 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 #pragma mark Properties
 
 /**
- The Application Bundle.
+ The Application Bundle as installed on the target. This may be missing information that is otherwise present from the installed bundle.
  */
 @property (nonatomic, copy, readonly) FBBundleDescriptor *bundle;
 
 /**
- The Install Type of the Application.
+ The "Install Type" enum of the Application.
  */
 @property (nonatomic, assign, readonly) FBApplicationInstallType installType;
 

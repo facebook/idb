@@ -18,7 +18,7 @@ typedef CFTypeRef PrivateDevice;
 /**
  Abstract class for device-based discovery.
  */
-@interface FBDeviceManager<PublicDevice : id> : NSObject<FBiOSTargetSet>
+@interface FBDeviceManager<PublicDevice : id> : NSObject <FBiOSTargetSet>
 
 #pragma mark Initializers
 

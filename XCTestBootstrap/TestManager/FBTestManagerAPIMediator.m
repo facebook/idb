@@ -26,9 +26,10 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
-#import "FBTestReporterForwarder.h"
+#import "FBTestReporterAdapter.h"
 #import "FBXCTestProcess.h"
 #import "FBXCTestReporter.h"
+
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -36,13 +37,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, strong, readonly) id<FBiOSTarget, FBXCTestExtendedCommands> target;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
-@property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
-@property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
+@property (nonatomic, strong, readonly) FBTestReporterAdapter *reporterAdapter;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id<FBLaunchedApplication>> *tokenToLaunchedAppMap;
 
 @end
 
@@ -50,13 +51,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBTestManagerAPIMediator *mediator = [[self alloc] initWithContext:context target:target reporter:reporter logger:logger];
   return [mediator connectAndRunUntilCompletion];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -68,10 +69,10 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _reporter = reporter;
   _logger = logger;
 
-  _tokenToBundleIDMap = [NSMutableDictionary new];
+  _tokenToLaunchedAppMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
-  _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
+  _reporterAdapter = [FBTestReporterAdapter withReporter:reporter];
 
   return self;
 }
@@ -90,6 +91,25 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
+- (FBFuture<NSNull *> *)terminateSpawnedProcesses
+{
+
+  NSArray<id<FBLaunchedApplication>> *appsToKill = [self.tokenToLaunchedAppMap allValues];
+  [self.tokenToLaunchedAppMap removeAllObjects];
+
+  if (appsToKill.count > 0) {
+    [self.logger logFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:appsToKill]];
+
+    NSMutableArray<FBFuture *> *futuresToWait = [NSMutableArray arrayWithCapacity:appsToKill.count];
+    for (id<FBLaunchedApplication> app in appsToKill) {
+      [futuresToWait addObject:[self.target killApplicationWithBundleID:app.bundleID]];
+    }
+    return [FBFuture futureWithFutures:futuresToWait.copy];
+  }
+
+  return FBFuture.empty;
+}
+
 - (FBFuture<NSNull *> *)connectAndRunUntilCompletion
 {
   id<FBControlCoreLogger> logger = self.logger;
@@ -100,22 +120,16 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [[[self
     startAndRunApplicationTestHost]
     onQueue:queue pop:^(id<FBLaunchedApplication> launchedApplication) {
-      return [[[FBTestBundleConnection
-        connectAndRunBundleToCompletionWithContext:self.context
-        target:self.target
-        interface:(id)self.reporterForwarder
-        testHostApplication:launchedApplication
-        requestQueue:self.requestQueue
-        logger:logger]
-        onQueue:queue fmap:^(NSNull *_) {
-          // The bundle has disconnected at this point, but we also need to wait for the application to terminate
-          return launchedApplication.applicationTerminated;
-        }]
-        onQueue:queue timeout:timeout handler:^{
-          // The timeout is applied to the lifecycle of the entire application.
-          [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
-          return [FBXCTestProcess performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier forTimeout:timeout queue:queue logger:logger];
-        }];
+      bool waitForDebugger = self.context.testHostLaunchConfiguration.waitForDebugger;
+      FBFuture *future = FBFuture.empty;
+      if (waitForDebugger) {
+        [reporter processWaitingForDebuggerWithProcessIdentifier:launchedApplication.processIdentifier];
+        future = [FBProcessFetcher waitForDebuggerToAttachAndContinueFor:launchedApplication.processIdentifier];
+      }
+
+      return [future onQueue:queue fmap:^(id _) {
+        return [self runUntilCompletion:launchedApplication logger:logger queue:queue timeout:timeout];
+      }];
     }]
     onQueue:queue chain:^(FBFuture<NSNull *> *future) {
       [reporter processUnderTestDidExit];
@@ -126,6 +140,34 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         [reporter didCrashDuringTest:error];
       }
       return future;
+    }];
+}
+
+- (FBFuture<NSNull *> *)runUntilCompletion:(id<FBLaunchedApplication>)launchedApplication logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout
+{
+  return [[[FBTestBundleConnection
+    connectAndRunBundleToCompletionWithContext:self.context
+    target:self.target
+    interface:(id)self
+    testHostApplication:launchedApplication
+    requestQueue:self.requestQueue
+    logger:logger]
+    onQueue:queue fmap:^(NSNull *_) {
+      // The bundle has disconnected at this point, but we also need to terminate any processes
+      // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
+      return [[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated];
+    }]
+    onQueue:queue timeout:timeout handler:^{
+      // The timeout is applied to the lifecycle of the entire application.
+      [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
+      return [[FBXCTestProcess
+        performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier
+        forTimeout:timeout
+        queue:queue
+        logger:logger]
+      onQueue:queue chain:^FBFuture *(FBFuture *future) {
+        return [[self terminateSpawnedProcesses] chainReplace:future];
+      }];
     }];
 }
 
@@ -145,7 +187,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
       describeFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]
       failFuture];
   }
-  return [[[[self.target
+  return [[[[self
     isApplicationInstalledWithBundleID:configuration.bundleID]
     onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> *(NSNumber *isInstalled) {
       if (!isInstalled.boolValue) {
@@ -172,6 +214,15 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
         return [self.target launchApplication:configuration];
       }
       return [self installAndLaunchApplication:configuration atPath:path];
+    }];
+}
+
+- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
+{
+  return [[self.target
+    installedApplicationWithBundleID:bundleID]
+    onQueue:self.target.asyncQueue chain:^(FBFuture<FBInstalledApplication *> *future) {
+      return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
     }];
 }
 
@@ -204,12 +255,12 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
   [[self
     launchApplication:launch atPath:path]
-    onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<NSNull *> *future) {
+    onQueue:self.target.workQueue notifyOfCompletion:^(FBFuture<id<FBLaunchedApplication>> *future) {
       NSError *innerError = future.error;
       if (innerError) {
         [receipt invokeCompletionWithReturnValue:nil error:innerError];
       } else {
-        self.tokenToBundleIDMap[token] = bundleID;
+        self.tokenToLaunchedAppMap[token] = future.result;
         [receipt invokeCompletionWithReturnValue:token error:nil];
       }
     }];
@@ -236,7 +287,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
                             userInfo:@{NSLocalizedDescriptionKey : @"API violation: token was nil."}];
   }
   else {
-    NSString *bundleID = self.tokenToBundleIDMap[token];
+    NSString *bundleID = self.tokenToLaunchedAppMap[token].bundleID;
     if (!bundleID) {
       error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
                                   code:0x2
@@ -274,10 +325,10 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 #pragma mark Test Suite Progress
 
-- (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
+- (id)_XCT_testSuite:(NSString *)testSuite didStartAt:(NSString *)time
 {
-  [self.logger logFormat:@"Test Suite %@ started", tests];
-  if (tests.length == 0) {
+  [self.logger logFormat:@"Test Suite %@ started", testSuite];
+  if (testSuite.length == 0) {
     NSError *error = [[[[XCTestBootstrapError
       describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
       inDomain:@"IDETestOperationsObserverErrorDomain"]
@@ -286,18 +337,22 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     [self.logger logFormat:@"%@", error];
   }
 
+  [self.reporterAdapter _XCT_testSuite:testSuite didStartAt:time];
+
   return nil;
 }
 
 - (id)_XCT_didBeginExecutingTestPlan
 {
   [self.logger logFormat:@"Test Plan Started"];
+  [self.reporterAdapter _XCT_didBeginExecutingTestPlan];
   return nil;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
   [self.logger logFormat:@"Test Plan Ended"];
+  [self.reporterAdapter _XCT_didFinishExecutingTestPlan];
   return nil;
 }
 
@@ -309,12 +364,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
   [self.logger logFormat:@"Test Case %@/%@ did start", testClass, method];
+  [self.reporterAdapter _XCT_testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
   [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
+  [self.reporterAdapter _XCT_testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line];
   return nil;
 }
 
@@ -332,22 +389,26 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
   [self.logger logFormat:@"Test Case %@/%@ did finish (%@)", testClass, method, statusString];
+  [self.reporterAdapter _XCT_testCaseDidFinishForTestClass:testClass method:method withStatus:statusString duration:duration];
   return nil;
 }
 
-- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
+- (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  [self.logger logFormat:@"Test Suite Did Finish %@", arg1];
+  [self.logger logFormat:@"Test Suite Did Finish %@", testSuite];
+  [self. reporterAdapter _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
   return nil;
 }
 
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3
+- (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method didFinishActivity:(XCActivityRecord *)activity
 {
+  [self.reporterAdapter _XCT_testCase:testCase method:method didFinishActivity:activity];
   return nil;
 }
 
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3
+- (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method willStartActivity:(XCActivityRecord *)activity
 {
+  [self.reporterAdapter _XCT_testCase:testCase method:method willStartActivity:activity];
   return nil;
 }
 

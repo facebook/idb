@@ -13,9 +13,11 @@ This page contains information about the implementation details of how iOS Devic
 
 At a first glance, this Framework is difficult to deal with since Private APIs are typically easier to work with if they export Objective-C classes. However, most of the usual patterns around how `CoreFoundation` APIs do apply. `MobileDevice.framework` is used extensively across Apple's macOS Applications that interact with iOS Devices (Finder/iTunes, Xcode, Accessibility Inspector, Apple Configurator 2, Photos). If an Application uses an iOS Device on macOS, it is extremely likely to leverage `MobileDevice.framework`.
 
-This wealth of "clients" of `MobileDevice.framework` has made it possible to understand how each of the API calls work in terms of their inputs and outputs. As a result, [there's a header that defines all of the calls that `FBDeviceControl` uses](https://github.com/facebook/idb/blob/master/FBDeviceControl/Management/FBAMDefines.h).
+This wealth of "clients" of `MobileDevice.framework` has made it possible to understand how each of the API calls work in terms of their inputs and outputs. As a result, [there's a header that defines all of the calls that `FBDeviceControl` uses](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDefines.h).
 
-`FBDeviceControl` aims to use these APIs as far as possible, `MobileDevice.framework` is assumed to be the "canonical" way to interact with iOS Devices on macOS. The `libimobiledevice` project is essentially a [re-implementation of `MobileDevice.framework` that runs on different host operating systems](https://libimobiledevice.org). There's also a range of other projects that use `MobileDevice.framework` including [`SDMMobileDevice`](https://github.com/samdmarshall/SDMMobileDevice/blob/master/SDM_MD_Tests/MobileDevice.h), [`MobileDevice`](https://github.com/mountainstorm/MobileDevice) and [`pymobiledevice`](https://github.com/iOSForensics/pymobiledevice) and more.
+`FBDeviceControl` aims to use these APIs as far as possible, `MobileDevice.framework` is assumed to be the "canonical" way to interact with iOS Devices on macOS. The `libimobiledevice` project is essentially a [re-implementation of `MobileDevice.framework` that runs on different host operating systems](https://libimobiledevice.org). There's also a range of other projects that use `MobileDevice.framework` including [`SDMMobileDevice`](https://github.com/samdmarshall/SDMMobileDevice/blob/main/SDM_MD_Tests/MobileDevice.h), [`MobileDevice`](https://github.com/mountainstorm/MobileDevice) and [`pymobiledevice`](https://github.com/iOSForensics/pymobiledevice) and more.
+
+There are some exceptions to the level of support for iOS Device operations within `MobileDevice.framework`; some functionality is provided via Xcode itself. This means that some device operations will be fully functional without Xcode installed (and `xcode-select`'ed), but some functionality is dependent on the presence of an Xcode on the host. Typically the functionality that requires Xcode, is only available through Xcode to begin with. `FBDeviceControl` will attempt to defer the loading of Xcode specific functionality until it is used in order to prevent failure for when Xcode is not required. For example if iOS Device listing is only used on a host without Xcode, the device listing functionality will still work.
 
 ## `AMDevice`
 
@@ -23,9 +25,9 @@ This wealth of "clients" of `MobileDevice.framework` has made it possible to und
 
 To operate on an `AMDevice`, the phone must "trust" the host. You might recognize this as the ["Trust Dialog" that appears when connecting an iOS Device to a Mac](https://support.apple.com/en-gb/HT202778). Most calls will fail if this trust exchange has not been performed. The Mac maintains a local store of the cryptographic components that are used as part of this trust exchange. This local store means that an iOS Device will not constantly require trust to be authorized every time that the iOS Device is connected to the same host. If this process did not take place, then it would be completely infeasible for iOS Devices to be used in a Continuous Integration environment.
 
-Since this is such an important component of how to interact with iOS Devices, it is backed by an Objective-C [`FBAMDevice`](https://github.com/facebook/idb/blob/master/FBDeviceControl/Management/FBAMDevice.h) class.
+Since this is such an important component of how to interact with iOS Devices, it is backed by an Objective-C [`FBAMDevice`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDevice.h) class.
 
-The process of discovering devices is asynchronous, which means that fetching the list of `AMDevice`s at a snapshot in time is going to be unreliable. `FBDeviceControl` instead uses an API within `MobileDevice.framework` [for recieving an `AMDevice` instance every time there is a state change](https://github.com/facebook/idb/blob/master/FBDeviceControl/Management/FBAMDeviceManager.m#L199) in the availability of `AMDevice` instances. This property is also true of Apple's tools that build on top of `MobileDevice.framework`; [`xcodebuild` has a `-destination-timeout` parameter](https://mokacoding.com/blog/xcodebuild-destination-options/) and Apple Configurator's `cfgutil` has a `--timeout` parameter since device discovery is delivered asynchronously. You might never notice this in Xcode's "Devices and Simulators" window, but it is still there too.
+The process of discovering devices is asynchronous, which means that fetching the list of `AMDevice`s at a snapshot in time is going to be unreliable. `FBDeviceControl` instead uses an API within `MobileDevice.framework` [for recieving an `AMDevice` instance every time there is a state change](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDeviceManager.m#L199) in the availability of `AMDevice` instances. This property is also true of Apple's tools that build on top of `MobileDevice.framework`; [`xcodebuild` has a `-destination-timeout` parameter](https://mokacoding.com/blog/xcodebuild-destination-options/) and Apple Configurator's `cfgutil` has a `--timeout` parameter since device discovery is delivered asynchronously. You might never notice this in Xcode's "Devices and Simulators" window, but it is still there too.
 
 ## `AMRestorableDevice`
 
@@ -43,7 +45,7 @@ There are a number of function calls relevant to this type, dealing with sending
 
 It is important to stress that this types is just a "Transport" rather than a "Protocol". Each "lockdown service" may have it's own very different binary protocol for sending and recieving data. In the simple case of `com.apple.syslog_relay`, the service just repeatedly sends text over the connection. Other protocols, for instance those used by Instruments are far more complicated. There is no single Protocol that is used by all lockdown services.
 
-There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/master/FBDeviceControl/Management/FBAMDServiceConnection.h#L83). This is implemented in `AMDServiceConnection(Send|Recieve)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It's essentially wiring a length header followed by a binary plist, this is used on both the send and recieve sides.
+There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDServiceConnection.h#L83). This is implemented in `AMDServiceConnection(Send|Recieve)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It's essentially wiring a length header followed by a binary plist, this is used on both the send and recieve sides.
 
 ## `AFC`: "Apple File Connection"
 
@@ -53,22 +55,77 @@ On non-jailbroken devices, there is no way of getting an `AFC` connection for th
 
 ## Developer Disk Images
 
-Whilst iOS by default has a number of different services, not all of them are present on the device. In order to augment the iOS Device with additional functionality to an attached macOS host, [Xcode bundles a "Developer Disk Image"](https://github.com/facebook/idb/blob/master/FBControlCore/Utility/FBDeveloperDiskImage.m).
+Whilst iOS by default has a number of different lockdown services provided within the base iOS image, not all of the functionality that is available within Xcode is implemented from services in the base OS. In order to augment the iOS Device with additional functionality to an attached macOS host, [Xcode bundles a "Developer Disk Image"](https://github.com/facebook/idb/blob/main/FBControlCore/Utility/FBDeveloperDiskImage.m).
 
-This is a regular `.dmg` file, which can be opened on macOS. Within this disk image is a number of executables, libraries and `plist`s describing the lockdown services that get added to the iOS Device upon mounting them on the device. `FBDeviceControl` provides an API for manipulating the [disk image manipulation functions in `MobileDevice.framework`](https://github.com/facebook/idb/blob/master/FBDeviceControl/Commands/FBDeviceDeveloperDiskImageCommands.m). It is not possible to mount arbitrary disk image on an iOS Device. Every disk image and it's binaries are signed by Apple. There are also different disk images for different versions of iOS, presumably because the lockdown services interact with APIs that can change over iOS versions.
+This is a regular `.dmg` file, which can be opened on macOS. Within this disk image is a number of executables, libraries and `plist`s describing the lockdown services that get added to the iOS Device upon mounting them on the device. `FBDeviceControl` provides an API for manipulating the [disk image manipulation functions in `MobileDevice.framework`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceDeveloperDiskImageCommands.m). It is not possible to mount arbitrary disk image on an iOS Device as every disk image and it's binaries are signed by Apple, only disk images that have genuine Apple signing are allowed to be mounted. There's some evidence within `MobileDevice.framework` to suggest that Apple uses these Disk Images internally for developing iOS itself.
+The "Developer Disk Image"s may be different for each major/minor iOS verion. This is presumably because the lockdown services interact with APIs on the device that can change in iOS versions. The services that are contained within the Developer Disk Image are associated with functionality that is specific to Xcode, Instruments and Accessibility Inspector. The [usage of and availability of these services can change over Xcode versions](https://github.com/facebook/idb/commit/5b4415a4fa20a49e03f7596cf5fc296efd25df42), so there may be differences in the implementation of clients depending on the protocol version of the service that the client is communicating with.
 
-The services that are contained within the Developer Disk Image are associated with functionality that is specific to Xcode, Instruments and Accessibility Inspector. This also means that the usage of these services can vary over versions of Xcode (therefore the Disk Images) instead of over iOS versions. As a result, there may be differences in the client-side implementation of the client depending on the protocol version of the service to which the client is communicating.
+### Manipulating Disk Images
+
+Any `FBDeviceControl` functionality that depends on a service provided by a "Developer Disk Image" will implicitly search for and subsequently mount the most appropriate disk image for the attached iOS device. `idb` also provides ways of manually managing the mounting of these disk images through the "disk image container" of file commands:
+
+```
+# List all of the available disk images that are present within the current Xcode, as well as the current mounted image/s (if present).
+# No images are mounted as the "mounted" path is empty.
+$ idb file ls --disk-images .
+15.0/DeveloperDiskImage.dmg
+12.1/DeveloperDiskImage.dmg
+10.0/DeveloperDiskImage.dmg
+9.2/DeveloperDiskImage.dmg
+9.1/DeveloperDiskImage.dmg
+14.2/DeveloperDiskImage.dmg
+13.4/DeveloperDiskImage.dmg
+11.3/DeveloperDiskImage.dmg
+13.0/DeveloperDiskImage.dmg
+12.2/DeveloperDiskImage.dmg
+10.1/DeveloperDiskImage.dmg
+13.1/DeveloperDiskImage.dmg
+11.0/DeveloperDiskImage.dmg
+14.3/DeveloperDiskImage.dmg
+13.5/DeveloperDiskImage.dmg
+11.4/DeveloperDiskImage.dmg
+12.3/DeveloperDiskImage.dmg
+10.2/DeveloperDiskImage.dmg
+14.0/DeveloperDiskImage.dmg
+13.2/DeveloperDiskImage.dmg
+11.1/DeveloperDiskImage.dmg
+14.4/DeveloperDiskImage.dmg
+13.6/DeveloperDiskImage.dmg
+12.0/DeveloperDiskImage.dmg
+14.5/DeveloperDiskImage.dmg
+12.4/DeveloperDiskImage.dmg
+10.3/DeveloperDiskImage.dmg
+14.1/DeveloperDiskImage.dmg
+11.2/DeveloperDiskImage.dmg
+13.3/DeveloperDiskImage.dmg
+9.0/DeveloperDiskImage.dmg
+9.3/DeveloperDiskImage.dmg
+13.7/DeveloperDiskImage.dmg
+
+$ idb file ls --disk-images mounted
+
+# Mounting for the current iOS Version of the attached device (iOS 15.0 succeeds).
+$ idb file mv --disk-images 15.0/DeveloperDiskImage.dmg mounted
+
+# Now we can see that the image is mounted.
+$ idb file ls --disk-images mounted
+15.0/DeveloperDiskImage.dmg
+
+# Unmount the disk image by rm'ing it. The disk image is kept intact on the host, but is unmounted from the device.
+$ idb file rm --disk-images mounted/15.0/DeveloperDiskImage.dmg
+$ idb file ls --disk-images mounted
+```
 
 ## Instruments Service
 
 The "Instruments Service", which is a service within the "Developer Disk Image" is a very important one with respect to iOS Device automation. Since `Instruments.app` and the `instruments` commandline offers a lot of functionality for launching and profiling Applications and iOS Devices, it is integral to tasks such as app launching and process listing on iOS Devices.
 
-The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/master/FBDeviceControl/Management/FBInstrumentsClient.h). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
+The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBInstrumentsClient.h). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
 
 ## Video Encoding
 
 One of the key features of `FBDeviceControl` is the ability to stream the iPhone's screen to the host over USB. You might be familiar with this within QuickTime's "Screen Recording" feature, where you can record video from a connected iOS Device to an `.mp4` file on your Mac.
 
-Access to this [is provided via `AVFoundation`](https://github.com/facebook/idb/blob/master/FBDeviceControl/Video/FBDeviceVideo.m#L38) as a "Capture Device". Usage of "Capture Devices" on macOS also requires that the hosting process (The process using `FBDeviceControl`) has system-level permissions for this on more recent versions of macOS. With a Capture Device for the iOS Device screen, it is then possible to create a "Capture Session" with the device. A "Capture Session" can thent be established, with relevant configuration so that frames are recieved in the most optimal format for the consumer. `FBDeviceControl` recieves frame samples from the device and these samples are either re-encoded or not before being passed on to a stream of data. 
+Access to this [is provided via `AVFoundation`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Video/FBDeviceVideo.m#L38) as a "Capture Device". Usage of "Capture Devices" on macOS also requires that the hosting process (The process using `FBDeviceControl`) has system-level permissions for this on more recent versions of macOS. With a Capture Device for the iOS Device screen, it is then possible to create a "Capture Session" with the device. A "Capture Session" can thent be established, with relevant configuration so that frames are recieved in the most optimal format for the consumer. `FBDeviceControl` recieves frame samples from the device and these samples are either re-encoded or not before being passed on to a stream of data. 
 
 `FBDeviceControl` supports writing to an `mp4` video file or as a stream of encoded data. For streams of data, these can be passed to other Applications for cases like webRTC or HTTP Live-Streaming.

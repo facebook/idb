@@ -22,22 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- Creates and returns a new Strategy strategyWith the given configuration.
+ Boots a simulator with the provided configuration.
 
- @param configuration the configuration to use.
  @param simulator the simulator to boot.
+ @param configuration the configuration to use.
  @return a new FBSimulatorBootStrategy instance.
  */
-+ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
-
-#pragma mark Public Methods
-
-/**
- Boots the Simulator.
-
- @return a future that resolves when the Simulator is booted.
- */
-- (FBFuture<NSNull *> *)boot;
++ (FBFuture<NSNull *> *)boot:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration;
 
 @end
 

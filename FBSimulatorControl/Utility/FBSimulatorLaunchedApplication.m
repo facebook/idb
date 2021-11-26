@@ -55,6 +55,11 @@
 
 #pragma mark Properties
 
+- (NSString *)bundleID
+{
+  return self.configuration.bundleID;
+}
+
 - (id<FBProcessFileOutput>)stdOut
 {
   return self.attachment.stdOut;

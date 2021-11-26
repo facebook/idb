@@ -162,6 +162,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, strong, nullable, readwrite) dispatch_group_t group;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
+@property (atomic, readonly) int64_t numPendingTasks;
 
 @end
 
@@ -177,15 +178,20 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   _queue = queue;
   _group = dispatch_group_create();
   _consumer = consumer;
+  _numPendingTasks = 0;
 
   return self;
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
 
 - (void)consumeData:(NSData *)data
 {
   void (^consumer)(NSData *) = nil;
   dispatch_queue_t queue;
   dispatch_group_t group;
+  OSAtomicIncrement64(&_numPendingTasks);
   @synchronized (self)
   {
     consumer = self.consumer;
@@ -197,9 +203,11 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
     if (queue) {
       dispatch_group_async(group, queue, ^{
         consumer(data);
+        OSAtomicDecrement64(&self->_numPendingTasks);
       });
     } else {
       consumer(data);
+      OSAtomicDecrement64(&_numPendingTasks);
     }
   }
 }
@@ -217,11 +225,21 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   }
 }
 
+#pragma clang diagnostic pop
+
 @end
 
 @interface FBBlockDataConsumer () <FBDataConsumer, FBDataConsumerLifecycle>
 
 @property (nonatomic, strong, readonly) FBBlockDataConsumer_Dispatcher *dispatcher;
+
+@end
+
+@interface FBBlockDataConsumerAsync : NSObject <FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>
+
+@property (nonatomic, strong, readonly) FBBlockDataConsumer_Dispatcher *dispatcher;
+
+- (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher;
 
 @end
 
@@ -234,6 +252,12 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 @end
 
 @interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer
+
+@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
+
+@end
+
+@interface FBBlockDataConsumerAsync_Unbuffered : FBBlockDataConsumerAsync
 
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
@@ -255,13 +279,13 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:consumer];
-  return [[FBBlockDataConsumer_Unbuffered alloc] initWithDispatcher:dispatcher];
+  return [[FBBlockDataConsumerAsync_Unbuffered alloc] initWithDispatcher:dispatcher];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.BlockDataConsumer.data", DISPATCH_QUEUE_SERIAL);
   return [self asynchronousDataConsumerOnQueue:queue consumer:consumer];
@@ -319,6 +343,52 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 }
 
 @end
+
+
+@implementation FBBlockDataConsumerAsync
+
+- (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _dispatcher = dispatcher;
+
+  return self;
+}
+
+#pragma mark FBDataConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)consumeEndOfFile
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+#pragma mark FBDataConsumerLifecycle
+
+- (FBFuture<NSNull *> *)finishedConsuming
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark FBDataConsumerAsync
+
+- (NSInteger)unprocessedDataCount
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return 0;
+}
+
+@end
+
 
 @implementation FBBlockDataConsumer_Buffered
 
@@ -399,6 +469,58 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 - (FBFuture<NSNull *> *)finishedConsuming
 {
   return self.finishedConsumingFuture;
+}
+
+@end
+
+@implementation FBBlockDataConsumerAsync_Unbuffered
+
+#pragma mark Initializers
+
+- (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher
+{
+  self = [super initWithDispatcher:dispatcher];
+  if (!self) {
+    return nil;
+  }
+
+  _finishedConsumingFuture = FBMutableFuture.future;
+
+  return self;
+}
+
+#pragma mark FBDataConsumer
+
+- (void)consumeData:(NSData *)data
+{
+  @synchronized (self) {
+    [self.dispatcher consumeData:data];
+  }
+}
+
+- (void)consumeEndOfFile
+{
+  @synchronized (self) {
+    [self.dispatcher consumeEndOfFile];
+    [self.finishedConsumingFuture resolveWithResult:NSNull.null];
+  }
+}
+
+#pragma mark FBDataConsumerLifecycle
+
+- (FBFuture<NSNull *> *)finishedConsuming
+{
+  return self.finishedConsumingFuture;
+}
+
+#pragma mark FBDataConsumerAsync
+
+- (NSInteger)unprocessedDataCount
+{
+  // not synchronized on purpose
+  // as processing data happens on a different thread
+  // so we cannot be accurate anyway
+  return self.dispatcher.numPendingTasks;
 }
 
 @end

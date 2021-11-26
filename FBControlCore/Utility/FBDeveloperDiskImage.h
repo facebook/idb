@@ -28,7 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
- Returns all of the Developern Disk Images.
+ Returns all of the Developer Disk Images that are available.
+ These Disk Images are found by inspecting the appropriate directories within the current installed Xcode.
  */
 + (NSArray<FBDeveloperDiskImage *> *)allDiskImages;
 
@@ -48,6 +49,11 @@ NS_ASSUME_NONNULL_BEGIN
  The OS Version that the Disk Image is intended for.
  */
 @property (nonatomic, assign, readonly) NSOperatingSystemVersion version;
+
+/**
+ The Xcode version associated with the disk image.
+ */
+@property (nonatomic, assign, readonly) NSOperatingSystemVersion xcodeVersion;
 
 #pragma mark Public
 

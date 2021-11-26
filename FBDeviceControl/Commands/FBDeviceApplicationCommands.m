@@ -26,14 +26,10 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
 }
 
-static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
-{
-  [device.logger logFormat:@"Transfer Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
-}
-
 @interface FBDeviceApplicationCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, copy, readonly) NSURL *deltaUpdateDirectory;
 
 - (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier;
 
@@ -43,6 +39,8 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 @property (nonatomic, strong, readonly) FBDeviceApplicationCommands *commands;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *configuration;
+
 
 @end
 
@@ -50,7 +48,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 @synthesize processIdentifier = _processIdentifier;
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier commands:(FBDeviceApplicationCommands *)commands queue:(dispatch_queue_t)queue
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier configuration:(FBApplicationLaunchConfiguration *)configuration commands:(FBDeviceApplicationCommands *)commands queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -58,6 +56,7 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   }
 
   _processIdentifier = processIdentifier;
+  _configuration = configuration;
   _commands = commands;
   _queue = queue;
 
@@ -74,6 +73,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
+- (NSString *)bundleID
+{
+  return self.configuration.bundleID;
+}
+
 @end
 
 @implementation FBDeviceApplicationCommands
@@ -82,10 +86,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 + (instancetype)commandsWithTarget:(FBDevice *)target
 {
-  return [[self alloc] initWithDevice:target];
+  NSURL *deltaUpdateDirectory = [target.temporaryDirectory temporaryDirectory];
+  return [[self alloc] initWithDevice:target deltaUpdateDirectory:deltaUpdateDirectory];
 }
 
-- (instancetype)initWithDevice:(FBDevice *)device
+- (instancetype)initWithDevice:(FBDevice *)device deltaUpdateDirectory:(NSURL *)deltaUpdateDirectory
 {
   self = [super init];
   if (!self) {
@@ -93,20 +98,39 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
   }
 
   _device = device;
-
+  _deltaUpdateDirectory = deltaUpdateDirectory;
+  
   return self;
 }
 
 #pragma mark FBApplicationCommands Implementation
 
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
+  // We need to get the bundle identifier of the installed application, in order that we can get install info later.
+  NSError *error = nil;
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:&error];
+  if (!bundle) {
+    return [FBFuture futureWithError:error];
+  }
+
+  // 'PackageType=Developer' signifies that the passed payload is a .app
+  // 'AMDeviceSecureInstallApplicationBundle' performs:
+  // 1) The transfer of the application bundle to the device.
+  // 2) The installation of the application after the transfer.
+  // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
+  // 'ShadowParentKey' must be provided in 'AMDeviceSecureInstallApplicationBundle' if 'Developer' is the 'PackageType
   NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
-  NSDictionary *options = @{@"PackageType" : @"Developer"};
+  NSDictionary<NSString *, id> *options = @{
+    @"PackageType" : @"Developer",
+    @"ShadowParentKey": self.deltaUpdateDirectory,
+  };
+ 
+  // Perform the install and lookup the app after.
   return [[self
-    transferAppURL:appURL options:options]
-    onQueue:self.device.workQueue fmap:^(NSNull *_) {
-      return [self secureInstallApplication:appURL options:options];
+    secureInstallApplicationBundle:appURL options:options]
+    onQueue:self.device.asyncQueue fmap:^(id _) {
+      return [self installedApplicationWithBundleID:bundle.identifier];
     }];
 }
 
@@ -196,44 +220,38 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 {
   return [[FBFuture
     futureWithFutures:@[
-      [self runningProcessPathToPID],
-      [self installedApplicationsData:FBDeviceApplicationCommands.pathLookupAttributes],
+      [self pidToRunningProcessName],
+      [self installedApplicationsData:FBDeviceApplicationCommands.namingLookupAttributes],
     ]]
     onQueue:self.device.asyncQueue map:^ NSDictionary<NSString *, NSNumber *> * (NSArray<id> *tuple) {
-      NSDictionary<NSString *, NSNumber *> *runningProcessRealAppNameToPID = tuple[0];
+      // Obtain the requested mappings.
+      NSDictionary<NSNumber *, NSString *> *pidToRunningProcessName = tuple[0];
       NSDictionary<NSString *, id> *bundleIdentifierToAttributes = tuple[1];
-      NSMutableDictionary<NSString *, NSString *> *bundlePathToBundleIdentifier = NSMutableDictionary.dictionary;
-      for (NSString *bundleIdentifier in bundleIdentifierToAttributes.allKeys) {
-        NSString *bundlePath = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyPath];
-        bundlePathToBundleIdentifier[bundlePath] = bundleIdentifier;
-      }
-      NSMutableDictionary<NSString *, NSNumber *> *bundleIdentifierToPID = NSMutableDictionary.dictionary;
-      for (NSString *processRealName in runningProcessRealAppNameToPID.allKeys) {
-        // processRealName points is the executable within the .app bundle (can it be nested more deeply?)
-        NSString *bundlePath = [processRealName stringByDeletingLastPathComponent];
-        NSString *bundleIdentifier = bundlePathToBundleIdentifier[bundlePath];
-        if (!bundleIdentifier) {
-          // '/private' is sometimes missing from the path
-          bundlePath = [@"/private" stringByAppendingString:bundlePath];
-          bundleIdentifier = bundlePathToBundleIdentifier[bundlePath];
-          if (!bundleIdentifier) {
-            continue;
-          }
-        }
-        NSNumber *pid = runningProcessRealAppNameToPID[processRealName];
-        bundleIdentifierToPID[bundleIdentifier] = pid;
-      }
-      return bundleIdentifierToPID;
-    }];
-}
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [[self
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.device.workQueue chain:^(FBFuture *future) {
-      return [FBFuture futureWithResult:(future.state == FBFutureStateDone ? @YES : @NO)];
-    }];
+      // Flip the mappings
+      NSMutableDictionary<NSString *, NSString *> *bundleNameToBundleIdentifier = NSMutableDictionary.dictionary;
+      for (NSString *bundleIdentifier in bundleIdentifierToAttributes.allKeys) {
+        NSString *bundleName = bundleIdentifierToAttributes[bundleIdentifier][FBApplicationInstallInfoKeyBundleName];
+        bundleNameToBundleIdentifier[bundleName] = bundleIdentifier;
+      }
+      NSMutableDictionary<NSString *, NSNumber *> *runningProcessNameToPID = NSMutableDictionary.dictionary;
+      for (NSNumber *processIdentifier in pidToRunningProcessName.allKeys) {
+        NSString *processName = pidToRunningProcessName[processIdentifier];
+        runningProcessNameToPID[processName] = processIdentifier;
+      }
+
+      // Compare bundle names with PIDs by using the inverted mappings.
+      NSMutableDictionary<NSString *, NSNumber *> *bundleNameToPID = NSMutableDictionary.dictionary;
+      for (NSString *processName in runningProcessNameToPID.allKeys) {
+        NSString *bundleName = bundleNameToBundleIdentifier[processName];
+        if (!bundleName) {
+          continue;
+        }
+        NSNumber *pid = runningProcessNameToPID[processName];
+        bundleNameToPID[bundleName] = pid;
+      }
+      return bundleNameToPID;
+    }]; 
 }
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
@@ -288,7 +306,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
       return [client launchApplication:configuration];
     }]
     onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
-      return [[FBDeviceLaunchedApplication alloc] initWithProcessIdentifier:pid.intValue commands:self queue:self.device.workQueue];
+      return [[FBDeviceLaunchedApplication alloc]
+        initWithProcessIdentifier:pid.intValue
+        configuration:configuration
+        commands:self
+        queue:self.device.workQueue];
     }];
 }
 
@@ -301,39 +323,15 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<NSNull *> *)transferAppURL:(NSURL *)appURL options:(NSDictionary *)options
-{
-  return [[self.device
-    connectToDeviceWithPurpose:@"transfer_app"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      int status = self.device.calls.SecureTransferPath(
-        0,
-        device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(appURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) TransferCallback,
-        (__bridge void *) (device)
-      );
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to transfer '%@' with error 0x%x (%@)", appURL, status, internalMessage]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
-}
-
-- (FBFuture<NSNull *> *)secureInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
+- (FBFuture<NSNull *> *)secureInstallApplicationBundle:(NSURL *)hostAppURL options:(NSDictionary<NSString *, id> *)options
 {
   return [[self.device
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      [self.device.logger logFormat:@"Installing Application %@", appURL];
-      int status = device.calls.SecureInstallApplication(
-        0,
+      [self.device.logger logFormat:@"Installing Application %@", hostAppURL];
+      int status = device.calls.SecureInstallApplicationBundle(
         device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFURLRef _Nonnull)(hostAppURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
         (AMDeviceProgressCallback) InstallCallback,
         (__bridge void *) (device)
@@ -341,10 +339,10 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
+          describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
           failFuture];
       }
-      [self.device.logger logFormat:@"Installed Application %@", appURL];
+      [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
       return FBFuture.empty;
     }];
 }
@@ -399,11 +397,11 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
 - (FBFutureContext<FBInstrumentsClient *> *)remoteInstrumentsClient
 {
-  // There is a change in service names in iOS 13.6 that we have to account for.
+  // There is a change in service names in iOS 14 that we have to account for.
   // Both of these channels are fine to use with the same underlying protocol, so long as the secure wrapper is used on the transport.
-  BOOL usesSecureConnection = self.device.osVersion.version.majorVersion > 13 || (self.device.osVersion.version.majorVersion == 13 && self.device.osVersion.version.minorVersion >= 6);
+  BOOL usesSecureConnection = self.device.osVersion.version.majorVersion >= 14;
   return [[[self.device
-    ensureDiskImageIsMounted]
+    ensureDeveloperDiskImageIsMounted]
     onQueue:self.device.workQueue pushTeardown:^(id _) {
       return [self.device startService:(usesSecureConnection ? @"com.apple.instruments.remoteserver.DVTSecureSocketProxy" : @"com.apple.instruments.remoteserver")];
     }]
@@ -412,12 +410,47 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcessPathToPID
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)pidToRunningProcessName
 {
-  return [[self
-    remoteInstrumentsClient]
-    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
-      return [client runningProcesses];
+  return [[self.device
+    startService:@"com.apple.os_trace_relay"]
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
+      NSError *error = nil;
+      BOOL success = [connection sendMessage:@{@"Request": @"PidList"} error:&error];
+      if (!success) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to request PidList %@", error]
+          failFuture];
+      }
+      NSData *data = [connection receive:1 error:&error];
+      if (!data) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to recieve 1 byte after PidList %@", error]
+          failFuture];
+      }
+      NSDictionary<NSString *, id> *response = [connection receiveMessageWithError:&error];
+      if (!response) {
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to recieve PidList response %@", error]
+          failFuture];
+      }
+      NSString *status = response[@"Status"];
+      if (![status isEqualToString:@"RequestSuccessful"]) {
+        return [[FBDeviceControlError
+          describeFormat:@"Request to PidList is not RequestSuccessful %@", error]
+          failFuture];
+      }
+      NSDictionary<NSNumber *, id> *payload = response[@"Payload"];
+      NSMutableDictionary<NSNumber *, NSString *> *pidToRunningProcessName = NSMutableDictionary.dictionary;
+      for (NSNumber *processIdentifer in payload.keyEnumerator) {
+        NSDictionary<NSString *, NSString *> *contents = payload[processIdentifer];
+        NSString *processName = contents[@"ProcessName"];
+        if (![processName isKindOfClass:NSString.class]) {
+          continue;
+        }
+        pidToRunningProcessName[processIdentifer] = processName;
+      }
+      return [FBFuture futureWithResult:pidToRunningProcessName];
     }];
 }
 
@@ -434,7 +467,8 @@ static void TransferCallback(NSDictionary<NSString *, id> *callbackDictionary, i
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:installType];
+    installType:installType
+    dataContainer:nil];
 }
 
 + (NSArray<NSString *> *)installedApplicationLookupAttributes

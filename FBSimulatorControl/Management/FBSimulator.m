@@ -24,11 +24,14 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDebuggerCommands.h"
+#import "FBSimulatorDapServerCommands.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLocationCommands.h"
+#import "FBSimulatorMemoryCommands.h"
+#import "FBSimulatorNotificationCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorMediaCommands.h"
 #import "FBSimulatorProcessSpawnCommands.h"
@@ -47,6 +50,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 @implementation FBSimulator
 
 @synthesize auxillaryDirectory = _auxillaryDirectory;
+@synthesize temporaryDirectory = _temporaryDirectory;
 @synthesize logger = _logger;
 @dynamic xctestPath;
 
@@ -58,7 +62,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
     set:set
-    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
+    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
     logger:set.logger
     reporter:set.reporter];
 }
@@ -142,6 +146,15 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return [[FBiOSTargetScreenInfo alloc] initWithWidthPixels:(NSUInteger)deviceType.mainScreenSize.width heightPixels:(NSUInteger)deviceType.mainScreenSize.height scale:deviceType.mainScreenScale];
 }
 
+- (FBTemporaryDirectory *)temporaryDirectory
+{
+  if (_temporaryDirectory) {
+    return _temporaryDirectory;
+  }
+  _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
+  return _temporaryDirectory;
+}
+
 - (dispatch_queue_t)workQueue
 {
   return dispatch_get_main_queue();
@@ -169,7 +182,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   };
 }
 
-- (BOOL) requiresBundlesToBeSigned {
+- (BOOL)requiresBundlesToBeSigned {
   return YES;
 }
 
@@ -268,6 +281,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBSimulatorApplicationCommands.class,
       FBSimulatorCrashLogCommands.class,
       FBSimulatorDebuggerCommands.class,
+      FBSimulatorDapServerCommand.class,
       FBSimulatorFileCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
@@ -281,6 +295,8 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBSimulatorVideoRecordingCommands.class,
       FBSimulatorXCTestCommands.class,
       FBXCTraceRecordCommands.class,
+      FBSimulatorNotificationCommands.class,
+      FBSimulatorMemoryCommands.class,
     ];
   });
   return commandClasses;
@@ -288,12 +304,9 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 #pragma mark Private
 
-+ (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
++ (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device
 {
-  if (!configuration.auxillaryDirectory) {
-    return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
-  }
-  return [configuration.auxillaryDirectory stringByAppendingPathComponent:device.UDID.UUIDString];
+  return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
 }
 
 + (NSSet<Class> *)statefulCommands

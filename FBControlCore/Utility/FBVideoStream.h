@@ -13,7 +13,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBDataConsumer;
-@protocol FBDataConsumerStackConsuming;
+@protocol FBDataConsumerSync;
 
 /**
  Streams Bitmaps to a File Sink
@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the bytes to.
  @return A future that resolves when the streaming has started.
  */
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer;
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer;
 
 /**
  Stops the Streaming.
@@ -40,6 +40,14 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
+ Returns true if consumer is ready to process another frame, false if consumer buffered data exceedes allowed limit
+ 
+ @param consumer consumer
+ @return True if next frame should be pushed; False if frame should be dropped
+ */
+extern BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger);
+
+/**
  Write an H264 frame to the stream, in the Annex-B stream format.
 
  @param sampleBuffer the Sample buffer to write.
@@ -48,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
+extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
  Write a JPEG frame to the MJPEG stream.
@@ -59,7 +67,7 @@ extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataCo
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-extern BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
+extern BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
  Write a Minicap frame to the stream, based upon using the provided JPEG Block Buffer.
@@ -70,7 +78,7 @@ extern BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDat
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-extern BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer, FBDataConsumerStackConsuming> consumer, id<FBControlCoreLogger> logger, NSError **error);
+extern BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
  Write a Minicap header to the stream.

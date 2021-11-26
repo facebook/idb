@@ -1,11 +1,11 @@
-# If you only want circle to run on direct commits to master, you can uncomment this out
-# and uncomment the filters: *filter-only-master down below too
+# If you only want circle to run on direct commits to main, you can uncomment this out
+# and uncomment the filters: *filter-only-main down below too
 #
 aliases:
- - &filter-only-master
+ - &filter-only-main
    branches:
      only:
-       - master
+       - main
 
 version: 2
 jobs:
@@ -28,4 +28,4 @@ workflows:
   build_and_deploy:
     jobs:
       - deploy-website:
-          filters: *filter-only-master
+          filters: *filter-only-main

@@ -26,10 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Installs application at given path on the host.
 
- @param path the file path of the Application Bundle on the host.
+ @param path the file path of the Application. May be a .app bundle, or a .ipa
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path;
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path;
 
 /**
  Uninstalls application with given bundle id.
@@ -38,14 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID;
-
-/**
- Queries to see if an Application is installed on iOS.
-
- @param bundleID The Bundle ID of the application.
- @return A future that identifies if the application was installed.
- */
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID;
 
 /**
  Launches an Application with the provided Application Launch Configuration.

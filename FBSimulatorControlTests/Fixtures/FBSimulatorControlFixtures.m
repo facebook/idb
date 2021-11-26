@@ -58,40 +58,38 @@
 - (FBTestLaunchConfiguration *)testLaunchTableSearch
 {
   return [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    initWithTestBundle:self.iOSUnitTestBundle
     applicationLaunchConfiguration:self.tableSearchAppLaunch
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:nil
     testsToSkip:nil
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
 {
   return [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:self.iOSUnitTestBundlePath
+    initWithTestBundle:self.iOSUnitTestBundle
     applicationLaunchConfiguration:self.safariAppLaunch
-    testHostPath:nil
+    testHostBundle:nil
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:nil
     testsToSkip:nil
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 }
 
@@ -150,16 +148,19 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
     mode:FBProcessSpawnModeDefault];
 }
 
-- (nullable NSString *)iOSUnitTestBundlePath
+- (nullable FBBundleDescriptor *)iOSUnitTestBundle
 {
+  NSError *error = nil;
   NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
+  FBBundleDescriptor * bundle = [FBBundleDescriptor bundleFromPath:bundlePath error:&error];
+  XCTAssert(bundle, @"Failed to load bundle at %@: %@", bundlePath, error);
+  
   FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
   if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
-    return bundlePath;
+    return bundle;
   }
-  NSError *error = nil;
   if ([[codesign signBundleAtPath:bundlePath] await:&error]) {
-    return bundlePath;
+    return bundle;
   }
   XCTFail(@"Bundle at path %@ could not be codesigned: %@", bundlePath, error);
   return nil;

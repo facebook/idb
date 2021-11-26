@@ -28,7 +28,16 @@ class AppInstallCommand(ClientCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "bundle_path", help="Path to the .app/.ipa to install", type=str
+            "--make-debuggable",
+            help="If set, will persist the application bundle alongside the iOS Target, this is needed for debugserver commands to function",
+            action="store_true",
+            default=None,
+            required=False,
+        )
+        parser.add_argument(
+            "bundle_path",
+            help="Path to the .app/.ipa to install. Note that .app bundles will usually be faster to install than .ipa files.",
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -37,7 +46,11 @@ class AppInstallCommand(ClientCommand):
         compression = (
             Compression[args.compression] if args.compression is not None else None
         )
-        async for info in client.install(args.bundle_path, compression):
+        async for info in client.install(
+            bundle=args.bundle_path,
+            make_debuggable=args.make_debuggable,
+            compression=compression,
+        ):
             artifact = info
             progress = info.progress
             if progress is None:

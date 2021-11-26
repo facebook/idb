@@ -14,19 +14,21 @@
 @interface FBDeviceDebugServer_TwistedPairFiles : NSObject
 
 @property (nonatomic, assign, readonly) int source;
-@property (nonatomic, assign, readonly) int sink;
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *sink;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) dispatch_queue_t sinkWriteQueue;
+@property (nonatomic, strong, readonly) dispatch_queue_t sinkReadQueue;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDispatchDataConsumer> sourceWriter;
-@property (nonatomic, strong, nullable, readwrite) FBFileReader *sourceReader;
-@property (nonatomic, strong, nullable, readwrite) id<FBDispatchDataConsumer> sinkWriter;
-@property (nonatomic, strong, nullable, readwrite) FBFileReader *sinkReader;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> sourceWriter;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileReader> sourceReader;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> sinkWriter;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileReader> sinkReader;
 
 @end
 
 @implementation FBDeviceDebugServer_TwistedPairFiles
 
-- (instancetype)initWithSource:(int)source sink:(int)sink queue:(dispatch_queue_t)queue
+- (instancetype)initWithSource:(int)source sink:(FBAMDServiceConnection *)sink queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -36,27 +38,28 @@
   _source = source;
   _sink = sink;
   _queue = queue;
+  _sinkWriteQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver_sink_write", DISPATCH_QUEUE_SERIAL);
+  _sinkReadQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver_sink_read", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)start
 {
-  return [[[FBFuture
+  NSError *error = nil;
+  id<FBDataConsumer, FBDataConsumerLifecycle> sourceWriter = [FBFileWriter asyncWriterWithFileDescriptor:self.source closeOnEndOfFile:NO error:&error];
+  if (!sourceWriter) {
+    return [FBFuture futureWithError:error];
+  }
+  self.sourceWriter = sourceWriter;
+  self.sinkWriter = [self.sink writeWithConsumerWritingOnQueue:self.sinkWriteQueue];
+  self.sourceReader = [FBFileReader readerWithFileDescriptor:self.source closeOnEndOfFile:NO consumer:self.sinkWriter logger:nil];
+  self.sinkReader = [self.sink readFromConnectionWritingToConsumer:self.sourceWriter onQueue:self.sinkReadQueue];
+  return [[FBFuture
     futureWithFutures:@[
-      [FBFileWriter asyncDispatchDataWriterWithFileDescriptor:self.source closeOnEndOfFile:NO],
-      [FBFileWriter asyncDispatchDataWriterWithFileDescriptor:self.sink closeOnEndOfFile:NO],
+      [self.sourceReader startReading],
+      [self.sinkReader startReading],
     ]]
-    onQueue:self.queue fmap:^(NSArray<id<FBDispatchDataConsumer>> *consumers) {
-      self.sourceWriter = consumers[0];
-      self.sinkWriter = consumers[1];
-      self.sourceReader = [FBFileReader dispatchDataReaderWithFileDescriptor:self.source closeOnEndOfFile:NO consumer:consumers[1] logger:nil];
-      self.sinkReader = [FBFileReader dispatchDataReaderWithFileDescriptor:self.sink closeOnEndOfFile:NO consumer:consumers[0] logger:nil];
-      return [FBFuture futureWithFutures:@[
-        [self.sourceReader startReading],
-        [self.sinkReader startReading],
-      ]];
-    }]
     onQueue:self.queue map:^(id _) {
       return [[FBFuture
         race:@[
@@ -128,7 +131,7 @@
     return;
   }
   [self.logger log:@"Client connected, connecting all file handles"];
-  self.twistedPair = [[FBDeviceDebugServer_TwistedPairFiles alloc] initWithSource:fileDescriptor sink:self.serviceConnection.socket queue:self.queue];
+  self.twistedPair = [[FBDeviceDebugServer_TwistedPairFiles alloc] initWithSource:fileDescriptor sink:self.serviceConnection queue:self.queue];
   [[[self.twistedPair
     start]
     onQueue:self.queue fmap:^(FBFuture<NSNull *> *finished) {

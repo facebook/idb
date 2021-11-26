@@ -3,7 +3,7 @@ Thank you for sending the PR! We appreciate you spending the time to work on the
 
 Help us understand your motivation by explaining why you decided to make this change.
 
-You can learn more about contributing to `idb` here: https://github.com/facebook/idb/blob/master/.github/CONTRIBUTING.md
+You can learn more about contributing to `idb` here: https://github.com/facebook/idb/blob/main/.github/CONTRIBUTING.md
 
 Happy contributing!
 

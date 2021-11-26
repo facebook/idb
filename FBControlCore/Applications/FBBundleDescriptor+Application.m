@@ -14,8 +14,8 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBTask.h"
-#import "FBTaskBuilder.h"
+#import "FBProcess.h"
+#import "FBProcessBuilder.h"
 
 @implementation FBBundleDescriptor (Application)
 

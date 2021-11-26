@@ -24,45 +24,9 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 };
 
 /**
- Reads a file in the background, forwarding to a consumer.
- Closing of a file descriptor when reading has finished is also provided, where relevant.
+ A Protocol for defining file reading.
  */
-@interface FBFileReader : NSObject
-
-#pragma mark Initializers
-
-/**
- Creates a reader of NSData from a file descriptor.
-
- @param fileDescriptor the file descriptor to write to.
- @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a file reader.
- */
-+ (instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Creates a reader of dispatch data from a file descriptor.
-
- @param fileDescriptor the file descriptor to write to.
- @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a File Reader.
- */
-+ (instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Creates a reader of NSData from a file at a path on the filesystem.
- A file handle will be internally created, and closed when reading has finished.
-
- @param filePath the file path to read from.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a File Reader, that is available when the underlying file handle has been opened.
- */
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
+@protocol FBFileReader
 
 #pragma mark Public Methods
 
@@ -108,6 +72,49 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  Cancelling the future will cause reading to be cancelled.
  */
 @property (nonatomic, strong, readonly) FBFuture<NSNumber *> *finishedReading;
+
+@end
+
+/**
+ Reads a file in the background, forwarding to a consumer.
+ Closing of a file descriptor when reading has finished is also provided, where relevant.
+ */
+@interface FBFileReader : NSObject <FBFileReader>
+
+#pragma mark Initializers
+
+/**
+ Creates a reader of NSData from a file descriptor.
+
+ @param fileDescriptor the file descriptor to write to.
+ @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
+ @param consumer the consumer to forward to.
+ @param logger the logger to use.
+ @return a file reader.
+ */
++ (instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Creates a reader of dispatch data from a file descriptor.
+
+ @param fileDescriptor the file descriptor to write to.
+ @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
+ @param consumer the consumer to forward to.
+ @param logger the logger to use.
+ @return a File Reader.
+ */
++ (instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Creates a reader of NSData from a file at a path on the filesystem.
+ A file handle will be internally created, and closed when reading has finished.
+
+ @param filePath the file path to read from.
+ @param consumer the consumer to forward to.
+ @param logger the logger to use.
+ @return a File Reader, that is available when the underlying file handle has been opened.
+ */
++ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 

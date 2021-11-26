@@ -156,7 +156,7 @@
         continue;
       }
 
-      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceModel:model] withOSNamed:osName];
+      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:model] withOSNamed:osName];
       [configurations addObject:configuration];
     }
   }

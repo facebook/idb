@@ -31,7 +31,12 @@ static int __testSuiteDepth = 0;
 static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
 {
   NSString *className = NSStringFromClass(testCase.class);
-  NSString *methodName = NSStringFromSelector([testCase.invocation selector]);
+  NSString *methodName;
+  if ([testCase respondsToSelector:@selector(languageAgnosticTestMethodName)]) {
+    methodName = [testCase languageAgnosticTestMethodName];
+  } else {
+    methodName = NSStringFromSelector([testCase.invocation selector]);
+  }
   NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
   if (classNameOut) {
     *classNameOut = className;

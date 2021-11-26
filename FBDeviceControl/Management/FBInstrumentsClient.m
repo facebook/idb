@@ -108,32 +108,6 @@ static const ResponsePayload InvalidResponsePayload = {
 
 #pragma mark Public Methods
 
-static NSString *const DeviceInfoChannel = @"com.apple.instruments.server.services.deviceinfo";
-
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcesses
-{
-  return [FBFuture
-    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, NSNumber *> * (NSError **error) {
-      ResponsePayload response = [self onChannelIdentifier:DeviceInfoChannel performSelector:@"runningProcesses" argumentsData:nil error:error];
-      if (response.success == NO) {
-        return nil;
-      }
-      NSMutableDictionary<NSString *, NSNumber *> *nameToPid = NSMutableDictionary.dictionary;
-      for (NSDictionary<NSString *, id> *process in response.returnValue) {
-        // Note that we could filter for isApplication here, however it seems a bit inconsistent when a process is flaged as an application.
-        // The following conditions have been identified:
-        // * bundle name needs to be valid according to spec, most notably less than 16 chars
-        // * bundle name needs to be the same as the executable name
-        // * bundle name as defined in the plist needs to be equal to the folder bundle on disk
-        // Violating any of the above still results in a working application that can be deployed!
-        NSNumber *pid = process[@"pid"];
-        NSString *realAppName = process[@"realAppName"];
-        nameToPid[realAppName] = pid;
-      }
-      return nameToPid;
-    }];
-}
-
 static NSString *const ProcessControlChannel = @"com.apple.instruments.server.services.processcontrol";
 
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration

@@ -121,7 +121,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
         shimOutputFilePath:outputs.shimOutput.filePath
         shimPath:shimPath
         bundlePath:self.configuration.testBundlePath
-        coveragePath:self.configuration.coveragePath
+        coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
         logDirectoryPath:self.configuration.logDirectoryPath
         waitForDebugger:self.configuration.waitForDebugger];
 
@@ -133,7 +133,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-+ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
 {
   NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
@@ -144,7 +144,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     @"TEST_SHIM_BUNDLE_PATH": bundlePath,
     kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
   }];
-  if (coveragePath) {
+  if (coverageDirectoryPath) {
+    NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", [bundlePath lastPathComponent]];
+    NSString *coveragePath = [coverageDirectoryPath stringByAppendingPathComponent:coverageFile];
     environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
   }
   if (logDirectoryPath) {
@@ -319,7 +321,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
   return [[self.target
     launchProcess:configuration]
-    onQueue:queue map:^ FBFuture<NSNumber *> * (id<FBLaunchedProcess> process) {
+    onQueue:queue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
       return [[FBLogicTestRunStrategy
         fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
         onQueue:queue fmap:^(id _) {

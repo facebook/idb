@@ -21,12 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
  */
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(nullable NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicaitonBundleID xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coveragePath:(nullable NSString *)coveragePath logDirectoryPath:(nullable NSString *)logDirectoryPath;
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip  targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
 
 /**
- Path to XCTest bundle used for testing
+ XCTest bundle used for testing
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testBundlePath;
+@property (nonatomic, retain, readonly, nullable) FBBundleDescriptor *testBundle;
 
 /**
  Configuration used to launch test runner application.
@@ -34,9 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 
 /**
- Path to host app.
+ Host app bundle.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
+@property (nonatomic, copy, readonly, nullable) FBBundleDescriptor *testHostBundle;
 
 /**
  Timeout for the Test Launch.
@@ -64,14 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSSet<NSString *> *testsToSkip;
 
 /*
- Bundle ID of to the target application for UI tests
+ Bundle of the target application for UI tests
  */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
-
-/*
- Path to the target application for UI tests
- */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
+@property (nonatomic, strong, readonly, nullable) FBBundleDescriptor *targetApplicationBundle;
 
 /*
  A dictionary with xctestrun file contents to use.
@@ -91,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Path to coverage file
  */
-@property (nonatomic, copy, readonly, nullable) NSString *coveragePath;
+@property (nonatomic, copy, readonly, nullable) NSString *coverageDirectoryPath;
 
 /**
  The Directory to use for storing logs generated during the execution of the test run.

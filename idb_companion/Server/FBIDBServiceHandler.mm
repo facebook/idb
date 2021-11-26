@@ -12,15 +12,17 @@
 #import <grpcpp/grpcpp.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import "FBCodeCoverageRequest.h"
 #import "FBDataDownloadInput.h"
 #import "FBIDBCommandExecutor.h"
+#import "FBIDBError.h"
 #import "FBIDBPortsConfiguration.h"
 #import "FBIDBServiceHandler.h"
 #import "FBIDBStorageManager.h"
 #import "FBIDBTestOperation.h"
 #import "FBIDBXCTestReporter.h"
-#import "FBStorageUtils.h"
-#import "FBTemporaryDirectory.h"
+#import "FBXCTestRunRequest.h"
+#import <FBControlCore/FBFuture.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -36,6 +38,18 @@ static NSString *nsstring_from_c_string(const ::std::string& string)
 
 static int BufferOutputSize = 16384; //  # 16Kb
 
+static FBCompressionFormat read_compression_format(const idb::Payload_Compression comp)
+{
+  switch (comp) {
+    case idb::Payload_Compression::Payload_Compression_GZIP:
+      return FBCompressionFormatGZIP;
+    case idb::Payload_Compression::Payload_Compression_ZSTD:
+      return FBCompressionFormatZSTD;
+    default:
+      return FBCompressionFormatGZIP;
+  }
+}
+
 template <class T>
 static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T> *reader)
 {
@@ -50,9 +64,9 @@ static FBFuture<NSNull *> * resolve_next_read(grpc::internal::ReaderInterface<T>
 }
 
 template <class T>
-static id<FBDataConsumer, FBDataConsumerStackConsuming> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
+static id<FBDataConsumer> drain_consumer(grpc::internal::WriterInterface<T> *writer, FBFuture<NSNull *> *done)
 {
-  return [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  return [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *data) {
     if (done.hasCompleted) {
       return;
     }
@@ -64,7 +78,7 @@ static id<FBDataConsumer, FBDataConsumerStackConsuming> drain_consumer(grpc::int
 }
 
 template <class Write, class Read>
-static id<FBDataConsumer, FBDataConsumerStackConsuming> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
+static id<FBDataConsumer> consumer_from_request(grpc::ServerReaderWriter<Write, Read> *stream, Read& request, FBFuture<NSNull *> *done, NSError **error)
 {
   Read initial;
   stream->Read(&initial);
@@ -77,10 +91,10 @@ static id<FBDataConsumer, FBDataConsumerStackConsuming> consumer_from_request(gr
 }
 
 template <class T>
-static Status drain_writer(FBFuture<FBTask<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
+static Status drain_writer(FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *taskFuture, grpc::internal::WriterInterface<T> *stream)
 {
   NSError *error = nil;
-  FBTask<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
+  FBProcess<NSNull *, NSInputStream *, id> *task = [taskFuture block:&error];
   if (!task) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -168,18 +182,6 @@ static id<FBDataConsumer, FBDataConsumerLifecycle> pipe_output(const idb::Proces
 {
   id<FBDataConsumer, FBDataConsumerLifecycle> consumer = [FBBlockDataConsumer asynchronousDataConsumerOnQueue:queue consumer:^(NSData *data) {
     idb::LaunchResponse response;
-    switch (interface) {
-      case idb::ProcessOutput_Interface_STDOUT:
-        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDOUT);
-        break;
-      case idb::ProcessOutput_Interface_STDERR:
-        response.set_interface(idb::LaunchResponse::Interface::LaunchResponse_Interface_STDERR);
-        break;
-      default:
-        break;
-    }
-    idb::LaunchResponse_Pipe *pipe = response.mutable_pipe();
-    pipe->set_data(data.bytes, data.length);
     idb::ProcessOutput *output = response.mutable_output();
     output->set_data(data.bytes, data.length);
     output->set_interface(interface);
@@ -205,10 +207,10 @@ static FBFuture<NSArray<NSURL *> *> *filepaths_from_stream(const idb::Payload in
   return future;
 }
 
-static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, id<FBControlCoreLogger> logger)
+static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_tar(FBTemporaryDirectory *temporaryDirectory, FBProcessInput<NSOutputStream *> *input, bool extract_from_subdir, FBCompressionFormat compression, id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.processinput", DISPATCH_QUEUE_SERIAL);
-  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP];
+  FBFutureContext<NSURL *> *tarContext = [temporaryDirectory withArchiveExtractedFromStream:input compression:compression];
   if (extract_from_subdir) {
     // Extract from subdirectories
     return [temporaryDirectory filesFromSubdirs:tarContext];
@@ -231,10 +233,19 @@ static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_reader(FBTemporaryDir
   T request;
   reader->Read(&request);
   idb::Payload firstPayload = request.payload();
+  
+  // The first item in the payload stream may be the compression format, if it's not assume the default.
+  FBCompressionFormat compression = FBCompressionFormatGZIP;
+  if (firstPayload.source_case() == idb::Payload::kCompression) {
+    compression = read_compression_format(firstPayload.compression());
+    reader->Read(&request);
+    firstPayload = request.payload();
+  }
+  
   switch (firstPayload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *input = pipe_to_input(firstPayload, reader);
-      return filepaths_from_tar(temporaryDirectory, input, extract_from_subdir, logger);
+      return filepaths_from_tar(temporaryDirectory, input, extract_from_subdir, compression, logger);
     }
     case idb::Payload::kFilePath: {
       return [FBFutureContext futureContextWithFuture:filepaths_from_stream(firstPayload, reader)];
@@ -264,6 +275,26 @@ static NSArray<NSString *> *extract_string_array(T &input)
   return arguments;
 }
 
+static FBCodeCoverageRequest *extract_code_coverage(const idb::XctestRunRequest *request) {
+  if (request->has_code_coverage()) {
+    const idb::XctestRunRequest::CodeCoverage codeCoverage = request->code_coverage();
+    FBCodeCoverageFormat format = FBCodeCoverageExported;
+    switch (codeCoverage.format()) {
+      case idb::XctestRunRequest_CodeCoverage_Format::XctestRunRequest_CodeCoverage_Format_RAW:
+        format = FBCodeCoverageRaw;
+        break;
+      case idb::XctestRunRequest_CodeCoverage_Format::XctestRunRequest_CodeCoverage_Format_EXPORTED:
+      default:
+        format = FBCodeCoverageExported;
+        break;
+    }
+    return [[FBCodeCoverageRequest alloc] initWithCollect:codeCoverage.collect() format:format];
+  } else {
+    // fallback to deprecated request field for backwards compatibility
+    return [[FBCodeCoverageRequest alloc] initWithCollect:request->collect_coverage() format:FBCodeCoverageExported];
+  }
+}
+
 static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *request)
 {
   NSNumber *testTimeout = @(request->timeout());
@@ -273,10 +304,10 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   NSMutableSet<NSString *> *testsToSkip = NSMutableSet.set;
   NSString *testBundleID = nsstring_from_c_string(request->test_bundle_id());
   BOOL reportActivities = request->report_activities();
-  BOOL collectCoverage = request->collect_coverage();
   BOOL collectLogs = request->collect_logs();
   BOOL waitForDebugger = request->wait_for_debugger();
   BOOL reportAttachments = request->report_attachments();
+  FBCodeCoverageRequest *coverage = extract_code_coverage(request);
 
   if (request->tests_to_run_size() > 0) {
     testsToRun = NSMutableSet.set;
@@ -293,18 +324,18 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
       NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID appBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
       NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments collectCoverage:collectCoverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs];
     }
     default:
       return nil;
@@ -457,6 +488,12 @@ static NSString *file_container(idb::FileContainer container)
       return FBFileContainerKindWallpaper;
     case idb::FileContainer_Kind_DISK_IMAGES:
       return FBFileContainerKindDiskImages;
+    case idb::FileContainer_Kind_GROUP_CONTAINER:
+      return FBFileContainerKindGroup;
+    case idb::FileContainer_Kind_APPLICATION_CONTAINER:
+      return FBFileContainerKindApplication;
+    case idb::FileContainer_Kind_AUXILLARY:
+      return FBFileContainerKindAuxillary;
     case idb::FileContainer_Kind_APPLICATION:
     default:
       return nsstring_from_c_string(container.bundle_id());
@@ -471,19 +508,6 @@ static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter
   NSData *data = [NSJSONSerialization dataWithJSONObject:metadata options:0 error:&error];
   if (data) {
     info->set_metadata(data.bytes, data.length);
-  }
-}
-
-static FBCompressionFormat read_compression_format(const idb::Payload payload)
-{
-  idb::Payload_Compression comp = payload.compression();
-  switch (comp) {
-    case idb::Payload_Compression::Payload_Compression_GZIP:
-      return FBCompressionFormatGZIP;
-    case idb::Payload_Compression::Payload_Compression_ZSTD:
-      return FBCompressionFormatZSTD;
-    default:
-      return FBCompressionFormatGZIP;
   }
 }
 
@@ -507,18 +531,43 @@ FBIDBServiceHandler::FBIDBServiceHandler(const FBIDBServiceHandler &c)
 
 FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::InstallRequest_Destination destination, grpc::ServerReaderWriter<idb::InstallResponse, idb::InstallRequest> *stream)
 {@autoreleasepool{
+  // Read the initial request
   idb::InstallRequest request;
   stream->Read(&request);
-  idb::Payload payload;
+  
+  // The name hint may be provided, if it is not then default to some UUID, then advance the stream.
   NSString *name = NSUUID.UUID.UUIDString;
-  if (request.name_hint().length()) {
+  if (request.value_case() == idb::InstallRequest::ValueCase::kNameHint) {
     name = nsstring_from_c_string(request.name_hint());
     stream->Read(&request);
   }
-  payload = request.payload();
+
+  // A debuggable flag may be provided, if it is, then obtain that value, then advance that stream.
+  BOOL makeDebuggable = NO;
+  if (request.value_case() == idb::InstallRequest::ValueCase::kMakeDebuggable) {
+    makeDebuggable = (request.make_debuggable() == true);
+    stream->Read(&request);
+  }
+  // A bundle id might be provided, if it is, then obtain the installed app if exists, then advance that stream.
+  // It can be used to determine where debug symbols should be linked
+  NSString *bundleID = nil;
+  if (request.value_case() == idb::InstallRequest::ValueCase::kBundleId) {
+    bundleID = nsstring_from_c_string(request.bundle_id());
+    stream->Read(&request);
+  }
+
+  // Now that we've read the header, the next item in the stream must be the payload.
+  if (request.value_case() != idb::InstallRequest::ValueCase::kPayload) {
+    return [[FBIDBError
+      describeFormat:@"Expected the next item in the stream to be a payload"]
+      failFuture];
+  }
+
+  // The first item in the payload stream may be the compression format, if it's not assume the default.
   FBCompressionFormat compression = FBCompressionFormatGZIP;
+  idb::Payload payload = request.payload();
   if (payload.source_case() == idb::Payload::kCompression) {
-    compression = read_compression_format(payload);
+    compression = read_compression_format(payload.compression());
     stream->Read(&request);
     payload = request.payload();
   }
@@ -528,11 +577,11 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:dataStream compression:compression];
+          return [_commandExecutor install_app_stream:dataStream compression:compression make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:dataStream];
+          return [_commandExecutor install_dsym_stream:dataStream linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:dataStream name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -546,11 +595,11 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:download.input compression:compression];
+          return [_commandExecutor install_app_stream:download.input compression:compression make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:download.input];
+          return [_commandExecutor install_dsym_stream:download.input linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:download.input name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -563,11 +612,11 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       NSString *filePath = nsstring_from_c_string(payload.file_path());
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_file_path:filePath];
+          return [_commandExecutor install_app_file_path:filePath make_debuggable:makeDebuggable];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_file_path:filePath];
+          return [_commandExecutor install_dsym_file_path:filePath linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -866,6 +915,20 @@ Status FBIDBServiceHandler::setting(ServerContext* context, const idb::SettingRe
           }
           return Status::OK;
         }
+        case idb::Setting::ANY: {
+          NSError *error = nil;
+          NSString *name = nsstring_from_c_string(stringSetting.name().c_str());
+          NSString *value = nsstring_from_c_string(stringSetting.value().c_str());
+          NSString *domain = nil;
+          if (stringSetting.domain().length() > 0) {
+            domain = nsstring_from_c_string(stringSetting.domain().c_str());
+          }
+          NSNull *result = [[_commandExecutor set_preference:name value:value domain:domain] await:&error];
+          if (!result) {
+            return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+          }
+          return Status::OK;
+        }
         default:
           return Status(grpc::StatusCode::INTERNAL, "Unknown setting case");
       }
@@ -885,6 +948,20 @@ Status FBIDBServiceHandler::get_setting(ServerContext* context, const idb::GetSe
         return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
       }
       response->set_value(localeIdentifier.UTF8String);
+      return Status::OK;
+    }
+    case idb::Setting::ANY: {
+      NSError *error = nil;
+      NSString *name = nsstring_from_c_string(request->name().c_str());
+      NSString *domain = nil;
+      if (request->domain().length() > 0) {
+        domain = nsstring_from_c_string(request->domain().c_str());
+      }
+      NSString *value = [[_commandExecutor get_preference:name domain:domain] await:&error];
+      if (error) {
+        return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+      }
+      response->set_value(value.UTF8String);
       return Status::OK;
     }
     default:
@@ -957,11 +1034,16 @@ Status FBIDBServiceHandler::launch(grpc::ServerContext *context, grpc::ServerRea
       return Status(grpc::StatusCode::FAILED_PRECONDITION, error.localizedDescription.UTF8String);
     }
   }
+  // Respond with the pid of the launched process
+  idb::LaunchResponse response;
+  idb::DebuggerInfo *debugger_info = response.mutable_debugger();
+  debugger_info->set_pid(launchedApp.processIdentifier);
+  stream->Write(response);
+  // Return early if not waiting for output
   if (!start.wait_for()) {
-    idb::LaunchResponse response;
-    stream->Write(response);
     return Status::OK;
   }
+  // Otherwise wait for the client to hang up.
   stream->Read(&request);
   [[launchedApp.applicationTerminated cancel] block:nil];
   [[FBFuture futureWithFutures:completions] block:nil];
@@ -1068,7 +1150,7 @@ Status FBIDBServiceHandler::log(ServerContext *context, const idb::LogRequest *r
   // In the background, write out the log data. Prevent future writes if the client write fails.
   // This will happen asynchronously with the server thread.
   FBMutableFuture<NSNull *> *writingDone = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     idb::LogResponse item;
     item.set_output(data.bytes, data.length);
     if (writingDone.hasCompleted) {
@@ -1137,7 +1219,7 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   NSError *error = nil;
   idb::VideoStreamRequest request;
   FBMutableFuture<NSNull *> *done = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = consumer_from_request(stream, request, done, &error);
+  id<FBDataConsumer> consumer = consumer_from_request(stream, request, done, &error);
   if (!consumer) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -1176,10 +1258,11 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   FBFuture<NSNull *> *clientStopped = resolve_next_read(stream);
   [[FBFuture race:@[clientStopped, videoStream.completed]] block:nil];
 
-  // Stop the streaming for real. It may have stopped already in which case this returns instantly.
-  success = [[videoStream stopStreaming] block:&error] != nil;
   // Signal that we're done so we don't write to a dangling pointer.
   [done resolveWithResult:NSNull.null];
+  // Stop the streaming for real. It may have stopped already in which case this returns instantly.
+  success = [[videoStream stopStreaming] block:&error] != nil;
+  [_target.logger logFormat:@"The video stream is terminated"];
   if (success == NO) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -1239,7 +1322,7 @@ Status FBIDBServiceHandler::tail(ServerContext* context, grpc::ServerReaderWrite
   NSString *container = file_container(start.container());
 
   FBMutableFuture<NSNull *> *finished = FBMutableFuture.future;
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<FBDataConsumer, FBDataConsumerSync> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     if (finished.hasCompleted) {
       return;
     }
@@ -1427,6 +1510,78 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
   }
 }}
 
+Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::DapResponse, idb::DapRequest> *stream)
+{@autoreleasepool{
+  idb::DapRequest initial_request;
+  stream->Read(&initial_request);
+  if (initial_request.control_case() != idb::DapRequest::ControlCase::kStart) {
+    return Status(grpc::StatusCode::FAILED_PRECONDITION, "Dap command expected a Start messaged in the beginning of the Stream");
+  }
+  idb::DapRequest_Start start = initial_request.start();
+  NSString *pkg_id = nsstring_from_c_string(start.debugger_pkg_id());
+  NSString *lldb_vscode = [@"dap" stringByAppendingPathComponent:[pkg_id stringByAppendingPathComponent: @"usr/bin/lldb-vscode"]];
+  
+  id<FBDataConsumer> reader = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+    idb::DapResponse response;
+    idb::DapResponse_Pipe *stdout = response.mutable_stdout();
+    stdout->set_data(data.bytes, data.length);
+    stream->Write(response);
+    [_target.logger.debug logFormat:@"Dap server stdout consumer: sent %lu bytes.", data.length];
+  }];
+  
+  
+  [_target.logger.debug logFormat:@"Starting dap server with path %@", lldb_vscode];
+  NSError *error = nil;
+  FBProcessInput<id<FBDataConsumer>> *writer = [FBProcessInput inputFromConsumer];
+  FBProcess *process = [[_commandExecutor dapServerWithPath:lldb_vscode stdIn:writer stdOut:reader] awaitWithTimeout:600 error:&error];
+  if (error){
+    NSString *errorMsg = [NSString stringWithFormat:@"Failed to spaw DAP server. Error: %@", error.localizedDescription];
+    return Status(grpc::StatusCode::INTERNAL, errorMsg.UTF8String);
+  }
+  [_target.logger.debug logFormat:@"Dap server spawn with PID: %d", process.processIdentifier];
+  idb::DapResponse response;
+  response.mutable_started();
+  stream->Write(response);
+  
+  dispatch_queue_t write_queue = dispatch_queue_create("com.facebook.idb.dap.write", DISPATCH_QUEUE_SERIAL);
+  auto writeFuture = [FBFuture onQueue:write_queue resolveWhen:^BOOL {
+    idb::DapRequest request;
+    stream->Read(&request);
+    if (request.control_case() == idb::DapRequest::ControlCase::kStop){
+      [_target.logger.debug logFormat:@"Received stop from Dap Request"];
+      [_target.logger.debug logFormat:@"Dap server with pid %d. Stderr: %@", process.processIdentifier, process.stdErr];
+      return YES;
+    }
+    
+    idb::DapRequest_Pipe pipe = request.pipe();
+    auto raw_data = pipe.data();
+    NSData *data = [NSData dataWithBytes:raw_data.c_str() length:raw_data.length()];
+    if (data.length == 0) {
+      [_target.logger.debug logFormat:@"Dap Request. Receiving empty messages. Transmission finished."];
+      return YES;
+    }
+    [_target.logger.debug logFormat:@"Dap Request. Received %lu bytes from client", data.length];
+    [writer.contents consumeData:data];
+    return NO;
+  }];
+  
+  //  Debug session shouln't be longer than 10hours
+  [writeFuture awaitWithTimeout:36000 error:&error];
+  if (error){
+    NSString *errorMsg = [NSString stringWithFormat:@"Error in writting to dap server stdout: %@", error.localizedDescription];
+    return Status(grpc::StatusCode::INTERNAL, errorMsg.UTF8String);
+  }
+  
+  idb::DapResponse_Event *stopped = response.mutable_stopped();
+  stopped->set_desc(@"Dap server stopped.".UTF8String);
+  stream->Write(response);
+  
+  return Status::OK;
+}}
+
+
+
+
 Status FBIDBServiceHandler::connect(grpc::ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response)
 {@autoreleasepool{
   // Add Meta to Reporter
@@ -1512,4 +1667,24 @@ Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerRe
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
+}}
+
+Status FBIDBServiceHandler::send_notification(grpc::ServerContext *context, const idb::SendNotificationRequest *request, idb::SendNotificationResponse *response)
+{@autoreleasepool{
+  NSError *error = nil;
+  [[_commandExecutor sendPushNotificationForBundleID:nsstring_from_c_string(request->bundle_id()) jsonPayload:nsstring_from_c_string(request->json_payload())] block:&error];
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
+  }
+  return Status::OK;
+}}
+
+Status FBIDBServiceHandler::simulate_memory_warning(grpc::ServerContext *context, const idb::SimulateMemoryWarningRequest *request, idb::SimulateMemoryWarningResponse *response)
+{@autoreleasepool{
+  NSError *error = nil;
+  [[_commandExecutor simulateMemoryWarning] block:&error];
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);
+  }
+  return Status::OK;
 }}

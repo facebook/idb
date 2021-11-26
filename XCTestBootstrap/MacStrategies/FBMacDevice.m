@@ -21,14 +21,17 @@
 @end
 
 @interface FBMacDevice()
+
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBBundleDescriptor *> *bundleIDToProductMap;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, FBTask *> *bundleIDToRunningTask;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, FBProcess *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
 @property (nonatomic, copy) NSString *workingDirectory;
 
 @end
 
 @implementation FBMacDevice
+
+@synthesize temporaryDirectory = _temporaryDirectory;
 
 + (NSString *)applicationInstallDirectory
 {
@@ -71,6 +74,7 @@
     _state = FBiOSTargetStateBooted;
     _targetType = FBiOSTargetTypeLocalMac;
     _workQueue = dispatch_get_main_queue();
+    _temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger];
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _screenInfo = nil;
     _osVersion = [FBOSVersion genericWithName:FBOSVersionNamemac];
@@ -204,7 +208,7 @@
 
 - (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID
 {
-  FBTask *task = self.bundleIDToRunningTask[bundleID];
+  FBProcess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
@@ -246,7 +250,7 @@
   return nil;
 }
 
-- (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
+- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
   NSFileManager *fm = [NSFileManager defaultManager];
@@ -270,7 +274,7 @@
     return [FBFuture futureWithResult:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;
-  return FBFuture.empty;
+  return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown dataContainer:nil]];
 }
 
 - (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID
@@ -299,7 +303,7 @@
     if (!bundle) {
       return [FBFuture futureWithError:error];
     }
-    [result addObject:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac]];
+    [result addObject:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac dataContainer:nil]];
   }
   return [FBFuture futureWithResult:result];
 }
@@ -312,18 +316,13 @@
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
-  FBInstalledApplication *installedApp = [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac];
+  FBInstalledApplication *installedApp = [FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeMac dataContainer:nil];
   return [FBFuture futureWithResult:installedApp];
-}
-
-- (nonnull FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(nonnull NSString *)bundleID
-{
-  return [FBFuture futureWithResult:@(self.bundleIDToProductMap[bundleID] != nil)];
 }
 
 - (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID
 {
-  FBTask *task = self.bundleIDToRunningTask[bundleID];
+  FBProcess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
     NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
     return [FBFuture futureWithError:error];
@@ -333,7 +332,7 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
@@ -341,12 +340,12 @@
       describeFormat:@"Could not find application for %@", configuration.bundleID]
       failFuture];
   }
-  return [[[[[FBTaskBuilder
+  return [[[[[FBProcessBuilder
     withLaunchPath:bundle.binary.path]
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ id<FBLaunchedProcess> (FBTask *task) {
+    onQueue:self.workQueue map:^ FBProcess * (FBProcess *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
       return task;
     }];
@@ -357,7 +356,7 @@
   NSMutableDictionary<NSString *, FBProcessInfo *> *runningProcesses = @{}.mutableCopy;
   FBProcessFetcher *fetcher = [FBProcessFetcher new];
   for (NSString *bundleId in self.bundleIDToRunningTask.allKeys) {
-    FBTask *task = self.bundleIDToRunningTask[bundleId];
+    FBProcess *task = self.bundleIDToRunningTask[bundleId];
     runningProcesses[bundleId] = [fetcher processInfoFor:task.processIdentifier];
   }
   return [FBFuture futureWithResult:runningProcesses];
@@ -486,13 +485,6 @@
     failFuture];
 }
 
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
-{
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
-}
-
 - (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBControlCoreError
@@ -500,9 +492,9 @@
     failFuture];
 }
 
-- (FBFuture<id<FBLaunchedProcess>> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+- (FBFuture<FBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
-  return (FBFuture<id<FBLaunchedProcess>> *) [FBTask startTaskWithConfiguration:configuration logger:self.logger];
+  return [FBProcess launchProcessWithConfiguration:configuration logger:self.logger];
 }
 
 @end

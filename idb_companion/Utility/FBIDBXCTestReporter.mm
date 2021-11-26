@@ -7,13 +7,13 @@
 
 #import "FBIDBXCTestReporter.h"
 
-#import "FBXCTestDescriptor.h"
 #import "FBXCTestReporterConfiguration.h"
+
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBIDBXCTestReporter ()
 
 @property (nonatomic, assign, readwrite) grpc::ServerWriter<idb::XctestRunResponse> *writer;
-@property (nonatomic, assign, readonly) BOOL reportAttachments;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *reportingTerminatedMutable;
@@ -27,6 +27,32 @@
 @property (nonatomic, assign, readwrite) idb::XctestRunResponse_TestRunInfo_TestRunFailureInfo failureInfo;
 
 @end
+
+@interface CodeCoverageResponseData : NSObject
+
+@property(nonatomic, copy, nullable, readonly) NSString *jsonString;
+
+@property(nonatomic, copy, nullable, readonly) NSData *data;
+
+- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString;
+
+@end
+
+@implementation CodeCoverageResponseData
+
+- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString
+{
+  self = [super init];
+  if (self) {
+    _data = data;
+    _jsonString = jsonString;
+  }
+  return self;
+}
+
+@end
+
+
 
 @implementation FBIDBXCTestReporter
 
@@ -43,7 +69,7 @@
   _queue = queue;
   _logger = logger;
 
-  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coveragePath:nil logDirectoryPath:nil binaryPath:nil reportAttachments:NO];
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageConfiguration:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -140,10 +166,10 @@
   [self.logger.info logFormat:@"Tests waiting for debugger. To debug run: lldb -p %d", pid];
   idb::XctestRunResponse response;
   response.set_status(idb::XctestRunResponse_Status_RUNNING);
-  
+
   idb::DebuggerInfo *debugger_info = response.mutable_debugger();
   debugger_info->set_pid(pid);
-  
+
   [self writeResponse:response];
 }
 
@@ -226,7 +252,7 @@
   activityOut->set_start(activity.start.timeIntervalSince1970);
   activityOut->set_finish(activity.finish.timeIntervalSince1970);
   activityOut->set_name(activity.name.UTF8String ?: "");
-  if (self.reportAttachments) {
+  if (self.configuration.reportAttachments) {
     for (FBAttachment *attachment in activity.attachments) {
       idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
       attachmentOut->set_payload(attachment.payload.bytes, attachment.payload.length);
@@ -328,15 +354,21 @@
 
 - (void)insertFinalDataThenWriteResponse:(const idb::XctestRunResponse &)response
 {
-  // Passing a reference to the response on the stack will lead to garbage memory unless we make a copy for the block.
-  // https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al#L212
-  __block idb::XctestRunResponse responseCaptured = response;
+  // This method can make changes to the response object, however the reference is `const` so
+  //   it's necessary to make a copy of the object and use the copy throughout this method.
+  // As the changes to the request (copy) will effectivelly happen inside blocks the reference to the copy
+  //   needs to be declared as __block otherwise the (reference to the) copy object will be destroyed
+  //   (together with the stack frame) before the blocks try to change it, causing memory access errors.
+
+  __block idb::XctestRunResponse responseCopy;
+  responseCopy.CopyFrom(response);
+
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   if (self.configuration.resultBundlePath) {
     [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
-        idb::Payload *payload = responseCaptured.mutable_result_bundle();
+        idb::Payload *payload = responseCopy.mutable_result_bundle();
         payload->set_data(data.bytes, data.length);
       } else {
         [self.logger.info logFormat:@"Failed to create result bundle %@", future];
@@ -344,22 +376,31 @@
       return [FBFuture futureWithResult:NSNull.null];
     }]];
   }
-  if (self.configuration.coveragePath) {
-    [futures addObject:[[self getCoverageData] onQueue:self.queue chain:^FBFuture<NSNull *>*(FBFuture<NSString *> *future) {
-      NSString *coverageData = future.result;
-      if (coverageData) {
-        responseCaptured.set_coverage_json(coverageData.UTF8String ?: "");
-      } else {
-        [self.logger.info logFormat:@"Failed to get coverage data: %@", future.error.localizedDescription];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }]];
+  if (self.configuration.coverageConfiguration.coverageDirectory) {
+    [futures addObject:[[[self getCoverageResponseData]
+      onQueue:self.queue map:^NSNull *(CodeCoverageResponseData *coverageResponseData) {
+        NSData *data = coverageResponseData.data;
+        if (data) {
+          idb::Payload *payload = responseCopy.mutable_code_coverage_data();
+          payload->set_data(data.bytes, data.length);
+        }
+        NSString *jsonString = coverageResponseData.jsonString;
+        if (jsonString) {
+          // for backwards compatibility
+          responseCopy.set_coverage_json(jsonString.UTF8String ?: "");
+        }
+        return NSNull.null;
+      }]
+      onQueue:self.queue handleError:^FBFuture<NSNull *> *(NSError *error) {
+        [self.logger.info logFormat:@"Failed to get coverage data: %@", error.localizedDescription];
+        return FBFuture.empty;
+      }]];
   }
   if (self.configuration.logDirectoryPath) {
       [futures addObject:[[self getLogDirectoryData] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
         NSData *data = future.result;
         if (data) {
-          idb::Payload *payload = responseCaptured.mutable_log_directory();
+          idb::Payload *payload = responseCopy.mutable_log_directory();
           payload->set_data(data.bytes, data.length);
         } else {
           [self.logger.info logFormat:@"Failed to get log drectory: %@", future.error.localizedDescription];
@@ -369,11 +410,11 @@
 
   }
   if (futures.count == 0) {
-    [self writeResponseFinal:responseCaptured];
+    [self writeResponseFinal:responseCopy];
     return;
   }
   [[FBFuture futureWithFutures:futures] onQueue:self.queue map:^NSNull *(id _) {
-    [self writeResponseFinal:responseCaptured];
+    [self writeResponseFinal:responseCopy];
     return NSNull.null;
   }];
 }
@@ -404,10 +445,61 @@
   }
 }
 
-- (FBFuture<NSString *> *)getCoverageData
+- (FBFuture<NSData *> *)getResultsBundle
 {
-  FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBTask<NSNull *, NSData *, NSString *> *) =
-    ^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> * (FBTask<NSNull *, NSData *, NSString *> *task) {
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
+}
+
+- (FBFuture<NSData *> *)getLogDirectoryData
+{
+  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
+}
+
+#pragma mark Code Coverage
+
+- (FBFuture<CodeCoverageResponseData *> *)getCoverageResponseData
+{
+  return [self.processUnderTestExitedMutable
+    onQueue:self.queue fmap:^FBFuture<CodeCoverageResponseData *> *(id _) {
+    
+      switch (self.configuration.coverageConfiguration.format) {
+        case FBCodeCoverageExported:
+          return [[self getCoverageDataExported]
+            onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
+              return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
+              onQueue:self.queue map:^CodeCoverageResponseData *(FBProcess<NSData *,NSData *,id> *task) {
+                return [[CodeCoverageResponseData alloc]
+                    initWithData:task.stdOut
+                    jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
+                  ];
+                }];
+            }];
+        case FBCodeCoverageRaw:
+          return [[self getCoverageDataDirectory]
+            onQueue:self.queue map:^CodeCoverageResponseData *(NSData *coverageTarball) {
+              return [[CodeCoverageResponseData alloc] initWithData:coverageTarball jsonString:nil];
+            }];
+        default:
+          return [[FBControlCoreError
+            describeFormat:@"Unsupported code coverage format"]
+            failFuture];
+      }
+  }];
+}
+
+
+- (FBFuture<NSData *> *)getCoverageDataDirectory
+{
+  return [FBArchiveOperations
+    createGzippedTarDataForPath:self.configuration.coverageConfiguration.coverageDirectory
+    queue:self.queue
+    logger:self.logger];
+}
+
+- (FBFuture<NSData *> *)getCoverageDataExported
+{
+  FBFuture<FBProcess<NSNull *, NSString *, NSString *> *> * (^checkXcrunError)(FBProcess<NSNull *, NSData *, NSString *> *) =
+    ^FBFuture<FBProcess<NSNull *, NSString *, NSString *> *> * (FBProcess<NSNull *, NSData *, NSString *> *task) {
       NSNumber *exitCode = task.exitCode.result;
       if ([exitCode isEqual:@0]) {
         return [FBFuture futureWithResult:task];
@@ -418,38 +510,49 @@
       }
     };
 
-  NSString *profdataPath = [[self.configuration.coveragePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"profdata"];
+  NSString *coverageDirectoryPath = self.configuration.coverageConfiguration.coverageDirectory;
+  NSString *profdataPath = [coverageDirectoryPath stringByAppendingPathComponent:@"coverage.profdata"];
 
-  return [[[[[self.processUnderTestExitedMutable
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
-      return [[[[FBTaskBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-profdata", @"merge", @"-o", profdataPath, self.configuration.coveragePath]]
-        withStdOutInMemoryAsString]
+  NSError *error = nil;
+  NSArray<NSString *> *profraws = [NSFileManager.defaultManager contentsOfDirectoryAtPath:coverageDirectoryPath error:&error];
+  if (profraws == nil) {
+    return [[FBControlCoreError
+      describeFormat:@"Couldn't find code coverage raw data: %@", error]
+      failFuture];
+  }
+  profraws = [profraws filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *evaluatedObject, NSDictionary<NSString *,id> *_) {
+    return [[evaluatedObject pathExtension] isEqualToString:@"profraw"];
+  }]];
+
+  NSMutableArray<NSString *> *mergeArgs = @[@"llvm-profdata", @"merge", @"-o", profdataPath].mutableCopy;
+  for (NSString *profraw in profraws) {
+    [mergeArgs addObject:[coverageDirectoryPath stringByAppendingPathComponent:profraw]];
+  }
+
+  FBFuture *mergeFuture = [[[[FBProcessBuilder
+    withLaunchPath:@"/usr/bin/xcrun" arguments:mergeArgs.copy]
+    withStdOutInMemoryAsData]
+    withStdErrInMemoryAsString]
+    runUntilCompletionWithAcceptableExitCodes:nil];
+
+  return [[[[mergeFuture onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
+      NSMutableArray<NSString *> *exportArgs = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
+      for (NSString *binary in self.configuration.binariesPaths) {
+        [exportArgs addObject:@"-object"];
+        [exportArgs addObject:binary];
+      }
+      return [[[[FBProcessBuilder
+        withLaunchPath:@"/usr/bin/xcrun" arguments:exportArgs.copy]
+        withStdOutInMemoryAsData]
         withStdErrInMemoryAsString]
         runUntilCompletionWithAcceptableExitCodes:nil];
     }]
     onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue fmap:^FBFuture<FBTask<NSNull *, NSString *, NSString *> *> *(id _) {
-      return [[[[FBTaskBuilder
-        withLaunchPath:@"/usr/bin/xcrun" arguments:@[@"llvm-cov", @"export", @"-instr-profile", profdataPath, self.configuration.binaryPath]]
-        withStdOutInMemoryAsString]
-        withStdErrInMemoryAsString]
-        runUntilCompletionWithAcceptableExitCodes:nil];
-    }]
-    onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue map:^NSString *(FBTask<NSNull *,NSString *,NSString *> *task) {
+    onQueue:self.queue map:^NSData *(FBProcess<NSNull *,NSData *,NSString *> *task) {
       return task.stdOut;
     }];
 }
 
-- (FBFuture<NSData *> *)getResultsBundle
-{
-  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.resultBundlePath queue:self.queue logger:self.logger];
-}
-
-- (FBFuture<NSData *> *)getLogDirectoryData
-{
-  return [FBArchiveOperations createGzippedTarDataForPath:self.configuration.logDirectoryPath queue:self.queue logger:self.logger];
-}
 
 @end

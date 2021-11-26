@@ -11,7 +11,6 @@
 
 #import <AppKit/AppKit.h>
 
-#import "FBBundleDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -48,21 +47,15 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
 #pragma mark Boot/Shutdown
 
-- (FBFuture<NSNull *> *)boot
+- (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration
 {
-  return [self bootWithConfiguration:FBSimulatorBootConfiguration.defaultConfiguration];
-}
-
-- (FBFuture<NSNull *> *)bootWithConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  return [[FBSimulatorBootStrategy
-    strategyWithConfiguration:configuration simulator:self.simulator]
-    boot];
+  return [FBSimulatorBootStrategy boot:self.simulator withConfiguration:configuration];
 }
 
 #pragma mark FBPowerCommands
@@ -77,7 +70,7 @@
   return [[self
     shutdown]
     onQueue:self.simulator.workQueue fmap:^(id _) {
-      return [self boot];
+      return [self boot:FBSimulatorBootConfiguration.defaultConfiguration];
     }];
 }
 
@@ -93,9 +86,9 @@
 - (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
 {
   FBSimulator *simulator = self.simulator;
-  return [[FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
+  return [FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
     return simulator.state == state;
-  }] mapReplace:NSNull.null];
+  }];
 }
 
 #pragma mark Focus
@@ -148,7 +141,7 @@
 + (NSRunningApplication *)launchSimulatorApplicationForDefaultDeviceSetWithError:(NSError **)error
 {
   // Obtain the location of the SimulatorApp
-  FBBundleDescriptor *applicationBundle = FBBundleDescriptor.xcodeSimulator;
+  FBBundleDescriptor *applicationBundle = FBXcodeConfiguration.simulatorApp;
   NSURL *applicationURL = [NSURL fileURLWithPath:applicationBundle.path];
 
   // We only want to ever connect to the default SimulatorApp, including re-activating it rather than creating a new instance.

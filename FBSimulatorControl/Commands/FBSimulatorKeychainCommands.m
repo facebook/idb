@@ -12,6 +12,7 @@
 #import "FBSimulatorLaunchCtlCommands.h"
 
 static NSString *const SecuritydServiceName = @"com.apple.securityd";
+static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
 
 @interface FBSimulatorKeychainCommands ()
 
@@ -44,7 +45,8 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
 {
   FBFuture<NSNull *> *stopServiceFuture = FBFuture.empty;
   if (self.simulator.state == FBiOSTargetStateBooted) {
-    stopServiceFuture = [[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
+    stopServiceFuture = [[[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
+      timeout:kSecuritydServiceStartupShutdownTimeout waitingFor:@"%@ service to stop", SecuritydServiceName];
   }
   return [stopServiceFuture
     onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (id _) {
@@ -53,7 +55,8 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
         return [FBFuture futureWithError:error];
       }
       if (self.simulator.state == FBiOSTargetStateBooted) {
-        return [[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null];
+        return [[[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
+          timeout:kSecuritydServiceStartupShutdownTimeout waitingFor:@"%@ service to restart", SecuritydServiceName];
       }
       return FBFuture.empty;
     }];
@@ -101,6 +104,7 @@ static NSString *const SecuritydServiceName = @"com.apple.securityd";
       [logger logFormat:@"Not removing keychain at path %@", fullPath];
       continue;
     }
+    [logger logFormat:@"Removing keychain at path %@", fullPath];
     if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&innerError]) {
       return [[[FBSimulatorError
         describeFormat:@"Failed to delete keychain at path %@", fullPath]

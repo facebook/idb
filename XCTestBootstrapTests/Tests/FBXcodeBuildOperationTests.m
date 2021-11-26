@@ -18,7 +18,10 @@
 - (void)testUITestConfiguration
 {
   NSString *testHostPath = @"/tmp/test_host_path.app";
+  FBBundleDescriptor *testHostBundle = [[FBBundleDescriptor alloc] initWithName:@"test.host.app" identifier:@"test.host.app" path:testHostPath binary:nil];
+
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
+  FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:@"test.bundle" identifier:@"test.bundle" path:testBundlePath binary:nil];
 
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration alloc]
     initWithBundleID:@"com.bundle.id"
@@ -30,20 +33,19 @@
     launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundlePath:testBundlePath
+    initWithTestBundle:testBundle
     applicationLaunchConfiguration:appLaunch
-    testHostPath:testHostPath
+    testHostBundle:testHostBundle
     timeout:0
     initializeUITesting:NO
     useXcodebuild:NO
     testsToRun:nil
     testsToSkip:nil
-    targetApplicationPath:nil
-    targetApplicationBundleID:nil
+    targetApplicationBundle:nil
     xcTestRunProperties:nil
     resultBundlePath:nil
     reportActivities:NO
-    coveragePath:nil
+    coverageDirectoryPath:nil
     logDirectoryPath:nil];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];

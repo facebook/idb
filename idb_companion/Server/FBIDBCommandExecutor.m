@@ -10,21 +10,11 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+#import "FBXCTestRunRequest.h"
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
-#import "FBStorageUtils.h"
-#import "FBTemporaryDirectory.h"
-
-FBFileContainerKind const FBFileContainerKindCrashes = @"crashes";
-FBFileContainerKind const FBFileContainerKindMedia = @"media";
-FBFileContainerKind const FBFileContainerKindRoot = @"root";
-FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
-FBFileContainerKind const FBFileContainerKindMDMProfiles = @"mdm_profiles";
-FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
-FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
-FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
 
 @interface FBIDBCommandExecutor ()
 
@@ -79,19 +69,19 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable
 {
   // Use .app directly, or extract an .ipa
   if ([FBBundleDescriptor isApplicationAtPath:filePath]) {
-    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]]];
+    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]] makeDebuggable:makeDebuggable];
   } else {
-    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath]];
+    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath] makeDebuggable:makeDebuggable];
   }
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable
 {
-  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression] makeDebuggable:makeDebuggable];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -124,14 +114,14 @@ FBFileContainerKind const FBFileContainerKindDiskImages = @"disk_images";
   return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.framework];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID
 {
-  return [self installFile:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym];
+  return [self installAndLinkDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID
 {
-  return [self installFile:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.dsym];
+  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
 #pragma mark Public Methods
@@ -357,10 +347,17 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<id<FBDebugServer>> *)debugserver_start:(NSString *)bundleID
 {
+  id<FBDebuggerCommands> commands = (id<FBDebuggerCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDebuggerCommands)]) {
+    return [[FBControlCoreError
+      describeFormat:@"Target doesn't conform to FBDebuggerCommands protocol %@", commands]
+      failFuture];
+  }
+
   return [[self
     debugserver_prepare:bundleID]
     onQueue:self.target.workQueue fmap:^(FBBundleDescriptor *application) {
-      return [self.target launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
+      return [commands launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
     }];
 }
 
@@ -485,12 +482,30 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+    return [commands setPreference:name value:value domain:domain];
+    }];
+}
+
+- (FBFuture<NSString *> *)get_preference:(NSString *)name domain:(nullable NSString *)domain
+{
+  return [[self
+    settingsCommands]
+    onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
+    return [commands getCurrentPreference:name domain:domain];
+    }];
+}
+
 - (FBFuture<NSNull *> *)set_locale_with_identifier:(NSString *)identifier
 {
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands setLocaleWithIdentifier:identifier];
+      return [commands setPreference:@"AppleLocale" value:identifier domain:nil];
     }];
 }
 
@@ -499,7 +514,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands getCurrentLocaleIdentifier];
+      return [commands getCurrentPreference:@"AppleLocale" domain:nil];
     }];
 }
 
@@ -638,6 +653,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut
+{
+  id<FBDapServerCommand> commands = (id<FBDapServerCommand>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDapServerCommand)]) {
+    return [[FBControlCoreError
+      describeFormat:@"Target doesn't conform to FBDapServerCommand protocol %@", commands]
+      failFuture];
+  }
+  
+  return [commands launchDapServer:dapPath stdIn:stdIn stdOut:stdOut];
+}
+
+
 #pragma mark Private Methods
 
 - (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)containerType
@@ -650,6 +678,12 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     return [[FBControlCoreError
       describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
       failFutureContext];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindApplication]) {
+    return [commands fileCommandsForApplicationContainers];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindGroup]) {
+    return [commands fileCommandsForGroupContainers];
   }
   if ([containerType isEqualToString:FBFileContainerKindMedia]) {
     return [commands fileCommandsForMediaDirectory];
@@ -671,6 +705,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }
   if ([containerType isEqualToString:FBFileContainerKindDiskImages]) {
     return [commands fileCommandsForDiskImages];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindAuxillary]) {
+    return [commands fileCommandsForAuxillary];
   }
   if (containerType == nil || containerType.length == 0) {
     // The Default for no, or null container for back-compat.
@@ -761,16 +798,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installExtractedApp:(FBFutureContext<NSURL *> *)extractedAppContext
+- (FBFuture<FBInstalledArtifact *> *)installExtractedApp:(FBFutureContext<NSURL *> *)extractedAppContext makeDebuggable:(BOOL)makeDebuggable
 {
-  FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
-       return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
-  }];
-  return [self installAppBundle:bundleContext];
+  FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext
+    onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
+      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
+    }];
+  return [self installAppBundle:bundleContext makeDebuggable:makeDebuggable];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext
+- (FBFuture<FBInstalledArtifact *> *)installAppBundle:(FBFutureContext<FBBundleDescriptor *> *)bundleContext makeDebuggable:(BOOL)makeDebuggable
 {
+  BOOL userDevelopmentAppIsRequired = [self.target isKindOfClass:FBDevice.class];
+
   return [bundleContext
     onQueue:self.target.asyncQueue pop:^(FBBundleDescriptor *appBundle){
       if (!appBundle) {
@@ -780,13 +820,25 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (![self.storageManager.application checkArchitecture:appBundle error:&error]) {
         return [FBFuture futureWithError:error];
       }
-      return [[FBFuture futureWithFutures:@[
-        [[self.target installApplicationWithPath:appBundle.path] onQueue:self.target.workQueue],
-        [self.storageManager.application saveBundle:appBundle],
-      ]] onQueue:self.target.asyncQueue map:^FBInstalledArtifact *(NSArray *results) {
-        return results[1];
-      }];
-  }];
+      return [[FBFuture
+        futureWithFutures:@[
+          [self.target installApplicationWithPath:appBundle.path],
+          // TODO: currently we have to persist it even if app is not used for debugging
+          // as installed apps are referenced from xctestrun files and expanded by idb
+          // by using its own application storage. Fix this by replacing xctestrun
+          // placeholders by app bundle paths instead
+          [self.storageManager.application saveBundle:appBundle]
+        ]]
+        onQueue:self.target.asyncQueue fmap:^(NSArray<id> *tuple) {
+          FBInstalledApplication *installedApp = tuple[0];
+          if (makeDebuggable && installedApp.installType != FBApplicationInstallTypeUserDevelopment && userDevelopmentAppIsRequired) {
+                return [[FBIDBError
+                  describeFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]
+                  failFuture];
+          }
+          return [FBFuture futureWithResult:[[FBInstalledArtifact alloc] initWithName:appBundle.identifier uuid:appBundle.binary.uuid path:[NSURL fileURLWithPath:installedApp.bundle.path]]];
+        }];
+    }];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
@@ -818,6 +870,59 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
+// To navigate directly to the dSYM directory instead of the parent tmp directory
+// created while unzipping
+- (FBFutureContext<NSURL *> *)dsymDirnameFromUnzipDir:(FBFutureContext<NSURL *> *)extractedFileContext {
+  return [extractedFileContext
+    onQueue:self.target.workQueue pend:^(NSURL *parentDir) {
+    NSError *error = nil;
+    NSArray<NSURL *> *subDirs = [NSFileManager.defaultManager contentsOfDirectoryAtURL:parentDir includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&error];
+    if (!subDirs) {
+      return [FBFuture futureWithError:error];
+    }
+    // TODO: support cases when more than one dSYM is included in the archive
+    if ([subDirs count] != 1) {
+      return [FBFuture futureWithError:[FBControlCoreError errorForDescription:[NSString stringWithFormat:@"Expected only one dSYM directory: found: %tu", [subDirs count]]]];
+    }
+    return [FBFuture futureWithResult:subDirs[0]];
+  }];
+}
+
+// Will install the dsym under standard dsym location
+// if linkToApp app is passed:
+// after installation it will create a symlink in the app bundle
+- (FBFuture<FBInstalledArtifact *> *)installAndLinkDsym:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage linkToApp:(nullable NSString *)bundleID
+{
+  return [extractedFileContext
+    onQueue:self.target.workQueue pop:^(NSURL *extractionDir) {
+      NSError *error = nil;
+      FBInstalledArtifact *artifact = [storage saveFileInUniquePath:extractionDir error:&error];
+      if (!artifact) {
+        return [FBFuture futureWithError:error];
+      }
+      if (!bundleID) {
+        return [FBFuture futureWithResult:artifact];
+      }
+      
+      return [[self.target installedApplicationWithBundleID:bundleID]
+        onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
+          [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];
+          NSURL *appPath = [[NSURL fileURLWithPath:linkToApp.bundle.path] URLByDeletingLastPathComponent];
+          NSURL *appDsymURL = [appPath URLByAppendingPathComponent:artifact.path.lastPathComponent];
+          // delete a simlink if already exists
+          // TODO: check if what we are deleting is a symlink
+          [NSFileManager.defaultManager removeItemAtURL:appDsymURL error:nil];
+          [self.logger logFormat:@"Deleted a symlink for dsym if it already exists: %@", appDsymURL];
+          NSError *createLinkError = nil;
+          if (![NSFileManager.defaultManager createSymbolicLinkAtURL:appDsymURL withDestinationURL:artifact.path error:&createLinkError]){
+            return [FBFuture futureWithError:error];
+          }
+          [self.logger logFormat:@"Created a symlink for dsym from: %@ to %@", appDsymURL, artifact.path];
+          return [FBFuture futureWithResult:artifact];
+      }];
+  }];
+}
+
 - (FBFuture<FBInstalledArtifact *> *)installBundle:(FBFutureContext<NSURL *> *)extractedDirectoryContext intoStorage:(FBBundleStorage *)storage
 {
   return [extractedDirectoryContext
@@ -829,6 +934,28 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       }
       return [storage saveBundle:bundle];
     }];
+}
+
+- (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload
+{
+  id<FBNotificationCommands> commands = (id<FBNotificationCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBNotificationCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not conform to FBNotificationCommands", commands]
+      failFuture];
+  }
+  return [commands sendPushNotificationForBundleID:bundleID jsonPayload:jsonPayload];
+}
+
+- (FBFuture<NSNull *> *)simulateMemoryWarning
+{
+  id<FBMemoryCommands> commands = (id<FBMemoryCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBMemoryCommands)]) {
+    return [[FBIDBError
+             describeFormat:@"%@ does not conform to FBMemoryCommands", commands]
+            failFuture];
+  }
+  return [commands simulateMemoryWarning];
 }
 
 @end

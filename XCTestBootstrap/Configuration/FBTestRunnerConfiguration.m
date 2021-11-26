@@ -36,8 +36,8 @@
 {
   if (codesign) {
     return [[[codesign
-      cdHashForBundleAtPath:testLaunchConfiguration.testBundlePath]
-      rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundlePath]
+      cdHashForBundleAtPath:testLaunchConfiguration.testBundle.path]
+      rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundle.path]
       onQueue:target.asyncQueue fmap:^(id _) {
         return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory];
       }];
@@ -103,12 +103,8 @@
 
   // This directory will contain XCTest.framework, built for the target platform.
   NSString *platformDeveloperFrameworksPath = [platformRoot stringByAppendingPathComponent:@"Developer/Library/Frameworks"];
-  // See if the injector lib is present, not that this may not be present on certain versions of Xcode.
-  NSString *xctTargetBootstrapInjectPath = [platformRoot stringByAppendingPathComponent:@"Developer/usr/lib/libXCTTargetBootstrapInject.dylib"];
   // Container directory for XCTest related Frameworks.
   NSString *developerLibraryPath = [runtimeRoot stringByAppendingPathComponent:@"Developer/Library"];
-  // A Framework needed for UI based test
-  NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
   // Contains other frameworks, depended on by XCTest and Instruments
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
@@ -116,18 +112,32 @@
     platformDeveloperFrameworksPath,
   ];
 
-  NSDictionary *testedApplicationAdditionalEnvironment = @{
-    @"DYLD_INSERT_LIBRARIES" : xctTargetBootstrapInjectPath
-  };
-  if (![NSFileManager.defaultManager fileExistsAtPath:automationFrameworkPath] && ![NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
+  NSString *automationFrameworkPath = [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks/XCTAutomationSupport.framework"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:automationFrameworkPath]) {
     automationFrameworkPath = nil;
-    testedApplicationAdditionalEnvironment = nil;
   }
+
+  NSMutableDictionary *testedApplicationAdditionalEnvironment = NSMutableDictionary.dictionary;
+  NSString *xctTargetBootstrapInjectPath = [platformRoot stringByAppendingPathComponent:@"Developer/usr/lib/libXCTTargetBootstrapInject.dylib"];
+  // Xcode > 12.5 does not have this file neither requires it's injection in the target test app.
+  if([NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
+    testedApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = xctTargetBootstrapInjectPath;
+  }
+
+  NSDictionary *testApplicationDependencies = nil;
+  if(testLaunchConfiguration.targetApplicationBundle.identifier != nil && testLaunchConfiguration.targetApplicationBundle.path != nil) {
+    // Explicitly setting the target application bundle id and path as a dependency triggers XCTest to request
+    // the launch of target application via XCTestManager_IDEInterface/XCTMessagingChannel_RunnerToIDE protocols
+    testApplicationDependencies = @{
+      testLaunchConfiguration.targetApplicationBundle.identifier : testLaunchConfiguration.targetApplicationBundle.path
+    };
+  }
+
 
   // Prepare XCTest bundle
   NSError *error;
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testLaunchConfiguration.testBundlePath error:&error];
+  FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testLaunchConfiguration.testBundle.path error:&error];
   if (!testBundle) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test bundle"]
@@ -143,8 +153,9 @@
     uiTesting:testLaunchConfiguration.shouldInitializeUITesting
     testsToRun:testLaunchConfiguration.testsToRun
     testsToSkip:testLaunchConfiguration.testsToSkip
-    targetApplicationPath:testLaunchConfiguration.targetApplicationPath
-    targetApplicationBundleID:testLaunchConfiguration.targetApplicationBundleID
+    targetApplicationPath:testLaunchConfiguration.targetApplicationBundle.path
+    targetApplicationBundleID:testLaunchConfiguration.targetApplicationBundle.identifier
+    testApplicationDependencies:testApplicationDependencies
     automationFrameworkPath:automationFrameworkPath
     reportActivities:testLaunchConfiguration.reportActivities
     error:&error];
@@ -166,9 +177,17 @@
       NSMutableDictionary<NSString *, NSString *> *hostApplicationAdditionalEnvironment = [NSMutableDictionary dictionary];
       hostApplicationAdditionalEnvironment[kEnv_ShimStartXCTest] = @"1";
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
-      NSString *coveragePath = testLaunchConfiguration.coveragePath;
-      if (coveragePath) {
-        hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = testLaunchConfiguration.coveragePath;
+      hostApplicationAdditionalEnvironment[kEnv_WaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? @"YES" : @"NO";
+      if (testLaunchConfiguration.coverageDirectoryPath) {
+        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
+        NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];
+        hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = hostCoveragePath;
+
+        if (testLaunchConfiguration.targetApplicationBundle != nil) {
+          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier];
+          NSString *targetAppCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:targetCoverageFile];
+          testedApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = targetAppCoveragePath;
+        }
       }
       NSString *logDirectoryPath = testLaunchConfiguration.logDirectoryPath;
       if (logDirectoryPath) {
@@ -192,7 +211,7 @@
         initWithSessionIdentifier:sessionIdentifier
         testRunner:hostApplication.bundle
         launchEnvironment:launchEnvironment
-        testedApplicationAdditionalEnvironment:testedApplicationAdditionalEnvironment];
+        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]];
     }];
 }
 

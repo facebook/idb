@@ -19,7 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
  An Option Set for Process Termination.
  */
 typedef NS_ENUM(NSUInteger, FBProcessTerminationStrategyOptions) {
-  FBProcessTerminationStrategyOptionsUseNSRunningApplication = 1 << 1, /** Use -[NSRunningApplication terminate] where relevant **/
   FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal = 1 << 2, /** Checks for the process to exist before signalling **/
   FBProcessTerminationStrategyOptionsCheckDeathAfterSignal = 1 << 3, /** Waits for the process to die before returning **/
   FBProcessTerminationStrategyOptionsBackoffToSIGKILL = 1 << 4, /** Whether to backoff to SIGKILL if a less severe signal fails **/
@@ -71,22 +70,6 @@ typedef struct {
  @return a Future that resolves when the process was killed.
  */
 - (FBFuture<NSNull *> *)killProcessIdentifier:(pid_t)processIdentifier;
-
-/**
- Terminates a Process of the provided Process Info.
-
- @param process the process to terminate, must not be nil.
- @return a Future that resolves when the process was killed.
- */
-- (FBFuture<NSNull *> *)killProcess:(FBProcessInfo *)process;
-
-/**
- Terminates a number of Processes.
-
- @param processes an Array of FBProcessInfo of processes to terminate.
- @return a Future that resolves when the all processes have been killed.
- */
-- (FBFuture<NSNull *> *)killProcesses:(NSArray<FBProcessInfo *> *)processes;
 
 @end
 

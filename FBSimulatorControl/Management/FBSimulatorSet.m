@@ -25,9 +25,9 @@
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorEraseStrategy.h"
 #import "FBSimulatorInflationStrategy.h"
+#import "FBSimulatorNotificationUpdateStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
-#import "FBSimulatorNotificationUpdateStrategy.h"
 
 @implementation FBSimulatorSet
 
@@ -70,12 +70,14 @@
 
 #pragma mark Querying
 
-- (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query
+- (id<FBiOSTargetInfo>)targetWithUDID:(NSString *)udid
 {
-  if ([query excludesAll:FBiOSTargetTypeSimulator]) {
-    return @[];
-  }
-  return (NSArray<FBSimulator *> *) [query filter:self.allSimulators];
+  return [self simulatorWithUDID:udid];
+}
+
+- (FBSimulator *)simulatorWithUDID:(NSString *)udid
+{
+  return [[self.allSimulators filteredArrayUsingPredicate:FBiOSTargetPredicateForUDID(udid)] firstObject];
 }
 
 #pragma mark Creation
