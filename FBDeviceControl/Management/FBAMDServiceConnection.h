@@ -15,75 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- Abstract protocol for defining an interaction
- */
-@protocol FBAMDServiceConnectionTransfer <NSObject>
-
-#pragma mark Read/Write
-
-/**
- Synchronously send bytes on the connection.
-
- @param data the data to send
- @param error an error out for any error that occurs.
- @return YES if the bytes were sent, NO otherwise.
- */
-- (BOOL)send:(NSData *)data error:(NSError **)error;
-
-/**
- Synchronously send bytes on the connection, prefixed with a length packet.
-
- @param data the data to send>
- @param error an error out for any error that occurs.
- @return YES if the bytes were sent, NO otherwise.
- */
-- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error;
-
-/**
- Synchronously receive bytes from the connection.
-
- @param size the number of bytes to read.
- @param error an error out for any error that occurs.
- @return the data.
- */
-- (NSData *)receive:(size_t)size error:(NSError **)error;
-
-/**
- Synchronously recieve bytes into a buffer.
-
- @param destination the destination to write into.
- @param size the number of bytes to read.
- @param error an error out for any error that occurs.
- @return YES if all bytes read, NO otherwise.
- */
-- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
-
-#pragma mark Streams
-
-/**
- Reads the stream on the given queue, until exhausted.
-
- @param consumer the consumer to use.
- @param queue the queue to consume on.
- @return the FBFileReader instance, this can be used to start reading the reciever's connection.
-*/
-- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
-
-/**
- Constructs a data consumer that writes to the underlying connection.
-
- @param queue the queue to perform writes on.
- @return a consumer that writes to the reciever's connection.
-*/
-- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue;
-
-@end
-
-/**
  Wraps the AMDServiceConnection.
  An AMDServiceConnection represents a connection to a "lockdown" service over USB.
  */
-@interface FBAMDServiceConnection : NSObject <FBAMDServiceConnectionTransfer>
+@interface FBAMDServiceConnection : NSObject
 
 #pragma mark Initializers
 
@@ -121,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 // 3) As with the write side, if there's an SSL context the data will be decrypted through this context.
 
 /**
- Synchronously recieve a plist-based packet used by lockdown.
+ Synchronously receive a plist-based packet used by lockdown.
 
  @param message the message to send.
  @param error an error out for any error that occurs.
@@ -130,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)sendMessage:(id)message error:(NSError **)error;
 
 /**
- Synchronously recieve a plist-based packet used by lockdown.
+ Synchronously receive a plist-based packet used by lockdown.
 
  @param error an error out for any error that occurs.
  @return the read plist on success, nil on error.
@@ -145,6 +80,63 @@ NS_ASSUME_NONNULL_BEGIN
  @return the message received, if successful.
  */
 - (nullable id)sendAndReceiveMessage:(id)message error:(NSError **)error;
+
+#pragma mark Raw Bytes Read/Write
+/**
+ Synchronously send bytes on the connection.
+
+ @param data the data to send
+ @param error an error out for any error that occurs.
+ @return YES if the bytes were sent, NO otherwise.
+ */
+- (BOOL)send:(NSData *)data error:(NSError **)error;
+
+/**
+ Synchronously send bytes on the connection, prefixed with a length packet.
+
+ @param data the data to send>
+ @param error an error out for any error that occurs.
+ @return YES if the bytes were sent, NO otherwise.
+ */
+- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error;
+
+/**
+ Synchronously receive bytes from the connection.
+
+ @param size the number of bytes to read.
+ @param error an error out for any error that occurs.
+ @return the data.
+ */
+- (NSData *)receive:(size_t)size error:(NSError **)error;
+
+/**
+ Synchronously receive bytes into a buffer.
+
+ @param destination the destination to write into.
+ @param size the number of bytes to read.
+ @param error an error out for any error that occurs.
+ @return YES if all bytes read, NO otherwise.
+ */
+- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
+
+#pragma mark Streams
+
+/**
+ Reads the stream on the given queue, until exhausted.
+
+ @param consumer the consumer to use.
+ @param queue the queue to consume on.
+ @return the FBFileReader instance, this can be used to start reading the receiver's connection.
+*/
+- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+
+/**
+ Constructs a data consumer that writes to the underlying connection.
+
+ @param queue the queue to perform writes on.
+ @return a consumer that writes to the receiver's connection.
+*/
+- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue;
 
 #pragma mark Lifecycle
 

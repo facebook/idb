@@ -18,7 +18,7 @@ static size_t ReadBufferSize = 1024 * 4;
 @interface FBAMDServiceConnection ()
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size;
-- (ssize_t)recieve:(void *)buffer size:(size_t)size;
+- (ssize_t)receive:(void *)buffer size:(size_t)size;
 
 @end
 
@@ -64,7 +64,7 @@ static size_t ReadBufferSize = 1024 * 4;
   dispatch_async(self.queue, ^{
     void *buffer = alloca(ReadBufferSize);
     while (self.state == FBFileReaderStateReading && self.finishedReadingMutable.state == FBFutureStateRunning) {
-      ssize_t readBytes = [connection recieve:buffer size:ReadBufferSize];
+      ssize_t readBytes = [connection receive:buffer size:ReadBufferSize];
       if (readBytes < 1) {
         break;
       }
@@ -111,14 +111,6 @@ static size_t ReadBufferSize = 1024 * 4;
 
 @end
 
-@interface FBAMDServiceConnection_TransferRaw : FBAMDServiceConnection
-
-@end
-
-@interface FBAMDServiceConnection_TransferServiceConnection : FBAMDServiceConnection
-
-@end
-
 @implementation FBAMDServiceConnection
 
 #pragma mark Initializers
@@ -127,11 +119,8 @@ static size_t ReadBufferSize = 1024 * 4;
 {
   // Use Raw transfer when there's no Secure Context, otherwise we must use the service connection wrapping.
   AMSecureIOContext secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection);
-  if (secureIOContext == NULL) {
-    return [[FBAMDServiceConnection_TransferRaw alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
-  } else {
-    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
-  }
+  [logger logFormat:@"Constructing service connection for %@ %@ Secure", name, secureIOContext ? @"is" : @"is not"];
+  return [[FBAMDServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
 }
 
 - (instancetype)initWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
@@ -178,7 +167,7 @@ static size_t ReadBufferSize = 1024 * 4;
   if (result != 0) {
     NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(result));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve message (%@): code %d", errorDescription, result]
+      describeFormat:@"Failed to receive message (%@): code %d", errorDescription, result]
       fail:error];
   }
   return CFBridgingRelease(message);
@@ -302,7 +291,7 @@ static size_t SendBufferSize = 1024 * 4;
   while (bytesRemaining > 0) {
     // Don't read more bytes than are remaining.
     size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t result = [self recieve:buffer size:maxReadBytes];
+    ssize_t result = [self receive:buffer size:maxReadBytes];
     // End of file.
     if (result == 0) {
       break;
@@ -360,40 +349,10 @@ static size_t SendBufferSize = 1024 * 4;
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size
 {
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-@end
-
-@implementation FBAMDServiceConnection_TransferRaw
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  return write(self.socket, buffer, size);
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  return read(self.socket, buffer, size);
-}
-
-@end
-
-@implementation FBAMDServiceConnection_TransferServiceConnection
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
   return self.calls.ServiceConnectionSend(self.connection, buffer, size);
 }
 
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
+- (ssize_t)receive:(void *)buffer size:(size_t)size
 {
   return self.calls.ServiceConnectionReceive(self.connection, buffer, size);
 }
