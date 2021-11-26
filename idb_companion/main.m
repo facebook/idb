@@ -40,6 +40,7 @@ Usage: \n \
     --unrecover ecid:ECID      Causes the targeted device ECID to exit recovery mode\n\
     --activate ecid:ECID       Causes the device to activate\n\
     --notify PATH|stdout       Launches a companion notifier which will stream availability updates to the specified path, or stdout.\n\
+    --forward UDID:PORT        Forwards the remote socket for the specified UDID to the specified remote PORT. Input and output is relayed via stdin/stdout\n\
     --list 1                   Lists all available devices and simulators in the current context. If Xcode is not correctly installed, only devices will be listed.\n\
     --version                  Writes companion version information to stdout.\n\
     --help                     Show this help message and exit.\n\
@@ -459,6 +460,29 @@ static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDef
     }];
 }
 
+static FBFuture<NSNull *> *ForwardFuture(NSString *forward, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
+{
+  NSArray<NSString *> *components = [forward componentsSeparatedByString:@":"];
+  if (components.count != 2) {
+    return [[FBIDBError
+      describeFormat:@"%@ should be of the form UDID:PORT", forward]
+      failFuture];
+  }
+  NSString *udid = components[0];
+  int remotePort = [components[1] intValue];
+
+  return [TargetForUDID(udid, userDefaults, xcodeAvailable, NO, logger, reporter)
+    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
+      id<FBSocketForwardingCommands> commands = (id<FBSocketForwardingCommands>) target;
+      if (![commands conformsToProtocol:@protocol(FBSocketForwardingCommands)]) {
+        return [[FBIDBError
+          describeFormat:@"%@ does not conform to FBSocketForwardingCommands", target]
+          failFuture];
+      }
+      return [commands drainLocalFileInput:STDIN_FILENO localFileOutput:STDOUT_FILENO remotePort:remotePort];
+    }];
+}
+
 static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger) {
   NSString *boot = [userDefaults stringForKey:@"-boot"];
   NSString *reboot = [userDefaults stringForKey:@"-reboot"];
@@ -474,6 +498,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefault
   NSString *unrecover = [userDefaults stringForKey:@"-unrecover"];
   NSString *activate = [userDefaults stringForKey:@"-activate"];
   NSString *clean = [userDefaults stringForKey:@"-clean"];
+  NSString *forward = [userDefaults stringForKey:@"-forward"];
 
   id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
   if (udid) {
@@ -517,6 +542,9 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefault
   } else if (clean) {
     [logger.info logFormat:@"Cleaning %@", clean];
     return [FBFuture futureWithResult:CleanFuture(clean, userDefaults, xcodeAvailable, logger, reporter)];
+  } else if (forward) {
+    [logger.info logFormat:@"Forwarding %@", forward];
+    return [FBFuture futureWithResult:ForwardFuture(forward, userDefaults, xcodeAvailable, logger, reporter)];
   }
   return [[FBIDBError
     describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
