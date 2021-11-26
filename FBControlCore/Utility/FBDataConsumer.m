@@ -183,6 +183,9 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   return self;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+
 - (void)consumeData:(NSData *)data
 {
   void (^consumer)(NSData *) = nil;
@@ -221,6 +224,8 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
     self.queue = nil;
   }
 }
+
+#pragma clang diagnostic pop
 
 @end
 
