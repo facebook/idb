@@ -97,6 +97,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->CreateHouseArrestService = FBGetSymbolFromHandle(handle, "AMDeviceCreateHouseArrestService");
   calls->Disconnect = FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
   calls->EnterRecovery = FBGetSymbolFromHandle(handle, "AMDeviceEnterRecovery");
+  calls->GetConnectionID = FBGetSymbolFromHandle(handle, "AMDeviceGetConnectionID");
   calls->InitializeMobileDevice = FBGetSymbolFromHandle(handle, "_InitializeMobileDevice");
   calls->InstallProvisioningProfile = FBGetSymbolFromHandle(handle, "AMDeviceInstallProvisioningProfile");
   calls->IsPaired = FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
@@ -143,7 +144,9 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->SetLogLevel = FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
   calls->StartSession = FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
   calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
+  calls->USBMuxConnectByPort = FBGetSymbolFromHandle(handle, "USBMuxConnectByPort");
   calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
+
 }
 
 /**

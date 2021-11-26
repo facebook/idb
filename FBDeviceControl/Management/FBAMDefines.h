@@ -206,6 +206,10 @@ typedef struct {
   // AppleMobileSync
   int (*AMSInitialize)(int arg0);
   int (*AMSEraseDevice)(CFStringRef udid, AMSEraseDeviceCallback callback, void *context);
+  
+  // USBMux
+  int (*GetConnectionID)(AMDeviceRef device);
+  int (*USBMuxConnectByPort)(int connectionID, int remotePort, int *socket);
 
   // Debugging
   void (*InitializeMobileDevice)(void);

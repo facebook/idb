@@ -317,6 +317,7 @@
       FBDevicePowerCommands.class,
       FBDeviceRecoveryCommands.class,
       FBDeviceScreenshotCommands.class,
+      FBDeviceSocketForwardingCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
       FBXCTraceRecordCommands.class,
