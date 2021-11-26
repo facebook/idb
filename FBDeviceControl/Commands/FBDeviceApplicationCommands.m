@@ -251,7 +251,7 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
         bundleNameToPID[bundleName] = pid;
       }
       return bundleNameToPID;
-    }]; 
+    }];
 }
 
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
@@ -410,7 +410,7 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)pidToRunningProcessName
+- (FBFuture<NSDictionary<NSNumber *, NSString *> *> *)pidToRunningProcessName
 {
   return [[self.device
     startService:@"com.apple.os_trace_relay"]
@@ -440,15 +440,16 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
           describeFormat:@"Request to PidList is not RequestSuccessful %@", error]
           failFuture];
       }
-      NSDictionary<NSNumber *, id> *payload = response[@"Payload"];
+      NSDictionary<NSString *, id> *payload = response[@"Payload"];
       NSMutableDictionary<NSNumber *, NSString *> *pidToRunningProcessName = NSMutableDictionary.dictionary;
-      for (NSNumber *processIdentifer in payload.keyEnumerator) {
+      for (NSString *processIdentifer in payload.keyEnumerator) {
         NSDictionary<NSString *, NSString *> *contents = payload[processIdentifer];
         NSString *processName = contents[@"ProcessName"];
         if (![processName isKindOfClass:NSString.class]) {
           continue;
         }
-        pidToRunningProcessName[processIdentifer] = processName;
+        NSNumber* processIdentiferNumber = [NSNumber numberWithInteger:[processIdentifer integerValue]];
+        pidToRunningProcessName[processIdentiferNumber] = processName;
       }
       return [FBFuture futureWithResult:pidToRunningProcessName];
     }];
@@ -487,14 +488,14 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   return lookupAttributes;
 }
 
-+ (NSArray<NSString *> *)pathLookupAttributes
++ (NSArray<NSString *> *)namingLookupAttributes
 {
   static dispatch_once_t onceToken;
   static NSArray<NSString *> *lookupAttributes = nil;
   dispatch_once(&onceToken, ^{
     lookupAttributes = @[
       FBApplicationInstallInfoKeyBundleIdentifier,
-      FBApplicationInstallInfoKeyPath,
+      FBApplicationInstallInfoKeyBundleName,
     ];
   });
   return lookupAttributes;
