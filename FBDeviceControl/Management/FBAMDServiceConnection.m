@@ -8,7 +8,6 @@
 #import "FBAMDServiceConnection.h"
 
 #import "FBDeviceControlError.h"
-#import "FBServiceConnectionClient.h"
 
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);
@@ -216,11 +215,6 @@ static size_t ReadBufferSize = 1024 * 4;
   CFRelease(_connection);
   _connection = NULL;
   return YES;
-}
-
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
-{
-  return [FBServiceConnectionClient clientForServiceConnection:self queue:queue logger:logger];
 }
 
 #pragma mark Properties

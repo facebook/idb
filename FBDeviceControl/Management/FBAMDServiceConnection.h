@@ -13,7 +13,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
-@class FBServiceConnectionClient;
 
 /**
  Abstract protocol for defining an interaction
@@ -157,15 +156,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES is succesful, NO otherwise.
  */
 - (BOOL)invalidateWithError:(NSError **)error;
-
-/**
- Build a service connection client, returning it in an FBFutureContext.
-
- @param logger the logger to use.
- @param queue the queue to execute on
- @return an FBFutureContext wrapping the client.
- */
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger  queue:(dispatch_queue_t)queue;
 
 #pragma mark Properties
 
