@@ -49,22 +49,10 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
 {
   return [[FBFuture
     onQueue:queue resolve:^{
-      AFCConnectionRef afcConnection = calls.Create(
-        0x0,
-        serviceConnection.socket,
-        0x0,
-        AFCConnectionCallback,
-        0x0
-      );
-      // We need to apply the Secure Context if it's present on the service connection.
-      AMSecureIOContext secureIOContext = serviceConnection.secureIOContext;
-      if (secureIOContext != NULL) {
-        calls.SetSecureContext(afcConnection, secureIOContext);
-      }
-      FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
+      FBAFCConnection *connection = [serviceConnection asAFCConnectionWithCalls:calls callback:AFCConnectionCallback logger:logger];
       if (![connection connectionIsValid]) {
         return [[FBDeviceControlError
-          describeFormat:@"Created AFC Connection %@ is not valid", afcConnection]
+          describeFormat:@"Created AFC Connection %@ is not valid", connection]
           failFuture];
       }
       return [FBFuture futureWithResult:connection];

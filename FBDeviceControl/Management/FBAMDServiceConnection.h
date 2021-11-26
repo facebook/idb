@@ -12,6 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBAFCConnection;
 @protocol FBControlCoreLogger;
 
 /**
@@ -149,6 +150,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)invalidateWithError:(NSError **)error;
 
+
+#pragma mark AFC
+
+/**
+ Constructs an AFC Connection from the underlying connection
+
+ @param calls  calls, the calls to use.
+ @param callback the callback to use for progress.
+ @param logger the logger to use for logging.
+ @return a new FBAFCConnection wrapper instance.
+ */
+- (FBAFCConnection *)asAFCConnectionWithCalls:(AFCCalls)calls callback:(AFCNotificationCallback)callback logger:(id<FBControlCoreLogger>)logger;
+
 #pragma mark Properties
 
 /**
@@ -175,16 +189,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Logger to use.
  */
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
-
-/**
- The socket for the connection.
- */
-@property (nonatomic, assign, readonly) int socket;
-
-/**
- The Secure IO Context.
- */
-@property (nonatomic, assign, readonly) AMSecureIOContext secureIOContext;
 
 @end
 

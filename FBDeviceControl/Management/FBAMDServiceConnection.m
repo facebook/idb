@@ -7,6 +7,7 @@
 
 #import "FBAMDServiceConnection.h"
 
+#import "FBAFCConnection.h"
 #import "FBDeviceControlError.h"
 
 typedef uint32_t HeaderIntType;
@@ -206,16 +207,23 @@ static size_t ReadBufferSize = 1024 * 4;
   return YES;
 }
 
-#pragma mark Properties
+#pragma mark AFC
 
-- (int)socket
+- (FBAFCConnection *)asAFCConnectionWithCalls:(AFCCalls)calls callback:(AFCNotificationCallback)callback logger:(id<FBControlCoreLogger>)logger
 {
-  return self.calls.ServiceConnectionGetSocket(self.connection);
-}
-
-- (AMSecureIOContext)secureIOContext
-{
-  return self.calls.ServiceConnectionGetSecureIOContext(self.connection);
+  AFCConnectionRef afcConnection = calls.Create(
+    0x0,
+    self.calls.ServiceConnectionGetSocket(self.connection),
+    0x0,
+    callback,
+    0x0
+  );
+  // We need to apply the Secure Context if it's present on the service connection.
+  AMSecureIOContext secureIOContext = self.calls.ServiceConnectionGetSecureIOContext(self.connection);;
+  if (secureIOContext != NULL) {
+    calls.SetSecureContext(afcConnection, secureIOContext);
+  }
+  return [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:self.logger];
 }
 
 #pragma mark FBAMDServiceConnectionTransfer Implementation
