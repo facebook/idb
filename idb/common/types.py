@@ -327,6 +327,9 @@ class FileContainerType(Enum):
     AUXILLARY = "auxillary"
     CRASHES = "crashes"
     DISK_IMAGES = "disk_images"
+    DSYM = "dsym"
+    DYLIB = "dylib"
+    FRAMEWORK = "framework"
     GROUP = "group"
     MDM_PROFILES = "mdm_profiles"
     MEDIA = "media"
@@ -334,6 +337,7 @@ class FileContainerType(Enum):
     ROOT = "root"
     SPRINGBOARD_ICONS = "springboard_icons"
     WALLPAPER = "wallpaper"
+    XCTEST = "xctest"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]

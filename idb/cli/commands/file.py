@@ -71,6 +71,16 @@ class FSCommand(ClientCommand):
                     "Use the springboard icons container",
                 ),
                 (FileContainerType.WALLPAPER, "Use the wallpaper container"),
+                (
+                    FileContainerType.XCTEST,
+                    "Use the container of installed xctest bundles",
+                ),
+                (FileContainerType.DYLIB, "Use the container of installed dylibs"),
+                (FileContainerType.DSYM, "Use the container of installed dsyms"),
+                (
+                    FileContainerType.FRAMEWORK,
+                    "Use the container of installed frameworks",
+                ),
             ],
         )
         super().add_parser_arguments(parser)

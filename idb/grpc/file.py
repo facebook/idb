@@ -35,4 +35,12 @@ def container_to_grpc(container: FileContainer) -> GrpcFileContainer:
         return GrpcFileContainer(kind=GrpcFileContainer.APPLICATION_CONTAINER)
     if container == FileContainerType.AUXILLARY:
         return GrpcFileContainer(kind=GrpcFileContainer.AUXILLARY)
+    if container == FileContainerType.XCTEST:
+        return GrpcFileContainer(kind=GrpcFileContainer.XCTEST)
+    if container == FileContainerType.DYLIB:
+        return GrpcFileContainer(kind=GrpcFileContainer.DYLIB)
+    if container == FileContainerType.DSYM:
+        return GrpcFileContainer(kind=GrpcFileContainer.DSYM)
+    if container == FileContainerType.FRAMEWORK:
+        return GrpcFileContainer(kind=GrpcFileContainer.FRAMEWORK)
     return GrpcFileContainer(kind=GrpcFileContainer.NONE)
