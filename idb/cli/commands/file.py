@@ -10,12 +10,26 @@ import sys
 import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import List
+from typing import Tuple, List
 
 import aiofiles
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
 from idb.common.types import Client, FileContainer, FileContainerType, Compression
+
+
+def _add_container_types_to_group(
+    parser: ArgumentParser, containers: List[Tuple[FileContainerType, str]]
+) -> None:
+    for (container_type, help_text) in containers:
+        argument_name = container_type.value.replace("_", "-")
+        parser.add_argument(
+            f"--{argument_name}",
+            action="store_const",
+            dest="container_type",
+            const=container_type,
+            help=help_text,
+        )
 
 
 class FSCommand(ClientCommand):
@@ -28,82 +42,36 @@ class FSCommand(ClientCommand):
             required=False,
             default=None,
         )
-        group.add_argument(
-            "--application",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.APPLICATION,
-            help="Use the container of application containers. Applications containers are presented, by bundle-id in the root.",
-        )
-        group.add_argument(
-            "--auxillary",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.AUXILLARY,
-            help="Use the auxillary container. This is where idb will store intermediate files.",
-        )
-        group.add_argument(
-            "--group",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.GROUP,
-            help="Use the group containers. Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari')",
-        )
-        group.add_argument(
-            "--root",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.ROOT,
-            help="Use the root file container",
-        )
-        group.add_argument(
-            "--media",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.MEDIA,
-            help="Use the media container",
-        )
-        group.add_argument(
-            "--crashes",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.CRASHES,
-            help="Use the crashes container",
-        )
-        group.add_argument(
-            "--disk-images",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.DISK_IMAGES,
-            help="Use the disk images",
-        )
-        group.add_argument(
-            "--provisioning-profiles",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.PROVISIONING_PROFILES,
-            help="Use the provisioning profiles container",
-        )
-        group.add_argument(
-            "--mdm-profiles",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.MDM_PROFILES,
-            help="Use the mdm profiles container",
-        )
-        group.add_argument(
-            "--springboard-icons",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.SPRINGBOARD_ICONS,
-            help="Use the springboard icons container",
-        )
-        group.add_argument(
-            "--wallpaper",
-            action="store_const",
-            dest="container_type",
-            const=FileContainerType.WALLPAPER,
-            help="Use the wallpaper container",
+        _add_container_types_to_group(
+            group,  # pyre-fixme[6]: _MutuallyExclusiveGroup is not public.
+            [
+                (
+                    FileContainerType.APPLICATION,
+                    "Use the container of application containers. Applications containers are presented, by bundle-id in the root.",
+                ),
+                (
+                    FileContainerType.AUXILLARY,
+                    "Use the auxillary container. This is where idb will store intermediate files.",
+                ),
+                (
+                    FileContainerType.GROUP,
+                    "Use the group containers. Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari')",
+                ),
+                (FileContainerType.ROOT, "Use the root file container"),
+                (FileContainerType.MEDIA, "Use the media container"),
+                (FileContainerType.CRASHES, "Use the crashes container"),
+                (FileContainerType.DISK_IMAGES, "Use the disk images"),
+                (
+                    FileContainerType.PROVISIONING_PROFILES,
+                    "Use the provisioning profiles container",
+                ),
+                (FileContainerType.MDM_PROFILES, "Use the mdm profiles container"),
+                (
+                    FileContainerType.SPRINGBOARD_ICONS,
+                    "Use the springboard icons container",
+                ),
+                (FileContainerType.WALLPAPER, "Use the wallpaper container"),
+            ],
         )
         super().add_parser_arguments(parser)
 
