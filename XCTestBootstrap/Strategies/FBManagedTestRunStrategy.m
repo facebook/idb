@@ -22,7 +22,7 @@
 {
   NSParameterAssert(target);
   NSParameterAssert(configuration.applicationLaunchConfiguration);
-  NSParameterAssert(configuration.testBundlePath);
+  NSParameterAssert(configuration.testBundle.path);
 
   NSError *error = nil;
   if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:target.logger error:&error]) {
@@ -61,7 +61,7 @@
     bundleName:testRunnerConfiguration.testRunner.identifier
     arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
     environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
-    waitForDebugger:NO
+    waitForDebugger:applicationLaunchConfiguration.waitForDebugger
     io:applicationLaunchConfiguration.io
     launchMode:FBApplicationLaunchModeFailIfRunning];
 }

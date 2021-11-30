@@ -1,0 +1,41 @@
+---
+id: video
+title: Video
+---
+
+`idb` provides recordings and streams of an attached iOS Simulator or Device. This can be very useful for exposing an iOS Target's screen, or recording an automation for later review.
+
+## Recording
+
+If you wish to make a recording for a target you can use `idb record-video FILE_PATH`.
+
+This can be used to record an mp4 file to disk. The specified `FILE_PATH` can be any location on disk, regardless of the extension it will be an `mp4` video. The video recording will start upon invoking the command, the recording can be stopped by sending a `SIGTERM` to the process (i.e. Ctrl-C in a terminal). The video file will only be written to disk upon exit of the `idb` process.
+
+## Streaming
+
+Video streaming allows for live frames to be captured from the iOS Target. Typically, this stream should be piped through another application for consumption, depending on the use-case. `idb` provides raw access to the video, in a variety of encodings, it's left to the user to decide how to combine this with a downstream video streaming pipeline. Streaming video pairs well with [Accessibility commands.](accessibility)
+
+Projects such as [`ffmpeg`](https://www.ffmpeg.org) or [`gstreamer`](https://gstreamer.freedesktop.org) are examples of these applications. For example, `ffmpeg` can accept streamed `h264` video and expose this over a UDP socket with intermediate transcoding of data.
+
+For example, the following invocation can be used to start a video stream and expose it on UDP port.
+
+```
+$ idb video-stream --fps 30 --format h264 --compression-quality 1.0 --udid EE074DCE-7D75-4F96-A949-82252F5FEC30 | ffmpeg -f h264 -i pipe:0 -vcodec copy -tune zerolatency -b 900k -framerate 30 -f mpegts udp://0.0.0.0:12345
+```
+
+Breaking this command down:
+
+- `idb video-stream` is the command used in idb to stream video out.
+- `--fps 30` is the number of frames that are produced by `idb` per second. This can be arbitrarily large or small. A higher frame rate will increase system utilization. Increasing the fps may not result in smoother presentation, as an iOS Simulator may be refreshing it's screen less frequently than the target frame rate. Typically an iOS Simulator may not render transparencies at 60fps.
+- `--format h264` represents the format of the video stream itself. A variety of outputs are available:
+  - `h264` This is an [Annexe-B H.264 Stream](https://en.wikipedia.org/wiki/Network_Abstraction_Layer#NAL_Units_in_Byte-Stream_Format_Use)
+  - `rbga` is a stream of raw RBGA bytes.
+  - `mjpeg` is an stream of encoed JPEG images, [typically called MJPEG](https://en.wikipedia.org/wiki/Motion_JPEG).
+  - `minicap` is [format used by the minicap project](https://github.com/openstf/minicap). It's fundementally a MJPEG stream with a header at the start of the stream and length [headers per frame](https://github.com/openstf/minicap#global-header-binary-format).
+- `--compression-quality 1.0` represents the quality level used for encoded frames, this is a value between 0.0 and 1.0. It applies to all formats except for the raw `rbga` format.
+- `idb video-stream` takes a positional argument for a file path to stream to. When this is not provided, video will be streamed to `stdout`, this can also be achieved by passing `-` as the file path argument.
+  - The output of the idb command is piped to `ffmpeg` in the shell. Pipelining via `stdout` is the easiest way of sending video data from `idb` to an external program (as opposed to using a file).
+- The arguments for `ffmpeg` relate to:
+  - The parsing of input video from `stdin`: `-f h264 -i pipe:0`.
+  - Transcoding it to a lower bitrate and for real-time delivery `-tune zerolatency -b 900k`.
+  - Exposing the transcoded video over UDP so that it can be consumed by another application over the network `udp://0.0.0.0:12345`.

@@ -14,7 +14,6 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
-@class FBiOSTargetQuery;
 @class SimDeviceSet;
 
 @protocol FBControlCoreLogger;
@@ -48,12 +47,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Querying
 
 /**
- Fetches the Simulators from the Set, matching the query.
+ Fetches a Simulator matching the specified udid
 
- @param query the Query to query with.
- @return an array of matching Simulators.
+ @param udid the UDID of the Simulator to fetch.
+ @return an FBSimulator instance if one matches the provided udid, else nil
  */
-- (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query;
+- (nullable FBSimulator *)simulatorWithUDID:(NSString *)udid;
 
 #pragma mark Creation Methods
 

@@ -5,23 +5,22 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-import errno
 import json
 import logging
 import os
 import subprocess
+from dataclasses import dataclass
 from datetime import timedelta
 from logging import Logger, DEBUG as LOG_LEVEL_DEBUG
 from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union, Tuple
 
-from idb.common.constants import IDB_LOCAL_TARGETS_FILE, IDB_LOGS_PATH
+from idb.common.constants import IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
 from idb.common.format import (
     target_description_from_json,
     target_descriptions_from_json,
 )
 from idb.common.logging import log_call
-from idb.common.pid_saver import PidSaver
 from idb.common.types import (
     Companion as CompanionBase,
     ECIDFilter,
@@ -68,7 +67,9 @@ async def _terminate_process(
 
 def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
     if isinstance(only, TargetType):
-        return ["--only", "simulator" if only is TargetType.SIMULATOR else "device"]
+        if only == TargetType.MAC:
+            return []
+        return ["--only", only.value]
     elif isinstance(only, ECIDFilter):
         return ["--only", f"ecid:{only.ecid}"]
     return []
@@ -82,74 +83,38 @@ def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
         raise IdbJsonException(f"Failed to parse json from: {decoded_line}")
 
 
-async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
+async def _extract_companion_report_from_spawned_companion(
+    stream: asyncio.StreamReader,
+) -> Dict[str, Union[int, str]]:
     # The first line of stdout should contain launch info,
     # otherwise something bad has happened
     line = await stream.readline()
     logging.debug(f"Read line from companion: {line}")
     update = parse_json_line(line)
     logging.debug(f"Got update from companion: {update}")
+    return update
+
+
+async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
+    update = await _extract_companion_report_from_spawned_companion(stream=stream)
     return int(update["grpc_port"])
 
 
-async def do_spawn_companion(
-    path: str,
-    udid: str,
-    log_file_path: str,
-    device_set_path: Optional[str],
-    port: Optional[int],
-    cwd: Optional[str],
-    tmp_path: Optional[str],
-    reparent: bool,
-    tls_cert_path: Optional[str] = None,
-) -> Tuple[asyncio.subprocess.Process, int]:
-    arguments: List[str] = [
-        path,
-        "--udid",
-        udid,
-        "--grpc-port",
-        str(port) if port is not None else "0",
-    ]
-    if tls_cert_path is not None:
-        arguments.extend(["--tls-cert-path", tls_cert_path])
-    if device_set_path is not None:
-        arguments.extend(["--device-set-path", device_set_path])
+async def _extract_domain_sock_from_spawned_companion(
+    stream: asyncio.StreamReader,
+) -> str:
+    update = await _extract_companion_report_from_spawned_companion(stream=stream)
+    return str(update["grpc_path"])
 
-    env = dict(os.environ)
-    if tmp_path:
-        env["TMPDIR"] = tmp_path
 
-    with open(log_file_path, "a") as log_file:
-        process = await asyncio.create_subprocess_exec(
-            *arguments,
-            stdout=asyncio.subprocess.PIPE,
-            stdin=asyncio.subprocess.PIPE if reparent else None,
-            stderr=log_file,
-            cwd=cwd,
-            env=env,
-            preexec_fn=os.setpgrp if reparent else None,
-        )
-        logging.debug(f"started companion at process id {process.pid}")
-        stdout = none_throws(process.stdout)
-        try:
-            extracted_port = await _extract_port_from_spawned_companion(stdout)
-        except Exception as e:
-            raise CompanionSpawnerException(
-                f"Failed to spawn companion, couldn't read port "
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            ) from e
-        if extracted_port == 0:
-            raise CompanionSpawnerException(
-                f"Failed to spawn companion, port is zero"
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            )
-        if port is not None and extracted_port != port:
-            raise CompanionSpawnerException(
-                "Failed to spawn companion, port is not correct "
-                f"(expected {port} got {extracted_port})"
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            )
-        return (process, extracted_port)
+@dataclass(frozen=True)
+class CompanionServerConfig:
+    udid: str
+    only: OnlyFilter
+    log_file_path: Optional[str]
+    cwd: Optional[str]
+    tmp_path: Optional[str]
+    reparent: bool
 
 
 class Companion(CompanionBase):
@@ -159,7 +124,6 @@ class Companion(CompanionBase):
         self._companion_path = companion_path
         self._device_set_path = device_set_path
         self._logger = logger
-        self._pid_saver = PidSaver(logger=logger)
 
     @asynccontextmanager
     async def _start_companion_command(
@@ -222,80 +186,114 @@ class Companion(CompanionBase):
             arguments=[f"--{command}", udid], timeout=timeout
         )
 
-        self._pid_saver = PidSaver(logger=self.logger)
-
     def _log_file_path(self, target_udid: str) -> str:
         os.makedirs(name=IDB_LOGS_PATH, exist_ok=True)
         return IDB_LOGS_PATH + "/" + target_udid
 
-    def _is_notifier_running(self) -> bool:
-        pid = self._pid_saver.get_notifier_pid()
-        # Taken from https://fburl.com/ibk820b6
-        if pid <= 0:
-            return False
-        try:
-            # no-op if process exists
-            os.kill(pid, 0)
-            return True
-        except OSError as err:
-            # EPERM clearly means there's a process to deny access to
-            # otherwise proc doesn't exist
-            return err.errno == errno.EPERM
-        except Exception:
-            return False
-
-    async def _read_notifier_output(self, stream: asyncio.StreamReader) -> None:
-        while True:
-            line = await stream.readline()
-            if line is None:
-                return
-            update = parse_json_line(line)
-            if update["report_initial_state"]:
-                return
-
-    def check_okay_to_spawn(self) -> None:
+    async def _spawn_server(
+        self,
+        config: CompanionServerConfig,
+        bind_arguments: List[str],
+    ) -> Tuple[asyncio.subprocess.Process, str]:
         if os.getuid() == 0:
             logging.warning(
                 "idb should not be run as root. "
                 "Listing available targets on this host and spawning "
                 "companions will not work"
             )
-
-    async def spawn_companion(self, target_udid: str) -> int:
-        self.check_okay_to_spawn()
-        (process, port) = await do_spawn_companion(
-            path=self._companion_path,
-            udid=target_udid,
-            log_file_path=self._log_file_path(target_udid),
-            device_set_path=None,
-            port=None,
-            cwd=None,
-            tmp_path=None,
-            reparent=True,
+        arguments: List[str] = (
+            [
+                self._companion_path,
+                "--udid",
+                config.udid,
+            ]
+            + bind_arguments
+            + _only_arg_from_filter(config.only)
         )
-        self._pid_saver.save_companion_pid(pid=process.pid)
-        return port
+        log_file_path = config.log_file_path
+        if log_file_path is None:
+            log_file_path = self._log_file_path(config.udid)
+        device_set_path = self._device_set_path
+        if device_set_path is not None:
+            arguments.extend(["--device-set-path", device_set_path])
 
-    async def spawn_notifier(self, targets_file: str = IDB_LOCAL_TARGETS_FILE) -> None:
-        if self._is_notifier_running():
-            return
+        env = dict(os.environ)
+        if config.tmp_path:
+            env["TMPDIR"] = config.tmp_path
 
-        self.check_okay_to_spawn()
-        cmd = [self._companion_path, "--notify", targets_file]
-        log_path = self._log_file_path("notifier")
-        with open(log_path, "a") as log_file:
+        with open(log_file_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=log_file
+                *arguments,
+                stdout=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.PIPE if config.reparent else None,
+                stderr=log_file,
+                cwd=config.cwd,
+                env=env,
+                preexec_fn=os.setpgrp if config.reparent else None,
             )
+            logging.debug(f"started companion at process id {process.pid}")
+            return (process, log_file_path)
+
+    async def spawn_tcp_server(
+        self,
+        config: CompanionServerConfig,
+        port: Optional[int],
+        tls_cert_path: Optional[str] = None,
+    ) -> Tuple[asyncio.subprocess.Process, int]:
+        bind_arguments = ["--grpc-port", str(port) if port is not None else "0"]
+        if tls_cert_path is not None:
+            bind_arguments.extend(["--tls-cert-path", tls_cert_path])
+        (process, log_file_path) = await self._spawn_server(
+            config=config,
+            bind_arguments=bind_arguments,
+        )
+        stdout = none_throws(process.stdout)
         try:
-            self._pid_saver.save_notifier_pid(pid=process.pid)
-            await self._read_notifier_output(stream=none_throws(process.stdout))
-            logging.debug(f"started notifier at process id {process.pid}")
+            extracted_port = await _extract_port_from_spawned_companion(stdout)
         except Exception as e:
             raise CompanionSpawnerException(
-                "Failed to spawn the idb notifier. "
-                f"Stderr: {get_last_n_lines(log_path, 30)}"
+                f"Failed to spawn companion, couldn't read port output "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
             ) from e
+        if extracted_port == 0:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, port zero is invalid "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        if port is not None and extracted_port != port:
+            raise CompanionSpawnerException(
+                "Failed to spawn companion, invalid port "
+                f"(expected {port} got {extracted_port})"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        return (process, extracted_port)
+
+    async def spawn_domain_sock_server(
+        self, config: CompanionServerConfig, path: str
+    ) -> asyncio.subprocess.Process:
+        (process, log_file_path) = await self._spawn_server(
+            config=config, bind_arguments=["--grpc-domain-sock", path]
+        )
+        stdout = none_throws(process.stdout)
+        try:
+            extracted_path = await _extract_domain_sock_from_spawned_companion(stdout)
+        except Exception as e:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, couldn't read port "
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            ) from e
+        if not extracted_path:
+            raise CompanionSpawnerException(
+                f"Failed to spawn companion, no extracted path"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        if extracted_path != path:
+            raise CompanionSpawnerException(
+                "Failed to spawn companion, extracted path is not correct "
+                f"(expected {path} got {extracted_path})"
+                f"stderr: {get_last_n_lines(log_file_path, 30)}"
+            )
+        return process
 
     @log_call()
     async def create(

@@ -30,10 +30,11 @@
 + (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithConnection:(FBAMDServiceConnection *)connection
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.fbdevicelinkclient", DISPATCH_QUEUE_SERIAL);
-  FBDeviceLinkClient *plistClient = [[self alloc] initWithServiceConnection:connection queue:queue];
-  return [[plistClient
-    performVersionExchange]
-    mapReplace:plistClient];
+  return [[FBDeviceLinkClient
+    performVersionExchange:connection queue:queue]
+    onQueue:queue map:^(id _) {
+      return [[self alloc] initWithServiceConnection:connection queue:queue];
+    }];
 }
 
 - (instancetype)initWithServiceConnection:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue
@@ -55,30 +56,31 @@ static NSString *const ProcessMessage = @"DLMessageProcessMessage";
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(id)message
 {
-  return [[self
-    sendAndReceivePlist:@[
-      ProcessMessage,
-      message,
-    ]]
-    onQueue:self.queue fmap:^(NSArray<id> *result) {
+  FBAMDServiceConnection *connection = self.connection;
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+      NSArray<id> *result = [connection sendAndReceiveMessage:@[ProcessMessage, message] error:error];
+      if (!result) {
+        return nil;
+      }
       NSString *responseType = result[0];
       if (![responseType isKindOfClass:NSString.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not an NSString in %@", responseType, result]
-          failFuture];
+          fail:error];
       }
       if (![responseType isEqualToString:ProcessMessage]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ should be a %@", responseType, ProcessMessage]
-          failFuture];
+          fail:error];
       }
       NSDictionary<NSString *, id> *response = result[1];
       if (![response isKindOfClass:NSDictionary.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not a NSDictionary", response]
-          failFuture];
+          fail:error];
       }
-      return [FBFuture futureWithResult:response];
+      return response;
     }];
 }
 
@@ -86,75 +88,48 @@ static NSString *const ProcessMessage = @"DLMessageProcessMessage";
 
 static NSString *const DeviceReady = @"DLMessageDeviceReady";
 
-- (FBFuture<NSNull *> *)performVersionExchange
++ (FBFuture<NSNull *> *)performVersionExchange:(FBAMDServiceConnection *)connection queue:(dispatch_queue_t)queue
 {
-  return [[[self
-    receivePlist]
-    onQueue:self.queue fmap:^ FBFuture<id> * (id plist) {
+  return [FBFuture
+    onQueue:queue resolveValue:^ NSNull * (NSError **error) {
+      id plist = [connection receiveMessageWithError:error];
       if (![plist isKindOfClass:NSArray.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not an array in version exchange", plist]
-          failFuture];
+          fail:error];
       }
       NSNumber *versionNumber = plist[1];
       if (![versionNumber isKindOfClass:NSNumber.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not a NSNumber for the handshake version", versionNumber]
-          failFuture];
+          fail:error];
       }
       NSArray<id> *response = @[
         @"DLMessageVersionExchange",
         @"DLVersionsOk",
         versionNumber,
       ];
-      return [self sendAndReceivePlist:response];
-    }]
-    onQueue:self.queue fmap:^(id plist) {
+      plist = [connection sendAndReceiveMessage:response error:error];
+      if (!plist) {
+        return nil;
+      }
       if (![plist isKindOfClass:NSArray.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not an array in version exchange", plist]
-          failFuture];
+          fail:error];
       }
       NSString *message = plist[0];
       if (![message isKindOfClass:NSString.class]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not a NSString for the device ready call", message]
-          failFuture];
+          fail:error];
       }
       if (![message isEqualToString:DeviceReady]) {
         return [[FBDeviceControlError
           describeFormat:@"%@ is not equal to %@", message, DeviceReady]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
-}
-
-- (FBFuture<NSNull *> *)sendPlist:(id)payload
-{
-  return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
-      if (![self.connection sendMessage:payload error:error]) {
-        return nil;
+          fail:error];
       }
       return NSNull.null;
-    }];
-}
-
-- (FBFuture<id> *)receivePlist
-{
-  return [FBFuture
-    onQueue:self.queue resolveValue:^ id (NSError **error) {
-      return [self.connection receiveMessageWithError:error];
-    }];
-}
-
-- (FBFuture<id> *)sendAndReceivePlist:(id)payload
-{
-  return [[self
-    sendPlist:payload]
-    onQueue:self.queue fmap:^(id _) {
-      return [self receivePlist];
     }];
 }
 

@@ -12,6 +12,7 @@ import os
 import shutil
 import tempfile
 import urllib.parse
+from asyncio import StreamWriter, StreamReader
 from io import StringIO
 from pathlib import Path
 from typing import (
@@ -32,7 +33,7 @@ from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
-from idb.common.gzip import drain_gzip_decompress
+from idb.common.gzip import drain_gzip_decompress, gunzip
 from idb.common.hid import (
     button_press_to_events,
     iterator_to_async_iterator,
@@ -45,10 +46,12 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
+    FileContainerType,
     AccessibilityInfo,
     Address,
     AppProcessState,
     Client as ClientBase,
+    CodeCoverageFormat,
     Companion,
     CompanionInfo,
     Compression,
@@ -79,6 +82,7 @@ from idb.grpc.crash import (
     _to_crash_log_info_list,
     _to_crash_log_query_proto,
 )
+from idb.grpc.dap import RemoteDapServer
 from idb.grpc.file import container_to_grpc as file_container_to_grpc
 from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -100,9 +104,12 @@ from idb.grpc.idb_pb2 import (
     ListAppsRequest,
     Location,
     LogRequest,
+    SimulateMemoryWarningRequest,
+    SendNotificationRequest,
     LsRequest,
     GetSettingRequest,
     LOCALE as LocaleSetting,
+    ANY as AnySetting,
     ListSettingRequest,
     MkdirRequest,
     MvRequest,
@@ -123,6 +130,7 @@ from idb.grpc.idb_pb2 import (
     XctestListBundlesRequest,
     XctestListTestsRequest,
     XctraceRecordRequest,
+    XctestRunResponse,
 )
 from idb.grpc.install import (
     Bundle,
@@ -240,7 +248,6 @@ class Client(ClientBase):
         cls,
         address: Address,
         logger: logging.Logger,
-        is_local: Optional[bool] = None,
         exchange_metadata: bool = True,
         extra_metadata: Optional[Dict[str, str]] = None,
         use_tls: bool = False,
@@ -282,9 +289,10 @@ class Client(ClientBase):
                     raise IdbException(
                         f"Failed to connect to companion at address {address}: {ex}"
                     )
-            companion = companion_to_py(
-                companion=response.companion, address=address, is_local=is_local
+            logger.debug(
+                f"Companion at {address} {'is' if response.companion.is_local else 'is not'} local"
             )
+            companion = companion_to_py(companion=response.companion, address=address)
             if exchange_metadata:
                 metadata_from_companion = {
                     key: value
@@ -312,7 +320,6 @@ class Client(ClientBase):
                 udid=udid, path=temp.name, only=only
             ) as resolved_path, Client.build(
                 address=DomainSocketAddress(path=resolved_path),
-                is_local=True,
                 logger=logger,
             ) as client:
                 yield client
@@ -334,7 +341,9 @@ class Client(ClientBase):
         self,
         bundle: Bundle,
         destination: Destination,
-        compression: Optional[Compression] = None,
+        compression: Optional[Compression],
+        make_debuggable: Optional[bool],
+        bundle_id: Optional[str],
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -348,11 +357,17 @@ class Client(ClientBase):
                 else:
                     file_path = str(Path(bundle).resolve(strict=True))
                     if self.is_local:
+                        self.logger.debug(
+                            f"Companion is local, sending local file by path {file_path}"
+                        )
                         # send file_path
                         generator = generate_requests(
                             [InstallRequest(payload=Payload(file_path=file_path))]
                         )
                     else:
+                        self.logger.debug(
+                            f"Companion is remote, generating binary chunks for {file_path}"
+                        )
                         # chunk file from file_path
                         generator = generate_binary_chunks(
                             path=file_path,
@@ -363,17 +378,25 @@ class Client(ClientBase):
 
             else:
                 # chunk file from memory
+                self.logger.debug("Sending file data from input stream")
                 generator = generate_io_chunks(io=bundle, logger=self.logger)
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
+            if make_debuggable is not None:
+                await stream.send_message(
+                    InstallRequest(make_debuggable=make_debuggable)
+                )
             if compression is not None:
                 await stream.send_message(
                     InstallRequest(
                         payload=Payload(compression=COMPRESSION_MAP[compression])
                     )
                 )
+            if bundle_id is not None:
+                await stream.send_message(InstallRequest(bundle_id=bundle_id))
             async for message in generator:
                 await stream.send_message(message)
+            self.logger.debug("Finished sending install payload to companion")
             await stream.end()
             async for response in stream:
                 yield InstalledArtifact(
@@ -402,6 +425,7 @@ class Client(ClientBase):
                 install_type=app.install_type,
                 process_state=AppProcessState(app.process_state),
                 debuggable=app.debuggable,
+                process_id=app.process_identifier,
             )
             for app in response.apps
         ]
@@ -484,6 +508,19 @@ class Client(ClientBase):
         )
 
     @log_and_handle_exceptions
+    async def simulate_memory_warning(self) -> None:
+        await self.stub.simulate_memory_warning(SimulateMemoryWarningRequest())
+
+    @log_and_handle_exceptions
+    async def send_notification(self, bundle_id: str, json_payload: str) -> None:
+        await self.stub.send_notification(
+            SendNotificationRequest(
+                bundle_id=bundle_id,
+                json_payload=json_payload,
+            )
+        )
+
+    @log_and_handle_exceptions
     async def terminate(self, bundle_id: str) -> None:
         await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
 
@@ -497,7 +534,10 @@ class Client(ClientBase):
             target=target,
             # Use the local understanding of the companion instead of the remote's.
             companion=CompanionInfo(
-                address=self.address, udid=target.udid, is_local=self.is_local
+                address=self.address,
+                udid=target.udid,
+                is_local=self.is_local,
+                pid=None,
             ),
             # Extract the companion metadata from the response.
             metadata=response.companion.metadata,
@@ -581,30 +621,49 @@ class Client(ClientBase):
         self,
         bundle: Bundle,
         compression: Optional[Compression] = None,
+        make_debuggable: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=bundle, destination=InstallRequest.APP, compression=compression
+            bundle=bundle,
+            destination=InstallRequest.APP,
+            compression=compression,
+            make_debuggable=make_debuggable,
+            bundle_id=None,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=xctest, destination=InstallRequest.XCTEST
+            bundle=xctest,
+            destination=InstallRequest.XCTEST,
+            compression=None,
+            make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=dylib, destination=InstallRequest.DYLIB
+            bundle=dylib,
+            destination=InstallRequest.DYLIB,
+            compression=None,
+            make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
     @log_and_handle_exceptions
-    async def install_dsym(self, dsym: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install_dsym(
+        self, dsym: Bundle, bundle_id: Optional[str]
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=dsym, destination=InstallRequest.DSYM
+            bundle=dsym,
+            destination=InstallRequest.DSYM,
+            compression=None,
+            make_debuggable=None,
+            bundle_id=bundle_id,
         ):
             yield response
 
@@ -613,13 +672,21 @@ class Client(ClientBase):
         self, framework_path: Bundle
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
-            bundle=framework_path, destination=InstallRequest.FRAMEWORK
+            bundle=framework_path,
+            destination=InstallRequest.FRAMEWORK,
+            compression=None,
+            make_debuggable=None,
+            bundle_id=None,
         ):
             yield response
 
     @log_and_handle_exceptions
     async def push(
-        self, src_paths: List[str], container: FileContainer, dest_path: str
+        self,
+        src_paths: List[str],
+        container: FileContainer,
+        dest_path: str,
+        compression: Optional[Compression],
     ) -> None:
         async with self.stub.push.open() as stream:
             await stream.send_message(
@@ -637,10 +704,21 @@ class Client(ClientBase):
                 await stream.end()
                 await stream.recv_message()
             else:
+                if compression is not None:
+                    await stream.send_message(
+                        PushRequest(
+                            payload=Payload(compression=COMPRESSION_MAP[compression])
+                        )
+                    )
+
                 await drain_to_stream(
                     stream=stream,
                     generator=stream_map(
-                        generate_tar(paths=src_paths, verbose=self._is_verbose),
+                        generate_tar(
+                            paths=src_paths,
+                            compression=compression or Compression.GZIP,
+                            verbose=self._is_verbose,
+                        ),
                         lambda chunk: PushRequest(payload=Payload(data=chunk)),
                     ),
                     logger=self.logger,
@@ -980,6 +1058,38 @@ class Client(ClientBase):
                 )
                 await stream.end()
 
+    async def _handle_code_coverage_in_response(
+        self,
+        response: XctestRunResponse,
+        coverage_output_path: Optional[str],
+        coverage_format: CodeCoverageFormat,
+    ) -> None:
+        if (
+            response.code_coverage_data
+            and response.code_coverage_data.data
+            and response.code_coverage_data.data.count
+            and coverage_output_path
+        ):
+            output_path: str = coverage_output_path
+            self.logger.info(f"Decompressing code coverage to {output_path}")
+            if coverage_format == CodeCoverageFormat.EXPORTED:
+                await gunzip(
+                    response.code_coverage_data.data,
+                    output_path=output_path,
+                )
+            elif coverage_format == CodeCoverageFormat.RAW:
+                await untar_into_path(
+                    payload=response.code_coverage_data,
+                    description="raw code coverage directory",
+                    output_path=output_path,
+                    logger=self.logger,
+                )
+            self.logger.info(f"Finished decompression to {output_path}")
+        elif response.coverage_json and coverage_output_path:
+            # handle deprecated response field
+            with open(coverage_output_path, "w") as f:
+                f.write(response.coverage_json)
+
     @log_and_handle_exceptions
     async def run_xctest(
         self,
@@ -1000,6 +1110,7 @@ class Client(ClientBase):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
@@ -1023,6 +1134,7 @@ class Client(ClientBase):
                 ),
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
+                coverage_format=coverage_format,
                 collect_logs=log_directory_path is not None,
                 wait_for_debugger=wait_for_debugger,
             )
@@ -1056,9 +1168,10 @@ class Client(ClientBase):
                         output_path=log_directory_path,
                         logger=self.logger,
                     )
-                if response.coverage_json and coverage_output_path:
-                    with open(coverage_output_path, "w") as f:
-                        f.write(response.coverage_json)
+
+                await self._handle_code_coverage_in_response(
+                    response, coverage_output_path, coverage_format
+                )
 
                 if wait_for_debugger and response.debugger.pid:
                     print("Tests waiting for debugger. To debug run:")
@@ -1107,8 +1220,27 @@ class Client(ClientBase):
         )
 
     @log_and_handle_exceptions
+    async def set_preference(
+        self, name: str, value: str, domain: Optional[str]
+    ) -> None:
+        await self.stub.setting(
+            SettingRequest(
+                stringSetting=SettingRequest.StringSetting(
+                    setting=AnySetting, value=value, name=name, domain=domain
+                )
+            )
+        )
+
+    @log_and_handle_exceptions
     async def get_locale(self) -> str:
         response = await self.stub.get_setting(GetSettingRequest(setting=LocaleSetting))
+        return response.value
+
+    @log_and_handle_exceptions
+    async def get_preference(self, name: str, domain: Optional[str]) -> str:
+        response = await self.stub.get_setting(
+            GetSettingRequest(setting=AnySetting, name=name, domain=domain)
+        )
         return response.value
 
     @log_and_handle_exceptions
@@ -1220,3 +1352,39 @@ class Client(ClientBase):
                         self.logger.info(f"Trace written to {trace_file}")
 
             return result
+
+    @log_and_handle_exceptions
+    async def dap(
+        self,
+        dap_path: str,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+        stop: asyncio.Event,
+        compression: Optional[Compression],
+    ) -> None:
+        path = Path(dap_path)
+        pkg_id = path.stem
+        self.logger.debug("Creating dap subfolder for different pkg of dap server.")
+        await self.mkdir(container=FileContainerType.ROOT, path="dap")
+
+        ls_response = await self.ls(container=FileContainerType.ROOT, paths=["dap"])
+        installed_daps = [entry.path for entry in ls_response[0].entries]
+        if pkg_id in installed_daps:
+            self.logger.info(f"Dap pkg already exist. Id: f{pkg_id}")
+        else:
+            self.logger.info(f"Pushing {path.absolute()} to simulator dap subfolder.")
+            await self.push(
+                src_paths=[str(path.absolute())],
+                container=FileContainerType.ROOT,
+                dest_path="dap",
+                compression=compression,
+            )
+
+        async with RemoteDapServer.start(self.stub, self.logger, pkg_id) as dap_server:
+            self.logger.debug("Dap server started. Waiting for input from stdin...")
+
+            await dap_server.pipe(
+                input_stream=input_stream,
+                output_stream=output_stream,
+                stop=stop,
+            )

@@ -23,6 +23,15 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
   FBFutureStateCancelled = 4,  /* The Future has been cancelled */
 };
 
+/**
+ Loop status for onQueue:resolveOrFailWhen:
+ */
+typedef NS_ENUM(NSUInteger, FBFutureLoopState) {
+  FBFutureLoopContinue = 1,  /* FBFuture resolveOrFailWhen will continue */
+  FBFutureLoopFinished = 2,  /* FBFuture resolveOrFailWhen has finished */
+  FBFutureLoopFailed = 3,  /* FBFuture resolveOrFailWhen has failed */
+};
+
 extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration);
 
 /**
@@ -59,12 +68,27 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 /**
  Constructs a Future that resolves successfully when the resolveWhen block returns YES.
+ onQueue:resolveWhen: is a shortcut to onQueue:resolveOrFailWhen:
 
  @param queue to resolve on.
  @param resolveWhen a block determining when the future should resolve.
  @return a new Future that resolves when the resolution block returns YES.
  */
 + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen;
+
+/**
+ Constructs a Future that resolves when the resolveOrFailWhen block returns FBFutureLoopState.
+ resolveOrFailWhen block will be executed every 100ms to determine when the future should be resolved:
+
+  * If resolveOrFailWhen block returns FBFutureLoopContinue, the future will continue in Running state
+  * If resolveOrFailWhen block returns FBFutureLoopFinished and errorOut is not set, the future will resolve successfully
+  * If resolveOrFailWhen block returns FBFutureLoopFailed and error out is set, the future will resolve on a failure.
+
+ @param queue to resolve on.
+ @param resolveOrFailWhen a block determining when the future should resolve. Future will resolve into a failure if `errorOut` is not nil.
+ @return a new Future that resolves when the resolution block returns FBFutureLoopFinished or FBFutureLoopFailed.
+ */
+ + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveOrFailWhen:(FBFutureLoopState (^)(NSError ** errorOut))resolveOrFailWhen;
 
 /**
  Constructs a Future that resolves successfully when the resolveUntil block resolves a Future that resolves a value.
@@ -144,16 +168,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a Future that resolves when cancellation of all handlers has been processed.
  */
 - (FBFuture<NSNull *> *)cancel;
-
-/**
- Removes existing cancellation propogation.
- Deriving new futures will propogate cancellation within the chain.
- However, this may be undesirable if you wish to prevent a default cancellation from propogating.
- This is useful when you wish to override the default cancellation behaviour of chained futures.
-
- @return the receiver, for chaining.
- */
-- (instancetype)shieldCancellation;
 
 /**
  Respond to the cancellation of the receiver.

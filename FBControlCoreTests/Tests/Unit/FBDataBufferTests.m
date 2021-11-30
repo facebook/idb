@@ -152,6 +152,29 @@
   XCTAssertEqualObjects(expected, actual);
 }
 
+- (void)testConsumerAsync
+{
+  NSData *expected = [@"FOO" dataUsingEncoding:NSUTF8StringEncoding];
+  NSMutableData *actual = NSMutableData.data;
+  dispatch_semaphore_t consumeStarted = dispatch_semaphore_create(0);
+  dispatch_semaphore_t continueConsume = dispatch_semaphore_create(0);
+  id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync> consumer = [FBBlockDataConsumer asynchronousDataConsumerWithBlock:^(NSData *incremental) {
+    dispatch_semaphore_signal(consumeStarted);
+    dispatch_semaphore_wait(continueConsume, DISPATCH_TIME_FOREVER);
+    [actual appendData:incremental];
+  }];
+
+  XCTAssertEqual(0, consumer.unprocessedDataCount);
+  [consumer consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
+  dispatch_semaphore_wait(consumeStarted, DISPATCH_TIME_FOREVER);
+  XCTAssertEqual(1, consumer.unprocessedDataCount);
+  dispatch_semaphore_signal(continueConsume);
+  [consumer consumeEndOfFile];
+  XCTAssertTrue(consumer.finishedConsuming.hasCompleted);
+  XCTAssertEqual(0, consumer.unprocessedDataCount);
+  XCTAssertEqualObjects(expected, actual);
+}
+
 - (void)testLineBufferConsumption
 {
   id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;

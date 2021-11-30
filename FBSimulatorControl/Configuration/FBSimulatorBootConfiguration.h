@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorBootConfiguration : NSObject <NSCopying>
 
+#pragma mark Properties
+
 /**
  Options for how the Simulator should be launched.
  */
@@ -42,25 +44,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, class, readonly) FBSimulatorBootConfiguration *defaultConfiguration;
 
-#pragma mark Launch Options
-
 /**
- Updates the boot configuration with new options.
-
- @param options the options to update.
- @return a new FBSimulatorBootConfiguration with the arguments applied.
+ The Designated Initializer.
+ 
+ @param options the options to use.
+ @param environment the boot environment to use.
+ @return a FBSimulatorBootConfiguration instance.
  */
-- (instancetype)withOptions:(FBSimulatorBootOptions)options;
-
-#pragma mark Environment
-
-/**
- Updates the boot configuration with a new boot environment.
-
- @param environment the new boot environment.
- @return a new FBSimulatorBootConfiguration with the arguments applied.
- */
-- (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment;
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment;
 
 @end
 

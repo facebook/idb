@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a future that resolves with the exit code.
  */
-+ (FBFuture<NSNumber *> *)ensureProcess:(id<FBLaunchedProcess>)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(nullable id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<NSNumber *> *)ensureProcess:(FBProcess *)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(nullable id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Describe the exit code, if an error.

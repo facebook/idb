@@ -341,12 +341,17 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   FBMutableFuture *started = FBMutableFuture.future;
 
-  [self onQueue:queue pop:^(id contextValue){
-    FBMutableFuture<NSNull *> *completed = FBMutableFuture.future;
-    id mappedValue = enter(contextValue, completed);
-    [started resolveWithResult:mappedValue];
-    return completed;
-  }];
+  [[self
+    onQueue:queue pop:^(id contextValue){
+      FBMutableFuture<NSNull *> *completed = FBMutableFuture.future;
+      id mappedValue = enter(contextValue, completed);
+      [started resolveWithResult:mappedValue];
+      return completed;
+    }]
+    onQueue:queue handleError:^(NSError *error) {
+      [started resolveWithError:error];
+      return [FBFuture futureWithError:error];
+    }];
 
   return started;
 }
@@ -444,7 +449,18 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return future;
 }
 
-+ (FBFuture<NSNumber *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen
+{
+  return [self onQueue:queue resolveOrFailWhen:^FBFutureLoopState(NSError **errorOut) {
+    if (resolveWhen()){
+      return FBFutureLoopFinished;
+    } else {
+      return FBFutureLoopContinue;
+    }
+  }];
+}
+
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveOrFailWhen:(FBFutureLoopState (^)(NSError ** errorOut))resolveOrFailWhen
 {
   FBMutableFuture *future = FBMutableFuture.future;
 
@@ -454,14 +470,29 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
     dispatch_source_set_timer(timer, FBCreateDispatchTimeFromDuration(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
     dispatch_source_set_event_handler(timer, ^{
+      
+      
       if (future.state != FBFutureStateRunning) {
         dispatch_cancel(timer);
-      } else if (resolveWhen()) {
-        dispatch_cancel(timer);
-        [future resolveWithResult:@YES];
+      } else {
+        NSError *error = nil;
+        switch(resolveOrFailWhen(&error)){
+           case FBFutureLoopContinue:
+            //Continue running
+            break;
+           case FBFutureLoopFailed:
+            dispatch_cancel(timer);
+            NSCAssert(error != nil, @"Expected error to be set when returning FBFutureLoopFailed");
+            [future resolveWithError:error];
+            break;
+          case FBFutureLoopFinished:
+            dispatch_cancel(timer);
+            NSCAssert(error == nil, @"Error must be set on nil when return FBFutureLoopFinished");
+            [future resolveWithResult:NSNull.null];
+            break;
+        }
       }
     });
-
     dispatch_resume(timer);
   });
 
@@ -684,17 +715,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   @synchronized (self) {
     self.resolvedCancellation = [FBFuture resolveCancellationResponders:cancelResponders forOriginalName:self.name];
     return self.resolvedCancellation;
-  }
-}
-
-- (instancetype)shieldCancellation
-{
-  @synchronized (self) {
-    if (self.state != FBFutureStateRunning) {
-      return self;
-    }
-    [self.cancelResponders removeAllObjects];
-    return self;
   }
 }
 

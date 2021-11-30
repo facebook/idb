@@ -72,11 +72,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)detachConsumer:(id<FBFramebufferConsumer>)consumer;
 
 /**
- An Array of all attached consumers
- */
-- (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers;
-
-/**
  Queries if the consumer is attached.
 
  @param consumer the consumer to use.

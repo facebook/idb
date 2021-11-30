@@ -65,7 +65,7 @@ class TestParser(TestCase):
             return_value=self.client_mock
         )
         self.client_manager_patch = patch(
-            "idb.cli.ClientManager", self.client_manager_mock
+            "idb.cli.GrpcClientManager", self.client_manager_mock
         )
         self.client_manager_patch.start()
         self.client_patch = patch("idb.cli.GrpcClient", self.client_mock)
@@ -150,7 +150,9 @@ class TestParser(TestCase):
         app_path = "testApp.app"
         compression = None
         await cli_main(cmd_input=["install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path, compression)
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path, make_debuggable=None, compression=compression
+        )
 
     async def test_install_with_bad_compression(self) -> None:
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
@@ -165,7 +167,9 @@ class TestParser(TestCase):
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
         await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
-        self.client_mock.install.assert_called_once_with(app_path, Compression.ZSTD)
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path, make_debuggable=None, compression=Compression.ZSTD
+        )
 
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()
@@ -186,7 +190,6 @@ class TestParser(TestCase):
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
             address=TCPAddress(host="thehost", port=123),
-            is_local=False,
             logger=ANY,
             use_tls=True,
         )
@@ -197,7 +200,6 @@ class TestParser(TestCase):
         self.client_mock.list_apps.assert_called_once()
         self.client_mock.build.assert_called_once_with(
             address=DomainSocketAddress(path="/foo/sock"),
-            is_local=False,
             logger=ANY,
             use_tls=False,
         )
@@ -241,21 +243,13 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.mkdir.assert_called_once_with(container=None, path=src)
 
-    async def test_bundled_file_mkdir_flag(self) -> None:
+    async def test_bundled_file_mkdir(self) -> None:
         self.client_mock.mkdir = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "mkdir", src, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.mkdir.assert_called_once_with(container=bundle_id, path=src)
-
-    async def test_bundled_file_mkdir_colon(self) -> None:
-        self.client_mock.mkdir = AsyncMock()
-        cmd_input = ["file", "mkdir", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.mkdir.assert_called_once_with(
-            container="com.bundle.id", path="path"
-        )
 
     async def test_rm(self) -> None:
         self.client_mock.rm = AsyncMock()
@@ -264,7 +258,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=None, paths=[src])
 
-    async def test_bundled_file_rmpath_flag(self) -> None:
+    async def test_bundled_file_rmpath(self) -> None:
         self.client_mock.rm = AsyncMock()
         src = "path"
         bundle_id = "com.bundle.id"
@@ -272,21 +266,13 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=[src])
 
-    async def test_bundled_file_rmpath_flag_multiple(self) -> None:
+    async def test_bundled_file_rmpath_multiple(self) -> None:
         self.client_mock.rm = AsyncMock()
         srcs = ["pathA", "pathB"]
         bundle_id = "com.bundle.id"
         cmd_input = ["file", "remove", srcs[0], srcs[1], "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.rm.assert_called_once_with(container=bundle_id, paths=srcs)
-
-    async def test_bundled_file_rmpath_colon(self) -> None:
-        self.client_mock.rm = AsyncMock()
-        cmd_input = ["file", "remove", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.rm.assert_called_once_with(
-            container="com.bundle.id", paths=["path"]
-        )
 
     async def test_list(self) -> None:
         self.client_mock.ls_single = AsyncMock(return_value=[])
@@ -295,7 +281,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.ls_single.assert_called_once_with(container=None, path=src)
 
-    async def test_bundled_file_list_flag(self) -> None:
+    async def test_bundled_file_list(self) -> None:
         self.client_mock.ls_single = AsyncMock(return_value=[])
         src = "path"
         bundle_id = "com.bundle.id"
@@ -303,14 +289,6 @@ class TestParser(TestCase):
         await cli_main(cmd_input=cmd_input)
         self.client_mock.ls_single.assert_called_once_with(
             container=bundle_id, path=src
-        )
-
-    async def test_bundled_file_list_colon(self) -> None:
-        self.client_mock.ls_single = AsyncMock(return_value=[])
-        cmd_input = ["file", "list", "com.bundle.id:path"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.ls_single.assert_called_once_with(
-            container="com.bundle.id", path="path"
         )
 
     async def test_file_move(self) -> None:
@@ -323,7 +301,7 @@ class TestParser(TestCase):
             container=None, src_paths=[src], dest_path=dst
         )
 
-    async def test_bundled_file_move_flag(self) -> None:
+    async def test_bundled_file_move(self) -> None:
         self.client_mock.mv = AsyncMock(return_value=[])
         src = "a"
         dst = "b"
@@ -334,7 +312,7 @@ class TestParser(TestCase):
             container=bundle_id, src_paths=[src], dest_path=dst
         )
 
-    async def test_bundled_file_move_flag_multiple(self) -> None:
+    async def test_bundled_file_move_multiple(self) -> None:
         self.client_mock.mv = AsyncMock(return_value=[])
         srcs = ["src1", "src2"]
         dst = "b"
@@ -345,15 +323,6 @@ class TestParser(TestCase):
             container=bundle_id, src_paths=srcs, dest_path=dst
         )
 
-    async def test_bundled_file_move_colon(self) -> None:
-        self.client_mock.mv = AsyncMock(return_value=[])
-        src = "a"
-        cmd_input = ["file", "move", src, "com.bundle.id:b"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.mv.assert_called_once_with(
-            container="com.bundle.id", src_paths=[src], dest_path="b"
-        )
-
     async def test_file_push(self) -> None:
         self.client_mock.push = AsyncMock()
         src = "Library/myFile.txt"
@@ -361,10 +330,13 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.push.assert_called_once_with(
-            container=None, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=None,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=None,
         )
 
-    async def test_bundled_file_push_single_flag(self) -> None:
+    async def test_bundled_file_push_single(self) -> None:
         self.client_mock.push = AsyncMock()
         bundle_id = "com.myapp"
         src = "Library/myFile.txt"
@@ -372,10 +344,36 @@ class TestParser(TestCase):
         cmd_input = ["file", "push", src, dst, "--bundle-id", bundle_id]
         await cli_main(cmd_input=cmd_input)
         self.client_mock.push.assert_called_once_with(
-            container=bundle_id, src_paths=[os.path.abspath(src)], dest_path=dst
+            container=bundle_id,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=None,
         )
 
-    async def test_bundled_file_push_multi_flag(self) -> None:
+    async def test_bundled_file_push_zstd(self) -> None:
+        self.client_mock.push = AsyncMock()
+        bundle_id = "com.myapp"
+        src = "Library/myFile.txt"
+        dst = "someOutputDir"
+        cmd_input = [
+            "--compression",
+            "ZSTD",
+            "file",
+            "push",
+            src,
+            dst,
+            "--bundle-id",
+            bundle_id,
+        ]
+        await cli_main(cmd_input=cmd_input)
+        self.client_mock.push.assert_called_once_with(
+            container=bundle_id,
+            src_paths=[os.path.abspath(src)],
+            dest_path=dst,
+            compression=Compression.ZSTD,
+        )
+
+    async def test_bundled_file_push_multi(self) -> None:
         self.client_mock.push = AsyncMock(return_value=[])
         bundle_id = "com.myapp"
         src1 = "Library/myFile.txt"
@@ -387,29 +385,7 @@ class TestParser(TestCase):
             container=bundle_id,
             src_paths=[os.path.abspath(path) for path in [src1, src2]],
             dest_path=dst,
-        )
-
-    async def test_bundled_file_push_single_colon(self) -> None:
-        self.client_mock.push = AsyncMock(return_value=[])
-        src = "Library/myFile.txt"
-        cmd_input = ["file", "push", src, "com.bundle.id:someOutputDir"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.push.assert_called_once_with(
-            container="com.bundle.id",
-            src_paths=[os.path.abspath(src)],
-            dest_path="someOutputDir",
-        )
-
-    async def test_bundled_file_push_multi_colon(self) -> None:
-        self.client_mock.push = AsyncMock(return_value=[])
-        src1 = "Library/myFile.txt"
-        src2 = "Library/myFile2.txt"
-        cmd_input = ["file", "push", src1, src2, "com.bundle.id:someOutputDir"]
-        await cli_main(cmd_input=cmd_input)
-        self.client_mock.push.assert_called_once_with(
-            container="com.bundle.id",
-            src_paths=[os.path.abspath(path) for path in [src1, src2]],
-            dest_path="someOutputDir",
+            compression=None,
         )
 
     async def test_file_pull(self) -> None:
@@ -453,7 +429,6 @@ class TestParser(TestCase):
         namespace = Namespace()
         namespace.companion_path = COMPANION_PATH
         namespace.companion = None
-        namespace.companion_local = False
         namespace.compression = None
         namespace.prune_dead_companion = True
         namespace.log_level = "WARNING"
@@ -476,6 +451,7 @@ class TestParser(TestCase):
         namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.coverage_format = "EXPORTED"
         namespace.log_directory_path = None
         namespace.wait_for_debugger = False
         namespace.install = False
@@ -559,7 +535,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.daemon_port = port
@@ -588,7 +563,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -607,7 +581,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -663,7 +636,6 @@ class TestParser(TestCase):
             namespace = Namespace()
             namespace.companion_path = COMPANION_PATH
             namespace.companion = None
-            namespace.companion_local = False
             namespace.compression = None
             namespace.prune_dead_companion = True
             namespace.log_level = "WARNING"
@@ -686,7 +658,6 @@ class TestParser(TestCase):
                 Namespace(
                     companion=None,
                     companion_path=COMPANION_PATH,
-                    companion_local=False,
                     compression=None,
                     prune_dead_companion=True,
                     log_level="WARNING",

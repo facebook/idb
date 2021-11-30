@@ -33,13 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Returns the list of running processes.
-
- @return a Dictionary, mapping process realAppName to pid.
- */
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningProcesses;
-
-/**
  Launches an application.
 
  @param configuration the app launch configuration.

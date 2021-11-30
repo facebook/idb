@@ -19,19 +19,13 @@
   static dispatch_once_t onceToken;
   static FBSimulatorBootConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    configuration = [self new];
+    configuration = [[FBSimulatorBootConfiguration alloc] initWithOptions:FBSimulatorBootOptionsVerifyUsable environment:@{}];
   });
   return configuration;
 }
 
-static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsVerifyUsable;
-
-- (instancetype)init
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment
 {
-  return [self initWithOptions:DefaultBootOptions environment:nil];
-}
-
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment{
   self = [super init];
   if (!self) {
     return nil;
@@ -75,20 +69,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsV
     [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]]
   ];
-}
-
-#pragma mark Options
-
-- (instancetype)withOptions:(FBSimulatorBootOptions)options
-{
-  return [[self.class alloc] initWithOptions:options environment:self.environment];
-}
-
-#pragma mark Environment
-
-- (instancetype)withBootEnvironment:(nullable NSDictionary<NSString *, NSString *> *)environment
-{
-  return [[self.class alloc] initWithOptions:self.options environment:environment];
 }
 
 #pragma mark Utility

@@ -12,6 +12,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ An enumeration representing the existing file containers.
+ */
+typedef NSString *FBFileContainerKind NS_STRING_ENUM;
+extern FBFileContainerKind const FBFileContainerKindApplication;
+extern FBFileContainerKind const FBFileContainerKindAuxillary;
+extern FBFileContainerKind const FBFileContainerKindCrashes;
+extern FBFileContainerKind const FBFileContainerKindDiskImages;
+extern FBFileContainerKind const FBFileContainerKindGroup;
+extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
+extern FBFileContainerKind const FBFileContainerKindMedia;
+extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
+extern FBFileContainerKind const FBFileContainerKindRoot;
+extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
+extern FBFileContainerKind const FBFileContainerKindWallpaper;
+
 @protocol FBDataConsumer;
 @protocol FBProvisioningProfileCommands;
 
@@ -97,6 +113,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return a File Container implementation.
  */
 + (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue;
+
+/**
+ A file container that relative to a path on the host.
+ 
+ @param basePath the base path to use.
+ @return a File Container implementation
+ */
++ (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath;
+
+/**
+ A file container that relative to a path on the host.
+ 
+ @param pathMapping the mapped base paths.
+ @return a File Container implementation
+ */
++ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
 
 @end
 

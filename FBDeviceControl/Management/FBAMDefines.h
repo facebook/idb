@@ -166,13 +166,13 @@ typedef struct {
   int (*RecoveryDeviceReboot)(AMRecoveryModeDeviceRef device);
 
   // Services
-  int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);
-  int (*SecureTransferPath)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*SecureInstallApplication)(int arg0, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*SecureInstallApplicationBundle)(AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*SecureUninstallApplication)(int arg0, AMDeviceRef device, CFStringRef arg2, int arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
-  int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
   int (*CreateHouseArrestService)(AMDeviceRef device, CFStringRef bundleID, void *_Nullable unused, AFCConnectionRef *connectionOut);
+  int (*LookupApplications)(AMDeviceRef device, CFDictionaryRef _Nullable options, CFDictionaryRef _Nonnull * _Nonnull attributesOut);
+  int (*SecureInstallApplication)(_Nullable AMDServiceConnectionRef connection, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
+  int (*SecureInstallApplicationBundle)(AMDeviceRef device, CFURLRef hostAppURL, CFDictionaryRef _Nullable options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
+  int (*SecureStartService)(AMDeviceRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, CFTypeRef *serviceOut);
+  int (*SecureTransferPath)(_Nullable AMDServiceConnectionRef connection, AMDeviceRef device, CFURLRef arg2, CFDictionaryRef arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
+  int (*SecureUninstallApplication)(_Nullable AMDServiceConnectionRef connection, AMDeviceRef device, CFStringRef arg2, int arg3, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
 
   // Developer Images
   int (*MountImage)(AMDeviceRef device, CFStringRef image, CFDictionaryRef options, _Nullable AMDeviceProgressCallback callback, void *_Nullable context);
@@ -206,6 +206,10 @@ typedef struct {
   // AppleMobileSync
   int (*AMSInitialize)(int arg0);
   int (*AMSEraseDevice)(CFStringRef udid, AMSEraseDeviceCallback callback, void *context);
+  
+  // USBMux
+  int (*GetConnectionID)(AMDeviceRef device);
+  int (*USBMuxConnectByPort)(int connectionID, int remotePort, int *socket);
 
   // Debugging
   void (*InitializeMobileDevice)(void);

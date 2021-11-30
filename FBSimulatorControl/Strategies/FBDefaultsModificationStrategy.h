@@ -38,24 +38,27 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Modifies the Apple Locale used by Applications
+ Modifies a preference used by Applications
  */
-@interface FBLocaleModificationStrategy : FBDefaultsModificationStrategy
+@interface FBPreferenceModificationStrategy : FBDefaultsModificationStrategy
 
 /**
- Sets the Locale, by Locale Identifier
+ Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
 
- @param localeIdentifier the locale identifier.
+ @param name preference name
+ @param value preference value
+ @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setLocaleWithIdentifier:(NSString *)localeIdentifier;
-
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
 /**
- Gets the Locale, by Locale Identifier
+ Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
 
- @return a Future that resolves with the current locale identifier.
+ @param name preference name
+ @param domain domain to search - optional
+ @return a Future that resolves with the current preference value
  */
-- (FBFuture<NSString *> *)getCurrentLocaleIdentifier;
+- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;
 
 @end
 

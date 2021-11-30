@@ -25,8 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)restorePrimaryDeviceState;
 
-+ (nullable NSString *)resolveDeviceUDID;
-
 @end
 
 NS_ASSUME_NONNULL_END

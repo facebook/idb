@@ -31,25 +31,23 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process;
 
 /**
- Finds the Service Name for a given Service Name.
- This will perform a substring match, so the first matching service will be returned.
+ Finds the Service Name and Process Identifier for all services matching the given search pattern.
 
- @param substring a Substring of the Service to fetch.
- @return A Future, wrapping a mapping of Service Name to Process Identifier.
+ @param regex a regular expression used to match.
+ @return A Future, wrapping a mapping of Service Names to Process Identifiers.
  */
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersForSubstring:(NSString *)substring;
+- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersMatching:(NSRegularExpression *)regex;
 
 /**
- Finds the Service Name for a given Service Name.
- This will perform a substring match, so the first matching service will be returned.
+ Finds the Service Name and Process Identifier for the first service matching the given search pattern.
 
- @param substring a Substring of the Service to fetch.
+ @param regex a Substring of the Service to fetch.
  @return A Future, wrapping a tuple of String Service Name & NSNumber Process Identifier.
  */
-- (FBFuture<NSArray<id> *> *)serviceNameAndProcessIdentifierForSubstring:(NSString *)substring;
+- (FBFuture<NSArray<id> *> *)firstServiceNameAndProcessIdentifierMatching:(NSRegularExpression *)regex;
 
 /**
- Consults the Simulator's launchctl to determine if the given process.
+ Consults the Simulator's launchctl to determine the existence of a given process.
 
  @param process the process to look for.
  @return A Future, YES if the process exists. NO otherwise.

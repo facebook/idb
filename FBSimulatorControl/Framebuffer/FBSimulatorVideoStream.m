@@ -18,6 +18,7 @@
 @protocol FBSimulatorVideoStreamFramePusher <NSObject>
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
+- (BOOL)tearDown:(NSError **)error;
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error;
 
 @end
@@ -32,14 +33,14 @@
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
 
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
 @end
@@ -89,14 +90,24 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
+- (BOOL)tearDown:(NSError **)error
+{
+  return YES;
+}
+
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
 {
   CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
   void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
   size_t size = CVPixelBufferGetDataSize(pixelBuffer);
-  NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
-  [self.consumer consumeData:data];
+  if ([self.consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
+    NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
+    [self.consumer consumeData:data];
+  } else {
+    NSData *data = [NSData dataWithBytes:baseAddress length:size];
+    [self.consumer consumeData:data];
+  }
 
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
@@ -107,7 +118,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -181,6 +192,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
+- (BOOL)tearDown:(NSError **)error
+{
+  if (self.compressionSession) {
+    VTCompressionSessionCompleteFrames(self.compressionSession, kCMTimeInvalid);
+    VTCompressionSessionInvalidate(self.compressionSession);
+    self.compressionSession = nil;
+  }
+  return YES;
+}
+
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
 {
   VTCompressionSessionRef compressionSession = self.compressionSession;
@@ -218,7 +239,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @interface FBSimulatorVideoStream_Eager : FBSimulatorVideoStream
 
 @property (nonatomic, assign, readonly) NSUInteger framesPerSecond;
-@property (nonatomic, strong, readwrite) FBDispatchSourceNotifier *timer;
+@property (nonatomic, strong, readwrite) NSThread *framePusherThread;
 
 - (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger;
 
@@ -237,7 +258,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
 @property (nonatomic, assign, readwrite) NSUInteger frameNumber;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer, FBDataConsumerStackConsuming> consumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBSimulatorVideoStreamFramePusher> framePusher;
 
 - (void)pushFrame;
@@ -298,7 +319,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer
+- (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
 {
   return [[FBFuture
     onQueue:self.writeQueue resolve:^ FBFuture<NSNull *> * {
@@ -333,7 +354,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
           describe:@"Cannot stop streaming, no consumer attached"]
           failFuture];
       }
-      if (![self.framebuffer.attachedConsumers containsObject:self]) {
+      if (![self.framebuffer isConsumerAttached:self]) {
         return [[FBSimulatorError
           describe:@"Cannot stop streaming, is not attached to a surface"]
           failFuture];
@@ -341,6 +362,14 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       self.consumer = nil;
       [self.framebuffer detachConsumer:self];
       [consumer consumeEndOfFile];
+      if (self.framePusher) {
+        NSError *error = nil;
+        if (![self.framePusher tearDown:&error]) {
+          return [[FBSimulatorError
+                   describeFormat:@"Failed to tear down frame pusher: %@", error]
+                   failFuture];
+        }
+      }
       [self.stoppedFuture resolveWithResult:NSNull.null];
       return self.stoppedFuture;
     }];
@@ -399,7 +428,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       failBool:error];
   }
 
-  id<FBDataConsumer, FBDataConsumerStackConsuming> consumer = self.consumer;
+  id<FBDataConsumer> consumer = self.consumer;
   if (!consumer) {
     return [[FBSimulatorError
       describe:@"Cannot mount surface when there is no consumer"]
@@ -438,6 +467,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!pixelBufer || !consumer || !framePusher) {
     return;
   }
+  if (!checkConsumerBufferLimit(consumer, self.logger)) {
+    return;
+  }
+  
   NSUInteger frameNumber = self.frameNumber;
   if (frameNumber == 0) {
     self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
@@ -451,7 +484,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   self.frameNumber = frameNumber + 1;
 }
 
-+ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer, FBDataConsumerStackConsuming>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Get the base compression session properties, and add the class-cluster properties to them.
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
@@ -547,14 +580,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     return NO;
   }
 
-  if (self.timer) {
-    [self.timer terminate];
-    self.timer = nil;
-  }
-  uint64_t timeInterval = NSEC_PER_SEC / self.framesPerSecond;
-  self.timer = [FBDispatchSourceNotifier timerNotifierNotifierWithTimeInterval:timeInterval queue:self.writeQueue handler:^(FBDispatchSourceNotifier *_) {
-    [self pushFrame];
+  self.framePusherThread = [[NSThread alloc] initWithBlock:^{
+    [self runFramePushLoop];
   }];
+  [[NSThread currentThread] setThreadPriority:1.0]; //highest priority
+  self.framePusherThread.qualityOfService = NSQualityOfServiceUserInteractive;
+  [self.framePusherThread start];
 
   return YES;
 }
@@ -565,6 +596,40 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
   };
+}
+
+// nanosleep can be off up to 8x when invoked for very precise time intervals
+// to minimize the drift run a polling loop with shorter sleep interval
+// returning when total elapsed time reaches intended sleep interval
+- (void)sleep:(uint64_t)timeIntervalNano
+{
+  const uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  const long sleepInterval = (long)(timeIntervalNano/8);
+  const struct timespec sleepTime = {
+     .tv_sec = 0,
+     .tv_nsec = sleepInterval,
+  };
+  struct timespec remainingTime;
+  while (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) < startTime + timeIntervalNano) {
+    nanosleep(&sleepTime, &remainingTime);
+  }
+}
+
+- (void)runFramePushLoop
+{
+  const uint64_t frameInterval = NSEC_PER_SEC / self.framesPerSecond;
+  uint64_t lastPushedTime = 0;
+  while (self.stoppedFuture.state == FBFutureStateRunning) {
+    const uint64_t loopDuration = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - lastPushedTime;
+    if (lastPushedTime > 0 && loopDuration <= frameInterval) {
+      const uint64_t sleepInterval = frameInterval - loopDuration;
+      [self sleep:sleepInterval];
+    } else if (lastPushedTime > 0) {
+      [self.logger logFormat:@"Push duration exceeded budget"];
+    }
+    lastPushedTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    [self pushFrame];
+  }
 }
 
 @end

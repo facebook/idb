@@ -12,7 +12,7 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBTaskBuilder.h"
+#import "FBProcessBuilder.h"
 #import "FBXCodeConfiguration.h"
 
 @implementation FBBundleDescriptor
@@ -131,7 +131,7 @@
       }
       [arguments addObject:self.binary.path];
       [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
-      return [[[[FBTaskBuilder
+      return [[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
         withStdErrToLogger:logger]
         runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]

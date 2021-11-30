@@ -71,12 +71,10 @@
 
 - (void)device:(SimDevice *)device didChangeState:(FBiOSTargetState)state
 {
-  FBiOSTargetQuery *query = [FBiOSTargetQuery udid:device.UDID.UUIDString];
-  NSArray<FBSimulator *> *simulators = [self.set query:query];
-  if (simulators.count != 1) {
+  FBSimulator *simulator = [self.set simulatorWithUDID:device.UDID.UUIDString];
+  if (!simulator) {
     return;
   }
-  FBSimulator *simulator = simulators.firstObject;
   [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
 }
 

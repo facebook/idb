@@ -13,12 +13,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
-@class FBServiceConnectionClient;
 
 /**
  Abstract protocol for defining an interaction
  */
 @protocol FBAMDServiceConnectionTransfer <NSObject>
+
+#pragma mark Read/Write
 
 /**
  Synchronously send bytes on the connection.
@@ -57,10 +58,30 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
 
+#pragma mark Streams
+
+/**
+ Reads the stream on the given queue, until exhausted.
+
+ @param consumer the consumer to use.
+ @param queue the queue to consume on.
+ @return the FBFileReader instance, this can be used to start reading the reciever's connection.
+*/
+- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+
+/**
+ Constructs a data consumer that writes to the underlying connection.
+
+ @param queue the queue to perform writes on.
+ @return a consumer that writes to the reciever's connection.
+*/
+- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue;
+
 @end
 
 /**
  Wraps the AMDServiceConnection.
+ An AMDServiceConnection represents a connection to a "lockdown" service over USB.
  */
 @interface FBAMDServiceConnection : NSObject <FBAMDServiceConnectionTransfer>
 
@@ -70,13 +91,14 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
  Data transfer uses raw sockets.
 
- @param connection the connection to use.
+ @param name the name of the service connection.
+ @param connection the underlying AMDevice Service Connection to wrap.
  @param device the device to use.
  @param calls the calls to use.
  @param logger the logger to use.
  @return a FBAMDServiceConnection instance.
  */
-+ (instancetype)connectionWithConnection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark plist Messaging
 
@@ -124,17 +146,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable id)sendAndReceiveMessage:(id)message error:(NSError **)error;
 
-#pragma mark Streams
-
-/**
- Reads the stream on the given queue, until exhausted.
-
- @param consumer the consumer to use.
- @param queue the queue to consume on.
- @return a Future that resolves once consumption has finished.
-*/
-- (FBFuture<NSNull *> *)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
-
 #pragma mark Lifecycle
 
 /**
@@ -146,16 +157,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)invalidateWithError:(NSError **)error;
 
-/**
- Build a service connection client, returning it in an FBFutureContext.
-
- @param logger the logger to use.
- @param queue the queue to execute on
- @return an FBFutureContext wrapping the client.
- */
-- (FBFutureContext<FBServiceConnectionClient *> *)makeClientWithLogger:(id<FBControlCoreLogger>)logger  queue:(dispatch_queue_t)queue;
-
 #pragma mark Properties
+
+/**
+ The name of of the service.
+ */
+@property (nonatomic, copy, readonly) NSString *name;
 
 /**
  The Wrapped Connection.

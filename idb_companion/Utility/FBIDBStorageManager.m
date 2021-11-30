@@ -8,7 +8,6 @@
 #import "FBIDBStorageManager.h"
 
 #import "FBIDBError.h"
-#import "FBStorageUtils.h"
 #import "FBXCTestDescriptor.h"
 #import "FBXCTestRunFileReader.h"
 
@@ -20,7 +19,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 
 @implementation FBInstalledArtifact
 
-- (instancetype)initWithName:(NSString *)name uuid:(NSUUID *)uuid
+- (instancetype)initWithName:(NSString *)name uuid:(NSUUID *)uuid path:(NSURL *)path
 {
   self = [super init];
   if (!self) {
@@ -29,6 +28,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 
   _name = name;
   _uuid = uuid;
+  _path = path;
 
   return self;
 }
@@ -81,13 +81,30 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 
 - (nullable FBInstalledArtifact *)saveFile:(NSURL *)url error:(NSError **)error
 {
-  NSURL *destination = [self.basePath URLByAppendingPathComponent:url.lastPathComponent];
-  [self.logger logFormat:@"Persisting %@ to %@", url.lastPathComponent, destination];
-  if (![NSFileManager.defaultManager copyItemAtURL:url toURL:destination error:error]) {
+  return [self copyInto:self.basePath from:url error:error];
+}
+
+- (nullable FBInstalledArtifact *)saveFileInUniquePath:(NSURL *)url error:(NSError **)error
+{
+  NSURL *baseURL = self.basePath;
+  baseURL = [baseURL URLByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  if (![NSFileManager.defaultManager createDirectoryAtURL:baseURL withIntermediateDirectories:YES attributes:nil error:error]) {
+    return nil;
+  }
+  return [self copyInto:baseURL from:url error:error];
+}
+
+#pragma mark Private Methods
+
+- (nullable FBInstalledArtifact *)copyInto:(NSURL *)basePath from:(NSURL *)fromURL error:(NSError **)error
+{
+  NSURL *destination = [basePath URLByAppendingPathComponent:fromURL.lastPathComponent];
+  [self.logger logFormat:@"Persisting %@ to %@", fromURL.lastPathComponent, destination];
+  if (![NSFileManager.defaultManager copyItemAtURL:fromURL toURL:destination error:error]) {
     return nil;
   }
   [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
-  return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent uuid:nil];
+  return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent uuid:nil path:destination];
 }
 
 @end
@@ -151,7 +168,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   }
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
-  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid];
+  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid path:destinationBundlePath];
   if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned]) {
     return [FBFuture futureWithResult:artifact];
   }
@@ -538,7 +555,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
   }
 
-  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID] uuid:nil];
+  FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:[descriptor testBundleID] uuid:nil path:dir];
   return [FBFuture futureWithResult:artifact];
 }
 

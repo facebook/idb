@@ -98,7 +98,7 @@
 - (nullable IOSurface *)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
   // Don't attach the same consumer twice
-  NSAssert([self.attachedConsumers containsObject:consumer] == NO, @"Cannot re-attach the same consumer %@", consumer);
+  NSAssert(![self isConsumerAttached:consumer], @"Cannot re-attach the same consumer %@", consumer);
   NSUUID *consumerUUID = NSUUID.UUID;
 
   // Attempt to return the surface synchronously (if supported).
@@ -121,18 +121,14 @@
   [self unregisterConsumer:consumer uuid:uuid];
 }
 
-- (NSArray<id<FBFramebufferConsumer>> *)attachedConsumers
-{
-  NSMutableArray<id<FBFramebufferConsumer>> *consumers = NSMutableArray.array;
-  for (id<FBFramebufferConsumer> consumer in self.consumers.objectEnumerator) {
-    [consumers addObject:consumer];
-  }
-  return [consumers copy];
-}
-
 - (BOOL)isConsumerAttached:(id<FBFramebufferConsumer>)consumer
 {
-  return [[self attachedConsumers] containsObject:consumer];
+  for (id<FBFramebufferConsumer> existing_consumer in self.consumers.keyEnumerator) {
+    if (existing_consumer == consumer) {
+      return true;
+    }
+  }
+  return false;
 }
 
 #pragma mark Private

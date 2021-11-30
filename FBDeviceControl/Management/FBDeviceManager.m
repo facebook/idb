@@ -134,6 +134,11 @@
   return self.currentDeviceList;
 }
 
+- (id<FBiOSTargetInfo>)targetWithUDID:(NSString *)udid
+{
+  return [[self.allTargetInfos filteredArrayUsingPredicate:FBiOSTargetPredicateForUDID(udid)] firstObject];
+}
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"%@: %@", NSStringFromClass(self.class), [FBCollectionInformation oneLineDescriptionFromArray:self.allTargetInfos]];

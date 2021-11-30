@@ -30,14 +30,24 @@ class ShellCommand(ClientCommand):
     def name(self) -> str:
         return "shell"
 
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--no-prompt",
+            action="store_true",
+            default=False,
+            help="Don't print the input prompt. Useful for automation",
+        )
+        super().add_parser_arguments(parser)
+
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         # Setup
         root_command = none_throws(self.root_command)
+        prompt = "" if args.no_prompt else "idb> "
         # Prompt loop
         while True:
             sys.stdout.flush()
             sys.stderr.flush()
-            new_args = shlex.split(input("idb> "))
+            new_args = shlex.split(input(prompt))
             # Special shell commands
             if new_args == ["exit"]:
                 return

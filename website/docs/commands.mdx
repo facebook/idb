@@ -5,38 +5,52 @@ title: Commands
 
 ## iOS Target Manipulation
 
-### Specifying which iOS Target to run against
+All `idb` cli commands run against a specific iOS Target (Simulator or Device). Since a single host will almost certainly have more than one target attached, there needs to be a way of specifying which iOS Target to run the command against.
+
+The common denominator of all iOS Targets is the presence of a UDID. This is a identifier unique to each target. iOS Simulators have UDIDs based on [NSUUID](https://developer.apple.com/documentation/foundation/nsuuid), for Devices it depends on the phone model, but the [iPhone Wiki has an overview of the formats](https://www.theiphonewiki.com/wiki/UDID). As far as `idb` is concerned, a UDID is just a string.
+
+The `idb` cli is powered by the `idb_companion`, to perform all underlying behaviour. Since an `idb_companion` can be exposed over a domain socket or TCP socket, it's also possible to address a companion directly, instead of addressing via UDID.
+
+### Running commands against a specific iOS Target
 
 `idb` maintains local state of iOS Targets that it is aware of. This state can be modified or bypassed. The `idb` leans heavily on the `idb_companion` in order to process requests. As such all commands that manipulate iOS Targets requires a companion to service them.
 
-If you can pass the location of the companion in each call, then there is no need to modify this internal state. All `idb` commands can be prefixed with the `IDB_COMPANION` environment variable, which will directly address a given companion
+If you can pass the location of the companion in each call, then there is no need to modify this internal state. All `idb` commands can be prefixed with the `IDB_COMPANION` environment variable, which will directly address a given companion. If the companion location is known ahead of time (instead of just a UDID), this is the preferred way of addressing an iOS target:
 
 ```
 # Run a describe command against a companion running on the loopback interface
 # on TCP Port 10882
-IDB_COMPANION=localhost:10882 idb describe
+$ IDB_COMPANION=localhost:10882 idb describe
 # This can also be a path to a domain socket that the companion is running on
-IDB_COMPANION=/tmp/idb_companion_domain_sock idb describe
+$ IDB_COMPANION=/tmp/idb_companion_domain_sock idb describe
 ```
 
 Addressing via a UDID instead of the companion address is achieved by `connect`ing a companion, so that this knowledge persists over invocations:
 
 ```
+# Connecting via a TCP companion server
 idb connect COMPANION_HOST COMPANION_PORT
+SOME_UDID
+# Connecting via a unix domain socket
+idb connect COMPANION_DOMAIN_SOCKET_PATH
+SOME_UDID
+# SOME_UDID can then be used to address the connected target via --udid
 ```
 
-Alternatively, pass a UDID instead of an address to transparently start a companion for the provided UDID in the background:
+`idb` can also transparently start companions in the background, so the user does not need to be aware of how to start a companion or address it directly:
 
 ```
-idb connect TARGET_UDID
+# This will implictly start a companion in the background and keep it alive
+$ idb connect TARGET_UDID
+TARGET_UDID
 ```
 
-Manual companion creation can be entirely bypassed by providing a UDID to command invocations. This will transparently start a companion in the background if one is not yet created for the provided UDID. Further invocations for this UDID will use the same companion from the first invocation.
+Using `connect` is also optional; when a command is executed against a given UDID and a companion is *not running* for the given UDID, a companion will be started in the background in a similar way to `idb connect`:
 
 ```
-idb describe --udid TARGET_UDID
+# When TARGET_UDID does not have a companion running for it, running describe will run it in the background.
+$ idb describe --udid TARGET_UDID
 ```
-
 
 ### Disconnect a target
 
@@ -185,67 +199,7 @@ Please consult the [Test Execution section](test-execution) for understanding mo
 
 ## File commands
 
-The `idb file` commands allow for managing manipulating files on a target. File operations are applied to "containers", which allow manipulation of different iOS subsystems.
-
-| Switch | Description | Simulators | Devices |
-|--------|-------------|------------|---------|
-|`--bundle-id`|Apply file operations to the "Application Container" of the provided Bundle ID. This is otherwise known as the "Application Sandbox"| ✅ | ✅ (Only for Applications signed with a Developer Profile) |
-|`--media`|The container for Photos/Videos| ✅ | ✅ |
-|`--crashes`|The container for Crash/Diagnostic reports. This can be used to view and pull crash logs from a device | ❌ | ✅ |
-
-Not all commands will make sense for each container. For example, crash containers are read only. However, file operations provide a consisent abstraction on top of views of heirarchical data.
-
-### Copying files into a container
-
-```
-idb file push --bundle-id com.foo.bar src1.jpg src2.jpg dest_1
-```
-
-Copies one or more files from the host to the relative destination path within the container.
-
-
-### Copying files out of a container
-
-```
-idb file pull --bundle-id com.foo.bar src.txt dest.txt
-```
-
-Copies a single file from the container to the host.
-
-### Moving files within the container
-
-```
-idb file mv --bundle-id com.foo.bar src1.jpg src2.jpg dest_1
-```
-
-This will move two image files from the root of the container, to a destination subdirectory within the container.
-
-
-### Make a new directory
-
-```
-idb file mkdir --bundle-id com.foo.bar newdir
-```
-
-Creates a new folder within the apps data container.
-
-### Remove a path on a target
-
-```
-idb file rm PATH_A PATH_B --bundle-id BUNDLE_ID
-```
-
-Removes the specified paths within an apps data container.
-
-If a folder is specified to be deleted, all of its contents will be removed recursively.
-
-### List a path on a target
-
-```
-idb file ls --bundle-id com.foo.bar directory1 directory2
-```
-
-Returns a list of all the files present within one or more directories.
+The `idb file` commands allow for managing manipulating files on a target. File operations are applied to "containers", which allow manipulation of different iOS subsystems. File commands are documented within the [File Containers section](file-containers).
 
 ## Debug an app
 

@@ -5,8 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
+from idb.common.format import target_type_from_string
 from idb.common.types import Address, CompanionInfo, ScreenDimensions, TargetDescription
 from idb.grpc.idb_pb2 import (
     CompanionInfo as GrpcCompanionInfo,
@@ -27,7 +28,7 @@ def target_to_py(
             else None
         ),
         state=target.state,
-        target_type=target.target_type,
+        target_type=target_type_from_string(target.target_type),
         os_version=target.os_version,
         architecture=target.architecture,
         companion_info=companion,
@@ -39,14 +40,13 @@ def target_to_py(
     )
 
 
-def companion_to_py(
-    companion: GrpcCompanionInfo, address: Address, is_local: Optional[bool]
-) -> CompanionInfo:
+def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> CompanionInfo:
     metadata = companion.metadata
     return CompanionInfo(
         address=address,
         udid=companion.udid,
-        is_local=(is_local if is_local is not None else companion.is_local),
+        is_local=companion.is_local,
+        pid=None,
         metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
     )
 

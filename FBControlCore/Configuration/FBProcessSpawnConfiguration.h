@@ -11,8 +11,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBProcessIO;
-
 /**
  An enum representing how an process should be launched.
  */
@@ -25,7 +23,7 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
 /**
  A configuration for spawning an executable.
  */
-@interface FBProcessSpawnConfiguration : FBProcessLaunchConfiguration
+@interface FBProcessSpawnConfiguration <StdInType : id, StdOutType : id, StdErrType : id> : FBProcessLaunchConfiguration <StdInType, StdOutType, StdErrType>
 
 /**
  The designated initializer.
@@ -37,7 +35,7 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
  @param mode the launch mode to use.
  @return a new Configuration Object with the arguments applied.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io mode:(FBProcessSpawnMode)mode;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO<StdInType, StdOutType, StdErrType> *)io mode:(FBProcessSpawnMode)mode;
 
 /**
  The Binary Path of the process to Launch.

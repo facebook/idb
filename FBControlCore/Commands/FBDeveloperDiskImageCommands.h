@@ -16,41 +16,46 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBDeveloperDiskImageCommands <NSObject, FBiOSTargetCommand>
 
+#pragma mark Managing Disk Images
+
+/**
+ Obtains the disk images that have been mounted, by finding the local image that has been mounted.
+
+ @return a Future wrapping list of disk images..
+ */
+- (FBFuture<NSArray<FBDeveloperDiskImage *> *> *)mountedDiskImages;
+
+/**
+ Mounts the provided disk image.
+
+ @param diskImage the image to mount
+ @return a Future wrapping the mounted image.
+ */
+- (FBFuture<FBDeveloperDiskImage *> *)mountDiskImage:(FBDeveloperDiskImage *)diskImage;
+
+/**
+ Unmounts the provided disk image.
+
+ @param diskImage the image to unmount.
+ @return a Future when the image is unmounted.
+ */
+- (FBFuture<NSNull *> *)unmountDiskImage:(FBDeveloperDiskImage *)diskImage;
+
+/**
+ Returns all of the found, mountable disk images for the target.
+
+ @return the array of disk images.
+ */
+- (NSArray<FBDeveloperDiskImage *> *)mountableDiskImages;
+
+#pragma mark Developer Disk Images
+
 /**
  Mounts the developer disk image, that is most suitable for the target.
 
  @return a Future wrapping the mounted image.
  */
-- (FBFuture<FBDeveloperDiskImage *> *)ensureDiskImageIsMounted;
-
-/**
- Mounts the provided developer disk image.
-
- @param diskImage the image to mount
- @return a Future wrapping the mounted image.
- */
-- (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage;
-
-/**
- Returns the mounted disk image. Fails if no image is mounted.
-
- @return a Future wrapping the mounted image.
- */
-- (FBFuture<FBDeveloperDiskImage *> *)mountedDeveloperDiskImage;
-
-/**
- Unmounts a developer disk image. Fails if no image is mounted.
-
- @return a Future when the image is unmounted.
- */
-- (FBFuture<NSNull *> *)unmountDeveloperDiskImage;
-
-/**
- Returns all disk images.
-
- @return the array of disk images.
- */
-- (NSArray<FBDeveloperDiskImage *> *)availableDeveloperDiskImages;
+- (FBFuture<FBDeveloperDiskImage *> *)ensureDeveloperDiskImageIsMounted;
 
 @end
 

@@ -28,7 +28,7 @@
 @interface FBSimulatorVideo_SimCtl : FBSimulatorVideo
 
 @property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
-@property (nonatomic, strong, nullable, readwrite) FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
+@property (nonatomic, strong, nullable, readwrite) FBFuture<FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
 
 - (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath  logger:(id<FBControlCoreLogger>)logger;
 
@@ -138,13 +138,13 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
 - (FBFuture<NSNull *> *)stopRecording
 {
   // Fail early if there's no task running.
-  FBFuture<FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
+  FBFuture<FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
   if (!recordingStarted) {
     return [[FBSimulatorError
       describe:@"Cannot Stop Recording, there is no recording task started"]
       failFuture];
   }
-  FBTask<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *recordingTask = recordingStarted.result;
+  FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *recordingTask = recordingStarted.result;
   if (!recordingTask) {
     return [[FBSimulatorError
       describe:@"Cannot Stop Recording, the recording task hasn't started"]
@@ -202,13 +202,13 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
 
 - (FBFuture<NSDecimalNumber *> *)simctlVersionNumber
 {
-  return [[[[[[FBTaskBuilder
+  return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/what"
     arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
     withStdOutInMemoryAsString]
     withStdErrToDevNull]
     runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^(FBTask<NSNull *, NSString *, NSNull *> *task) {
+    onQueue:self.queue fmap:^(FBProcess<NSNull *, NSString *, NSNull *> *task) {
       NSString *output = task.stdOut;
       NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
       NSRegularExpression* regex = [NSRegularExpression

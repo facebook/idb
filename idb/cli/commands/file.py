@@ -4,73 +4,18 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import functools
 import json
 import os
 import sys
 import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
-from logging import Logger
-from typing import Any, List, NamedTuple, Optional, Tuple
+from typing import List
 
 import aiofiles
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, FileContainer, FileContainerType
-
-
-class BundleWithPath(NamedTuple):
-    bundle_id: Optional[str]
-    path: str
-
-    @classmethod
-    def parse(cls, argument: str, logger: Logger) -> "BundleWithPath":
-        split = argument.split(sep=":", maxsplit=1)
-        if len(split) == 1:
-            return BundleWithPath(bundle_id=None, path=split[0])
-        (bundle_id, path) = split
-        logger.error(
-            f"file commands of form {bundle_id}:{path} are deprecated, please use --bundle-id instead."
-        )
-        return BundleWithPath(bundle_id=bundle_id, path=path)
-
-
-def _extract_bundle_id(args: Namespace) -> FileContainer:
-    if args.bundle_id is not None:
-        return args.bundle_id
-    values = []
-    for value in vars(args).values():
-        if isinstance(value, List):
-            values.extend(value)
-        else:
-            values.append(value)
-    for value in values:
-        if not isinstance(value, BundleWithPath):
-            continue
-        bundle_id = value.bundle_id
-        if bundle_id is None:
-            continue
-        args.bundle_id = bundle_id
-    return args.bundle_id
-
-
-def _convert_args(args: Namespace) -> Tuple[Namespace, FileContainer]:
-    def convert_value(value: Any) -> Any:  # pyre-ignore
-        if isinstance(value, List):
-            return [convert_value(x) for x in value]
-        return value.path if isinstance(value, BundleWithPath) else value
-
-    bundle_id = _extract_bundle_id(args)
-    args = Namespace(
-        **{
-            key: convert_value(value)
-            for (key, value) in vars(args).items()
-            if key != "bundle_id"
-        }
-    )
-    file_container = bundle_id or args.container_type
-    return (args, file_container)
+from idb.common.types import Client, FileContainer, FileContainerType, Compression
 
 
 class FSCommand(ClientCommand):
@@ -78,10 +23,31 @@ class FSCommand(ClientCommand):
         group = parser.add_mutually_exclusive_group()
         group.add_argument(
             "--bundle-id",
-            help="Bundle ID of application. If not provided, the 'root' of the target will be used",
+            help="DEPRECATED: Use --application instead. Bundle ID of application. If not provided, the 'root' of the target will be used.",
             type=str,
             required=False,
             default=None,
+        )
+        group.add_argument(
+            "--application",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.APPLICATION,
+            help="Use the container of application containers. Applications containers are presented, by bundle-id in the root.",
+        )
+        group.add_argument(
+            "--auxillary",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.AUXILLARY,
+            help="Use the auxillary container. This is where idb will store intermediate files.",
+        )
+        group.add_argument(
+            "--group",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.GROUP,
+            help="Use the group containers. Group containers are shared directories between applications and are prefixed with reverse-domain identifiers (e.g 'group.com.apple.safari')",
         )
         group.add_argument(
             "--root",
@@ -103,6 +69,13 @@ class FSCommand(ClientCommand):
             dest="container_type",
             const=FileContainerType.CRASHES,
             help="Use the crashes container",
+        )
+        group.add_argument(
+            "--disk-images",
+            action="store_const",
+            dest="container_type",
+            const=FileContainerType.DISK_IMAGES,
+            help="Use the disk images",
         )
         group.add_argument(
             "--provisioning-profiles",
@@ -141,7 +114,14 @@ class FSCommand(ClientCommand):
         pass
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        (args, container) = _convert_args(args)
+        bundle_id = args.bundle_id
+        if bundle_id is not None:
+            container = bundle_id
+            self.logger.warn(
+                f"'--bundle-id {bundle_id}' is deprecated, please use --application prefixing '{bundle_id}' in the file path/s provided to this command."
+            )
+        else:
+            container = args.container_type
         return await self.run_with_container(
             container=container, args=args, client=client
         )
@@ -166,7 +146,7 @@ class FSListCommand(FSCommand):
             help="Source path",
             nargs="+",
             default="./",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument(
             "--force-new-output",
@@ -217,7 +197,7 @@ class FSMkdirCommand(FSCommand):
         parser.add_argument(
             "path",
             help="Path to directory to create",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
 
     async def run_with_container(
@@ -244,12 +224,12 @@ class FSMoveCommand(FSCommand):
             "src",
             help="Source paths relative to Container",
             nargs="+",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument(
             "dst",
             help="Destination path relative to Container",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -277,7 +257,7 @@ class FSRemoveCommand(FSCommand):
             "path",
             help="Path of item to remove (A directory will be recursively deleted)",
             nargs="+",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -306,17 +286,21 @@ class FSPushCommand(FSCommand):
                 "Directory relative to the data container of the application\n"
                 "to copy the files into. Will be created if non-existent"
             ),
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
     async def run_with_container(
         self, container: FileContainer, args: Namespace, client: Client
     ) -> None:
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
         return await client.push(
             container=container,
             src_paths=[os.path.abspath(path) for path in args.src_paths],
             dest_path=args.dest_path,
+            compression=compression,
         )
 
 
@@ -333,7 +317,7 @@ class FSPullCommand(FSCommand):
         parser.add_argument(
             "src",
             help="Relative Container source path",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         parser.add_argument("dst", help="Local destination path", type=str)
         super().add_parser_arguments(parser)
@@ -363,7 +347,7 @@ class FBSReadCommand(FSCommand):
         parser.add_argument(
             "src",
             help="Relatve Container source path",
-            type=functools.partial(BundleWithPath.parse, logger=self.logger),
+            type=str,
         )
         super().add_parser_arguments(parser)
 
@@ -402,6 +386,9 @@ class FSWriteCommand(FSCommand):
     ) -> None:
         data = sys.stdin.buffer.read()
         (destination_directory, destination_file_path) = os.path.split(args.dst)
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_file_path = os.path.join(
@@ -413,6 +400,7 @@ class FSWriteCommand(FSCommand):
                 src_paths=[temporary_file_path],
                 container=container,
                 dest_path=destination_directory,
+                compression=compression,
             )
 
 

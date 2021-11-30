@@ -63,9 +63,10 @@
 - (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer
 {
   return [[self.device
-    ensureDiskImageIsMounted]
-    onQueue:self.device.workQueue pushTeardown:^(id _) {
-      return [self.device startService:@"com.apple.debugserver"];
+    ensureDeveloperDiskImageIsMounted]
+    onQueue:self.device.workQueue pushTeardown:^(FBDeveloperDiskImage *diskImage) {
+      // Xcode 12 and after uses a different service name for the debugserver.
+      return [self.device startService:(diskImage.xcodeVersion.majorVersion >= 12 ? @"com.apple.debugserver.DVTSecureSocketProxy" : @"com.apple.debugserver")];
     }];
 }
 

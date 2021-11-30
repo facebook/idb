@@ -191,6 +191,7 @@
 - (BOOL)connectIDSRelayToDevice:(id)arg1 disconnectMonitorPort:(unsigned int *)arg2 error:(id *)arg3;
 - (id)setHardwareKeyboardEnabled:(_Bool)arg2 keyboardType:(unsigned char)arg2 error:(NSError **)arg3;
 - (BOOL)setLocationWithLatitude:(double)arg1 andLongitude:(double)arg2 error:(NSError **)arg3;
+- (void)sendPushNotificationForBundleID:(id)bundleID jsonPayload:(id)jsonPayload error:(NSError **)error;
 
 // In Xcode 12, this replaces SimulatorBridge related accessibility requests .
 

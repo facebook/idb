@@ -94,7 +94,7 @@
   return [self asyncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile queue:queue error:error];
 }
 
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
++ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
 {
   int fileDescriptor = [self fileDescriptorForPath:filePath error:error];
   if (!fileDescriptor) {
@@ -209,7 +209,7 @@
   if (!io) {
     return;
   }
-
+  
   dispatch_io_write(io, 0, data, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 

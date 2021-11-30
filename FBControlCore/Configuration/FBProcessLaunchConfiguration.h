@@ -7,14 +7,14 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
+#import <FBControlCore/FBProcessIO.h>
 
-@class FBProcessIO;
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  An abstract value object for launching both regular and applications processes.
  */
-@interface FBProcessLaunchConfiguration : NSObject
+@interface FBProcessLaunchConfiguration <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Process Output Configuration.
  */
-@property (nonatomic, strong, readonly) FBProcessIO *io;
+@property (nonatomic, strong, readonly) FBProcessIO<StdInType, StdOutType, StdErrType> *io;
 
 /**
  The Designated Initializer.
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param io the IO object.
  @return a new FBProcessLaunchConfiguration Instance.
  */
-- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io;
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO<StdInType, StdOutType, StdErrType> *)io;
 
 @end
 

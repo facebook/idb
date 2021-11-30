@@ -218,11 +218,11 @@
 			};
 			buildConfigurationList = AA017F3C1BD7776B00F45E9D /* Build configuration list for PBXProject "Shimulator" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
+				Base,
 			);
 			mainGroup = AA017F381BD7776B00F45E9D;
 			productRefGroup = AA017F421BD7776B00F45E9D /* Products */;

@@ -85,11 +85,15 @@
     [self.device.logger log:unsupportedArgumentsMessage];
   }
   dispatch_queue_t queue = self.device.asyncQueue;
-  return [[self.device
+  dispatch_queue_t readQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.device_log_consumer", DISPATCH_QUEUE_SERIAL);
+  return [[[self.device
     startService:@"com.apple.syslog_relay"]
-    onQueue:queue enter:^(FBAMDServiceConnection *connection, FBMutableFuture<NSNull *> *teardown) {
-      connection.readBufferSize = 1;
-      FBFuture<NSNull *> *readCompleted = [connection consume:consumer onQueue:dispatch_queue_create("com.facebook.fbdevicecontrol.device_log_consumer", DISPATCH_QUEUE_SERIAL)];
+    onQueue:queue pend:^(FBAMDServiceConnection *connection) {
+      id<FBFileReader> reader = [connection readFromConnectionWritingToConsumer:consumer onQueue:readQueue];
+      return [[reader startReading] mapReplace:reader];
+    }]
+    onQueue:queue enter:^(id<FBFileReader> reader, FBMutableFuture<NSNull *> *teardown) {
+      FBFuture<NSNull *> *readCompleted = [[reader finishedReading] mapReplace:NSNull.null];
       return [[FBDeviceLogOperation alloc] initWithConsumer:consumer readCompleted:readCompleted serviceCompleted:teardown];
     }];
 }

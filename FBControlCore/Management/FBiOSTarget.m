@@ -89,25 +89,6 @@ NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType target
   return [strings copy];
 }
 
-FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings)
-{
-  FBiOSTargetType targetType = FBiOSTargetTypeNone;
-  for (NSString *string in targetTypeStrings) {
-    NSString *targetTypeString = [string.lowercaseString stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-    if ([targetTypeString isEqualToString:@"simulator"]) {
-      targetType = targetType | FBiOSTargetTypeSimulator;
-    }
-    if ([targetTypeString isEqualToString:@"device"]) {
-      targetType = targetType | FBiOSTargetTypeDevice;
-    }
-    if ([targetTypeString isEqualToString:@"mac"]) {
-      targetType = targetType | FBiOSTargetTypeLocalMac;
-    }
-  }
-
-  return targetType;
-}
-
 NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
 {
   NSComparisonResult comparison = [@(left.targetType) compare:@(right.targetType)];
@@ -133,7 +114,7 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
   return [left.udid compare:right.udid];
 }
 
-extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
+NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
 {
   return [NSString stringWithFormat:
     @"%@ | %@ | %@ | %@ | %@ | %@",
@@ -144,4 +125,19 @@ extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
     target.osVersion,
     target.architecture
   ];
+}
+
+
+NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid)
+{
+  return FBiOSTargetPredicateForUDIDs(@[udid]);
+}
+
+NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids)
+{
+  NSSet<NSString *> *udidsSet = [NSSet setWithArray:udids];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+    return [udidsSet containsObject:candidate.udid];
+  }];
 }

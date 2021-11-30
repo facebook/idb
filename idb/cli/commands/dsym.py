@@ -21,11 +21,20 @@ class DsymInstallCommand(ClientCommand):
         return "install"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--bundle-id",
+            help="If specified will install debug symbols inside the app container",
+            type=str,
+            required=False,
+            default=None,
+        )
         parser.add_argument("dsym_path", help="Path to dSYM(s) to install", type=str)
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        async for install_response in client.install_dsym(args.dsym_path):
+        async for install_response in client.install_dsym(
+            args.dsym_path, args.bundle_id
+        ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
             elif args.json:

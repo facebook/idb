@@ -27,7 +27,7 @@ from idb.common.types import (
     TCPAddress,
 )
 from idb.grpc.client import Client as GrpcClient
-from idb.grpc.management import ClientManager
+from idb.grpc.management import ClientManager as GrpcClientManager
 from idb.utils.contextlib import asynccontextmanager
 
 
@@ -40,7 +40,7 @@ def _parse_address(value: str) -> Address:
 
 
 def _get_management_client(logger: logging.Logger, args: Namespace) -> ClientManager:
-    return ClientManager(
+    return GrpcClientManager(
         companion_path=args.companion_path,
         logger=logger,
         prune_dead_companion=args.prune_dead_companion,
@@ -55,13 +55,12 @@ async def _get_client(
     if companion is not None:
         async with GrpcClient.build(
             address=_parse_address(companion),
-            is_local=args.companion_local,
             logger=logger,
             use_tls=args.companion_tls,
         ) as client:
             yield client
     else:
-        async with ClientManager(
+        async with GrpcClientManager(
             logger=logger, companion_path=args.companion_path
         ).from_udid(udid=vars(args).get("udid")) as client:
             yield client

@@ -22,7 +22,7 @@ These tests can manipulate the UI within an Application, depend certain behaviou
 
 In Xcode 7, Apple deprecated `UIAutomation` and replaced it with UI Testing support inside the `XCTest` framework itself. This means that UI Tests have a similar execution model to Application Tests, by injecting into an Application Process.
 
-As part of the security model of running these tests, the Test Bundle cannot manipulate the User Interface un-aided. The bundle running inside the Application process co-ordinates with Xcode via a daemon process called `testmanagerd`. This mediated connection between the injected Application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/master/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
+As part of the security model of running these tests, the Test Bundle cannot manipulate the User Interface un-aided. The bundle running inside the Application process co-ordinates with Xcode via a daemon process called `testmanagerd`. This mediated connection between the injected Application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/main/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
 
 ## Rationale
 
@@ -44,7 +44,7 @@ In Xcode 8, Apple added the `test-without-building` action to `xcodebuild`'s com
 
 This is great news for people who want to 'build once, run everywhere'. However there are a number of problems with this:
 
-- Concurrency. In the case of running UI Tests, `xcodebuild` cannot run [tests at the same time on multiple iOS Simulators](https://github.com/facebook/FBSimulatorControl). This is problematic for those who wish to get more test throughput out of their test hosts. For this reason, the [`XCTestBootstrap` Framework was created](https://github.com/facebook/FBSimulatorControl/blob/master/XCTestBootstrap/README.md), upon which `fbxctest` depends.
+- Concurrency. In the case of running UI Tests, `xcodebuild` cannot run [tests at the same time on multiple iOS Simulators](https://github.com/facebook/FBSimulatorControl). This is problematic for those who wish to get more test throughput out of their test hosts. For this reason, the [`XCTestBootstrap` Framework was created](https://github.com/facebook/FBSimulatorControl/blob/main/XCTestBootstrap/README.md), upon which `fbxctest` depends.
 - A Simple UI. The supported interface of specifying a format for `xcodebuild` is to generate a `plist` for the `xcodebuild` CLI and pass it as an argument with the `-xctestrun` parameter. `fbxctest` is
 - Streaming Results. `xcodebuild` delivers it's results back to the caller of the process in a structured way by using the `-resultBundlePath`. The test results are reported to a bundle, which contains information about the status of all the tests that have been run, which requires re-parsing. This means that results must be extracted from this bundle at the end of a test run and cannot be read incrementally. As mentioned in [Structured Output], there are already a number of de-facto standards that integrate well with automation which can also work with streaming output.
 
@@ -52,8 +52,8 @@ This is great news for people who want to 'build once, run everywhere'. However 
 
 When Logic Tests are launched via the Simulator's `xctest` commandline, the `xctest` process doesn't have any dependencies on helper processes like `testmanagerd` for reporting results to `stdout`. As the the iPhone Simulator Platform runs on macOS without any emulation, the `xctest` commandline can be launched directly by setting the appropriate `DYLD` environment variables for ensuring that the executable links with the appropriate iPhone Simulator System Frameworks, instead of the root-level macOS Frameworks.
 
-Unlike [Xcode's Framework dependencies](https://gist.github.com/lawrencelomax/7c36f447c819502f12f67173132607e6), the `xctest` commandline is not codesigned. This means that a shim can be injected into the `xctest` process without having to defeat codesigning. By using a shim, the [internal reporting calls of `XCTest.framework` linked by the `xctest` commandline can be swizzled](https://github.com/facebook/xctool/blob/master/otest-shim/otest-shim/otest-shim.m), and structured data can instead be written to `stdout`.
+Unlike [Xcode's Framework dependencies](https://gist.github.com/lawrencelomax/7c36f447c819502f12f67173132607e6), the `xctest` commandline is not codesigned. This means that a shim can be injected into the `xctest` process without having to defeat codesigning. By using a shim, the [internal reporting calls of `XCTest.framework` linked by the `xctest` commandline can be swizzled](https://github.com/facebook/xctool/blob/main/otest-shim/otest-shim/otest-shim.m), and structured data can instead be written to `stdout`.
 
-With these two principles in mind, this is how [`xctool` runs `xctest` bundles without a booted Simulator](https://github.com/facebook/xctool/blob/master/xctool/xctool/OCUnitIOSLogicTestRunner.m) and gets structured output instead of the default output of `xctest`. `fbxctest` will use a similar strategy to run logic tests and get the same output.
+With these two principles in mind, this is how [`xctool` runs `xctest` bundles without a booted Simulator](https://github.com/facebook/xctool/blob/main/xctool/xctool/OCUnitIOSLogicTestRunner.m) and gets structured output instead of the default output of `xctest`. `fbxctest` will use a similar strategy to run logic tests and get the same output.
 
 This is not currently implemented.

@@ -11,9 +11,10 @@
 
 @synthesize architecture;
 @synthesize logger;
-@synthesize screenInfo;
-@synthesize runtimeRootDirectory;
 @synthesize platformRootDirectory;
+@synthesize runtimeRootDirectory;
+@synthesize screenInfo;
+@synthesize temporaryDirectory;
 
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {
@@ -57,12 +58,7 @@
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
 
-- (FBFuture<NSNumber *> *)isApplicationInstalledWithBundleID:(NSString *)bundleID
-{
-  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
-}
-
-- (FBFuture<id<FBLaunchedProcess>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }
@@ -163,11 +159,6 @@
 }
 
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
-{
-  return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
-}
-
-- (nonnull FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBBundleDescriptor *)application port:(in_port_t)port
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];
 }

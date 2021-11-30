@@ -37,6 +37,7 @@ extern FBXCTestType const FBXCTestTypeLogicTest;
  */
 extern FBXCTestType const FBXCTestTypeListTest;
 
+@class FBCodeCoverageConfiguration;
 @class FBXCTestDestination;
 @class FBXCTestShimConfiguration;
 
@@ -180,9 +181,9 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 @property (nonatomic, readonly) FBLogicTestMirrorLogs mirroring;
 
 /**
- The path to the coverage file
+ The configuration for code coverage collection
 */
-@property (nonatomic, nullable, copy, readonly) NSString *coveragePath;
+@property (nonatomic, nullable, retain, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
 
 /**
  The path to the test bundle binary
@@ -197,7 +198,7 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coveragePath:(nullable NSString *)coveragePath binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
 
 @end
 

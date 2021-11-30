@@ -37,42 +37,30 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBOSVersion *os;
 
 /**
- The Location to store auxillary files in.
- Auxillary files are stored per-simulator, so will be nested inside directories for each Simulator.
- If no path is provided, a default Auxillary directory inside the Simulator's data directory will be used.
- */
-@property (nonatomic, copy, nullable, readonly) NSString *auxillaryDirectory;
-
-/**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
-+ (instancetype)defaultConfiguration;
+@property (nonatomic, copy, readonly, class) FBSimulatorConfiguration *defaultConfiguration;
 
-#pragma mark - Devices
+#pragma mark Models
 
 /**
- A Configuration with the provided Device Name.
- Will assume a 'Default' Configuration of the provided Device Name if it is unknown to the Framework.
+ Returns a new configuration, applying the specified model.
+ 
+ @param model the model to apply
+ @return a new configuration
  */
-+ (instancetype)withDeviceModel:(FBDeviceModel)model;
 - (instancetype)withDeviceModel:(FBDeviceModel)model;
 
-#pragma mark - OS Versions
+#pragma mark OS Versions
 
 /**
- A Configuration with the provided OS Name.
- Will assert if the deviceName is not a valid Device Name.
+ Returns a new configuration, applying the specified os name..
+ 
+ @param osName the OS Name.
+ @return a new configuration.
  */
-+ (instancetype)withOSNamed:(FBOSVersionName)osName;
 - (instancetype)withOSNamed:(FBOSVersionName)osName;
-
-#pragma mark Auxillary Directory
-
-/**
- Updates the Auxillary Directory.
- */
-- (instancetype)withAuxillaryDirectory:(NSString *)auxillaryDirectory;
 
 @end
 
