@@ -16,6 +16,11 @@
 #import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
 
+FBFileContainerKind const FBFileContainerKindXctest = @"xctest";
+FBFileContainerKind const FBFileContainerKindDylib = @"dylib";
+FBFileContainerKind const FBFileContainerKindDsym = @"dsym";
+FBFileContainerKind const FBFileContainerKindFramework = @"framework";
+
 @interface FBIDBCommandExecutor ()
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
@@ -708,6 +713,18 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   }
   if ([containerType isEqualToString:FBFileContainerKindAuxillary]) {
     return [commands fileCommandsForAuxillary];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindXctest]) {
+    return [FBFutureContext futureContextWithResult:self.storageManager.xctest.asFileContainer];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindDylib]) {
+    return [FBFutureContext futureContextWithResult:self.storageManager.dylib.asFileContainer];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindDsym]) {
+    return [FBFutureContext futureContextWithResult:self.storageManager.dsym.asFileContainer];
+  }
+  if ([containerType isEqualToString:FBFileContainerKindFramework]) {
+    return [FBFutureContext futureContextWithResult:self.storageManager.framework.asFileContainer];
   }
   if (containerType == nil || containerType.length == 0) {
     // The Default for no, or null container for back-compat.

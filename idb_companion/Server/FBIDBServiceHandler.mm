@@ -494,6 +494,14 @@ static NSString *file_container(idb::FileContainer container)
       return FBFileContainerKindApplication;
     case idb::FileContainer_Kind_AUXILLARY:
       return FBFileContainerKindAuxillary;
+    case idb::FileContainer_Kind_XCTEST:
+      return FBFileContainerKindXctest;
+    case idb::FileContainer_Kind_DYLIB:
+      return FBFileContainerKindDylib;
+    case idb::FileContainer_Kind_DSYM:
+      return FBFileContainerKindDsym;
+    case idb::FileContainer_Kind_FRAMEWORK:
+      return FBFileContainerKindFramework;
     case idb::FileContainer_Kind_APPLICATION:
     default:
       return nsstring_from_c_string(container.bundle_id());

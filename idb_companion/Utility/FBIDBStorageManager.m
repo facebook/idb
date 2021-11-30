@@ -54,6 +54,23 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   return self;
 }
 
+#pragma mark Methods
+
+- (BOOL)clean:(NSError **)error
+{
+  for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.basePath includingPropertiesForKeys:nil options:0 error:nil]) {
+    if (![NSFileManager.defaultManager removeItemAtPath:url.path error:error]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
+- (id<FBFileContainer>)asFileContainer
+{
+  return [FBFileContainer fileContainerForBasePath:self.basePath.path];
+}
+
 #pragma mark Properties
 
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
@@ -63,16 +80,6 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
     replacementMapping[url.lastPathComponent] = url.path;
   }
   return replacementMapping;
-}
-
--(BOOL)clean:(NSError **)error
-{
-  for (NSURL *url in [NSFileManager.defaultManager contentsOfDirectoryAtURL:self.basePath includingPropertiesForKeys:nil options:0 error:nil]) {
-    if (![NSFileManager.defaultManager removeItemAtPath:url.path error:error]) {
-      return NO;
-    }
-  }
-  return YES;
 }
 
 @end

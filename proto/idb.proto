@@ -730,6 +730,10 @@ message FileContainer {
     GROUP_CONTAINER = 10;
     APPLICATION_CONTAINER = 11;
     AUXILLARY = 12;
+    XCTEST = 13;
+    DYLIB = 14;
+    DSYM = 15;
+    FRAMEWORK = 16;
   }
   Kind kind = 1;
   string bundle_id = 2;

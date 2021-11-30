@@ -24,6 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBXCTestReporter;
 
+extern FBFileContainerKind const FBFileContainerKindXctest;
+extern FBFileContainerKind const FBFileContainerKindDylib;
+extern FBFileContainerKind const FBFileContainerKindDsym;
+extern FBFileContainerKind const FBFileContainerKindFramework;
+
 @interface FBIDBCommandExecutor : NSObject
 
 #pragma mark Initializers
