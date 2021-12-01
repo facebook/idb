@@ -204,7 +204,7 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
   if (![connection send:requestData error:error]) {
     return InvalidResponsePayload;
   }
-  return [self recieveMessage:connection request:request error:error];
+  return [self receiveMessage:connection request:request error:error];
 }
 
 static const uint32 DTXMessageHeaderMagic = 0x1F3D5B79;
@@ -350,7 +350,7 @@ static const uint32 Int32ArgumentType = 3;
   return [data subdataWithRange:NSMakeRange(length, data.length - length)];
 }
 
-+ (ResponsePayload)recieveMessage:(FBAMDServiceConnection *)connection request:(RequestPayload)request error:(NSError **)error
++ (ResponsePayload)receiveMessage:(FBAMDServiceConnection *)connection request:(RequestPayload)request error:(NSError **)error
 {
   // This header will start the first iteration of the loop, then is overwritten on each iteration.
   DTXMessageHeader messageHeader = {

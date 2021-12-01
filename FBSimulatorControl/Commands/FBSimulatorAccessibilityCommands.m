@@ -40,7 +40,7 @@
 // - Additional methods are required in the delegation, depending on whether there needs to be additional transformation, as is in the case with translating co-ordinate systems.
 // - We smooth over the differences in the values returned in the legacy API by replicating the values returned by the SimulatorBridge, calling the appropriate methods on AXMacPlatformElement.
 // - To get an idea of what methods are usable, take a look as NSAccessibilityElement which is a supertype of AXMacPlatformElement.
-// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be recieved from all delegate callbacks.s
+// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be received from all delegate callbacks.s
 //
 // All of the above could be implemented without the delegation system. However, this requires dumping large enums and going much lower in the protocol level.
 // Instead having the higher level object, liberated from SimulatorKit (and therefore views) is the best compromise and the lightest touch.

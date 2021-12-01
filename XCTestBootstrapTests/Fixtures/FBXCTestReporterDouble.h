@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy) NSString *logDirectoryPath;
 
 /**
- Get events by name that were recieved from `-[FBXCTestReporter handleExternalEvent:]`
+ Get events by name that were received from `-[FBXCTestReporter handleExternalEvent:]`
  */
 - (NSArray<NSDictionary *> *)eventsWithName:(NSString *)name;
 

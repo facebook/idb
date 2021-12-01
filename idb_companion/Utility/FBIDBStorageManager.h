@@ -81,7 +81,7 @@ extern NSString *const IdbFrameworksFolder;
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *replacementMapping;
 
 /**
- Exposes the reciever as an FBFileContainer instance.
+ Exposes the receiver as an FBFileContainer instance.
  
  @return a FBFileContainer instance.
  */

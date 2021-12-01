@@ -365,13 +365,13 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
       NSData *data = [connection receive:1 error:&error];
       if (!data) {
         return [[FBDeviceControlError
-          describeFormat:@"Failed to recieve 1 byte after PidList %@", error]
+          describeFormat:@"Failed to receive 1 byte after PidList %@", error]
           failFuture];
       }
       NSDictionary<NSString *, id> *response = [connection receiveMessageWithError:&error];
       if (!response) {
         return [[FBDeviceControlError
-          describeFormat:@"Failed to recieve PidList response %@", error]
+          describeFormat:@"Failed to receive PidList response %@", error]
           failFuture];
       }
       NSString *status = response[@"Status"];

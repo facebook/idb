@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Consumes the provided binary data.
- If the reciever implements FBDataConsumerSync, then stack allocated data is permitted.
+ If the receiver implements FBDataConsumerSync, then stack allocated data is permitted.
  Otherwise, the underlying buffer must survive data being consumed on a separate thread.
 
  @param data the data to consume.
