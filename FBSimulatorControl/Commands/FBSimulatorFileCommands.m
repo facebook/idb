@@ -99,7 +99,8 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
 {
-  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.simulator.dataDirectory]];
+  NSString *mediaDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Media"];
+  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:mediaDirectory]];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
