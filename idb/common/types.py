@@ -444,6 +444,7 @@ class Client(ABC):
         foreground_if_running: bool = False,
         wait_for_debugger: bool = False,
         stop: Optional[asyncio.Event] = None,
+        pid_file: Optional[str] = None,
     ) -> None:
         pass
 

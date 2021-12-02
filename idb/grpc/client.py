@@ -954,6 +954,7 @@ class Client(ClientBase):
         foreground_if_running: bool = False,
         wait_for_debugger: bool = False,
         stop: Optional[asyncio.Event] = None,
+        pid_file: Optional[str] = None,
     ) -> None:
         async with self.stub.launch.open() as stream:
             request = LaunchRequest(
@@ -969,11 +970,12 @@ class Client(ClientBase):
             await stream.send_message(request)
             if stop:
                 await asyncio.gather(
-                    drain_launch_stream(stream), end_launch_stream(stream, stop)
+                    drain_launch_stream(stream, pid_file),
+                    end_launch_stream(stream, stop),
                 )
             else:
                 await stream.end()
-                await drain_launch_stream(stream)
+                await drain_launch_stream(stream, pid_file)
 
     @log_and_handle_exceptions
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:

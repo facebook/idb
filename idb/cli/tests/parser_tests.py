@@ -91,6 +91,25 @@ class TestParser(TestCase):
             foreground_if_running=False,
             wait_for_debugger=False,
             stop=None,
+            pid_file=None,
+        )
+
+    async def test_launch_with_pid_file(self) -> None:
+        bundle_id = "com.foo.app"
+        udid = "my udid"
+        pid_file = "/tmp/fifo-file"
+        self.client_mock.launch = AsyncMock(return_value=bundle_id)
+        await cli_main(
+            cmd_input=["launch", "--pid-file", pid_file, "--udid", udid, bundle_id]
+        )
+        self.client_mock.launch.assert_called_once_with(
+            bundle_id=bundle_id,
+            env={},
+            args=[],
+            foreground_if_running=False,
+            wait_for_debugger=False,
+            stop=None,
+            pid_file=pid_file,
         )
 
     async def test_create(self) -> None:

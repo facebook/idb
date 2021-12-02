@@ -52,6 +52,12 @@ class LaunchCommand(ClientCommand):
             help="Wait for the process to exit, tailing all output from the app",
             action="store_true",
         )
+        parser.add_argument(
+            "-p",
+            "--pid-file",
+            help="launched app pid will be written into the specified file",
+            type=str,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -62,4 +68,5 @@ class LaunchCommand(ClientCommand):
             foreground_if_running=args.foreground_if_running,
             wait_for_debugger=args.wait_for_debugger,
             stop=signal_handler_event("launch") if args.wait_for else None,
+            pid_file=args.pid_file,
         )
