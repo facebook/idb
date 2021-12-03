@@ -66,7 +66,7 @@ BOOL FBLoadXCTestIfNeeded()
 
   for(NSString *frameworkDir in fallbackFrameworkDirs) {
     NSString *possibleLocation = [frameworkDir stringByAppendingPathComponent:@"XCTest.framework/XCTest"];
-    if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:NO]) {
+    if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:nil]) {
       if (dlopen([possibleLocation cStringUsingEncoding:NSUTF8StringEncoding], RTLD_LAZY)) {
         FBDebugLog(@"[XCTestMainEntryPoint] Found and loaded XCTest from %@", possibleLocation);
         return YES;
