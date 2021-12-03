@@ -67,7 +67,12 @@
   if (self) {
     _architecture = FBArchitectureX86_64;
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+#ifdef DEBUG
+    // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there
     _auxillaryDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+#else
+    _auxillaryDirectory = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+#endif
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _udid = [FBMacDevice resolveDeviceUDID];
@@ -256,22 +261,22 @@
   NSFileManager *fm = [NSFileManager defaultManager];
   if (![fm fileExistsAtPath:FBMacDevice.applicationInstallDirectory]) {
     if (![fm createDirectoryAtPath:FBMacDevice.applicationInstallDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-      return [FBFuture futureWithResult:error];
+      return [FBFuture futureWithError:error];
     }
   }
 
   NSString *dest = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:path.lastPathComponent];
   if ([fm fileExistsAtPath:dest]) {
     if (![fm removeItemAtPath:dest error:&error]) {
-      return [FBFuture futureWithResult:error];
+      return [FBFuture futureWithError:error];
     }
   }
   if (![fm copyItemAtPath:path toPath:dest error:&error]) {
-    return [FBFuture futureWithResult:error];
+    return [FBFuture futureWithError:error];
   }
   FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:dest error:&error];
   if (error) {
-    return [FBFuture futureWithResult:error];
+    return [FBFuture futureWithError:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;
   return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown dataContainer:nil]];
@@ -287,7 +292,7 @@
   }
   NSError *error;
   if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
-    return [FBFuture futureWithResult:error];
+    return [FBFuture futureWithError:error];
   }
   [self.bundleIDToProductMap removeObjectForKey:bundleID];
   return [FBFuture futureWithResult:[NSNull null]];

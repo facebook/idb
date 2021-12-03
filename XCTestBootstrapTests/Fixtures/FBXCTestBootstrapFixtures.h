@@ -8,6 +8,8 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
+@class FBBundleDescriptor;
+
 /**
  Fetching Fixtures, causing test failures if they cannot be obtained.
  */
@@ -22,5 +24,10 @@
  An macOS Unit Test Bundle.
  */
 + (NSBundle *)macUnitTestBundleFixture;
+
+/**
+ An macOS dummy application
+ */
++ (FBBundleDescriptor *)macCommonApplicationWithError:(NSError **)error;
 
 @end
