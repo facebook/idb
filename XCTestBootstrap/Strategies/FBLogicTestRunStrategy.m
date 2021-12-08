@@ -225,21 +225,18 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   if (!waitFor) {
     return FBFuture.empty;
   }
-
   // Report from the current queue, but wait in a special queue.
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
-
-  return [FBFuture
-    onQueue:waitQueue resolve:^FBFuture<NSNull *> *(){
-      siginfo_t sig_info;
-      if (waitid(P_PID, (id_t)processIdentifier, &sig_info, WSTOPPED) != 0) {
-        return [[XCTestBootstrapError
-                  describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%s'", processIdentifier, strerror(errno)]
-                failFuture];
-      }
-      [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
-      return FBFuture.empty;
-    }];
+  
+  return [[FBProcessFetcher waitStopSignalForProcess:processIdentifier] onQueue:waitQueue chain:^FBFuture *(FBFuture *future) {
+    if (future.error){
+      return [[XCTestBootstrapError
+         describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]
+       failFuture];
+    }
+    [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
+    return FBFuture.empty;
+  }];
 }
 
 - (FBFuture<FBLogicTestRunOutputs *> *)buildOutputsForUUID:(NSUUID *)udid

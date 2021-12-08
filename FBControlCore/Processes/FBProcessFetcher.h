@@ -73,12 +73,47 @@ NS_ASSUME_NONNULL_BEGIN
 - (pid_t)processWithOpenFileTo:(const char *)filePath;
 
 /**
+ Verify if process is running
+
+ @param processIdentifier process to check.
+ @param error an error out for any error that occurs.
+ @return YES if process is Runnig and error is NOT set. False if process isn't running or error is set.
+ */
+- (BOOL) isProcessRunning:(pid_t)processIdentifier error:(NSError **)error;
+
+/**
+ Verify if process is stopped
+
+ @param processIdentifier process to check.
+ @param error an error out for any error that occurs.
+ @return YES if process is Stopped and error is NOT set. False if process isn't stopped or error is set.
+ */
+- (BOOL) isProcessStopped:(pid_t)processIdentifier error:(NSError **)error;
+
+/**
+ Verify if process has a debugger attached to it.
+
+ @param processIdentifier process to check.
+ @param error an error out for any error that occurs.
+ @return YES if process is has a debugger attached and error is NOT set.. False if process doesn't have a debugger attached  or error is set.
+ */
+- (BOOL) isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError **)error;
+
+/**
  Wait for a debugger to attach to the process and the process to be up running again.
 
  @param processIdentifier the Process Identifier of the process.
  @return A future waitting for the debugger and process up running again.
  */
 + (FBFuture<NSNull *> *) waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier;
+
+/**
+ Wait for process to receive SIGSTOP.
+ 
+ @param processIdentifier the Process Identifier of the process.
+ @return A future waitting for the process to be in SSTOP state.
+ */
++ (FBFuture<NSNull *> *) waitStopSignalForProcess:(pid_t) processIdentifier;
 @end
 
 NS_ASSUME_NONNULL_END
