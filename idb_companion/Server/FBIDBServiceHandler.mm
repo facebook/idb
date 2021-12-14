@@ -648,7 +648,7 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
     idb::InstalledAppInfo *appInfo = response->add_apps();
     appInfo->set_bundle_id(app.bundle.identifier.UTF8String ?: "");
     appInfo->set_name(app.bundle.name.UTF8String ?: "");
-    appInfo->set_install_type([FBInstalledApplication stringFromApplicationInstallType:app.installType].UTF8String);
+    appInfo->set_install_type(app.installTypeString.UTF8String);
     for (NSString *architecture in app.bundle.binary.architectures) {
       appInfo->add_architectures(architecture.UTF8String);
     }

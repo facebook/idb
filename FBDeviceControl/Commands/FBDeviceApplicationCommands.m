@@ -399,15 +399,13 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
   NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
   NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
-  FBApplicationInstallType installType = [FBInstalledApplication
-    installTypeFromString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")
-    signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")];
 
   FBBundleDescriptor *bundle = [[FBBundleDescriptor alloc] initWithName:bundleName identifier:bundleID path:path binary:nil];
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:installType
+    installTypeString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")
+    signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")
     dataContainer:nil];
 }
 
