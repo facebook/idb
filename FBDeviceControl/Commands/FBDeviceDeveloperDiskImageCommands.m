@@ -90,14 +90,14 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
 
 - (NSArray<FBDeveloperDiskImage *> *)mountableDiskImages
 {
-  return FBDeveloperDiskImage.allDiskImages;
+  return [FBDeveloperDiskImage allDiskImages: self.device.platformRootDirectory];
 }
 
 - (FBFuture<FBDeveloperDiskImage *> *)ensureDeveloperDiskImageIsMounted
 {
   NSError *error = nil;
   NSOperatingSystemVersion targetVersion = [FBOSVersion operatingSystemVersionFromName:self.device.productVersion];
-  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:targetVersion logger:self.device.logger error:&error];
+  FBDeveloperDiskImage *diskImage = [FBDeveloperDiskImage developerDiskImage:targetVersion logger:self.device.logger platformRootDirectory: self.device.platformRootDirectory error:&error];
   if (!diskImage) {
     return [FBFuture futureWithError:error];
   }
@@ -112,7 +112,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
   return [[self
     mountedImageEntries]
     onQueue:self.device.asyncQueue map:^(NSArray<NSDictionary<NSString *,id> *> *mountEntries) {
-      NSArray<FBDeveloperDiskImage *> *images = FBDeveloperDiskImage.allDiskImages;
+      NSArray<FBDeveloperDiskImage *> *images = [FBDeveloperDiskImage allDiskImages: self.device.platformRootDirectory];
       NSDictionary<NSData *, FBDeveloperDiskImage *> *imagesBySignature = [NSDictionary dictionaryWithObjects:images forKeys:[images valueForKey:@"signature"]];
       NSMutableDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountEntryToDiskImage = NSMutableDictionary.dictionary;
       for (NSDictionary<NSString *, id> *mountEntry in mountEntries) {
