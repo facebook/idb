@@ -25,13 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the path of the disk image.
  */
-+ (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger platformRootDirectory:(NSString*)platformRootDirectory error:(NSError **)error;
 
 /**
  Returns all of the Developer Disk Images that are available.
  These Disk Images are found by inspecting the appropriate directories within the current installed Xcode.
  */
-+ (NSArray<FBDeveloperDiskImage *> *)allDiskImages;
++ (NSArray<FBDeveloperDiskImage *> *)allDiskImages:(NSString*)platformRootDirectory;
 
 #pragma mark Properties
 

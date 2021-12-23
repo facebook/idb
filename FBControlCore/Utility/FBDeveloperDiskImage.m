@@ -58,18 +58,18 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Initializers
 
-+ (FBDeveloperDiskImage *)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBDeveloperDiskImage *)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(id<FBControlCoreLogger>)logger platformRootDirectory:(NSString*)platformRootDirectory error:(NSError **)error
 {
-  NSArray<FBDeveloperDiskImage *> *images = FBDeveloperDiskImage.allDiskImages;
+    NSArray<FBDeveloperDiskImage *> *images = [FBDeveloperDiskImage allDiskImages:platformRootDirectory];
   return [self bestImageForImages:images targetVersion:targetVersion logger:logger error:error];
 }
 
-+ (NSArray<FBDeveloperDiskImage *> *)allDiskImages
++ (NSArray<FBDeveloperDiskImage *> *)allDiskImages:(NSString*)platformRootDirectory
 {
   static dispatch_once_t onceToken;
   static NSArray<FBDeveloperDiskImage *> *images = nil;
   dispatch_once(&onceToken, ^{
-    images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    images = [self allDiskImagesFromSearchPath:[platformRootDirectory stringByAppendingPathComponent:@"DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
   });
   return images;
 }
@@ -91,6 +91,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 
 #pragma mark Public
 
+// TODO: This only yields symbols for iOS, not tvOS or other.
 + (NSString *)pathForDeveloperSymbols:(NSString *)buildVersion logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *searchPaths = @[

@@ -102,7 +102,22 @@
 
 - (NSString *)platformRootDirectory
 {
-  return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
+  switch (self.deviceType.family)
+  {
+      case FBControlCoreProductFamilyUnknown:
+      case FBControlCoreProductFamilyiPhone:
+      case FBControlCoreProductFamilyiPad:
+          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
+        
+      case FBControlCoreProductFamilyAppleTV:
+          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/AppleTVOS.platform"];
+          
+      case FBControlCoreProductFamilyAppleWatch:
+          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/WatchOS.platform"];
+          
+      case FBControlCoreProductFamilyMac:
+          return [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/MacOSX.platform"];
+  }
 }
 
 - (NSString *)runtimeRootDirectory
