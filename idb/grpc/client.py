@@ -10,6 +10,7 @@ import inspect
 import logging
 import os
 import shutil
+import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamWriter, StreamReader
@@ -33,6 +34,7 @@ from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
+from idb.common.format import json_format_debugger_info
 from idb.common.gzip import drain_gzip_decompress, gunzip
 from idb.common.hid import (
     button_press_to_events,
@@ -76,6 +78,7 @@ from idb.common.types import (
     TCPAddress,
     TestRunInfo,
     VideoFormat,
+    DebuggerInfo,
 )
 from idb.grpc.crash import (
     _to_crash_log,
@@ -1176,8 +1179,11 @@ class Client(ClientBase):
                 )
 
                 if wait_for_debugger and response.debugger.pid:
-                    print("Tests waiting for debugger. To debug run:")
-                    print(f"lldb -p {response.debugger.pid}")
+                    sys.stdout.buffer.write(
+                        json_format_debugger_info(response.debugger).encode()
+                    )
+                    sys.stdout.buffer.write(os.linesep.encode())
+                    sys.stdout.buffer.flush()
 
                 for result in make_results(response, log_parser):
                     if activities_output_path:
