@@ -15,7 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- Wraps the 'SimulatorBridge' Connection and Protocol
+ An interface to the "SimulatorBridge" binary, a remote process that runs inside the iOS Simulator.
+ This is needed for the SimulatorApp to implement some of it's functionality.
+ "SimulatorBridge" will wrap functionality that is present in SimulatorApp, but not present in CoreSimulator itself.
+ "SimulatorBridge" is distinct from "CoreSimulatorBridge", which is an internal implementation detail of the SimDevice API.
  */
 @interface FBSimulatorBridge : NSObject
 
