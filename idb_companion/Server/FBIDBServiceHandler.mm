@@ -502,6 +502,8 @@ static NSString *file_container(idb::FileContainer container)
       return FBFileContainerKindDsym;
     case idb::FileContainer_Kind_FRAMEWORK:
       return FBFileContainerKindFramework;
+    case idb::FileContainer_Kind_SYMBOLS:
+      return FBFileContainerKindSymbols;
     case idb::FileContainer_Kind_APPLICATION:
     default:
       return nsstring_from_c_string(container.bundle_id());

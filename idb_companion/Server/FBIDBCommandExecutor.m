@@ -711,6 +711,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   if ([containerType isEqualToString:FBFileContainerKindDiskImages]) {
     return [commands fileCommandsForDiskImages];
   }
+  if ([containerType isEqualToString:FBFileContainerKindSymbols]) {
+    return [commands fileCommandsForSymbols];
+  }
   if ([containerType isEqualToString:FBFileContainerKindAuxillary]) {
     return [commands fileCommandsForAuxillary];
   }

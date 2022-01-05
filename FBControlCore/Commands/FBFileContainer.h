@@ -26,6 +26,7 @@ extern FBFileContainerKind const FBFileContainerKindMedia;
 extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
 extern FBFileContainerKind const FBFileContainerKindRoot;
 extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
+extern FBFileContainerKind const FBFileContainerKindSymbols;
 extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 @protocol FBDataConsumer;

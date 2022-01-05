@@ -734,6 +734,7 @@ message FileContainer {
     DYLIB = 14;
     DSYM = 15;
     FRAMEWORK = 16;
+    SYMBOLS = 17;
   }
   Kind kind = 1;
   string bundle_id = 2;

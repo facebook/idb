@@ -98,6 +98,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages;
 
+/**
+ Returns a file container for manipulating device symbols.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols;
+
 @end
 
 NS_ASSUME_NONNULL_END

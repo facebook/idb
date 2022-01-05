@@ -138,6 +138,13 @@
     failFutureContext];
 }
 
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSString *> *)dataContainerForBundleID:(NSString *)bundleID

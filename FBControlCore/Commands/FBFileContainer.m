@@ -22,6 +22,7 @@ FBFileContainerKind const FBFileContainerKindMedia = @"media";
 FBFileContainerKind const FBFileContainerKindProvisioningProfiles = @"provisioning_profiles";
 FBFileContainerKind const FBFileContainerKindRoot = @"root";
 FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
+FBFileContainerKind const FBFileContainerKindSymbols = @"symbols";
 FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainer>

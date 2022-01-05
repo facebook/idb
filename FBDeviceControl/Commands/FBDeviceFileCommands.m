@@ -11,6 +11,7 @@
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceDebugSymbolsCommands.h"
 #import "FBDeviceProvisioningProfileCommands.h"
 #import "FBManagedConfigClient.h"
 #import "FBSpringboardServicesClient.h"
@@ -478,6 +479,76 @@ static NSString *const MountRootPath = @"mounted";
 
 @end
 
+@interface FBDeviceFileCommands_Symbols : NSObject <FBFileContainer>
+
+@property (nonatomic, strong, readonly) id<FBDeviceDebugSymbolsCommands> commands;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
+@implementation FBDeviceFileCommands_Symbols
+
+- (instancetype)initWithCommands:(id<FBDeviceDebugSymbolsCommands>)commands queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _commands = commands;
+  _queue = queue;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+{
+  return [self.commands pullSymbolFile:containerPath toDestinationPath:destinationPath];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)remove:(NSString *)path
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
+{
+  return [self.commands listSymbols];
+}
+
+@end
+
+
 @interface FBDeviceFileCommands ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
@@ -599,6 +670,11 @@ static NSString *const MountRootPath = @"mounted";
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
 {
   return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_DiskImages alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
+{
+  return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_Symbols alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
 }
 
 @end
