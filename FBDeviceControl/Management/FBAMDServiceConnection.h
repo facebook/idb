@@ -150,7 +150,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)invalidateWithError:(NSError **)error;
 
-
 #pragma mark AFC
 
 /**

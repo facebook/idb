@@ -290,43 +290,15 @@ static size_t SendBufferSize = 1024 * 4;
 
 - (NSData *)receive:(size_t)size error:(NSError **)error
 {
-  // Create a buffer that contains the data to return and a temp buffer for reading into.
+  // Create a buffer that contains the data to return and how to append it from the enumerator
   NSMutableData *data = NSMutableData.data;
-  void *buffer = alloca(ReadBufferSize);
-
-  // Start reading in a loop, until there's no more bytes to read.
-  size_t bytesRemaining = size;
-  while (bytesRemaining > 0) {
-    // Don't read more bytes than are remaining.
-    size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t result = [self receive:buffer size:maxReadBytes];
-    // End of file.
-    if (result == 0) {
-      break;
-    }
-    // A negative return indicates an error
-    if (result == -1) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failure in receive of %zu bytes: %s", maxReadBytes, strerror(errno)]
-        fail:error];
-    }
-    // Check an over-read to prevent unsigned integer overflow.
-    size_t readBytes = (size_t) result;
-    if (readBytes > bytesRemaining) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failure in receive: Read %zu bytes but only %zu bytes remaining", readBytes, bytesRemaining]
-        fail:error];
-    }
-    // Decrement the number of bytes to read and add it to the return buffer.
-    bytesRemaining -= readBytes;
-    [data appendBytes:buffer length:readBytes];
-  }
-
-  // Check that we've read the right number of bytes.
-  if (bytesRemaining != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to receive %zu bytes, %zu remaining to read", size, bytesRemaining]
-      fail:error];
+  void(^enumerator)(NSData *) = ^(NSData *chunk){
+    [data appendData:[chunk copy]];
+  };
+  // Start the byte recieve.
+  BOOL success = [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
+  if (!success) {
+    return nil;
   }
   return data;
 }
@@ -363,6 +335,49 @@ static size_t SendBufferSize = 1024 * 4;
 - (ssize_t)receive:(void *)buffer size:(size_t)size
 {
   return self.calls.ServiceConnectionReceive(self.connection, buffer, size);
+}
+
+- (BOOL)enumateReceiveOfLength:(size_t)size chunkSize:(size_t)chunkSize enumerator:(void(^)(NSData *))enumerator error:(NSError **)error
+{
+  // Create a buffer that contains the incremental enumerated data.
+  void *buffer = alloca(chunkSize);
+
+  // Start reading in a loop, until there's no more bytes to read.
+  size_t bytesRemaining = size;
+  while (bytesRemaining > 0) {
+    // Don't read more bytes than are remaining.
+    size_t maxReadBytes = MIN(chunkSize, bytesRemaining);
+    ssize_t result = [self receive:buffer size:maxReadBytes];
+    // End of file.
+    if (result == 0) {
+      break;
+    }
+    // A negative return indicates an error
+    if (result == -1) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive of %zu bytes: %s", maxReadBytes, strerror(errno)]
+        failBool:error];
+    }
+    // Check an over-read to prevent unsigned integer overflow.
+    size_t readBytes = (size_t) result;
+    if (readBytes > bytesRemaining) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive: Read %zu bytes but only %zu bytes remaining", readBytes, bytesRemaining]
+        failBool:error];
+    }
+    // Decrement the number of bytes to read and pass it to the callback
+    bytesRemaining -= readBytes;
+    NSData *readData = [[NSData alloc] initWithBytesNoCopy:buffer length:readBytes freeWhenDone:NO];
+    enumerator(readData);
+  }
+
+  // Check that we've read the right number of bytes.
+  if (bytesRemaining != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to receive %zu bytes, %zu remaining to read and eof reached.", size, bytesRemaining]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end
