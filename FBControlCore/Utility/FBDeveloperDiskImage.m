@@ -98,16 +98,40 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
   ];
   [logger logFormat:@"Attempting to find Symbols directory by build version %@", buildVersion];
+  NSMutableArray<NSString *> *paths = NSMutableArray.array;
   for (NSString *searchPath in searchPaths) {
-    for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
-      NSString *path = [searchPath stringByAppendingPathComponent:fileName];
-      if ([path containsString:buildVersion]) {
-        return [path stringByAppendingPathComponent:@"Symbols"];
+    NSError *innerError = nil;
+    NSArray<NSString *> *supportPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:&innerError];
+    if (!supportPaths) {
+      continue;
+    }
+    for (NSString *supportName in supportPaths) {
+      NSString *supportPath = [searchPath stringByAppendingPathComponent:supportName];
+      BOOL isDirectory = NO;
+      if (![NSFileManager.defaultManager fileExistsAtPath:supportPath isDirectory:&isDirectory]) {
+        continue;
       }
+      if (isDirectory == NO) {
+        continue;
+      }
+      NSString *symbolsPath = [supportPath stringByAppendingPathComponent:@"Symbols"];
+      if (![NSFileManager.defaultManager fileExistsAtPath:symbolsPath isDirectory:&isDirectory]) {
+        continue;
+      }
+      if (isDirectory == NO) {
+        continue;
+      }
+      [paths addObject:symbolsPath];
     }
   }
+  for (NSString *path in paths) {
+    if (![path containsString:buildVersion]) {
+      continue;
+    }
+    return path;
+  }
   return [[FBControlCoreError
-    describeFormat:@"Could not find the Symbols for %@", self]
+    describeFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]
     fail:error];
 }
 
