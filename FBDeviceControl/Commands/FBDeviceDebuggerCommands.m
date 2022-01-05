@@ -95,12 +95,18 @@
 
 - (FBFuture<NSString *> *)platformSelectCommand
 {
-  return [[FBFuture
-    resolveValue:^(NSError **error) {
-      return [FBDeveloperDiskImage pathForDeveloperSymbols:self.device.buildVersion logger:self.device.logger error:error];
-    }]
-    onQueue:self.device.workQueue map:^(NSString *path) {
-      return [NSString stringWithFormat:@"platform select remote-ios --sysroot '%@'", path];
+  FBDevice *device = self.device;
+  id<FBControlCoreLogger> logger = self.device.logger;
+  return [FBFuture
+    onQueue:self.device.asyncQueue resolveValue:^(NSError **error) {
+      NSError *innerError = nil;
+      NSString *developerSymbolsPath = [FBDeveloperDiskImage pathForDeveloperSymbols:device.buildVersion logger:logger error:&innerError];
+      NSString *platformSelectCommand = @"platform select remote-ios";
+      if (!developerSymbolsPath) {
+        [logger logFormat:@"Failed to get developer symbols for %@, no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: %@", device, innerError];
+        return platformSelectCommand;
+      }
+      return [platformSelectCommand stringByAppendingFormat:@" --sysroot '%@'", developerSymbolsPath];
     }];
 }
 
