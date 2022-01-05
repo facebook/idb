@@ -102,6 +102,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error;
 
 /**
+ Sends a uint32_t over the connection.
+
+ @param value the value to pull.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)sendUnsignedInt32:(uint32_t)value error:(NSError **)error;
+
+/**
  Synchronously receive bytes from the connection.
 
  @param size the number of bytes to read.
@@ -109,6 +118,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return the data.
  */
 - (NSData *)receive:(size_t)size error:(NSError **)error;
+
+/**
+ Synchronously receive bytes from the connection, writing to a file handle.
+
+ @param size the number of bytes to read.
+ @param fileHandle the file handle to write to.
+ @param error an error out for any error that occurs.
+ @return the data.
+ */
+- (BOOL)receive:(size_t)size toFile:(NSFileHandle *)fileHandle error:(NSError **)error;
 
 /**
  Synchronously receive bytes into a buffer.
@@ -119,6 +138,24 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if all bytes read, NO otherwise.
  */
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
+
+/**
+ Receives a uint32_t a from the connection.
+
+ @param valueOut the value to pull.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)receiveUnsignedInt32:(uint32_t *)valueOut error:(NSError **)error;
+
+/**
+ Receives a uint64_t a from the connection.
+
+ @param valueOut the value to pull.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)receiveUnsignedInt64:(uint64_t *)valueOut error:(NSError **)error;
 
 #pragma mark Streams
 

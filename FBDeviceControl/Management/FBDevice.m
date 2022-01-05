@@ -308,6 +308,7 @@
       FBDeviceApplicationCommands.class,
       FBDeviceCrashLogCommands.class,
       FBDeviceDebuggerCommands.class,
+      FBDeviceDebugSymbolsCommands.class,
       FBDeviceDeveloperDiskImageCommands.class,
       FBDeviceDiagnosticInformationCommands.class,
       FBDeviceEraseCommands.class,
@@ -320,8 +321,8 @@
       FBDeviceSocketForwardingCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
-      FBXCTraceRecordCommands.class,
       FBInstrumentsCommands.class,
+      FBXCTraceRecordCommands.class,
     ];
   });
   return commandClasses;

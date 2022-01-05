@@ -288,6 +288,12 @@ static size_t SendBufferSize = 1024 * 4;
   return YES;
 }
 
+- (BOOL)sendUnsignedInt32:(uint32_t)value error:(NSError **)error
+{
+  NSData *data = [[NSData alloc] initWithBytes:&value length:sizeof(uint32_t)];
+  return [self send:data error:error];
+}
+
 - (NSData *)receive:(size_t)size error:(NSError **)error
 {
   // Create a buffer that contains the data to return and how to append it from the enumerator
@@ -303,6 +309,14 @@ static size_t SendBufferSize = 1024 * 4;
   return data;
 }
 
+- (BOOL)receive:(size_t)size toFile:(NSFileHandle *)fileHandle error:(NSError **)error
+{
+  void(^enumerator)(NSData *) = ^(NSData *chunk){
+    [fileHandle writeData:chunk];
+  };
+  return [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
+}
+
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
 {
   NSData *data = [self receive:size error:error];
@@ -311,6 +325,16 @@ static size_t SendBufferSize = 1024 * 4;
   }
   memcpy(destination, data.bytes, data.length);
   return YES;
+}
+
+- (BOOL)receiveUnsignedInt32:(uint32_t *)valueOut error:(NSError **)error
+{
+  return [self receive:valueOut ofSize:sizeof(uint32_t) error:error];
+}
+
+- (BOOL)receiveUnsignedInt64:(uint64_t *)valueOut error:(NSError **)error
+{
+  return [self receive:valueOut ofSize:sizeof(uint64_t) error:error];
 }
 
 - (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
