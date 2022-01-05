@@ -291,7 +291,7 @@ class TargetEraseCommand(UDIDTargetedCompanionCommand):
 class TargetCloneCommand(UDIDTargetedCompanionCommand):
     @property
     def description(self) -> str:
-        return "Erases the simulator (only works on mac)"
+        return "Clones the simulator (only works on mac)"
 
     @property
     def name(self) -> str:
