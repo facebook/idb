@@ -43,4 +43,6 @@ def container_to_grpc(container: FileContainer) -> GrpcFileContainer:
         return GrpcFileContainer(kind=GrpcFileContainer.DSYM)
     if container == FileContainerType.FRAMEWORK:
         return GrpcFileContainer(kind=GrpcFileContainer.FRAMEWORK)
+    if container == FileContainerType.SYMBOLS:
+        return GrpcFileContainer(kind=GrpcFileContainer.SYMBOLS)
     return GrpcFileContainer(kind=GrpcFileContainer.NONE)

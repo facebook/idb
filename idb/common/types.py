@@ -336,6 +336,7 @@ class FileContainerType(Enum):
     PROVISIONING_PROFILES = "provisioning_profiles"
     ROOT = "root"
     SPRINGBOARD_ICONS = "springboard_icons"
+    SYMBOLS = "symbols"
     WALLPAPER = "wallpaper"
     XCTEST = "xctest"
 

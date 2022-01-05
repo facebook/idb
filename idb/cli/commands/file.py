@@ -81,6 +81,10 @@ class FSCommand(ClientCommand):
                     FileContainerType.FRAMEWORK,
                     "Use the container of installed frameworks",
                 ),
+                (
+                    FileContainerType.SYMBOLS,
+                    "Use the container of target-provided symbols/dyld cache",
+                ),
             ],
         )
         super().add_parser_arguments(parser)
