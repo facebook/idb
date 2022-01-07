@@ -12,13 +12,20 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebugServer.h"
 
-// Much of the implementation here comes from:
-// - DTDeviceKitBase which provides implementations of functions for calling AMDevice calls.
-// - IDEiOSSupportCore that is a a client of 'DTDeviceKitBase'
-// - DebuggerLLDB.ideplugin is the Xcode plugin responsible for executing the lldb commands via a C++ for launching an Application. This is linked directly by the Xcode App, but can use a remote interface.
-//  - This can be traced with dtrace, (e.g. `sudo dtrace -n 'objc$target:*:*HandleCommand*:entry { ustack();} ' -p XCODE_PID`)
-//  - Also effective tracing is to see the commands that lldb has downstream by setting in lldbinit `log enable -v -f /tmp/lldb.log lldb api`
-//  - DebuggerLLDB uses a combination of calls to the C++ LLDB API and executing command strings here.
+/*
+Much of the implementation here comes from:
+ - DTDeviceKitBase which provides implementations of functions for calling AMDevice calls. This is used to establish the 'debugserver' socket, which is then consumed by lldb itself.
+ - DVTFoundation calls out to the DebuggerLLDB.ideplugin plugin, which provides implementations of lldb debugger clients.
+ - DebuggerLLDB.ideplugin is the plugin/framework responsible for calling the underlying debugger, there are different objc class implementations depending on what is being debugged.
+ - These implementations are backed by interfaces to the SBDebugger class (https://lldb.llvm.org/python_api/lldb.SBDebugger.html)
+ - 'LLDBRPCDebugger' is the class responsible for debugging over an RPC interface, this is used for debugging iOS Devices, since it is running against a remote debugserver on the iOS device, forwarded over a socket on the host. This is backed by the lldb_rpc:SBDebugger class within the lldb codebase.
+ - DebuggerLLDB uses a combination of calls to the C++ LLDB API and executing command strings here. The bulk of the implementation is in ` -[DBGLLDBLauncher _doRegularDebugWithTarget:usingDebugServer:errTargetString:outError:]`.
+ - It is possible to trace (using dtrace) the commands that Xcode runs to start a debug session, by observing the 'HandleCommand:' method on the Objc class that wraps SBDebugger.
+  - To trace the stacks of the command strings that are executed: `sudo dtrace -n 'objc$target:*:*HandleCommand*:entry { ustack(); }' -p XCODE_PID``
+  - To trace the command strings that are executed: `sudo dtrace -n 'objc$target:*:*HandleCommand*:entry { printf("HandleCommand = %s\n", copyinstr(arg2)); }' -p XCODE_PID``
+  - To trace stacks of all API calls: `sudo dtrace -n 'objc$target:LLDBRPCDebugger:*:entry { ustack(); }'  -p XCODE_PID`
+ - It is also possible to use lldb's internal logging to see the API calls that it is making. This is done by configuring lldb via adding a line in ~/.lldbinit (e.g `log enable -v -f /tmp/lldb.log lldb api`)
+ */
 
 @interface FBDeviceDebuggerCommands ()
 
