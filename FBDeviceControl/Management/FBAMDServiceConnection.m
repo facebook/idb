@@ -327,6 +327,26 @@ static size_t SendBufferSize = 1024 * 4;
   return YES;
 }
 
+- (NSData *)receiveUpTo:(size_t)size error:(NSError **)error
+{
+  // Create a buffer that contains the data
+  void *buffer = alloca(size);
+  // Read the underlying bytes.
+  ssize_t result = [self receive:buffer size:size];
+  // End of file.
+  if (result == 0) {
+    return NSData.data;
+  }
+  // A negative return indicates an error
+  if (result == -1) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failure in receive of up to %zu bytes: %s", size, strerror(errno)]
+      fail:error];
+  }
+  size_t readBytes = (size_t) result;
+  return [[NSData alloc] initWithBytes:buffer length:readBytes];
+}
+
 - (BOOL)receiveUnsignedInt32:(uint32_t *)valueOut error:(NSError **)error
 {
   return [self receive:valueOut ofSize:sizeof(uint32_t) error:error];

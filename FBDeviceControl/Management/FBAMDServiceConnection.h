@@ -112,12 +112,24 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Synchronously receive bytes from the connection.
+ This call will block until 'size' is met.
+ If a read fails before the 'size' is met, this call will fail.
 
  @param size the number of bytes to read.
  @param error an error out for any error that occurs.
  @return the data.
  */
 - (NSData *)receive:(size_t)size error:(NSError **)error;
+
+/**
+ Synchronously receive up to 'size' bytes in the connection
+ This call will return an empty NSData when end of file is reached.
+
+ @param size the number of bytes to read up to.
+ @param error an error out for any error that occurs.
+ @return the data.
+ */
+- (NSData *)receiveUpTo:(size_t)size error:(NSError **)error;
 
 /**
  Synchronously receive bytes from the connection, writing to a file handle.
