@@ -359,10 +359,13 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       failFuture];
   }
 
-  return [[self
+  return [[[self
     debugserver_prepare:bundleID]
     onQueue:self.target.workQueue fmap:^(FBBundleDescriptor *application) {
       return [commands launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
+    }]
+    onQueue:self.target.workQueue doOnResolved:^(id<FBDebugServer> debugServer) {
+      self.debugServer = debugServer;
     }];
 }
 

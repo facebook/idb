@@ -168,6 +168,7 @@ static size_t const ConnectionReadSizeLimit = 1024;
     [self.logger log:@"Client Disconnected"];
     self.twistedPair = nil;
   }];
+  [self.teardown resolveFromFuture:completed];
   self.twistedPair = twistedPair;
 }
 

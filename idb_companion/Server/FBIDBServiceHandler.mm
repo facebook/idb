@@ -1507,7 +1507,7 @@ Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::Serv
       return Status::OK;
     }
     case idb::DebugServerRequest::ControlCase::kStop: {
-      id<FBDebugServer> debugServer = [[_commandExecutor debugserver_status] block:&error];
+      id<FBDebugServer> debugServer = [[_commandExecutor debugserver_stop] block:&error];
       if (!debugServer) {
         return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
       }
