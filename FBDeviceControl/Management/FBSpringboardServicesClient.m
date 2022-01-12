@@ -95,7 +95,7 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     iconLayoutFromSourcePath:sourcePath toDestinationFile:destinationPath.lastPathComponent]
@@ -132,13 +132,13 @@ static NSString *const IconJSONFile = @"icons.json";
     failFuture];
 }
 
-- (FBFuture<IconLayoutType> *)iconLayoutFromSourcePath:(NSURL *)sourcePath toDestinationFile:(NSString *)filename
+- (FBFuture<IconLayoutType> *)iconLayoutFromSourcePath:(NSString *)sourcePath toDestinationFile:(NSString *)filename
 {
   return [FBFuture
     onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
       if ([filename isEqualToString:IconJSONFile]) {
         NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
         if (!data) {
           return [FBFuture futureWithError:error];
         }
@@ -150,7 +150,7 @@ static NSString *const IconJSONFile = @"icons.json";
       }
       if ([filename isEqualToString:IconPlistFile]) {
         NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
         if (!data) {
           return [FBFuture futureWithError:error];
         }

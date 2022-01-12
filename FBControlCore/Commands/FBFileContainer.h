@@ -40,13 +40,13 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  Copy a path from the host, to inside the container.
-
+ 
  @note Performs a recursive copy
  @param sourcePath The source path on the host. May be Files and/or Directories.
  @param destinationPath the destination path to copy to, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath;
 
 /**
  Copy a path from inside the container, to the host.

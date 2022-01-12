@@ -237,7 +237,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
   NSError *error = nil;
-  NSURL *pushedFile = [NSURL fileURLWithPath:FBControlCoreFixtures.photo0Path];
+  NSString *pushedFile = FBControlCoreFixtures.photo0Path;
   XCTAssertNotNil([[container copyFromHost:pushedFile toContainer:@"dir"] await:&error]);
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"some.txt", @"photo0.png"]];
   NSArray<NSString *> *actualFiles = [[container contentsOfDirectory:@"dir"] await:&error];
@@ -250,7 +250,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
   NSError *error = nil;
-  NSURL *pushedDirectory = [NSURL fileURLWithPath:FBControlCoreFixtures.photo0Path.stringByDeletingLastPathComponent];
+  NSString *pushedDirectory = FBControlCoreFixtures.photo0Path.stringByDeletingLastPathComponent;
   XCTAssertNotNil([[container copyFromHost:pushedDirectory toContainer:@"dir"] await:&error]);
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"some.txt", @"Resources"]];
   NSArray<NSString *> *actualFiles = [[container contentsOfDirectory:@"dir"] await:&error];
@@ -447,7 +447,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSURL *pushedFile = [NSURL fileURLWithPath:FBControlCoreFixtures.photo0Path];
+  NSString *pushedFile = FBControlCoreFixtures.photo0Path;
   XCTAssertNotNil([[container copyFromHost:pushedFile toContainer:@"bar/dir"] await:&error]);
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"in_dir.txt", @"photo0.png"]];
   NSArray<NSString *> *actualFiles = [[container contentsOfDirectory:@"bar/dir"] await:&error];
@@ -460,7 +460,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSURL *pushedDirectory = [NSURL fileURLWithPath:FBControlCoreFixtures.photo0Path.stringByDeletingLastPathComponent];
+  NSString *pushedDirectory = FBControlCoreFixtures.photo0Path.stringByDeletingLastPathComponent;
   XCTAssertNotNil([[container copyFromHost:pushedDirectory toContainer:@"bar/dir"] await:&error]);
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"in_dir.txt", @"Resources"]];
   NSArray<NSString *> *actualFiles = [[container contentsOfDirectory:@"bar/dir"] await:&error];

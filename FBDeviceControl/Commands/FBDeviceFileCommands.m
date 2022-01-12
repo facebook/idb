@@ -38,7 +38,7 @@
   return self;
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     BOOL success = [afc copyFromHost:sourcePath toContainerPath:destinationPath error:error];
@@ -185,12 +185,12 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
@@ -264,12 +264,12 @@
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
@@ -329,7 +329,7 @@ static NSString *const MountRootPath = @"mounted";
   return self;
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]

@@ -28,7 +28,7 @@
   BOOL success = [[[simulator
     fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
     onQueue:simulator.asyncQueue pop:^(id<FBFileContainer> container) {
-      return [container copyFromHost:[NSURL fileURLWithPath:fixturePath] toContainer:@"Documents"];
+      return [container copyFromHost:fixturePath toContainer:@"Documents"];
     }]
     await:&error] != nil;
   XCTAssertNil(error);

@@ -49,12 +49,12 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 #pragma mark FBFileContainer Implementation
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)path toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)path toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfURL:path options:0 error:&error];
+      NSData *data = [NSData dataWithContentsOfFile:path options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
@@ -134,7 +134,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 #pragma mark FBFileCommands
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     mappedPath:destinationPath]
@@ -143,7 +143,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
       NSString *destPath = [mappedPath stringByAppendingPathComponent:sourcePath.lastPathComponent];
       // Attempt to delete first to overwrite
       [self removeItemAtPath:destPath error:nil];
-      if (![self copyItemAtPath:sourcePath.path toPath:destPath error:&error]) {
+      if (![self copyItemAtPath:sourcePath toPath:destPath error:&error]) {
         return [[[FBControlCoreError
           describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destPath, error]
           causedBy:error]

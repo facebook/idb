@@ -86,13 +86,12 @@ static NSMutableDictionary *sEvents;
   */
   NSString *dir = [[NSUUID UUID] UUIDString];
   NSString *dir2 = [[NSUUID UUID] UUIDString];
-  NSString *pathStr = [NSTemporaryDirectory() stringByAppendingPathComponent:dir];
-  NSURL *path = [NSURL fileURLWithPath:pathStr];
+  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:dir];
   NSArray<NSString *> *expectedDirs = @[dir, [@[dir, dir2] componentsJoinedByString:@"/"]];
 
-  [[NSFileManager defaultManager] createDirectoryAtURL:[path URLByAppendingPathComponent:dir2 isDirectory:YES] withIntermediateDirectories:YES attributes:nil error:NULL];
-  [[NSData data] writeToURL:[path URLByAppendingPathComponent:@"file.empty"] atomically:YES];
-  [[NSData data] writeToURL:[path URLByAppendingPathComponent:[NSString pathWithComponents:@[dir2, @"file2.txt"]]] atomically:YES];
+  [NSFileManager.defaultManager createDirectoryAtPath:[path stringByAppendingPathComponent:dir2] withIntermediateDirectories:YES attributes:nil error:NULL];
+  [NSData.data writeToFile:[path stringByAppendingPathComponent:@"file.empty"] atomically:YES];
+  [NSData.data writeToFile:[path stringByAppendingPathComponent:[NSString pathWithComponents:@[dir2, @"file2.txt"]]] atomically:YES];
 
   NSSet<NSString *> *files = [NSSet setWithArray:@[
     [dir stringByAppendingFormat:@"/%@", @"file.empty"],
