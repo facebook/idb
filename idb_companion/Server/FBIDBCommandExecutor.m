@@ -903,9 +903,10 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     if (!subDirs) {
       return [FBFuture futureWithError:error];
     }
-    // TODO: support cases when more than one dSYM is included in the archive
     if ([subDirs count] != 1) {
-      return [FBFuture futureWithError:[FBControlCoreError errorForDescription:[NSString stringWithFormat:@"Expected only one dSYM directory: found: %tu", [subDirs count]]]];
+      // if more than one dSYM is found
+      // then we treat the parent dir as the dSYM directory
+      return [FBFuture futureWithResult:parentDir];
     }
     return [FBFuture futureWithResult:subDirs[0]];
   }];
