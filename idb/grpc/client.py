@@ -659,12 +659,15 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions
     async def install_dsym(
-        self, dsym: Bundle, bundle_id: Optional[str]
+        self,
+        dsym: Bundle,
+        bundle_id: Optional[str],
+        compression: Optional[Compression],
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
             destination=InstallRequest.DSYM,
-            compression=None,
+            compression=compression,
             make_debuggable=None,
             bundle_id=bundle_id,
         ):

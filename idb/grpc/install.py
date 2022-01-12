@@ -65,10 +65,10 @@ async def _generate_dylib_chunks(
 
 
 async def _generate_dsym_chunks(
-    path: str, logger: Logger
+    path: str, compression: Compression, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating chunks for {path}")
-    async for chunk in tar.generate_tar([path]):
+    async for chunk in tar.generate_tar([path], compression):
         yield InstallRequest(payload=Payload(data=chunk))
     logger.debug(f"Finished generating chunks {path}")
 
@@ -122,7 +122,9 @@ def generate_binary_chunks(
     elif destination == InstallRequest.DYLIB:
         return _generate_dylib_chunks(path=path, logger=logger)
     elif destination == InstallRequest.DSYM:
-        return _generate_dsym_chunks(path=path, logger=logger)
+        return _generate_dsym_chunks(
+            path=path, compression=compression or Compression.GZIP, logger=logger
+        )
     elif destination == InstallRequest.FRAMEWORK:
         return _generate_framework_chunks(path=path, logger=logger)
     raise GRPCError(
