@@ -51,20 +51,20 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 /**
  Copy a path from inside the container, to the host.
 
- @param containerPath the source path, relative to the root of the container. May be Files and/or Directories.
+ @param sourcePath the source path, relative to the root of the container. May be Files and/or Directories.
  @param destinationPath the destination path on the host.
  @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath;
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath;
 
 /**
- Tails a path from inside the container, to a consumer.
+ Tails the contents of a file path inside the container, to a data consumer.
  
- @param containerPath the source path to tail, relative to the root of the container. Must be a file
+ @param path the source path to tail, relative to the root of the container. Must be a file
  @param consumer the consumer to write to.
  @return a Future that resolves with a Future when the tailing has completed. The wrapped future can be cancelled to end the tailing operation.
  */
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer;
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Create a directory inside the container.

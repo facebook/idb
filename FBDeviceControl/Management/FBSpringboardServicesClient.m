@@ -57,9 +57,9 @@ static NSString *const IconJSONFile = @"icons.json";
   return [FBFuture futureWithResult:self.validFilenames];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
-  NSString *filename = containerPath.lastPathComponent;
+  NSString *filename = sourcePath.lastPathComponent;
   return [[FBFuture
     onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
       if (![self.validFilenames containsObject:filename]) {
@@ -104,7 +104,7 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]

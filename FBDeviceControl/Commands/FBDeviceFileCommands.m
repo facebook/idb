@@ -49,14 +49,14 @@
   }];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   NSString *destination = destinationPath;
   if ([FBDeviceFileContainer isDirectory:destinationPath]){
-    destination = [destinationPath stringByAppendingPathComponent:containerPath.lastPathComponent];
+    destination = [destinationPath stringByAppendingPathComponent:sourcePath.lastPathComponent];
   }
   return [[self
-    readFileFromPathInContainer:containerPath]
+    readFileFromPathInContainer:sourcePath]
     onQueue:self.queue fmap:^FBFuture<NSString *> *(NSData *fileData) {
      NSError *error;
      if (![fileData writeToFile:destination options:0 error:&error]) {
@@ -69,7 +69,7 @@
    }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -172,10 +172,10 @@
   return [FBFuture futureWithResult:@[FBWallpaperNameHomescreen, FBWallpaperNameLockscreen]];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[self.springboard
-    wallpaperImageDataForKind:containerPath.lastPathComponent]
+    wallpaperImageDataForKind:sourcePath.lastPathComponent]
     onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSData *data) {
       NSError *error = nil;
       if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
@@ -198,7 +198,7 @@
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -257,7 +257,7 @@
   return [self.managedConfig getProfileList];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
@@ -277,7 +277,7 @@
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -336,14 +336,14 @@ static NSString *const MountRootPath = @"mounted";
     failFuture];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -508,12 +508,12 @@ static NSString *const MountRootPath = @"mounted";
     failFuture];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
-  return [self.commands pullSymbolFile:containerPath toDestinationPath:destinationPath];
+  return [self.commands pullSymbolFile:sourcePath toDestinationPath:destinationPath];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]

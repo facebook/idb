@@ -62,14 +62,14 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
     }];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -153,10 +153,10 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
     }];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[self
-    mappedPath:containerPath]
+    mappedPath:sourcePath]
     onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSString *source) {
       BOOL srcIsDirecory = NO;
       if (![self.fileManager fileExistsAtPath:source isDirectory:&srcIsDirecory]) {
@@ -197,10 +197,10 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[[self
-    mappedPath:containerPath]
+    mappedPath:path]
     onQueue:self.queue fmap:^(NSString *fullSourcePath) {
       return [[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/tail"]
