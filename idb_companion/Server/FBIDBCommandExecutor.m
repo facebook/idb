@@ -124,9 +124,9 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [self installAndLinkDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkToApp:(nullable NSString *)bundleID
 {
-  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
+  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
 }
 
 #pragma mark Public Methods

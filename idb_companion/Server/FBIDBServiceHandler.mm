@@ -591,7 +591,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:dataStream linkToApp:bundleID];
+          return [_commandExecutor install_dsym_stream:dataStream compression:compression linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:dataStream name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -609,7 +609,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:download.input linkToApp:bundleID];
+          return [_commandExecutor install_dsym_stream:download.input compression:compression linkToApp:bundleID];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:download.input name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:

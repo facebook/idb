@@ -153,10 +153,11 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  Installs dSYM(s) from a zip stream.
 
  @param input the input to pipe.
+ @param compression the compression type to use
  @param bundleID if specified installed dsym will be linked into the app bundle container.
  @return A future that resolves with the directory containing the dSYM(s)
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input linkToApp:(nullable NSString *)bundleID;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkToApp:(nullable NSString *)bundleID;
 
 /**
  Takes a Screenshot
