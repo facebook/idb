@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTest/XCTestManager_IDEInterface-Protocol.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 @protocol FBXCTestReporter;
 

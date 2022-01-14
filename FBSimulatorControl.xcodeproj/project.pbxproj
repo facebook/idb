@@ -1321,7 +1321,6 @@
 		EE4F0DC01C91B85800608E89 /* DTXSharedMemoryTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSharedMemoryTransport.h; sourceTree = "<group>"; };
 		EE4F0DC11C91B85800608E89 /* DTXSocketTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSocketTransport.h; sourceTree = "<group>"; };
 		EE4F0DC21C91B85800608E89 /* DTXTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXTransport.h; sourceTree = "<group>"; };
-		EE4F0DD31C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
 		EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTestConfiguration.h; sourceTree = "<group>"; };
 		EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestDriverInterface-Protocol.h"; sourceTree = "<group>"; };
 		EE4F0DD61C91B85800608E89 /* XCTestManager_DaemonConnectionInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestManager_DaemonConnectionInterface-Protocol.h"; sourceTree = "<group>"; };
@@ -1829,7 +1828,7 @@
 				AAEB58F11E2CC6F7005BC408 /* SimulatorApp */,
 				AA791BA31C63668C00AE49EB /* SimulatorBridge */,
 				AA2DDC221C283F40000689C6 /* SimulatorKit */,
-				EE4F0DD21C91B85800608E89 /* XCTest */,
+				EE4F0DD21C91B85800608E89 /* XCTestPrivate */,
 			);
 			path = PrivateHeaders;
 			sourceTree = "<group>";
@@ -2528,13 +2527,12 @@
 			path = DTXConnectionServices;
 			sourceTree = "<group>";
 		};
-		EE4F0DD21C91B85800608E89 /* XCTest */ = {
+		EE4F0DD21C91B85800608E89 /* XCTestPrivate */ = {
 			isa = PBXGroup;
 			children = (
 				30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */,
 				30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */,
 				30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */,
-				EE4F0DD31C91B85800608E89 /* CDStructures.h */,
 				EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */,
 				EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */,
 				EE4F0DD61C91B85800608E89 /* XCTestManager_DaemonConnectionInterface-Protocol.h */,
@@ -2542,7 +2540,7 @@
 				EE4F0DD81C91B85800608E89 /* XCTestManager_ManagerInterface-Protocol.h */,
 				EE4F0DD91C91B85800608E89 /* XCTestManager_TestsInterface-Protocol.h */,
 			);
-			path = XCTest;
+			path = XCTestPrivate;
 			sourceTree = "<group>";
 		};
 		EE87FA3D2008C04C002716FE /* AXRuntime */ = {

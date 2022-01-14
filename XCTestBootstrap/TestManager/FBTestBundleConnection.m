@@ -7,9 +7,9 @@
 
 #import "FBTestBundleConnection.h"
 
-#import <XCTest/XCTestDriverInterface-Protocol.h>
-#import <XCTest/XCTestManager_DaemonConnectionInterface-Protocol.h>
-#import <XCTest/XCTestManager_IDEInterface-Protocol.h>
+#import <XCTestPrivate/XCTestDriverInterface-Protocol.h>
+#import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import <DTXConnectionServices/DTXConnection.h>
 #import <DTXConnectionServices/DTXProxyChannel.h>

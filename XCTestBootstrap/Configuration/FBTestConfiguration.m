@@ -9,10 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <XCTest/XCTestConfiguration.h>
-#import <XCTest/XCTTestIdentifier.h>
-#import <XCTest/XCTTestIdentifierSet.h>
-#import <XCTest/XCTTestIdentifierSetBuilder.h>
+#import <XCTestPrivate/XCTestConfiguration.h>
+#import <XCTestPrivate/XCTTestIdentifier.h>
+#import <XCTestPrivate/XCTTestIdentifierSet.h>
+#import <XCTestPrivate/XCTTestIdentifierSetBuilder.h>
 
 #import <objc/runtime.h>
 

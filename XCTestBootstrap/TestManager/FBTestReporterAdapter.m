@@ -7,8 +7,8 @@
 
 #import "FBTestReporterAdapter.h"
 
-#import <XCTest/XCTestManager_IDEInterface-Protocol.h>
-#import <XCTest/XCActivityRecord.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
+#import <XCTestPrivate/XCActivityRecord.h>
 
 #import "FBActivityRecord.h"
 #import "FBTestManagerAPIMediator.h"

@@ -7,7 +7,7 @@
 
 #import "FBActivityRecord.h"
 #import "FBAttachment.h"
-#import <XCTest/XCActivityRecord.h>
+#import <XCTestPrivate/XCActivityRecord.h>
 
 @implementation FBActivityRecord
 
