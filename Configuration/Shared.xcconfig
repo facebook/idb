@@ -55,15 +55,9 @@ GCC_WARN_UNUSED_VALUE = YES
 GCC_WARN_UNUSED_VARIABLE = YES
 ONLY_ACTIVE_ARCH = YES
 
-// Inferred Directories. Important for the linker to be able to find and weak-link private symbols.
-APPLE_FRAMEWORKS_DIR = $(DEVELOPER_DIR)/../Frameworks
-APPLE_OTHER_FRAMEWORKS_DIR = $(DEVELOPER_DIR)/../OtherFrameworks
-APPLE_PLUGINS_DIR = $(DEVELOPER_DIR)/../PlugIns
-APPLE_SHARED_FRAMEWORKS_DIR = $(DEVELOPER_DIR)/../SharedFrameworks
-
 // Search Paths for Frameworks & Headers
 ALWAYS_SEARCH_USER_PATHS = NO
-FRAMEWORK_SEARCH_PATHS = $(inherited) $(APPLE_FRAMEWORKS_DIR) $(APPLE_PLUGINS_DIR) $(APPLE_OTHER_FRAMEWORKS_DIR) $(APPLE_SHARED_FRAMEWORKS_DIR) $(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks $(SDKROOT)/System/Library/PrivateFrameworks /Library/Developer/PrivateFrameworks
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks $(SDKROOT)/System/Library/PrivateFrameworks /Library/Developer/PrivateFrameworks
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
 
 // SDK & OS Versions
