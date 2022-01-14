@@ -494,7 +494,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel; // ref: http://blog.mediacoderhq.com/h264-profiles-and-levels/
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CAVLC;
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
       initWithConfiguration:configuration
       compressionSessionProperties:[derivedCompressionSessionProperties copy]
@@ -593,8 +594,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
   return @{
-    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
-    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
+    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(2 * self.framesPerSecond),
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @60,
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration: @10, // key frame at least every 10 seconds
+    (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
+    (NSString *) kVTCompressionPropertyKey_AverageBitRate: @(800 * 1024), // avg kbps // TODO: make this configurable
+    (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[@(1200 * 1024), @1], // max kbps // TODO: make this configurable
   };
 }
 
