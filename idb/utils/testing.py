@@ -265,7 +265,7 @@ class AsyncContextManagerMock:
                     return_value=AsyncContextManagerMock(return_value=m)
                 ):
                     r = await target()
-                    self.assertEquals(r, 'fff')
+                    self.assertEqual(r, 'fff')
     """
 
     def __init__(self, *args, **kwargs):
