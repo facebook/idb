@@ -482,6 +482,13 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
 }
 
+- (void)testMappedPathPushToRootFails
+{
+  id<FBFileContainer> container = [self setUpMappedPathContainer];
+  NSString *pushedFile = FBControlCoreFixtures.photo0Path;
+  XCTAssertNil([[container copyFromHost:pushedFile toContainer:@"."] await:nil]);
+}
+
 - (void)testMappedPathMoveFile
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
