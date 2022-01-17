@@ -51,7 +51,6 @@ GCC_WARN_UNUSED_VARIABLE = YES
 
 // Search Paths for Frameworks & Headers
 ALWAYS_SEARCH_USER_PATHS = NO
-FRAMEWORK_SEARCH_PATHS = $(inherited) $(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks $(SDKROOT)/System/Library/PrivateFrameworks /Library/Developer/PrivateFrameworks
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
 
 // SDK & OS Versions
