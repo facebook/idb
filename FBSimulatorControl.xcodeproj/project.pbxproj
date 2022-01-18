@@ -1097,6 +1097,7 @@
 		AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceCommands.h; sourceTree = "<group>"; };
 		AAA1F9C21F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorLaunchCtlCommands.h; sourceTree = "<group>"; };
 		AAA1F9C31F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchCtlCommands.m; sourceTree = "<group>"; };
+		AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = XCTestBootstrapTests.xcconfig; sourceTree = "<group>"; };
 		AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControl.xcconfig; sourceTree = "<group>"; };
 		AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBControlCoreTests.xcconfig; sourceTree = "<group>"; };
 		AAA5B80B24B37FBC0093DAEB /* FBDeviceStorage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceStorage.m; sourceTree = "<group>"; };
@@ -2436,9 +2437,10 @@
 		EE4F0D3D1C91B7DB00608E89 /* XCTestBootstrapTests */ = {
 			isa = PBXGroup;
 			children = (
+				EE4F0D971C91B83300608E89 /* XCTestBootstrapTests-Info.plist */,
+				AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */,
 				EEF4497A1CE0A22200300C9F /* Fixtures */,
 				AAEC23BC1D5E345D0083CAB7 /* Tests */,
-				EE4F0D971C91B83300608E89 /* XCTestBootstrapTests-Info.plist */,
 			);
 			path = XCTestBootstrapTests;
 			sourceTree = "<group>";
@@ -3787,7 +3789,7 @@
 		};
 		EE4F0D441C91B7DB00608E89 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
+			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3796,7 +3798,7 @@
 		};
 		EE4F0D451C91B7DB00608E89 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
+			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3805,7 +3807,7 @@
 		};
 		EE4F0D461C91B7DB00608E89 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
+			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
