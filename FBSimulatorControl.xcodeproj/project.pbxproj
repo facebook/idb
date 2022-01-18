@@ -310,11 +310,11 @@
 		AA97C7FB20D90D98002B8564 /* FBAMDevice+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B231CEDA237009B6ECA /* FBAMDevice+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA98266724E131CA006E05A9 /* FBFileContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA98266624E131CA006E05A9 /* FBFileContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA98266A24E1348C006E05A9 /* FBFileCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA98266924E1348C006E05A9 /* FBFileCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AA9DB39B24DA9C1F00960765 /* FBDeviceRecoveryCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9DB39924DA9C1E00960765 /* FBDeviceRecoveryCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9DB39C24DA9C1F00960765 /* FBDeviceRecoveryCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9DB39A24DA9C1F00960765 /* FBDeviceRecoveryCommands.m */; };
 		AAA02A4824A118AB0054F0DC /* FBDeviceCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA02A4724A118AB0054F0DC /* FBDeviceCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -3114,7 +3114,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = FB;
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1320;
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					AA819DB11B9FB40D002F58CA = {
