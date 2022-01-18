@@ -3648,7 +3648,6 @@
 		4952437303EDA63300000002 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -3667,7 +3666,6 @@
 		4952437350C7218900000002 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_OPTIMIZATION_LEVEL = s;
 			};
@@ -3683,7 +3681,6 @@
 		49524373A439BFE700000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_OPTIMIZATION_LEVEL = s;
 			};
@@ -3792,16 +3789,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
-				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3811,16 +3798,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
-				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3830,16 +3807,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
-				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
