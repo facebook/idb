@@ -7,8 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
+@class SimDeviceNotificationManager;
 
 @interface FBSimulatorControlTests_SimDeviceType_Double : NSObject
 
