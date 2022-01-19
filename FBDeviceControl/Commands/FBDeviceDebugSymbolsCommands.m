@@ -43,7 +43,7 @@
 
 static const uint32_t ListFilesPlistCommand = 0x30303030;
 static const uint32_t ListFilesPlistAck = ListFilesPlistCommand;
-static const uint32_t GetFileCommand = 1;
+static const uint32_t GetFileCommand = 0x01000000;
 static const uint32_t GetFileAck = GetFileCommand;
 
 - (FBFuture<NSArray<NSString *> *> *)listSymbols
@@ -52,6 +52,18 @@ static const uint32_t GetFileAck = GetFileCommand;
 }
 
 - (FBFuture<NSString *> *)pullSymbolFile:(NSString *)fileName toDestinationPath:(NSString *)destinationPath
+{
+  return [[self
+    indexOfSymbolFile:fileName]
+    onQueue:self.device.asyncQueue fmap:^(NSNumber *indexNumber) {
+      uint32_t index = indexNumber.unsignedIntValue;
+      return [self writeSymbolFileWithIndex:index toFileAtPath:destinationPath];
+    }];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNumber *> *)indexOfSymbolFile:(NSString *)fileName
 {
   return [[self
     symbolServiceConnection]
@@ -67,14 +79,22 @@ static const uint32_t GetFileAck = GetFileCommand;
           describeFormat:@"Could not find %@ within %@", fileName, [FBCollectionInformation oneLineDescriptionFromArray:files]]
           failFuture];
       }
-      if (![FBDeviceDebugSymbolsCommands getFileWithIndex:(uint32_t)index toDestinationPath:destinationPath onConnection:connection error:&error]) {
+      return [FBFuture futureWithResult:@(index)];
+    }];
+}
+
+- (FBFuture<NSString *> *)writeSymbolFileWithIndex:(uint32_t)index toFileAtPath:(NSString *)destinationPath
+{
+  return [[self
+    symbolServiceConnection]
+    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
+      NSError *error = nil;
+      if(![FBDeviceDebugSymbolsCommands getFileWithIndex:index toDestinationPath:destinationPath onConnection:connection error:&error]) {
         return [FBFuture futureWithError:error];
       }
       return [FBFuture futureWithResult:destinationPath];
     }];
 }
-
-#pragma mark Private
 
 - (FBFutureContext<FBAMDServiceConnection *> *)symbolServiceConnection
 {
@@ -101,13 +121,10 @@ static const uint32_t GetFileAck = GetFileCommand;
 
 + (NSArray<NSString *> *)obtainFileListingFromService:(FBAMDServiceConnection *)connection error:(NSError **)error
 {
-  NSError *innerError = nil;
-  if (![FBDeviceDebugSymbolsCommands sendCommand:ListFilesPlistCommand withAck:ListFilesPlistAck commandName:@"ListFilesPlist" onConnection:connection error:&innerError]) {
-    if (error) {
-      *error = innerError;
-    }
+  if (![FBDeviceDebugSymbolsCommands sendCommand:ListFilesPlistCommand withAck:ListFilesPlistAck commandName:@"ListFilesPlist" onConnection:connection error:error]) {
     return nil;
   }
+  NSError *innerError = nil;
   NSDictionary<NSString *, id> *message = [connection receiveMessageWithError:&innerError];
   if (!message) {
     return [[FBDeviceControlError
@@ -129,19 +146,19 @@ static const uint32_t GetFileAck = GetFileCommand;
   BOOL success = [connection sendUnsignedInt32:command error:&innerError];
   if (!success) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to send %@ command to symbol service %@", commandName, innerError]
+      describeFormat:@"Failed to send '%@' command to symbol service %@", commandName, innerError]
       failBool:error];
   }
-  uint32_t response = 1;
+  uint32_t response = 0;
   success = [connection receiveUnsignedInt32:&response error:&innerError];
   if (!success) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve %@ command to symbol service %@", commandName, innerError]
+      describeFormat:@"Failed to recieve '%@' response from %@", commandName, innerError]
       failBool:error];
   }
   if (response != ack) {
     return [[FBDeviceControlError
-      describeFormat:@"Incorrect %@ ack from symbol service got %d expected %d", commandName, response, ListFilesPlistAck]
+      describeFormat:@"Incorrect '%@' ack from symbol service; got %u expected %u", commandName, response, ack]
       failBool:error];
   }
   return YES;
@@ -155,26 +172,33 @@ static const uint32_t GetFileAck = GetFileCommand;
   }
   // Send the index of the file to pull back
   NSError *innerError = nil;
-  if (![connection sendUnsignedInt32:(uint32_t) index error:&innerError]) {
+  uint32_t indexWire = OSSwapHostToBigInt32(index);
+  if (![connection sendUnsignedInt32:indexWire error:&innerError]) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve GetFiles plist message %@", innerError]
+      describeFormat:@"Failed to send GetFile file index %u packet %@", index, innerError]
       failBool:error];
   }
-  uint64_t recieveLength = 0;
-  if (![connection receiveUnsignedInt64:&recieveLength error:&innerError]) {
+  uint64_t recieveLengthWire = 0;
+  if (![connection receiveUnsignedInt64:&recieveLengthWire error:&innerError]) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to get file length %@", innerError]
+      describeFormat:@"Failed to recieve GetFile file length %@", innerError]
       failBool:error];
   }
-  if (recieveLength == 0) {
+  if (recieveLengthWire == 0) {
     return [[FBDeviceControlError
-      describe:@"Failed to get file length, recieveLength not returned"]
+      describe:@"Failed to get file length, recieveLength not returned or is zero."]
+      failBool:error];
+  }
+  uint64_t recieveLength = OSSwapBigToHostInt64(recieveLengthWire);
+  if (![NSFileManager.defaultManager createFileAtPath:destinationPath contents:nil attributes:nil]) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to create destination file at path %@", destinationPath]
       failBool:error];
   }
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:destinationPath];
   if (!fileHandle) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to open file for reading at %@", destinationPath]
+      describeFormat:@"Failed to open file for writing at %@", destinationPath]
       failBool:error];
   }
   if (![connection receive:recieveLength toFile:fileHandle error:error]) {
