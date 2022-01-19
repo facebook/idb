@@ -152,7 +152,34 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
     }];
 }
 
+- (FBFuture<NSDictionary<NSData *, FBDeveloperDiskImage *> *> *)signatureToDiskImageOfMountedDisks
+{
+  return [[self
+    mountInfoToDiskImage]
+    onQueue:self.device.asyncQueue map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
+      NSMutableDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage = NSMutableDictionary.dictionary;
+      for (FBDeveloperDiskImage *image in mountInfoToDiskImage.allValues) {
+        signatureToDiskImage[image.signature] = image;
+      }
+      return signatureToDiskImage;
+    }];
+}
+
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
+{
+  id<FBControlCoreLogger> logger = self.device.logger;
+  return [[self
+    signatureToDiskImageOfMountedDisks]
+    onQueue:self.device.asyncQueue fmap:^ FBFuture<FBDeveloperDiskImage *> * (NSDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage) {
+      if (signatureToDiskImage[diskImage.signature]) {
+        [logger logFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage];
+        return [FBFuture futureWithResult:diskImage];
+      }
+      return [self performDiskImageMount:diskImage imageType:imageType];
+    }];
+}
+
+- (FBFuture<FBDeveloperDiskImage *> *)performDiskImageMount:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
 {
   return [[self.device
     connectToDeviceWithPurpose:@"mount_disk_image"]
