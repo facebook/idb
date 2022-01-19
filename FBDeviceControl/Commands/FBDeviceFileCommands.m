@@ -488,6 +488,8 @@ static NSString *const MountRootPath = @"mounted";
 
 @implementation FBDeviceFileCommands_Symbols
 
+static NSString *const ExtractedSymbolsDirectory = @"Symbols";
+
 - (instancetype)initWithCommands:(id<FBDeviceDebugSymbolsCommands>)commands queue:(dispatch_queue_t)queue
 {
   self = [super init];
@@ -510,6 +512,9 @@ static NSString *const MountRootPath = @"mounted";
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
+  if ([sourcePath isEqualToString:ExtractedSymbolsDirectory]) {
+    return [self.commands pullAndExtractSymbolsToDestinationDirectory:destinationPath];
+  }
   return [self.commands pullSymbolFile:sourcePath toDestinationPath:destinationPath];
 }
 
@@ -543,7 +548,11 @@ static NSString *const MountRootPath = @"mounted";
 
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
-  return [self.commands listSymbols];
+  return [[self.commands
+    listSymbols]
+    onQueue:self.queue map:^(NSArray<NSString *> *listedSymbols) {
+      return [listedSymbols arrayByAddingObject:ExtractedSymbolsDirectory];
+    }];
 }
 
 @end
