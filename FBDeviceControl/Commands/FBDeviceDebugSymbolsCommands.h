@@ -32,8 +32,17 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param fileName the file to pull
  @param destinationPath the destination to write to.
+ @return a  Future that resolves with the extract path.
  */
 - (FBFuture<NSString *> *)pullSymbolFile:(NSString *)fileName toDestinationPath:(NSString *)destinationPath;
+
+/**
+ Pulls and extracts symbols to the provided path.
+
+ @param destinationDirectory the destination to write to.
+ @return a  Future that resolves with the extract path.
+ */
+- (FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(NSString *)destinationDirectory;
 
 @end
 
