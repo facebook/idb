@@ -34,7 +34,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     }
     [images addObject:image];
   }
-  return images;
+  return [images sortedArrayUsingSelector:@selector(compare:)];
 }
 
 + (nullable FBDeveloperDiskImage *)diskImageAtPath:(NSString *)path xcodeVersion:(NSOperatingSystemVersion)xcodeVersion error:(NSError **)error
@@ -176,6 +176,19 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"%@: %lu.%lu", self.diskImagePath, self.version.majorVersion, self.version.minorVersion];
+}
+
+- (NSComparisonResult)compare:(FBDeveloperDiskImage *)other
+{
+  NSComparisonResult comparison = [@(self.version.majorVersion) compare:@(other.version.majorVersion)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [@(self.version.minorVersion) compare:@(other.version.minorVersion)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  return [@(self.version.patchVersion) compare:@(other.version.patchVersion)];
 }
 
 @end

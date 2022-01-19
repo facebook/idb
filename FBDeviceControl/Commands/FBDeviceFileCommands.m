@@ -444,7 +444,7 @@ static NSString *const MountRootPath = @"mounted";
     onQueue:self.queue map:^(NSDictionary<NSString *, FBDeveloperDiskImage *> *mountedDiskImages) {
       // Construct the full list of all paths, including the mounted & available images.
       NSMutableArray<NSString *> *paths = NSMutableArray.array;
-      [paths addObjectsFromArray:self.mountableDiskImagesByPath.allKeys];
+      [paths addObjectsFromArray:[self.mountableDiskImagesByPath keysSortedByValueUsingSelector:@selector(compare:)]];
       [paths addObject:MountRootPath];
       [paths addObjectsFromArray:mountedDiskImages.allKeys];
       return [paths copy];
