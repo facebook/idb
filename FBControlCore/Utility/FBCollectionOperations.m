@@ -11,10 +11,10 @@
 
 #pragma mark Public
 
-+ (NSArray<NSNumber *> *)arrayFromIndeces:(NSIndexSet *)indeces
++ (NSArray<NSNumber *> *)arrayFromIndices:(NSIndexSet *)indices
 {
   NSMutableArray<NSNumber *> *array = [NSMutableArray array];
-  [indeces enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *_) {
+  [indices enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *_) {
     [array addObject:@(index)];
   }];
   return [array copy];
@@ -46,7 +46,7 @@
   return output;
 }
 
-+ (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array
++ (NSIndexSet *)indicesFromArray:(NSArray<NSNumber *> *)array
 {
   NSMutableIndexSet *indexSet = [NSMutableIndexSet indexSet];
   for (NSNumber *number in array) {

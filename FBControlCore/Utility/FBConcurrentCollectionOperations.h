@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBConcurrentCollectionOperations : NSObject
 
 /**
- Generate an array of objects from indeces. Indeces where nil is returned will contain `NSNull.null`
+ Generate an array of objects from indices. Indices where nil is returned will contain `NSNull.null`
 
  @param count the number of generations to execute
  @param block the block to generate objects from.
