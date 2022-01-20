@@ -49,12 +49,11 @@ typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
 /**
  Represents the kind of a target, device or simulator.
  */
-typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
+typedef NS_ENUM(NSUInteger, FBiOSTargetType) {
   FBiOSTargetTypeNone = 0,
   FBiOSTargetTypeSimulator = 1 << 0,
   FBiOSTargetTypeDevice = 1 << 1,
   FBiOSTargetTypeLocalMac = 1 << 2,
-  FBiOSTargetTypeAll = FBiOSTargetTypeSimulator | FBiOSTargetTypeDevice | FBiOSTargetTypeLocalMac,
 };
 
 /**
@@ -220,9 +219,9 @@ extern FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState s
 extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
 
 /**
- The canonical string representations of the target type Option Set.
+ The canonical string representations of the FBiOSTargetType Enum.
  */
-extern NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
+extern NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
 
 /**
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.

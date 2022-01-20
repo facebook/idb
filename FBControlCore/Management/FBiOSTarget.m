@@ -74,19 +74,18 @@ FBiOSTargetState FBiOSTargetStateFromStateString(NSString *stateString)
   return FBiOSTargetStateUnknown;
 }
 
-NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType)
+NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {
-  NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((targetType & FBiOSTargetTypeDevice) == FBiOSTargetTypeDevice) {
-    [strings addObject:@"Device"];
+  if (targetType == FBiOSTargetTypeDevice) {
+    return @"Device";
   }
-  if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
-    [strings addObject:@"Simulator"];
+  if (targetType == FBiOSTargetTypeSimulator) {
+    return @"Simulator";
   }
-  if ((targetType & FBiOSTargetTypeLocalMac) == FBiOSTargetTypeLocalMac) {
-    [strings addObject:@"Mac"];
+  if (targetType == FBiOSTargetTypeLocalMac) {
+    return @"Mac";
   }
-  return [strings copy];
+  return @"Unknown";
 }
 
 NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)

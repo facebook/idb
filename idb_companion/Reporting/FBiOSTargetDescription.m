@@ -24,18 +24,6 @@
 @synthesize udid = _udid;
 @synthesize uniqueIdentifier = _uniqueIdentifier;
 
-static NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
-{
-  if ((targetType & FBiOSTargetTypeDevice) == FBiOSTargetTypeDevice) {
-    return @"device";
-  } else if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
-    return @"simulator";
-  } else if ((targetType & FBiOSTargetTypeLocalMac) == FBiOSTargetTypeLocalMac) {
-    return @"mac";
-  }
-  return nil;
-}
-
 - (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target
 {
   self = [super init];
