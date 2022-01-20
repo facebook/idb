@@ -114,16 +114,11 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     return [FBFuture futureWithError:error];
   }
 
-  // 'PackageType=Developer' signifies that the passed payload is a .app
-  // 'AMDeviceSecureInstallApplicationBundle' performs:
-  // 1) The transfer of the application bundle to the device.
-  // 2) The installation of the application after the transfer.
-  // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
-  // 'ShadowParentKey' must be provided in 'AMDeviceSecureInstallApplicationBundle' if 'Developer' is the 'PackageType
   NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
   NSDictionary<NSString *, id> *options = @{
-    @"PackageType" : @"Developer",
-    @"ShadowParentKey": self.deltaUpdateDirectory,
+    @"IsUserInitiated": @1, // Improves installation performance. This has a strong effect on time taken in "VerifyingApplication" stage of installation, which is CPU/IO bound on the attached device.
+    @"PackageType": @"Developer", // Signifies that the passed payload is a .app
+    @"ShadowParentKey": self.deltaUpdateDirectory, // Must be provided if 'Developer' is the 'PackageType'. Specifies where incremental install data and apps are persisted for faster future installs of the same bundle.
   };
  
   // Perform the install and lookup the app after.
@@ -131,6 +126,10 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
       [self.device.logger logFormat:@"Installing Application %@", appURL];
+      // 'AMDeviceSecureInstallApplicationBundle' performs:
+      // 1) The transfer of the application bundle to the device.
+      // 2) The installation of the application after the transfer.
+      // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
       int status = device.calls.SecureInstallApplicationBundle(
         device.amDeviceRef,
         (__bridge CFURLRef _Nonnull)(appURL),
