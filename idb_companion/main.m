@@ -407,7 +407,10 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
-      [reporter addMetadata:@{@"udid": udid}];
+      [reporter addMetadata:@{
+        @"udid": udid,
+        @"target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercaseString,
+      }];
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
       FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
