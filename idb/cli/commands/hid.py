@@ -9,6 +9,7 @@ from argparse import ArgumentParser, Namespace
 from idb.cli import ClientCommand
 from idb.common.types import Client, HIDButtonType, HIDElementType
 
+
 class AXTapCommand(ClientCommand):
     @property
     def description(self) -> str:
@@ -20,20 +21,32 @@ class AXTapCommand(ClientCommand):
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "element", 
+            "element",
             choices=[element.name for element in HIDElementType],
             help="Accessibility Type",
-            type=str
+            type=str,
         )
-        parser.add_argument("label", nargs='?', help="AXLabel", type=str)        
-        parser.add_argument("x", nargs='?', default=1, help="The x-coordinate", type=float)
-        parser.add_argument("y", nargs='?', default=1, help="The y-coordinate", type=float)
+        parser.add_argument("label", nargs="?", help="AXLabel", type=str)
+        parser.add_argument(
+            "x", nargs="?", default=1, help="The x-coordinate", type=float
+        )
+        parser.add_argument(
+            "y", nargs="?", default=1, help="The y-coordinate", type=float
+        )
         parser.add_argument("--duration", help="Press duration", type=float)
         parser.add_argument("--count", default=1, help="Number of taps", type=int)
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.axtap(element=HIDElementType[args.element], label=args.label, x=args.x, y=args.y, duration=args.duration, count=args.count)
+        await client.axtap(
+            element=HIDElementType[args.element],
+            label=args.label,
+            x=args.x,
+            y=args.y,
+            duration=args.duration,
+            count=args.count,
+        )
+
 
 class TapCommand(ClientCommand):
     @property
@@ -68,7 +81,7 @@ class ButtonCommand(ClientCommand):
             "button",
             help="The button name",
             choices=[button.name for button in HIDButtonType],
-            type=str
+            type=str,
         )
         parser.add_argument("--duration", help="Press duration", type=float)
         super().add_parser_arguments(parser)
