@@ -78,6 +78,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+protoc-gen-python_grpc
 
 # Installer logs
 pip-log.txt
