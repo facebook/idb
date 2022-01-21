@@ -120,6 +120,11 @@ class HIDButtonType(Enum):
     SIDE_BUTTON = 4
     SIRI = 5
 
+class HIDElementType(Enum):
+    back = "back button"
+    button = "button"
+    text = "text"
+    textfield = "text field"
 
 ConnectionDestination = Union[str, Address]
 
