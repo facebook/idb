@@ -311,18 +311,18 @@ static const char *FileTypeDirectory = "S_IFDIR";
   }
   // Then enumerate and copy the contents
   [self.logger logFormat:@"Copying from %@ to %@", hostDirectory, self];
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-  NSDirectoryEnumerator<NSURL *> *urls = [fileManager
-    enumeratorAtURL:[NSURL fileURLWithPath:hostDirectory]
-    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
-    options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
-    errorHandler:NULL];
-
-  for (NSURL *url in urls) {
-    NSString *hostNext = url.path;
-    id<FBContainedFile> afcNext = [self afcFileByAppendingPathComponent:hostNext.lastPathComponent];
+  NSError *innerError = nil;
+  NSArray<NSString *> *contents = [NSFileManager.defaultManager contentsOfDirectoryAtPath:hostDirectory error:&innerError];
+  if (!contents) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to list contents of directory %@: %@", hostDirectory, innerError]
+      failBool:error];
+  }
+  for (NSString *content in contents) {
+    NSString *hostNext = [hostDirectory stringByAppendingPathComponent:content];
+    id<FBContainedFile> afcNext = [self afcFileByAppendingPathComponent:content];
     if (![afcNext populateWithContentsOfHostPath:hostNext error:error]) {
-      [self.logger logFormat:@"Failed to copy %@ to %@ with error %@", url, self, *error];
+      [self.logger logFormat:@"Failed to copy %@ to %@ with error %@", hostNext, self, *error];
       return NO;
     }
   }
