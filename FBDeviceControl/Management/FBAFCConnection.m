@@ -318,32 +318,30 @@ static const char *FileTypeDirectory = "S_IFDIR";
   return YES;
 }
 
+static size_t DataReadChunkSize = 1024;
+
 - (BOOL)populateWithContentsOfHostFile:(NSString *)hostFile error:(NSError **)error
 {
   [self.logger logFormat:@"Copying %@ to %@", hostFile, self];
-  NSData *data = [NSData dataWithContentsOfFile:hostFile options:0 error:error];
-  if (!data) {
-    return NO;
+  NSInputStream *inputStream = [NSInputStream inputStreamWithFileAtPath:hostFile];
+  if (!inputStream) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to open host file %@", hostFile]
+      failBool:error];
   }
+  [inputStream open];
   CFTypeRef fileReference;
   mach_error_t result = self.calls.FileRefOpen(self.connection, self.path.UTF8String, FBAFCreateReadAndWrite, &fileReference);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file %@: %@", self, [self errorMessageWithCode:result]]
+      describeFormat:@"Error when opening remote file %@: %@", self.path, [self errorMessageWithCode:result]]
       failBool:error];
   }
-
-  __block mach_error_t writeResult = 0;
-  [data enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop) {
-    if (byteRange.length == 0) {
-      return;
-    }
-    writeResult = self.calls.FileRefWrite(self.connection, fileReference, bytes, byteRange.length);
-    if (writeResult != 0) {
-      *stop = YES;
-    }
+  int writeResult = [FBContainedFile_AFC enumerateContentsOfHostFile:inputStream chunkMaxSize:DataReadChunkSize enumerator:^(void *buffer, size_t size){
+    return self.calls.FileRefWrite(self.connection, fileReference, buffer, size);
   }];
   self.calls.FileRefClose(self.connection, fileReference);
+  [inputStream close];
   if (writeResult != 0) {
     return [[FBDeviceControlError
       describeFormat:@"Error when writing file %@: %@", self, [self errorMessageWithCode:writeResult]]
@@ -390,6 +388,28 @@ static const char *FileTypeDirectory = "S_IFDIR";
 {
   BOOL isDir = NO;
   return ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDir] && isDir);
+}
+
++ (int)enumerateContentsOfHostFile:(NSInputStream *)hostFileStream chunkMaxSize:(size_t)chunkMaxSize enumerator:(int(^)(void *, size_t))enumerator
+{
+  int result = 0;
+  void *buffer = malloc(chunkMaxSize);
+  while (hostFileStream.hasBytesAvailable) {
+    NSInteger readResult = [hostFileStream read:buffer maxLength:chunkMaxSize];
+    if (readResult == 0) {
+      break;
+    }
+    if (readResult == -1) {
+      break;
+    }
+    size_t readSize = (size_t) readResult;
+    result = enumerator(buffer, readSize);
+    if (result != 0) {
+      break;
+    }
+  }
+  free(buffer);
+  return result;
 }
 
 @end
