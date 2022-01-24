@@ -110,7 +110,7 @@ static NSString *const PingSuccess = @"ping";
             self.hasPerformedInitialIngestion = YES;
           }
           NSError *error = nil;
-          NSArray<NSString *> *paths = [afc contentsOfDirectory:@"." error:&error];
+          NSArray<NSString *> *paths = [afc.rootContainedFile contentsOfDirectoryWithError:&error];
           if (!paths) {
             return [FBFuture futureWithError:error];
           }
@@ -136,7 +136,7 @@ static NSString *const PingSuccess = @"ping";
       NSMutableArray<FBCrashLogInfo *> *removed = NSMutableArray.array;
       for (FBCrashLogInfo *crash in crashesToRemove) {
         NSError *error = nil;
-        if ([afc removePath:crash.name recursively:NO error:&error]) {
+        if ([[afc containedFileForPath:@"crash.name"] removeItemWithError:&error]) {
           [logger logFormat:@"Crash %@ removed from device", crash.name];
           [removed addObject:crash];
         } else {
@@ -155,7 +155,7 @@ static NSString *const PingSuccess = @"ping";
     [self.device.logger logFormat:@"No need to re-ingest %@", path];
     return existing;
   }
-  NSData *data = [afc contentsOfPath:path error:error];
+  NSData *data = [[afc containedFileForPath:@"path"] contentsOfFileWithError:error];
   if (!data) {
     return nil;
   }

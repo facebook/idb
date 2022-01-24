@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBFileContainer.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -16,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- An Object wrapper for an Apple File Conduit handle/
+ An Object wrapper for an Apple File Conduit handle.
  */
 @interface FBAFCConnection : NSObject
 
@@ -43,65 +44,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
 
-#pragma mark Public Methods
+#pragma mark Public
 
 /**
- Copies an item at the provided url into an application container.
- The source file can represent a file or a directory.
+ Obtains a contained file for the provided path.
 
- @param hostPath the source file on the host.
- @param containerPath the file path relative to the application container.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @param path the path to obtained a file path for.
+ @return a contained file for the path
  */
-- (BOOL)copyFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error;
-
-/**
- Creates a Directory.
-
- @param path the path to create.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)createDirectory:(NSString *)path error:(NSError **)error;
-
-/**
- Get the contents of a directory.
-
- @param path the path to locate.
- @param error an error out for any occurs
- @return the contents of the directory.
- */
-- (nullable NSArray<NSString *> *)contentsOfDirectory:(NSString *)path error:(NSError **)error;
-
-/**
- Get the contents of a file.
-
- @param path the path to read.
- @param error an error out for any occurs.
- @return the data for the file.
- */
-- (nullable NSData *)contentsOfPath:(NSString *)path error:(NSError **)error;
-
-/**
- Removes a path.
-
- @param path the path to remove.
- @param recursively YES to recurse, NO otherwise.
- @param error an error out for any occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
-
-/**
- Renames a path.
-
- @param path the path to rename
- @param destination the destination path.
- @param error an error out for any occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error;
+- (id<FBContainedFile>)containedFileForPath:(NSString *)path;
 
 /**
  Close the connection.
@@ -133,6 +84,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Default Calls.
  */
 @property (nonatomic, assign, readonly, class) AFCCalls defaultCalls;
+
+/**
+ The contained file for the root of the connection.
+ */
+@property (nonatomic, strong, readonly) id<FBContainedFile> rootContainedFile;
 
 @end
 

@@ -55,6 +55,11 @@ typedef CFTypeRef MISProfileRef;
 typedef void *AMDNotificationSubscription;
 
 /**
+ Opaque alias of an AFC Dictionary.
+ */
+typedef void *AFCDictionaryRef;
+
+/**
  An enum for read modes.
  */
 typedef enum : uint64_t {
@@ -233,6 +238,7 @@ typedef struct {
   int (*DirectoryRead)(AFCConnectionRef connection, CFTypeRef dir, char *_Nullable*_Nullable dirent);
   int (*DirectoryClose)(AFCConnectionRef connection, CFTypeRef dir);
   int (*DirectoryCreate)(AFCConnectionRef connection, const char *dir);
+  int (*FileInfoOpen)(AFCConnectionRef connection, const char *_Nonnull path, AFCDictionaryRef *infoOut);
   int (*FileRefOpen)(AFCConnectionRef connection, const char *_Nonnull path, FBAFCReadMode mode, CFTypeRef *_Nonnull ref);
   int (*FileRefClose)(AFCConnectionRef connection, CFTypeRef ref);
   int (*FileRefSeek)(AFCConnectionRef connection, CFTypeRef ref, int64_t offset, uint64_t mode);
@@ -241,6 +247,10 @@ typedef struct {
   int (*FileRefWrite)(AFCConnectionRef connection, CFTypeRef ref, const void *_Nonnull buf, uint64_t len);
   int (*RenamePath)(AFCConnectionRef connection, const char *_Nonnull path, const char *_Nonnull toPath);
   int (*RemovePath)(AFCConnectionRef connection, const char *_Nonnull path);
+
+  // Key Value Operation
+  int (*KeyValueRead)(AFCDictionaryRef dictionary, const char **keyIn, const char **valueOut);
+  int (*KeyValueClose)(AFCDictionaryRef dictionary);
 
   // Batch Operations
   int (*ConnectionProcessOperation)(AFCConnectionRef connection, CFTypeRef operation);

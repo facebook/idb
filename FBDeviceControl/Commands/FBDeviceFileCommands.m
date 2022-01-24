@@ -41,7 +41,7 @@
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc copyFromHost:sourcePath toContainerPath:destinationPath error:error];
+    BOOL success = [[afc containedFileForPath:destinationPath] populateWithContentsOfHostPath:sourcePath error:error];
     if (!success) {
       return nil;
     }
@@ -79,7 +79,7 @@
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc createDirectory:directoryPath error:error];
+    BOOL success = [[afc containedFileForPath:directoryPath] createDirectoryWithError:error];
     if (!success) {
       return nil;
     }
@@ -90,7 +90,9 @@
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc renamePath:sourcePath destination:destinationPath error:error];
+    id<FBContainedFile> source = [afc containedFileForPath:sourcePath];
+    id<FBContainedFile> destination = [afc containedFileForPath:destinationPath];
+    BOOL success = [source moveTo:destination error:error];
     if (!success) {
       return nil;
     }
@@ -101,7 +103,7 @@
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [afc removePath:path recursively:YES error:error];
+    BOOL success = [[afc containedFileForPath:path] removeItemWithError:error];
     if (!success) {
       return nil;
     }
@@ -112,7 +114,7 @@
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
   return [self handleAFCOperation:^ NSArray<NSString *> * (FBAFCConnection *afc, NSError **error) {
-    return [afc contentsOfDirectory:path error:error];
+    return [[afc containedFileForPath:path] contentsOfDirectoryWithError:error];
   }];
 }
 
@@ -121,7 +123,7 @@
 - (FBFuture<NSData *> *)readFileFromPathInContainer:(NSString *)path
 {
   return [self handleAFCOperation:^ NSData * (FBAFCConnection *afc, NSError **error) {
-    return [afc contentsOfPath:path error:error];
+    return [[afc containedFileForPath:path] contentsOfFileWithError:error];
   }];
 }
 
