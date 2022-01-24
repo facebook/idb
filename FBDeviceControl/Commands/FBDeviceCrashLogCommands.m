@@ -86,7 +86,7 @@ static NSString *const PingSuccess = @"ping";
   return [[self
     crashReportFileConnection]
     onQueue:self.device.asyncQueue pend:^(FBAFCConnection *connection) {
-      return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
+      return [FBFuture futureWithResult:[FBFileContainer fileContainerForRootFile:connection.rootContainedFile queue:self.device.asyncQueue]];
     }];
 }
 

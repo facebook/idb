@@ -16,133 +16,6 @@
 #import "FBManagedConfigClient.h"
 #import "FBSpringboardServicesClient.h"
 
-@interface FBDeviceFileContainer ()
-
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) FBAFCConnection *connection;
-
-@end
-
-@implementation FBDeviceFileContainer
-
-- (instancetype)initWithAFCConnection:(FBAFCConnection *)connection queue:(dispatch_queue_t)queue
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _connection = connection;
-  _queue = queue;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
-{
-  return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [[afc containedFileForPath:destinationPath] populateWithContentsOfHostPath:sourcePath error:error];
-    if (!success) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
-{
-  NSString *destination = destinationPath;
-  if ([FBDeviceFileContainer isDirectory:destinationPath]){
-    destination = [destinationPath stringByAppendingPathComponent:sourcePath.lastPathComponent];
-  }
-  return [[self
-    readFileFromPathInContainer:sourcePath]
-    onQueue:self.queue fmap:^FBFuture<NSString *> *(NSData *fileData) {
-     NSError *error;
-     if (![fileData writeToFile:destination options:0 error:&error]) {
-       return [[[FBDeviceControlError
-        describeFormat:@"Failed to write data to file at path %@", destination]
-        causedBy:error]
-        failFuture];
-     }
-     return [FBFuture futureWithResult:destination];
-   }];
-}
-
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
-{
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
-}
-
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
-{
-  return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [[afc containedFileForPath:directoryPath] createDirectoryWithError:error];
-    if (!success) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
-{
-  return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    id<FBContainedFile> source = [afc containedFileForPath:sourcePath];
-    id<FBContainedFile> destination = [afc containedFileForPath:destinationPath];
-    BOOL success = [source moveTo:destination error:error];
-    if (!success) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSNull *> *)remove:(NSString *)path
-{
-  return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
-    BOOL success = [[afc containedFileForPath:path] removeItemWithError:error];
-    if (!success) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
-{
-  return [self handleAFCOperation:^ NSArray<NSString *> * (FBAFCConnection *afc, NSError **error) {
-    return [[afc containedFileForPath:path] contentsOfDirectoryWithError:error];
-  }];
-}
-
-#pragma mark Private
-
-- (FBFuture<NSData *> *)readFileFromPathInContainer:(NSString *)path
-{
-  return [self handleAFCOperation:^ NSData * (FBAFCConnection *afc, NSError **error) {
-    return [[afc containedFileForPath:path] contentsOfFileWithError:error];
-  }];
-}
-
-- (FBFuture *)handleAFCOperation:(id(^)(FBAFCConnection *, NSError **))operationBlock
-{
-  return [FBFuture
-  onQueue:self.queue resolveValue:^(NSError **error) {
-      return operationBlock(self.connection, error);
-  }];
-}
-
-+ (BOOL)isDirectory:(NSString *)path
-{
-  BOOL isDir = NO;
-  return ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDir] && isDir);
-}
-
-@end
-
 @interface FBDeviceFileContainer_Wallpaper : NSObject <FBFileContainer>
 
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -601,7 +474,7 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
   return [[self.device
     houseArrestAFCConnectionForBundleID:bundleID afcCalls:self.afcCalls]
     onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAFCConnection *connection) {
-      return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
+      return [FBFuture futureWithResult:[FBFileContainer fileContainerForRootFile:connection.rootContainedFile queue:self.device.asyncQueue]];
     }];
 }
 
@@ -636,7 +509,7 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
   return [[self.device
     startAFCService:@"com.apple.afc"]
     onQueue:self.device.asyncQueue pend:^ FBFuture<id<FBFileContainer>> * (FBAFCConnection *connection) {
-      return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
+      return [FBFuture futureWithResult:[FBFileContainer fileContainerForRootFile:connection.rootContainedFile queue:self.device.asyncQueue]];
     }];
 }
 

@@ -547,6 +547,11 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return [[FBFileContainer_ProvisioningProfile alloc] initWithCommands:commands queue:queue];
 }
 
++ (id<FBFileContainer>)fileContainerForRootFile:(id<FBContainedFile>)root queue:(dispatch_queue_t)queue;
+{
+  return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:root queue:queue];
+}
+
 + (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [[FBContainedFile_Host alloc] initWithFileManager:NSFileManager.defaultManager path:basePath];
@@ -564,7 +569,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 + (id<FBFileContainer>)fileContainerForRootFile:(id<FBContainedFile>)root
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.file_container", DISPATCH_QUEUE_SERIAL);
-  return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:root queue:queue];
+  return [self fileContainerForRootFile:root queue:queue];
 }
 
 @end
