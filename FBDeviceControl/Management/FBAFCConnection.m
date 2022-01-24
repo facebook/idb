@@ -264,12 +264,40 @@ static const char *FileTypeDirectory = "S_IFDIR";
 
 - (BOOL)populateHostPathWithContentsOfFile:(NSString *)hostFile error:(NSError **)error
 {
-  NSData *data = [self contentsOfFileWithError:error];
-  if (!data) {
-    return NO;
+  NSOutputStream *hostFileStream = [NSOutputStream outputStreamToFileAtPath:hostFile append:NO];
+  if (!hostFileStream) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to open host path %@ for writing", hostFile]
+      failBool:error];
   }
-  if (![data writeToFile:hostFile options:0 error:error]) {
-    return NO;
+  [hostFileStream open];
+  __block NSString *hostFileError;
+  int result = [self enumerateContentsOfRemoteFile:self.path chunkMaxSize:DataReadChunkSize enumerator:^(void *buffer, size_t size) {
+    NSInteger writtenBytes = [hostFileStream write:buffer maxLength:size];
+    if ((size_t) writtenBytes != size) {
+      hostFileError = [NSString stringWithFormat:@"Failed to write %zu bytes, only %ld written", size, writtenBytes];
+      return -1;
+    }
+    if (writtenBytes == -1) {
+      hostFileError = hostFileStream.streamError.description;
+      return -1;
+    }
+    if (writtenBytes == 0) {
+      hostFileError = @"Reached end of file stream early";
+      return -1;
+    }
+    return 0;
+  }];
+  [hostFileStream close];
+  if (result == -1) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to write to host file %@", hostFileError]
+      failBool:error];
+  }
+  if (result != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Error when reading remote file %@: %@", self.path, [self errorMessageWithCode:result]]
+      failBool:error];
   }
   return YES;
 }
