@@ -16,6 +16,7 @@
 
 static NSString *AFCCodeKey = @"AFCCode";
 static NSString *AFCDomainKey = @"AFCDomain";
+static size_t DataReadChunkSize = 1024;
 
 static AFCCalls defaultCalls;
 
@@ -94,34 +95,17 @@ const char *DoubleDot = "..";
 {
   NSString *path = self.path;
   [self.logger logFormat:@"Contents of path %@", path];
-  CFTypeRef file;
-  mach_error_t result = self.calls.FileRefOpen(self.connection, path.UTF8String, FBAFCReadOnlyMode, &file);
+  NSMutableData *data = NSMutableData.data;
+  int result = [self enumerateContentsOfRemoteFile:path chunkMaxSize:DataReadChunkSize enumerator:^(void *buffer, size_t size) {
+    [data appendBytes:buffer length:size];
+    return 0;
+  }];
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Error when opening file %@: %@", path, [self errorMessageWithCode:result]]
+      describeFormat:@"Error when reading remote file %@: %@", path, [self errorMessageWithCode:result]]
       fail:error];
   }
-  self.calls.FileRefSeek(self.connection, file, 0, 2);
-  uint64_t offset = 0;
-  self.calls.FileRefTell(self.connection, file, &offset);
-  NSMutableData *buffer = [[NSMutableData alloc] initWithLength:offset];
-  uint64_t len = offset;
-  uint64_t toRead = len;
-  self.calls.FileRefSeek(self.connection, file, 0, 0);
-  while (toRead > 0) {
-    uint64_t read = toRead;
-    result = self.calls.FileRefRead(self.connection, file, [buffer mutableBytes] + (len - toRead), &read);
-    toRead -= read;
-    if (result != 0) {
-      self.calls.FileRefClose(self.connection, file);
-      return [[FBDeviceControlError
-        describeFormat:@"Error when reading file %@: %@", path, [self errorMessageWithCode:result]]
-        fail:error];
-    }
-  }
-  self.calls.FileRefClose(self.connection, file);
-  [self.logger logFormat:@"Read %lu bytes from path %@", buffer.length, path];
-  return buffer;
+  return data;
 }
 
 - (BOOL)removeItemWithError:(NSError **)error
@@ -318,8 +302,6 @@ static const char *FileTypeDirectory = "S_IFDIR";
   return YES;
 }
 
-static size_t DataReadChunkSize = 1024;
-
 - (BOOL)populateWithContentsOfHostFile:(NSString *)hostFile error:(NSError **)error
 {
   [self.logger logFormat:@"Copying %@ to %@", hostFile, self];
@@ -410,6 +392,42 @@ static size_t DataReadChunkSize = 1024;
   }
   free(buffer);
   return result;
+}
+
+- (int)enumerateContentsOfRemoteFile:(NSString *)remoteFilePath chunkMaxSize:(size_t)chunkMaxSize enumerator:(int(^)(void *, size_t))enumerator
+{
+  // Open the remote file.
+  CFTypeRef file;
+  mach_error_t openResult = self.calls.FileRefOpen(self.connection, remoteFilePath.UTF8String, FBAFCReadOnlyMode, &file);
+  if (openResult != 0) {
+    return openResult;
+  }
+  // Obtain the remote file size using 'mode 2'
+  self.calls.FileRefSeek(self.connection, file, 0, 2);
+  uint64_t remoteFileSize = 0;
+  self.calls.FileRefTell(self.connection, file, &remoteFileSize);
+  self.calls.FileRefSeek(self.connection, file, 0, 0);
+  // Construct the buffer to read into.
+  void *buffer = malloc(chunkMaxSize);
+  uint64_t bytesRemaining = remoteFileSize;
+  // Enumerate the stream until there are no bytes remaining.
+  int readResult = 0;
+  while (bytesRemaining > 0) {
+    uint64_t readBytes = MIN(chunkMaxSize, bytesRemaining);
+    readResult = self.calls.FileRefRead(self.connection, file, buffer, &readBytes);
+    if (readResult != 0) {
+      break;
+    }
+    readResult = enumerator(buffer, readBytes);
+    if (readResult != 0) {
+      break;
+    }
+    NSAssert(readBytes <= bytesRemaining, @"Read %llu bytes, when only %llu should have been read!!", readBytes, bytesRemaining);
+    bytesRemaining = bytesRemaining - readBytes;
+  }
+  free(buffer);
+  self.calls.FileRefClose(self.connection, file);
+  return readResult;
 }
 
 @end
