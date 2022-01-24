@@ -205,14 +205,6 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 + (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue;
 
 /**
- A file container wrapping the root contained file.
-
- @param root the root file to wrap.
- @param queue the queue to serialize on.
- */
-+ (id<FBFileContainer>)fileContainerForRootFile:(id<FBContainedFile>)root queue:(dispatch_queue_t)queue;
-
-/**
  A file container that relative to a path on the host.
  
  @param basePath the base path to use.

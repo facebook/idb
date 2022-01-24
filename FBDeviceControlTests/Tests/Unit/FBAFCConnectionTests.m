@@ -203,42 +203,6 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
   return @{};
 }
 
-static int fileInfoOpen(AFCConnectionRef connection, const char *path, AFCDictionaryRef *infoOut)
-{
-  NSString *pathString = [NSString stringWithCString:path encoding:NSASCIIStringEncoding];
-  NSDictionary<NSString *, NSString *> *attributes = sVirtualizedFilesAndAttributes[pathString];
-  if (!attributes) {
-    return 1;
-  }
-  if (infoOut) {
-    *infoOut = (__bridge AFCDictionaryRef)(attributes);
-  }
-  return 0;
-}
-
-static int keyValueRead(AFCDictionaryRef dictionary, const char **keyIn, const char **valueOut)
-{
-  if (!dictionary) {
-    return 1;
-  }
-  NSDictionary<NSString *, NSString *> *attributes = (__bridge NSDictionary<NSString *,NSString *> *)(dictionary);
-  NSString *keyString = [NSString stringWithCString:*keyIn encoding:NSASCIIStringEncoding];
-  NSString *valueString = attributes[keyString];
-  if (!valueString) {
-    return 1;
-  }
-  if (valueOut) {
-    const char *value = valueString.UTF8String;
-    *valueOut = value;
-  }
-  return 0;
-}
-
-static int keyValueClose(AFCDictionaryRef dictionary)
-{
-  return 0;
-}
-
 @interface FBAFCConnectionTests : XCTestCase
 
 @end
@@ -316,15 +280,12 @@ static NSString *const FooFileContents = @"FooContents";
     .DirectoryOpen = directoryOpen,
     .DirectoryRead = directoryRead,
     .ErrorString = errorString,
-    .FileInfoOpen = fileInfoOpen,
     .FileRefClose = fileClose,
     .FileRefOpen = fileRefOpen,
     .FileRefRead = fileRefRead,
     .FileRefSeek = fileRefSeek,
     .FileRefTell = fileRefTell,
     .FileRefWrite = fileWrite,
-    .KeyValueClose = keyValueClose,
-    .KeyValueRead = keyValueRead,
     .OperationCreateRemovePathAndContents = operationCreateRemovePathAndContents,
     .OperationGetResultObject = operationGetResultObject,
     .OperationGetResultStatus = operationGetResultStatus,
@@ -370,7 +331,7 @@ static NSString *const FooFileContents = @"FooContents";
   FBAFCConnection *connection = [self setUpConnection];
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
-  NSArray<NSString *> *actual = [connection.rootContainedFile contentsOfDirectoryWithError:&error];
+  NSArray<NSString *> *actual = [connection contentsOfDirectory:@"" error:&error];
   NSArray<NSString *> *expected = @[@"remote_foo.txt", @"remote_empty", @"remote_bar"];
   XCTAssertNil(error);
   XCTAssertEqualObjects(actual, expected);
@@ -381,7 +342,7 @@ static NSString *const FooFileContents = @"FooContents";
   FBAFCConnection *connection = [self setUpConnection];
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
-  NSArray<NSString *> *actual = [[connection containedFileForPath:@"remote_bar"] contentsOfDirectoryWithError:&error];
+  NSArray<NSString *> *actual = [connection contentsOfDirectory:@"remote_bar" error:&error];
   NSArray<NSString *> *expected = @[@"some.txt", @"other.txt"];
   XCTAssertNil(error);
   XCTAssertEqualObjects(actual, expected);
@@ -392,7 +353,7 @@ static NSString *const FooFileContents = @"FooContents";
   FBAFCConnection *connection = [self setUpConnection];
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
-  NSArray<NSString *> *actual = [[connection containedFileForPath:@"aaaaaa"] contentsOfDirectoryWithError:&error];
+  NSArray<NSString *> *actual = [connection contentsOfDirectory:@"aaaaaa" error:&error];
   XCTAssertNotNil(error);
   XCTAssertNil(actual);
 }
@@ -403,7 +364,7 @@ static NSString *const FooFileContents = @"FooContents";
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
   NSData *expected = [@"some foo" dataUsingEncoding:NSASCIIStringEncoding];
-  NSData *actual = [[connection containedFileForPath:@"remote_foo.txt"] contentsOfFileWithError:&error];
+  NSData *actual = [connection contentsOfPath:@"remote_foo.txt" error:&error];
   XCTAssertNil(error);
   XCTAssertEqualObjects(expected, actual);
 }
@@ -413,7 +374,7 @@ static NSString *const FooFileContents = @"FooContents";
   FBAFCConnection *connection = [self setUpConnection];
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
-  NSData *actual = [[connection containedFileForPath:@"remote_bar"] contentsOfFileWithError:&error];
+  NSData *actual = [connection contentsOfPath:@"remote_bar" error:&error];
   XCTAssertNil(actual);
   XCTAssertNotNil(error);
 }
@@ -423,7 +384,7 @@ static NSString *const FooFileContents = @"FooContents";
   FBAFCConnection *connection = [self setUpConnection];
   [self addVirtualizedRemoteFiles];
   NSError *error = nil;
-  NSData *actual = [[connection containedFileForPath:@"nope"] contentsOfFileWithError:&error];
+  NSData *actual = [connection contentsOfPath:@"nope" error:&error];
   XCTAssertNil(actual);
   XCTAssertNotNil(error);
 }
@@ -432,7 +393,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:self.fooHostFilePath.lastPathComponent] populateWithContentsOfHostPath:self.fooHostFilePath error:&error];
+  BOOL success = [connection copyFromHost:self.fooHostFilePath toContainerPath:@"" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -446,7 +407,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:@"bing/foo.txt"] populateWithContentsOfHostPath:self.fooHostFilePath error:&error];
+  BOOL success = [connection copyFromHost:self.fooHostFilePath toContainerPath:@"bing" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -460,7 +421,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:self.rootHostDirectory.lastPathComponent] populateWithContentsOfHostPath:self.rootHostDirectory error:&error];
+  BOOL success = [connection copyFromHost:self.rootHostDirectory toContainerPath:@"" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -472,60 +433,13 @@ static NSString *const FooFileContents = @"FooContents";
     @"FBAFCConnectionTests/foo.txt",
     @"FBAFCConnectionTests/bar/baz.empty",
   ]];
-}
-
-- (void)testCopyItemsToHostDirectory
-{
-  FBAFCConnection *connection = [self setUpConnection];
-  NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:self.rootHostDirectory.lastPathComponent] populateWithContentsOfHostPath:self.rootHostDirectory error:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  [self assertExpectedDirectoryCreate:@[
-    @"FBAFCConnectionTests",
-    @"FBAFCConnectionTests/bar",
-  ]];
-  [self assertExpectedFiles:@[
-    @"FBAFCConnectionTests/foo.txt",
-    @"FBAFCConnectionTests/bar/baz.empty",
-  ]];
-}
-
-- (void)testFileExists
-{
-  FBAFCConnection *connection = [self setUpConnection];
-  [self addVirtualizedRemoteFiles];
-  BOOL isDirectory = YES;
-  BOOL exists = [[connection containedFileForPath:@"remote_foo.txt"] fileExistsIsDirectory:&isDirectory];
-  XCTAssertTrue(exists);
-  XCTAssertFalse(isDirectory);
-}
-
-- (void)testDirectoryExists
-{
-  FBAFCConnection *connection = [self setUpConnection];
-  [self addVirtualizedRemoteFiles];
-  BOOL isDirectory = NO;
-  BOOL exists = [[connection containedFileForPath:@"remote_bar"] fileExistsIsDirectory:&isDirectory];
-  XCTAssertTrue(exists);
-  XCTAssertTrue(isDirectory);
-}
-
-- (void)testFileDoesNotExist
-{
-  FBAFCConnection *connection = [self setUpConnection];
-  [self addVirtualizedRemoteFiles];
-  BOOL isDirectory = NO;
-  BOOL exists = [[connection containedFileForPath:@"no_exists"] fileExistsIsDirectory:&isDirectory];
-  XCTAssertFalse(exists);
 }
 
 - (void)testCreateDirectoryAtRoot
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:@"bing"] createDirectoryWithError:&error];
+  BOOL success = [connection createDirectory:@"bing" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -536,7 +450,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:@"bar/bing"] createDirectoryWithError:&error];
+  BOOL success = [connection createDirectory:@"bar/bing" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -547,9 +461,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  id<FBContainedFile> source = [connection containedFileForPath:@"foo.txt"];
-  id<FBContainedFile> destination = [connection containedFileForPath:@"bar.txt"];
-  BOOL success = [source moveTo:destination error:&error];
+  BOOL success = [connection renamePath:@"foo.txt" destination:@"bar.txt" error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -560,7 +472,7 @@ static NSString *const FooFileContents = @"FooContents";
 {
   FBAFCConnection *connection = [self setUpConnection];
   NSError *error = nil;
-  BOOL success = [[connection containedFileForPath:@"foo.txt"] removeItemWithError:&error];
+  BOOL success = [connection removePath:@"foo.txt" recursively:YES error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
