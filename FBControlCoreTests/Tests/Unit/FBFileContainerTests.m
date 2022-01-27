@@ -27,6 +27,8 @@
 
 - (void)setUp
 {
+  [super setUp];
+
   _basePathTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath", NSUUID.UUID.UUIDString]];
   _basePathPulledFileTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_file", NSUUID.UUID.UUIDString]];
   _basePathPulledDirectoryTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_directory", NSUUID.UUID.UUIDString]];
@@ -35,6 +37,12 @@
   _basePathPulledFileTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_file", NSUUID.UUID.UUIDString]];;
   _basePathPulledDirectoryTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_directory", NSUUID.UUID.UUIDString]];
   _basePathPulledMappedDirectoryTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_mapped_directory", NSUUID.UUID.UUIDString]];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
+
   [NSFileManager.defaultManager removeItemAtPath:self.basePathTestBasePath error:nil];
   [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledFileTestBasePath error:nil];
   [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledDirectoryTestBasePath error:nil];

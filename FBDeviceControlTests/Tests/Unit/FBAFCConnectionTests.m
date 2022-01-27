@@ -230,6 +230,11 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
   _fooHostFilePath = [self.rootHostDirectory stringByAppendingPathComponent:@"foo.txt"];
   _barHostDirectory = [self.rootHostDirectory stringByAppendingPathComponent:@"bar"];
   _bazHostFilePath = [self.barHostDirectory stringByAppendingPathComponent:@"baz.empty"];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
 
   [NSFileManager.defaultManager removeItemAtPath:self.bazHostFilePath error:nil];
   [NSFileManager.defaultManager removeItemAtPath:self.barHostDirectory error:nil];
