@@ -444,7 +444,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6SPlus productType:@"iPhone8,2" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_1stGeneration productType:@"iPhone8,4" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_2ndGeneration productType:@"iPhone12,8" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2", @"iPhone9,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7Plus productTypes:@[@"iPhone9,2", @"iPhone9,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8 productTypes:@[@"iPhone10,1", @"iPhone10,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8Plus productTypes:@[@"iPhone10,2", @"iPhone10,5"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],

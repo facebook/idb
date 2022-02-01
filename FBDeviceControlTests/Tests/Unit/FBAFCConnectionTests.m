@@ -205,6 +205,11 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
 
 @interface FBAFCConnectionTests : XCTestCase
 
+@property (nonatomic, copy, readonly) NSString *rootHostDirectory;
+@property (nonatomic, copy, readonly) NSString *fooHostFilePath;
+@property (nonatomic, copy, readonly) NSString *barHostDirectory;
+@property (nonatomic, copy, readonly) NSString *bazHostFilePath;
+
 @end
 
 @implementation FBAFCConnectionTests
@@ -220,6 +225,16 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
   sEvents[RemovePath] = NSMutableArray.array;
   sEvents[RenamePath] = NSMutableArray.array;
   sVirtualizedFilesAndAttributes = nil;
+
+  _rootHostDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBAFCConnectionTests", NSUUID.UUID.UUIDString]];
+  _fooHostFilePath = [self.rootHostDirectory stringByAppendingPathComponent:@"foo.txt"];
+  _barHostDirectory = [self.rootHostDirectory stringByAppendingPathComponent:@"bar"];
+  _bazHostFilePath = [self.barHostDirectory stringByAppendingPathComponent:@"baz.empty"];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
 
   [NSFileManager.defaultManager removeItemAtPath:self.bazHostFilePath error:nil];
   [NSFileManager.defaultManager removeItemAtPath:self.barHostDirectory error:nil];
@@ -246,26 +261,6 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
 - (AFCConnectionRef)connectionRef
 {
   return NULL;
-}
-
-- (NSString *)rootHostDirectory
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBAFCConnectionTests"];
-}
-
-- (NSString *)fooHostFilePath
-{
-  return [self.rootHostDirectory stringByAppendingPathComponent:@"foo.txt"];
-}
-
-- (NSString *)barHostDirectory
-{
-  return [self.rootHostDirectory stringByAppendingPathComponent:@"bar"];
-}
-
-- (NSString *)bazHostFilePath
-{
-  return [self.barHostDirectory stringByAppendingPathComponent:@"baz.empty"];
 }
 
 static NSString *const FooFileContents = @"FooContents";
@@ -426,12 +421,12 @@ static NSString *const FooFileContents = @"FooContents";
   XCTAssertTrue(success);
 
   [self assertExpectedDirectoryCreate:@[
-    @"FBAFCConnectionTests",
-    @"FBAFCConnectionTests/bar",
+    self.rootHostDirectory.lastPathComponent,
+    [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"bar"],
   ]];
   [self assertExpectedFiles:@[
-    @"FBAFCConnectionTests/foo.txt",
-    @"FBAFCConnectionTests/bar/baz.empty",
+    [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"foo.txt"],
+    [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"bar/baz.empty"],
   ]];
 }
 

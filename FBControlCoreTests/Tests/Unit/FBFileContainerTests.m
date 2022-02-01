@@ -13,65 +13,49 @@
 
 @interface FBFileContainerTests : XCTestCase
 
+@property (nonatomic, copy, readonly) NSString *basePathTestBasePath;
+@property (nonatomic, copy, readonly) NSString *basePathPulledFileTestBasePath;
+@property (nonatomic, copy, readonly) NSString *basePathPulledDirectoryTestBasePath;
+@property (nonatomic, copy, readonly) NSString *basePathTestPathMappingFoo;
+@property (nonatomic, copy, readonly) NSString *basePathTestPathMappingBar;
+@property (nonatomic, copy, readonly) NSString *basePathPulledFileTestPathMapping;
+@property (nonatomic, copy, readonly) NSString *basePathPulledDirectoryTestPathMapping;
+@property (nonatomic, copy, readonly) NSString *basePathPulledMappedDirectoryTestPathMapping;
 @end
 
 @implementation FBFileContainerTests
 
-+ (NSString *)basePathTestBasePath
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testBasePath"];
-}
-
-+ (NSString *)basePathPulledFileTestBasePath
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testBasePath_pulled_file"];
-}
-
-+ (NSString *)basePathPulledDirectoryTestBasePath
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testBasePath_pulled_directory"];
-}
-
-+ (NSString *)basePathTestPathMappingFoo
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testPathMapping_foo"];
-}
-
-+ (NSString *)basePathTestPathMappingBar
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testPathMapping_bar"];
-}
-
-+ (NSString *)basePathPulledFileTestPathMapping
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testPathMapping_pulled_file"];
-}
-
-+ (NSString *)basePathPulledDirectoryTestPathMapping
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testPathMapping_pulled_directory"];
-}
-
-+ (NSString *)basePathPulledMappedDirectoryTestPathMapping
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorFileCommandsTests_testPathMapping_pulled_mapped_directory"];
-}
-
 - (void)setUp
 {
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathTestBasePath error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathPulledFileTestBasePath error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathPulledDirectoryTestBasePath error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathTestPathMappingFoo error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathTestPathMappingBar error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathPulledFileTestPathMapping error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathPulledDirectoryTestPathMapping error:nil];
-  [NSFileManager.defaultManager removeItemAtPath:FBFileContainerTests.basePathPulledMappedDirectoryTestPathMapping error:nil];
+  [super setUp];
+
+  _basePathTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath", NSUUID.UUID.UUIDString]];
+  _basePathPulledFileTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_file", NSUUID.UUID.UUIDString]];
+  _basePathPulledDirectoryTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_directory", NSUUID.UUID.UUIDString]];
+  _basePathTestPathMappingFoo =[NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_foo", NSUUID.UUID.UUIDString]];
+  _basePathTestPathMappingBar = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_bar", NSUUID.UUID.UUIDString]];
+  _basePathPulledFileTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_file", NSUUID.UUID.UUIDString]];;
+  _basePathPulledDirectoryTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_directory", NSUUID.UUID.UUIDString]];
+  _basePathPulledMappedDirectoryTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_mapped_directory", NSUUID.UUID.UUIDString]];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
+
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathTestBasePath error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledFileTestBasePath error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledDirectoryTestBasePath error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathTestPathMappingFoo error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathTestPathMappingBar error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledFileTestPathMapping error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledDirectoryTestPathMapping error:nil];
+  [NSFileManager.defaultManager removeItemAtPath:self.basePathPulledMappedDirectoryTestPathMapping error:nil];
 }
 
 - (NSString *)basePath
 {
-  return FBFileContainerTests.basePathTestBasePath;
+  return self.basePathTestBasePath;
 }
 
 - (NSString *)fileInBasePath
@@ -83,6 +67,7 @@
 {
   return [self.basePath stringByAppendingPathComponent:@"dir"];
 }
+
 - (NSString *)fileInDirectoryInBasePath
 {
   return [self.directoryInBasePath stringByAppendingPathComponent:@"some.txt"];
@@ -105,7 +90,7 @@ static NSString *const FileInDirectoryInBasePathText = @"Other Text";
 
 - (NSString *)fooPath
 {
-  return FBFileContainerTests.basePathTestPathMappingFoo;
+  return self.basePathTestPathMappingFoo;
 }
 
 - (NSString *)fileInFoo
@@ -115,7 +100,7 @@ static NSString *const FileInDirectoryInBasePathText = @"Other Text";
 
 - (NSString *)barPath
 {
-  return FBFileContainerTests.basePathTestPathMappingBar;
+  return self.basePathTestPathMappingBar;
 }
 
 - (NSString *)directoryInBar
@@ -173,7 +158,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
   NSError *error = nil;
-  NSString *pulledFileDirectory = FBFileContainerTests.basePathPulledFileTestBasePath;
+  NSString *pulledFileDirectory = self.basePathPulledFileTestBasePath;
   NSString *pulledFile = [[container copyFromContainer:@"file.txt" toHost:pulledFileDirectory] await:&error];
   pulledFile = [pulledFile stringByAppendingPathComponent:@"file.txt"];
   XCTAssertNil(error);
@@ -189,7 +174,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
   NSError *error = nil;
-  NSString *pulledFileDirectory = FBFileContainerTests.basePathPulledFileTestBasePath;
+  NSString *pulledFileDirectory = self.basePathPulledFileTestBasePath;
   NSString *pulledFile = [[container copyFromContainer:@"dir/some.txt" toHost:pulledFileDirectory] await:&error];
   pulledFile = [pulledFile stringByAppendingPathComponent:@"some.txt"];
   NSString *actualContent = [NSString stringWithContentsOfFile:pulledFile encoding:NSUTF8StringEncoding error:&error];
@@ -202,7 +187,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
   NSError *error = nil;
-  NSString *pulledDirectoryDirectory = FBFileContainerTests.basePathPulledDirectoryTestBasePath;
+  NSString *pulledDirectoryDirectory = self.basePathPulledDirectoryTestBasePath;
   NSString *pulledDirectory = [[container copyFromContainer:@"dir" toHost:pulledDirectoryDirectory] await:&error];
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"some.txt"]];
   NSArray<NSString *> *actualFiles = [NSFileManager.defaultManager contentsOfDirectoryAtPath:pulledDirectory error:&error];
@@ -367,7 +352,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSString *pulledFileDirectory = FBFileContainerTests.basePathPulledFileTestPathMapping;
+  NSString *pulledFileDirectory = self.basePathPulledFileTestPathMapping;
   NSString *pulledFile = [[container copyFromContainer:@"foo/file.txt" toHost:pulledFileDirectory] await:&error];
   pulledFile = [pulledFile stringByAppendingPathComponent:@"file.txt"];
   NSString *actualContent = [NSString stringWithContentsOfFile:pulledFile encoding:NSUTF8StringEncoding error:&error];
@@ -380,7 +365,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSString *pulledFileDirectory = FBFileContainerTests.basePathPulledFileTestPathMapping;
+  NSString *pulledFileDirectory = self.basePathPulledFileTestPathMapping;
   NSString *pulledFile = [[container copyFromContainer:@"bar/dir/in_dir.txt" toHost:pulledFileDirectory] await:&error];
   pulledFile = [pulledFile stringByAppendingPathComponent:@"in_dir.txt"];
   NSString *actualContent = [NSString stringWithContentsOfFile:pulledFile encoding:NSUTF8StringEncoding error:&error];
@@ -393,7 +378,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSString *pulledDirectoryDirectory = FBFileContainerTests.basePathPulledDirectoryTestPathMapping;
+  NSString *pulledDirectoryDirectory = self.basePathPulledDirectoryTestPathMapping;
   NSString *pulledDirectory = [[container copyFromContainer:@"bar/dir" toHost:pulledDirectoryDirectory] await:&error];
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"in_dir.txt"]];
   NSArray<NSString *> *actualFiles = [NSFileManager.defaultManager contentsOfDirectoryAtPath:pulledDirectory error:&error];
@@ -406,7 +391,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
   NSError *error = nil;
-  NSString *pulledDirectoryDirectory = FBFileContainerTests.basePathPulledMappedDirectoryTestPathMapping;
+  NSString *pulledDirectoryDirectory = self.basePathPulledMappedDirectoryTestPathMapping;
   NSString *pulledDirectory = [[container copyFromContainer:@"bar" toHost:pulledDirectoryDirectory] await:&error];
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"dir"]];
   NSArray<NSString *> *actualFiles = [NSFileManager.defaultManager contentsOfDirectoryAtPath:pulledDirectory error:&error];

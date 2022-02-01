@@ -114,13 +114,18 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     return [FBFuture futureWithError:error];
   }
 
+  // Construct the options for the underlying install API. This mirrors as much of Xcode's call to the same API as is reasonable.
+  // `@"PreferWifi": @1` may also be passed by Xcode. However, this being preferable is highly dependent on a fast WiFi network and both host/device on the same network. Since this is harder to pick a sane default for this option, this is omitted from the options.
   NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
   NSDictionary<NSString *, id> *options = @{
+    @"CFBundleIdentifier": bundle.identifier,  // Lets the installer know what the Bundle ID is of the passed in artifact.
+    @"CloseOnInvalidate": @1,  // Standard arguments of lockdown services to ensure that the socket is closed on teardown.
+    @"InvalidateOnDetach": @1,  // Similar to the above.
     @"IsUserInitiated": @1, // Improves installation performance. This has a strong effect on time taken in "VerifyingApplication" stage of installation, which is CPU/IO bound on the attached device.
     @"PackageType": @"Developer", // Signifies that the passed payload is a .app
     @"ShadowParentKey": self.deltaUpdateDirectory, // Must be provided if 'Developer' is the 'PackageType'. Specifies where incremental install data and apps are persisted for faster future installs of the same bundle.
   };
- 
+
   // Perform the install and lookup the app after.
   return [[[self.device
     connectToDeviceWithPurpose:@"install"]

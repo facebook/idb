@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <IOSurface/IOSurface.h>
 #import <VideoToolbox/VideoToolbox.h>
+#import <CoreImage/CIContext.h>
 
 #import "FBSimulatorError.h"
 
@@ -25,9 +26,13 @@
 
 @interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer;
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer scaleFactor:(NSNumber *)scaleFactor;
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+/**
+ The scale factor between 0-1. nil for no scaling.
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
 
 @end
 
@@ -44,6 +49,60 @@
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
 @end
+
+
+static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
+{
+  size_t width = CVPixelBufferGetWidth(pixelBuffer);
+  size_t height = CVPixelBufferGetHeight(pixelBuffer);
+  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
+  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
+  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
+  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
+  
+  size_t columnLeft;
+  size_t columnRight;
+  size_t rowsTop;
+  size_t rowsBottom;
+  
+  CVPixelBufferGetExtendedPixels(pixelBuffer, &columnLeft, &columnRight, &rowsTop, &rowsBottom);
+  return @{
+    @"width" : @(width),
+    @"height" : @(height),
+    @"row_size" : @(rowSize),
+    @"frame_size" : @(frameSize),
+    @"padding_column_left" : @(columnLeft),
+    @"padding_column_right" : @(columnRight),
+    @"padding_row_top" : @(rowsTop),
+    @"padding_row_bottom" : @(rowsBottom),
+    @"format" : pixelFormatString,
+  };
+}
+
+static CVPixelBufferRef createScaledPixelBuffer(CVPixelBufferRef pixelBuffer,
+                                                   NSNumber *scaleFactor,
+                                                   CIContext *context) {
+    if (scaleFactor == nil || scaleFactor.doubleValue == 1.0) {
+      return pixelBuffer;
+    }
+    
+    CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+  
+    CIImage *image = [[CIImage imageWithCVImageBuffer:pixelBuffer] imageByApplyingTransform:CGAffineTransformMakeScale(scaleFactor.doubleValue, scaleFactor.doubleValue)];
+
+    CVPixelBufferRef output = NULL;
+    CVPixelBufferCreate(NULL,
+                        (size_t)CGRectGetWidth(image.extent),
+                        (size_t)CGRectGetHeight(image.extent),
+                        CVPixelBufferGetPixelFormatType(pixelBuffer),
+                        NULL,
+                        &output);
+    if (output != NULL) {
+        [context render:image toCVPixelBuffer:output];
+    }
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+    return output;
+}
 
 static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
@@ -73,7 +132,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer scaleFactor:(NSNumber *)scaleFactor
 {
   self = [super init];
   if (!self) {
@@ -81,6 +140,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   _consumer = consumer;
+  _scaleFactor = scaleFactor;
 
   return self;
 }
@@ -97,10 +157,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
 {
-  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
-  void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-  size_t size = CVPixelBufferGetDataSize(pixelBuffer);
+  CIContext* context = [CIContext context];
+
+  CVPixelBufferRef resizedBuffer = createScaledPixelBuffer(pixelBuffer, self.scaleFactor, context);
+  
+  CVPixelBufferLockBaseAddress(resizedBuffer, kCVPixelBufferLock_ReadOnly);
+  
+  void *baseAddress = CVPixelBufferGetBaseAddress(resizedBuffer);
+  size_t size = CVPixelBufferGetDataSize(resizedBuffer);
+  
   if ([self.consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
     NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
     [self.consumer consumeData:data];
@@ -109,7 +175,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     [self.consumer consumeData:data];
   }
 
-  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+  CVPixelBufferUnlockBaseAddress(resizedBuffer, kCVPixelBufferLock_ReadOnly);
 
   return YES;
 }
@@ -265,23 +331,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @end
 
-static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
-{
-  size_t width = CVPixelBufferGetWidth(pixelBuffer);
-  size_t height = CVPixelBufferGetHeight(pixelBuffer);
-  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
-  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
-  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
-
-  return @{
-    @"width" : @(width),
-    @"height" : @(height),
-    @"row_size" : @(rowSize),
-    @"frame_size" : @(frameSize),
-    @"format" : pixelFormatString,
-  };
-}
 
 @implementation FBSimulatorVideoStream
 
@@ -525,7 +574,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
         logger:logger];
   }
   if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
-    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
+    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];
   }
   return [[FBControlCoreError
     describeFormat:@"%@ is not supported for Simulators", encoding]
