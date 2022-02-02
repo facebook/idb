@@ -41,7 +41,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 # pyre-ignore
-def swallow_exceptions(f):
+def swallow_exceptions(f: object):
     if asyncio.iscoroutinefunction(f):
 
         @wraps(f)
@@ -53,11 +53,14 @@ def swallow_exceptions(f):
 
     else:
 
+        # pyre-fixme[6]: For 1st param expected `(...) -> Any` but got `object`.
         @wraps(f)
         def inner(*args, **kwargs) -> None:  # pyre-ignore
             try:
+                # pyre-fixme[29]: `object` is not a function.
                 return f(*args, **kwargs)
             except Exception:
+                # pyre-fixme[16]: `object` has no attribute `__name__`.
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
     return inner
