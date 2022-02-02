@@ -15,34 +15,34 @@
 + (nonnull instancetype)CoreSimulator
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] requiredFrameworks:@[] rootPermitted:NO];
+    return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] rootPermitted:NO];
   }
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] requiredFrameworks:@[] rootPermitted:NO];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] rootPermitted:NO];
 }
 
 + (nonnull instancetype)SimulatorKit
 {
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[]  requiredFrameworks:@[] rootPermitted:NO];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[] rootPermitted:NO];
 }
 
 + (nonnull instancetype)DTXConnectionServices
 {
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]  requiredFrameworks:@[] rootPermitted:NO];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"] rootPermitted:NO];
 }
 
 + (nonnull instancetype)XCTest
 {
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"] requiredFrameworks:@[] rootPermitted:NO];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"] rootPermitted:NO];
 }
 
 + (instancetype)MobileDevice
 {
-  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[] requiredFrameworks:@[] rootPermitted:YES];
+  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[] rootPermitted:YES];
 }
 
 + (instancetype)AccessibilityPlatformTranslation
 {
-  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework" requiredClassNames:@[@"AXPTranslationObject"] requiredFrameworks:@[] rootPermitted:NO];
+  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework" requiredClassNames:@[@"AXPTranslationObject"] rootPermitted:NO];
 }
 
 @end

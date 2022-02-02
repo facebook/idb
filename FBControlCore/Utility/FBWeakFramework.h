@@ -21,22 +21,20 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param relativePath Developer Directory relative path to the framework.
  @param requiredClassNames list of class names used to determin if framework load was successful
- @param requiredFrameworks list of frameworks, that should be loaded before this framework loads
  @param rootPermitted YES if this Framework can be loaded from the root user, NO otherwise.
  @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
  */
-+ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted;
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted;
 
 /**
   Creates and returns FBWeakFramework with the provided absolute path
 
   @param absolutePath The Absolute Path of the Framework.
   @param requiredClassNames list of class names used to determin if framework load was successful
-  @param requiredFrameworks list of frameworks, that should be loaded before this framework loads
   @param rootPermitted YES if this Framework can be loaded from the root user, NO otherwise.
   @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
 */
-+ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted;
++ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted;
 
 /**
  Loads framework by:

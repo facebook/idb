@@ -26,7 +26,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 @property (nonatomic, copy, readonly) NSString *relativePath;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *fallbackDirectories;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
-@property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *requiredFrameworks;
 @property (nonatomic, assign, readonly) FBWeakFrameworkType type;
 @property (nonatomic, assign, readonly) BOOL rootPermitted;
 
@@ -46,29 +45,27 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
 #pragma mark Initializers
 
-+ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   return [[FBWeakFramework alloc]
     initWithBasePath:FBXcodeConfiguration.developerDirectory
     relativePath:relativePath
     fallbackDirectories:self.xcodeFallbackDirectories
     requiredClassNames:requiredClassNames
-    requiredFrameworks:requiredFrameworks
     rootPermitted:NO];
 }
 
-+ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted
++ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   return [[FBWeakFramework alloc]
     initWithBasePath:absolutePath
     relativePath:@""
     fallbackDirectories:@[]
     requiredClassNames:requiredClassNames
-    requiredFrameworks:requiredFrameworks
     rootPermitted:rootPermitted];
 }
 
-- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks rootPermitted:(BOOL)rootPermitted
+- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   self = [super init];
   if (!self) {
@@ -81,7 +78,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   _relativePath = relativePath;
   _fallbackDirectories = fallbackDirectories;
   _requiredClassNames = requiredClassNames;
-  _requiredFrameworks = requiredFrameworks;
   _name = filename.stringByDeletingPathExtension;
   _type = [filename.pathExtension isEqualToString:@"dylib"] ? FBWeakFrameworkDylib : FBWeakFrameworkTypeFramework;
   _rootPermitted = rootPermitted;
@@ -153,14 +149,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
     return YES;
-  }
-
-  // Load required frameworks
-  for (FBWeakFramework *requredFramework in self.requiredFrameworks) {
-    NSError *innerError = nil;
-    if (![requredFramework loadWithLogger:logger error:&innerError]) {
-      return [FBControlCoreError failBoolWithError:innerError errorOut:error];
-    }
   }
 
   // Check that the framework can be loaded as root if root.
@@ -293,7 +281,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 - (BOOL)loadMissingFrameworkNamed:(NSString *)missingFrameworkName fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Try to load missing framework with locations from
-  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName requiredClassNames:@[] requiredFrameworks:@[] rootPermitted:NO];
+  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName requiredClassNames:@[] rootPermitted:NO];
   [logger.debug logFormat:@"Attempting to load missing framework %@", missingFrameworkName];
   for (NSString *directory in fallbackDirectories) {
     NSError *missingFrameworkLoadError = nil;
