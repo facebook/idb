@@ -212,4 +212,37 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     }];
 }
 
+#pragma mark Private Methods
+
++ (NSArray *)createArgumentsWithTarget:(id<FBiOSTarget>)target
+                         configuration:(FBInstrumentsConfiguration *)configuration
+                             traceFile: (NSString *)traceFile {
+  NSString *durationMilliseconds = [NSString stringWithFormat:@"%@ms", [@(configuration.timings.operationDuration * 1000) stringValue]];
+  
+  NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+  [arguments addObjectsFromArray:@[@"--template", configuration.templateName,
+                                   @"--device", target.udid,
+                                   @"--output", traceFile,
+                                   @"--time-limit", durationMilliseconds]];
+  
+  if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
+    for (NSString *key in configuration.appEnvironment) {
+      [arguments addObjectsFromArray:@[@"--env", [NSString stringWithFormat:@"%@=%@", key, configuration.appEnvironment[key]]]];
+    }
+    
+    [arguments addObjectsFromArray:@[
+      @"--launch",
+      @"--",
+      configuration.targetApplication
+    ]];
+    [arguments addObjectsFromArray:configuration.appArguments];
+  }
+  
+  return [@[@"xctrace", @"record"] arrayByAddingObjectsFromArray:arguments];
+}
+
++ (NSString *)launchPath {
+  return @"/usr/bin/xcrun";
+}
+
 @end
