@@ -45,7 +45,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
 #pragma mark Initializers
 
-+ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
 {
   return [[FBWeakFramework alloc]
     initWithBasePath:FBXcodeConfiguration.developerDirectory
@@ -281,7 +281,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 - (BOOL)loadMissingFrameworkNamed:(NSString *)missingFrameworkName fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Try to load missing framework with locations from
-  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName requiredClassNames:@[] rootPermitted:NO];
+  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName requiredClassNames:@[]];
   [logger.debug logFormat:@"Attempting to load missing framework %@", missingFrameworkName];
   for (NSString *directory in fallbackDirectories) {
     NSError *missingFrameworkLoadError = nil;
