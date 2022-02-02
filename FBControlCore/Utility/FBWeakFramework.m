@@ -24,7 +24,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, copy, readonly) NSString *basePath;
 @property (nonatomic, copy, readonly) NSString *relativePath;
-@property (nonatomic, copy, readonly) NSArray<NSString *> *fallbackDirectories;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
 @property (nonatomic, assign, readonly) BOOL rootPermitted;
 
@@ -33,15 +32,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
 @implementation FBWeakFramework
 
-+ (NSArray<NSString *> *)xcodeFallbackDirectories
-{
-  return @[
-    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
-    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
-    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../Plugins"],
-  ];
-}
-
 #pragma mark Initializers
 
 + (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
@@ -49,7 +39,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   return [[FBWeakFramework alloc]
     initWithBasePath:FBXcodeConfiguration.developerDirectory
     relativePath:relativePath
-    fallbackDirectories:self.xcodeFallbackDirectories
     requiredClassNames:requiredClassNames
     rootPermitted:NO];
 }
@@ -59,12 +48,11 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   return [[FBWeakFramework alloc]
     initWithBasePath:absolutePath
     relativePath:@""
-    fallbackDirectories:@[]
     requiredClassNames:requiredClassNames
     rootPermitted:rootPermitted];
 }
 
-- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
+- (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   self = [super init];
   if (!self) {
@@ -75,7 +63,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
   _basePath = basePath;
   _relativePath = relativePath;
-  _fallbackDirectories = fallbackDirectories;
   _requiredClassNames = requiredClassNames;
   _name = filename.stringByDeletingPathExtension;
   _rootPermitted = rootPermitted;
@@ -87,42 +74,10 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
 - (BOOL)loadWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 {
-  return [self loadFromRelativeDirectory:self.basePath fallbackDirectories:self.fallbackDirectories logger:logger error:error];
+  return [self loadFromRelativeDirectory:self.basePath logger:logger error:error];
 }
 
 #pragma mark Private
-
-+ (NSString *)missingFrameworkNameWithErrorDescription:(NSString *)description
-{
-  if (!description) {
-    return nil;
-  }
-
-  NSRange rpathRange = [description rangeOfString:@"@rpath/"];
-  if (rpathRange.location == NSNotFound) {
-    return nil;
-  }
-
-  NSRange searchRange = NSMakeRange(rpathRange.location, description.length - rpathRange.location);
-
-  NSRange frameworkRange = [description rangeOfString:@".dylib"
-                                              options:NSCaseInsensitiveSearch
-                                                range:searchRange];
-
-  if (frameworkRange.location == NSNotFound) {
-    frameworkRange = [description rangeOfString:@".framework"
-                                        options:NSCaseInsensitiveSearch
-                                          range:searchRange];
-  }
-
-  if (frameworkRange.location == NSNotFound) {
-    frameworkRange = [description rangeOfString:@".ideplugin" options:NSCaseInsensitiveSearch range:NSMakeRange(rpathRange.location, description.length - rpathRange.location)];
-    if (frameworkRange.location == NSNotFound) {
-      return nil;
-    }
-  }
-  return [description substringWithRange:NSMakeRange(rpathRange.location + rpathRange.length, frameworkRange.location - rpathRange.location - rpathRange.length + frameworkRange.length)];
-}
 
 - (BOOL)allRequiredClassesExistsWithError:(NSError **)error
 {
@@ -136,7 +91,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   return YES;
 }
 
-- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Checking if classes are already loaded. Error here is irrelevant (returning NO means something is not loaded)
   if ([self allRequiredClassesExistsWithError:nil] && self.requiredClassNames.count > 0) {
@@ -172,7 +127,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   }
 
   [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
-  if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error]) {
+  if (![bundle loadAndReturnError:error]) {
     return NO;
   }
 
@@ -183,63 +138,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   }
   if (![self verifyIfLoadedWithLogger:logger error:error]) {
     return NO;
-  }
-  return YES;
-}
-
-- (BOOL)loadBundle:(NSBundle *)bundle fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  NSError *innerError;
-  if ([bundle loadAndReturnError:&innerError]) {
-    return YES;
-  }
-
-  BOOL isLinkingIssue = ([innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSExecutableLoadError);
-  if (!isLinkingIssue) {
-    return [[[FBControlCoreError
-      describeFormat:@"Error loading bundle at %@ and it was not a linking issue", bundle.bundlePath]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  // If it is linking issue, try to determine missing framework
-  [logger.debug logFormat:@"%@: Bundle could not be loaded from %@, attempting to find the Framework name", self.name, bundle.bundlePath];
-  NSString *description = innerError.userInfo[@"NSDebugDescription"];
-  NSString *missingFrameworkName = [self.class missingFrameworkNameWithErrorDescription:description];
-  if (!missingFrameworkName) {
-    return [[[FBControlCoreError
-      describeFormat:@"Could not determine the missing framework name from %@", bundle.bundlePath]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  if (![self loadMissingFrameworkNamed:missingFrameworkName
-                   fallbackDirectories:fallbackDirectories
-                                logger:logger
-                                 error:error]) {
-    return [[FBControlCoreError describeFormat:@"Could not load missing framework %@", missingFrameworkName]
-            failBool:error];
-  }
-  return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
-
-  // Uncategorizable Error, return the original error
-  return [[FBControlCoreError
-    describeFormat:@"Missing Framework %@ could not be loaded from any fallback directories", missingFrameworkName]
-    failBool:error];
-}
-
-- (BOOL)loadMissingFrameworkNamed:(NSString *)missingFrameworkName fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  // Try to load missing framework with locations from
-  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName requiredClassNames:@[]];
-  [logger.debug logFormat:@"Attempting to load missing framework %@", missingFrameworkName];
-  for (NSString *directory in fallbackDirectories) {
-    NSError *missingFrameworkLoadError = nil;
-    if (![missingFramework loadFromRelativeDirectory:directory fallbackDirectories:fallbackDirectories logger:logger error:&missingFrameworkLoadError]) {
-      [logger.debug logFormat:@"%@ could not be loaded from fallback directory %@", missingFrameworkName, directory];
-      continue;
-    }
-    [logger.debug logFormat:@"%@ has been loaded from fallback directory '%@', re-attempting to load %@", missingFrameworkName, directory, self.name];
   }
   return YES;
 }
