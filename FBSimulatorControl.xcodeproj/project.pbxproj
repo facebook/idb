@@ -237,6 +237,7 @@
 		AA758B4D20E3C0720064EC18 /* FBAMDeviceServiceManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA758B4B20E3C0720064EC18 /* FBAMDeviceServiceManager.m */; };
 		AA7728AE1E5238A6008FCF7C /* FBFileWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA7728AC1E5238A6008FCF7C /* FBFileWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA7728AF1E5238A6008FCF7C /* FBFileWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = AA7728AD1E5238A6008FCF7C /* FBFileWriter.m */; };
+		AA777B0327A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA777B0027A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m */; };
 		AA780714225B4A0700A6E4AF /* FBSimulatorSetTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = AA780713225B4A0700A6E4AF /* FBSimulatorSetTestCase.m */; };
 		AA791BA81C63668C00AE49EB /* SimulatorBridge-Protocol.h in Headers */ = {isa = PBXBuildFile; fileRef = AA791BA51C63668C00AE49EB /* SimulatorBridge-Protocol.h */; };
 		AA791BA91C63668C00AE49EB /* SimulatorBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = AA791BA61C63668C00AE49EB /* SimulatorBridge.h */; };
@@ -1014,6 +1015,7 @@
 		AA758B4B20E3C0720064EC18 /* FBAMDeviceServiceManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAMDeviceServiceManager.m; sourceTree = "<group>"; };
 		AA7728AC1E5238A6008FCF7C /* FBFileWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileWriter.h; sourceTree = "<group>"; };
 		AA7728AD1E5238A6008FCF7C /* FBFileWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileWriter.m; sourceTree = "<group>"; };
+		AA777B0027A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBControlCoreFrameworkLoaderTests.m; sourceTree = "<group>"; };
 		AA780712225B4A0700A6E4AF /* FBSimulatorSetTestCase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorSetTestCase.h; sourceTree = "<group>"; };
 		AA780713225B4A0700A6E4AF /* FBSimulatorSetTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorSetTestCase.m; sourceTree = "<group>"; };
 		AA789C261F064A1000BC86BD /* SimDeviceLegacyClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimDeviceLegacyClient.h; sourceTree = "<group>"; };
@@ -1605,9 +1607,10 @@
 		AA2076A51F0B7541001F180C /* Integration */ = {
 			isa = PBXGroup;
 			children = (
-				A255670A27610C7E0052D060 /* FBProcessFetcherTests.m */,
+				AA777B0027A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m */,
 				AA2076D11F0B779B001F180C /* FBFileReaderTests.m */,
 				AA2076CF1F0B76AF001F180C /* FBFileWriterTests.m */,
+				A255670A27610C7E0052D060 /* FBProcessFetcherTests.m */,
 				AA6C68A3267B89C100EB975D /* FBProcessIOTests.m */,
 				AA274282204546F800CFAC3B /* FBProcessStreamTests.m */,
 				AA2076A71F0B7541001F180C /* FBProcessTests.m */,
@@ -3574,6 +3577,7 @@
 				AA6C68A4267B89C100EB975D /* FBProcessIOTests.m in Sources */,
 				AA2076BD1F0B7542001F180C /* FBCrashLogInfoTests.m in Sources */,
 				EE87FA432008D906002716FE /* AXTraitsTest.m in Sources */,
+				AA777B0327A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m in Sources */,
 				AA08487E1F3F49D600A4BA60 /* FBFutureTests.m in Sources */,
 				AAB68D7B1C90C2F200D20416 /* FBControlCoreValueTestCase.m in Sources */,
 				AA3B92B11DD1C716000C045B /* FBControlCoreLoggerDouble.m in Sources */,
