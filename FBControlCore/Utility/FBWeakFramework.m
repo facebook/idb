@@ -26,7 +26,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 @property (nonatomic, copy, readonly) NSString *relativePath;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *fallbackDirectories;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
-@property (nonatomic, assign, readonly) FBWeakFrameworkType type;
 @property (nonatomic, assign, readonly) BOOL rootPermitted;
 
 
@@ -79,7 +78,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   _fallbackDirectories = fallbackDirectories;
   _requiredClassNames = requiredClassNames;
   _name = filename.stringByDeletingPathExtension;
-  _type = [filename.pathExtension isEqualToString:@"dylib"] ? FBWeakFrameworkDylib : FBWeakFrameworkTypeFramework;
   _rootPermitted = rootPermitted;
 
   return self;
@@ -166,44 +164,25 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
       failBool:error];
   }
 
-  NSError *innerError = nil;
-  switch (self.type) {
-    case FBWeakFrameworkTypeFramework: {
-      NSBundle *bundle = [NSBundle bundleWithPath:path];
-      if (!bundle) {
-        return [[FBControlCoreError
-                 describeFormat:@"Failed to load the bundle for path %@", path]
-                failBool:error];
-      }
+  NSBundle *bundle = [NSBundle bundleWithPath:path];
+  if (!bundle) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to load the bundle for path %@", path]
+      failBool:error];
+  }
 
-      [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
-      if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
-        return [FBControlCoreError failBoolWithError:innerError errorOut:error];
-      }
-    }
-      break;
-
-    case FBWeakFrameworkDylib:
-      if (![self loadDylibNamed:self.relativePath
-              relativeDirectory:relativeDirectory
-            fallbackDirectories:fallbackDirectories
-                         logger:logger
-                          error:error]) {
-        return [[FBControlCoreError describeFormat:@"Failed to load %@", self.relativePath] failBool:error];
-      }
-      break;
-
-    default:
-      break;
+  [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
+  if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error]) {
+    return NO;
   }
 
   [logger.debug logFormat:@"%@: Successfully loaded", self.name];
-  if (![self allRequiredClassesExistsWithError:&innerError]) {
+  if (![self allRequiredClassesExistsWithError:error]) {
     [logger logFormat:@"Failed to load %@", path.lastPathComponent];
-    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+    return NO;
   }
-  if (![self verifyIfLoadedWithLogger:logger error:&innerError]) {
-    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+  if (![self verifyIfLoadedWithLogger:logger error:error]) {
+    return NO;
   }
   return YES;
 }
@@ -247,35 +226,6 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   return [[FBControlCoreError
     describeFormat:@"Missing Framework %@ could not be loaded from any fallback directories", missingFrameworkName]
     failBool:error];
-}
-
-- (BOOL)loadDylibNamed:(NSString *)dylibName
-     relativeDirectory:(NSString *)relativeDirectory
-   fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories
-                logger:(id<FBControlCoreLogger>)logger
-                 error:(NSError **)error
-{
-  NSString *path = [relativeDirectory.stringByStandardizingPath stringByAppendingPathComponent:dylibName];
-  if (!dlopen(path.UTF8String, RTLD_LAZY)) {
-    // Error may be
-    NSString *errorString = [NSString stringWithUTF8String:dlerror()];
-    NSString *missingFrameworkName = [[self class] missingFrameworkNameWithErrorDescription:errorString];
-    if (![self loadMissingFrameworkNamed:missingFrameworkName
-                     fallbackDirectories:fallbackDirectories
-                                  logger:logger
-                                   error:error]) {
-      return [[FBControlCoreError describeFormat:@"Failed to load dylib %@ dependency %@",
-               dylibName, missingFrameworkName]
-              failBool:error];
-    }
-    // Dependency loaded - retry
-    return [self loadDylibNamed:dylibName
-              relativeDirectory:relativeDirectory
-            fallbackDirectories:fallbackDirectories
-                         logger:logger
-                   error:error];
-  }
-  return YES;
 }
 
 - (BOOL)loadMissingFrameworkNamed:(NSString *)missingFrameworkName fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
