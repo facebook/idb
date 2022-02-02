@@ -111,15 +111,17 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   FBInstrumentsConsumer *instrumentsConsumer = [[FBInstrumentsConsumer alloc] init];
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
-
-  return [[[[[[[[FBProcessBuilder
-    withLaunchPath:[self launchPath]]
-    withArguments:arguments]
-    withStdOutToLogger:compositeLogger]
-    withStdErrToLogger:compositeLogger]
-    withTaskLifecycleLoggingTo:logger]
-    start]
-    onQueue:target.asyncQueue fmap:^ FBFuture * (FBProcess *task) {
+  
+  FBFuture *instrumentsProcess = [[[[[[FBProcessBuilder
+                                       withLaunchPath:[self launchPath]]
+                                      withArguments:arguments]
+                                     withStdOutToLogger:compositeLogger]
+                                    withStdErrToLogger:compositeLogger]
+                                   withTaskLifecycleLoggingTo:logger]
+                                  start];
+  
+  if (!FBXcodeConfiguration.isXcode13OrGreater) {
+    instrumentsProcess = [instrumentsProcess onQueue:target.asyncQueue fmap:^ FBFuture * (FBProcess *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
         onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
         [logger logFormat:@"Waiting for %f seconds for instruments to start properly", configuration.timings.launchErrorTimeout];
@@ -134,7 +136,10 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
           }]
           mapReplace:task];
         }];
-    }]
+    }];
+  }
+
+  return [instrumentsProcess
     // Yay instruments started properly
     onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBProcess *task) {
       [logger logFormat:@"Started instruments %@", task];
