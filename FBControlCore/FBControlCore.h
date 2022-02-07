@@ -84,7 +84,6 @@
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
-#import <FBControlCore/FBWeakFrameworkLoader.h>
 #import <FBControlCore/FBXcodeConfiguration.h>
 #import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/FBXCTestCommands.h>
