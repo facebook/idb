@@ -8,6 +8,7 @@ import asyncio
 import functools
 import inspect
 import logging
+import json
 import os
 import shutil
 import sys
@@ -65,6 +66,7 @@ from idb.common.types import (
     FileEntryInfo,
     FileListing,
     HIDButtonType,
+    HIDElementType,
     HIDEvent,
     IdbConnectionException,
     IdbException,
@@ -788,6 +790,48 @@ class Client(ClientBase):
     @log_and_handle_exceptions
     async def send_events(self, events: Iterable[HIDEvent]) -> None:
         await self.hid(iterator_to_async_iterator(events))
+
+    @log_and_handle_exceptions
+    async def axtap(
+        self,
+        element: HIDElementType,
+        label: str,
+        x: float,
+        y: float,
+        duration: Optional[float] = None,
+        count: Optional[int] = 1,
+    ) -> None:
+        accessibilityInfo = await self.stub.accessibility_info(
+            AccessibilityInfoRequest(
+                point=None,
+                format=(AccessibilityInfoRequest.LEGACY),
+            )
+        )
+
+        elementFound = False
+
+        for item in json.loads(accessibilityInfo.json):
+            try:
+                axElement = HIDElementType(item["role_description"])
+                axLabel = item["AXLabel"]
+
+                elementFound = axElement == element and (
+                    label is None or axLabel == label
+                )
+
+                if elementFound:
+                    axframe = item["frame"]
+                    x += axframe["x"]
+                    y += axframe["y"]
+                    break
+            except:
+                pass
+
+        if elementFound:
+            for n in range(count):
+                await self.send_events(tap_to_events(x, y, duration))
+        else:
+            print("AXElement with AXLabel: ", label, " type: ", element, " not found.")
 
     @log_and_handle_exceptions
     async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:

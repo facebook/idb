@@ -54,6 +54,7 @@ from idb.cli.commands.file import (
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
 from idb.cli.commands.hid import (
+    AXTapCommand,
     ButtonCommand,
     KeyCommand,
     KeySequenceCommand,
@@ -242,6 +243,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
             commands=[
                 AccessibilityInfoAllCommand(),
                 AccessibilityInfoAtPointCommand(),
+                AXTapCommand(),
                 TapCommand(),
                 ButtonCommand(),
                 TextCommand(),
