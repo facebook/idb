@@ -12,7 +12,7 @@
 
 @implementation FBWeakFramework (ApplePrivateFrameworks)
 
-+ (nonnull instancetype)CoreSimulator
++ (instancetype)CoreSimulator
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {
     return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] rootPermitted:NO];
@@ -20,17 +20,17 @@
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
 }
 
-+ (nonnull instancetype)SimulatorKit
++ (instancetype)SimulatorKit
 {
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[]];
 }
 
-+ (nonnull instancetype)DTXConnectionServices
++ (instancetype)DTXConnectionServices
 {
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]];
 }
 
-+ (nonnull instancetype)XCTest
++ (instancetype)XCTest
 {
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"]];
 }
