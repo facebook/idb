@@ -407,6 +407,7 @@ message VideoStreamRequest {
     RBGA = 1;
     MJPEG = 2;
     MINICAP = 3;
+    I420 = 4;
   }
   message Start {
     string file_path = 1;
