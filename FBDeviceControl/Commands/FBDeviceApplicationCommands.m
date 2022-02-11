@@ -309,30 +309,6 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     }];
 }
 
-- (FBFuture<NSNull *> *)secureInstallApplicationBundle:(NSURL *)hostAppURL options:(NSDictionary<NSString *, id> *)options
-{
-  return [[self.device
-    connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      [self.device.logger logFormat:@"Installing Application %@", hostAppURL];
-      int status = device.calls.SecureInstallApplicationBundle(
-        device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(hostAppURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) InstallCallback,
-        (__bridge void *) (device)
-      );
-      if (status != 0) {
-        NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
-          failFuture];
-      }
-      [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
-      return FBFuture.empty;
-    }];
-}
-
 - (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)installedApplicationsData:(NSArray<NSString *> *)returnAttributes
 {
   return [[self.device
