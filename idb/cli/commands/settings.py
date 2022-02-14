@@ -10,7 +10,6 @@ from idb.cli import ClientCommand
 from idb.common.command import CommandGroup
 from idb.common.types import Client
 
-
 _ENABLE = "enable"
 _DISABLE = "disable"
 
@@ -37,6 +36,13 @@ class SetPreferenceCommand(ClientCommand):
             type=str,
         )
         parser.add_argument(
+            "--type",
+            help="Specifies the type of the value to be set, for supported types see 'defaults get help' defaults to string. "
+            "Example of usage: idb set --domain com.apple.suggestions.plist SuggestionsAppLibraryEnabled --type bool true",
+            type=str,
+            default="string",
+        )
+        parser.add_argument(
             "value",
             help="Preference value",
             type=str,
@@ -58,7 +64,10 @@ class SetPreferenceCommand(ClientCommand):
             await client.set_hardware_keyboard(args.value == _ENABLE)
         else:
             await client.set_preference(
-                name=args.name, value=args.value, domain=args.domain
+                name=args.name,
+                value=args.value,
+                value_type=args.type,
+                domain=args.domain,
             )
 
 

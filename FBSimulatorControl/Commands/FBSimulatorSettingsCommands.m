@@ -64,11 +64,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }];
 }
 
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 {
   return [[FBPreferenceModificationStrategy
     strategyWithSimulator:self.simulator]
-    setPreference:name value:value domain:domain];
+          setPreference:name value:value type: type domain:domain];
 }
 
 - (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;

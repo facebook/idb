@@ -929,11 +929,15 @@ Status FBIDBServiceHandler::setting(ServerContext* context, const idb::SettingRe
           NSError *error = nil;
           NSString *name = nsstring_from_c_string(stringSetting.name().c_str());
           NSString *value = nsstring_from_c_string(stringSetting.value().c_str());
+          NSString *type = nil;
+          if (stringSetting.value_type().length() > 0) {
+            type = nsstring_from_c_string(stringSetting.value_type().c_str());
+          }
           NSString *domain = nil;
           if (stringSetting.domain().length() > 0) {
             domain = nsstring_from_c_string(stringSetting.domain().c_str());
           }
-          NSNull *result = [[_commandExecutor set_preference:name value:value domain:domain] await:&error];
+          NSNull *result = [[_commandExecutor set_preference:name value:value type: type domain:domain] await:&error];
           if (!result) {
             return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
           }

@@ -551,7 +551,7 @@ class Client(ABC):
 
     @abstractmethod
     async def set_preference(
-        self, name: str, value: str, domain: Optional[str]
+        self, name: str, value: str, value_type: str, domain: Optional[str]
     ) -> None:
         pass
 

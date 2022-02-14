@@ -1232,12 +1232,16 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions
     async def set_preference(
-        self, name: str, value: str, domain: Optional[str]
+        self, name: str, value: str, value_type: str, domain: Optional[str]
     ) -> None:
         await self.stub.setting(
             SettingRequest(
                 stringSetting=SettingRequest.StringSetting(
-                    setting=AnySetting, value=value, name=name, domain=domain
+                    setting=AnySetting,
+                    value=value,
+                    name=name,
+                    value_type=value_type,
+                    domain=domain,
                 )
             )
         )

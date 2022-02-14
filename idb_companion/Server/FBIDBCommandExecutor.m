@@ -490,12 +490,12 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value type:(NSString *)type domain:(nullable NSString *)domain
 {
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-    return [commands setPreference:name value:value domain:domain];
+    return [commands setPreference:name value:value type:type domain:domain];
     }];
 }
 
@@ -513,7 +513,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands setPreference:@"AppleLocale" value:identifier domain:nil];
+    return [commands setPreference:@"AppleLocale" value:identifier type:nil domain:nil];
     }];
 }
 

@@ -47,10 +47,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param name preference name
  @param value preference value
+ @param type preference value type. If null defaults to `string`.
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
 

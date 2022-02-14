@@ -76,13 +76,14 @@
   return [[self performDefaultsCommandWithArguments:arguments] mapReplace:NSNull.null];
 }
 
-- (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value
+- (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value type:(NSString *)type
 {
   return [[self
     performDefaultsCommandWithArguments:@[
       @"write",
       domain,
       key,
+      [NSString stringWithFormat:@"-%@", type ? type : @"string"],
       value,
     ]]
     mapReplace:NSNull.null];
@@ -152,12 +153,12 @@
 
 static NSString *const AppleGlobalDomain = @"Apple Global Domain";
 
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain
 {
   if (domain == nil) {
     domain = AppleGlobalDomain;
   }
-  return [self setDefaultInDomain:domain key:name value:value];
+  return [self setDefaultInDomain:domain key:name value:value type:type];
 }
 
 - (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain
