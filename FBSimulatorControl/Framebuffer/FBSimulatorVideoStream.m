@@ -206,6 +206,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   NSDictionary<NSString *, id> * encoderSpecification = @{
     (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
+  
+  if (@available(macOS 12.1, *)) {
+    encoderSpecification = @{
+      (NSString *) kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: @YES,
+      (NSString *) kVTVideoEncoderSpecification_EnableLowLatencyRateControl: @YES,
+    };
+  }
   size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(pixelBuffer);
   int32_t destinationWidth = (int32_t) sourceWidth;
