@@ -1259,7 +1259,8 @@ Status FBIDBServiceHandler::video_stream(ServerContext* context, grpc::ServerRea
   }
   NSNumber *compressionQuality = @(start.compression_quality());
   NSNumber *scaleFactor = @(start.scale_factor());
-  FBVideoStreamConfiguration *configuration = [[FBVideoStreamConfiguration alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond compressionQuality:compressionQuality scaleFactor:scaleFactor];
+  NSNumber *avgBitrate = start.avg_bitrate() > 0 ? @(start.avg_bitrate()) : nil;
+  FBVideoStreamConfiguration *configuration = [[FBVideoStreamConfiguration alloc] initWithEncoding:encoding framesPerSecond:framesPerSecond compressionQuality:compressionQuality scaleFactor:scaleFactor avgBitrate:avgBitrate];
   id<FBVideoStream> videoStream = [[_target createStreamWithConfiguration:configuration] block:&error];
   if (!stream) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);

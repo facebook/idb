@@ -31,7 +31,7 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  @param compressionQuality the compression quality to use.
  @param scaleFactor the scale factor, between 0-1. nil for no scaling.
  */
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor;
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate;
 
 /**
  The encoding of the stream.
@@ -53,6 +53,11 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  The scale factor between 0-1. nil for no scaling.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
+
+/**
+ Average bitrate
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *avgBitrate;
 
 @end
 

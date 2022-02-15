@@ -542,11 +542,19 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 + (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  NSNumber *avgBitrate = @(800 * 1024);
+  if (configuration.avgBitrate != nil) {
+    avgBitrate = configuration.avgBitrate;
+  }
+  NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
   // Get the base compression session properties, and add the class-cluster properties to them.
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+    (NSString *) kVTCompressionPropertyKey_AverageBitRate: avgBitrate,
+    (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[maxBitrate, @1],
   }];
+
   [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
@@ -654,8 +662,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @60,
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration: @10, // key frame at least every 10 seconds
     (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
-    (NSString *) kVTCompressionPropertyKey_AverageBitRate: @(800 * 1024), // avg kbps // TODO: make this configurable
-    (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[@(1200 * 1024), @1], // max kbps // TODO: make this configurable
+
   };
 }
 
