@@ -431,6 +431,7 @@ message VideoStreamRequest {
     Format format = 3;
     double compression_quality = 4;
     double scale_factor = 5;
+    double avg_bitrate = 6;
   }
   message Stop {}
   oneof control {
