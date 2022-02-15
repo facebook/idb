@@ -10,6 +10,8 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
+#import "FBXCTestDescriptor.h"
+#import "FBXCTestRunRequest.h"
 #import "FBXCTestRunRequest.h"
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
@@ -669,7 +671,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       describeFormat:@"Target doesn't conform to FBDapServerCommand protocol %@", commands]
       failFuture];
   }
-  
+
   return [commands launchDapServer:dapPath stdIn:stdIn stdOut:stdOut];
 }
 
@@ -927,7 +929,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (!bundleID) {
         return [FBFuture futureWithResult:artifact];
       }
-      
+
       return [[self.target installedApplicationWithBundleID:bundleID]
         onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
           [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];

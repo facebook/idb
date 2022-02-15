@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 #import <FBControlCore/FBControlCore.h>
-#import "FBXCTestDescriptor.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -16,6 +15,9 @@ extern NSString *const IdbApplicationsFolder;
 extern NSString *const IdbDylibsFolder;
 extern NSString *const IdbDsymsFolder;
 extern NSString *const IdbFrameworksFolder;
+
+@protocol FBControlCoreLogger;
+@protocol FBXCTestDescriptor;
 
 /**
  A wrapper around an installed artifact
@@ -82,7 +84,7 @@ extern NSString *const IdbFrameworksFolder;
 
 /**
  Exposes the receiver as an FBFileContainer instance.
- 
+
  @return a FBFileContainer instance.
  */
 - (id<FBFileContainer>)asFileContainer;
@@ -267,7 +269,7 @@ extern NSString *const IdbFrameworksFolder;
 
 /**
  Interpolate path replacements
- 
+
  @return a dictionary with the replacements defined
  */
 - (NSDictionary<NSString *, NSString *> *)replacementMapping;

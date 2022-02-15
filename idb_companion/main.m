@@ -23,6 +23,8 @@
 #import "FBIDBStorageManager.h"
 #import "FBIDBCommandExecutor.h"
 
+#import "idb-Swift.h"
+
 const char *kUsageHelpMessage = "\
 Usage: \n \
   Modes of operation, only one of these may be specified:\n\

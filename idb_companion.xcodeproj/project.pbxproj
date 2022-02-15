@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -58,6 +58,11 @@
 		D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */; };
 		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
+		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
+		DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB5C38CA27B5411C00401F91 /* GRPC */; };
+		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
+		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
+		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -77,7 +82,34 @@
 			);
 			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
 		};
+		DBF5D5D2278EF9F000633753 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.proto";
+			fileType = pattern.proxy;
+			inputFiles = (
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-grpc-swift",
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-swift",
+			);
+			isEditable = 1;
+			name = "Files '*.proto' using Script";
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.swift",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.swift",
+			);
+			script = "# Generate grpc code from .proto\nGRPC_PACKAGE_DIR=${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\n\nprotoc \\\n  --proto_path=$INPUT_FILE_DIR \\\n  --swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_opt=Visibility=Public,ExperimentalAsyncServer=true,ExperimentalAsyncClient=true \\\n  --swift_opt=Visibility=Public \\\n  --plugin=protoc-gen-grpc-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-grpc-swift \\\n  --plugin=protoc-gen-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-swift \\\n  $INPUT_FILE_PATH\n";
+		};
 /* End PBXBuildRule section */
+
+/* Begin PBXContainerItemProxy section */
+		DBF5D5CD278EF97500633753 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DBF5D5C3278EF96E00633753;
+			remoteInfo = idbGRPCSwift;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
@@ -156,6 +188,9 @@
 		D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
 		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
+		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
+		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +204,7 @@
 				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
 				7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */,
+				DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,6 +213,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5C1278EF96E00633753 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,6 +254,7 @@
 			children = (
 				D7D6DF122265DDEC00B01F14 /* idb_companion */,
 				D7D6DF942265DF2200B01F14 /* libidbGRPC.a */,
+				DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -243,6 +288,8 @@
 		D7D6DFA82265F0DF00B01F14 /* idb_companion */ = {
 			isa = PBXGroup;
 			children = (
+				DB465CC7279567AB00FD4583 /* Bridging */,
+				DBF5D5D3278EFA7900633753 /* SwiftServer */,
 				D7D6DFBD2265F0DF00B01F14 /* Configuration */,
 				D7D6DFB52265F0DF00B01F14 /* Reporting */,
 				713C709126F52F970086D8DF /* Request */,
@@ -320,6 +367,22 @@
 			path = Utility;
 			sourceTree = "<group>";
 		};
+		DB465CC7279567AB00FD4583 /* Bridging */ = {
+			isa = PBXGroup;
+			children = (
+				DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */,
+			);
+			path = Bridging;
+			sourceTree = "<group>";
+		};
+		DBF5D5D3278EFA7900633753 /* SwiftServer */ = {
+			isa = PBXGroup;
+			children = (
+				DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */,
+			);
+			path = SwiftServer;
+			sourceTree = "<group>";
+		};
 		E47FF620763B1FAD507E99B9 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -364,10 +427,18 @@
 				D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */,
 				AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */,
 				713C70AD26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h in Headers */,
+				DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */,
 				AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */,
 				D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */,
 				AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */,
 				D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5BF278EF96E00633753 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,8 +459,11 @@
 			buildRules = (
 			);
 			dependencies = (
+				DBF5D5CE278EF97500633753 /* PBXTargetDependency */,
 			);
 			name = idb_companion;
+			packageProductDependencies = (
+			);
 			productName = idb_companion;
 			productReference = D7D6DF122265DDEC00B01F14 /* idb_companion */;
 			productType = "com.apple.product-type.tool";
@@ -414,6 +488,29 @@
 			productReference = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DBF5D5C8278EF96E00633753 /* Build configuration list for PBXNativeTarget "IDBGRPCSwift" */;
+			buildPhases = (
+				DBF5D5D1278EF9BD00633753 /* Build protoc plugin */,
+				DBF5D5BF278EF96E00633753 /* Headers */,
+				DBF5D5C0278EF96E00633753 /* Sources */,
+				DBF5D5C1278EF96E00633753 /* Frameworks */,
+				DBF5D5C2278EF96E00633753 /* Resources */,
+			);
+			buildRules = (
+				DBF5D5D2278EF9F000633753 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = IDBGRPCSwift;
+			packageProductDependencies = (
+				DB5C38CA27B5411C00401F91 /* GRPC */,
+			);
+			productName = idbGRPCSwift;
+			productReference = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -425,9 +522,13 @@
 				TargetAttributes = {
 					D7D6DF112265DDEC00B01F14 = {
 						CreatedOnToolsVersion = 10.2;
+						LastSwiftMigration = 1320;
 					};
 					D7D6DF932265DF2200B01F14 = {
 						CreatedOnToolsVersion = 10.2;
+					};
+					DBF5D5C3278EF96E00633753 = {
+						CreatedOnToolsVersion = 13.2;
 					};
 				};
 			};
@@ -440,15 +541,29 @@
 				Base,
 			);
 			mainGroup = D7D6DF092265DDEC00B01F14;
+			packageReferences = (
+				DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */,
+			);
 			productRefGroup = D7D6DF132265DDEC00B01F14 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D7D6DF112265DDEC00B01F14 /* idb_companion */,
 				D7D6DF932265DF2200B01F14 /* idbGRPC */,
+				DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DBF5D5C2278EF96E00633753 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */ = {
@@ -529,6 +644,26 @@
 			shellPath = /bin/sh;
 			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
 		};
+		DBF5D5D1278EF9BD00633753 /* Build protoc plugin */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build protoc plugin";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-grpc-swift",
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd ${BUILD_DIR}\npwd\ncd ${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\nmake plugins\npwd\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -553,6 +688,7 @@
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
+				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
@@ -565,11 +701,27 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5C0278EF96E00633753 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DBF5D5CE278EF97500633753 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */;
+			targetProxy = DBF5D5CD278EF97500633753 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D7D6DF172265DDEC00B01F14 /* Debug */ = {
@@ -628,6 +780,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "idb-Swift.h";
 			};
 			name = Debug;
 		};
@@ -680,6 +833,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "idb-Swift.h";
 			};
 			name = Release;
 		};
@@ -687,6 +841,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
@@ -695,8 +850,12 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "idb_companion/Bridging/idb_companion-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -704,6 +863,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
@@ -712,8 +872,11 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "idb_companion/Bridging/idb_companion-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -736,6 +899,74 @@
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		DBF5D5C9278EF96E00633753 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBGRPCSwift;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		DBF5D5CA278EF96E00633753 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBGRPCSwift;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
@@ -769,7 +1000,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		DBF5D5C8278EF96E00633753 /* Build configuration list for PBXNativeTarget "IDBGRPCSwift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DBF5D5C9278EF96E00633753 /* Debug */,
+				DBF5D5CA278EF96E00633753 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Nekitosss/grpc-swift.git";
+			requirement = {
+				branch = "1.6.0-async-await";
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB5C38CA27B5411C00401F91 /* GRPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */;
+			productName = GRPC;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D7D6DF0A2265DDEC00B01F14 /* Project object */;
 }

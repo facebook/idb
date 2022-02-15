@@ -9,10 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBXCTestDescriptor.h"
-
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBXCTestDescriptor;
+@protocol FBControlCoreLogger;
 @class FBBundleStorageManager;
 @class FBIDBLogger;
 @class FBIDBPortsConfiguration;
@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBInstalledArtifact;
 @class FBSimulatorHIDEvent;
 @class FBTemporaryDirectory;
+@class FBXCTestRunRequest;
 
 @protocol FBXCTestReporter;
 
@@ -519,7 +520,7 @@ This allows to avoid the permission popup the first time we open a deeplink
 
 /**
  Spawn a dap protocol server from dapPath
- 
+
  @param dapPath relative path to the root container where dap is installed
  @param stdIn where the dap process reads
  @param stdOut where the dap process writes

@@ -23,6 +23,7 @@
 #import "FBIDBXCTestReporter.h"
 #import "FBXCTestRunRequest.h"
 #import <FBControlCore/FBFuture.h>
+#import "FBXCTestDescriptor.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -233,7 +234,7 @@ static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_reader(FBTemporaryDir
   T request;
   reader->Read(&request);
   idb::Payload firstPayload = request.payload();
-  
+
   // The first item in the payload stream may be the compression format, if it's not assume the default.
   FBCompressionFormat compression = FBCompressionFormatGZIP;
   if (firstPayload.source_case() == idb::Payload::kCompression) {
@@ -241,7 +242,7 @@ static FBFutureContext<NSArray<NSURL *> *> *filepaths_from_reader(FBTemporaryDir
     reader->Read(&request);
     firstPayload = request.payload();
   }
-  
+
   switch (firstPayload.source_case()) {
     case idb::Payload::kData: {
       FBProcessInput<NSOutputStream *> *input = pipe_to_input(firstPayload, reader);
@@ -544,7 +545,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
   // Read the initial request
   idb::InstallRequest request;
   stream->Read(&request);
-  
+
   // The name hint may be provided, if it is not then default to some UUID, then advance the stream.
   NSString *name = NSUUID.UUID.UUIDString;
   if (request.value_case() == idb::InstallRequest::ValueCase::kNameHint) {
@@ -1534,7 +1535,7 @@ Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReader
   idb::DapRequest_Start start = initial_request.start();
   NSString *pkg_id = nsstring_from_c_string(start.debugger_pkg_id());
   NSString *lldb_vscode = [@"dap" stringByAppendingPathComponent:[pkg_id stringByAppendingPathComponent: @"usr/bin/lldb-vscode"]];
-  
+
   id<FBDataConsumer> reader = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     idb::DapResponse response;
     idb::DapResponse_Pipe *stdout = response.mutable_stdout();
@@ -1542,8 +1543,8 @@ Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReader
     stream->Write(response);
     [_target.logger.debug logFormat:@"Dap server stdout consumer: sent %lu bytes.", data.length];
   }];
-  
-  
+
+
   [_target.logger.debug logFormat:@"Starting dap server with path %@", lldb_vscode];
   NSError *error = nil;
   FBProcessInput<id<FBDataConsumer>> *writer = [FBProcessInput inputFromConsumer];
@@ -1556,7 +1557,7 @@ Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReader
   idb::DapResponse response;
   response.mutable_started();
   stream->Write(response);
-  
+
   dispatch_queue_t write_queue = dispatch_queue_create("com.facebook.idb.dap.write", DISPATCH_QUEUE_SERIAL);
   auto writeFuture = [FBFuture onQueue:write_queue resolveWhen:^BOOL {
     idb::DapRequest request;
@@ -1566,7 +1567,7 @@ Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReader
       [_target.logger.debug logFormat:@"Dap server with pid %d. Stderr: %@", process.processIdentifier, process.stdErr];
       return YES;
     }
-    
+
     idb::DapRequest_Pipe pipe = request.pipe();
     auto raw_data = pipe.data();
     NSData *data = [NSData dataWithBytes:raw_data.c_str() length:raw_data.length()];
@@ -1578,18 +1579,18 @@ Status FBIDBServiceHandler::dap(grpc::ServerContext *context, grpc::ServerReader
     [writer.contents consumeData:data];
     return NO;
   }];
-  
+
   //  Debug session shouln't be longer than 10hours
   [writeFuture awaitWithTimeout:36000 error:&error];
   if (error){
     NSString *errorMsg = [NSString stringWithFormat:@"Error in writting to dap server stdout: %@", error.localizedDescription];
     return Status(grpc::StatusCode::INTERNAL, errorMsg.UTF8String);
   }
-  
+
   idb::DapResponse_Event *stopped = response.mutable_stopped();
   stopped->set_desc(@"Dap server stopped.".UTF8String);
   stream->Write(response);
-  
+
   return Status::OK;
 }}
 
