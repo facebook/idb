@@ -50,9 +50,18 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
       failBool:error];
   }
   NSData *headerData = AnnexBNALUStartCodeData();
-  NSArray<id> *attachmentsArray = (NSArray<id> *) CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
-  BOOL hasKeyframe = attachmentsArray[0][(NSString *) kCMSampleAttachmentKey_NotSync] != nil;
-  if (hasKeyframe) {
+  
+  bool isKeyFrame = false;
+  CFArrayRef attachments =
+      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  if (CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    CFBooleanRef dependsOnOthers = (CFBooleanRef)CFDictionaryGetValue(
+        attachment, kCMSampleAttachmentKey_DependsOnOthers);
+    isKeyFrame = (dependsOnOthers == kCFBooleanFalse);
+  }
+
+  if (isKeyFrame) {
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     size_t spsSize, spsCount;
     const uint8_t *spsParameterSet;
