@@ -558,8 +558,14 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel; // ref: http://blog.mediacoderhq.com/h264-profiles-and-levels/
+    // ref: https://www.lighterra.com/papers/videoencodingh264/
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel;
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CAVLC;
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AllowFrameReordering] = @YES; // B-frames
+    if (@available(macOS 12.1, *)) {
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_ConstrainedHigh_AutoLevel;
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CABAC;
+    }
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
       initWithConfiguration:configuration
       compressionSessionProperties:[derivedCompressionSessionProperties copy]
@@ -659,7 +665,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 {
   return @{
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(2 * self.framesPerSecond),
-    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @60,
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @360,
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration: @10, // key frame at least every 10 seconds
     (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
 
