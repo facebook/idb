@@ -61,6 +61,8 @@
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
 		DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB5C38CA27B5411C00401F91 /* GRPC */; };
 		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
+		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
+		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
 		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 /* End PBXBuildFile section */
@@ -189,6 +191,8 @@
 		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
+		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
+		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
 		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -375,9 +379,19 @@
 			path = Bridging;
 			sourceTree = "<group>";
 		};
+		DB5C38E327B5511F00401F91 /* Interceptors */ = {
+			isa = PBXGroup;
+			children = (
+				DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */,
+				DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */,
+			);
+			path = Interceptors;
+			sourceTree = "<group>";
+		};
 		DBF5D5D3278EFA7900633753 /* SwiftServer */ = {
 			isa = PBXGroup;
 			children = (
+				DB5C38E327B5511F00401F91 /* Interceptors */,
 				DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */,
 			);
 			path = SwiftServer;
@@ -681,8 +695,10 @@
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
 				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
+				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
+				DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
