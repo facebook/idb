@@ -105,6 +105,11 @@
   return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"12.5"]] != NSOrderedAscending;
 }
 
++ (BOOL)isXcode13OrGreater
+{
+  return [FBXcodeConfiguration.xcodeVersionNumber compare:[NSDecimalNumber decimalNumberWithString:@"13.0"]] != NSOrderedAscending;
+}
+
 + (FBBundleDescriptor *)simulatorApp
 {
   NSError *error = nil;

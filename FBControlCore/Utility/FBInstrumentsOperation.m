@@ -15,6 +15,7 @@
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
 #import "FBProcessBuilder.h"
+#import "FBXcodeConfiguration.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
 const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
@@ -102,33 +103,25 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
   NSString *traceFile = [traceDir stringByAppendingPathComponent:@"trace.trace"];
 
-  NSString *durationMilliseconds = [@(configuration.timings.operationDuration * 1000) stringValue];
-  NSMutableArray<NSString *> *arguments = [NSMutableArray new];
-  if ([[configuration toolArguments] count] > 0) {
-    [arguments addObjectsFromArray:[configuration toolArguments]];
-  }
-  [arguments addObjectsFromArray:@[@"-w", target.udid, @"-D", traceFile, @"-t", configuration.templateName, @"-l",  durationMilliseconds, @"-v"]];
-
-  if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
-    [arguments addObject:configuration.targetApplication];
-    for (NSString *key in configuration.appEnvironment) {
-      [arguments addObjectsFromArray:@[@"-e", key, configuration.appEnvironment[key]]];
-    }
-    [arguments addObjectsFromArray:configuration.appArguments];
-  }
+  NSArray<NSString *> *arguments = [self createArgumentsWithTarget:target
+                                          configuration:configuration
+                                              traceFile:traceFile];
+  
   [logger logFormat:@"Starting instruments with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   FBInstrumentsConsumer *instrumentsConsumer = [[FBInstrumentsConsumer alloc] init];
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLogger loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
-
-  return [[[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/instruments"]
-    withArguments:arguments]
-    withStdOutToLogger:compositeLogger]
-    withStdErrToLogger:compositeLogger]
-    withTaskLifecycleLoggingTo:logger]
-    start]
-    onQueue:target.asyncQueue fmap:^ FBFuture * (FBProcess *task) {
+  
+  FBFuture *instrumentsProcess = [[[[[[FBProcessBuilder
+                                       withLaunchPath:[self launchPath]]
+                                      withArguments:arguments]
+                                     withStdOutToLogger:compositeLogger]
+                                    withStdErrToLogger:compositeLogger]
+                                   withTaskLifecycleLoggingTo:logger]
+                                  start];
+  
+  if (!FBXcodeConfiguration.isXcode13OrGreater) {
+    instrumentsProcess = [instrumentsProcess onQueue:target.asyncQueue fmap:^ FBFuture * (FBProcess *task) {
       return [instrumentsConsumer.hasStartedLoadingTemplate
         onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
         [logger logFormat:@"Waiting for %f seconds for instruments to start properly", configuration.timings.launchErrorTimeout];
@@ -143,7 +136,10 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
           }]
           mapReplace:task];
         }];
-    }]
+    }];
+  }
+
+  return [instrumentsProcess
     // Yay instruments started properly
     onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBProcess *task) {
       [logger logFormat:@"Started instruments %@", task];
@@ -210,6 +206,61 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     onQueue:queue map:^(id _) {
       return outputTraceFile;
     }];
+}
+
+#pragma mark Private Methods
+
++ (NSArray *)createArgumentsWithTarget:(id<FBiOSTarget>)target
+                         configuration:(FBInstrumentsConfiguration *)configuration
+                             traceFile: (NSString *)traceFile
+{
+  NSString *durationMilliseconds = [NSString stringWithFormat:@"%@ms", [@(configuration.timings.operationDuration * 1000) stringValue]];
+  
+  if (FBXcodeConfiguration.isXcode13OrGreater) {
+    NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+    [arguments addObjectsFromArray:@[@"--template", configuration.templateName,
+                                     @"--device", target.udid,
+                                     @"--output", traceFile,
+                                     @"--time-limit", durationMilliseconds]];
+    
+    if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
+      for (NSString *key in configuration.appEnvironment) {
+        [arguments addObjectsFromArray:@[@"--env", [NSString stringWithFormat:@"%@=%@", key, configuration.appEnvironment[key]]]];
+      }
+      
+      [arguments addObjectsFromArray:@[
+        @"--launch",
+        @"--",
+        configuration.targetApplication
+      ]];
+      [arguments addObjectsFromArray:configuration.appArguments];
+    }
+    
+    return [@[@"xctrace", @"record"] arrayByAddingObjectsFromArray:arguments];
+  } else {
+    NSMutableArray<NSString *> *arguments = [NSMutableArray new];
+    if ([[configuration toolArguments] count] > 0) {
+      [arguments addObjectsFromArray:[configuration toolArguments]];
+    }
+    [arguments addObjectsFromArray:@[@"-w", target.udid, @"-D", traceFile, @"-t", configuration.templateName, @"-l",  durationMilliseconds, @"-v"]];
+
+    if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
+      [arguments addObject:configuration.targetApplication];
+      for (NSString *key in configuration.appEnvironment) {
+        [arguments addObjectsFromArray:@[@"-e", key, configuration.appEnvironment[key]]];
+      }
+      [arguments addObjectsFromArray:configuration.appArguments];
+    }
+    
+    return arguments;
+  }
+}
+
+
++ (NSString *)launchPath {
+  return FBXcodeConfiguration.isXcode13OrGreater ?
+    @"/usr/bin/xcrun" :
+    @"/usr/bin/instruments";
 }
 
 @end
