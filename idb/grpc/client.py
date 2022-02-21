@@ -31,6 +31,7 @@ from typing import (
 
 import idb.common.plugin as plugin
 from grpclib.client import Channel
+from grpclib.events import listen, SendRequest
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
@@ -147,6 +148,7 @@ from idb.grpc.instruments import (
     instruments_generate_bytes,
     translate_instruments_timings,
 )
+from idb.grpc.interceptors import on_send_request_set_swift_methods
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
 from idb.grpc.stream import (
     cancel_wrapper,
@@ -280,6 +282,8 @@ class Client(ClientBase):
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
         ) as channel:
+            listen(channel, SendRequest, on_send_request_set_swift_methods)
+
             stub = CompanionServiceStub(channel=channel)
             with tempfile.NamedTemporaryFile(mode="w+b") as f:
                 try:
