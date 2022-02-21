@@ -44,6 +44,7 @@ final class GRPCSwiftServer : NSObject {
                                                            eventLoopGroup: group,
                                                            serviceProviders: [provider])
     serverConfiguration.tlsConfiguration = Self.tlsConfiguration(portConfiguration: ports, logger: logger)
+    serverConfiguration.errorDelegate = GRPCSwiftServerErrorDelegate()
     self.serverConfig = serverConfiguration
     
     self.completed = FBMutableFuture<NSNull>()

@@ -58,6 +58,7 @@
 		D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */; };
 		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
+		DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
 		DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB5C38CA27B5411C00401F91 /* GRPC */; };
@@ -196,6 +197,7 @@
 		D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
 		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
+		DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServerErrorDelegate.swift; sourceTree = "<group>"; };
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
@@ -410,6 +412,7 @@
 			children = (
 				DB5C38E327B5511F00401F91 /* Interceptors */,
 				DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */,
+				DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */,
 				DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */,
 			);
 			path = SwiftServer;
@@ -729,6 +732,7 @@
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
+				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
 				DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */,
