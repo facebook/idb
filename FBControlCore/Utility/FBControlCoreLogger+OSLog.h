@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A logger implementation on top of os_log.
  */
-@interface FBControlCoreLogger (OSLog)
+@interface FBControlCoreLoggerFactory (OSLog)
 
 /*
  Construct a new OS Log logger.

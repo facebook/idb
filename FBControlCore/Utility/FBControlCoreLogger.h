@@ -117,7 +117,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 /**
  Implementations of Loggers.
  */
-@interface FBControlCoreLogger : NSObject
+@interface FBControlCoreLoggerFactory : NSObject
 
 /**
  An implementation of `FBControlCoreLogger` that logs using the OS's default logging framework.

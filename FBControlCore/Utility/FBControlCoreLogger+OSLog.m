@@ -97,7 +97,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 #endif
 
-@implementation FBControlCoreLogger (OSLog)
+@implementation FBControlCoreLoggerFactory (OSLog)
 
 + (id<FBControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level
 {

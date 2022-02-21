@@ -1147,7 +1147,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   // Once the reporter is created, only it will perform writing to the writer.
   NSError *error = nil;
   FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
-  FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLogger loggerToConsumer:reporter]] block:&error];
+  FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLoggerFactory loggerToConsumer:reporter]] block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
@@ -1449,8 +1449,8 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
     pthread_mutex_unlock(&mutex);
 
   }];
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-    [FBControlCoreLogger loggerToConsumer:consumer],
+  id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[
+    [FBControlCoreLoggerFactory loggerToConsumer:consumer],
     _target.logger,
   ]];
   FBInstrumentsOperation *operation = [[_target startInstruments:configuration logger:logger] block:&error];
@@ -1640,8 +1640,8 @@ Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerRe
     }
     pthread_mutex_unlock(&mutex);
   }];
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-    [FBControlCoreLogger loggerToConsumer:consumer],
+  id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[
+    [FBControlCoreLoggerFactory loggerToConsumer:consumer],
     _target.logger,
   ]];
 

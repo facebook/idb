@@ -83,7 +83,7 @@ static id<FBControlCoreLogger> logger;
 
 + (id<FBControlCoreLogger>)createDefaultLogger
 {
-  return [FBControlCoreLogger systemLoggerWritingToStderr:self.stderrLoggingEnabledByDefault withDebugLogging:self.debugLoggingEnabledByDefault];
+  return [FBControlCoreLoggerFactory systemLoggerWritingToStderr:self.stderrLoggingEnabledByDefault withDebugLogging:self.debugLoggingEnabledByDefault];
 }
 
 + (BOOL)stderrLoggingEnabledByDefault

@@ -90,7 +90,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 + (instancetype)loggerWithUserDefaults:(NSUserDefaults *)userDefaults
 {
   BOOL debugLogging = [[userDefaults stringForKey:@"-log-level"].lowercaseString isEqualToString:@"info"] ? NO : YES;
-  id<FBControlCoreLogger> systemLogger = [FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:debugLogging];
+  id<FBControlCoreLogger> systemLogger = [FBControlCoreLoggerFactory systemLoggerWritingToStderr:YES withDebugLogging:debugLogging];
   NSMutableArray<id<FBControlCoreLogger>> *loggers = [NSMutableArray arrayWithObject:systemLogger];
 
   NSError *error;
@@ -108,7 +108,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
       exit(1);
     }
 
-    [loggers addObject:[FBControlCoreLogger loggerToFileDescriptor:fileDescriptor closeOnEndOfFile:YES]];
+    [loggers addObject:[FBControlCoreLoggerFactory loggerToFileDescriptor:fileDescriptor closeOnEndOfFile:YES]];
   }
   FBIDBLogger *logger = [[[FBIDBLogger alloc] initWithLoggers:loggers] withDateFormatEnabled:YES];
   FBControlCoreGlobalConfiguration.defaultLogger = logger;
@@ -145,7 +145,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 {
   dispatch_queue_t queue = FBIDBLogger.loggerQueue;
   return [FBFuture onQueue:queue resolveValue:^(NSError **_) {
-    id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
+    id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:consumer];
     id<FBLogOperation> operation =  [[FBIDBLogger_Operation alloc] initWithConsumer:consumer logger:logger queue:queue];
     AddGlobalLogger(logger);
     return operation;
