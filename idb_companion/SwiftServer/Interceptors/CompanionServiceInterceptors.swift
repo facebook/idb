@@ -15,7 +15,7 @@ import GRPC
 final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol {
 
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
-    [MethodPathSetterInterceptor()]
+    [MethodPathSetterInterceptor(), ProxyDeterminatorInterceptor()]
   }
 
   func makeconnectInterceptors() -> [ServerInterceptor<Idb_ConnectRequest, Idb_ConnectResponse>] {

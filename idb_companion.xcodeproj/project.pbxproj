@@ -58,12 +58,13 @@
 		D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */; };
 		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
+		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
 		DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB5C38CA27B5411C00401F91 /* GRPC */; };
-		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
+		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
 		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
 		DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* FutureBox.swift */; };
@@ -195,6 +196,7 @@
 		D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
 		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
+		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
@@ -397,6 +399,7 @@
 			isa = PBXGroup;
 			children = (
 				DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */,
+				DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */,
 				DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */,
 			);
 			path = Interceptors;
@@ -728,6 +731,7 @@
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
+				DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */,
 				AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */,
 				713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */,
 			);

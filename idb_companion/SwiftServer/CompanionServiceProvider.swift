@@ -30,6 +30,10 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
   var interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol? { interceptorFactory }
 
+  private func shouldHandleNatively(context: GRPCAsyncServerCallContext) -> Bool {
+    return context.userInfo[CallSwiftMethodNatively.self] ?? false
+  }
+
   func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
     return try await proxy(request: request, context: context)
   }
