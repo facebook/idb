@@ -64,6 +64,10 @@
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
+		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
+		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
+		DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* FutureBox.swift */; };
+		DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
 		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 /* End PBXBuildFile section */
@@ -195,6 +199,10 @@
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
 		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
+		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
+		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
+		DBA2ED1B27BBA96000926054 /* FutureBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FutureBox.swift; sourceTree = "<group>"; };
+		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -347,6 +355,10 @@
 		D7D6DFE72265F0DF00B01F14 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				DBA2ED1C27BBA96100926054 /* Atomic.swift */,
+				DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */,
+				DBA2ED1B27BBA96000926054 /* FutureBox.swift */,
+				DBA2ED1A27BBA96000926054 /* Mutex.swift */,
 				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
 				D72CB1C42277837000265160 /* FBDataDownloadInput.m */,
 				623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */,
@@ -691,6 +703,7 @@
 				DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */,
 				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
 				AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */,
+				DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */,
 				AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */,
 				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
 				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
@@ -700,15 +713,18 @@
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
 				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
 				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
+				DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
+				DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
+				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
