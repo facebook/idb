@@ -8,6 +8,7 @@
 #import "FBIDBPortsConfiguration.h"
 
 static NSString *const GrpcPortKey = @"-grpc-port";
+static NSString *const GrpcSwiftPortEnvKey = @"IDB_SWIFT_COMPANION_PORT";
 
 @implementation FBIDBPortsConfiguration
 
@@ -27,6 +28,12 @@ static NSString *const GrpcPortKey = @"-grpc-port";
 
   _debugserverPort = [userDefaults integerForKey:@"-debug-port"] ?: 10881;
   _grpcPort = [userDefaults stringForKey:GrpcPortKey] ? [userDefaults integerForKey:GrpcPortKey] : 10882;
+  _grpcSwiftPort = 0;
+  
+  NSString *swiftPort = [NSProcessInfo.processInfo.environment objectForKey:GrpcSwiftPortEnvKey];
+  if (swiftPort.length > 0) {
+    _grpcSwiftPort = [swiftPort integerValue];
+  }
   _grpcDomainSocket = [userDefaults stringForKey:@"-grpc-domain-sock"];
   _tlsCertPath = [userDefaults stringForKey:@"-tls-cert-path"];
 

@@ -407,6 +407,7 @@ static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefau
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
+
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
       [reporter addMetadata:@{
@@ -416,29 +417,55 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
       FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
+      BOOL withSwiftServer = ports.grpcSwiftPort != 0;
+
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
       FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
       if (!server) {
         return [FBFuture futureWithError:error];
       }
-      return [[server
-        start]
-        onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
-          WriteJSONToStdOut(serverDescription);
-          FBFuture<NSNull *> *completed = server.completed;
-          if (terminateOffline) {
-            [logger.info logFormat:@"Companion will terminate when target goes offline"];
-            completed = [FBFuture race:@[completed, TargetOfflineFuture(target, logger)]];
-          } else {
-            [logger.info logFormat:@"Companion will stay alive if target goes offline"];
-          }
-          return [completed
-            onQueue:target.workQueue chain:^(FBFuture *future) {
-              [temporaryDirectory cleanOnExit];
-              return future;
-            }];
-        }];
+
+      GRPCSwiftServer *swiftServer = nil;
+
+      if (withSwiftServer) {
+        swiftServer = [[GRPCSwiftServer alloc] initWithReporter:reporter
+                                                         logger:logger
+                                                          ports:ports
+                                                          error:&error];
+      }
+
+      if (error) {
+        return [FBFuture futureWithError:error];
+      }
+
+      return [[[server start] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSDictionary<NSString *,id> * _Nonnull cppServerDescrption) {
+        if (withSwiftServer) {
+          return [[swiftServer start] mapReplace:cppServerDescrption];
+        }
+        return [FBFuture futureWithResult: cppServerDescrption];
+      }] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
+        WriteJSONToStdOut(serverDescription);
+        NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[server.completed]];
+        if (swiftServer) {
+          [futures addObject: swiftServer.completed];
+        }
+
+        if (terminateOffline) {
+          [logger.info logFormat:@"Companion will terminate when target goes offline"];
+          [futures addObject:TargetOfflineFuture(target, logger)];
+        } else {
+          [logger.info logFormat:@"Companion will stay alive if target goes offline"];
+        }
+
+        FBFuture<NSNull *> *completed = [FBFuture race: futures];
+        return [completed
+          onQueue:target.workQueue chain:^(FBFuture *future) {
+            [temporaryDirectory cleanOnExit];
+            return future;
+          }];
+      }];
+      
     }];
 }
 

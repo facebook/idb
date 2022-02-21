@@ -35,6 +35,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) in_port_t grpcPort;
 
 /**
+ The GRPC TCP Port of swift server.
+ */
+@property (nonatomic, assign, readonly) in_port_t grpcSwiftPort;
+
+/**
  The debugserver port
  */
 @property (nonatomic, assign, readonly) in_port_t debugserverPort;
