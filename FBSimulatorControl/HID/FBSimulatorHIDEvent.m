@@ -124,10 +124,8 @@ static NSString *const KeyY = @"y";
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Touch %@ at (%lu,%lu)",
-    [FBSimulatorHIDEvent directionStringFromDirection:self.direction],
-    (unsigned long)self.x,
-    (unsigned long)self.y
+    @"Touch %@ at <hidden>",
+    [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
   ];
 }
 
@@ -272,8 +270,7 @@ static NSString *const KeyKeycode = @"keycode";
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Keyboard Code=%d %@",
-    self.keyCode,
+    @"Keyboard Code=<hidden> %@",
     [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
   ];
 }
