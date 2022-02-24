@@ -13,15 +13,18 @@ import NIOHPACK
 
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
+  private let target: FBiOSTarget
   private let reporter: FBEventReporter
   private let logger: FBIDBLogger
   private let internalCppClient: Idb_CompanionServiceAsyncClientProtocol
   private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
 
-  init(reporter: FBEventReporter,
+  init(target: FBiOSTarget,
+       reporter: FBEventReporter,
        logger: FBIDBLogger,
        internalCppClient: Idb_CompanionServiceAsyncClient,
        interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol) {
+    self.target = target
     self.reporter = reporter
     self.logger = logger
     self.internalCppClient = internalCppClient
@@ -35,7 +38,25 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    self.reporter.addMetadata(request.metadata)
+    let isLocal = FileManager.default.fileExists(atPath: request.localFilePath)
+
+    return Idb_ConnectResponse.with {
+      $0.companion = .with {
+        $0.udid = target.udid
+        $0.isLocal = isLocal
+
+        do {
+          $0.metadata = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])
+        } catch {
+          logger.error().log("Error while serializing metadata \(error.localizedDescription)")
+        }
+      }
+    }
   }
 
   func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {

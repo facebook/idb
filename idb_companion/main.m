@@ -429,7 +429,8 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       GRPCSwiftServer *swiftServer = nil;
 
       if (withSwiftServer) {
-        swiftServer = [[GRPCSwiftServer alloc] initWithReporter:reporter
+        swiftServer = [[GRPCSwiftServer alloc] initWithTarget: target
+                                                     reporter: reporter
                                                          logger:logger
                                                           ports:ports
                                                           error:&error];

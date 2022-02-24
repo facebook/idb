@@ -26,7 +26,7 @@ final class GRPCSwiftServer : NSObject {
   let completed : FBMutableFuture<NSNull>
 
   @objc
-  init(reporter: FBEventReporter, logger: FBIDBLogger, ports: FBIDBPortsConfiguration) throws {
+  init(target: FBiOSTarget, reporter: FBEventReporter, logger: FBIDBLogger, ports: FBIDBPortsConfiguration) throws {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
 
     let config = ClientConnection.Configuration.default(target: .host("localhost", port: Int(ports.grpcPort)), eventLoopGroup: group)
@@ -35,7 +35,8 @@ final class GRPCSwiftServer : NSObject {
     let clientToCppServer = Idb_CompanionServiceAsyncClient(channel: connection)
     let interceptors = CompanionServiceInterceptors()
 
-    self.provider = CompanionServiceProvider(reporter: reporter,
+    self.provider = CompanionServiceProvider(target: target,
+                                             reporter: reporter,
                                              logger: logger,
                                              internalCppClient: clientToCppServer,
                                              interceptors: interceptors)
