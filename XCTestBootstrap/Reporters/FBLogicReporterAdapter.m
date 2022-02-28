@@ -71,8 +71,15 @@
   id<FBXCTestReporter> reporter = self.reporter;
   if ([eventName isEqualToString:kReporter_Events_BeginTestSuite]) {
     NSString *suiteName = JSONEvent[kReporter_BeginTestSuite_SuiteKey];
-    NSString *startTime = JSONEvent[kReporter_TimestampKey];
-    [reporter testSuite:suiteName didStartAt:startTime];
+    id startTime = JSONEvent[kReporter_TimestampKey];
+    if ([startTime isKindOfClass:NSNumber.class]) {
+      [reporter testSuite:suiteName didStartAt:((NSNumber *)startTime).stringValue];
+    } else if ([startTime isKindOfClass:NSString.class]) {
+      [reporter testSuite:suiteName didStartAt:((NSString *)startTime)];
+    } else {
+      NSAssert(NO, @"Unknown type of obj. This will likely cause crash in runtime because of swift signature mismatch");
+    }
+
   } else if ([eventName isEqualToString:kReporter_Events_BeginTest]) {
     NSString *className = JSONEvent[kReporter_BeginTest_ClassNameKey];
     NSString *methodName = JSONEvent[kReporter_BeginTest_MethodNameKey];

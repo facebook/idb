@@ -102,7 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)handleExternalEvent:(NSString *)event;
 
 /**
- Called when the results of the test should be written to the output.
+ Called when the results of the test should be written to the output. Warning! This method is bridged to swift incorrectly and loses bool return type. Adapt and use with extra care
 
  @param error an error for an error that occurs.
  */
