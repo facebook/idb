@@ -436,6 +436,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
                                                logger:logger];
     
       FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
+      FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
       
       FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports eventReporter:reporter logger:logger error:&error];
       if (!server) {
@@ -445,11 +446,12 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       GRPCSwiftServer *swiftServer = nil;
 
       if (withSwiftServer) {
-        swiftServer = [[GRPCSwiftServer alloc] initWithTarget: target
-                                                     reporter: reporter
-                                                         logger:logger
-                                                          ports:ports
-                                                          error:&error];
+        swiftServer = [[GRPCSwiftServer alloc] initWithTarget:target
+                                              commandExecutor:swiftCommandExecutor
+                                                     reporter:reporter
+                                                       logger:logger
+                                                        ports:ports
+                                                        error:&error];
       }
 
       if (error) {

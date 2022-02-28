@@ -10,21 +10,25 @@ import IDBGRPCSwift
 import GRPC
 import SwiftProtobuf
 import NIOHPACK
+import XCTestBootstrap
 
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
   private let target: FBiOSTarget
+  private let commandExecutor: FBIDBCommandExecutor
   private let reporter: FBEventReporter
   private let logger: FBIDBLogger
   private let internalCppClient: Idb_CompanionServiceAsyncClientProtocol
   private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
 
   init(target: FBiOSTarget,
+       commandExecutor: FBIDBCommandExecutor,
        reporter: FBEventReporter,
        logger: FBIDBLogger,
        internalCppClient: Idb_CompanionServiceAsyncClient,
        interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol) {
     self.target = target
+    self.commandExecutor = commandExecutor
     self.reporter = reporter
     self.logger = logger
     self.internalCppClient = internalCppClient
