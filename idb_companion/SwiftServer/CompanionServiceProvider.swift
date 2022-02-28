@@ -41,6 +41,15 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     return context.userInfo[CallSwiftMethodNatively.self] ?? false
   }
 
+  private var targetLogger: FBControlCoreLogger {
+    get throws {
+      guard let logger = target.logger else {
+        throw GRPCStatus(code: .internalError, message: "Target logger not configured")
+      }
+      return logger
+    }
+  }
+
   func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
     guard shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
@@ -196,7 +205,27 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctest_run(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(request: request, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      try await proxy(request: request, responseStream: responseStream, context: context)
+      return
+    }
+
+    let runRequestTransformer = XctestRunRequestValueTransformer()
+    guard let request = runRequestTransformer.transform(value: request) else {
+      throw GRPCStatus(code: .invalidArgument, message: "failed to create FBXCTestRunRequest")
+    }
+    let logger = try targetLogger
+
+    let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
+
+    let operationFuture = commandExecutor.xctest_run(request,
+                                                     reporter: reporter,
+                                                     logger: FBControlCoreLoggerFactory.logger(to: reporter))
+    let operation = try await FutureBox(operationFuture).value
+    reporter.configuration = .init(legacy: operation.reporterConfiguration)
+
+    try await FutureBox(operation.completed).await()
+    _ = try await FutureBox(reporter.reportingTerminated).value
   }
 
   func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {

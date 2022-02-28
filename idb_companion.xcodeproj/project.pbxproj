@@ -71,6 +71,7 @@
 		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
 		DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* FutureBox.swift */; };
 		DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
+		DBD34DC727C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */; };
 		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 /* End PBXBuildFile section */
@@ -209,6 +210,7 @@
 		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
 		DBA2ED1B27BBA96000926054 /* FutureBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FutureBox.swift; sourceTree = "<group>"; };
 		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
+		DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctestRunRequestValueTransformer.swift; sourceTree = "<group>"; };
 		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -410,6 +412,14 @@
 			path = Interceptors;
 			sourceTree = "<group>";
 		};
+		DBD34DC527C7988400B8BAD5 /* ValueTransformers */ = {
+			isa = PBXGroup;
+			children = (
+				DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */,
+			);
+			path = ValueTransformers;
+			sourceTree = "<group>";
+		};
 		DBF4764527B69294001E39C2 /* IDBXCTestReporter */ = {
 			isa = PBXGroup;
 			children = (
@@ -421,6 +431,7 @@
 		DBF5D5D3278EFA7900633753 /* SwiftServer */ = {
 			isa = PBXGroup;
 			children = (
+				DBD34DC527C7988400B8BAD5 /* ValueTransformers */,
 				DB5C38E327B5511F00401F91 /* Interceptors */,
 				DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */,
 				DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */,
@@ -740,6 +751,7 @@
 				DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
+				DBD34DC727C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
