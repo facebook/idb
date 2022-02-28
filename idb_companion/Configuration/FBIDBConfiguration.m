@@ -10,15 +10,27 @@
 @implementation FBIDBConfiguration
 
 static id<FBEventReporter> reporter = nil;
+static id<FBEventReporter> swiftReporter = nil;
+
+
++ (void)setEventReporter:(id<FBEventReporter>)eventReporter
+{
+  reporter = eventReporter;
+}
 
 + (id<FBEventReporter>)eventReporter
 {
   return reporter;
 }
 
-+ (void)setEventReporter:(id<FBEventReporter>)eventReporter
++ (id<FBEventReporter>)swiftEventReporter
 {
-  reporter = eventReporter;
+  return swiftReporter;
+}
+
++ (void)setSwiftEventReporter:(id<FBEventReporter>)eventReporter
+{
+  swiftReporter = eventReporter;
 }
 
 @end

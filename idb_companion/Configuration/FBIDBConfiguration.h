@@ -21,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readwrite, class) id<FBEventReporter> eventReporter;
 
+
+/**
+ The event reporter to use for swift.
+ */
+@property (nonatomic, strong, readwrite, class) id<FBEventReporter> swiftEventReporter;
+
 @end
 
 NS_ASSUME_NONNULL_END
