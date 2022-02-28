@@ -7,8 +7,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-beta.9",
-    "@docusaurus/preset-classic": "^2.0.0-beta.9",
+    "@docusaurus/core": "^2.0.0-beta.16",
+    "@docusaurus/preset-classic": "^2.0.0-beta.16",
     "browserslist": ">4.16.5",
     "classnames": "^2.3.1",
     "css-what": "^5.0.1",
