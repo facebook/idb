@@ -421,7 +421,23 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
-      FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
+    
+      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+      if (!storageManager) {
+        return [FBFuture futureWithError:error];
+      }
+    
+      // Command Executor
+      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                               commandExecutorForTarget:target
+                                               storageManager:storageManager
+                                               temporaryDirectory:temporaryDirectory
+                                               ports:ports
+                                               logger:logger];
+    
+      FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
+      
+      FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports eventReporter:reporter logger:logger error:&error];
       if (!server) {
         return [FBFuture futureWithError:error];
       }

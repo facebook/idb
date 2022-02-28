@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs in initialization
  @return a server on success, nil otherwise.
  */
-+ (nullable instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)companionForTarget:(id<FBiOSTarget>)target commandExecutor: (FBIDBCommandExecutor *)commandExecutor ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 #pragma mark Methods
 

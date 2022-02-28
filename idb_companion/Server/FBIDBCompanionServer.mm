@@ -42,21 +42,8 @@ using namespace std;
 
 #pragma mark Initializers
 
-+ (instancetype)companionForTarget:(id<FBiOSTarget>)target temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger error:(NSError **)error
++ (instancetype)companionForTarget:(id<FBiOSTarget>)target commandExecutor: (FBIDBCommandExecutor *)commandExecutor ports:(FBIDBPortsConfiguration *)ports eventReporter:(id<FBEventReporter>)eventReporter logger:(FBIDBLogger *)logger error:(NSError **)error
 {
-  FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:error];
-  if (!storageManager) {
-    return nil;
-  }
-  // Command Executor
-  FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-    commandExecutorForTarget:target
-    storageManager:storageManager
-    temporaryDirectory:temporaryDirectory
-    ports:ports
-    logger:logger];
-  commandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:eventReporter logger:logger];
-
   return [[self alloc] initWithPorts:ports target:target commandExecutor:commandExecutor eventReporter:eventReporter logger:logger];
 }
 
