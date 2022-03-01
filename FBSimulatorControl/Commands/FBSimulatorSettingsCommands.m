@@ -52,11 +52,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
       NSError *error = nil;
       [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:&error];
-      
+
       return FBFuture.empty;
     }];
   }
-  
+
   return [[self.simulator
     connectToBridge]
     onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
@@ -96,15 +96,28 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   // Composing different futures due to differences in how these operate.
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   NSMutableSet<NSString *> *toApprove = [NSMutableSet setWithSet:services];
+  FBOSVersion *iosVer = [self.simulator osVersion];
+  NSDictionary<FBSettingsApprovalService, NSString *> *coreSimulatorSettingMapping;
+
+  if (iosVer.version.majorVersion >= 13) {
+    coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13;
+  } else {
+    coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13;
+  }
 
   // Go through each of the internal APIs, removing them from the pending set as we go.
   if ([self.simulator.device respondsToSelector:@selector(setPrivacyAccessForService:bundleID:granted:error:)]) {
     NSMutableSet<NSString *> *simDeviceServices = [toApprove mutableCopy];
-    [simDeviceServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.coreSimulatorSettingMapping.allKeys]];
+    [simDeviceServices intersectSet:[NSSet setWithArray:coreSimulatorSettingMapping.allKeys]];
     // Only approve these services, where they are serviced by the CoreSimulator API
     if (simDeviceServices.count > 0) {
+      NSMutableSet<NSString *> *internalServices = [NSMutableSet set];
+      for (NSString *service in simDeviceServices) {
+        NSString *internalService = coreSimulatorSettingMapping[service];
+        [internalServices addObject:internalService];
+      }
       [toApprove minusSet:simDeviceServices];
-      [futures addObject:[self coreSimulatorApproveWithBundleIDs:bundleIDs toServices:simDeviceServices]];
+      [futures addObject:[self coreSimulatorApproveWithBundleIDs:bundleIDs toServices:internalServices]];
     }
   }
   if (toApprove.count > 0 && [[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:toApprove]) {
@@ -327,16 +340,10 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     mapReplace:NSNull.null];
 }
 
-- (FBFuture<NSNull *> *)coreSimulatorApproveWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
+- (FBFuture<NSNull *> *)coreSimulatorApproveWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<NSString *> *)services
 {
   for (NSString *bundleID in bundleIDs) {
-    for (NSString *service in services) {
-      NSString *internalService = FBSimulatorSettingsCommands.coreSimulatorSettingMapping[service];
-      if (!internalService) {
-        return [[FBSimulatorError
-          describeFormat:@"%@ is not a valid service for CoreSimulator", service]
-          failFuture];
-      }
+    for (NSString *internalService in services) {
       NSError *error = nil;
       if (![self.simulator.device setPrivacyAccessForService:internalService bundleID:bundleID granted:YES error:&error]) {
         return [FBFuture futureWithError:error];
@@ -361,7 +368,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return mapping;
 }
 
-+ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMapping
++ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMappingPreIos13
 {
   static dispatch_once_t onceToken;
   static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
@@ -372,6 +379,19 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       FBSettingsApprovalServiceCamera: @"camera",
       FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
       FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
+    };
+  });
+  return mapping;
+}
+
++ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMappingPostIos13
+{
+  static dispatch_once_t onceToken;
+  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  dispatch_once(&onceToken, ^{
+    mapping = @{
+      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
+      FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
     };
   });
   return mapping;
@@ -492,4 +512,3 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 }
 
 @end
-
