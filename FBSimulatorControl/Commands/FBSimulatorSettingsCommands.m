@@ -429,12 +429,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return [[self
     runSqliteCommandOnDatabase:databasePath arguments:@[@".schema access"] queue:queue logger:logger]
     onQueue:queue map:^(NSString *result) {
-      if ([result containsString:@"last_modified"]) {
+      if ([result containsString:@"auth_value"]) {
+        return [FBSimulatorSettingsCommands postiOS15ApprovalRowsForBundleIDs:bundleIDs services:services];
+      } else if ([result containsString:@"last_modified"]) {
         return [FBSimulatorSettingsCommands postiOS12ApprovalRowsForBundleIDs:bundleIDs services:services];
       } else {
         return [FBSimulatorSettingsCommands preiOS12ApprovalRowsForBundleIDs:bundleIDs services:services];
       }
-    }];
+  }];
 }
 
 + (NSString *)preiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
@@ -444,6 +446,19 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
       [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", serviceName, bundleID]];
+    }
+  }
+  return [tuples componentsJoinedByString:@", "];
+}
+
++ (NSString *)postiOS15ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
+{
+  NSUInteger timestamp = (NSUInteger) NSDate.date.timeIntervalSince1970;
+  NSMutableArray<NSString *> *tuples = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+      NSString *serviceName = self.tccDatabaseMapping[service];
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 2, 4, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
     }
   }
   return [tuples componentsJoinedByString:@", "];
