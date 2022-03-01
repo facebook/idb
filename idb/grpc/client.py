@@ -179,6 +179,7 @@ APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
     Permission.URL: ApproveRequest.URL,
     Permission.LOCATION: ApproveRequest.LOCATION,
     Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
+    Permission.MICROPHONE: ApproveRequest.MICROPHONE,
 }
 
 VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {

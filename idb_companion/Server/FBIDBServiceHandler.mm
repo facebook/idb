@@ -831,6 +831,7 @@ Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRe
 {@autoreleasepool{
   NSError *error = nil;
   NSDictionary<NSNumber *, FBSettingsApprovalService> *mapping = @{
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_MICROPHONE): FBSettingsApprovalServiceMicrophone,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_PHOTOS): FBSettingsApprovalServicePhotos,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CAMERA): FBSettingsApprovalServiceCamera,
     @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CONTACTS): FBSettingsApprovalServiceContacts,

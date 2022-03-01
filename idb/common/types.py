@@ -51,6 +51,7 @@ class Permission(Enum):
     URL = 3
     LOCATION = 4
     NOTIFICATION = 5
+    MICROPHONE = 6
 
 
 class TargetType(str, Enum):
