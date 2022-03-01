@@ -200,7 +200,7 @@ static int operationGetResultStatus(CFTypeRef operation)
 
 static CFTypeRef operationGetResultObject(CFTypeRef operation)
 {
-  return @{};
+  return (__bridge CFTypeRef)(@{});
 }
 
 @interface FBAFCConnectionTests : XCTestCase
