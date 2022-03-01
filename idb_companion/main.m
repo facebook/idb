@@ -461,7 +461,11 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
       return [[[server start] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSDictionary<NSString *,id> * _Nonnull cppServerDescrption) {
         if (withSwiftServer) {
-          return [[swiftServer start] mapReplace:cppServerDescrption];
+          return [[swiftServer start] onQueue:target.workQueue map: ^(NSDictionary<NSString *,id> * _Nonnull swiftServerDescription) {
+            NSMutableDictionary<NSString *,id> * resultDictionary = [cppServerDescrption mutableCopy];
+            [resultDictionary addEntriesFromDictionary:swiftServerDescription];
+            return resultDictionary;
+          }];
         }
         return [FBFuture futureWithResult: cppServerDescrption];
       }] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {

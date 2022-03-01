@@ -19,8 +19,9 @@ final class GRPCSwiftServer : NSObject {
   private var server: EventLoopFuture<Server>?
   private let provider: CallHandlerProvider
   private let logger: FBIDBLogger
-  
+
   private let serverConfig: Server.Configuration
+  private let ports: FBIDBPortsConfiguration
 
   @objc
   let completed : FBMutableFuture<NSNull>
@@ -53,26 +54,27 @@ final class GRPCSwiftServer : NSObject {
     serverConfiguration.tlsConfiguration = Self.tlsConfiguration(portConfiguration: ports, logger: logger)
     serverConfiguration.errorDelegate = GRPCSwiftServerErrorDelegate()
     self.serverConfig = serverConfiguration
-    
+    self.ports = ports
+
     self.completed = FBMutableFuture<NSNull>()
     self.logger = logger
 
     super.init()
   }
 
-  @objc func start() -> FBMutableFuture<NSNull> {
+  @objc func start() -> FBMutableFuture<NSDictionary> {
     // Start the server and print its address once it has started.
-    let future = FBMutableFuture<NSNull>()
-    
+    let future = FBMutableFuture<NSDictionary>()
+
     let server = Server.start(configuration: serverConfig)
     self.server = server
-    
+
     logger.info().log("Starting swift server")
-    server.map(\.channel.localAddress).whenSuccess { [weak self] address in
+    server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
       self?.logServerStartup(address: address)
-      future.resolve(withResult: NSNull())
+      future.resolve(withResult: ["grpc_swift_port": Int(ports.grpcSwiftPort)])
     }
-    
+
     server.flatMap(\.onClose).whenCompleteBlocking(onto: .main) { [completed] _ in
       completed.resolve(withResult: NSNull())
     }
