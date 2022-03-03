@@ -17,6 +17,7 @@
 // Request
 #import "FBXCTestRunRequest.h"
 #import "FBCodeCoverageRequest.h"
+#import "FBDsymInstallLinkToBundle.h"
 
 // Configuration
 #import "FBIDBPortsConfiguration.h"

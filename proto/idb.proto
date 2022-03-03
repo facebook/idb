@@ -190,12 +190,22 @@ message InstallRequest {
     DSYM = 3;
     FRAMEWORK = 4;
   }
+  message LinkDsymToBundle {
+    enum BundleType {
+      APP = 0;
+      XCTEST = 1;
+    }
+    BundleType bundle_type = 1;
+    string bundle_id = 2;
+  }
   oneof value {
     Destination destination = 1;
     Payload payload = 2;
     string name_hint = 3;
     bool make_debuggable = 4;
-    string bundle_id = 5; // dSYM for app
+    string bundle_id = 5; //(2022-03-02) REMOVE, For back compatibility only.
+                          // Link dSYM to app bundle_id
+    LinkDsymToBundle link_dsym_to_bundle = 6;
   }
 }
 

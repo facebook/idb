@@ -17,6 +17,8 @@
 		713C70AD26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */; };
 		713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */; };
 		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
+		A21CDD3827CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */; };
+		A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
 		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
 		AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */; };
@@ -151,6 +153,8 @@
 		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.debug.xcconfig"; sourceTree = "<group>"; };
+		A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDsymInstallLinkToBundle.h; sourceTree = "<group>"; };
+		A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDsymInstallLinkToBundle.m; sourceTree = "<group>"; };
 		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
 		AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
 		AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBXCTestReporter.mm; sourceTree = "<group>"; };
@@ -254,6 +258,8 @@
 			children = (
 				713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */,
 				713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */,
+				A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */,
+				A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */,
 				713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */,
 				713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */,
 			);
@@ -488,6 +494,7 @@
 				AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */,
 				D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */,
 				AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */,
+				A21CDD3827CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h in Headers */,
 				D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -737,6 +744,7 @@
 				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
 				AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */,
 				AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */,
+				A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */,
 				DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,

@@ -17,6 +17,7 @@
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
+#import "FBDsymInstallLinkToBundle.h"
 
 FBFileContainerKind const FBFileContainerKindXctest = @"xctest";
 FBFileContainerKind const FBFileContainerKindDylib = @"dylib";
@@ -121,14 +122,14 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [self installBundle:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:FBCompressionFormatGZIP] intoStorage:self.storageManager.framework];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkTo:(nullable FBDsymInstallLinkToBundle *)linkTo
 {
-  return [self installAndLinkDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
+  return [self installAndLinkDsym:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] intoStorage:self.storageManager.dsym linkTo:linkTo];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkToApp:(nullable NSString *)bundleID
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkTo:(nullable FBDsymInstallLinkToBundle *)linkTo
 {
-  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]] intoStorage:self.storageManager.dsym linkToApp:bundleID];
+  return [self installAndLinkDsym:[self dsymDirnameFromUnzipDir:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression]] intoStorage:self.storageManager.dsym linkTo:linkTo];
 }
 
 #pragma mark Public Methods
@@ -915,9 +916,9 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 }
 
 // Will install the dsym under standard dsym location
-// if linkToApp app is passed:
-// after installation it will create a symlink in the app bundle
-- (FBFuture<FBInstalledArtifact *> *)installAndLinkDsym:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage linkToApp:(nullable NSString *)bundleID
+// if linkTo is passed:
+// after installation it will create a symlink in the bundle container
+- (FBFuture<FBInstalledArtifact *> *)installAndLinkDsym:(FBFutureContext<NSURL *> *)extractedFileContext intoStorage:(FBFileStorage *)storage linkTo:(nullable FBDsymInstallLinkToBundle *)linkTo
 {
   return [extractedFileContext
     onQueue:self.target.workQueue pop:^(NSURL *extractionDir) {
@@ -926,26 +927,38 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (!artifact) {
         return [FBFuture futureWithError:error];
       }
-      if (!bundleID) {
+      
+      if (!linkTo) {
         return [FBFuture futureWithResult:artifact];
       }
-
-      return [[self.target installedApplicationWithBundleID:bundleID]
-        onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
+      
+      FBFuture<NSURL *> *future = nil;
+      if (linkTo.bundle_type == FBDsymBundleTypeApp) {
+        future = [[self.target installedApplicationWithBundleID:linkTo.bundle_id] onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
           [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];
-          NSURL *appPath = [[NSURL fileURLWithPath:linkToApp.bundle.path] URLByDeletingLastPathComponent];
-          NSURL *appDsymURL = [appPath URLByAppendingPathComponent:artifact.path.lastPathComponent];
-          // delete a simlink if already exists
-          // TODO: check if what we are deleting is a symlink
-          [NSFileManager.defaultManager removeItemAtURL:appDsymURL error:nil];
-          [self.logger logFormat:@"Deleted a symlink for dsym if it already exists: %@", appDsymURL];
-          NSError *createLinkError = nil;
-          if (![NSFileManager.defaultManager createSymbolicLinkAtURL:appDsymURL withDestinationURL:artifact.path error:&createLinkError]){
-            return [FBFuture futureWithError:error];
-          }
-          [self.logger logFormat:@"Created a symlink for dsym from: %@ to %@", appDsymURL, artifact.path];
-          return [FBFuture futureWithResult:artifact];
-      }];
+          return [FBFuture futureWithResult:[NSURL fileURLWithPath:linkToApp.bundle.path]];
+        }];
+      } else {
+        id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:linkTo.bundle_id error:&error];
+        [self.logger logFormat:@"Going to create a symlink for test bundle: %@", testDescriptor.name];
+        future = [FBFuture futureWithResult:testDescriptor.url];
+      }
+    
+      return [future onQueue:self.target.workQueue fmap:^(NSURL *bundlePath) {
+                NSURL *bundleUrl = [bundlePath URLByDeletingLastPathComponent];
+                NSURL *dsymURL = [bundleUrl URLByAppendingPathComponent:artifact.path.lastPathComponent];
+                // delete a simlink if already exists
+                // TODO: check if what we are deleting is a symlink
+                [NSFileManager.defaultManager removeItemAtURL:dsymURL error:nil];
+                [self.logger logFormat:@"Deleted a symlink for dsym if it already exists: %@", dsymURL];
+                NSError *createLinkError = nil;
+                if (![NSFileManager.defaultManager createSymbolicLinkAtURL:dsymURL withDestinationURL:artifact.path error:&createLinkError]){
+                  return [FBFuture futureWithError:error];
+                }
+                [self.logger logFormat:@"Created a symlink for dsym from: %@ to %@", dsymURL, artifact.path];
+                return [FBFuture futureWithResult:artifact];
+            }];
+
   }];
 }
 

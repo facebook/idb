@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestDescriptor;
 @protocol FBControlCoreLogger;
 @class FBBundleStorageManager;
+@class FBDsymInstallLinkToBundle;
 @class FBIDBLogger;
 @class FBIDBPortsConfiguration;
 @class FBIDBStorageManager;
@@ -145,20 +146,20 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  Installs a dSYM from a file path.
 
  @param filePath the input to pipe.
- @param bundleID if specified installed dsym will be linked into the app bundle container.
+ @param linkTo if specified installed dsym will be linked into bundle container.
  @return A future that resolves with the dSYM Name
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkToApp:(nullable NSString *)bundleID;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_file_path:(NSString *)filePath linkTo:(nullable FBDsymInstallLinkToBundle *)linkTo;
 
 /**
  Installs dSYM(s) from a zip stream.
 
  @param input the input to pipe.
  @param compression the compression type to use
- @param bundleID if specified installed dsym will be linked into the app bundle container.
+ @param linkTo if specified installed dsym will be linked into bundle container.
  @return A future that resolves with the directory containing the dSYM(s)
  */
-- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkToApp:(nullable NSString *)bundleID;
+- (FBFuture<FBInstalledArtifact *> *)install_dsym_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression linkTo:(nullable FBDsymInstallLinkToBundle *)linkTo;
 
 /**
  Takes a Screenshot

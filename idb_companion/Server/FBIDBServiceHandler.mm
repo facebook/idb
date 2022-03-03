@@ -24,6 +24,7 @@
 #import "FBXCTestRunRequest.h"
 #import <FBControlCore/FBFuture.h>
 #import "FBXCTestDescriptor.h"
+#import "FBDsymInstallLinkToBundle.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -511,6 +512,18 @@ static NSString *file_container(idb::FileContainer container)
   }
 }
 
+static FBDsymBundleType bundle_type_link_to_dsym(idb::InstallRequest_LinkDsymToBundle_BundleType bundleType)
+{
+  switch (bundleType) {
+    case idb::InstallRequest_LinkDsymToBundle_BundleType_XCTEST:
+      return FBDsymBundleTypeXCTest;
+    case idb::InstallRequest_LinkDsymToBundle_BundleType_APP:
+      return FBDsymBundleTypeApp;
+    default:
+      return FBDsymBundleTypeApp;
+  }
+}
+
 static void populate_companion_info(idb::CompanionInfo *info, id<FBEventReporter> reporter, id<FBiOSTarget> target)
 {
   info->set_udid(target.udid.UTF8String);
@@ -559,14 +572,25 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     makeDebuggable = (request.make_debuggable() == true);
     stream->Read(&request);
   }
+  
+  FBDsymInstallLinkToBundle *linkToBundle = nil;
+  //(2022-03-02) REMOVE! Keeping only for retrocompatibility
   // A bundle id might be provided, if it is, then obtain the installed app if exists, then advance that stream.
   // It can be used to determine where debug symbols should be linked
-  NSString *bundleID = nil;
   if (request.value_case() == idb::InstallRequest::ValueCase::kBundleId) {
-    bundleID = nsstring_from_c_string(request.bundle_id());
+    NSString *bundleID = nsstring_from_c_string(request.bundle_id());
+    linkToBundle = [[FBDsymInstallLinkToBundle alloc] initWith:bundleID bundle_type:FBDsymBundleTypeApp];
     stream->Read(&request);
   }
 
+  if (request.value_case() == idb::InstallRequest::ValueCase::kLinkDsymToBundle) {
+    idb::InstallRequest_LinkDsymToBundle link_to_bundle = request.link_dsym_to_bundle();
+    FBDsymBundleType bundleType = bundle_type_link_to_dsym(link_to_bundle.bundle_type());
+    NSString *bundleID = nsstring_from_c_string(link_to_bundle.bundle_id());
+    linkToBundle = [[FBDsymInstallLinkToBundle alloc] initWith:bundleID bundle_type:bundleType];
+    stream->Read(&request);
+  }
+  
   // Now that we've read the header, the next item in the stream must be the payload.
   if (request.value_case() != idb::InstallRequest::ValueCase::kPayload) {
     return [[FBIDBError
@@ -592,7 +616,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:dataStream compression:compression linkToApp:bundleID];
+          return [_commandExecutor install_dsym_stream:dataStream compression:compression linkTo:linkToBundle];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:dataStream name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -610,7 +634,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_stream:download.input compression:compression linkToApp:bundleID];
+          return [_commandExecutor install_dsym_stream:download.input compression:compression linkTo:linkToBundle];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_stream:download.input name:name];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
@@ -627,7 +651,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
-          return [_commandExecutor install_dsym_file_path:filePath linkToApp:bundleID];
+          return [_commandExecutor install_dsym_file_path:filePath linkTo:linkToBundle];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DYLIB:
           return [_commandExecutor install_dylib_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_FRAMEWORK:
