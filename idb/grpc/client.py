@@ -352,6 +352,7 @@ class Client(ClientBase):
         compression: Optional[Compression],
         make_debuggable: Optional[bool],
         bundle_id: Optional[str],
+        bundle_type: Optional[FileContainerType],
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -401,7 +402,20 @@ class Client(ClientBase):
                     )
                 )
             if bundle_id is not None:
-                await stream.send_message(InstallRequest(bundle_id=bundle_id))
+                link_to_bundle_type = None
+                if bundle_type == FileContainerType.APPLICATION:
+                    link_to_bundle_type = InstallRequest.LinkDsymToBundle.APP
+                elif bundle_type == FileContainerType.XCTEST:
+                    link_to_bundle_type = InstallRequest.LinkDsymToBundle.XCTEST
+                else:
+                    raise IdbException(
+                        f"Unexpected bundle_type. Bundle_type {bundle_type} specified for {bundle_id}"
+                    )
+                message = InstallRequest.LinkDsymToBundle(
+                    bundle_id=bundle_id, bundle_type=link_to_bundle_type
+                )
+                await stream.send_message(InstallRequest(link_dsym_to_bundle=message))
+
             async for message in generator:
                 await stream.send_message(message)
             self.logger.debug("Finished sending install payload to companion")
@@ -637,6 +651,7 @@ class Client(ClientBase):
             compression=compression,
             make_debuggable=make_debuggable,
             bundle_id=None,
+            bundle_type=None,
         ):
             yield response
 
@@ -648,6 +663,7 @@ class Client(ClientBase):
             compression=None,
             make_debuggable=None,
             bundle_id=None,
+            bundle_type=None,
         ):
             yield response
 
@@ -659,6 +675,7 @@ class Client(ClientBase):
             compression=None,
             make_debuggable=None,
             bundle_id=None,
+            bundle_type=None,
         ):
             yield response
 
@@ -668,6 +685,7 @@ class Client(ClientBase):
         dsym: Bundle,
         bundle_id: Optional[str],
         compression: Optional[Compression],
+        bundle_type: Optional[FileContainerType],
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
@@ -675,6 +693,7 @@ class Client(ClientBase):
             compression=compression,
             make_debuggable=None,
             bundle_id=bundle_id,
+            bundle_type=bundle_type,
         ):
             yield response
 
@@ -688,6 +707,7 @@ class Client(ClientBase):
             compression=None,
             make_debuggable=None,
             bundle_id=None,
+            bundle_type=None,
         ):
             yield response
 

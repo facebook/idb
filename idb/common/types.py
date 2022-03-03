@@ -497,6 +497,7 @@ class Client(ABC):
         dsym: Union[str, IO[bytes]],
         bundle_id: Optional[str],
         compression: Optional[Compression],
+        bundle_type: Optional[FileContainerType] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 

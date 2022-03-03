@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import Client, Compression
+from idb.common.types import Client, Compression, FileContainerType
 
 
 class DsymInstallCommand(ClientCommand):
@@ -35,10 +35,13 @@ class DsymInstallCommand(ClientCommand):
         compression = (
             Compression[args.compression] if args.compression is not None else None
         )
+
+        bundle_type = FileContainerType.APPLICATION if args.bundle_id else None
         async for install_response in client.install_dsym(
             args.dsym_path,
             args.bundle_id,
             compression,
+            bundle_type,
         ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
