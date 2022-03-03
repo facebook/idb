@@ -18,7 +18,13 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
-from idb.common.types import Client, CodeCoverageFormat, ExitWithCodeException
+from idb.common.types import (
+    Client,
+    CodeCoverageFormat,
+    ExitWithCodeException,
+    FileContainerType,
+    IdbException,
+)
 
 
 class XctestInstallCommand(ClientCommand):
@@ -191,12 +197,26 @@ class CommonRunXcTestCommand(ClientCommand):
             "to be paths instead. They are installed before running.",
             action="store_true",
         )
+        parser.add_argument(
+            "--install-dsym",
+            default=None,
+            type=str,
+            help="Path of the debug symbols .DYSM to be install alongside with the test bundle. (--install flag is required as well)",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await super().run_with_client(args, client)
         if args.install:
             await self.install_bundles(args, client)
+
+        if args.install_dsym:
+            if not args.install:
+                raise IdbException(
+                    "XCTest run failed! Error: --install flag is required if --install-dsym is used."
+                )
+            await self.install_dsym(args, client)
+
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
         app_bundle_id = args.app_bundle_id if hasattr(args, "app_bundle_id") else None
@@ -248,6 +268,18 @@ class CommonRunXcTestCommand(ClientCommand):
     async def install_bundles(self, args: Namespace, client: Client) -> None:
         async for test in client.install_xctest(args.test_bundle_id):
             args.test_bundle_id = test.name
+
+    async def install_dsym(self, args: Namespace, client: Client) -> Optional[str]:
+        dsym_name = None
+        async for install_response in client.install_dsym(
+            dsym=args.install_dsym,
+            bundle_id=args.test_bundle_id,
+            bundle_type=FileContainerType.XCTEST,
+            compression=None,
+        ):
+            if install_response.progress == 0.0:
+                dsym_name = install_response.name
+        return dsym_name
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
         return None

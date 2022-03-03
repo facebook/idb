@@ -475,6 +475,7 @@ class TestParser(TestCase):
         namespace.wait_for_debugger = False
         namespace.install = False
         namespace.companion_tls = False
+        namespace.install_dsym = None
         return namespace
 
     async def test_xctest_run_app(self) -> None:
@@ -542,6 +543,44 @@ class TestParser(TestCase):
         self.client_mock.list_test_bundle.assert_called_once_with(
             test_bundle_id=bundle_id, app_path=None
         )
+
+    async def test_xctest_run_logic_with_install(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_path = "testBundle.xctest"
+            await cli_main(
+                cmd_input=["xctest", "run", "logic", "--install", test_bundle_path]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install = True
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
+
+    async def test_xctest_run_logic_with_install_dsym(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_id = "com.me.tests"
+            test_dsym_path = "/my/dsym_path"
+            await cli_main(
+                cmd_input=[
+                    "xctest",
+                    "run",
+                    "logic",
+                    "--install-dsym",
+                    test_dsym_path,
+                    test_bundle_id,
+                ]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_id)
+            namespace.install_dsym = test_dsym_path
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
 
     async def test_daemon(self) -> None:
         mock = AsyncMock()
@@ -772,7 +811,7 @@ class TestParser(TestCase):
             point=(10, 20), nested=False
         )
 
-    async def test_accessibility_info_at_point(self) -> None:
+    async def test_accessibility_info_at_point_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(
