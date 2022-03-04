@@ -468,6 +468,7 @@
 		AAFE1C131FD68A7D00ADDE66 /* FBSimulatorNotificationUpdateStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFE1C111FD68A7D00ADDE66 /* FBSimulatorNotificationUpdateStrategy.m */; };
 		AAFE93B61CE4954500A50F76 /* FBSimulatorEraseStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFE93B41CE4954500A50F76 /* FBSimulatorEraseStrategy.h */; };
 		AAFE93B71CE4954500A50F76 /* FBSimulatorEraseStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */; };
+		B8E19B9C27D0E33A0095241C /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B8E19B9927D0E33A0095241C /* Accelerate.framework */; platformFilter = maccatalyst; };
 		C0B32FC91E4E459700A48CF4 /* FBArchitecture.h in Headers */ = {isa = PBXBuildFile; fileRef = C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C0B32FCA1E4E459700A48CF4 /* FBArchitecture.m in Sources */ = {isa = PBXBuildFile; fileRef = C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */; };
 		D75ACC6B264BEF82009862C4 /* FBOToolDynamicLibs.m in Sources */ = {isa = PBXBuildFile; fileRef = D75ACC69264BEF82009862C4 /* FBOToolDynamicLibs.m */; };
@@ -1254,6 +1255,7 @@
 		AAFE1C111FD68A7D00ADDE66 /* FBSimulatorNotificationUpdateStrategy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorNotificationUpdateStrategy.m; sourceTree = "<group>"; };
 		AAFE93B41CE4954500A50F76 /* FBSimulatorEraseStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorEraseStrategy.h; sourceTree = "<group>"; };
 		AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorEraseStrategy.m; sourceTree = "<group>"; };
+		B8E19B9927D0E33A0095241C /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBArchitecture.h; sourceTree = "<group>"; };
 		C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBArchitecture.m; sourceTree = "<group>"; };
 		D75ACC69264BEF82009862C4 /* FBOToolDynamicLibs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolDynamicLibs.m; sourceTree = "<group>"; };
@@ -1359,6 +1361,7 @@
 			buildActionMask = 0;
 			files = (
 				AAB4AC1E1BB586930046F6A1 /* AVFoundation.framework in Frameworks */,
+				B8E19B9C27D0E33A0095241C /* Accelerate.framework in Frameworks */,
 				AAC241261BB311690054570C /* ApplicationServices.framework in Frameworks */,
 				E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */,
 				AA3C18441D5DE47D00419EAA /* CoreImage.framework in Frameworks */,
@@ -2320,6 +2323,7 @@
 		B401C97968022A5500000000 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B8E19B9927D0E33A0095241C /* Accelerate.framework */,
 				AAF1D44424AF777400150547 /* VideoToolbox.framework */,
 				AAC241231BB3113F0054570C /* AppKit.framework */,
 				AAC241251BB311690054570C /* ApplicationServices.framework */,
