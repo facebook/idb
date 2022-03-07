@@ -16,14 +16,49 @@
 #import "FBDeviceDebuggerCommands.h"
 #import "FBInstrumentsClient.h"
 
-static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
+@interface FBDeviceWorkflowStatistics : NSObject
+
+@property (nonatomic, copy, readonly) NSString *workflowType;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *lastEvent;
+
+@end
+
+@implementation FBDeviceWorkflowStatistics
+
+- (instancetype)initWithWorkflowType:(NSString *)workflowType logger:(id<FBControlCoreLogger>)logger
 {
-  [device.logger logFormat:@"Uninstall Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _workflowType = workflowType;
+  _logger = logger;
+
+  return self;
 }
 
-static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
+- (void)pushProgress:(NSDictionary<NSString *, id> *)event
 {
-  [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+  [self.logger logFormat:@"%@ Progress: %@", self.workflowType, [FBCollectionInformation oneLineDescriptionFromDictionary:event]];
+  self.lastEvent = event;
+}
+
+- (NSString *)summaryOfRecentEvents
+{
+  NSDictionary<NSString *, id> *lastEvent = self.lastEvent;
+  if (!lastEvent) {
+    return [NSString stringWithFormat:@"No events from %@", self.lastEvent];
+  }
+  return [NSString stringWithFormat:@"Last event %@", [FBCollectionInformation oneLineDescriptionFromDictionary:lastEvent]];
+}
+
+@end
+
+static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, FBDeviceWorkflowStatistics *statistics)
+{
+  [statistics pushProgress:callbackDictionary];
 }
 
 @interface FBDeviceApplicationCommands ()
@@ -135,17 +170,18 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
       // 1) The transfer of the application bundle to the device.
       // 2) The installation of the application after the transfer.
       // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
       int status = device.calls.SecureInstallApplicationBundle(
         device.amDeviceRef,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) InstallCallback,
-        (__bridge void *) (device)
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
       );
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", appURL.lastPathComponent, status, errorMessage]
+          describeFormat:@"Failed to install application %@ 0x%x (%@). %@", appURL.lastPathComponent, status, errorMessage, statistics.summaryOfRecentEvents]
           failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
@@ -166,19 +202,20 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   return [[self.device
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int status = device.calls.SecureUninstallApplication(
         0,
         device.amDeviceRef,
         (__bridge CFStringRef _Nonnull)(bundleID),
         0,
-        (AMDeviceProgressCallback) UninstallCallback,
-        (__bridge void *) (device)
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
       );
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to uninstall application '%@' with error 0x%x (%@)", bundleID, status, internalMessage]
+          describeFormat:@"Failed to uninstall application '%@' with error 0x%x (%@). %@", bundleID, status, internalMessage, statistics.summaryOfRecentEvents]
           failFuture];
       }
       [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
