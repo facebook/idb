@@ -16,6 +16,16 @@
 
 #import "FBSimulatorError.h"
 
+@interface FBVideoCompressorCallbackSourceFrame : NSObject
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber;
+
+@property (nonatomic, readonly) NSUInteger frameNumber;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
+
+@end
+
+
 @protocol FBSimulatorVideoStreamFramePusher <NSObject>
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
@@ -129,12 +139,16 @@ static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CV
 
 static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
+  FBVideoCompressorCallbackSourceFrame *sourceFrame = (__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
+  CVPixelBufferRelease(sourceFrame.pixelBuffer);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, nil);
 }
 
 static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
+  FBVideoCompressorCallbackSourceFrame *sourceFrame = (__bridge_transfer FBVideoCompressorCallbackSourceFrame*) sourceFrameRefCon;
+  CVPixelBufferRelease(sourceFrame.pixelBuffer);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
@@ -142,7 +156,9 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
 
 static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
-  NSUInteger frameNumber = (NSUInteger) sourceFrameRefCon;
+  FBVideoCompressorCallbackSourceFrame *sourceFrame = (__bridge_transfer FBVideoCompressorCallbackSourceFrame*) sourceFrameRefCon;
+  CVPixelBufferRelease(sourceFrame.pixelBuffer);
+  NSUInteger frameNumber = sourceFrame.frameNumber;
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   if (frameNumber == 0) {
     CMFormatDescriptionRef formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
@@ -152,6 +168,24 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, nil);
 }
+
+@implementation FBVideoCompressorCallbackSourceFrame
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _pixelBuffer = pixelBuffer;
+  _frameNumber = frameNumber;
+  
+  return self;
+}
+
+@end
+
 
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
 
@@ -323,15 +357,30 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       failBool:error];
   }
   
+  CVPixelBufferRef bufferToWrite = pixelBuffer;
+  FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
+  CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
+  if (bufferPool != nil) {
+    CVPixelBufferRef resizedBuffer;
+    CVReturn returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer);
+    if (returnStatus == kCVReturnSuccess) {
+      scaleFromSourceToDestinationBuffer(pixelBuffer, resizedBuffer);
+      bufferToWrite = resizedBuffer;
+      sourceFrameRef.pixelBuffer = resizedBuffer;
+    } else {
+      [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
+    }
+  }
+  
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
   OSStatus status = VTCompressionSessionEncodeFrame(
     compressionSession,
-    pixelBuffer,
+    bufferToWrite,
     time,
     kCMTimeInvalid,  // Frame duration
     NULL,  // Frame properties
-    (void *) frameNumber,  // Source Frame Reference for callback.
+    (__bridge_retained void * _Nullable)(sourceFrameRef),
     &flags
   );
   if (status != 0) {
