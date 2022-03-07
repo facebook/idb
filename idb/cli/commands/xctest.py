@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import os.path
 from argparse import REMAINDER, ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Set
@@ -25,6 +26,8 @@ from idb.common.types import (
     FileContainerType,
     IdbException,
 )
+
+NO_SPECIFIED_PATH = "NO_SPECIFIED_PATH"
 
 
 class XctestInstallCommand(ClientCommand):
@@ -201,7 +204,9 @@ class CommonRunXcTestCommand(ClientCommand):
             "--install-dsym-test-bundle",
             default=None,
             type=str,
-            help="Path of the debug symbols .DYSM to be install alongside with the test bundle. (--install flag is required as well)",
+            nargs="?",
+            const=NO_SPECIFIED_PATH,
+            help="Install debug symbols together with bundle. Specify path for debug symbols; otherwise, we'll try to infer it. (requires --install)",
         )
         super().add_parser_arguments(parser)
 
@@ -213,18 +218,17 @@ class CommonRunXcTestCommand(ClientCommand):
         is_app = args.run == "app"
 
         if args.install:
-            await self.install_bundles(args, client)
+            # Note for --install specified, test_bundle_id is a path initially, but
+            # `install_bundles` will override it.
+            test_bundle_location = args.test_bundle_id
 
-        if args.install_dsym_test_bundle:
-            if not args.install:
-                raise IdbException(
-                    "XCTest run failed! Error: --install flag is required if --install-dsym is used."
-                )
-            if is_ui or is_app:
-                print(
-                    "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests."
-                )
-            await self.install_dsym_test_bundle(args, client)
+            await self.install_bundles(args, client)
+            if args.install_dsym_test_bundle:
+                if is_ui or is_app:
+                    print(
+                        "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests."
+                    )
+                await self.install_dsym_test_bundle(args, client, test_bundle_location)
 
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
@@ -276,11 +280,22 @@ class CommonRunXcTestCommand(ClientCommand):
             args.test_bundle_id = test.name
 
     async def install_dsym_test_bundle(
-        self, args: Namespace, client: Client
+        self, args: Namespace, client: Client, test_bundle_location: str
     ) -> Optional[str]:
         dsym_name = None
+        dsym_path_location = args.install_dsym_test_bundle
+        if args.install_dsym_test_bundle == NO_SPECIFIED_PATH:
+            dsym_path_location = test_bundle_location + ".dSYM"
+
+        if not os.path.exists(dsym_path_location):
+            raise IdbException(
+                "XCTest run failed! Error: --install-dsym flag was used but there is no file at location {}.".format(
+                    dsym_path_location
+                )
+            )
+
         async for install_response in client.install_dsym(
-            dsym=args.install_dsym_test_bundle,
+            dsym=dsym_path_location,
             bundle_id=args.test_bundle_id,
             bundle_type=FileContainerType.XCTEST,
             compression=None,

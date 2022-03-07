@@ -11,6 +11,7 @@ from argparse import Namespace
 from typing import Any, Optional, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
+from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main
 from idb.common.types import (
     Compression,
@@ -550,7 +551,7 @@ class TestParser(TestCase):
         with patch(
             "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
         ):
-            test_bundle_path = "testBundle.xctest"
+            test_bundle_path = "/bundle/path"
             await cli_main(
                 cmd_input=["xctest", "run", "logic", "--install", test_bundle_path]
             )
@@ -580,6 +581,29 @@ class TestParser(TestCase):
             )
             namespace = self.xctest_run_namespace("logic", test_bundle_path)
             namespace.install_dsym_test_bundle = test_dsym_path
+            namespace.install = True
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
+
+    async def test_xctest_run_logic_with_install_dsym_no_path(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_path = "/bundle/path"
+            await cli_main(
+                cmd_input=[
+                    "xctest",
+                    "run",
+                    "logic",
+                    "--install-dsym",
+                    "--install",
+                    test_bundle_path,
+                ]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install_dsym_test_bundle = NO_SPECIFIED_PATH
             namespace.install = True
             namespace.timeout = None
             mock.assert_called_once_with(namespace)
