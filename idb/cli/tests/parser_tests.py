@@ -475,7 +475,7 @@ class TestParser(TestCase):
         namespace.wait_for_debugger = False
         namespace.install = False
         namespace.companion_tls = False
-        namespace.install_dsym = None
+        namespace.install_dsym_test_bundle = None
         return namespace
 
     async def test_xctest_run_app(self) -> None:
@@ -559,14 +559,14 @@ class TestParser(TestCase):
             namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
-    async def test_xctest_run_logic_with_install_dsym(self) -> None:
+    async def test_xctest_run_logic_with_install_dsym_test_bundle(self) -> None:
         mock = AsyncMock()
         mock.return_value = []
         with patch(
             "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
         ):
-            test_bundle_id = "com.me.tests"
-            test_dsym_path = "/my/dsym_path"
+            test_bundle_path = "/bundle/path"
+            test_dsym_path = "/dsym/path"
             await cli_main(
                 cmd_input=[
                     "xctest",
@@ -574,11 +574,13 @@ class TestParser(TestCase):
                     "logic",
                     "--install-dsym",
                     test_dsym_path,
-                    test_bundle_id,
+                    "--install",
+                    test_bundle_path,
                 ]
             )
-            namespace = self.xctest_run_namespace("logic", test_bundle_id)
-            namespace.install_dsym = test_dsym_path
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install_dsym_test_bundle = test_dsym_path
+            namespace.install = True
             namespace.timeout = None
             mock.assert_called_once_with(namespace)
 

@@ -198,7 +198,7 @@ class CommonRunXcTestCommand(ClientCommand):
             action="store_true",
         )
         parser.add_argument(
-            "--install-dsym",
+            "--install-dsym-test-bundle",
             default=None,
             type=str,
             help="Path of the debug symbols .DYSM to be install alongside with the test bundle. (--install flag is required as well)",
@@ -207,15 +207,24 @@ class CommonRunXcTestCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await super().run_with_client(args, client)
+
+        is_ui = args.run == "ui"
+        is_logic = args.run == "logic"
+        is_app = args.run == "app"
+
         if args.install:
             await self.install_bundles(args, client)
 
-        if args.install_dsym:
+        if args.install_dsym_test_bundle:
             if not args.install:
                 raise IdbException(
                     "XCTest run failed! Error: --install flag is required if --install-dsym is used."
                 )
-            await self.install_dsym(args, client)
+            if is_ui or is_app:
+                print(
+                    "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests."
+                )
+            await self.install_dsym_test_bundle(args, client)
 
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
@@ -226,9 +235,6 @@ class CommonRunXcTestCommand(ClientCommand):
             else None
         )
         arguments = getattr(args, "test_arguments", [])
-        is_ui = args.run == "ui"
-        is_logic = args.run == "logic"
-
         if args.wait_for_debugger and is_ui:
             print(
                 "--wait_for_debugger flag is NOT supported for ui tests. It will default to False"
@@ -269,10 +275,12 @@ class CommonRunXcTestCommand(ClientCommand):
         async for test in client.install_xctest(args.test_bundle_id):
             args.test_bundle_id = test.name
 
-    async def install_dsym(self, args: Namespace, client: Client) -> Optional[str]:
+    async def install_dsym_test_bundle(
+        self, args: Namespace, client: Client
+    ) -> Optional[str]:
         dsym_name = None
         async for install_response in client.install_dsym(
-            dsym=args.install_dsym,
+            dsym=args.install_dsym_test_bundle,
             bundle_id=args.test_bundle_id,
             bundle_type=FileContainerType.XCTEST,
             compression=None,
