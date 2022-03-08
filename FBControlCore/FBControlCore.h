@@ -32,7 +32,6 @@
 #import <FBControlCore/FBDeveloperDiskImage.h>
 #import <FBControlCore/FBDeveloperDiskImageCommands.h>
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
-#import <FBControlCore/FBDispatchSourceNotifier.h>
 #import <FBControlCore/FBEraseCommands.h>
 #import <FBControlCore/FBEventReporter.h>
 #import <FBControlCore/FBEventReporterSubject.h>
