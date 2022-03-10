@@ -422,6 +422,11 @@ static NSString *const AXPrefix = @"AX";
   // The CoreSimulator API **is** backwards compatible, since it updates CoreSimulator.framework at the system level.
   // However, this API is only usable from CoreSimulator if Xcode 12 has been *installed at some point in the past on the host*.
   FBSimulator *simulator = self.simulator;
+  if (simulator.state != FBiOSTargetStateBooted) {
+    return [[FBControlCoreError
+      describeFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]
+      failFuture];
+  }
   SimDevice *device = simulator.device;
   if (nestedFormat || FBXcodeConfiguration.isXcode12OrGreater) {
     if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
