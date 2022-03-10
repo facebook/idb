@@ -60,7 +60,7 @@
 
   return [[self.terminationStrategy
     killSimulators:simulators]
-    onQueue:dispatch_get_main_queue() fmap:^(NSArray<FBSimulator *> *result) {
+    onQueue:self.set.workQueue fmap:^(NSArray<FBSimulator *> *result) {
       NSMutableArray<FBFuture<FBSimulator *> *> *futures = [NSMutableArray array];
       for (FBSimulator *simulator in result) {
         [futures addObject:[self eraseContentsAndSettings:simulator]];
