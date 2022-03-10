@@ -82,7 +82,7 @@
   // This could race with methods that may reallocate the newly-deleted device.
   // So we should wait for the device to no longer be present in the underlying set.
   return [[[FBFuture
-    onQueue:dispatch_get_main_queue() resolveWhen:^BOOL{
+    onQueue:set.workQueue resolveWhen:^BOOL{
       NSMutableSet<NSString *> *remainderSet = [NSMutableSet setWithSet:deletedDeviceUDIDs];
       [remainderSet intersectSet:[NSSet setWithArray:[set.allSimulators valueForKey:@"udid"]]];
       return remainderSet.count == 0;
