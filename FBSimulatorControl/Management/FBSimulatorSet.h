@@ -108,45 +108,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator;
 
 /**
- Kills all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to kill. Must not be nil.
- @return an Future that resolves when successful.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
- Erases all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to erase. Must not be nil.
- @return A future wrapping the erased simulators.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
- Erases all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to delete. Must not be nil.
- @return A future wrapping the erased simulators udids.
- */
-- (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
  Kills all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll;
-
-/**
- Kills all of the Simulators that belong to the receiver.
-
- @return A future wrapping the erased simulators.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll;
 
 /**
  Delete all of the Simulators that belong to the receiver.

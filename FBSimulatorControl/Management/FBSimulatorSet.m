@@ -179,12 +179,6 @@
   return [self.simulatorTerminationStrategy killSimulators:simulators];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators
-{
-  NSParameterAssert(simulators);
-  return [self.eraseStrategy eraseSimulators:simulators];
-}
-
 - (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
@@ -194,11 +188,6 @@
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll
 {
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators];
-}
-
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll
-{
-  return [self.eraseStrategy eraseSimulators:self.allSimulators];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)deleteAll
