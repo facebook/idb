@@ -68,12 +68,13 @@
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
 		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
+		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
+		DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */; };
 		DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */; };
 		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
 		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
 		DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* FutureBox.swift */; };
 		DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
-		DBD34DC727C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */; };
 		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 /* End PBXBuildFile section */
@@ -209,12 +210,13 @@
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
 		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
+		DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMethodHandler.swift; sourceTree = "<group>"; };
+		DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestRunMethodHandler.swift; sourceTree = "<group>"; };
 		DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBXCTestReporter.swift; sourceTree = "<group>"; };
 		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
 		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
 		DBA2ED1B27BBA96000926054 /* FutureBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FutureBox.swift; sourceTree = "<group>"; };
 		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
-		DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctestRunRequestValueTransformer.swift; sourceTree = "<group>"; };
 		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -418,12 +420,13 @@
 			path = Interceptors;
 			sourceTree = "<group>";
 		};
-		DBD34DC527C7988400B8BAD5 /* ValueTransformers */ = {
+		DB9722D427CCCCA200E37D78 /* MethodHandlers */ = {
 			isa = PBXGroup;
 			children = (
-				DBD34DC627C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift */,
+				DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */,
+				DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */,
 			);
-			path = ValueTransformers;
+			path = MethodHandlers;
 			sourceTree = "<group>";
 		};
 		DBF4764527B69294001E39C2 /* IDBXCTestReporter */ = {
@@ -437,7 +440,7 @@
 		DBF5D5D3278EFA7900633753 /* SwiftServer */ = {
 			isa = PBXGroup;
 			children = (
-				DBD34DC527C7988400B8BAD5 /* ValueTransformers */,
+				DB9722D427CCCCA200E37D78 /* MethodHandlers */,
 				DB5C38E327B5511F00401F91 /* Interceptors */,
 				DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */,
 				DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */,
@@ -754,12 +757,12 @@
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */,
+				DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
 				DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
-				DBD34DC727C798BE00B8BAD5 /* XctestRunRequestValueTransformer.swift in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
@@ -768,6 +771,7 @@
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
 				DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */,
+				DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */,
 				AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */,
 				713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */,
 			);

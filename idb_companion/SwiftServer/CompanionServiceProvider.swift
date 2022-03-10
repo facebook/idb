@@ -54,22 +54,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     guard shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
-
-    self.reporter.addMetadata(request.metadata)
-    let isLocal = FileManager.default.fileExists(atPath: request.localFilePath)
-
-    return Idb_ConnectResponse.with {
-      $0.companion = .with {
-        $0.udid = target.udid
-        $0.isLocal = isLocal
-
-        do {
-          $0.metadata = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])
-        } catch {
-          logger.error().log("Error while serializing metadata \(error.localizedDescription)")
-        }
-      }
-    }
+    return try await ConnectMethodHandler(reporter: reporter, logger: logger, target: target)
+      .handle(request: request, context: context)
   }
 
   func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
@@ -210,22 +196,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
       return
     }
 
-    let runRequestTransformer = XctestRunRequestValueTransformer()
-    guard let request = runRequestTransformer.transform(value: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "failed to create FBXCTestRunRequest")
-    }
-    let logger = try targetLogger
-
-    let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
-
-    let operationFuture = commandExecutor.xctest_run(request,
-                                                     reporter: reporter,
-                                                     logger: FBControlCoreLoggerFactory.logger(to: reporter))
-    let operation = try await FutureBox(operationFuture).value
-    reporter.configuration = .init(legacy: operation.reporterConfiguration)
-
-    try await FutureBox(operation.completed).await()
-    _ = try await FutureBox(reporter.reportingTerminated).value
+    try await XCTestRunMethodHandler(target: target, commandExecutor: commandExecutor, reporter: reporter, targetLogger: targetLogger, logger: logger)
+      .handle(request: request, responseStream: responseStream, context: context)
   }
 
   func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {

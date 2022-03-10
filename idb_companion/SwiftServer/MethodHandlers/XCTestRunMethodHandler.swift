@@ -7,8 +7,34 @@
 
 import Foundation
 import IDBGRPCSwift
+import GRPC
+import FBSimulatorControl
 
-final class XctestRunRequestValueTransformer {
+struct XCTestRunMethodHandler {
+
+  let target: FBiOSTarget
+  let commandExecutor: FBIDBCommandExecutor
+  let reporter: FBEventReporter
+  let targetLogger: FBControlCoreLogger
+  let logger: FBIDBLogger
+
+  func handle(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
+    guard let request = transform(value: request) else {
+      throw GRPCStatus(code: .invalidArgument, message: "failed to create FBXCTestRunRequest")
+    }
+
+    let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
+
+    let operationFuture = commandExecutor.xctest_run(request,
+                                                     reporter: reporter,
+                                                     logger: FBControlCoreLoggerFactory.logger(to: reporter))
+    let operation = try await FutureBox(operationFuture).value
+    reporter.configuration = .init(legacy: operation.reporterConfiguration)
+
+    try await FutureBox(operation.completed).await()
+    _ = try await FutureBox(reporter.reportingTerminated).value
+  }
+
 
   func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {
     let testsToRun = request.testsToRun.isEmpty ? nil : Set(request.testsToRun)
@@ -68,5 +94,4 @@ final class XctestRunRequestValueTransformer {
     // fallback to deprecated request field for backwards compatibility
     return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported)
   }
-
 }
