@@ -56,7 +56,7 @@
 - (void)startNotifyingOfStateChanges
 {
   __weak typeof(self) weakSelf = self;
-  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set queue:dispatch_get_main_queue() block:^(NSDictionary *info) {
+  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set queue:self.set.workQueue block:^(NSDictionary *info) {
     SimDevice *device = info[@"device"];
     if (!device) {
       return;

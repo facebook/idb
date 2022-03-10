@@ -180,6 +180,16 @@ NS_ASSUME_NONNULL_BEGIN
 */
 @property (nonatomic, copy, readonly) NSArray<FBSimulator *> *allSimulators;
 
+/**
+ The work queue that will be used by all simulators within the set.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ The async queue that will be used by all simulators within the set.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
+
 @end
 
 NS_ASSUME_NONNULL_END
