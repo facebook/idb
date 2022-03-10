@@ -97,7 +97,7 @@
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.h",
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.cc",
 			);
-			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
+			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin:$HOME/homebrew/bin/\n\necho $PATH\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
 		};
 		DBF5D5D2278EF9F000633753 /* PBXBuildRule */ = {
 			isa = PBXBuildRule;
@@ -114,7 +114,7 @@
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.swift",
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.swift",
 			);
-			script = "# Generate grpc code from .proto\nGRPC_PACKAGE_DIR=${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\n\nprotoc \\\n  --proto_path=$INPUT_FILE_DIR \\\n  --swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_opt=Visibility=Public,ExperimentalAsyncServer=true,ExperimentalAsyncClient=true \\\n  --swift_opt=Visibility=Public \\\n  --plugin=protoc-gen-grpc-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-grpc-swift \\\n  --plugin=protoc-gen-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-swift \\\n  $INPUT_FILE_PATH\n";
+			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin:$HOME/homebrew/bin/\n\nGRPC_PACKAGE_DIR=${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\n\nprotoc \\\n  --proto_path=$INPUT_FILE_DIR \\\n  --swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_opt=Visibility=Public,ExperimentalAsyncServer=true,ExperimentalAsyncClient=true \\\n  --swift_opt=Visibility=Public \\\n  --plugin=protoc-gen-grpc-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-grpc-swift \\\n  --plugin=protoc-gen-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-swift \\\n  $INPUT_FILE_PATH\n";
 		};
 /* End PBXBuildRule section */
 
