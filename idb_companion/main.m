@@ -421,12 +421,12 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
-    
+
       FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
       if (!storageManager) {
         return [FBFuture futureWithError:error];
       }
-    
+
       // Command Executor
       FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
                                                commandExecutorForTarget:target
@@ -434,9 +434,9 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
                                                temporaryDirectory:temporaryDirectory
                                                ports:ports
                                                logger:logger];
-    
+
       FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
-      
+
       FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:FBIDBConfiguration.swiftEventReporter logger:logger];
 
       FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports eventReporter:reporter logger:logger error:&error];
@@ -489,7 +489,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
             return future;
           }];
       }];
-      
+
     }];
 }
 
@@ -631,6 +631,24 @@ static NSString *EnvDescription()
   return [FBCollectionInformation oneLineDescriptionFromDictionary:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment];
 }
 
+static NSString *ArchName()
+{
+#if TARGET_CPU_ARM64
+  return @"arm64";
+#elif TARGET_CPU_X86_64
+  return @"x86_64";
+#else
+  return @"not supported");
+#endif
+}
+
+static void logStartupInfo(FBIDBLogger *logger)
+{
+    [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
+    [logger.info logFormat:@"IDB Companion architecture %@", ArchName()];
+    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
+}
+
 int main(int argc, const char *argv[]) {
   @autoreleasepool
   {
@@ -646,8 +664,8 @@ int main(int argc, const char *argv[]) {
 
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
-    [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
-    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
+    logStartupInfo(logger);
+
     NSError *error = nil;
 
     // Check that xcode-select returns a valid path, throw a big
