@@ -354,7 +354,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 			};
 			name = Debug;
 		};
@@ -362,7 +361,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 			};
 			name = Release;
 		};
