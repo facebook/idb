@@ -116,9 +116,8 @@
 
       // This step ensures that the Simulator is in a known-shutdown state after creation.
       // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-      return [[[[FBSimulatorShutdownStrategy
-        strategyWithSimulator:simulator]
-        shutdown]
+      return [[[FBSimulatorShutdownStrategy
+        shutdown:simulator]
         rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
         mapReplace:simulator];
     }];

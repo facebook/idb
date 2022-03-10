@@ -44,10 +44,9 @@
 
 #pragma mark Public Methdos
 
-- (FBFuture<NSNull *> *)shutdown
++ (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator
 {
-  FBSimulator *simulator = self.simulator;
-  id<FBControlCoreLogger> logger = self.simulator.logger;
+  id<FBControlCoreLogger> logger = simulator.logger;
   [logger.debug logFormat:@"Starting Safe Shutdown of %@", simulator.udid];
 
   // If the device is in a strange state, we should bail now

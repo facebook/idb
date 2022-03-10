@@ -103,10 +103,9 @@
   return [[[simulator
     disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger]
     onQueue:simulator.workQueue fmap:^(id _) {
-      return [[FBSimulatorShutdownStrategy
-        strategyWithSimulator:simulator]
-        shutdown];
-    }] mapReplace:simulator];
+      return [FBSimulatorShutdownStrategy shutdown:simulator];
+    }]
+    mapReplace:simulator];
 }
 
 @end

@@ -18,16 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorShutdownStrategy : NSObject
 
-#pragma mark Initializers
-
-/**
- Create a Strategy for Shutting Down a Simulator.
-
- @param simulator the simulator to shutdown.
- @return a new Strategy.
- */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
-
 #pragma mark Public Methdos
 
 /**
@@ -47,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)shutdown;
++ (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
 
 @end
 
