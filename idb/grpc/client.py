@@ -685,7 +685,7 @@ class Client(ClientBase):
         dsym: Bundle,
         bundle_id: Optional[str],
         compression: Optional[Compression],
-        bundle_type: Optional[FileContainerType],
+        bundle_type: Optional[FileContainerType] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
