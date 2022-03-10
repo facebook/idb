@@ -71,7 +71,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
+    try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
+      .handle(requestStream: requestStream, responseStream: responseStream, context: context)
   }
 
   func instruments_run(requestStream: GRPCAsyncRequestStream<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {

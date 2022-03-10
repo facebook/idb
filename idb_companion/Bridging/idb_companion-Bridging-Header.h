@@ -13,6 +13,7 @@
 #import "FBIDBStorageManager.h"
 #import "FBXCTestReporterConfiguration.h"
 #import "FBIDBTestOperation.h"
+#import "FBDataDownloadInput.h"
 
 // Request
 #import "FBXCTestRunRequest.h"
