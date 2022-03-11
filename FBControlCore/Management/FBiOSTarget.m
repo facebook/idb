@@ -9,17 +9,6 @@
 
 #import "FBiOSTargetConfiguration.h"
 
-FBiOSTargetStateString const FBiOSTargetStateStringCreating = @"Creating";
-FBiOSTargetStateString const FBiOSTargetStateStringShutdown = @"Shutdown";
-FBiOSTargetStateString const FBiOSTargetStateStringBooting = @"Booting";
-FBiOSTargetStateString const FBiOSTargetStateStringBooted = @"Booted";
-FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown = @"Shutting Down";
-FBiOSTargetStateString const FBiOSTargetStateStringDFU = @"DFU";
-FBiOSTargetStateString const FBiOSTargetStateStringRecovery = @"Recovery";
-FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS = @"RestoreOS";
-FBiOSTargetStateString const FBiOSTargetStateStringUnknown = @"Unknown";
-
-
 NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
 {
   switch (state) {

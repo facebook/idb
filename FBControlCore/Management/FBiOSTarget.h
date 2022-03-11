@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBVideoStreamCommands.h>
@@ -29,46 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBiOSTargetDiagnostics;
 @class FBiOSTargetScreenInfo;
 @protocol FBControlCoreLogger;
-
-/**
- Uses the known values of SimDevice State, to construct an enumeration.
- These mirror the values from -[SimDeviceState state].
- */
-typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
-  FBiOSTargetStateCreating = 0,
-  FBiOSTargetStateShutdown = 1,
-  FBiOSTargetStateBooting = 2,
-  FBiOSTargetStateBooted = 3,
-  FBiOSTargetStateShuttingDown = 4,
-  FBiOSTargetStateDFU = 5,
-  FBiOSTargetStateRecovery = 6,
-  FBiOSTargetStateRestoreOS = 7,
-  FBiOSTargetStateUnknown = 99,
-};
-
-/**
- Represents the kind of a target, device or simulator.
- */
-typedef NS_ENUM(NSUInteger, FBiOSTargetType) {
-  FBiOSTargetTypeNone = 0,
-  FBiOSTargetTypeSimulator = 1 << 0,
-  FBiOSTargetTypeDevice = 1 << 1,
-  FBiOSTargetTypeLocalMac = 1 << 2,
-};
-
-/**
- String Representations of Simulator State.
- */
-typedef NSString *FBiOSTargetStateString NS_STRING_ENUM;
-extern FBiOSTargetStateString const FBiOSTargetStateStringCreating;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShutdown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooting;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooted;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringDFU;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRecovery;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS;
-extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 
 /**
  A protocol that defines an informational target.
