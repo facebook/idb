@@ -156,11 +156,9 @@
 - (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.eraseStrategy
-    eraseSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
-      return [result firstObject];
-    }];
+  return [[FBSimulatorEraseStrategy
+    eraseSimulator:simulator]
+    mapReplace:simulator];
 }
 
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
@@ -247,11 +245,6 @@
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
   return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
-
-- (FBSimulatorEraseStrategy *)eraseStrategy
-{
-  return [FBSimulatorEraseStrategy strategyForSet:self];
 }
 
 - (FBSimulatorDeletionStrategy *)deletionStrategy
