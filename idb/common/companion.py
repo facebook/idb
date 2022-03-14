@@ -12,7 +12,15 @@ import subprocess
 from dataclasses import dataclass
 from datetime import timedelta
 from logging import Logger, DEBUG as LOG_LEVEL_DEBUG
-from typing import AsyncGenerator, Dict, List, Optional, Sequence, Union, Tuple
+from typing import (
+    AsyncGenerator,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    Tuple,
+)
 
 from idb.common.constants import IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
@@ -36,6 +44,9 @@ from idb.utils.typing import none_throws
 DEFAULT_ERASE_COMMAND_TIMEOUT = timedelta(minutes=3)
 DEFAULT_COMPANION_COMMAND_TIMEOUT = timedelta(seconds=120)
 DEFAULT_COMPANION_TEARDOWN_TIMEOUT = timedelta(seconds=30)
+
+
+CompanionReport = Dict[str, Union[int, str]]
 
 
 class IdbJsonException(Exception):
@@ -84,26 +95,56 @@ def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
 
 
 async def _extract_companion_report_from_spawned_companion(
-    stream: asyncio.StreamReader,
-) -> Dict[str, Union[int, str]]:
-    # The first line of stdout should contain launch info,
-    # otherwise something bad has happened
-    line = await stream.readline()
-    logging.debug(f"Read line from companion: {line}")
-    update = parse_json_line(line)
-    logging.debug(f"Got update from companion: {update}")
-    return update
+    stream: asyncio.StreamReader, log_file_path: str
+) -> CompanionReport:
+    try:
+        # The first line of stdout should contain launch info,
+        # otherwise something bad has happened
+        line = await stream.readline()
+        logging.debug(f"Read line from companion: {line}")
+        update = parse_json_line(line)
+        logging.debug(f"Got update from companion: {update}")
+        return update
+    except Exception as e:
+        raise CompanionSpawnerException(
+            f"Failed to spawn companion, couldn't read report "
+            f"stderr: {get_last_n_lines(log_file_path, 30)}"
+        ) from e
 
 
-async def _extract_port_from_spawned_companion(stream: asyncio.StreamReader) -> int:
-    update = await _extract_companion_report_from_spawned_companion(stream=stream)
-    return int(update["grpc_port"])
+async def _verify_port_from_spawned_companion(
+    report: CompanionReport,
+    port_name: str,
+    log_file_path: str,
+    expected_port: Optional[int],
+) -> int:
+    try:
+        extracted_port = int(report[port_name])
+    except Exception as e:
+        raise CompanionSpawnerException(
+            f"Failed to spawn companion, couldn't read {port_name} output "
+            f"stderr: {get_last_n_lines(log_file_path, 30)}"
+        ) from e
+    if extracted_port == 0:
+        raise CompanionSpawnerException(
+            f"Failed to spawn companion, {port_name} zero is invalid "
+            f"stderr: {get_last_n_lines(log_file_path, 30)}"
+        )
+    if expected_port is not None and extracted_port != expected_port:
+        raise CompanionSpawnerException(
+            f"Failed to spawn companion, invalid {port_name} "
+            f"(expected {expected_port} got {extracted_port})"
+            f"stderr: {get_last_n_lines(log_file_path, 30)}"
+        )
+    return extracted_port
 
 
 async def _extract_domain_sock_from_spawned_companion(
-    stream: asyncio.StreamReader,
+    stream: asyncio.StreamReader, log_file_path: str
 ) -> str:
-    update = await _extract_companion_report_from_spawned_companion(stream=stream)
+    update = await _extract_companion_report_from_spawned_companion(
+        stream=stream, log_file_path=log_file_path
+    )
     return str(update["grpc_path"])
 
 
@@ -193,6 +234,7 @@ class Companion(CompanionBase):
     async def _spawn_server(
         self,
         config: CompanionServerConfig,
+        port_env_variables: Dict[str, str],
         bind_arguments: List[str],
     ) -> Tuple[asyncio.subprocess.Process, str]:
         if os.getuid() == 0:
@@ -220,6 +262,8 @@ class Companion(CompanionBase):
         env = dict(os.environ)
         if config.tmp_path:
             env["TMPDIR"] = config.tmp_path
+        if port_env_variables:
+            env.update(port_env_variables)
 
         with open(log_file_path, "a") as log_file:
             process = await asyncio.create_subprocess_exec(
@@ -240,57 +284,52 @@ class Companion(CompanionBase):
         port: Optional[int],
         tls_cert_path: Optional[str] = None,
     ) -> Tuple[asyncio.subprocess.Process, int]:
+        port_env_variables: Dict[str, str] = {}
         bind_arguments = ["--grpc-port", str(port) if port is not None else "0"]
         if tls_cert_path is not None:
             bind_arguments.extend(["--tls-cert-path", tls_cert_path])
         (process, log_file_path) = await self._spawn_server(
             config=config,
+            port_env_variables=port_env_variables,
             bind_arguments=bind_arguments,
         )
         stdout = none_throws(process.stdout)
-        try:
-            extracted_port = await _extract_port_from_spawned_companion(stdout)
-        except Exception as e:
-            raise CompanionSpawnerException(
-                f"Failed to spawn companion, couldn't read port output "
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            ) from e
-        if extracted_port == 0:
-            raise CompanionSpawnerException(
-                f"Failed to spawn companion, port zero is invalid "
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            )
-        if port is not None and extracted_port != port:
-            raise CompanionSpawnerException(
-                "Failed to spawn companion, invalid port "
-                f"(expected {port} got {extracted_port})"
-                f"stderr: {get_last_n_lines(log_file_path, 30)}"
-            )
+        companion_report = await _extract_companion_report_from_spawned_companion(
+            stream=stdout, log_file_path=log_file_path
+        )
+        extracted_port = await _verify_port_from_spawned_companion(
+            companion_report, "grpc_port", log_file_path, port
+        )
+
         return (process, extracted_port)
 
     async def spawn_domain_sock_server(
         self, config: CompanionServerConfig, path: str
     ) -> asyncio.subprocess.Process:
         (process, log_file_path) = await self._spawn_server(
-            config=config, bind_arguments=["--grpc-domain-sock", path]
+            config=config,
+            port_env_variables={},
+            bind_arguments=["--grpc-domain-sock", path],
         )
         stdout = none_throws(process.stdout)
         try:
-            extracted_path = await _extract_domain_sock_from_spawned_companion(stdout)
+            extracted_path = await _extract_domain_sock_from_spawned_companion(
+                stream=stdout, log_file_path=log_file_path
+            )
         except Exception as e:
             raise CompanionSpawnerException(
-                f"Failed to spawn companion, couldn't read port "
+                f"Failed to spawn companion, couldn't read domain socket path "
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             ) from e
         if not extracted_path:
             raise CompanionSpawnerException(
-                f"Failed to spawn companion, no extracted path"
+                f"Failed to spawn companion, no extracted domain socket path "
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             )
         if extracted_path != path:
             raise CompanionSpawnerException(
-                "Failed to spawn companion, extracted path is not correct "
-                f"(expected {path} got {extracted_path})"
+                "Failed to spawn companion, extracted domain socket path "
+                f"is not correct (expected {path} got {extracted_path})"
                 f"stderr: {get_last_n_lines(log_file_path, 30)}"
             )
         return process
