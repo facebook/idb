@@ -164,11 +164,7 @@
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.deletionStrategy
-    deleteSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<NSString *> *result) {
-      return [result firstObject];
-    }];
+  return [FBSimulatorDeletionStrategy deleteSimulator:simulator];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
@@ -180,7 +176,7 @@
 - (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
-  return [self.deletionStrategy deleteSimulators:simulators];
+  return [FBSimulatorDeletionStrategy deleteSimulators:simulators];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll
@@ -245,11 +241,6 @@
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
   return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
-
-- (FBSimulatorDeletionStrategy *)deletionStrategy
-{
-  return [FBSimulatorDeletionStrategy strategyForSet:self];
 }
 
 + (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name queue:(dispatch_queue_t)queue
