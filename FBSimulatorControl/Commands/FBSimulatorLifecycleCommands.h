@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Interactions for the Lifecycle of the Simulator.
  */
-@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands>
+@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands>
 
 #pragma mark Boot/Shutdown
 
@@ -35,16 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future that resolves when the Simulator is booted.
  */
 - (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration;
-
-#pragma mark States
-
-/**
- Asynchronously waits on the provided state.
-
- @param state the state to wait on
- @return A future that resolves when it has transitioned to the given state.
- */
-- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state;
 
 #pragma mark Focus
 
