@@ -643,10 +643,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
     (NSString *) kVTCompressionPropertyKey_AverageBitRate: avgBitrate,
     (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[maxBitrate, @1],
-    (NSString *) kVTCompressionPropertyKey_Depth: @(kCMPixelFormat_422YpCbCr10),
-    (NSString *) kVTCompressionPropertyKey_YCbCrMatrix: (NSString *)kCVImageBufferYCbCrMatrix_ITU_R_2020,
-    (NSString *) kVTCompressionPropertyKey_ColorPrimaries: (NSString *)kCVImageBufferColorPrimaries_DCI_P3,
-    (NSString *) kVTCompressionPropertyKey_TransferFunction: (NSString *)kCVImageBufferTransferFunction_Linear,
   }];
 
   [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
