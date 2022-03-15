@@ -79,7 +79,7 @@ from idb.common.types import (
     TCPAddress,
     TestRunInfo,
     VideoFormat,
-    DebuggerInfo,
+    LoggingMetadata,
 )
 from idb.grpc.crash import (
     _to_crash_log,
@@ -195,38 +195,43 @@ COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
 }
 
 
-def log_and_handle_exceptions(func):  # pyre-ignore
-    @functools.wraps(func)
-    @log_call(name=func.__name__)
-    async def func_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
-        try:
-            return await func(*args, **kwargs)
-        except GRPCError as e:
-            raise IdbException(e.message) from e  # noqa B306
-        except (ProtocolError, StreamTerminatedError) as e:
-            raise IdbException(e.args) from e
-        except OSError as e:
-            raise IdbConnectionException(e.strerror)
+def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
+    metadata: LoggingMetadata = {"grpc_method_name": grpc_method_name}
 
-    @functools.wraps(func)
-    @log_call(name=func.__name__)
-    # pyre-fixme[53]: Captured variable `func` is not annotated.
-    # pyre-fixme[3]: Return annotation cannot be `Any`.
-    async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
-        try:
-            async for item in func(*args, **kwargs):
-                yield item
-        except GRPCError as e:
-            raise IdbException(e.message) from e  # noqa B306
-        except (ProtocolError, StreamTerminatedError) as e:
-            raise IdbException(e.args) from e
-        except OSError as e:
-            raise IdbConnectionException(e.strerror)
+    def decorating(func) -> Any:  # pyre-ignore:
+        @functools.wraps(func)
+        @log_call(name=func.__name__, metadata=metadata)
+        async def func_wrapper(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
+            try:
+                return await func(*args, **kwargs)
+            except GRPCError as e:
+                raise IdbException(e.message) from e  # noqa B306
+            except (ProtocolError, StreamTerminatedError) as e:
+                raise IdbException(e.args) from e
+            except OSError as e:
+                raise IdbConnectionException(e.strerror)
 
-    if inspect.isasyncgenfunction(func):
-        return func_wrapper_gen
-    else:
-        return func_wrapper
+        @functools.wraps(func)
+        @log_call(name=func.__name__, metadata=metadata)
+        # pyre-fixme[53]: Captured variable `func` is not annotated.
+        # pyre-fixme[3]: Return annotation cannot be `Any`.
+        async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
+            try:
+                async for item in func(*args, **kwargs):
+                    yield item
+            except GRPCError as e:
+                raise IdbException(e.message) from e  # noqa B306
+            except (ProtocolError, StreamTerminatedError) as e:
+                raise IdbException(e.args) from e
+            except OSError as e:
+                raise IdbConnectionException(e.strerror)
+
+        if inspect.isasyncgenfunction(func):
+            return func_wrapper_gen
+        else:
+            return func_wrapper
+
+    return decorating
 
 
 class Client(ClientBase):
@@ -432,7 +437,7 @@ class Client(ClientBase):
     def _log_from_companion(self, data: str) -> None:
         self.logger.info(data.strip())
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("list_apps")
     async def list_apps(
         self, fetch_process_state: bool = True
     ) -> List[InstalledAppInfo]:
@@ -452,7 +457,7 @@ class Client(ClientBase):
             for app in response.apps
         ]
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("accessibility_info")
     async def accessibility_info(
         self, point: Optional[Tuple[int, int]], nested: bool
     ) -> AccessibilityInfo:
@@ -469,7 +474,7 @@ class Client(ClientBase):
         )
         return AccessibilityInfo(json=response.json)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("add_media")
     async def add_media(self, file_paths: List[str]) -> None:
         async with self.stub.add_media.open() as stream:
             if self.is_local:
@@ -493,7 +498,7 @@ class Client(ClientBase):
                     stream=stream, generator=generator, logger=self.logger
                 )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("approve")
     async def approve(
         self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
     ) -> None:
@@ -505,23 +510,23 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("clear_keychain")
     async def clear_keychain(self) -> None:
         await self.stub.clear_keychain(ClearKeychainRequest())
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("contacts_update")
     async def contacts_update(self, contacts_path: str) -> None:
         data = await create_tar([contacts_path])
         await self.stub.contacts_update(
             ContactsUpdateRequest(payload=Payload(data=data))
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("screenshot")
     async def screenshot(self) -> bytes:
         response = await self.stub.screenshot(ScreenshotRequest())
         return response.image_data
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("set_location")
     async def set_location(self, latitude: float, longitude: float) -> None:
         await self.stub.set_location(
             SetLocationRequest(
@@ -529,11 +534,11 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("simulate_memory_warning")
     async def simulate_memory_warning(self) -> None:
         await self.stub.simulate_memory_warning(SimulateMemoryWarningRequest())
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("send_notification")
     async def send_notification(self, bundle_id: str, json_payload: str) -> None:
         await self.stub.send_notification(
             SendNotificationRequest(
@@ -542,11 +547,11 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("terminate")
     async def terminate(self, bundle_id: str) -> None:
         await self.stub.terminate(TerminateRequest(bundle_id=bundle_id))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("describe")
     async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
         response = await self.stub.describe(
             TargetDescriptionRequest(fetch_diagnostics=fetch_diagnostics)
@@ -565,25 +570,25 @@ class Client(ClientBase):
             metadata=response.companion.metadata,
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("focus")
     async def focus(self) -> None:
         await self.stub.focus(FocusRequest())
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("open_url")
     async def open_url(self, url: str) -> None:
         await self.stub.open_url(OpenUrlRequest(url=url))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("uninstall")
     async def uninstall(self, bundle_id: str) -> None:
         await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("rm")
     async def rm(self, container: FileContainer, paths: List[str]) -> None:
         await self.stub.rm(
             RmRequest(paths=paths, container=file_container_to_grpc(container))
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("mv")
     async def mv(
         self, container: FileContainer, src_paths: List[str], dest_path: str
     ) -> None:
@@ -595,7 +600,7 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("ls")
     async def ls_single(
         self, container: FileContainer, path: str
     ) -> List[FileEntryInfo]:
@@ -604,7 +609,7 @@ class Client(ClientBase):
         )
         return [FileEntryInfo(path=file.path) for file in response.files]
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("ls")
     async def ls(self, container: FileContainer, paths: List[str]) -> List[FileListing]:
         response = await self.stub.ls(
             LsRequest(paths=paths, container=file_container_to_grpc(container))
@@ -617,28 +622,28 @@ class Client(ClientBase):
             for listing in response.listings
         ]
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("mkdir")
     async def mkdir(self, container: FileContainer, path: str) -> None:
         await self.stub.mkdir(
             MkdirRequest(path=path, container=file_container_to_grpc(container))
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("crash_delete")
     async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
         return _to_crash_log_info_list(response)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("crash_list")
     async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
         response = await self.stub.crash_list(_to_crash_log_query_proto(query))
         return _to_crash_log_info_list(response)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("crash_show")
     async def crash_show(self, name: str) -> CrashLog:
         response = await self.stub.crash_show(CrashShowRequest(name=name))
         return _to_crash_log(response)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("install")
     async def install(
         self,
         bundle: Bundle,
@@ -655,7 +660,7 @@ class Client(ClientBase):
         ):
             yield response
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("install")
     async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=xctest,
@@ -667,7 +672,7 @@ class Client(ClientBase):
         ):
             yield response
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("install")
     async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dylib,
@@ -679,7 +684,7 @@ class Client(ClientBase):
         ):
             yield response
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("install")
     async def install_dsym(
         self,
         dsym: Bundle,
@@ -697,7 +702,7 @@ class Client(ClientBase):
         ):
             yield response
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("install")
     async def install_framework(
         self, framework_path: Bundle
     ) -> AsyncIterator[InstalledArtifact]:
@@ -711,7 +716,7 @@ class Client(ClientBase):
         ):
             yield response
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("push")
     async def push(
         self,
         src_paths: List[str],
@@ -755,7 +760,7 @@ class Client(ClientBase):
                     logger=self.logger,
                 )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("pull")
     async def pull(
         self, container: FileContainer, src_path: str, dest_path: str
     ) -> None:
@@ -775,7 +780,7 @@ class Client(ClientBase):
                 await drain_untar(generate_bytes(stream), output_path=dest_path)
             self.logger.info(f"pulled file to {dest_path}")
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("tail")
     async def tail(
         self, stop: asyncio.Event, container: FileContainer, path: str
     ) -> AsyncIterator[bytes]:
@@ -791,14 +796,14 @@ class Client(ClientBase):
                 yield response.data
             await stream.send_message(TailRequest(stop=TailRequest.Stop()))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("xctest_list_tests")
     async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
         response = await self.stub.xctest_list_tests(
             XctestListTestsRequest(bundle_name=test_bundle_id, app_path=app_path)
         )
         return list(response.names)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("xctest_list_bundles")
     async def list_xctests(self) -> List[InstalledTestInfo]:
         response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
         return [
@@ -810,29 +815,29 @@ class Client(ClientBase):
             for bundle in response.bundles
         ]
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def send_events(self, events: Iterable[HIDEvent]) -> None:
         await self.hid(iterator_to_async_iterator(events))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:
         await self.send_events(tap_to_events(x, y, duration))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def button(
         self, button_type: HIDButtonType, duration: Optional[float] = None
     ) -> None:
         await self.send_events(button_press_to_events(button_type, duration))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def key(self, keycode: int, duration: Optional[float] = None) -> None:
         await self.send_events(key_press_to_events(keycode, duration))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def text(self, text: str) -> None:
         await self.send_events(text_to_events(text))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def swipe(
         self,
         p_start: Tuple[int, int],
@@ -842,14 +847,14 @@ class Client(ClientBase):
     ) -> None:
         await self.send_events(swipe_to_events(p_start, p_end, duration, delta))
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def key_sequence(self, key_sequence: List[int]) -> None:
         events: List[HIDEvent] = []
         for key in key_sequence:
             events.extend(key_press_to_events(key))
         await self.send_events(events)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("hid")
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         async with self.stub.hid.open() as stream:
             grpc_event_iterator = (
@@ -865,14 +870,14 @@ class Client(ClientBase):
             )
             await stream.recv_message()
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("debugserver")
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
         async with self.stub.debugserver.open() as stream:
             await stream.send_message(request)
             await stream.end()
             return await stream.recv_message()
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("debugserver")
     async def debugserver_start(self, bundle_id: str) -> List[str]:
         response = await self.debug_server(
             request=DebugServerRequest(
@@ -881,13 +886,13 @@ class Client(ClientBase):
         )
         return response.status.lldb_bootstrap_commands
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("debugserver")
     async def debugserver_stop(self) -> None:
         await self.debug_server(
             request=DebugServerRequest(stop=DebugServerRequest.Stop())
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("debugserver")
     async def debugserver_status(self) -> Optional[List[str]]:
         response = await self.debug_server(
             request=DebugServerRequest(status=DebugServerRequest.Status())
@@ -895,7 +900,7 @@ class Client(ClientBase):
         commands = response.status.lldb_bootstrap_commands
         return commands if commands else None
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("instruments_run")
     async def run_instruments(
         self,
         stop: asyncio.Event,
@@ -976,7 +981,7 @@ class Client(ClientBase):
 
             return result
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("launch")
     async def launch(
         self,
         bundle_id: str,
@@ -1008,7 +1013,7 @@ class Client(ClientBase):
                 await stream.end()
                 await drain_launch_stream(stream, pid_file)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("record")
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         self.logger.info("Starting connection to backend")
         async with self.stub.record.open() as stream:
@@ -1038,6 +1043,7 @@ class Client(ClientBase):
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
 
+    @log_and_handle_exceptions("video_stream")
     async def stream_video(
         self,
         output_file: Optional[str],
@@ -1123,7 +1129,7 @@ class Client(ClientBase):
             with open(coverage_output_path, "w") as f:
                 f.write(response.coverage_json)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("xctest_run")
     async def run_xctest(
         self,
         test_bundle_id: str,
@@ -1221,7 +1227,7 @@ class Client(ClientBase):
                         )
                     yield result
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("log")
     async def tail_logs(
         self, stop: asyncio.Event, arguments: Optional[List[str]] = None
     ) -> AsyncIterator[str]:
@@ -1230,14 +1236,14 @@ class Client(ClientBase):
         ):
             yield message
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("log")
     async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
         async for message in self._tail_specific_logs(
             source=LogRequest.COMPANION, stop=stop, arguments=None
         ):
             yield message
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("setting")
     async def set_hardware_keyboard(self, enabled: bool) -> None:
         await self.stub.setting(
             SettingRequest(
@@ -1245,7 +1251,7 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("setting")
     async def set_locale(self, locale_identifier: str) -> None:
         await self.stub.setting(
             SettingRequest(
@@ -1255,7 +1261,7 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("setting")
     async def set_preference(
         self, name: str, value: str, value_type: str, domain: Optional[str]
     ) -> None:
@@ -1271,19 +1277,19 @@ class Client(ClientBase):
             )
         )
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("get_setting")
     async def get_locale(self) -> str:
         response = await self.stub.get_setting(GetSettingRequest(setting=LocaleSetting))
         return response.value
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("get_setting")
     async def get_preference(self, name: str, domain: Optional[str]) -> str:
         response = await self.stub.get_setting(
             GetSettingRequest(setting=AnySetting, name=name, domain=domain)
         )
         return response.value
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("list_settings")
     async def list_locale_identifiers(self) -> List[str]:
         response = await self.stub.list_settings(
             ListSettingRequest(
@@ -1292,7 +1298,7 @@ class Client(ClientBase):
         )
         return list(response.values)
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("xctrace_record")
     async def xctrace_record(
         self,
         stop: asyncio.Event,
@@ -1393,7 +1399,7 @@ class Client(ClientBase):
 
             return result
 
-    @log_and_handle_exceptions
+    @log_and_handle_exceptions("dap")
     async def dap(
         self,
         dap_path: str,
