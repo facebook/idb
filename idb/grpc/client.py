@@ -14,6 +14,7 @@ import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamWriter, StreamReader
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import (
@@ -195,8 +196,25 @@ COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
 }
 
 
+# Caching result of method to not recompute each time
+@lru_cache(maxsize=None)
+def extract_native_swift_methods_from_env() -> Set[str]:
+    env_swift_methods = os.environ.get("IDB_SWIFT_METHODS")
+    if not env_swift_methods:
+        return set()
+    return set(env_swift_methods.split(","))
+
+
 def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
-    metadata: LoggingMetadata = {"grpc_method_name": grpc_method_name}
+
+    is_native_swift_call = (
+        os.environ.get("IDB_USE_SWIFT") == "YES"
+        and grpc_method_name in extract_native_swift_methods_from_env()
+    )
+    metadata: LoggingMetadata = {
+        "grpc_method_name": grpc_method_name,
+        "grpc_native_swift_call": "yes" if is_native_swift_call else "no",
+    }
 
     def decorating(func) -> Any:  # pyre-ignore:
         @functools.wraps(func)
