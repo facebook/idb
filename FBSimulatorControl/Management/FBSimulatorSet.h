@@ -81,13 +81,13 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Desctructive Methods
 
 /**
- Kills a Simulator in the Set.
- The Set to which the Simulator belongs must be the receiver.
+ Shuts down a simulator in the set.
+ The Set to which the Simulator belongs must be present the receiver.
 
- @param simulator the Simulator to delete. Must not be nil.
+ @param simulator the Simulator to shutdown. Must not be nil.
  @return an Future that resolves when successful.
  */
-- (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator;
+- (FBFuture<FBSimulator *> *)shutdownSimulator:(FBSimulator *)simulator;
 
 /**
  Erases a Simulator in the Set.
@@ -108,11 +108,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator;
 
 /**
- Kills all of the Simulators that belong to the receiver.
+ Performs a shutdown all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll;
+- (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll;
 
 /**
  Delete all of the Simulators that belong to the receiver.

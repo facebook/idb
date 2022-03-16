@@ -62,7 +62,7 @@
 
 - (FBFuture<NSNull *> *)shutdown
 {
-  return [[self.simulator.set killSimulator:self.simulator] mapReplace:NSNull.null];
+  return [[self.simulator.set shutdownSimulator:self.simulator] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)reboot

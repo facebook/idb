@@ -112,7 +112,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 - (void)tearDown
 {
-  [[self.control.set killAll] await:nil];
+  [[self.control.set shutdownAll] await:nil];
   _control = nil;
 }
 
