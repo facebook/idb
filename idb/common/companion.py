@@ -282,9 +282,13 @@ class Companion(CompanionBase):
         self,
         config: CompanionServerConfig,
         port: Optional[int],
+        swift_port: Optional[int] = None,
         tls_cert_path: Optional[str] = None,
-    ) -> Tuple[asyncio.subprocess.Process, int]:
+    ) -> Tuple[asyncio.subprocess.Process, int, Optional[int]]:
         port_env_variables: Dict[str, str] = {}
+        if swift_port is not None:
+            port_env_variables["IDB_SWIFT_COMPANION_PORT"] = str(swift_port)
+
         bind_arguments = ["--grpc-port", str(port) if port is not None else "0"]
         if tls_cert_path is not None:
             bind_arguments.extend(["--tls-cert-path", tls_cert_path])
@@ -301,7 +305,21 @@ class Companion(CompanionBase):
             companion_report, "grpc_port", log_file_path, port
         )
 
-        return (process, extracted_port)
+        extracted_swift_port: Optional[int] = None
+        if swift_port:
+            try:
+                extracted_swift_port = await _verify_port_from_spawned_companion(
+                    companion_report,
+                    "grpc_swift_port",
+                    log_file_path,
+                    swift_port,
+                )
+            except Exception:
+                self._logger.exception("Failed to verify SWIFT GRPC port")
+        else:
+            self._logger.info("Swift server not requested, skipping verification")
+
+        return (process, extracted_port, extracted_swift_port)
 
     async def spawn_domain_sock_server(
         self, config: CompanionServerConfig, path: str
