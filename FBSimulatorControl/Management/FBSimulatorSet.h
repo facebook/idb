@@ -85,18 +85,18 @@ NS_ASSUME_NONNULL_BEGIN
  The Set to which the Simulator belongs must be present the receiver.
 
  @param simulator the Simulator to shutdown. Must not be nil.
- @return an Future that resolves when successful.
+ @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<FBSimulator *> *)shutdown:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
 
 /**
  Erases a Simulator in the Set.
  The Set to which the Simulator belongs must be the receiver.
 
  @param simulator the Simulator to erase. Must not be nil.
- @return A future wrapping the erased simulators udids.
+ @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<FBSimulator *> *)erase:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator;
 
 /**
  Deletes a Simulator in the Set.
@@ -105,21 +105,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to delete. Must not be nil.
  @return A future wrapping the delegate simulators.
  */
-- (FBFuture<NSString *> *)delete:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator;
 
 /**
  Performs a shutdown all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
-- (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll;
+- (FBFuture<NSNull *> *)shutdownAll;
 
 /**
  Delete all of the Simulators that belong to the receiver.
 
  @return A future wrapping the erased simulators udids.
  */
-- (FBFuture<NSArray<NSString *> *> *)deleteAll;
+- (FBFuture<NSNull *> *)deleteAll;
 
 /**
  The Logger to use.

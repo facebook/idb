@@ -142,49 +142,43 @@
 
 #pragma mark Destructive Methods
 
-- (FBFuture<FBSimulator *> *)shutdown:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[FBSimulatorShutdownStrategy
-    shutdown:simulator]
-    mapReplace:simulator];
+  return [FBSimulatorShutdownStrategy shutdown:simulator];
 }
 
-- (FBFuture<FBSimulator *> *)erase:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[FBSimulatorEraseStrategy
-    erase:simulator]
-    mapReplace:simulator];
+  return [FBSimulatorEraseStrategy erase:simulator];
 }
 
-- (FBFuture<NSString *> *)delete:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
   return [FBSimulatorDeletionStrategy delete:simulator];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
+- (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
 {
   NSParameterAssert(simulators);
-  return [[FBSimulatorShutdownStrategy shutdownAll:simulators] mapReplace:simulators];
+  return [FBSimulatorShutdownStrategy shutdownAll:simulators];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
+- (FBFuture<NSNull *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
   return [FBSimulatorDeletionStrategy deleteAll:simulators];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll
+- (FBFuture<NSNull *> *)shutdownAll
 {
   NSArray<FBSimulator *> *simulators = self.allSimulators;
-  return [[FBSimulatorShutdownStrategy
-    shutdownAll:simulators]
-    mapReplace:simulators];
+  return [FBSimulatorShutdownStrategy shutdownAll:simulators];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)deleteAll
+- (FBFuture<NSNull *> *)deleteAll
 {
   return [self deleteAll:self.allSimulators];
 }

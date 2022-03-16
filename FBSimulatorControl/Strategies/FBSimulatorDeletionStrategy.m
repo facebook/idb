@@ -22,7 +22,7 @@
 
 #pragma mark Public Methods
 
-+ (FBFuture<NSString *> *)delete:(FBSimulator *)simulator
++ (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator
 {
   // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
   NSString *coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory;
@@ -62,29 +62,28 @@
     }];
 }
 
-+ (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators
++ (FBFuture<NSNull *> *)deleteAll:(NSArray<FBSimulator *> *)simulators
 {
-  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
     [futures addObject:[self delete:simulator]];
   }
-  return [FBFuture futureWithFutures:futures];
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
 
 #pragma mark Private
 
-+ (FBFuture<NSString *> *)confirmSimulatorUDID:(NSString *)udid isRemovedFromSet:(FBSimulatorSet *)set
++ (FBFuture<NSNull *> *)confirmSimulatorUDID:(NSString *)udid isRemovedFromSet:(FBSimulatorSet *)set
 {
   // Deleting the device from the set can still leave it around for a few seconds.
   // This could race with methods that may reallocate the newly-deleted device.
   // So we should wait for the device to no longer be present in the underlying set.
-  return [[[FBFuture
+  return [[FBFuture
     onQueue:set.workQueue resolveWhen:^BOOL{
       NSSet<NSString *> *simulatorsInSet = [NSSet setWithArray:[set.allSimulators valueForKey:@"udid"]];
       return [simulatorsInSet containsObject:udid] == NO;
     }]
-    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to be removed from set"]
-    mapReplace:udid];
+    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to be removed from set"];
 }
 
 + (FBFuture<NSString *> *)onDeviceSet:(SimDeviceSet *)deviceSet performDeletionOfDevice:(SimDevice *)device onQueue:(dispatch_queue_t)queue
