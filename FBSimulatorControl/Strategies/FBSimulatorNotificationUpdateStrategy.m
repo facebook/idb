@@ -75,6 +75,7 @@
   if (!simulator) {
     return;
   }
+  [simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:simulator.logger];
   [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
 }
 
