@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to Delete.
  @return a future wrapping the array of deleted simulator uuids.
  */
-+ (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator;
++ (FBFuture<NSString *> *)delete:(FBSimulator *)simulator;
 
 /**
  Batch operation for deleting multipole simulators.
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulators the Simulators to Delete.
  @return a future wrapping the array of deleted simulator uuids.
  */
-+ (FBFuture<NSArray<NSString *> *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators;
++ (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 
 @end
 

@@ -142,7 +142,7 @@
 
 #pragma mark Destructive Methods
 
-- (FBFuture<FBSimulator *> *)shutdownSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)shutdown:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
   return [[FBSimulatorShutdownStrategy
@@ -150,18 +150,18 @@
     mapReplace:simulator];
 }
 
-- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
+- (FBFuture<FBSimulator *> *)erase:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
   return [[FBSimulatorEraseStrategy
-    eraseSimulator:simulator]
+    erase:simulator]
     mapReplace:simulator];
 }
 
-- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
+- (FBFuture<NSString *> *)delete:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [FBSimulatorDeletionStrategy deleteSimulator:simulator];
+  return [FBSimulatorDeletionStrategy delete:simulator];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
@@ -173,7 +173,7 @@
 - (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
-  return [FBSimulatorDeletionStrategy deleteSimulators:simulators];
+  return [FBSimulatorDeletionStrategy deleteAll:simulators];
 }
 
 - (FBFuture<NSArray<FBSimulator *> *> *)shutdownAll

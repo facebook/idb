@@ -18,7 +18,7 @@
 
 #pragma mark Public
 
-+ (FBFuture<NSNull *> *)eraseSimulator:(FBSimulator *)simulator
++ (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator
 {
   return [[FBSimulatorShutdownStrategy
     shutdown:simulator]

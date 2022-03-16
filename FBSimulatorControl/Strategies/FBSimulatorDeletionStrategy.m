@@ -22,16 +22,7 @@
 
 #pragma mark Public Methods
 
-+ (FBFuture<NSArray<NSString *> *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators
-{
-  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
-  for (FBSimulator *simulator in simulators) {
-    [futures addObject:[self deleteSimulator:simulator]];
-  }
-  return [FBFuture futureWithFutures:futures];
-}
-
-+ (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
++ (FBFuture<NSString *> *)delete:(FBSimulator *)simulator
 {
   // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
   NSString *coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory;
@@ -69,6 +60,15 @@
     onQueue:workQueue doOnResolved:^(id _) {
       [simulator.logger logFormat:@"%@ has been removed from set", udid];
     }];
+}
+
++ (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators
+{
+  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+  for (FBSimulator *simulator in simulators) {
+    [futures addObject:[self delete:simulator]];
+  }
+  return [FBFuture futureWithFutures:futures];
 }
 
 #pragma mark Private

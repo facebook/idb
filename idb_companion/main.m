@@ -302,7 +302,7 @@ static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *use
           describeFormat:@"Could not find a simulator with udid %@", udidOrAll]
           failFuture];
       }
-      return [set deleteSimulator:simulator];
+      return [set delete:simulator];
     }]
     mapReplace:NSNull.null];
 }

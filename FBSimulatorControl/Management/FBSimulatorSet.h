@@ -87,7 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to shutdown. Must not be nil.
  @return an Future that resolves when successful.
  */
-- (FBFuture<FBSimulator *> *)shutdownSimulator:(FBSimulator *)simulator;
+- (FBFuture<FBSimulator *> *)shutdown:(FBSimulator *)simulator;
 
 /**
  Erases a Simulator in the Set.
@@ -96,7 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to erase. Must not be nil.
  @return A future wrapping the erased simulators udids.
  */
-- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator;
+- (FBFuture<FBSimulator *> *)erase:(FBSimulator *)simulator;
 
 /**
  Deletes a Simulator in the Set.
@@ -105,7 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to delete. Must not be nil.
  @return A future wrapping the delegate simulators.
  */
-- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSString *> *)delete:(FBSimulator *)simulator;
 
 /**
  Performs a shutdown all of the Simulators that belong to the receiver.

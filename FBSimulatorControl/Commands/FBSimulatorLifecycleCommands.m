@@ -62,7 +62,7 @@
 
 - (FBFuture<NSNull *> *)shutdown
 {
-  return [[self.simulator.set shutdownSimulator:self.simulator] mapReplace:NSNull.null];
+  return [[self.simulator.set shutdown:self.simulator] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)reboot
@@ -78,7 +78,7 @@
 
 - (FBFuture<NSNull *> *)erase
 {
-  return [[self.simulator.set eraseSimulator:self.simulator] mapReplace:NSNull.null];
+  return [[self.simulator.set erase:self.simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark States

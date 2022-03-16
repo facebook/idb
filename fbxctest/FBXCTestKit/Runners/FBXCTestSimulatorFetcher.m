@@ -114,7 +114,7 @@
 
 - (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator
 {
-  return [[self.simulatorControl.set deleteSimulator:simulator] mapReplace:NSNull.null];
+  return [[self.simulatorControl.set delete:simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark Private

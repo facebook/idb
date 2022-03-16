@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to Erase.
  @return A future that resolves when the Simulator is erased.
  */
-+ (FBFuture<NSNull *> *)eraseSimulator:(FBSimulator *)simulator;
++ (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator;
 
 @end
 
