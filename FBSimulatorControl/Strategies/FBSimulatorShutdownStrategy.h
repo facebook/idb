@@ -39,6 +39,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
 
+/**
+ Batch operation for shutting down multiple simulators
+
+ @param simulators the simulators to shutdown.
+ @return A future that resolves when successful.
+ */
++ (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators;
+
 @end
 
 NS_ASSUME_NONNULL_END

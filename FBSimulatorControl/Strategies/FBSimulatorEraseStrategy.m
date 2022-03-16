@@ -13,7 +13,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorEraseStrategy
 

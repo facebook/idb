@@ -27,7 +27,6 @@
 #import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorNotificationUpdateStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
 
@@ -146,11 +145,9 @@
 - (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.simulatorTerminationStrategy
-    killSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
-      return [result firstObject];
-    }];
+  return [[FBSimulatorShutdownStrategy
+    shutdown:simulator]
+    mapReplace:simulator];
 }
 
 - (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
@@ -170,7 +167,7 @@
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
 {
   NSParameterAssert(simulators);
-  return [self.simulatorTerminationStrategy killSimulators:simulators];
+  return [[FBSimulatorShutdownStrategy shutdownAll:simulators] mapReplace:simulators];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
@@ -181,7 +178,10 @@
 
 - (FBFuture<NSArray<FBSimulator *> *> *)killAll
 {
-  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators];
+  NSArray<FBSimulator *> *simulators = self.allSimulators;
+  return [[FBSimulatorShutdownStrategy
+    shutdownAll:simulators]
+    mapReplace:simulators];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)deleteAll
@@ -237,11 +237,6 @@
 }
 
 #pragma mark Private Properties
-
-- (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
-{
-  return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
 
 + (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name queue:(dispatch_queue_t)queue
 {

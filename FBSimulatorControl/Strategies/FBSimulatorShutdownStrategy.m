@@ -73,6 +73,17 @@
   return [FBSimulatorShutdownStrategy shutdownSimulator:simulator];
 }
 
++ (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
+{
+  NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
+  for (FBSimulator *simulator in simulators) {
+    [futures addObject:[self shutdown:simulator]];
+  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+}
+
+#pragma mark Private
+
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {
   if (FBXcodeConfiguration.isXcode9OrGreater) {

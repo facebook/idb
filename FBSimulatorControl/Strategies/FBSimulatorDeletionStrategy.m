@@ -14,8 +14,9 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorSet.h"
 #import "FBSimulatorSet+Private.h"
+#import "FBSimulatorSet.h"
+#import "FBSimulatorShutdownStrategy.h"
 
 @implementation FBSimulatorDeletionStrategy
 
@@ -40,8 +41,8 @@
 
   // Kill the Simulators before deleting them.
   [simulator.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
-  return [[[[simulator.set
-    killSimulator:simulator]
+  return [[[[FBSimulatorShutdownStrategy
+    shutdown:simulator]
     onQueue:workQueue fmap:^(id _) {
       // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
       [simulator.logger logFormat:@"Deleting Simulator %@", simulator];

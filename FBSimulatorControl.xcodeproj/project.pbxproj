@@ -204,8 +204,6 @@
 		AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */; };
 		AA6A3B3F1CC1597000E016C4 /* FBSimulatorBootStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B351CC1597000E016C4 /* FBSimulatorBootStrategy.h */; };
 		AA6A3B401CC1597000E016C4 /* FBSimulatorBootStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6A3B361CC1597000E016C4 /* FBSimulatorBootStrategy.m */; };
-		AA6A3B431CC1597000E016C4 /* FBSimulatorTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B391CC1597000E016C4 /* FBSimulatorTerminationStrategy.h */; };
-		AA6A3B441CC1597000E016C4 /* FBSimulatorTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6A3B3A1CC1597000E016C4 /* FBSimulatorTerminationStrategy.m */; };
 		AA6B1DD21FC5FCFA009DDDAE /* FBDataBufferTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6B1DD11FC5FCFA009DDDAE /* FBDataBufferTests.m */; };
 		AA6C68A4267B89C100EB975D /* FBProcessIOTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6C68A3267B89C100EB975D /* FBProcessIOTests.m */; };
 		AA6F22441C916A31009F5CE4 /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AA6F22411C916A31009F5CE4 /* photo0.png */; };
@@ -985,8 +983,6 @@
 		AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCollectionOperations.m; sourceTree = "<group>"; };
 		AA6A3B351CC1597000E016C4 /* FBSimulatorBootStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorBootStrategy.h; sourceTree = "<group>"; };
 		AA6A3B361CC1597000E016C4 /* FBSimulatorBootStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorBootStrategy.m; sourceTree = "<group>"; };
-		AA6A3B391CC1597000E016C4 /* FBSimulatorTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorTerminationStrategy.h; sourceTree = "<group>"; };
-		AA6A3B3A1CC1597000E016C4 /* FBSimulatorTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorTerminationStrategy.m; sourceTree = "<group>"; };
 		AA6B1DD11FC5FCFA009DDDAE /* FBDataBufferTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDataBufferTests.m; sourceTree = "<group>"; };
 		AA6C68A3267B89C100EB975D /* FBProcessIOTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessIOTests.m; sourceTree = "<group>"; };
 		AA6F22411C916A31009F5CE4 /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
@@ -1916,8 +1912,6 @@
 				AAFE1C111FD68A7D00ADDE66 /* FBSimulatorNotificationUpdateStrategy.m */,
 				AAF7B0D71DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.h */,
 				AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */,
-				AA6A3B391CC1597000E016C4 /* FBSimulatorTerminationStrategy.h */,
-				AA6A3B3A1CC1597000E016C4 /* FBSimulatorTerminationStrategy.m */,
 			);
 			path = Strategies;
 			sourceTree = "<group>";
@@ -2754,7 +2748,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA9517971C15F54600A89CAD /* FBCoreSimulatorNotifier.h in Headers */,
-				AA6A3B431CC1597000E016C4 /* FBSimulatorTerminationStrategy.h in Headers */,
 				AA15688C1F0EDBDF000743D5 /* FBSimulatorLaunchedApplication.h in Headers */,
 				AAA1F9C41F1396FB006A4811 /* FBSimulatorLaunchCtlCommands.h in Headers */,
 				AA44AF681E792F7500185844 /* FBSimulatorVideoStream.h in Headers */,
@@ -3289,7 +3282,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				AA6A3B441CC1597000E016C4 /* FBSimulatorTerminationStrategy.m in Sources */,
 				AA3EA8541F31B20D003FBDC1 /* FBSimulatorFileCommands.m in Sources */,
 				AAB475F820C8217F00B37634 /* FBSimulatorCrashLogCommands.m in Sources */,
 				AAE42AA91D2D77D800DCD0EA /* FBSimulatorBridge.m in Sources */,
