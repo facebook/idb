@@ -98,10 +98,7 @@ final class GRPCSwiftServer : NSObject {
   private static func tlsConfiguration(portConfiguration: FBIDBPortsConfiguration, logger: FBIDBLogger) -> GRPCTLSConfiguration? {
     let tlsPath = portConfiguration.tlsCertPath as String
     guard !tlsPath.isEmpty else { return nil }
-    guard let tlsURL = URL(string: tlsPath) else {
-      logger.error().log("Unable to parse tls-cert-path \(tlsPath)")
-      fatalError("Unable to parse tls-cert-path \(tlsPath)")
-    }
+    let tlsURL = URL(fileURLWithPath: tlsPath)
     do {
       let rawCert = try Data(contentsOf: tlsURL)
 
