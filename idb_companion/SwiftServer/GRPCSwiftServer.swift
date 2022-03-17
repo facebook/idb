@@ -69,7 +69,12 @@ final class GRPCSwiftServer : NSObject {
     let server = Server.start(configuration: serverConfig)
     self.server = server
 
-    logger.info().log("Starting swift server")
+    logger.info().log("Starting swift server on port \(ports.grpcSwiftPort)")
+    let tslPath = ports.tlsCertPath as String
+    if !tslPath.isEmpty {
+      logger.info().log("Starting swift server with TLS path \(ports.tlsCertPath)")
+    }
+
     server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
       self?.logServerStartup(address: address)
       future.resolve(withResult: ["grpc_swift_port": Int(ports.grpcSwiftPort)])
