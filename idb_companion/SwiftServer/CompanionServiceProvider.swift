@@ -25,7 +25,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
        commandExecutor: FBIDBCommandExecutor,
        reporter: FBEventReporter,
        logger: FBIDBLogger,
-       internalCppClient: Idb_CompanionServiceAsyncClient,
+       internalCppClient: Idb_CompanionServiceAsyncClientProtocol,
        interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol) {
     self.target = target
     self.commandExecutor = commandExecutor

@@ -39,11 +39,9 @@ final class GRPCSwiftServer : NSObject {
        ports: FBIDBPortsConfiguration) throws {
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
+    let tlsCerts = Self.loadCertificates(portConfiguration: ports, logger: logger)
 
-    let config = ClientConnection.Configuration.default(target: .host("localhost", port: Int(ports.grpcPort)), eventLoopGroup: group)
-    let connection = ClientConnection(configuration: config)
-
-    let clientToCppServer = Idb_CompanionServiceAsyncClient(channel: connection)
+    let clientToCppServer = Self.internalCppClient(portConfiguration: ports, certificates: tlsCerts, group: group)
     let interceptors = CompanionServiceInterceptors()
 
     self.provider = CompanionServiceProvider(target: target,
@@ -57,7 +55,6 @@ final class GRPCSwiftServer : NSObject {
                                                            eventLoopGroup: group,
                                                            serviceProviders: [provider])
 
-    let tlsCerts = Self.loadCertificates(portConfiguration: ports, logger: logger)
     serverConfiguration.tlsConfiguration = tlsCerts.map {
       GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
     }
@@ -129,5 +126,19 @@ final class GRPCSwiftServer : NSObject {
     }
 
   }
+
+    private static func internalCppClient(portConfiguration: FBIDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
+        var config = ClientConnection.Configuration.default(target: .host("localhost", port: Int(portConfiguration.grpcPort)), eventLoopGroup: group)
+        config.tlsConfiguration = certificates.map {
+          var nioConf = TLSConfiguration.makeClientConfiguration()
+          nioConf.certificateChain = $0.certificates
+          nioConf.privateKey = $0.privateKey
+          nioConf.certificateVerification = .none
+          return GRPCTLSConfiguration.makeClientConfigurationBackedByNIOSSL(configuration:nioConf)
+        }
+        let connection = ClientConnection(configuration: config)
+
+        return Idb_CompanionServiceAsyncClient(channel: connection)
+    }
 
 }
