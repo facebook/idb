@@ -16,6 +16,11 @@ import IDBGRPCSwift
 @objc
 final class GRPCSwiftServer : NSObject {
 
+  private struct TLSCertificates {
+    let certificates: [NIOSSLCertificateSource]
+    let privateKey: NIOSSLPrivateKeySource
+  }
+
   private var server: EventLoopFuture<Server>?
   private let provider: CallHandlerProvider
   private let logger: FBIDBLogger
@@ -51,7 +56,11 @@ final class GRPCSwiftServer : NSObject {
     var serverConfiguration = Server.Configuration.default(target: Self.bindTarget(portConfiguration: ports),
                                                            eventLoopGroup: group,
                                                            serviceProviders: [provider])
-    serverConfiguration.tlsConfiguration = Self.tlsConfiguration(portConfiguration: ports, logger: logger)
+
+    let tlsCerts = Self.loadCertificates(portConfiguration: ports, logger: logger)
+    serverConfiguration.tlsConfiguration = tlsCerts.map {
+      GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
+    }
     serverConfiguration.errorDelegate = GRPCSwiftServerErrorDelegate()
     self.serverConfig = serverConfiguration
     self.ports = ports
@@ -100,7 +109,7 @@ final class GRPCSwiftServer : NSObject {
     return .host("localhost", port: Int(portConfiguration.grpcSwiftPort))
   }
 
-  private static func tlsConfiguration(portConfiguration: FBIDBPortsConfiguration, logger: FBIDBLogger) -> GRPCTLSConfiguration? {
+  private static func loadCertificates(portConfiguration: FBIDBPortsConfiguration, logger: FBIDBLogger) -> TLSCertificates? {
     let tlsPath = portConfiguration.tlsCertPath as String
     guard !tlsPath.isEmpty else { return nil }
     let tlsURL = URL(fileURLWithPath: tlsPath)
@@ -110,11 +119,13 @@ final class GRPCSwiftServer : NSObject {
       let certificate = try NIOSSLCertificateSource.certificate(.init(bytes: [UInt8](rawCert), format: .pem))
       let privateKey = try NIOSSLPrivateKeySource.privateKey(.init(bytes: [UInt8](rawCert), format: .pem))
 
-      return GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: [certificate], privateKey: privateKey)
-
+      return TLSCertificates(
+        certificates: [certificate],
+        privateKey: privateKey
+      )
     } catch {
-      logger.error().log("Unable to create tls configuration. Error: \(error)")
-      fatalError("Unable to create tls configuration. Error: \(error)")
+      logger.error().log("Unable to load tls certificate. Error: \(error)")
+      fatalError("Unable to load tls certificate. Error: \(error)")
     }
 
   }
