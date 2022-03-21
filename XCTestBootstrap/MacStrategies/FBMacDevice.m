@@ -83,6 +83,7 @@
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _screenInfo = nil;
     _osVersion = [FBOSVersion genericWithName:FBOSVersionNamemac];
+    _name = [[NSHost currentHost] localizedName];
   }
   return self;
 }
