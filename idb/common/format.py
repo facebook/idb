@@ -33,6 +33,8 @@ def target_type_from_string(output: str) -> TargetType:
         return TargetType.SIMULATOR
     if "dev" in normalized:
         return TargetType.DEVICE
+    if "mac" in normalized:
+        return TargetType.MAC
     raise IdbException(f"Could not interpret target type from {output}")
 
 
