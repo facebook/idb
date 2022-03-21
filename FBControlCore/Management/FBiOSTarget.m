@@ -136,3 +136,10 @@ FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetS
     return target.state == state;
   }];
 }
+
+FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state)
+{
+  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
+    return target.state != state;
+  }];
+}

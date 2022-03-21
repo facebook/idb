@@ -28,6 +28,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state;
 
+/**
+ Asynchronously waits to leave the provided state.
+
+ @param state the state to wait to leave
+ @return A future that resolves when it has transitioned away from the given state.
+ */
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state;
+
 @end
 
 NS_ASSUME_NONNULL_END

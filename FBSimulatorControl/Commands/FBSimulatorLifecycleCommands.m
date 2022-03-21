@@ -88,6 +88,11 @@
   return FBiOSTargetResolveState(self.simulator, state);
 }
 
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
+{
+  return FBiOSTargetResolveLeavesState(self.simulator, state);
+}
+
 #pragma mark Focus
 
 - (FBFuture<NSNull *> *)focus
