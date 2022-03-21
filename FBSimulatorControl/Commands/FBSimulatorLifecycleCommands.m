@@ -85,10 +85,7 @@
 
 - (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
 {
-  FBSimulator *simulator = self.simulator;
-  return [FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
-    return simulator.state == state;
-  }];
+  return FBiOSTargetResolveState(self.simulator, state);
 }
 
 #pragma mark Focus

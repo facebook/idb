@@ -129,3 +129,10 @@ NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids)
     return [udidsSet containsObject:candidate.udid];
   }];
 }
+
+FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state)
+{
+  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
+    return target.state == state;
+  }];
+}

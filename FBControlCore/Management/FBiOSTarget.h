@@ -204,6 +204,11 @@ extern NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
  */
 extern NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
 
+/**
+ Constructs a future that resolves when the target resolves to a provided state.
+ */
+extern FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state);
+
 #if defined __cplusplus
 };
 #endif
