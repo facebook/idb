@@ -10,6 +10,7 @@
 		1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */; };
 		623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */; };
 		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
+		712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */; };
 		713C709426F52F970086D8DF /* FBCodeCoverageRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */; };
 		713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */; };
 		713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */; };
@@ -147,6 +148,7 @@
 		5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
 		623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
 		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
+		712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescribeMethodHandler.swift; sourceTree = "<group>"; };
 		713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageRequest.h; sourceTree = "<group>"; };
 		713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageRequest.m; sourceTree = "<group>"; };
 		713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunRequest.h; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */,
 				DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */,
 				DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */,
+				712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -785,6 +788,7 @@
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
+				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
 				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
