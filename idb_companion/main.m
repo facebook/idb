@@ -191,14 +191,11 @@ static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *
 
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
 {
-  return [FBFuture
-    onQueue:target.workQueue resolveWhen:^ BOOL {
-      if (target.state != FBiOSTargetStateBooted) {
-        [logger.error logFormat:@"Target with udid %@ is no longer booted, it is in state %@", target.udid, FBiOSTargetStateStringFromState(target.state)];
-        return YES;
-      }
-      return NO;
-  }];
+  return [[target
+    resolveLeavesState:FBiOSTargetStateBooted]
+    onQueue:target.workQueue doOnResolved:^(id _){
+      [target.logger log:@"Target is no longer booted, companion going offline"];
+    }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
