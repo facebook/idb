@@ -10,14 +10,15 @@
 #import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBArchitecture.h>
-#import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBCrashLogCommands.h>
-#import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBDapServerCommands.h>
+#import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBInstrumentsCommands.h>
+#import <FBControlCore/FBLifecycleCommands.h>
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 
@@ -89,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands, FBLifecycleCommands>
 
 /**
  The Target's Logger.

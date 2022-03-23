@@ -173,4 +173,14 @@
   return NO;
 }
 
+- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
+{
+  return FBMutableFuture.future;
+}
+
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
+{
+  return FBMutableFuture.future;
+}
+
 @end

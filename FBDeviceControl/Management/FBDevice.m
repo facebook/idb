@@ -21,6 +21,7 @@
 #import "FBDeviceEraseCommands.h"
 #import "FBDeviceFileCommands.h"
 #import "FBDeviceFileCommands.h"
+#import "FBDeviceLifecycleCommands.h"
 #import "FBDeviceLocationCommands.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDevicePowerCommands.h"
@@ -313,6 +314,7 @@
       FBDeviceDiagnosticInformationCommands.class,
       FBDeviceEraseCommands.class,
       FBDeviceFileCommands.class,
+      FBDeviceLifecycleCommands.class,
       FBDeviceLocationCommands.class,
       FBDeviceLogCommands.class,
       FBDevicePowerCommands.class,

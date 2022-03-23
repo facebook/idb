@@ -399,6 +399,16 @@
   return nil;
 }
 
+- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
+{
+  return FBiOSTargetResolveState(self, state);
+}
+
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
+{
+  return FBiOSTargetResolveLeavesState(self, state);
+}
+
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   return NSDictionary.dictionary;
