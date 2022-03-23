@@ -11,6 +11,7 @@
 
 #import <AppKit/AppKit.h>
 
+#import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -90,7 +91,7 @@
 
 - (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
 {
-  return FBiOSTargetResolveLeavesState(self.simulator, state);
+  return [FBCoreSimulatorNotifier resolveLeavesState:state forSimDevice:self.simulator.device];
 }
 
 #pragma mark Focus
