@@ -35,11 +35,6 @@ extension IDBXCTestReporter {
 
   }
 
-  struct CodeCoverageResponseData {
-    let data: Data
-    let jsonString: String?
-  }
-
   struct CurrentTestInfo {
     var bundleName = ""
     var testClass = ""
@@ -285,11 +280,7 @@ extension IDBXCTestReporter {
       do {
         let coverageData = try await getCoverageResponseData(config: coverageConfig)
         response.codeCoverageData = .with {
-          $0.data = coverageData.data
-        }
-        if let json = coverageData.jsonString {
-          // for backwards compatibility
-          response.coverageJson = json
+          $0.data = coverageData
         }
       } catch {
         logger.info().log("Failed to get coverage data: \(error.localizedDescription)")
@@ -341,18 +332,17 @@ extension IDBXCTestReporter {
     return try await FutureBox(task).value as Data
   }
 
-  private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> CodeCoverageResponseData {
+  private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
     try await FutureBox(processUnderTestExitedMutable).await()
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
       let archived = try await FutureBox(FBArchiveOperations.createGzipData(from: data, logger: logger)).value
       let archivedData = archived.stdOut ?? NSData()
-      return CodeCoverageResponseData(data: archivedData as Data, jsonString: String(data: data, encoding: .utf8))
+      return archivedData as Data
 
     case .raw:
-      let archiveData = try await gzipFolder(at: config.coverageDirectory)
-      return CodeCoverageResponseData(data: archiveData, jsonString: nil)
+      return try await gzipFolder(at: config.coverageDirectory)
 
     default:
       throw FBControlCoreError.describe("Unsupported code coverage format")

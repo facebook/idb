@@ -28,31 +28,6 @@
 
 @end
 
-@interface CodeCoverageResponseData : NSObject
-
-@property(nonatomic, copy, nullable, readonly) NSString *jsonString;
-
-@property(nonatomic, copy, nullable, readonly) NSData *data;
-
-- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString;
-
-@end
-
-@implementation CodeCoverageResponseData
-
-- (instancetype)initWithData:(nullable NSData *)data jsonString:(nullable NSString *)jsonString
-{
-  self = [super init];
-  if (self) {
-    _data = data;
-    _jsonString = jsonString;
-  }
-  return self;
-}
-
-@end
-
-
 
 @implementation FBIDBXCTestReporter
 
@@ -378,16 +353,10 @@
   }
   if (self.configuration.coverageConfiguration.coverageDirectory) {
     [futures addObject:[[[self getCoverageResponseData]
-      onQueue:self.queue map:^NSNull *(CodeCoverageResponseData *coverageResponseData) {
-        NSData *data = coverageResponseData.data;
-        if (data) {
+      onQueue:self.queue map:^NSNull *(NSData *coverageResponseData) {
+        if (coverageResponseData) {
           idb::Payload *payload = responseCopy.mutable_code_coverage_data();
-          payload->set_data(data.bytes, data.length);
-        }
-        NSString *jsonString = coverageResponseData.jsonString;
-        if (jsonString) {
-          // for backwards compatibility
-          responseCopy.set_coverage_json(jsonString.UTF8String ?: "");
+          payload->set_data(coverageResponseData.bytes, coverageResponseData.length);
         }
         return NSNull.null;
       }]
@@ -457,28 +426,22 @@
 
 #pragma mark Code Coverage
 
-- (FBFuture<CodeCoverageResponseData *> *)getCoverageResponseData
+- (FBFuture<NSData *> *)getCoverageResponseData
 {
   return [self.processUnderTestExitedMutable
-    onQueue:self.queue fmap:^FBFuture<CodeCoverageResponseData *> *(id _) {
+    onQueue:self.queue fmap:^FBFuture<NSData *> *(id _) {
     
       switch (self.configuration.coverageConfiguration.format) {
         case FBCodeCoverageExported:
           return [[self getCoverageDataExported]
             onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
               return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
-              onQueue:self.queue map:^CodeCoverageResponseData *(FBProcess<NSData *,NSData *,id> *task) {
-                return [[CodeCoverageResponseData alloc]
-                    initWithData:task.stdOut
-                    jsonString:[[NSString alloc] initWithData:coverageData encoding:NSUTF8StringEncoding]
-                  ];
-                }];
+              onQueue:self.queue map:^NSData *(FBProcess<NSData *,NSData *,id> *task) {
+                return task.stdOut;
+              }];
             }];
         case FBCodeCoverageRaw:
-          return [[self getCoverageDataDirectory]
-            onQueue:self.queue map:^CodeCoverageResponseData *(NSData *coverageTarball) {
-              return [[CodeCoverageResponseData alloc] initWithData:coverageTarball jsonString:nil];
-            }];
+          return [self getCoverageDataDirectory];
         default:
           return [[FBControlCoreError
             describeFormat:@"Unsupported code coverage format"]
