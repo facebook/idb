@@ -64,10 +64,10 @@
 		DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
-		DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB5C38CA27B5411C00401F91 /* GRPC */; };
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
+		DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB67676527EB2BAD002BBE32 /* GRPC */; };
 		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
 		DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */; };
@@ -256,7 +256,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DB5C38CB27B5411C00401F91 /* GRPC in Frameworks */,
+				DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -592,7 +592,7 @@
 			);
 			name = IDBGRPCSwift;
 			packageProductDependencies = (
-				DB5C38CA27B5411C00401F91 /* GRPC */,
+				DB67676527EB2BAD002BBE32 /* GRPC */,
 			);
 			productName = idbGRPCSwift;
 			productReference = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */;
@@ -629,7 +629,7 @@
 			);
 			mainGroup = D7D6DF092265DDEC00B01F14;
 			packageReferences = (
-				DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */,
+				DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */,
 			);
 			productRefGroup = D7D6DF132265DDEC00B01F14 /* Products */;
 			projectDirPath = "";
@@ -1116,20 +1116,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
+		DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Nekitosss/grpc-swift.git";
+			repositoryURL = "https://github.com/grpc/grpc-swift.git";
 			requirement = {
-				branch = "1.6.0-async-await";
-				kind = branch;
+				kind = exactVersion;
+				version = "1.7.1-async-await.2";
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		DB5C38CA27B5411C00401F91 /* GRPC */ = {
+		DB67676527EB2BAD002BBE32 /* GRPC */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DB5C38C927B5411C00401F91 /* XCRemoteSwiftPackageReference "grpc-swift" */;
+			package = DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */;
 			productName = GRPC;
 		};
 /* End XCSwiftPackageProductDependency section */
