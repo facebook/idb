@@ -54,6 +54,7 @@ final class GRPCSwiftServer : NSObject {
     var serverConfiguration = Server.Configuration.default(target: Self.bindTarget(portConfiguration: ports),
                                                            eventLoopGroup: group,
                                                            serviceProviders: [provider])
+    serverConfiguration.maximumReceiveMessageLength = 16777216
 
     serverConfiguration.tlsConfiguration = tlsCerts.map {
       GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
@@ -136,6 +137,12 @@ final class GRPCSwiftServer : NSObject {
           nioConf.certificateVerification = .none
           return GRPCTLSConfiguration.makeClientConfigurationBackedByNIOSSL(configuration:nioConf)
         }
+
+        // Potentially we could have very large files. To improve speed we removing max capacity
+        // and set max frame size to maximum
+        config.maximumReceiveMessageLength = Int.max
+        config.httpMaxFrameSize = 16_777_215
+
         let connection = ClientConnection(configuration: config)
 
         return Idb_CompanionServiceAsyncClient(channel: connection)
