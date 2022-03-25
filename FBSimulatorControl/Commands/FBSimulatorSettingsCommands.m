@@ -458,7 +458,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   for (NSString *bundleID in bundleIDs) {
     for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
-      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 2, 4, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
+      // The first 2 is for auth_value, 2 corresponds to "allowed"
+      // The other two 2 and 2 that we set here correspond to auth_reason and auth_version
+      // Both has to be 2 for  AVCaptureDevice.authorizationStatus(... to return something different from notDetermined
+      // It is also possible that in the future auth_version has to be bumped up to 3 and above with newer minor version of iOS
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
     }
   }
   return [tuples componentsJoinedByString:@", "];
