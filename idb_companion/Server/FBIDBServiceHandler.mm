@@ -671,6 +671,9 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
   NSSet<NSString *> *persistedBundleIDs = _commandExecutor.storageManager.application.persistedBundleIDs;
   BOOL fetchAppProcessState = request->suppress_process_state() == false;
   NSDictionary<FBInstalledApplication *, id> *apps = [[_commandExecutor list_apps:fetchAppProcessState] block:&error];
+  if (!apps) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
   for (FBInstalledApplication *app in apps.allKeys) {
     idb::InstalledAppInfo *appInfo = response->add_apps();
     appInfo->set_bundle_id(app.bundle.identifier.UTF8String ?: "");
@@ -687,9 +690,6 @@ Status FBIDBServiceHandler::list_apps(ServerContext *context, const idb::ListApp
       appInfo->set_process_state(idb::InstalledAppInfo_AppProcessState_UNKNOWN);
     }
     appInfo->set_debuggable(app.installType == FBApplicationInstallTypeUserDevelopment && [persistedBundleIDs containsObject:app.bundle.identifier]);
-  }
-  if (error) {
-    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
   return Status::OK;
 }}
