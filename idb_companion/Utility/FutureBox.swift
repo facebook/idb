@@ -8,8 +8,6 @@
 import Foundation
 import FBControlCore
 
-private let futureSerialFullfillmentQueue = DispatchQueue(label: "com.facebook.fbfuture.fullfilment")
-
 enum FBFutureError: Error {
   case continuationFullfilledWithoutValues
 }
@@ -35,7 +33,7 @@ final class FutureBox<T: AnyObject> {
     get async throws {
       try await withTaskCancellationHandler {
         try await withCheckedThrowingContinuation { continuation in
-          future.onQueue(futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
+          future.onQueue(BridgeQueues.futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
             if let error = resultFuture.error {
               continuation.resume(throwing: error)
             } else if let value = resultFuture.result {
