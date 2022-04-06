@@ -130,7 +130,11 @@ async def _verify_port_from_spawned_companion(
             f"Failed to spawn companion, {port_name} zero is invalid "
             f"stderr: {get_last_n_lines(log_file_path, 30)}"
         )
-    if expected_port is not None and extracted_port != expected_port:
+    if (
+        expected_port is not None
+        and expected_port != 0
+        and extracted_port != expected_port
+    ):
         raise CompanionSpawnerException(
             f"Failed to spawn companion, invalid {port_name} "
             f"(expected {expected_port} got {extracted_port})"
