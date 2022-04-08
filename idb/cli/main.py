@@ -153,6 +153,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         if swift_address:
             companion_address = swift_address
         else:
+            del os.environ["IDB_USE_SWIFT"]
             logger.exception(
                 "Incorrect swift usage configuration, IDB_USE_SWIFT=YES provided, but IDB_SWIFT_COMPANION not found. Will try to fallback to another options"
             )
