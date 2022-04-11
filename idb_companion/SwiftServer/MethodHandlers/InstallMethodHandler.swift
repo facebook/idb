@@ -106,25 +106,25 @@ struct InstallMethodHandler {
     func installSource(dataStream: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable)
-        ).value
+        )
       case .xctest:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_xctest_app_stream(dataStream)
-        ).value
+        )
       case .dsym:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
-        ).value
+        )
       case .dylib:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_dylib_stream(dataStream, name: name)
-        ).value
+        )
       case .framework:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_framework_stream(dataStream)
-        ).value
+        )
       case .UNRECOGNIZED:
         throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
       }
@@ -147,25 +147,25 @@ struct InstallMethodHandler {
     case let .filePath(filePath):
       switch destination {
       case .app:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable)
-        ).value
+        )
       case .xctest:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_xctest_app_file_path(filePath)
-        ).value
+        )
       case .dsym:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
-        ).value
+        )
       case .dylib:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_dylib_file_path(filePath)
-        ).value
+        )
       case .framework:
-        return try await FutureBox(
+        return try await FutureBox.value(
           commandExecutor.install_framework_file_path(filePath)
-        ).value
+        )
       case .UNRECOGNIZED:
         throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
       }

@@ -28,11 +28,11 @@ struct XCTestRunMethodHandler {
     let operationFuture = commandExecutor.xctest_run(request,
                                                      reporter: reporter,
                                                      logger: FBControlCoreLoggerFactory.logger(to: reporter))
-    let operation = try await FutureBox(operationFuture).value
+    let operation = try await FutureBox.value(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
-    try await FutureBox(operation.completed).await()
-    _ = try await FutureBox(reporter.reportingTerminated).value
+    try await FutureBox.await(operation.completed)
+    _ = try await FutureBox.value(reporter.reportingTerminated)
   }
 
 

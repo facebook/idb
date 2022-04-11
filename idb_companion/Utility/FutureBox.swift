@@ -15,26 +15,20 @@ enum FBFutureError: Error {
 
 /// Swift compiler does not allow usage of generic parameters of objc classes in extension
 /// so we need to create a bridge class
-final class FutureBox<T: AnyObject> {
+enum FutureBox {
 
-  let future: FBFuture<T>
-
-  init(_ future: FBFuture<T>) {
-    self.future = future
-  }
-
-  static func values(_ futures: FBFuture<T>...) async throws -> [T] {
+  static func values<T: AnyObject>(_ futures: FBFuture<T>...) async throws -> [T] {
     let futuresArr: [FBFuture<T>] = futures
     return try await values(futuresArr)
   }
 
-  static func values(_ futures: [FBFuture<T>]) async throws -> [T] {
+  static func values<T: AnyObject>(_ futures: [FBFuture<T>]) async throws -> [T] {
     return try await withThrowingTaskGroup(of: (Int, T).self, returning: [T].self) { group in
       var results = [T?].init(repeating: nil, count: futures.count)
 
       for (index, future) in futures.enumerated() {
         group.addTask {
-          return try await (index, FutureBox(future).value)
+          return try await (index, FutureBox.value(future))
         }
       }
 
@@ -52,39 +46,36 @@ final class FutureBox<T: AnyObject> {
     }
   }
 
-  /// Interop between swift and objc generics are quite bad, so we have to write wrappers like this
-  init(_ mutableFuture: FBMutableFuture<T>) {
-    let future: FBFuture<AnyObject> = mutableFuture
-    self.future = future as! FBFuture<T>
-  }
-
   /// Awaitable value that waits for publishing from the wrapped future
-  var value: T {
-    get async throws {
-      try await withTaskCancellationHandler {
-        try await withCheckedThrowingContinuation { continuation in
-          future.onQueue(BridgeQueues.futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
-            if let error = resultFuture.error {
-              continuation.resume(throwing: error)
-            } else if let value = resultFuture.result {
-              continuation.resume(returning: value as! T)
-            } else {
-              continuation.resume(throwing: FBFutureError.continuationFullfilledWithoutValues)
-            }
-          })
-        }
-      } onCancel: {
-        future.cancel()
+  static func value<T: AnyObject>(_ future: FBFuture<T>) async throws -> T {
+    try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { continuation in
+        future.onQueue(BridgeQueues.futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
+          if let error = resultFuture.error {
+            continuation.resume(throwing: error)
+          } else if let value = resultFuture.result {
+            continuation.resume(returning: value as! T)
+          } else {
+            continuation.resume(throwing: FBFutureError.continuationFullfilledWithoutValues)
+          }
+        })
       }
+    } onCancel: {
+      future.cancel()
     }
   }
-}
 
-extension FutureBox where T == NSNull {
+  static func await(_ future: FBFuture<NSNull>) async throws {
+    _ = try await Self.value(future)
+  }
 
-  /// Created to explicitly indicate that result type is Void and nothing should be returned.
-  /// And also to make a difference between omitting from call site
-  func await() async throws {
-    _ = try await value
+  static func await(_ future: FBFuture<AnyObject>) async throws {
+    _ = try await Self.value(future)
+  }
+
+  /// Interop between swift and objc generics are quite bad, so we have to write wrappers like this
+  static func convertToFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) -> FBFuture<T> {
+    let future: FBFuture<AnyObject> = mutableFuture
+    return future as! FBFuture<T>
   }
 }

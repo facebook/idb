@@ -52,7 +52,7 @@ struct DescribeMethodHandler {
         return response
       }
 
-      let diagnosticInformation = try await FutureBox(commandExecutor.diagnostic_information()).value
+      let diagnosticInformation = try await FutureBox.value(commandExecutor.diagnostic_information())
       let diagnosticInfoData = try JSONSerialization.data(withJSONObject: diagnosticInformation)
       response.targetDescription.diagnostics = diagnosticInfoData
 
