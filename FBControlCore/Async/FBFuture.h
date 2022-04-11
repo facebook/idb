@@ -135,7 +135,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param futures the futures to compose.
  @return a new future with the resolved results of all the composed futures.
  */
-+ (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures;
++ (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures NS_SWIFT_UNAVAILABLE("Use FutureBox.values instead");
 
 /**
  Constructrs a Future from an Array of Futures.

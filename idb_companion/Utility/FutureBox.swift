@@ -10,6 +10,7 @@ import FBControlCore
 
 enum FBFutureError: Error {
   case continuationFullfilledWithoutValues
+  case taskGroupReceivedNilResultInternalError
 }
 
 /// Swift compiler does not allow usage of generic parameters of objc classes in extension
@@ -20,6 +21,35 @@ final class FutureBox<T: AnyObject> {
 
   init(_ future: FBFuture<T>) {
     self.future = future
+  }
+
+  static func values(_ futures: FBFuture<T>...) async throws -> [T] {
+    let futuresArr: [FBFuture<T>] = futures
+    return try await values(futuresArr)
+  }
+
+  static func values(_ futures: [FBFuture<T>]) async throws -> [T] {
+    return try await withThrowingTaskGroup(of: (Int, T).self, returning: [T].self) { group in
+      var results = [T?].init(repeating: nil, count: futures.count)
+
+      for (index, future) in futures.enumerated() {
+        group.addTask {
+          return try await (index, FutureBox(future).value)
+        }
+      }
+
+      for try await (index, value) in group {
+        results[index] = value
+      }
+
+      return try results.map { value -> T in
+        guard let shouldDefinitelyExist = value else {
+          assertionFailure("This should never happen. We should fullfill all values at that moment")
+          throw FBFutureError.taskGroupReceivedNilResultInternalError
+        }
+        return shouldDefinitelyExist
+      }
+    }
   }
 
   /// Interop between swift and objc generics are quite bad, so we have to write wrappers like this
