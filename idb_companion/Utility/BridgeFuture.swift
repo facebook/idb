@@ -15,7 +15,7 @@ enum FBFutureError: Error {
 
 /// Swift compiler does not allow usage of generic parameters of objc classes in extension
 /// so we need to create a bridge class
-enum FutureBox {
+enum BridgeFuture {
 
   static func values<T: AnyObject>(_ futures: FBFuture<T>...) async throws -> [T] {
     let futuresArr: [FBFuture<T>] = futures
@@ -28,7 +28,7 @@ enum FutureBox {
 
       for (index, future) in futures.enumerated() {
         group.addTask {
-          return try await (index, FutureBox.value(future))
+          return try await (index, BridgeFuture.value(future))
         }
       }
 

@@ -75,7 +75,7 @@
 		DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */; };
 		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
 		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
-		DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* FutureBox.swift */; };
+		DBA2ED1F27BBA96100926054 /* BridgeFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */; };
 		DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
 		DBA31DD127BE72EF0032091C /* AsyncSequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */; };
 		DBB3278527F5CDF3001A8E3A /* BridgeQueues.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */; };
@@ -222,7 +222,7 @@
 		DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBXCTestReporter.swift; sourceTree = "<group>"; };
 		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
 		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
-		DBA2ED1B27BBA96000926054 /* FutureBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FutureBox.swift; sourceTree = "<group>"; };
+		DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeFuture.swift; sourceTree = "<group>"; };
 		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncSequence+Extension.swift"; sourceTree = "<group>"; };
 		DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeQueues.swift; sourceTree = "<group>"; };
@@ -383,7 +383,7 @@
 			children = (
 				DBA2ED1C27BBA96100926054 /* Atomic.swift */,
 				DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */,
-				DBA2ED1B27BBA96000926054 /* FutureBox.swift */,
+				DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */,
 				DBA2ED1A27BBA96000926054 /* Mutex.swift */,
 				DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */,
 				DBF4764527B69294001E39C2 /* IDBXCTestReporter */,
@@ -793,7 +793,7 @@
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
-				DBA2ED1F27BBA96100926054 /* FutureBox.swift in Sources */,
+				DBA2ED1F27BBA96100926054 /* BridgeFuture.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,

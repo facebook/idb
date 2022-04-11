@@ -329,15 +329,15 @@ extension IDBXCTestReporter {
     let task = FBArchiveOperations.createGzippedTarData(forPath: path,
                                                         queue: queue,
                                                         logger: logger)
-    return try await FutureBox.value(task) as Data
+    return try await BridgeFuture.value(task) as Data
   }
 
   private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
-    try await FutureBox.await(processUnderTestExitedMutable)
+    try await BridgeFuture.await(processUnderTestExitedMutable)
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
-      let archived = try await FutureBox.value(FBArchiveOperations.createGzipData(from: data, logger: logger))
+      let archived = try await BridgeFuture.value(FBArchiveOperations.createGzipData(from: data, logger: logger))
       let archivedData = archived.stdOut ?? NSData()
       return archivedData as Data
 
@@ -371,8 +371,8 @@ extension IDBXCTestReporter {
       .withStdErrInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
 
-    let mergeProcess = try await FutureBox.value(mergeProcessFuture)
-    let exitCode = try await FutureBox.value(mergeProcess.exitCode)
+    let mergeProcess = try await BridgeFuture.value(mergeProcessFuture)
+    let exitCode = try await BridgeFuture.value(mergeProcess.exitCode)
     if exitCode != 0 {
       throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(mergeProcess.stdErr ?? "")")
     }
@@ -389,8 +389,8 @@ extension IDBXCTestReporter {
       .withStdErrInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: nil)
 
-    let exportProcess = try await FutureBox.value(exportProcessFuture)
-    let exitCode = try await FutureBox.value(exportProcess.exitCode)
+    let exportProcess = try await BridgeFuture.value(exportProcessFuture)
+    let exitCode = try await BridgeFuture.value(exportProcess.exitCode)
     if exitCode != 0 {
         throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(exportProcess.stdErr ?? "")")
     }

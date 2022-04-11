@@ -106,23 +106,23 @@ struct InstallMethodHandler {
     func installSource(dataStream: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable)
         )
       case .xctest:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_xctest_app_stream(dataStream)
         )
       case .dsym:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
         )
       case .dylib:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_dylib_stream(dataStream, name: name)
         )
       case .framework:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_framework_stream(dataStream)
         )
       case .UNRECOGNIZED:
@@ -147,23 +147,23 @@ struct InstallMethodHandler {
     case let .filePath(filePath):
       switch destination {
       case .app:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable)
         )
       case .xctest:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_xctest_app_file_path(filePath)
         )
       case .dsym:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
         )
       case .dylib:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_dylib_file_path(filePath)
         )
       case .framework:
-        return try await FutureBox.value(
+        return try await BridgeFuture.value(
           commandExecutor.install_framework_file_path(filePath)
         )
       case .UNRECOGNIZED:
