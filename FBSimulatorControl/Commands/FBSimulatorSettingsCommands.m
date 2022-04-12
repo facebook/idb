@@ -390,7 +390,6 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
   dispatch_once(&onceToken, ^{
     mapping = @{
-      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
       FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
     };
   });
