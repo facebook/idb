@@ -78,11 +78,7 @@ def on_launch(logger: Logger) -> None:
 @swallow_exceptions
 async def on_close(logger: Logger) -> None:
     await asyncio.gather(
-        *[
-            plugin.on_close(logger)  # pyre-ignore
-            for plugin in PLUGINS
-            if hasattr(plugin, "on_close")
-        ],
+        *[plugin.on_close(logger) for plugin in PLUGINS if hasattr(plugin, "on_close")],
     )
 
 
@@ -90,7 +86,7 @@ async def on_close(logger: Logger) -> None:
 async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.before_invocation(name=name, metadata=metadata)  # pyre-ignore
+            plugin.before_invocation(name=name, metadata=metadata)
             for plugin in PLUGINS
             if hasattr(plugin, "before_invocation")
         ]
@@ -101,9 +97,7 @@ async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
 async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.after_invocation(  # pyre-ignore
-                name=name, duration=duration, metadata=metadata
-            )
+            plugin.after_invocation(name=name, duration=duration, metadata=metadata)
             for plugin in PLUGINS
             if hasattr(plugin, "after_invocation")
         ]
@@ -116,7 +110,7 @@ async def failed_invocation(
 ) -> None:
     await asyncio.gather(
         *[
-            plugin.failed_invocation(  # pyre-ignore
+            plugin.failed_invocation(
                 name=name, duration=duration, exception=exception, metadata=metadata
             )
             for plugin in PLUGINS
