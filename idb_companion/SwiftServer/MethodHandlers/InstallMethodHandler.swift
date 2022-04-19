@@ -29,15 +29,6 @@ struct InstallMethodHandler {
 
   private func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
 
-    var request: Idb_InstallRequest!
-
-    func consumeNextElement() async throws {
-      guard let next = try await requestStream.next else {
-        throw GRPCStatus(code: .failedPrecondition, message: "Install request not provided")
-      }
-      request = next
-    }
-
     func extractPayloadFromRequest() throws -> Idb_Payload {
       guard let payload = request.extractPayload() else {
         throw GRPCStatus(code: .invalidArgument, message: "Expected the next item in the stream to be a payload")
@@ -45,23 +36,23 @@ struct InstallMethodHandler {
       return payload
     }
 
-    try await consumeNextElement()
+    var request = try await requestStream.requiredNext
 
     guard case let .destination(destination) = request.value else {
       throw GRPCStatus(code: .failedPrecondition, message: "Expected destination as first request in stream")
     }
-    try await consumeNextElement()
+    request = try await requestStream.requiredNext
 
     var name = UUID().uuidString
     if case let .nameHint(nameHint) = request.value {
       name = nameHint
-      try await consumeNextElement()
+      request = try await requestStream.requiredNext
     }
 
     var makeDebuggable = false
     if case let .makeDebuggable(debuggable) = request.value {
       makeDebuggable = debuggable
-      try await consumeNextElement()
+      request = try await requestStream.requiredNext
     }
 
     var linkToBundle: FBDsymInstallLinkToBundle?
@@ -69,12 +60,12 @@ struct InstallMethodHandler {
     //(2022-03-02) REMOVE! Keeping only for retrocompatibility
     if case let .bundleID(id) = request.value {
       linkToBundle = .init(id, bundle_type: .app)
-      try await consumeNextElement()
+      request = try await requestStream.requiredNext
     }
 
     if case let .linkDsymToBundle(link) = request.value {
       linkToBundle = readLinkBundleToDsym(from: link)
-      try await consumeNextElement()
+      request = try await requestStream.requiredNext
     }
 
     var payload = try extractPayloadFromRequest()
@@ -82,7 +73,7 @@ struct InstallMethodHandler {
     var compression = FBCompressionFormat.GZIP
     if case let .compression(format) = payload.source {
       compression = readCompressionFormat(from: format)
-      try await consumeNextElement()
+      request = try await requestStream.requiredNext
       payload = try extractPayloadFromRequest()
     }
 
