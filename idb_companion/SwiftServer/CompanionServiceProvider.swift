@@ -147,7 +147,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func launch(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+      return
+    }
+    try await LaunchMethodHandler(commandExecutor: commandExecutor)
+      .handle(requestStream: requestStream, responseStream: responseStream, context: context)
   }
 
   func list_apps(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {

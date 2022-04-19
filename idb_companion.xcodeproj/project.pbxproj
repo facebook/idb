@@ -79,6 +79,7 @@
 		DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
 		DBA31DD127BE72EF0032091C /* AsyncSequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */; };
 		DBB3278527F5CDF3001A8E3A /* BridgeQueues.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */; };
+		DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */; };
 		DBCD82DB27D60FF300293F77 /* GrpcDataMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */; };
 		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
@@ -226,6 +227,7 @@
 		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncSequence+Extension.swift"; sourceTree = "<group>"; };
 		DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeQueues.swift; sourceTree = "<group>"; };
+		DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LaunchMethodHandler.swift; sourceTree = "<group>"; };
 		DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GrpcDataMappings.swift; sourceTree = "<group>"; };
 		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
@@ -439,6 +441,7 @@
 				DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */,
 				DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */,
 				712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */,
+				DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -773,6 +776,7 @@
 				AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */,
 				A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */,
 				DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */,
+				DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
 				DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */,
