@@ -21,12 +21,6 @@ enum StreamReadError<Element>: Error, GRPCStatusTransformable {
 
 extension AsyncSequence {
 
-  var next: Element? {
-    get async throws {
-      return try await first(where: { _ in true })
-    }
-  }
-
   /// We have quite a lot of grpc request streams where we read request N constant number of times and do not need foreach loop. But pure next produces optinal by design.
   /// This small tweak just saves us from lots of boilerplate of unwrapping the optionals everywhere
   var requiredNext: Element {
