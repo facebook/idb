@@ -31,7 +31,8 @@ struct XCTestRunMethodHandler {
     let operation = try await BridgeFuture.value(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
-    try await BridgeFuture.await(operation.completed)
+    // TODO: operation.completed throws an error in case of binary crash. We should handle it gracefully
+    try? await BridgeFuture.await(operation.completed)
     _ = try await BridgeFuture.value(reporter.reportingTerminated)
   }
 
