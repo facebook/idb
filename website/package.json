@@ -7,20 +7,22 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-beta.16",
-    "@docusaurus/preset-classic": "^2.0.0-beta.16",
-    "browserslist": ">4.16.5",
+    "@docusaurus/core": "^2.0.0-beta",
+    "@docusaurus/preset-classic": "^2.0.0-beta",
     "classnames": "^2.3.1",
-    "css-what": "^5.0.1",
-    "glob-parent": ">5.1.2",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "yarn": "^1.22.17"
+    "react": "^17",
+    "react-dom": "^17",
+    "yarn": "^1.22",
+    "follow-redirects": "^1.14",
+    "node-forge": "^1.3",
+    "minimist": "^1.2"
   },
   "resolutions": {
     "browserslist": ">4.16.5",
     "trim": "^1.0.1",
-    "css-what": "^5.0.1",
-    "glob-parent": ">5.1.2"
+    "css-what": ">5.0.1",
+    "follow-redirects": ">=1.14.9",
+    "node-forge": ">=1.3.0",
+    "minimist": ">=1.2.6"
   }
 }
