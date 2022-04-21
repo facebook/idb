@@ -6,7 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#include <sys/sysctl.h>
+#import <sys/sysctl.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
