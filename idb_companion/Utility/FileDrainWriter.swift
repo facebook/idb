@@ -19,7 +19,8 @@ struct FileDrainWriter {
     inputStream.open()
     defer { inputStream.close() }
 
-    while inputStream.hasBytesAvailable {
+    // inputStream.hasBytesAvailable is unavailable due to custom implementation of NSInputStream
+    while true {
       let sixteenKilobytes = 16384
       var buffer = [UInt8](repeating: 0, count: sixteenKilobytes)
       let readBytes = inputStream.read(&buffer, maxLength: sixteenKilobytes)
@@ -27,6 +28,9 @@ struct FileDrainWriter {
       guard readBytes >= 0 else {
         let message = "Draining operation failed with stream error: \(inputStream.streamError?.localizedDescription ?? "Unknown")"
         throw GRPCStatus(code: .internalError, message: message)
+      }
+      if readBytes == 0 {
+        break
       }
 
       let data = Data(buffer)
