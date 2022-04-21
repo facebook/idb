@@ -6,6 +6,7 @@
  */
 
 #import "FBIDBConfiguration.h"
+#import "idb-Swift.h"
 
 @implementation FBIDBConfiguration
 
@@ -20,12 +21,18 @@ static id<FBEventReporter> swiftReporter = nil;
 
 + (id<FBEventReporter>)eventReporter
 {
-  return reporter;
+  if (reporter) {
+    return reporter;
+  }
+  return EmptyEventReporter.shared;
 }
 
 + (id<FBEventReporter>)swiftEventReporter
 {
-  return swiftReporter;
+  if (swiftReporter) {
+    return swiftReporter;
+  }
+  return EmptyEventReporter.shared;
 }
 
 + (void)setSwiftEventReporter:(id<FBEventReporter>)eventReporter
