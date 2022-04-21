@@ -65,6 +65,7 @@
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */; };
 		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
+		DB4585BF280863FE004065A2 /* FileDrainWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585BE280863FE004065A2 /* FileDrainWriter.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
@@ -217,6 +218,7 @@
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
 		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
+		DB4585BE280863FE004065A2 /* FileDrainWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDrainWriter.swift; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
@@ -393,6 +395,7 @@
 				DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */,
 				DBA2ED1A27BBA96000926054 /* Mutex.swift */,
 				DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */,
+				DB4585BE280863FE004065A2 /* FileDrainWriter.swift */,
 				DBF4764527B69294001E39C2 /* IDBXCTestReporter */,
 				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
 				D72CB1C42277837000265160 /* FBDataDownloadInput.m */,
@@ -774,6 +777,7 @@
 				DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */,
 				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
 				AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */,
+				DB4585BF280863FE004065A2 /* FileDrainWriter.swift in Sources */,
 				DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */,
 				AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */,
 				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
