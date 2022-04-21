@@ -76,6 +76,65 @@ enum BridgeFuture {
     }
   }
 
+  /// Awaitable value that waits for publishing from the wrapped future.
+  /// This is convenient bridgeable overload for dealing with objc `NSArray`.
+  /// - Warning: This operation not safe (as most of objc bridge). That means you should be sure that type bridging will succeed.
+  /// Consider this method as
+  ///
+  /// ```
+  /// // ------- command_executor.m
+  ///  - (FBFuture<NSArray<NSNumer> *> *)doTheThing;
+  ///
+  /// // ------- swiftfile.swift
+  /// let futureFromObjc: FBFuture<NSArray> = command_executor.doTheThing() // Note: NSNumber is lost
+  /// let withoutBridge = BridgeFuture.value(futureFromObjc) // withoutBridge: NSArray
+  /// let withBridge: [NSNumer] = BridgeFuture.value(futureFromObjc) // withBridge: [NSNumber]
+  ///
+  /// // But this starts to shine more when you have to pass results to methods/return results, e.g.
+  /// func operation() -> [Int] {
+  ///   return BridgeFuture.value(futureFromObjc)
+  /// }
+  ///
+  /// // Or pass value to some oter method
+  /// func someMethod(accepts: [NSNumber]) { ... }
+  ///
+  ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
+  /// ```
+  static func value<T>(_ future: FBFuture<NSArray>) async throws -> [T] {
+    let objcValue = try await value(future)
+    return objcValue as! [T]
+  }
+
+
+  /// Awaitable value that waits for publishing from the wrapped future.
+  /// This is convenient bridgeable overload for dealing with objc `NSDictionary`.
+  /// - Warning: This operation not safe (as most of objc bridge). That means you should be sure that type bridging will succeed.
+  /// Consider this method as
+  ///
+  /// ```
+  /// // ------- command_executor.m
+  ///  - (FBFuture<NSDictionary<FBInstalledApplication *, id> *> *)doTheThing;
+  ///
+  /// // ------- swiftfile.swift
+  /// let futureFromObjc: FBFuture<NSDictionary> = command_executor.doTheThing() // Note: types is lost
+  /// let withoutBridge = BridgeFuture.value(futureFromObjc) // withoutBridge: NSDictionary
+  /// let withBridge: [FBInstalledApplication: Any] = BridgeFuture.value(futureFromObjc) // withBridge: [FBInstalledApplication: Any]
+  ///
+  /// // But this starts to shine more when you have to pass results to methods/return results, e.g.
+  /// func operation() -> [FBInstalledApplication: Any] {
+  ///   return BridgeFuture.value(futureFromObjc)
+  /// }
+  ///
+  /// // Or pass value to some oter method
+  /// func someMethod(accepts: [FBInstalledApplication: Any]) { ... }
+  ///
+  ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
+  /// ```
+  static func value<T: Hashable>(_ future: FBFuture<NSDictionary>) async throws -> [T: Any] {
+    let objcValue = try await value(future)
+    return objcValue as! [T: Any]
+  }
+
   /// NSNull is Void equivalent in objc reference world. So is is safe to ignore the result.
   static func await(_ future: FBFuture<NSNull>) async throws {
     _ = try await Self.value(future)
