@@ -751,7 +751,7 @@ Status FBIDBServiceHandler::accessibility_info(ServerContext *context, const idb
     point = [NSValue valueWithPoint:CGPointMake(request->point().x(), request->point().y())];
   }
   BOOL nestedFormat = request->format() == idb::AccessibilityInfoRequest_Format::AccessibilityInfoRequest_Format_NESTED;
-  NSArray<NSDictionary<NSString *, id> *> *info = [[_commandExecutor accessibility_info_at_point:point nestedFormat:nestedFormat] block:&error];
+  id info = [[_commandExecutor accessibility_info_at_point:point nestedFormat:nestedFormat] block:&error];
 
   if (!info) {
     return Status(grpc::StatusCode::INTERNAL, [error.localizedDescription UTF8String]);

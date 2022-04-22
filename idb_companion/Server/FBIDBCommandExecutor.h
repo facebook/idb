@@ -176,7 +176,7 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  @param nestedFormat YES if the legacy format should be used, NO otherwise.
  @return A Future that resolves with the accessibility info
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
+- (FBFuture<id> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
 
 /**
  Adds media files (photos, videos, ...) to the target
