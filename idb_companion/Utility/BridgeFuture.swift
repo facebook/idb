@@ -130,9 +130,9 @@ enum BridgeFuture {
   ///
   ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
   /// ```
-  static func value<T: Hashable>(_ future: FBFuture<NSDictionary>) async throws -> [T: Any] {
+  static func value<T: Hashable, U>(_ future: FBFuture<NSDictionary>) async throws -> [T: U] {
     let objcValue = try await value(future)
-    return objcValue as! [T: Any]
+    return objcValue as! [T: U]
   }
 
   /// NSNull is Void equivalent in objc reference world. So is is safe to ignore the result.
