@@ -230,7 +230,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func mkdir(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await MkdirMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func mv(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
