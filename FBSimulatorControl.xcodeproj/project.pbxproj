@@ -485,6 +485,7 @@
 		DB5F487E28114E7B000FC7C7 /* FBCrashLogParser.m in Sources */ = {isa = PBXBuildFile; fileRef = DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */; };
 		DB5F488028115683000FC7C7 /* FBCrashLogInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */; };
 		DB5F4882281156C4000FC7C7 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4881281156C4000FC7C7 /* TestFixtures.swift */; };
+		DB5F488428115C5E000FC7C7 /* xctest-concated-json-crash.ips in Resources */ = {isa = PBXBuildFile; fileRef = DB5F488328115C5E000FC7C7 /* xctest-concated-json-crash.ips */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		EE1277541C931C5E00DE52A1 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
@@ -1279,6 +1280,7 @@
 		DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogParser.m; sourceTree = "<group>"; };
 		DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBCrashLogInfoTests.swift; sourceTree = "<group>"; };
 		DB5F4881281156C4000FC7C7 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
+		DB5F488328115C5E000FC7C7 /* xctest-concated-json-crash.ips */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "xctest-concated-json-crash.ips"; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -2282,6 +2284,7 @@
 				AA7FDA0D1C981231009F7828 /* app_custom_set.crash */,
 				AA7FDA0E1C981231009F7828 /* app_default_set.crash */,
 				AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */,
+				DB5F488328115C5E000FC7C7 /* xctest-concated-json-crash.ips */,
 				AAEA3A901C90B5E4004F8409 /* FBControlCoreFixtures.h */,
 				AAEA3A911C90B5E4004F8409 /* FBControlCoreFixtures.m */,
 				DB5F4881281156C4000FC7C7 /* TestFixtures.swift */,
@@ -3275,6 +3278,7 @@
 				AA6F22451C916A31009F5CE4 /* simulator_system.log in Resources */,
 				AA7FDA101C981231009F7828 /* agent_custom_set.crash in Resources */,
 				AA6F22441C916A31009F5CE4 /* photo0.png in Resources */,
+				DB5F488428115C5E000FC7C7 /* xctest-concated-json-crash.ips in Resources */,
 				AA6F22461C916A31009F5CE4 /* tree.json in Resources */,
 				AA7FDA111C981231009F7828 /* app_custom_set.crash in Resources */,
 			);

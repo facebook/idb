@@ -71,6 +71,19 @@ final class FBCrashLogInfoTests: XCTestCase {
     try XCTAssertEqual(allCrashLogs.filtered(using: FBCrashLogInfo.predicate(forName: "assetsd_custom_set.crash")).count, 1)
   }
 
+  func testJSONCrashLogFormat() throws {
+    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashWithJSONFormat)
+
+    XCTAssertEqual(info.processIdentifier, 82406)
+    XCTAssertEqual(info.parentProcessIdentifier, 81861)
+    XCTAssertEqual(info.identifier, "xctest3")
+    XCTAssertEqual(info.processName, "xctest3")
+    XCTAssertEqual(info.parentProcessName, "idb")
+    XCTAssertEqual(info.executablePath, "/Applications/Xcode_13.3.0_fb.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
+    XCTAssertEqual(info.date.timeIntervalSinceReferenceDate, 672154593, accuracy: 1)
+    XCTAssertEqual(info.processType, .system)
+  }
+
   private var allCrashLogs: NSArray {
     get throws {
       return try [

@@ -22,4 +22,8 @@ enum TestFixtures {
 
   static let agentCrashPathWithCustomDeviceSet = Bundle(for: BundleFinder.self)
     .path(forResource: "agent_custom_set", ofType: "crash")!
+
+  static let appCrashWithJSONFormat = Bundle(for: BundleFinder.self)
+    .path(forResource: "xctest-concated-json-crash", ofType: "ips")!
+
 }
