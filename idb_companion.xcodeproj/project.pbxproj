@@ -76,6 +76,7 @@
 		DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */; };
 		DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */; };
 		DB6177B72817ED3400C33A0A /* TerminateMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */; };
+		DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */; };
 		DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB67676527EB2BAD002BBE32 /* GRPC */; };
 		DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */; };
 		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
@@ -238,6 +239,7 @@
 		DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSettingsMethodHandler.swift; sourceTree = "<group>"; };
 		DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotMethodHandler.swift; sourceTree = "<group>"; };
 		DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminateMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApproveMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestRunMethodHandler.swift; sourceTree = "<group>"; };
@@ -474,6 +476,7 @@
 				DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */,
 				DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */,
 				DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */,
+				DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -831,6 +834,7 @@
 				DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
 				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
+				DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */,
 				DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */,
