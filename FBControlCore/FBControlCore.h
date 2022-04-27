@@ -93,3 +93,4 @@
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 #import <FBControlCore/FBConcatedJsonParser.h>
+#import <FBControlCore/FBCrashLogParser.h>

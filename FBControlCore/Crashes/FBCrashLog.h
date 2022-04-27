@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBCrashLog;
 
 @protocol FBControlCoreLogger;
+@protocol FBCrashLogParser;
 
 /**
  An emuration representing the kind of process that has crashed.
@@ -98,6 +99,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return a Crash Log Info on success, nil otherwise.
  */
 + (nullable instancetype)fromCrashLogAtPath:(NSString *)path error:(NSError **)error;
+
 
 #pragma mark Public Methods
 
@@ -197,6 +199,10 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  Crash contents.
  */
 @property (nonatomic, copy, readonly) NSString *contents;
+
+
+/// Provides date formatted to parse date strings from Apple crash logs
++ (NSDateFormatter *)dateFormatter;
 
 @end
 

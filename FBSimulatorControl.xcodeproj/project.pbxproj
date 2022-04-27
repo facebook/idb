@@ -2325,6 +2325,8 @@
 			children = (
 				AAF9D3B8257E76D000E6541D /* FBCrashLog.h */,
 				AAF9D3BC257E76D000E6541D /* FBCrashLog.m */,
+				DB5F487B28114D84000FC7C7 /* FBCrashLogParser.h */,
+				DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */,
 				AAF9D3BB257E76D000E6541D /* FBCrashLogNotifier.h */,
 				AAF9D3B9257E76D000E6541D /* FBCrashLogNotifier.m */,
 			);
@@ -2869,6 +2871,7 @@
 				AA84EFFE1C9FE162000CDA41 /* NSPredicate+FBControlCore.h in Headers */,
 				AA90708E223AC97800805706 /* FBInstrumentsConfiguration.h in Headers */,
 				EE2EC7B01CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h in Headers */,
+				DB5F487C28114D84000FC7C7 /* FBCrashLogParser.h in Headers */,
 				AAF2FA6122396D4D00F1185C /* FBInstrumentsOperation.h in Headers */,
 				AAF9D3C1257E76D000E6541D /* FBCrashLogNotifier.h in Headers */,
 				AADC72F12012BF7A001060E5 /* FBAccessibilityTraits.h in Headers */,
@@ -3541,6 +3544,7 @@
 				AA90708F223AC97800805706 /* FBInstrumentsConfiguration.m in Sources */,
 				1C0AAAB4254B646000001D3C /* FBXCTestShimConfiguration.m in Sources */,
 				AA2B266426821F1200EF31AA /* FBVideoFileWriter.m in Sources */,
+				DB5F487E28114E7B000FC7C7 /* FBCrashLogParser.m in Sources */,
 				AADBB6B525E5689600AFB15D /* FBSettingsCommands.m in Sources */,
 				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,
