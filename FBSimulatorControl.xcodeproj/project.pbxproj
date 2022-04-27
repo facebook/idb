@@ -92,7 +92,6 @@
 		AA2076B91F0B7542001F180C /* FBProcessTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076A71F0B7541001F180C /* FBProcessTests.m */; };
 		AA2076BB1F0B7542001F180C /* FBiOSTargetConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076AA1F0B7541001F180C /* FBiOSTargetConfigurationTests.m */; };
 		AA2076BC1F0B7542001F180C /* FBControlCoreLoggerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076AB1F0B7541001F180C /* FBControlCoreLoggerTests.m */; };
-		AA2076BD1F0B7542001F180C /* FBCrashLogInfoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076AC1F0B7541001F180C /* FBCrashLogInfoTests.m */; };
 		AA2076C31F0B7542001F180C /* FBiOSTargetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076B21F0B7541001F180C /* FBiOSTargetTests.m */; };
 		AA2076D01F0B76AF001F180C /* FBFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076CF1F0B76AF001F180C /* FBFileWriterTests.m */; };
 		AA2076D21F0B779B001F180C /* FBFileReaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2076D11F0B779B001F180C /* FBFileReaderTests.m */; };
@@ -484,6 +483,8 @@
 		DB5F487A281079CC000FC7C7 /* FBConcatedJsonParser.h in Headers */ = {isa = PBXBuildFile; fileRef = DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DB5F487C28114D84000FC7C7 /* FBCrashLogParser.h in Headers */ = {isa = PBXBuildFile; fileRef = DB5F487B28114D84000FC7C7 /* FBCrashLogParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DB5F487E28114E7B000FC7C7 /* FBCrashLogParser.m in Sources */ = {isa = PBXBuildFile; fileRef = DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */; };
+		DB5F488028115683000FC7C7 /* FBCrashLogInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */; };
+		DB5F4882281156C4000FC7C7 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4881281156C4000FC7C7 /* TestFixtures.swift */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		EE1277541C931C5E00DE52A1 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
@@ -767,7 +768,6 @@
 		AA2076A71F0B7541001F180C /* FBProcessTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTests.m; sourceTree = "<group>"; };
 		AA2076AA1F0B7541001F180C /* FBiOSTargetConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetConfigurationTests.m; sourceTree = "<group>"; };
 		AA2076AB1F0B7541001F180C /* FBControlCoreLoggerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBControlCoreLoggerTests.m; sourceTree = "<group>"; };
-		AA2076AC1F0B7541001F180C /* FBCrashLogInfoTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogInfoTests.m; sourceTree = "<group>"; };
 		AA2076B21F0B7541001F180C /* FBiOSTargetTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetTests.m; sourceTree = "<group>"; };
 		AA2076CF1F0B76AF001F180C /* FBFileWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileWriterTests.m; sourceTree = "<group>"; };
 		AA2076D11F0B779B001F180C /* FBFileReaderTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBFileReaderTests.m; sourceTree = "<group>"; };
@@ -1277,6 +1277,8 @@
 		DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBConcatedJsonParser.h; sourceTree = "<group>"; };
 		DB5F487B28114D84000FC7C7 /* FBCrashLogParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCrashLogParser.h; sourceTree = "<group>"; };
 		DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogParser.m; sourceTree = "<group>"; };
+		DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBCrashLogInfoTests.swift; sourceTree = "<group>"; };
+		DB5F4881281156C4000FC7C7 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -1632,7 +1634,7 @@
 				DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */,
 				AA2076AB1F0B7541001F180C /* FBControlCoreLoggerTests.m */,
 				AA71A1161FA8E49D00BB10DA /* FBControlCoreRunLoopTests.m */,
-				AA2076AC1F0B7541001F180C /* FBCrashLogInfoTests.m */,
+				DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */,
 				AA6B1DD11FC5FCFA009DDDAE /* FBDataBufferTests.m */,
 				AA11EDF8272C44410055D6D1 /* FBFileContainerTests.m */,
 				AA758B4820E3BB0B0064EC18 /* FBFutureContextManagerTests.m */,
@@ -2282,6 +2284,7 @@
 				AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */,
 				AAEA3A901C90B5E4004F8409 /* FBControlCoreFixtures.h */,
 				AAEA3A911C90B5E4004F8409 /* FBControlCoreFixtures.m */,
+				DB5F4881281156C4000FC7C7 /* TestFixtures.swift */,
 				AA6F22411C916A31009F5CE4 /* photo0.png */,
 				AA6F22421C916A31009F5CE4 /* simulator_system.log */,
 				AA6F22431C916A31009F5CE4 /* tree.json */,
@@ -3582,11 +3585,12 @@
 				AA71A1171FA8E49D00BB10DA /* FBControlCoreRunLoopTests.m in Sources */,
 				AA2076BB1F0B7542001F180C /* FBiOSTargetConfigurationTests.m in Sources */,
 				AA2076B91F0B7542001F180C /* FBProcessTests.m in Sources */,
+				DB5F4882281156C4000FC7C7 /* TestFixtures.swift in Sources */,
 				AA9319B822B78FB800C68F65 /* FBBinaryDescriptorTests.m in Sources */,
 				AA11EDF9272C44410055D6D1 /* FBFileContainerTests.m in Sources */,
 				AA6C68A4267B89C100EB975D /* FBProcessIOTests.m in Sources */,
-				AA2076BD1F0B7542001F180C /* FBCrashLogInfoTests.m in Sources */,
 				EE87FA432008D906002716FE /* AXTraitsTest.m in Sources */,
+				DB5F488028115683000FC7C7 /* FBCrashLogInfoTests.swift in Sources */,
 				AA777B0327A9937E00E1481F /* FBControlCoreFrameworkLoaderTests.m in Sources */,
 				AA08487E1F3F49D600A4BA60 /* FBFutureTests.m in Sources */,
 				AAB68D7B1C90C2F200D20416 /* FBControlCoreValueTestCase.m in Sources */,
