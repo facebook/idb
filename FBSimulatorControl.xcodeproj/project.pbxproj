@@ -479,6 +479,11 @@
 		D7C55B30217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */; };
 		D7E70C122440A2B40092422C /* FBAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = D7E70C102440A2B40092422C /* FBAttachment.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D7E70C132440A2B40092422C /* FBAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = D7E70C112440A2B40092422C /* FBAttachment.m */; };
+		DB5F4876281079AD000FC7C7 /* FBConcatedJsonParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */; };
+		DB5F4879281079CC000FC7C7 /* FBConcatedJsonParser.m in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4877281079CC000FC7C7 /* FBConcatedJsonParser.m */; };
+		DB5F487A281079CC000FC7C7 /* FBConcatedJsonParser.h in Headers */ = {isa = PBXBuildFile; fileRef = DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DB5F487C28114D84000FC7C7 /* FBCrashLogParser.h in Headers */ = {isa = PBXBuildFile; fileRef = DB5F487B28114D84000FC7C7 /* FBCrashLogParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DB5F487E28114E7B000FC7C7 /* FBCrashLogParser.m in Sources */ = {isa = PBXBuildFile; fileRef = DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		EE1277541C931C5E00DE52A1 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
@@ -1267,6 +1272,11 @@
 		D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorMediaCommandsTests.m; sourceTree = "<group>"; };
 		D7E70C102440A2B40092422C /* FBAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAttachment.h; sourceTree = "<group>"; };
 		D7E70C112440A2B40092422C /* FBAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAttachment.m; sourceTree = "<group>"; };
+		DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FBConcatedJsonParserTests.swift; sourceTree = "<group>"; };
+		DB5F4877281079CC000FC7C7 /* FBConcatedJsonParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBConcatedJsonParser.m; sourceTree = "<group>"; };
+		DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBConcatedJsonParser.h; sourceTree = "<group>"; };
+		DB5F487B28114D84000FC7C7 /* FBCrashLogParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCrashLogParser.h; sourceTree = "<group>"; };
+		DB5F487D28114E7B000FC7C7 /* FBCrashLogParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogParser.m; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -1619,6 +1629,7 @@
 			isa = PBXGroup;
 			children = (
 				EE87FA422008D906002716FE /* AXTraitsTest.m */,
+				DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */,
 				AA2076AB1F0B7541001F180C /* FBControlCoreLoggerTests.m */,
 				AA71A1161FA8E49D00BB10DA /* FBControlCoreRunLoopTests.m */,
 				AA2076AC1F0B7541001F180C /* FBCrashLogInfoTests.m */,
@@ -2618,6 +2629,8 @@
 		EEBD604A1C9062E900298A07 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */,
+				DB5F4877281079CC000FC7C7 /* FBConcatedJsonParser.m */,
 				AADC72EF2012BF7A001060E5 /* FBAccessibilityTraits.h */,
 				AADC72EE2012BF7A001060E5 /* FBAccessibilityTraits.m */,
 				C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */,
@@ -2894,6 +2907,7 @@
 				AA59F46524912730007C1875 /* FBEraseCommands.h in Headers */,
 				AA89E5B227D7AF3400ECD072 /* FBiOSTargetConstants.h in Headers */,
 				AACB5E5A25E6672F00EC1FBD /* FBXCTraceRecordCommands.h in Headers */,
+				DB5F487A281079CC000FC7C7 /* FBConcatedJsonParser.h in Headers */,
 				AA23F1D322424D9B00F504CC /* FBArchiveOperations.h in Headers */,
 				AA1174B21CEA17DB00EB699E /* FBApplicationCommands.h in Headers */,
 				EEBD60621C9062E900298A07 /* FBControlCore.h in Headers */,
@@ -3136,6 +3150,7 @@
 					};
 					EEBD60161C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
+						LastSwiftMigration = 1330;
 					};
 				};
 			};
@@ -3508,6 +3523,7 @@
 				AACB5E7525E6677A00EC1FBD /* FBXCTraceOperation.m in Sources */,
 				AACC503D1EAA230F0034A987 /* FBVideoStreamConfiguration.m in Sources */,
 				AA6F98EC1D2B9C8E00464B0F /* FBBinaryDescriptor.m in Sources */,
+				DB5F4879281079CC000FC7C7 /* FBConcatedJsonParser.m in Sources */,
 				AA70F5272701F1AA0023A36A /* FBTemporaryDirectory.m in Sources */,
 				EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */,
 				AA56DBFC26BAA96B001896F3 /* FBProcessSpawnCommands.m in Sources */,
@@ -3574,6 +3590,7 @@
 				AA2076D21F0B779B001F180C /* FBFileReaderTests.m in Sources */,
 				A255670D27610C7E0052D060 /* FBProcessFetcherTests.m in Sources */,
 				AA6B1DD21FC5FCFA009DDDAE /* FBDataBufferTests.m in Sources */,
+				DB5F4876281079AD000FC7C7 /* FBConcatedJsonParserTests.swift in Sources */,
 				AA274283204546F800CFAC3B /* FBProcessStreamTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3833,6 +3850,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -3840,6 +3865,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Profile;
 		};
@@ -3847,6 +3880,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
