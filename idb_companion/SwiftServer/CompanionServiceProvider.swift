@@ -188,7 +188,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func screenshot(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await ScreenshotMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func video_stream(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
