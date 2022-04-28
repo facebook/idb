@@ -39,11 +39,6 @@ class IdbConnectionException(Exception):
     pass
 
 
-@dataclass(frozen=True)
-class ExitWithCodeException(Exception):
-    exit_code: int
-
-
 class Permission(Enum):
     PHOTOS = 0
     CAMERA = 1

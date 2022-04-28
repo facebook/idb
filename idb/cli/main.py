@@ -101,7 +101,7 @@ from idb.cli.commands.xctest import (
 )
 from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException, ExitWithCodeException, Compression
+from idb.common.types import IdbException, Compression
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
@@ -331,8 +331,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     except IdbException as e:
         print(e.args[0], file=sys.stderr)
         return 1
-    except ExitWithCodeException as e:
-        return e.exit_code
     except SystemExit as e:
         return e.code
     except Exception:

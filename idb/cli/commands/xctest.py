@@ -22,7 +22,6 @@ from idb.common.misc import get_env_with_idb_prefix
 from idb.common.types import (
     Client,
     CodeCoverageFormat,
-    ExitWithCodeException,
     FileContainerType,
     IdbException,
 )
@@ -245,7 +244,6 @@ class CommonRunXcTestCommand(ClientCommand):
             )
 
         formatter = json_format_test_info if args.json else human_format_test_info
-        crashed_outside_test_case = False
         coverage_format = CodeCoverageFormat[args.coverage_format]
 
         async for test_result in client.run_xctest(
@@ -269,11 +267,6 @@ class CommonRunXcTestCommand(ClientCommand):
             wait_for_debugger=args.wait_for_debugger,
         ):
             print(formatter(test_result))
-            crashed_outside_test_case = (
-                crashed_outside_test_case or test_result.crashed_outside_test_case
-            )
-        if crashed_outside_test_case:
-            raise ExitWithCodeException(3)
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
         async for test in client.install_xctest(args.test_bundle_id):
