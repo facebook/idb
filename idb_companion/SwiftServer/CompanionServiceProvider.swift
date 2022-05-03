@@ -87,7 +87,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func log(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(request: request, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, responseStream: responseStream, context: context)
+    }
+
+    return try await LogMethodHandler(target: target, commandExecutor: commandExecutor)
+      .handle(request: request, responseStream: responseStream, context: context)
   }
 
   func xctrace_record(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
