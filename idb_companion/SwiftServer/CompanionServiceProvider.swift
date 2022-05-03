@@ -115,13 +115,18 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     guard shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, context: context)
     }
-    
+
     return try await HidMethodHandler(commandExecutor: commandExecutor)
       .handle(requestStream: requestStream, context: context)
   }
 
   func open_url(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await OpenUrlMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func set_location(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {

@@ -90,6 +90,7 @@
 		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
 		DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */; };
 		DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */; };
+		DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */; };
 		DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */; };
 		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
 		DBA2ED1E27BBA96100926054 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
@@ -257,6 +258,7 @@
 		DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestRunMethodHandler.swift; sourceTree = "<group>"; };
+		DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenUrlMethodHandler.swift; sourceTree = "<group>"; };
 		DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBXCTestReporter.swift; sourceTree = "<group>"; };
 		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
 		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
@@ -498,6 +500,7 @@
 				DB6177C828194EDF00C33A0A /* RmMethodHandler.swift */,
 				DB6177CA2819501E00C33A0A /* MvMethodHandler.swift */,
 				DB6177D3281A956600C33A0A /* HidMethodHandler.swift */,
+				DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -844,6 +847,7 @@
 				DB6177BB2817FFC300C33A0A /* SettingMethodHandler.swift in Sources */,
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
 				DB6177B72817ED3400C33A0A /* TerminateMethodHandler.swift in Sources */,
+				DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */,
 				DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */,
 				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
 				DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */,
