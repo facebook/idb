@@ -279,7 +279,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func rm(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await RmMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func pull(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>, context: GRPCAsyncServerCallContext) async throws {
