@@ -112,7 +112,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func hid(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
-    return try await proxy(requestStream: requestStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, context: context)
+    }
+    
+    return try await HidMethodHandler(commandExecutor: commandExecutor)
+      .handle(requestStream: requestStream, context: context)
   }
 
   func open_url(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
