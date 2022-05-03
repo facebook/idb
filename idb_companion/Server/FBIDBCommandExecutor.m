@@ -493,7 +493,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value type:(NSString *)type domain:(nullable NSString *)domain
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain
 {
   return [[self
     settingsCommands]

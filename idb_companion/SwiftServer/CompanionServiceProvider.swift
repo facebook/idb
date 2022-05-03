@@ -130,7 +130,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     guard shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
-    
+
     return try await ApproveMethodHandler(commandExecutor: commandExecutor)
       .handle(request: request, context: context)
   }
@@ -144,7 +144,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func setting(request: Idb_SettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SettingResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await SettingMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func get_setting(request: Idb_GetSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_GetSettingResponse {

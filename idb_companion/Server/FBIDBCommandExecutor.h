@@ -380,7 +380,7 @@ This allows to avoid the permission popup the first time we open a deeplink
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value type:(NSString *)type domain:(nullable NSString *)domain;
+- (FBFuture<NSNull *> *)set_preference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
