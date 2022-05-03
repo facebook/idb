@@ -275,7 +275,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func mv(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await MvMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
   }
 
   func rm(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
