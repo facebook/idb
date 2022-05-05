@@ -28,7 +28,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBIDBLogger *logger;
-@property (nonatomic, strong, readonly) FBIDBPortsConfiguration *ports;
+@property (nonatomic, readonly) in_port_t debugserverPort;
 
 @end
 
@@ -36,12 +36,12 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 #pragma mark Initializers
 
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory debugserverPort:(in_port_t)debugserverPort logger:(FBIDBLogger *)logger
 {
-  return [[self alloc] initWithTarget:target storageManager:storageManager temporaryDirectory:temporaryDirectory ports:ports logger:[logger withName:@"grpc_handler"]];
+  return [[self alloc] initWithTarget:target storageManager:storageManager temporaryDirectory:temporaryDirectory debugserverPort:debugserverPort logger:[logger withName:@"grpc_handler"]];
 }
 
-- (instancetype)initWithTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory debugserverPort:(in_port_t)debugserverPort logger:(FBIDBLogger *)logger
 {
   self = [super init];
   if (!self) {
@@ -51,7 +51,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   _target = target;
   _storageManager = storageManager;
   _temporaryDirectory = temporaryDirectory;
-  _ports = ports;
+  _debugserverPort = debugserverPort;
   _logger = logger;
 
   return self;
@@ -365,7 +365,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
   return [[[self
     debugserver_prepare:bundleID]
     onQueue:self.target.workQueue fmap:^(FBBundleDescriptor *application) {
-      return [commands launchDebugServerForHostApplication:application port:self.ports.debugserverPort];
+      return [commands launchDebugServerForHostApplication:application port:self.debugserverPort];
     }]
     onQueue:self.target.workQueue doOnResolved:^(id<FBDebugServer> debugServer) {
       self.debugServer = debugServer;

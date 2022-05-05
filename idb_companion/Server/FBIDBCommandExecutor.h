@@ -41,11 +41,11 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  @param target the target to run against.
  @param storageManager storage for all bundles
  @param temporaryDirectory the temporary directory to use.
- @param ports the ports to use.
+ @param debugserverPort will launch debug server at that port.
  @param logger a logger to log to.
  @return a new FBIDBCommandExecutor instance
  */
-+ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory ports:(FBIDBPortsConfiguration *)ports logger:(FBIDBLogger *)logger;
++ (instancetype)commandExecutorForTarget:(id<FBiOSTarget>)target storageManager:(FBIDBStorageManager *)storageManager temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory debugserverPort:(in_port_t)debugserverPort logger:(FBIDBLogger *)logger;
 
 #pragma mark Properties
 

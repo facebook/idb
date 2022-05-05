@@ -395,7 +395,7 @@ static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefau
         commandExecutorForTarget:target
         storageManager:storageManager
         temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
-        ports:[FBIDBPortsConfiguration portsWithArguments:userDefaults]
+        debugserverPort:[FBIDBPortsConfiguration portsWithArguments:userDefaults].debugserverPort
         logger:logger];
       return [commandExecutor clean];
     }];
@@ -429,7 +429,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
                                                commandExecutorForTarget:target
                                                storageManager:storageManager
                                                temporaryDirectory:temporaryDirectory
-                                               ports:ports
+                                               debugserverPort:ports.debugserverPort
                                                logger:logger];
 
       FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
