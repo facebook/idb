@@ -85,8 +85,12 @@ final class GRPCSwiftServer : NSObject {
     }
 
     server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
-      self?.logServerStartup(address: address)
-      future.resolve(withResult: ports.swiftServerTarget.outputDescription as NSDictionary)
+      do {
+        self?.logServerStartup(address: address)
+        try future.resolve(withResult: ports.swiftServerTarget.outputDescription(for: address) as NSDictionary)
+      } catch {
+        future.resolveWithError(error)
+      }
     }
 
     server.flatMap(\.onClose).whenCompleteBlocking(onto: .main) { [completed] _ in

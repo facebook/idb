@@ -7,6 +7,7 @@
 
 import Foundation
 import GRPC
+import NIO
 
 
 //  ┌─────────────────────────────────────────────────────────┐
@@ -51,6 +52,11 @@ import GRPC
 // All this logic will simplify a lot (back to what it was before moving to swift) and will be deleted
 // simulataneously with cpp revamp.
 enum GRPCConnectionTarget: CustomStringConvertible {
+  enum ExtractionError: Error {
+    case socketAddressIsEmpty
+    case failedToExtractAssociatedInfo
+  }
+
   case tcpPort(port: Int, useSwiftAsDefault: Bool)
   case unixDomainSocket(String)
 
@@ -64,16 +70,25 @@ enum GRPCConnectionTarget: CustomStringConvertible {
     }
   }
 
-  var outputDescription: [String: Any] {
+  func outputDescription(for socketAddress: SocketAddress?) throws -> [String: Any] {
+    guard let socketAddress = socketAddress else {
+      throw ExtractionError.socketAddressIsEmpty
+    }
     switch self {
-    case let .tcpPort(port, useSwiftAsDefault):
+    case let .tcpPort(_, useSwiftAsDefault):
+      guard let port = socketAddress.port else {
+        throw ExtractionError.failedToExtractAssociatedInfo
+      }
       var description = ["grpc_swift_port": port]
       if useSwiftAsDefault {
         description["grpc_port"] = port
       }
       return description
 
-    case let .unixDomainSocket(path):
+    case .unixDomainSocket:
+      guard let path = socketAddress.pathname else {
+        throw ExtractionError.failedToExtractAssociatedInfo
+      }
       return ["grpc_path": path]
     }
   }
