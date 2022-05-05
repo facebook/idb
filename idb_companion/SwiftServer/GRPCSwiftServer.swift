@@ -39,7 +39,7 @@ final class GRPCSwiftServer : NSObject {
        ports: IDBPortsConfiguration) throws {
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
-    let tlsCerts = Self.loadCertificates(portConfiguration: ports, logger: logger)
+    let tlsCerts = Self.loadCertificates(tlsCertPath: ports.tlsCertPath, logger: logger)
 
     let clientToCppServer = Self.internalCppClient(portConfiguration: ports, certificates: tlsCerts, group: group)
     let interceptors = CompanionServiceInterceptors()
@@ -51,14 +51,17 @@ final class GRPCSwiftServer : NSObject {
                                              internalCppClient: clientToCppServer,
                                              interceptors: interceptors)
 
-    var serverConfiguration = Server.Configuration.default(target: Self.bindTarget(portConfiguration: ports),
+    var serverConfiguration = Server.Configuration.default(target: ports.swiftServerTarget.grpcConnection,
                                                            eventLoopGroup: group,
                                                            serviceProviders: [provider])
     serverConfiguration.maximumReceiveMessageLength = 16777216
 
-    serverConfiguration.tlsConfiguration = tlsCerts.map {
-      GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
+    if ports.swiftServerTarget.supportsTLSCert {
+      serverConfiguration.tlsConfiguration = tlsCerts.map {
+        GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
+      }
     }
+
     serverConfiguration.errorDelegate = GRPCSwiftServerErrorDelegate()
     self.serverConfig = serverConfiguration
     self.ports = ports
@@ -76,14 +79,14 @@ final class GRPCSwiftServer : NSObject {
     let server = Server.start(configuration: serverConfig)
     self.server = server
 
-    logger.info().log("Starting swift server on port \(ports.grpcSwiftPort)")
+    logger.info().log("Starting swift server on \(ports.swiftServerTarget)")
     if let tlsPath = ports.tlsCertPath, !tlsPath.isEmpty {
       logger.info().log("Starting swift server with TLS path \(tlsPath)")
     }
 
     server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
       self?.logServerStartup(address: address)
-      future.resolve(withResult: ["grpc_swift_port": Int(ports.grpcSwiftPort)])
+      future.resolve(withResult: ports.swiftServerTarget.outputDescription as NSDictionary)
     }
 
     server.flatMap(\.onClose).whenCompleteBlocking(onto: .main) { [completed] _ in
@@ -102,12 +105,8 @@ final class GRPCSwiftServer : NSObject {
     }
   }
 
-  private static func bindTarget(portConfiguration: IDBPortsConfiguration) -> BindTarget {
-    return .host("localhost", port: Int(portConfiguration.grpcSwiftPort))
-  }
-
-  private static func loadCertificates(portConfiguration: IDBPortsConfiguration, logger: FBIDBLogger) -> TLSCertificates? {
-    guard let tlsPath = portConfiguration.tlsCertPath,
+  private static func loadCertificates(tlsCertPath: String?, logger: FBIDBLogger) -> TLSCertificates? {
+    guard let tlsPath = tlsCertPath,
           !tlsPath.isEmpty
     else { return nil }
 
@@ -129,24 +128,27 @@ final class GRPCSwiftServer : NSObject {
 
   }
 
-    private static func internalCppClient(portConfiguration: IDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
-        var config = ClientConnection.Configuration.default(target: .host("localhost", port: Int(portConfiguration.grpcPort)), eventLoopGroup: group)
-        config.tlsConfiguration = certificates.map {
-          var nioConf = TLSConfiguration.makeClientConfiguration()
-          nioConf.certificateChain = $0.certificates
-          nioConf.privateKey = $0.privateKey
-          nioConf.certificateVerification = .none
-          return GRPCTLSConfiguration.makeClientConfigurationBackedByNIOSSL(configuration:nioConf)
-        }
+  private static func internalCppClient(portConfiguration: IDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
+    var config = ClientConnection.Configuration.default(target: portConfiguration.cppServerTarget.grpcConnection, eventLoopGroup: group)
 
-        // Potentially we could have very large files. To improve speed we removing max capacity
-        // and set max frame size to maximum
-        config.maximumReceiveMessageLength = Int.max
-        config.httpMaxFrameSize = 16_777_215
-
-        let connection = ClientConnection(configuration: config)
-
-        return Idb_CompanionServiceAsyncClient(channel: connection)
+    if portConfiguration.cppServerTarget.supportsTLSCert {
+      config.tlsConfiguration = certificates.map {
+        var nioConf = TLSConfiguration.makeClientConfiguration()
+        nioConf.certificateChain = $0.certificates
+        nioConf.privateKey = $0.privateKey
+        nioConf.certificateVerification = .none
+        return GRPCTLSConfiguration.makeClientConfigurationBackedByNIOSSL(configuration:nioConf)
+      }
     }
+
+    // Potentially we could have very large files. To improve speed we removing max capacity
+    // and set max frame size to maximum
+    config.maximumReceiveMessageLength = Int.max
+    config.httpMaxFrameSize = 16_777_215
+
+    let connection = ClientConnection(configuration: config)
+
+    return Idb_CompanionServiceAsyncClient(channel: connection)
+  }
 
 }

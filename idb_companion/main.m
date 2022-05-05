@@ -414,7 +414,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
       IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
-      BOOL withSwiftServer = ports.grpcSwiftPort != 0;
+      BOOL withSwiftServer = ports.grpcSwiftPort != 0 || ports.useSwiftAsDefault;
 
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
@@ -459,9 +459,14 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       return [[[server start] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSDictionary<NSString *,id> * _Nonnull cppServerDescrption) {
         if (withSwiftServer) {
           return [[swiftServer start] onQueue:target.workQueue map: ^(NSDictionary<NSString *,id> * _Nonnull swiftServerDescription) {
+            if (ports.useSwiftAsDefault) {
+              // We should not expose cpp description in default swift endpoint mode
+              return swiftServerDescription;
+            }
             NSMutableDictionary<NSString *,id> * resultDictionary = [cppServerDescrption mutableCopy];
             [resultDictionary addEntriesFromDictionary:swiftServerDescription];
-            return resultDictionary;
+            
+            return (NSDictionary<NSString *,id> *)resultDictionary;
           }];
         }
         return [FBFuture futureWithResult: cppServerDescrption];
