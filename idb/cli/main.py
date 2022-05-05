@@ -149,7 +149,12 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     companion_address = os.environ.get("IDB_COMPANION")
     swift_address = os.environ.get("IDB_SWIFT_COMPANION")
     use_swift = os.environ.get("IDB_USE_SWIFT") == "YES"
-    if use_swift:
+    use_swift_as_defaut = os.environ.get("IDB_USE_SWIFT_AS_DEFAULT") == "YES"
+    if use_swift and use_swift_as_defaut:
+        exception_message = "Incorrect swift usage configuration, both IDB_USE_SWIFT=YES and IDB_USE_SWIFT_AS_DEFAULT=YES provided, you should stick with one option"
+        logger.exception(exception_message)
+        raise Exception(exception_message)
+    elif use_swift:
         if swift_address:
             companion_address = swift_address
         else:

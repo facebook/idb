@@ -209,8 +209,8 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
 
     is_native_swift_call = (
         os.environ.get("IDB_USE_SWIFT") == "YES"
-        and grpc_method_name in extract_native_swift_methods_from_env()
-    )
+        or os.environ.get("IDB_USE_SWIFT_AS_DEFAULT") == "YES"
+    ) and grpc_method_name in extract_native_swift_methods_from_env()
     metadata: LoggingMetadata = {
         "grpc_method_name": grpc_method_name,
         "grpc_native_swift_call": "yes" if is_native_swift_call else "no",
