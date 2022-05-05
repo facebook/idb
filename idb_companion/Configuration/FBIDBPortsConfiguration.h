@@ -18,11 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Construct a ports object.
-
- @param userDefaults the user defaults
  @return a new ports object
  */
-+ (instancetype)portsWithArguments:(NSUserDefaults *)userDefaults;
+- (instancetype)initWithGrpcDomainSocket:(nullable NSString *)grpcDomainSocket grpcPort:(in_port_t)grpcPort debugserverPort:(in_port_t)debugserverPort tlsCertPath:(nullable NSString *)tlsCertPath;
 
 /**
  The GRPC Unix Domain Socket Path. nil if not set.

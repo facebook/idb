@@ -86,6 +86,7 @@
 		DB6177D4281A956600C33A0A /* HidMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177D3281A956600C33A0A /* HidMethodHandler.swift */; };
 		DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB67676527EB2BAD002BBE32 /* GRPC */; };
 		DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */; };
+		DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */; };
 		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
 		DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */; };
@@ -255,6 +256,7 @@
 		DB6177CA2819501E00C33A0A /* MvMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MvMethodHandler.swift; sourceTree = "<group>"; };
 		DB6177D3281A956600C33A0A /* HidMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HidMethodHandler.swift; sourceTree = "<group>"; };
 		DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LsMethodHandler.swift; sourceTree = "<group>"; };
+		DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDBPortsConfiguration.swift; sourceTree = "<group>"; };
 		DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallMethodHandler.swift; sourceTree = "<group>"; };
 		DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestRunMethodHandler.swift; sourceTree = "<group>"; };
@@ -401,6 +403,7 @@
 				D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */,
 				D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */,
 				D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */,
+				DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */,
 				713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */,
 				713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */,
 				DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */,
@@ -858,6 +861,7 @@
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				DB6177D4281A956600C33A0A /* HidMethodHandler.swift in Sources */,
 				DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */,
+				DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */,
 				DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */,
 				DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */,
 				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,

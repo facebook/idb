@@ -395,7 +395,7 @@ static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefau
         commandExecutorForTarget:target
         storageManager:storageManager
         temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
-        debugserverPort:[FBIDBPortsConfiguration portsWithArguments:userDefaults].debugserverPort
+        debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults].debugserverPort
         logger:logger];
       return [commandExecutor clean];
     }];
@@ -413,7 +413,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       }];
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
       // Start up the companion
-      FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
+      IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
       BOOL withSwiftServer = ports.grpcSwiftPort != 0;
 
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
@@ -436,7 +436,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
       FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:FBIDBConfiguration.swiftEventReporter logger:logger];
 
-      FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports eventReporter:reporter logger:logger error:&error];
+      FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports.legacyConfigurationObject eventReporter:reporter logger:logger error:&error];
       if (!server) {
         return [FBFuture futureWithError:error];
       }

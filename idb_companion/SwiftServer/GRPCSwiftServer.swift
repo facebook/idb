@@ -26,7 +26,7 @@ final class GRPCSwiftServer : NSObject {
   private let logger: FBIDBLogger
 
   private let serverConfig: Server.Configuration
-  private let ports: FBIDBPortsConfiguration
+  private let ports: IDBPortsConfiguration
 
   @objc
   let completed : FBMutableFuture<NSNull>
@@ -36,7 +36,7 @@ final class GRPCSwiftServer : NSObject {
        commandExecutor: FBIDBCommandExecutor,
        reporter: FBEventReporter,
        logger: FBIDBLogger,
-       ports: FBIDBPortsConfiguration) throws {
+       ports: IDBPortsConfiguration) throws {
 
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     let tlsCerts = Self.loadCertificates(portConfiguration: ports, logger: logger)
@@ -77,9 +77,8 @@ final class GRPCSwiftServer : NSObject {
     self.server = server
 
     logger.info().log("Starting swift server on port \(ports.grpcSwiftPort)")
-    let tslPath = ports.tlsCertPath as String
-    if !tslPath.isEmpty {
-      logger.info().log("Starting swift server with TLS path \(ports.tlsCertPath)")
+    if let tlsPath = ports.tlsCertPath, !tlsPath.isEmpty {
+      logger.info().log("Starting swift server with TLS path \(tlsPath)")
     }
 
     server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
@@ -103,13 +102,15 @@ final class GRPCSwiftServer : NSObject {
     }
   }
 
-  private static func bindTarget(portConfiguration: FBIDBPortsConfiguration) -> BindTarget {
+  private static func bindTarget(portConfiguration: IDBPortsConfiguration) -> BindTarget {
     return .host("localhost", port: Int(portConfiguration.grpcSwiftPort))
   }
 
-  private static func loadCertificates(portConfiguration: FBIDBPortsConfiguration, logger: FBIDBLogger) -> TLSCertificates? {
-    let tlsPath = portConfiguration.tlsCertPath as String
-    guard !tlsPath.isEmpty else { return nil }
+  private static func loadCertificates(portConfiguration: IDBPortsConfiguration, logger: FBIDBLogger) -> TLSCertificates? {
+    guard let tlsPath = portConfiguration.tlsCertPath,
+          !tlsPath.isEmpty
+    else { return nil }
+
     let tlsURL = URL(fileURLWithPath: tlsPath)
     do {
       let rawCert = try Data(contentsOf: tlsURL)
@@ -128,7 +129,7 @@ final class GRPCSwiftServer : NSObject {
 
   }
 
-    private static func internalCppClient(portConfiguration: FBIDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
+    private static func internalCppClient(portConfiguration: IDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
         var config = ClientConnection.Configuration.default(target: .host("localhost", port: Int(portConfiguration.grpcPort)), eventLoopGroup: group)
         config.tlsConfiguration = certificates.map {
           var nioConf = TLSConfiguration.makeClientConfiguration()
