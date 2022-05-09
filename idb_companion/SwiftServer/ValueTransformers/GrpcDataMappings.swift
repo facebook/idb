@@ -29,6 +29,17 @@ extension Idb_InstallRequest: PayloadExtractable {
   }
 }
 
+extension Idb_PushRequest: PayloadExtractable {
+  func extractPayload() -> Idb_Payload? {
+    switch value {
+    case .payload(let payload):
+      return payload
+    default:
+      return nil
+    }
+  }
+}
+
 extension PayloadExtractable {
   func extractDataFrame() -> Data? {
     extractPayload()?.extractDataFrame()

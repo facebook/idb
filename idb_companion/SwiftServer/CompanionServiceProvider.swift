@@ -311,7 +311,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func push(requestStream: GRPCAsyncRequestStream<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
-    return try await proxy(requestStream: requestStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, context: context)
+    }
+    return try await FBTeardownContext.withAutocleanup {
+      try await PushMethodHandler(target: target, commandExecutor: commandExecutor)
+        .handle(requestStream: requestStream, context: context)
+    }
   }
 
   func tail(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
