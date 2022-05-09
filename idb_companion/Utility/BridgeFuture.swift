@@ -153,4 +153,49 @@ enum BridgeFuture {
     let future: FBFuture<AnyObject> = mutableFuture
     return future as! FBFuture<T>
   }
+
+
+  /// Split FBFutureContext to two pieces: result and later cleanup closure
+  /// - Parameter futureContext: source future context
+  /// - Returns: Tuple of extracted result and cleanup closure that **should** be called later to perform all required cleanups
+  static func value<T: AnyObject>(_ futureContext: FBFutureContext<T>) async throws -> T {
+    try FBTeardownContext.current.addCleanup {
+      let cleanupFuture = futureContext.onQueue(BridgeQueues.futureSerialFullfillmentQueue) { (result: Any, teardown: FBMutableFuture<NSNull>) -> NSNull in
+        teardown.resolve(withResult: NSNull())
+        return NSNull()
+      }
+      try await BridgeFuture.await(cleanupFuture)
+    }
+
+    return try await value(futureContext.future)
+  }
+
+  /// Awaitable value that waits for publishing from the wrapped futureContext.
+  /// This is convenient bridgeable overload for dealing with objc `NSArray`.
+  /// - Warning: This operation not safe (as most of objc bridge). That means you should be sure that type bridging will succeed.
+  /// Consider this method as
+  ///
+  /// ```
+  /// // ------- command_executor.m
+  ///  - (FBFuture<NSArray<NSNumer> *> *)doTheThing;
+  ///
+  /// // ------- swiftfile.swift
+  /// let futureFromObjc: FBFuture<NSArray> = command_executor.doTheThing() // Note: NSNumber is lost
+  /// let withoutBridge = BridgeFuture.value(futureFromObjc) // withoutBridge: NSArray
+  /// let withBridge: [NSNumer] = BridgeFuture.value(futureFromObjc) // withBridge: [NSNumber]
+  ///
+  /// // But this starts to shine more when you have to pass results to methods/return results, e.g.
+  /// func operation() -> [Int] {
+  ///   return BridgeFuture.value(futureFromObjc)
+  /// }
+  ///
+  /// // Or pass value to some oter method
+  /// func someMethod(accepts: [NSNumber]) { ... }
+  ///
+  ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
+  /// ```
+  static func values<T: AnyObject, U>(_ futureContext: FBFutureContext<T>) async throws -> [U] {
+    let objcValue = try await value(futureContext)
+    return objcValue as! [U]
+  }
 }
