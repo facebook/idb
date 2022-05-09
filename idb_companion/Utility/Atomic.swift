@@ -8,7 +8,7 @@
 import Foundation
 
 @propertyWrapper
-struct Atomic<Value>: @unchecked Sendable {
+final class Atomic<Value>: @unchecked Sendable {
 
   private var value: Value
   private let mutex: FBMutex
@@ -23,7 +23,7 @@ struct Atomic<Value>: @unchecked Sendable {
     set { mutex.sync(execute: { value = newValue }) }
   }
 
-  mutating func sync<R>(execute work: (inout Value) -> R) -> R {
+  func sync<R>(execute work: (inout Value) -> R) -> R {
     mutex.sync(execute: { work(&value) })
   }
 }
