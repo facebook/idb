@@ -113,6 +113,7 @@
 		DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */; };
 		DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */; };
 		DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */; };
+		DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -291,6 +292,7 @@
 		DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulateMemoryWarningMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendNotificationMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetLocationMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -530,6 +532,7 @@
 				DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */,
 				DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */,
 				DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */,
+				DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -874,6 +877,7 @@
 				AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */,
 				A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */,
 				710FD8182811AFE1000832EA /* AccessibilityInfoMethodHandler.swift in Sources */,
+				DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */,
 				DBCAE6A82816B6AE00C15D07 /* MkdirMethodHandler.swift in Sources */,
 				DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */,
 				DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */,

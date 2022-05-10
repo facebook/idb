@@ -136,7 +136,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func set_location(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await FBTeardownContext.withAutocleanup {
+      try await SetLocationMethodHandler(commandExecutor: commandExecutor)
+        .handle(request: request, context: context)
+    }
   }
 
   func send_notification(request: Idb_SendNotificationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SendNotificationResponse {
