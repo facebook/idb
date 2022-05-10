@@ -112,6 +112,7 @@
 		DBF88BBC282900D1003B1494 /* UninstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */; };
 		DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */; };
 		DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */; };
+		DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -289,6 +290,7 @@
 		DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulateMemoryWarningMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendNotificationMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -527,6 +529,7 @@
 				DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */,
 				DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */,
 				DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */,
+				DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -853,6 +856,7 @@
 				DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */,
 				DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */,
 				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
+				DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */,
 				DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */,
 				AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */,
 				DB4585C32808661B004065A2 /* PullMethodHandler.swift in Sources */,
