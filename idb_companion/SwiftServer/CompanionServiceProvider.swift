@@ -108,7 +108,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func focus(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await FBTeardownContext.withAutocleanup {
+      try await FocusMethodHandler(commandExecutor: commandExecutor)
+        .handle(request: request, context: context)
+    }
   }
 
   func hid(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
