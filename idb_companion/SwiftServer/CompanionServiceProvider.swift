@@ -144,7 +144,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func simulate_memory_warning(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await FBTeardownContext.withAutocleanup {
+      try await SimulateMemoryWarningMethodHandler(commandExecutor: commandExecutor)
+        .handle(request: request, context: context)
+    }
   }
 
   func approve(request: Idb_ApproveRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ApproveResponse {

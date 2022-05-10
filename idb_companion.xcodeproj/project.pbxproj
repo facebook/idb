@@ -111,6 +111,7 @@
 		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
 		DBF88BBC282900D1003B1494 /* UninstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */; };
 		DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */; };
+		DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -287,6 +288,7 @@
 		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
 		DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulateMemoryWarningMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -524,6 +526,7 @@
 				DB6E6C442824152600144D97 /* TailMethodHandler.swift */,
 				DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */,
 				DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */,
+				DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -910,6 +913,7 @@
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
+				DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */,
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
 				DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */,
 				DB6177BF28182C1B00C33A0A /* LogMethodHandler.swift in Sources */,
