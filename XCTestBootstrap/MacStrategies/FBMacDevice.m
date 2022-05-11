@@ -71,7 +71,13 @@
     // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there
     _auxillaryDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
 #else
-    _auxillaryDirectory = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    NSString *explicitTmpDirectory = NSProcessInfo.processInfo.environment[@"IDB_MAC_AUXILLIARY_DIR"];
+    if (explicitTmpDirectory) {
+      _auxillaryDirectory = [explicitTmpDirectory stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    } else {
+      _auxillaryDirectory = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    }
+
 #endif
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
