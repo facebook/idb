@@ -12,13 +12,13 @@ from typing import Any, Dict, List, Optional, Set
 
 from idb.common.tar import untar
 from idb.common.types import (
+    CodeCoverageFormat,
     TestActivity,
     TestAttachment,
     TestRunFailureInfo,
     TestRunInfo,
-    CodeCoverageFormat,
 )
-from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse, Payload
+from idb.grpc.idb_pb2 import Payload, XctestRunRequest, XctestRunResponse
 from idb.grpc.xctest_log_parser import XCTestLogParser
 
 

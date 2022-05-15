@@ -4,7 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from argparse import REMAINDER, ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, REMAINDER
 
 from idb.cli import ClientCommand
 from idb.common.misc import get_env_with_idb_prefix

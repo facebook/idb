@@ -6,7 +6,7 @@
 
 import json
 import os
-from argparse import SUPPRESS, ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, SUPPRESS
 from typing import Dict, Optional
 
 from idb.cli import BaseCommand

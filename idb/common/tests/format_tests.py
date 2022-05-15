@@ -16,9 +16,9 @@ from idb.common.types import (
     InstalledAppInfo,
     InstalledTestInfo,
     TargetDescription,
+    TargetType,
     TCPAddress,
     TestActivity,
-    TargetType,
     TestRunFailureInfo,
     TestRunInfo,
 )

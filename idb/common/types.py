@@ -7,18 +7,18 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
-from asyncio import StreamWriter, StreamReader
+from asyncio import StreamReader, StreamWriter
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
-    IO,
     AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Dict,
+    IO,
     List,
     Mapping,
     Optional,

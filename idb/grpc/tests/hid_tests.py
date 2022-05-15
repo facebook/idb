@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from idb.grpc.hid import (
+    event_to_grpc,
     GrpcHIDButton,
     GrpcHIDDelay,
     GrpcHIDEvent,
@@ -23,7 +24,6 @@ from idb.grpc.hid import (
     HIDSwipe,
     HIDTouch,
     Point,
-    event_to_grpc,
 )
 from idb.utils.testing import TestCase
 

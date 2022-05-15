@@ -6,7 +6,7 @@
 
 from unittest import TestCase
 
-from idb.common.types import CompanionInfo, TargetDescription, TCPAddress, TargetType
+from idb.common.types import CompanionInfo, TargetDescription, TargetType, TCPAddress
 from idb.grpc.target import merge_connected_targets
 
 

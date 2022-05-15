@@ -7,7 +7,7 @@
 import asyncio
 import sys
 from argparse import ArgumentParser, Namespace
-from asyncio import StreamWriter, StreamReader
+from asyncio import StreamReader, StreamWriter
 from dataclasses import dataclass
 
 from idb.cli import ClientCommand

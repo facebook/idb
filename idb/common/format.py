@@ -11,18 +11,18 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
-    IdbException,
     AppProcessState,
     CompanionInfo,
     DebuggerInfo,
     DomainSocketAddress,
+    IdbException,
     InstalledAppInfo,
     InstalledTestInfo,
     TargetDescription,
+    TargetType,
     TCPAddress,
     TestActivity,
     TestRunInfo,
-    TargetType,
 )
 from treelib import Tree
 

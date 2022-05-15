@@ -10,12 +10,12 @@ import sys
 import tempfile
 from abc import abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import Tuple, List
+from typing import List, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, FileContainer, FileContainerType, Compression
+from idb.common.types import Client, Compression, FileContainer, FileContainerType
 
 
 def _add_container_types_to_group(

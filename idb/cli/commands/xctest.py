@@ -6,7 +6,7 @@
 
 import json
 import os.path
-from argparse import REMAINDER, ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, REMAINDER
 from pathlib import Path
 from typing import Optional, Set
 
@@ -19,12 +19,7 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
-from idb.common.types import (
-    Client,
-    CodeCoverageFormat,
-    FileContainerType,
-    IdbException,
-)
+from idb.common.types import Client, CodeCoverageFormat, FileContainerType, IdbException
 
 NO_SPECIFIED_PATH = "NO_SPECIFIED_PATH"
 

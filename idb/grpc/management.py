@@ -17,12 +17,12 @@ from idb.common.logging import log_call
 from idb.common.types import (
     ClientManager as ClientManagerBase,
     CompanionInfo,
-    OnlyFilter,
     ConnectionDestination,
     DomainSocketAddress,
     IdbException,
-    TargetType,
+    OnlyFilter,
     TargetDescription,
+    TargetType,
     TCPAddress,
 )
 from idb.grpc.client import Client

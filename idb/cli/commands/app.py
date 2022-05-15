@@ -13,7 +13,7 @@ from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import Client, InstalledArtifact, Compression
+from idb.common.types import Client, Compression, InstalledArtifact
 from idb.utils.typing import none_throws
 
 

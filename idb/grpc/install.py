@@ -6,7 +6,7 @@
 
 import os
 from logging import Logger
-from typing import IO, AsyncIterator, List, Union, Optional
+from typing import AsyncIterator, IO, List, Optional, Union
 
 import aiofiles
 import idb.common.gzip as gzip

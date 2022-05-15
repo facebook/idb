@@ -11,8 +11,7 @@ from typing import Optional
 
 from idb.cli import ClientCommand
 from idb.common.command import CommandGroup
-from idb.common.types import Client
-from idb.common.types import IdbException
+from idb.common.types import Client, IdbException
 from idb.utils.typing import none_throws
 
 

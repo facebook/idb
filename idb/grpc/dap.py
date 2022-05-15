@@ -6,15 +6,12 @@
 
 import asyncio
 import logging
-from asyncio import StreamWriter, StreamReader
-from typing import Optional, AsyncGenerator
+from asyncio import StreamReader, StreamWriter
+from typing import AsyncGenerator, Optional
 
 from idb.common.types import IdbException
 from idb.grpc.idb_grpc import CompanionServiceStub
-from idb.grpc.idb_pb2 import (
-    DapResponse,
-    DapRequest,
-)
+from idb.grpc.idb_pb2 import DapRequest, DapResponse
 from idb.grpc.stream import Stream
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws

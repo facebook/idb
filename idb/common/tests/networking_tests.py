@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from idb.common.networking import _get_ports
-from idb.utils.testing import TestCase, ignoreTaskLeaks
+from idb.utils.testing import ignoreTaskLeaks, TestCase
 
 
 @ignoreTaskLeaks

@@ -5,15 +5,21 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
-from argparse import SUPPRESS, ArgumentParser, Namespace
-from typing import Union, Mapping
+from argparse import ArgumentParser, Namespace, SUPPRESS
+from typing import Mapping, Union
 
 import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client, ClientManager, Companion, IdbException, TCPAddress
-from idb.common.types import TargetType
+from idb.common.types import (
+    Client,
+    ClientManager,
+    Companion,
+    IdbException,
+    TargetType,
+    TCPAddress,
+)
 from idb.common.udid import is_udid
 
 

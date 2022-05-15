@@ -11,7 +11,7 @@ import logging
 import unittest
 import unittest.mock as _mock
 import warnings
-from typing import Awaitable, Callable, TypeVar, cast
+from typing import Awaitable, Callable, cast, TypeVar
 
 # pyre-ignore
 from unittest.case import _Outcome

@@ -5,7 +5,7 @@
 
 import json
 from collections import defaultdict
-from typing import Optional, Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 
 class XCTestLogParserKey(NamedTuple):

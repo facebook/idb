@@ -10,12 +10,8 @@ from typing import AsyncGenerator
 from unittest import mock
 
 from idb.common.companion_set import CompanionSet
-from idb.common.types import (
-    CompanionInfo,
-    DomainSocketAddress,
-    TCPAddress,
-)
-from idb.utils.testing import TestCase, ignoreTaskLeaks
+from idb.common.types import CompanionInfo, DomainSocketAddress, TCPAddress
+from idb.utils.testing import ignoreTaskLeaks, TestCase
 
 
 @ignoreTaskLeaks

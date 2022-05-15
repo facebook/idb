@@ -17,7 +17,7 @@ from idb.common.companion import (
     CompanionSpawnerException,
 )
 from idb.common.types import TargetType
-from idb.utils.testing import AsyncMock, TestCase, ignoreTaskLeaks
+from idb.utils.testing import AsyncMock, ignoreTaskLeaks, TestCase
 
 
 @ignoreTaskLeaks

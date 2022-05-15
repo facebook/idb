@@ -13,7 +13,7 @@ import shutil
 import sys
 import tempfile
 import urllib.parse
-from asyncio import StreamWriter, StreamReader
+from asyncio import StreamReader, StreamWriter
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
@@ -50,7 +50,6 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
-    FileContainerType,
     AccessibilityInfo,
     Address,
     AppProcessState,
@@ -64,6 +63,7 @@ from idb.common.types import (
     CrashLogQuery,
     DomainSocketAddress,
     FileContainer,
+    FileContainerType,
     FileEntryInfo,
     FileListing,
     HIDButtonType,
@@ -74,13 +74,13 @@ from idb.common.types import (
     InstalledArtifact,
     InstalledTestInfo,
     InstrumentsTimings,
+    LoggingMetadata,
     OnlyFilter,
     Permission,
     TargetDescription,
     TCPAddress,
     TestRunInfo,
     VideoFormat,
-    LoggingMetadata,
 )
 from idb.grpc.crash import (
     _to_crash_log,
@@ -94,6 +94,7 @@ from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityInfoRequest,
     AddMediaRequest,
+    ANY as AnySetting,
     ApproveRequest,
     ClearKeychainRequest,
     ConnectRequest,
@@ -102,20 +103,16 @@ from idb.grpc.idb_pb2 import (
     DebugServerRequest,
     DebugServerResponse,
     FocusRequest,
+    GetSettingRequest,
     InstallRequest,
     InstrumentsRunRequest,
     LaunchRequest,
-    TailRequest,
     ListAppsRequest,
+    ListSettingRequest,
+    LOCALE as LocaleSetting,
     Location,
     LogRequest,
-    SimulateMemoryWarningRequest,
-    SendNotificationRequest,
     LsRequest,
-    GetSettingRequest,
-    LOCALE as LocaleSetting,
-    ANY as AnySetting,
-    ListSettingRequest,
     MkdirRequest,
     MvRequest,
     OpenUrlRequest,
@@ -126,16 +123,19 @@ from idb.grpc.idb_pb2 import (
     RecordRequest,
     RmRequest,
     ScreenshotRequest,
+    SendNotificationRequest,
     SetLocationRequest,
     SettingRequest,
+    SimulateMemoryWarningRequest,
+    TailRequest,
     TargetDescriptionRequest,
     TerminateRequest,
     UninstallRequest,
     VideoStreamRequest,
     XctestListBundlesRequest,
     XctestListTestsRequest,
-    XctraceRecordRequest,
     XctestRunResponse,
+    XctraceRecordRequest,
 )
 from idb.grpc.install import (
     Bundle,
@@ -166,10 +166,7 @@ from idb.grpc.xctest import (
     untar_into_path,
 )
 from idb.grpc.xctest_log_parser import XCTestLogParser
-from idb.grpc.xctrace import (
-    xctrace_drain_until_running,
-    xctrace_generate_bytes,
-)
+from idb.grpc.xctrace import xctrace_drain_until_running, xctrace_generate_bytes
 from idb.utils.contextlib import asynccontextmanager
 
 

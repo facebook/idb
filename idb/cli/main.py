@@ -41,15 +41,15 @@ from idb.cli.commands.debugserver import (
 from idb.cli.commands.dsym import DsymInstallCommand
 from idb.cli.commands.dylib import DylibInstallCommand
 from idb.cli.commands.file import (
+    FBSReadCommand,
     FSListCommand,
     FSMkdirCommand,
     FSMoveCommand,
     FSPullCommand,
     FSPushCommand,
-    FSWriteCommand,
     FSRemoveCommand,
     FSTailCommand,
-    FBSReadCommand,
+    FSWriteCommand,
 )
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
@@ -72,9 +72,9 @@ from idb.cli.commands.memory import SimulateMemoryWarningCommand
 from idb.cli.commands.notification import SendNotificationCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import (
-    SetPreferenceCommand,
     GetPreferenceCommand,
     ListCommand,
+    SetPreferenceCommand,
 )
 from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
@@ -101,7 +101,7 @@ from idb.cli.commands.xctest import (
 )
 from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException, Compression
+from idb.common.types import Compression, IdbException
 
 
 COROUTINE_DRAIN_TIMEOUT = 2

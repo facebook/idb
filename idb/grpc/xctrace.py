@@ -10,10 +10,7 @@ import re
 from logging import Logger
 from typing import AsyncIterator, Optional
 
-from idb.grpc.idb_pb2 import (
-    XctraceRecordRequest,
-    XctraceRecordResponse,
-)
+from idb.grpc.idb_pb2 import XctraceRecordRequest, XctraceRecordResponse
 from idb.grpc.stream import Stream
 from idb.utils.typing import none_throws
 
