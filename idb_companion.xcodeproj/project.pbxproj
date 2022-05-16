@@ -18,6 +18,7 @@
 		713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */; };
 		713C70AD26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */; };
 		713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */; };
+		717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */; };
 		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
 		A21CDD3827CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */; };
 		A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */; };
@@ -193,6 +194,7 @@
 		716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<absolute>"; };
 		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListTestsMethodHandler.swift; sourceTree = "<group>"; };
 		79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.debug.xcconfig"; sourceTree = "<group>"; };
 		A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDsymInstallLinkToBundle.h; sourceTree = "<group>"; };
 		A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDsymInstallLinkToBundle.m; sourceTree = "<group>"; };
@@ -509,6 +511,7 @@
 				710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */,
 				DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */,
 				DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */,
+				717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */,
 				DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */,
 				DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */,
 				712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */,
@@ -924,6 +927,7 @@
 				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
 				DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */,
 				DBA2ED1F27BBA96100926054 /* BridgeFuture.swift in Sources */,
+				717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */,
 				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
 				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
