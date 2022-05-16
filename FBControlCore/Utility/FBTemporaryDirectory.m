@@ -83,19 +83,29 @@
 
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression
 {
+  return [self withArchiveExtractedFromStream:input compression:compression overrideModificationTime:NO];
+}
+
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression overrideModificationTime:(BOOL)overrideMTime
+{
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:NO queue:self.queue logger:self.logger compression:compression] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:overrideMTime queue:self.queue logger:self.logger compression:compression] mapReplace:tempDir];
     }];
 }
 
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath
 {
+  return [self withArchiveExtractedFromFile:filePath overrideModificationTime:NO];
+}
+
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath overrideModificationTime:(BOOL)overrideMTime
+{
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:NO queue:self.queue logger:self.logger] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:overrideMTime queue:self.queue logger:self.logger] mapReplace:tempDir];
     }];
 }
 
