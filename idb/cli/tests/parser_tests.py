@@ -171,7 +171,22 @@ class TestParser(TestCase):
         compression = None
         await cli_main(cmd_input=["install", app_path])
         self.client_mock.install.assert_called_once_with(
-            bundle=app_path, make_debuggable=None, compression=compression
+            bundle=app_path,
+            make_debuggable=None,
+            compression=compression,
+            override_modification_time=None,
+        )
+
+    async def test_install_with_mtime_override(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.ipa"
+        compression = None
+        await cli_main(cmd_input=["install", "--override-mtime", app_path])
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path,
+            make_debuggable=None,
+            compression=compression,
+            override_modification_time=True,
         )
 
     async def test_install_with_bad_compression(self) -> None:
@@ -188,7 +203,10 @@ class TestParser(TestCase):
         app_path = "testApp.app"
         await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
         self.client_mock.install.assert_called_once_with(
-            bundle=app_path, make_debuggable=None, compression=Compression.ZSTD
+            bundle=app_path,
+            make_debuggable=None,
+            compression=Compression.ZSTD,
+            override_modification_time=None,
         )
 
     async def test_uninstall(self) -> None:

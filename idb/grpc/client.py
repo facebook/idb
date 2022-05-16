@@ -373,6 +373,7 @@ class Client(ClientBase):
         make_debuggable: Optional[bool],
         bundle_id: Optional[str],
         bundle_type: Optional[FileContainerType],
+        override_modification_time: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -414,6 +415,12 @@ class Client(ClientBase):
             if make_debuggable is not None:
                 await stream.send_message(
                     InstallRequest(make_debuggable=make_debuggable)
+                )
+            if override_modification_time is not None:
+                await stream.send_message(
+                    InstallRequest(
+                        override_modification_time=override_modification_time
+                    )
                 )
             if compression is not None:
                 await stream.send_message(
@@ -664,6 +671,7 @@ class Client(ClientBase):
         bundle: Bundle,
         compression: Optional[Compression] = None,
         make_debuggable: Optional[bool] = None,
+        override_modification_time: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=bundle,
@@ -672,6 +680,7 @@ class Client(ClientBase):
             make_debuggable=make_debuggable,
             bundle_id=None,
             bundle_type=None,
+            override_modification_time=override_modification_time,
         ):
             yield response
 

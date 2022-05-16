@@ -477,6 +477,7 @@ class Client(ABC):
         bundle: Union[str, IO[bytes]],
         compression: Optional[Compression] = None,
         make_debuggable: Optional[bool] = None,
+        override_modification_time: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 

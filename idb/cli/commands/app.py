@@ -35,6 +35,13 @@ class AppInstallCommand(ClientCommand):
             required=False,
         )
         parser.add_argument(
+            "--override-mtime",
+            help="If set, idb will disregard the mtime of files contained in an .ipa file. Current timestamp will be used as modification time. Use this flag to ensure app updates work properly when your build system normalises the timestamps of contents of archives.",
+            action="store_true",
+            default=None,
+            required=False,
+        )
+        parser.add_argument(
             "bundle_path",
             help="Path to the .app/.ipa to install. Note that .app bundles will usually be faster to install than .ipa files.",
             type=str,
@@ -50,6 +57,7 @@ class AppInstallCommand(ClientCommand):
             bundle=args.bundle_path,
             make_debuggable=args.make_debuggable,
             compression=compression,
+            override_modification_time=args.override_mtime,
         ):
             artifact = info
             progress = info.progress
