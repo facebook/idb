@@ -54,6 +54,11 @@ struct InstallMethodHandler {
       makeDebuggable = debuggable
       request = try await requestStream.requiredNext
     }
+    var overrideModificationTime = false
+    if case let .overrideModificationTime(omtime) = request.value {
+      overrideModificationTime = omtime
+      request = try await requestStream.requiredNext
+    }
 
     var linkToBundle: FBDsymInstallLinkToBundle?
 
@@ -83,7 +88,8 @@ struct InstallMethodHandler {
                                  name: name,
                                  makeDebuggable: makeDebuggable,
                                  linkToBundle: linkToBundle,
-                                 compression: compression)
+                                 compression: compression,
+                                 overrideModificationTime: overrideModificationTime)
   }
 
   private func installData(from source: Idb_Payload.OneOf_Source?,
@@ -92,13 +98,14 @@ struct InstallMethodHandler {
                            name: String,
                            makeDebuggable: Bool,
                            linkToBundle: FBDsymInstallLinkToBundle?,
-                           compression: FBCompressionFormat) async throws -> FBInstalledArtifact {
+                           compression: FBCompressionFormat,
+                           overrideModificationTime: Bool) async throws -> FBInstalledArtifact {
 
     func installSource(dataStream: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
         return try await BridgeFuture.value(
-          commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable)
+          commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
         )
       case .xctest:
         return try await BridgeFuture.value(
@@ -139,7 +146,7 @@ struct InstallMethodHandler {
       switch destination {
       case .app:
         return try await BridgeFuture.value(
-          commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable)
+          commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
         )
       case .xctest:
         return try await BridgeFuture.value(

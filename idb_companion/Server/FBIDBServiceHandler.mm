@@ -572,7 +572,13 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     makeDebuggable = (request.make_debuggable() == true);
     stream->Read(&request);
   }
-  
+
+  BOOL overrideModificationTime = NO;
+    if (request.value_case() == idb::InstallRequest::ValueCase::kOverrideModificationTime) {
+    overrideModificationTime = (request.override_modification_time() == true);
+    stream->Read(&request);
+  }
+
   FBDsymInstallLinkToBundle *linkToBundle = nil;
   //(2022-03-02) REMOVE! Keeping only for retrocompatibility
   // A bundle id might be provided, if it is, then obtain the installed app if exists, then advance that stream.
@@ -590,7 +596,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
     linkToBundle = [[FBDsymInstallLinkToBundle alloc] initWith:bundleID bundle_type:bundleType];
     stream->Read(&request);
   }
-  
+
   // Now that we've read the header, the next item in the stream must be the payload.
   if (request.value_case() != idb::InstallRequest::ValueCase::kPayload) {
     return [[FBIDBError
@@ -612,7 +618,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBProcessInput<NSOutputStream *> *dataStream = pipe_to_input_output(payload, stream);
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:dataStream compression:compression make_debuggable:makeDebuggable];
+          return [_commandExecutor install_app_stream:dataStream compression:compression make_debuggable:makeDebuggable override_modification_time:overrideModificationTime];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:dataStream];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -630,7 +636,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       FBDataDownloadInput *download = [FBDataDownloadInput dataDownloadWithURL:url logger:_target.logger];
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_stream:download.input compression:compression make_debuggable:makeDebuggable];
+          return [_commandExecutor install_app_stream:download.input compression:compression make_debuggable:makeDebuggable override_modification_time:overrideModificationTime];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_stream:download.input];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:
@@ -647,7 +653,7 @@ FBFuture<FBInstalledArtifact *> *FBIDBServiceHandler::install_future(const idb::
       NSString *filePath = nsstring_from_c_string(payload.file_path());
       switch (destination) {
         case idb::InstallRequest_Destination::InstallRequest_Destination_APP:
-          return [_commandExecutor install_app_file_path:filePath make_debuggable:makeDebuggable];
+          return [_commandExecutor install_app_file_path:filePath make_debuggable:makeDebuggable override_modification_time:overrideModificationTime];
         case idb::InstallRequest_Destination::InstallRequest_Destination_XCTEST:
           return [_commandExecutor install_xctest_app_file_path:filePath];
         case idb::InstallRequest_Destination::InstallRequest_Destination_DSYM:

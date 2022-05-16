@@ -77,19 +77,19 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable override_modification_time:(BOOL)overrideModificationTime
 {
   // Use .app directly, or extract an .ipa
   if ([FBBundleDescriptor isApplicationAtPath:filePath]) {
     return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]] makeDebuggable:makeDebuggable];
   } else {
-    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath] makeDebuggable:makeDebuggable];
+    return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath overrideModificationTime:overrideModificationTime] makeDebuggable:makeDebuggable];
   }
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable override_modification_time:(BOOL)overrideModificationTime
 {
-  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression] makeDebuggable:makeDebuggable];
+  return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression overrideModificationTime:overrideModificationTime] makeDebuggable:makeDebuggable];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
@@ -927,11 +927,11 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
       if (!artifact) {
         return [FBFuture futureWithError:error];
       }
-      
+
       if (!linkTo) {
         return [FBFuture futureWithResult:artifact];
       }
-      
+
       FBFuture<NSURL *> *future = nil;
       if (linkTo.bundle_type == FBDsymBundleTypeApp) {
         future = [[self.target installedApplicationWithBundleID:linkTo.bundle_id] onQueue:self.target.workQueue fmap:^(FBInstalledApplication *linkToApp) {
@@ -943,7 +943,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
         [self.logger logFormat:@"Going to create a symlink for test bundle: %@", testDescriptor.name];
         future = [FBFuture futureWithResult:testDescriptor.url];
       }
-    
+
       return [future onQueue:self.target.workQueue fmap:^(NSURL *bundlePath) {
                 NSURL *bundleUrl = [bundlePath URLByDeletingLastPathComponent];
                 NSURL *dsymURL = [bundleUrl URLByAppendingPathComponent:artifact.path.lastPathComponent];

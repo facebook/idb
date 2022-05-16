@@ -79,9 +79,10 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
 
  @param filePath the path to a file on disk with the file.
  @param makeDebuggable whether the app should be installed in a debuggable state or not.
+ @param overrideModificationTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable;
+- (FBFuture<FBInstalledArtifact *> *)install_app_file_path:(NSString *)filePath make_debuggable:(BOOL)makeDebuggable override_modification_time:(BOOL)overrideModificationTime;
 
 /**
  Install an App via a Data stream.
@@ -89,9 +90,10 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  @param input the input to pipe.
  @param compression the compression type to use
  @param makeDebuggable whether the app should be installed in a debuggable state or not.
+ @param overrideModificationTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
  @return A future that resolves with the App Bundle Id
  */
-- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable;
+- (FBFuture<FBInstalledArtifact *> *)install_app_stream:(FBProcessInput *)input compression:(FBCompressionFormat)compression make_debuggable:(BOOL)makeDebuggable override_modification_time:(BOOL)overrideModificationTime;
 
 /**
  Installs an xctest bundle by file path.
