@@ -16,11 +16,11 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
 @implementation FBArchiveOperations
 
-+ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBProcessBuilder
     withLaunchPath:BSDTarPath]
-    withArguments:@[@"-zxp", @"-C", extractPath, @"-f", path]]
+    withArguments:@[overrideMTime ? @"-zxpm" : @"-zxp", @"-C", extractPath, @"-f", path]]
     withStdErrToLoggerAndErrorMessage:logger.debug]
     withStdOutToLogger:logger.debug]
     withTaskLifecycleLoggingTo:logger]
@@ -28,11 +28,11 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     mapReplace:extractPath];
 }
 
-+ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
++ (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
 {
-  NSArray<NSString *> *extractCommand = @[@"-zxp", @"-C", extractPath, @"-f", @"-"];
+    NSArray<NSString *> *extractCommand = @[overrideMTime ? @"-zxpm" : @"-zxp", @"-C", extractPath, @"-f", @"-"];
   if (compression == FBCompressionFormatZSTD) {
-    extractCommand = @[@"--use-compress-program", @"pzstd -d", @"-xp", @"-C", extractPath, @"-f", @"-"];
+      extractCommand = @[@"--use-compress-program", @"pzstd -d", overrideMTime ? @"-xpm" : @"-xp", @"-C", extractPath, @"-f", @"-"];
   }
 
   return [[[[[[[[FBProcessBuilder
