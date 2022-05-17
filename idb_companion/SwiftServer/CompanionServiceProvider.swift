@@ -279,7 +279,14 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func video_stream(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
-    return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
+
+    return try await FBTeardownContext.withAutocleanup {
+      try await VideoStreamMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor)
+        .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
   }
 
   func crash_delete(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
