@@ -33,7 +33,7 @@ struct FileDrainWriter {
         break
       }
 
-      let data = Data(buffer)
+      let data = Data(bytes: &buffer, count: readBytes)
       try await sendResponse(data)
     }
 
