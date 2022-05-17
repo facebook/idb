@@ -72,6 +72,7 @@
 		DB4585BF280863FE004065A2 /* FileDrainWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585BE280863FE004065A2 /* FileDrainWriter.swift */; };
 		DB4585C32808661B004065A2 /* PullMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585C22808661B004065A2 /* PullMethodHandler.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
+		DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */; };
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
@@ -258,6 +259,7 @@
 		DB4585BE280863FE004065A2 /* FileDrainWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDrainWriter.swift; sourceTree = "<group>"; };
 		DB4585C22808661B004065A2 /* PullMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PullMethodHandler.swift; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
+		DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsUpdateMethodHandler.swift; sourceTree = "<group>"; };
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
 		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
@@ -547,6 +549,7 @@
 				DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */,
 				DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */,
 				DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */,
+				DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -935,6 +938,7 @@
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
+				DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */,
 				DBCAE6AB2816C8F700C15D07 /* PushMethodHandler.swift in Sources */,
 				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
 				DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */,
