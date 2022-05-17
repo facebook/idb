@@ -73,6 +73,7 @@
 		DB4585C32808661B004065A2 /* PullMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585C22808661B004065A2 /* PullMethodHandler.swift */; };
 		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
 		DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */; };
+		DB4B33CC282D1A100080EDEF /* GetSettingMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */; };
 		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
 		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
 		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
@@ -260,6 +261,7 @@
 		DB4585C22808661B004065A2 /* PullMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PullMethodHandler.swift; sourceTree = "<group>"; };
 		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
 		DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsUpdateMethodHandler.swift; sourceTree = "<group>"; };
+		DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetSettingMethodHandler.swift; sourceTree = "<group>"; };
 		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
 		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
 		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
@@ -550,6 +552,7 @@
 				DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */,
 				DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */,
 				DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */,
+				DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -900,6 +903,7 @@
 				DBCAE6A82816B6AE00C15D07 /* MkdirMethodHandler.swift in Sources */,
 				DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */,
 				DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */,
+				DB4B33CC282D1A100080EDEF /* GetSettingMethodHandler.swift in Sources */,
 				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
 				DB6177BB2817FFC300C33A0A /* SettingMethodHandler.swift in Sources */,
 				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
