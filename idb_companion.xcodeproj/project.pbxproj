@@ -118,6 +118,7 @@
 		DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */; };
 		DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */; };
 		DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */; };
+		DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -301,6 +302,7 @@
 		DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashListMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogQueryValueTransformer.swift; sourceTree = "<group>"; };
 		DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashShowMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDeleteMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -544,6 +546,7 @@
 				DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */,
 				DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */,
 				DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */,
+				DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -906,6 +909,7 @@
 				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
 				DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */,
 				DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */,
+				DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
 				DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */,
 				DBCD82DB27D60FF300293F77 /* GrpcDataMappings.swift in Sources */,
