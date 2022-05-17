@@ -5,21 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+
 // Server
-#import "FBIDBCommandExecutor.h"
+#import "../Server/FBIDBCommandExecutor.h"
 
 // Utility
-#import "FBIDBLogger.h"
-#import "FBIDBStorageManager.h"
-#import "FBXCTestReporterConfiguration.h"
-#import "FBIDBTestOperation.h"
-#import "FBDataDownloadInput.h"
-#import "FBXCTestDescriptor.h"
+#import "../Utility/FBIDBLogger.h"
+#import "../Utility/FBIDBStorageManager.h"
+#import "../Utility/FBXCTestReporterConfiguration.h"
+#import "../Utility/FBIDBTestOperation.h"
+#import "../Utility/FBDataDownloadInput.h"
+#import "../Utility/FBXCTestDescriptor.h"
 
 // Request
-#import "FBXCTestRunRequest.h"
-#import "FBCodeCoverageRequest.h"
-#import "FBDsymInstallLinkToBundle.h"
+#import "../Request/FBXCTestRunRequest.h"
+#import "../Request/FBCodeCoverageRequest.h"
+#import "../Request/FBDsymInstallLinkToBundle.h"
 
 // Configuration
-#import "FBIDBPortsConfiguration.h"
+#import "../Configuration/FBIDBPortsConfiguration.h"
