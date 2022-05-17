@@ -63,7 +63,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   var grpcConnection: ConnectionTarget {
     switch self {
     case let .tcpPort(port, _):
-      return .hostAndPort("localhost", port)
+      return .hostAndPort("::", port)
 
     case let .unixDomainSocket(path):
       return .unixDomainSocket(path)
