@@ -323,7 +323,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctest_list_bundles(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
-    return try await proxy(request: request, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+    return try await FBTeardownContext.withAutocleanup {
+      try await XCTestListBundlesMethodHandler(commandExecutor: commandExecutor)
+        .handle(request: request, context: context)
+    }
   }
 
   func xctest_list_tests(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {

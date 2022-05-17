@@ -14,6 +14,7 @@
 #import "FBXCTestReporterConfiguration.h"
 #import "FBIDBTestOperation.h"
 #import "FBDataDownloadInput.h"
+#import "FBXCTestDescriptor.h"
 
 // Request
 #import "FBXCTestRunRequest.h"
