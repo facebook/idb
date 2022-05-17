@@ -101,11 +101,10 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
- @param queue the queue to do work on
  @param logger the logger to log to.
  @return a Future containing a task with an NSInputStream attached to stdout.
  */
-+ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates a gzipped tar archive, returning an the data of the tar.

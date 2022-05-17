@@ -38,9 +38,7 @@ struct PullMethodHandler {
                                      containerType: fileContainer)
     )
 
-    let archiveFuture = FBArchiveOperations.createGzippedTar(forPath: filePath as String,
-                                                             queue: BridgeQueues.miscEventReaderQueue,
-                                                             logger: logger)
+    let archiveFuture = FBArchiveOperations.createGzippedTar(forPath: filePath as String, logger: logger)
 
     try await FileDrainWriter.performDrain(taskFuture: archiveFuture) { data in
       let response = Idb_PullResponse.with { $0.payload.data = data }

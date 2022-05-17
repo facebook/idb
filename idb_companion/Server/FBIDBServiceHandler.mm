@@ -1354,7 +1354,6 @@ Status FBIDBServiceHandler::pull(ServerContext *context, const ::idb::PullReques
     }
     return drain_writer([FBArchiveOperations
                          createGzippedTarForPath:filePath
-                         queue:dispatch_queue_create("com.facebook.idb.pull", DISPATCH_QUEUE_SERIAL)
                          logger:_target.logger],
                         stream);
   }
@@ -1519,7 +1518,7 @@ Status FBIDBServiceHandler::instruments_run(grpc::ServerContext *context, grpc::
   if (!processed) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
+  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path logger:_target.logger], stream);
 }}
 
 Status FBIDBServiceHandler::debugserver(grpc::ServerContext *context, grpc::ServerReaderWriter<idb::DebugServerResponse, idb::DebugServerRequest> *stream)
@@ -1713,7 +1712,7 @@ Status FBIDBServiceHandler::xctrace_record(ServerContext *context,grpc::ServerRe
   if (!processed) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path queue:queue logger:_target.logger], stream);
+  return drain_writer([FBArchiveOperations createGzippedTarForPath:processed.path logger:_target.logger], stream);
 }}
 
 Status FBIDBServiceHandler::send_notification(grpc::ServerContext *context, const idb::SendNotificationRequest *request, idb::SendNotificationResponse *response)
