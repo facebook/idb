@@ -64,6 +64,7 @@
 		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
 		DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */; };
+		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */; };
 		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
@@ -116,6 +117,7 @@
 		DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */; };
 		DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */; };
 		DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */; };
+		DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -247,6 +249,7 @@
 		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
 		DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServerErrorDelegate.swift; sourceTree = "<group>"; };
+		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
 		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
@@ -297,6 +300,7 @@
 		DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetLocationMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashListMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogQueryValueTransformer.swift; sourceTree = "<group>"; };
+		DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashShowMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -539,6 +543,7 @@
 				DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */,
 				DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */,
 				DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */,
+				DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -549,6 +554,7 @@
 				DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */,
 				DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */,
 				DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */,
+				DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */,
 			);
 			path = ValueTransformers;
 			sourceTree = "<group>";
@@ -899,7 +905,9 @@
 				DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */,
 				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
 				DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */,
+				DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */,
 				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
+				DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */,
 				DBCD82DB27D60FF300293F77 /* GrpcDataMappings.swift in Sources */,
 				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
 				DB6177D4281A956600C33A0A /* HidMethodHandler.swift in Sources */,

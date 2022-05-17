@@ -16,18 +16,7 @@ struct CrashListMethodHandler {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
     let crashes: [FBCrashLogInfo] = try await BridgeFuture.value(commandExecutor.crash_list(predicate))
     return Idb_CrashLogResponse.with {
-      $0.list = crashes.map(Self.responseCrashLogInfo(from:))
-    }
-  }
-
-  static func responseCrashLogInfo(from crash: FBCrashLogInfo) -> Idb_CrashLogInfo {
-    return .with {
-      $0.name = crash.name
-      $0.processName = crash.processName
-      $0.parentProcessName = crash.parentProcessName
-      $0.processIdentifier = UInt64(crash.processIdentifier)
-      $0.parentProcessIdentifier = UInt64(crash.parentProcessIdentifier)
-      $0.timestamp = UInt64(crash.date.timeIntervalSince1970)
+      $0.list = crashes.map(CrashLogInfoValueTransformer.responseCrashLogInfo(from:))
     }
   }
 
