@@ -310,9 +310,9 @@ static NSString *const XctestRunExtension = @"xctestrun";
     failFuture];
 }
 
-- (NSSet<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
+- (NSArray<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
 {
-  NSMutableSet<id<FBXCTestDescriptor>> *testDescriptors = [[NSMutableSet alloc] init];
+  NSMutableArray<id<FBXCTestDescriptor>> *testDescriptors = [[NSMutableArray alloc] init];
 
   // Get xctest bundles
   NSSet<NSURL *> *testURLS = [self listTestBundlesWithError:error];
@@ -353,12 +353,12 @@ static NSString *const XctestRunExtension = @"xctestrun";
     [testDescriptors addObjectsFromArray:descriptors];
   }
 
-  return testDescriptors;
+  return [NSArray arrayWithArray:testDescriptors];
 }
 
 - (id<FBXCTestDescriptor>)testDescriptorWithID:(NSString *)bundleId error:(NSError **)error
 {
-  NSSet<id<FBXCTestDescriptor>> *testDescriptors = [self listTestDescriptorsWithError:error];
+  NSArray<id<FBXCTestDescriptor>> *testDescriptors = [self listTestDescriptorsWithError:error];
   for (id<FBXCTestDescriptor> testDescriptor in testDescriptors) {
     if ([[testDescriptor testBundleID] isEqualToString: bundleId]) {
       return testDescriptor;
@@ -410,7 +410,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (id<FBXCTestDescriptor>)testDescriptorWithURL:(NSURL *)url error:(NSError **)error
 {
-  NSSet<id<FBXCTestDescriptor>> *testDescriptors = [self listTestDescriptorsWithError:error];
+  NSArray<id<FBXCTestDescriptor>> *testDescriptors = [self listTestDescriptorsWithError:error];
   for (id<FBXCTestDescriptor> testDescriptor in testDescriptors) {
     if ([[[testDescriptor url] absoluteString] isEqualToString:[url absoluteString]]) {
       return testDescriptor;

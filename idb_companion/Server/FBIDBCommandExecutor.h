@@ -259,9 +259,9 @@ This allows to avoid the permission popup the first time we open a deeplink
 /**
  List the xctests installed
 
- @return a Future that resolves with a set of tests.
+ @return a Future that resolves with an array of tests.
  */
-- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)list_test_bundles;
+- (FBFuture<NSArray<id<FBXCTestDescriptor>> *> *)list_test_bundles;
 
 /**
  List the tests in an installed bundle

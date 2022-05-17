@@ -1141,7 +1141,7 @@ Status FBIDBServiceHandler::crash_delete(ServerContext *context, const idb::Cras
 Status FBIDBServiceHandler::xctest_list_bundles(ServerContext *context, const idb::XctestListBundlesRequest *request, idb::XctestListBundlesResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  NSSet<id<FBXCTestDescriptor>> *descriptors = [[_commandExecutor list_test_bundles] block:&error];
+  NSArray<id<FBXCTestDescriptor>> *descriptors = [[_commandExecutor list_test_bundles] block:&error];
   if (!descriptors) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }

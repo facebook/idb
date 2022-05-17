@@ -201,9 +201,9 @@ extern NSString *const IdbFrameworksFolder;
  Get descriptors for all installed test bundles and xctestrun files.
 
  @param error Set if getting this bundle failed
- @return Set of FBXCTestDescriptors of all installed test bundles and xctestrun files
+ @return List of FBXCTestDescriptors of all installed test bundles and xctestrun files
  */
-- (nullable NSSet<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error;
+- (nullable NSArray<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error;
 
 /**
  Get test descriptor by bundle id.

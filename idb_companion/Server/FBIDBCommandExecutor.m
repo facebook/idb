@@ -261,11 +261,11 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
-- (FBFuture<NSSet<id<FBXCTestDescriptor>> *> *)list_test_bundles
+- (FBFuture<NSArray<id<FBXCTestDescriptor>> *> *)list_test_bundles
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^{
     NSError *error;
-    NSSet<id<FBXCTestDescriptor>> *testDescriptors = [self.storageManager.xctest listTestDescriptorsWithError:&error];
+    NSArray<id<FBXCTestDescriptor>> *testDescriptors = [self.storageManager.xctest listTestDescriptorsWithError:&error];
     if (testDescriptors == nil) {
       return [FBFuture futureWithError:error];
     }
