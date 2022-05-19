@@ -156,7 +156,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
         return [[FBTestApplicationsPair alloc] initWithApplicationUnderTest:applications[0] testHostApp:applications[1]];
       }];
   }
-  NSString *bundleID = request.testHostAppBundleID ?: request.appBundleID;
+  // it's an App Test then
+  NSString *bundleID = request.testHostAppBundleID;
   if (!bundleID) {
     return [[FBIDBError
       describe:@"Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided"]
@@ -272,7 +273,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
   if (!properties) {
     return [FBFuture futureWithError:error];
   }
-  
+
   return [BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, nil, request.waitForDebugger, queue)
    onQueue:queue map:^ FBIDBAppHostedTestConfiguration * (FBApplicationLaunchConfiguration *launchConfig) {
     FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]

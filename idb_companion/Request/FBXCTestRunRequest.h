@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 The Initializer for App Tests.
 
  @param testBundleID the bundle id of the test to run.
- @param appBundleID the bundle id of the application to inject the test bundle into.
+ @param testHostAppBundleID the bundle id of the application to inject the test bundle into.
  @param environment environment for the application test process.
  @param arguments arguments for the application test process.
  @param testsToRun the tests to run.
@@ -53,7 +53,7 @@ The Initializer for App Tests.
  @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
 
 /**
 The Initializer for UI Tests.

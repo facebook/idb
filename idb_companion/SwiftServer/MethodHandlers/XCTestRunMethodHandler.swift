@@ -54,7 +54,7 @@ struct XCTestRunMethodHandler {
                                           waitForDebugger: request.waitForDebugger)
     case let .application(app):
       return FBXCTestRunRequest.applicationTest(withTestBundleID: request.testBundleID,
-                                                appBundleID: app.appBundleID,
+                                                testHostAppBundleID: app.appBundleID,
                                                 environment: request.environment,
                                                 arguments: request.arguments,
                                                 testsToRun: testsToRun,
