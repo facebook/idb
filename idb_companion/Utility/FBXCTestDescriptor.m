@@ -171,14 +171,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
 
 - (FBFuture<FBIDBAppHostedTestConfiguration *> *)testConfigWithRunRequest:(FBXCTestRunRequest *)request testApps:(FBTestApplicationsPair *)testApps logDirectoryPath:(NSString *)logDirectoryPath logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
-  BOOL uiTesting = NO;
   FBFuture<FBApplicationLaunchConfiguration *> *appLaunchConfigFuture = nil;
-  if (request.isUITest) {
-    appLaunchConfigFuture = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger, logDirectoryPath, request.waitForDebugger, queue);
-    uiTesting = YES;
-  } else {
-    appLaunchConfigFuture = BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, logDirectoryPath, request.waitForDebugger, queue);
-  }
+  appLaunchConfigFuture = BuildAppLaunchConfig(testApps.testHostApp.bundle.identifier, request.environment, request.arguments, logger, logDirectoryPath, request.waitForDebugger, queue);
   FBCodeCoverageConfiguration *coverageConfig = nil;
   if (request.coverageRequest.collect) {
     NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
@@ -192,7 +186,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
       applicationLaunchConfiguration:applicationLaunchConfiguration
       testHostBundle:testApps.testHostApp.bundle
       timeout:(request.testTimeout ? request.testTimeout.doubleValue : 0)
-      initializeUITesting:uiTesting
+      initializeUITesting:request.isUITest
       useXcodebuild:NO
       testsToRun:request.testsToRun
       testsToSkip:request.testsToSkip
