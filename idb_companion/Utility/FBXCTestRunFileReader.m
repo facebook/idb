@@ -28,16 +28,17 @@
       describeFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath]
       fail:error];
   }
-  // dictionaryWithContentsOfURL:error: is only available in NSDictionary not in NSMutableDictionary
-  NSMutableDictionary<NSString *, id> *xctestrunContents = [[NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error] mutableCopy];
+  NSDictionary<NSString *, id> *xctestrunContents = [NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error];
+  NSMutableDictionary<NSString *, id> *mutableContents = [NSMutableDictionary dictionaryWithCapacity:xctestrunContents.count];
   if (!xctestrunContents) {
     return nil;
   }
-  for (NSString *testTarget in xctestrunContents) {
-    if ([testTarget isEqualToString:@"__xctestrun_metadata__"] || [testTarget isEqualToString:@"CodeCoverageBuildableInfos"]) {
+  for (NSString *contentKey in xctestrunContents) {
+    if ([contentKey isEqualToString:@"__xctestrun_metadata__"] || [contentKey isEqualToString:@"CodeCoverageBuildableInfos"]) {
+      [mutableContents setObject:xctestrunContents[contentKey] forKey:contentKey];
       continue;
     }
-    NSMutableDictionary<NSString *, id> *testTargetProperties = [[xctestrunContents objectForKey:testTarget] mutableCopy];
+    NSMutableDictionary<NSString *, id> *testTargetProperties = [[xctestrunContents objectForKey:contentKey] mutableCopy];
     // Expand __TESTROOT__ and __IDB_APPSTORAGE__ in TestHostPath
     NSString *testHostPath = [testTargetProperties objectForKey:@"TestHostPath"];
     if (testHostPath != nil) {
@@ -58,9 +59,9 @@
       targetAppPath = [targetAppPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
       [testTargetProperties setObject:targetAppPath forKey:@"UITargetAppPath"];
     }
-    [xctestrunContents setObject:testTargetProperties forKey:testTarget];
+    [mutableContents setObject:testTargetProperties forKey:contentKey];
   }
-  return xctestrunContents;
+  return [NSDictionary dictionaryWithDictionary:mutableContents];
 }
 
 @end
