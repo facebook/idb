@@ -285,7 +285,14 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func add_media(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
-    return try await proxy(requestStream: requestStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, context: context)
+    }
+
+    return try await FBTeardownContext.withAutocleanup {
+      try await AddMediaMethodHandler(commandExecutor: commandExecutor)
+        .handle(requestStream: requestStream, context: context)
+    }
   }
 
   func record(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {

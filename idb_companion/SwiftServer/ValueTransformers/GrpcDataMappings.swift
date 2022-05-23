@@ -40,6 +40,15 @@ extension Idb_PushRequest: PayloadExtractable {
   }
 }
 
+extension Idb_AddMediaRequest: PayloadExtractable {
+  func extractPayload() -> Idb_Payload? {
+    if hasPayload {
+      return payload
+    }
+    return nil
+  }
+}
+
 extension PayloadExtractable {
   func extractDataFrame() -> Data? {
     extractPayload()?.extractDataFrame()
