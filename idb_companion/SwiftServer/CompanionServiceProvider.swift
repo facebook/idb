@@ -59,7 +59,14 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+        return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
+
+    return try await FBTeardownContext.withAutocleanup {
+      try await DebugserverMethodHandler(commandExecutor: commandExecutor)
+        .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
   }
 
   func dap(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
