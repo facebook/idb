@@ -38,18 +38,6 @@ private final class FBTeardownContextImpl {
   }
 }
 
-private struct CodeLocation: CustomStringConvertible {
-  let function: String?
-  let file: String
-  let line: Int
-  let column: Int
-
-  var description: String {
-    "Located at file: \(file), line: \(line), column: \(column)" + (function.map { ", function: " + $0 } ?? "")
-  }
-
-}
-
 /// Use this class to coordinate cleanup of the tasks.
 ///
 /// ```
