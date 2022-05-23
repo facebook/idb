@@ -37,6 +37,11 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  */
 @property (nonatomic, assign, readonly) FBProcessStreamAttachmentMode mode;
 
+/**
+ Checks fileDescriptor status and closes it if necessary;
+ */
+-(void)close;
+
 @end
 
 /**

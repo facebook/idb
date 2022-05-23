@@ -38,6 +38,12 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
   return self;
 }
 
+- (void)close
+{
+  if (self.fileDescriptor) {
+    close(self.fileDescriptor);
+  }
+}
 @end
 
 #pragma mark FBProcessFileOutput
