@@ -66,6 +66,7 @@
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
 		DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */; };
 		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
+		DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */; };
 		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
@@ -120,11 +121,11 @@
 		DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */; };
 		DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */; };
 		DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */; };
+		DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */; };
 		DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */; };
 		DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */; };
 		DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */; };
 		DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */; };
-		DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -258,6 +259,7 @@
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
 		DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServerErrorDelegate.swift; sourceTree = "<group>"; };
 		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
+		DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctraceRecordMethodHandler.swift; sourceTree = "<group>"; };
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
 		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
@@ -310,11 +312,11 @@
 		DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulateMemoryWarningMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendNotificationMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetLocationMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsRunMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashListMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogQueryValueTransformer.swift; sourceTree = "<group>"; };
 		DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashShowMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDeleteMethodHandler.swift; sourceTree = "<group>"; };
-		DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsRunMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -565,6 +567,7 @@
 				DBE60F3C282A95D10043EB57 /* VideoStreamMethodHandler.swift */,
 				717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */,
 				DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */,
+				DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -925,6 +928,7 @@
 				DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */,
 				DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */,
 				DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */,
+				DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */,
 				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
 				DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */,
 				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,

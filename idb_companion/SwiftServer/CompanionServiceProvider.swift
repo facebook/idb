@@ -102,7 +102,14 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctrace_record(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
-    try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    guard shouldHandleNatively(context: context) else {
+      return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
+
+    return try await FBTeardownContext.withAutocleanup {
+      try await XctraceRecordMethodHandler(logger: logger, targetLogger: targetLogger, target: target)
+        .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+    }
   }
 
   func accessibility_info(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
