@@ -124,6 +124,7 @@
 		DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */; };
 		DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */; };
 		DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */; };
+		DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -313,6 +314,7 @@
 		DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogQueryValueTransformer.swift; sourceTree = "<group>"; };
 		DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashShowMethodHandler.swift; sourceTree = "<group>"; };
 		DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDeleteMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsRunMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -562,6 +564,7 @@
 				DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */,
 				DBE60F3C282A95D10043EB57 /* VideoStreamMethodHandler.swift */,
 				717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */,
+				DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */,
 			);
 			path = MethodHandlers;
 			sourceTree = "<group>";
@@ -944,6 +947,7 @@
 				DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */,
 				DBA2ED2027BBA96100926054 /* Atomic.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
+				DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */,
 				DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */,
 				DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */,
 				DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */,
