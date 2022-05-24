@@ -196,7 +196,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
       resultBundlePath:nil
       reportActivities:request.reportActivities
       coverageDirectoryPath:coverageConfig.coverageDirectory
-      logDirectoryPath:logDirectoryPath];
+      logDirectoryPath:logDirectoryPath
+      reportResultBundle:request.collectResultBundle];
     return [[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfig coverageConfiguration:coverageConfig];
   }];
 }
@@ -290,7 +291,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
       resultBundlePath:resultBundlePath
       reportActivities:request.reportActivities
       coverageDirectoryPath:nil
-      logDirectoryPath:logDirectoryPath];
+      logDirectoryPath:logDirectoryPath
+      reportResultBundle:request.collectResultBundle];
     return [[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfiguration coverageConfiguration:nil];
   }];
 }

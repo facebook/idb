@@ -51,7 +51,8 @@ struct XCTestRunMethodHandler {
                                           reportAttachments: request.reportAttachments,
                                           coverageRequest: extractCodeCoverage(from: request),
                                           collectLogs: request.collectLogs,
-                                          waitForDebugger: request.waitForDebugger)
+                                          waitForDebugger: request.waitForDebugger,
+                                          collectResultBundle: request.collectResultBundle)
     case let .application(app):
       return FBXCTestRunRequest.applicationTest(withTestBundleID: request.testBundleID,
                                                 testHostAppBundleID: app.appBundleID,
@@ -64,7 +65,8 @@ struct XCTestRunMethodHandler {
                                                 reportAttachments: request.reportAttachments,
                                                 coverageRequest: extractCodeCoverage(from: request),
                                                 collectLogs: request.collectLogs,
-                                                waitForDebugger: request.waitForDebugger)
+                                                waitForDebugger: request.waitForDebugger,
+                                                collectResultBundle: request.collectResultBundle)
     case let .ui(ui):
       return FBXCTestRunRequest.uiTest(withTestBundleID: request.testBundleID,
                                        appBundleID: ui.appBundleID,
@@ -77,7 +79,8 @@ struct XCTestRunMethodHandler {
                                        reportActivities: request.reportActivities,
                                        reportAttachments: request.reportAttachments,
                                        coverageRequest: extractCodeCoverage(from: request),
-                                       collectLogs: request.collectLogs)
+                                       collectLogs: request.collectLogs,
+                                       collectResultBundle: request.collectResultBundle)
     case .none:
       return nil
     }

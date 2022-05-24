@@ -102,7 +102,8 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
   FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy

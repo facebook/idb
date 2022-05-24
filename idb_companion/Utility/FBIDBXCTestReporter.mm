@@ -33,7 +33,7 @@
 
 #pragma mark Initializer
 
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger reportResultBundle:(BOOL)reportResultBundle
 {
   self = [super init];
   if (!self) {
@@ -44,7 +44,7 @@
   _queue = queue;
   _logger = logger;
 
-  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageConfiguration:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO];
+  _configuration = [[FBXCTestReporterConfiguration alloc] initWithResultBundlePath:nil coverageConfiguration:nil logDirectoryPath:nil binariesPaths:nil reportAttachments:NO reportResultBundle:reportResultBundle];
   _currentActivityRecords = NSMutableArray.array;
   _reportingTerminatedMutable = FBMutableFuture.future;
   _processUnderTestExitedMutable = FBMutableFuture.future;
@@ -339,7 +339,7 @@
   responseCopy.CopyFrom(response);
 
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
-  if (self.configuration.resultBundlePath) {
+  if (self.configuration.resultBundlePath && self.configuration.reportResultBundle) {
     [futures addObject:[[self getResultsBundle] onQueue:self.queue chain:^FBFuture<NSNull *> *(FBFuture<NSData *> *future) {
       NSData *data = future.result;
       if (data) {
@@ -430,7 +430,7 @@
 {
   return [self.processUnderTestExitedMutable
     onQueue:self.queue fmap:^FBFuture<NSData *> *(id _) {
-    
+
       switch (self.configuration.coverageConfiguration.format) {
         case FBCodeCoverageExported:
           return [[self getCoverageDataExported]

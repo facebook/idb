@@ -25,12 +25,15 @@ extension IDBXCTestReporter {
 
     let reportAttachments: Bool
 
+    let reportResultBundle: Bool
+
     init(legacy: FBXCTestReporterConfiguration) {
       self.resultBundlePath = legacy.resultBundlePath ?? ""
       self.coverageConfiguration = legacy.coverageConfiguration
       self.logDirectoryPath = legacy.logDirectoryPath
       self.binariesPath = legacy.binariesPaths ?? []
       self.reportAttachments = legacy.reportAttachments
+      self.reportResultBundle = legacy.reportResultBundle
     }
 
   }
@@ -265,7 +268,7 @@ extension IDBXCTestReporter {
   private func insertFinalDataThenWriteResponse(response: Idb_XctestRunResponse) async throws {
     var response = response
 
-    if !configuration.resultBundlePath.isEmpty {
+    if !configuration.resultBundlePath.isEmpty && configuration.reportResultBundle {
       do {
         let resultBundle = try await gzipFolder(at: configuration.resultBundlePath)
         response.resultBundle = .with {

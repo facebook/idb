@@ -17,7 +17,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle
 {
   self = [super init];
   if (!self) {
@@ -38,6 +38,7 @@
   _reportActivities = reportActivities;
   _coverageDirectoryPath = coverageDirectoryPath;
   _logDirectoryPath = logDirectoryPath;
+  _reportResultBundle = reportResultBundle;
 
   return self;
 }
@@ -70,7 +71,8 @@
          (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
          (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]) &&
          (self.coverageDirectoryPath == configuration.coverageDirectoryPath || [self.coverageDirectoryPath isEqualToString:configuration.coverageDirectoryPath]) &&
-         (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath]);
+         (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath]) &&
+         self.reportResultBundle == configuration.reportResultBundle;
 }
 
 - (NSUInteger)hash
@@ -81,7 +83,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | LogDirectoryPath %@" ,
+    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | LogDirectoryPath %@ | ReportResultBundle %d" ,
     self.testBundle,
     self.applicationLaunchConfiguration,
     self.testHostBundle,
@@ -93,7 +95,8 @@
     self.xcTestRunProperties,
     self.resultBundlePath,
     self.coverageDirectoryPath,
-    self.logDirectoryPath
+    self.logDirectoryPath,
+    self.reportResultBundle
   ];
 }
 

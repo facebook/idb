@@ -688,6 +688,7 @@ message XctestRunRequest {
   bool collect_logs = 11;
   bool wait_for_debugger = 12;
   CodeCoverage code_coverage = 13;
+  bool collect_result_bundle = 14;
 }
 
 message XctestRunResponse {

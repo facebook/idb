@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to serialize work on.
  @param logger the logger to log to.
  */
-- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithResponseWriter:(grpc::ServerWriter<idb::XctestRunResponse> *)writer queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger reportResultBundle:(BOOL)reportResultBundle;
 
 #pragma mark Properties
 

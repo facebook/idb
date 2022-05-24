@@ -308,6 +308,7 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
   BOOL reportActivities = request->report_activities();
   BOOL collectLogs = request->collect_logs();
   BOOL waitForDebugger = request->wait_for_debugger();
+  BOOL collectResultBundle = request->collect_result_bundle();
   BOOL reportAttachments = request->report_attachments();
   FBCodeCoverageRequest *coverage = extract_code_coverage(request);
 
@@ -326,18 +327,18 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
 
   switch (request->mode().mode_case()) {
     case idb::XctestRunRequest_Mode::kLogic: {
-      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
+      return [FBXCTestRunRequest logicTestWithTestBundleID:testBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger collectResultBundle:collectResultBundle];
     }
     case idb::XctestRunRequest_Mode::kApplication: {
       const idb::XctestRunRequest::Application application = request->mode().application();
       NSString *appBundleID = nsstring_from_c_string(application.app_bundle_id());
-      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID testHostAppBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger];
+      return [FBXCTestRunRequest applicationTestWithTestBundleID:testBundleID testHostAppBundleID:appBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs waitForDebugger:waitForDebugger collectResultBundle:collectResultBundle];
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
       NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs collectResultBundle:collectResultBundle];
     }
     default:
       return nil;
@@ -1177,7 +1178,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   }
   // Once the reporter is created, only it will perform writing to the writer.
   NSError *error = nil;
-  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger];
+  FBIDBXCTestReporter *reporter = [[FBIDBXCTestReporter alloc] initWithResponseWriter:response queue:_target.workQueue logger:_target.logger reportResultBundle:xctestRunRequest.collectResultBundle];
   FBIDBTestOperation *operation = [[_commandExecutor xctest_run:xctestRunRequest reporter:reporter logger:[FBControlCoreLoggerFactory loggerToConsumer:reporter]] block:&error];
   if (!operation) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);

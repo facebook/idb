@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
  @return an FBXCTestRunRequest instance.
  */
-+ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
++ (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
 
 /**
 The Initializer for App Tests.
@@ -53,7 +53,7 @@ The Initializer for App Tests.
  @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger;
++ (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
 
 /**
 The Initializer for UI Tests.
@@ -70,7 +70,7 @@ The Initializer for UI Tests.
  @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
 
 #pragma mark Properties
 
@@ -148,6 +148,11 @@ The Initializer for UI Tests.
  If set tests' would stop after Run and wait for a debugger to be attached.
  */
 @property (nonatomic, assign, readonly) BOOL waitForDebugger;
+
+/**
+ If set tests' result bundle will be collected
+ */
+@property (nonatomic, assign, readonly) BOOL collectResultBundle;
 
 /**
  Starts the test operation.

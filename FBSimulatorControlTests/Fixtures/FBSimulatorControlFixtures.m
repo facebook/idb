@@ -71,7 +71,8 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
@@ -90,7 +91,8 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 }
 
 - (FBBundleDescriptor *)tableSearchApplication
@@ -154,7 +156,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
   NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
   FBBundleDescriptor * bundle = [FBBundleDescriptor bundleFromPath:bundlePath error:&error];
   XCTAssert(bundle, @"Failed to load bundle at %@: %@", bundlePath, error);
-  
+
   FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
   if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
     return bundle;

@@ -114,6 +114,7 @@ def make_request(
     coverage_format: CodeCoverageFormat,
     collect_logs: bool,
     wait_for_debugger: bool,
+    collect_result_bundle: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -149,6 +150,7 @@ def make_request(
         collect_logs=collect_logs,
         wait_for_debugger=wait_for_debugger,
         code_coverage=coverage_object,
+        collect_result_bundle=collect_result_bundle,
     )
 
 

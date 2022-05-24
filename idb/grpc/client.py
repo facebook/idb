@@ -1200,6 +1200,7 @@ class Client(ClientBase):
                 coverage_format=coverage_format,
                 collect_logs=log_directory_path is not None,
                 wait_for_debugger=wait_for_debugger,
+                collect_result_bundle=result_bundle_path is not None,
             )
             log_parser = XCTestLogParser()
             await stream.send_message(request)
