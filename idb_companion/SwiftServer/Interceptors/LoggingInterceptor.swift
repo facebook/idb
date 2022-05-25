@@ -8,6 +8,10 @@
 import GRPC
 import NIO
 
+private enum MethodStartKey: UserInfo.Key {
+  typealias Value = Date
+}
+
 final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
 
   private let logger: FBIDBLogger
@@ -18,6 +22,8 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     self.reporter = reporter
   }
 
+  // MARK: Request start + incoming frames
+
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
     guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
       assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
@@ -27,6 +33,7 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
 
     switch part {
     case .metadata:
+      saveStartDate(in: context)
       reportMethodStart(methodName: methodInfo.name, in: context)
 
     case .message where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
@@ -42,6 +49,10 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     super.receive(part, context: context)
   }
 
+  private func saveStartDate(in context: ServerInterceptorContext<Request, Response>) {
+    context.userInfo[MethodStartKey.self] = Date()
+  }
+
   private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
     let willBeCalledNatively = context.userInfo[CallSwiftMethodNatively.self] == true
     if !willBeCalledNatively {
@@ -49,7 +60,11 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     } else {
       logger.info().log("Start of \(methodName), handling natively")
     }
+    let subject = FBEventReporterSubject(forStartedCall: methodName, arguments: [], reportNativeSwiftMethodCall: willBeCalledNatively)
+    reporter.report(subject)
   }
+
+  // MARK: Request end + outgoing frames
 
   override func send(_ part: GRPCServerResponsePart<Response>, promise: EventLoopPromise<Void>?, context: ServerInterceptorContext<Request, Response>) {
     guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
@@ -73,11 +88,27 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
   }
 
   private func reportMethodEnd(methodName: String, status: GRPCStatus, context: ServerInterceptorContext<Request, Response>) {
+    let duration = getMethodDuration(context: context)
+
+    let subject: FBEventReporterSubject
+    let reportNativeSwiftMethodCall = context.userInfo[CallSwiftMethodNatively.self] == true
     if status.isOk {
       logger.debug().log("Success of \(methodName)")
+      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [], reportNativeSwiftMethodCall: reportNativeSwiftMethodCall)
     } else {
       logger.info().log("Failure of \(methodName), \(status)")
+      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [], reportNativeSwiftMethodCall: reportNativeSwiftMethodCall)
     }
+
+    reporter.report(subject)
+  }
+
+  private func getMethodDuration(context: ServerInterceptorContext<Request, Response>) -> TimeInterval {
+    guard let methodStartDate = context.userInfo[MethodStartKey.self] else {
+      assertionFailure("\(MethodStartKey.self) is not configured on request start")
+      return 0
+    }
+    return Date().timeIntervalSince(methodStartDate)
   }
 
 }
