@@ -13,7 +13,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBIDBCompanionServer.h"
-#import "FBIDBConfiguration.h"
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
 #import "FBIDBPortsConfiguration.h"
@@ -434,7 +433,7 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
 
       FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
 
-      FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:FBIDBConfiguration.swiftEventReporter logger:logger];
+      FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
 
       FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target commandExecutor: cppCommandExecutor ports:ports.legacyConfigurationObject eventReporter:reporter logger:logger error:&error];
       if (!server) {
@@ -558,7 +557,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefault
   NSString *clean = [userDefaults stringForKey:@"-clean"];
   NSString *forward = [userDefaults stringForKey:@"-forward"];
 
-  id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
+  id<FBEventReporter> reporter = IDBConfiguration.eventReporter;
   if (udid) {
     return CompanionServerFuture(udid, userDefaults, xcodeAvailable, logger, reporter);
   } else if (list) {

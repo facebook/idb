@@ -24,4 +24,3 @@
 
 // Configuration
 #import "../Configuration/FBIDBPortsConfiguration.h"
-#import "../Configuration/FBIDBConfiguration.h"
