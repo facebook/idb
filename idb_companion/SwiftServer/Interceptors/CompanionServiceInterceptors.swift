@@ -23,7 +23,7 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
   }
 
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
-    [MethodPathSetterInterceptor(),
+    [MethodInfoSetterInterceptor(),
      ProxyDeterminatorInterceptor(),
      LoggingInterceptor(logger: logger, reporter: reporter)]
   }

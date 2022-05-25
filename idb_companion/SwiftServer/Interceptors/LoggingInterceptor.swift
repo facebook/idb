@@ -19,20 +19,21 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
   }
 
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
+    guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
+      assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
+      super.receive(part, context: context)
+      return
+    }
+
     switch part {
     case .metadata:
-      let willBeCalledNatively = context.userInfo[CallSwiftMethodNatively.self] == true
-      if !willBeCalledNatively {
-        logger.info().log("Start of \(context.path), proxying to cpp server")
-      } else {
-        logger.info().log("Start of \(context.path), call natively")
-      }
+      reportMethodStart(methodName: methodInfo.name, in: context)
 
-    case .message where context.type == .clientStreaming || context.type == .bidirectionalStreaming:
-      logger.debug().log("Receive frame of \(context.path)")
+    case .message where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
+      logger.debug().log("Receive frame of \(methodInfo.name)")
 
-    case .end where context.type == .clientStreaming || context.type == .bidirectionalStreaming:
-      logger.debug().log("Close client stream of \(context.path)")
+    case .end where methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming:
+      logger.debug().log("Close client stream of \(methodInfo.name)")
 
     default:
       break
@@ -41,23 +42,42 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     super.receive(part, context: context)
   }
 
+  private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
+    let willBeCalledNatively = context.userInfo[CallSwiftMethodNatively.self] == true
+    if !willBeCalledNatively {
+      logger.info().log("Start of \(methodName), proxying to cpp server")
+    } else {
+      logger.info().log("Start of \(methodName), handling natively")
+    }
+  }
+
   override func send(_ part: GRPCServerResponsePart<Response>, promise: EventLoopPromise<Void>?, context: ServerInterceptorContext<Request, Response>) {
+    guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
+      assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
+      super.send(part, promise: promise, context: context)
+      return
+    }
+
     switch part {
-    case .message where context.type == .serverStreaming || context.type == .bidirectionalStreaming:
-      logger.debug().log("Send frame of \(context.path)")
+    case .message where methodInfo.callType == .serverStreaming || methodInfo.callType == .bidirectionalStreaming:
+      logger.debug().log("Send frame of \(methodInfo.name)")
 
     case let .end(status, _):
-      if status.isOk {
-        logger.debug().log("Success of \(context.path)")
-      } else {
-        logger.info().log("Failure of \(context.path), \(status)")
-      }
+      reportMethodEnd(methodName: methodInfo.name, status: status, context: context)
 
     default:
       break
     }
 
     super.send(part, promise: promise, context: context)
+  }
+
+  private func reportMethodEnd(methodName: String, status: GRPCStatus, context: ServerInterceptorContext<Request, Response>) {
+    if status.isOk {
+      logger.debug().log("Success of \(methodName)")
+    } else {
+      logger.info().log("Failure of \(methodName), \(status)")
+    }
   }
 
 }

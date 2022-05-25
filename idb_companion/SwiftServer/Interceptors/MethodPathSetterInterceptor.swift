@@ -7,16 +7,53 @@
 
 import Foundation
 import GRPC
+import IDBGRPCSwift
 
-enum MethodPathKey: UserInfo.Key {
-   typealias Value = String
+enum MethodInfoKey: UserInfo.Key {
+   typealias Value = GRPCMethodInfo
 }
 
-final class MethodPathSetterInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
+struct GRPCMethodInfo {
+  let name: String
+  let path: String
+  let callType: GRPCCallType
+}
+
+final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
+
+  @Atomic var methodDescriptors: [String: GRPCMethodDescriptor] = Idb_CompanionServiceServerMetadata
+    .serviceDescriptor
+    .methods
+    .reduce(into: [:]) { $0[$1.path] = $1 }
 
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
-    context.userInfo[MethodPathKey.self] = context.path
-    context.receive(part)
+    switch part {
+    case .metadata:
+      let methodInfo: GRPCMethodInfo
+      if let methodDescriptor = methodDescriptors[context.path] {
+        methodInfo = GRPCMethodInfo(name: methodDescriptor.name,
+                                    path: methodDescriptor.path,
+                                    callType: methodDescriptor.type)
+      } else {
+        assertionFailure("Method not found in descriptors list. If this is client and companion version mismatch, ignore that error")
+        // context.callType is not reported correctly in ServerInterceptorContext and always return .bidirectionalStreaming
+        methodInfo = GRPCMethodInfo(name: String(extractMethodName(path: context.path)),
+                                    path: context.path,
+                                    callType: context.type)
+      }
+      context.userInfo[MethodInfoKey.self] = methodInfo
+
+    default:
+      break
+    }
+
+    super.receive(part, context: context)
+  }
+
+  private func extractMethodName(path: String) -> Substring {
+    path
+      .suffix(from: path.lastIndex(of: "/")!)
+      .dropFirst()
   }
 
 }

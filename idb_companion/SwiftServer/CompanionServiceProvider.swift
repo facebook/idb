@@ -452,12 +452,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 extension CompanionServiceProvider {
 
   private func proxy<Request: Message, Response: Message>(request: Request, context: GRPCAsyncServerCallContext) async throws -> Response {
-    let methodPath = try extractMethodPathAndLogProxyMessage(context: context)
+    let methodPath = try extractMethodPath(context: context)
     return try await internalCppClient.performAsyncUnaryCall(path: methodPath, request: request)
   }
 
   private func proxy<Request: Message, Response: Message>(request: Request, responseStream: GRPCAsyncResponseStreamWriter<Response>, context: GRPCAsyncServerCallContext) async throws {
-    let methodPath = try extractMethodPathAndLogProxyMessage(context: context)
+    let methodPath = try extractMethodPath(context: context)
     let resultStream = internalCppClient.performAsyncServerStreamingCall(path: methodPath, request: request, responseType: Response.self)
 
     for try await response in resultStream {
@@ -466,12 +466,12 @@ extension CompanionServiceProvider {
   }
 
   private func proxy<Request: Message, Response: Message>(requestStream: GRPCAsyncRequestStream<Request>, context: GRPCAsyncServerCallContext) async throws -> Response {
-    let methodPath = try extractMethodPathAndLogProxyMessage(context: context)
+    let methodPath = try extractMethodPath(context: context)
     return try await internalCppClient.performAsyncClientStreamingCall(path: methodPath, requests: requestStream)
   }
 
   private func proxy<Request: Message, Response: Message>(requestStream: GRPCAsyncRequestStream<Request>, responseStream: GRPCAsyncResponseStreamWriter<Response>, context: GRPCAsyncServerCallContext) async throws {
-    let methodPath = try extractMethodPathAndLogProxyMessage(context: context)
+    let methodPath = try extractMethodPath(context: context)
     let resultStream = internalCppClient.performAsyncBidirectionalStreamingCall(path: methodPath, requests: requestStream, responseType: Response.self)
 
     for try await response in resultStream {
@@ -479,11 +479,10 @@ extension CompanionServiceProvider {
     }
   }
 
-  private func extractMethodPathAndLogProxyMessage(context: GRPCAsyncServerCallContext) throws -> String {
-    guard let methodPath = context.userInfo[MethodPathKey.self] else {
+  private func extractMethodPath(context: GRPCAsyncServerCallContext) throws -> String {
+    guard let methodPath = context.userInfo[MethodInfoKey.self]?.path else {
       throw GRPCStatus(code: .internalError, message: "Method path not provided. Check idb_companion's grpc interceptor configuration")
     }
-    logger.log("Proxying \(methodPath) to cpp server")
     return methodPath
   }
 }

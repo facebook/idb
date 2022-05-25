@@ -18,7 +18,6 @@ final class ProxyDeterminatorInterceptor<Request, Response>: ServerInterceptor<R
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
     switch part {
     case let .metadata(headers):
-
       if ProcessInfo.processInfo.environment["IDB_HANDLE_ALL_GRPC_SWIFT"] == "YES" {
         context.userInfo[CallSwiftMethodNatively.self] = true
       } else {
@@ -34,19 +33,16 @@ final class ProxyDeterminatorInterceptor<Request, Response>: ServerInterceptor<R
   private func swiftMethodsHeaderContainsCurrentMethod(headers: HPACKHeaders, context: ServerInterceptorContext<Request, Response>) -> Bool {
     let swiftMethodsValue = headers["idb-swift-methods"]
 
-    let methodName = extractMethodName(path: context.path)
+    guard let methodName = context.userInfo[MethodInfoKey.self]?.name else {
+      assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
+      return false
+    }
+
     let swiftMethods = swiftMethodsValue
       .reduce("", +)
       .split(separator: ",")
 
-    return swiftMethods.contains(methodName)
+    return swiftMethods.contains(Substring(methodName))
   }
-
-  private func extractMethodName(path: String) -> Substring {
-    path
-      .suffix(from: path.lastIndex(of: "/")!)
-      .dropFirst()
-  }
-
 
 }
