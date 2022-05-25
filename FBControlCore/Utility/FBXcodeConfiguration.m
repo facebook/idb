@@ -22,7 +22,7 @@
   return [self findXcodeDeveloperDirectoryOrAssert];
 }
 
-+ (NSString *)getDeveloperDirectoryIfExists
++ (nullable NSString *)getDeveloperDirectoryIfExists
 {
   return [self findXcodeDeveloperDirectoryFromXcodeSelect:nil];
 }
@@ -160,7 +160,7 @@
   return directory;
 }
 
-+ (NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
++ (nullable NSString *)findXcodeDeveloperDirectoryFromXcodeSelect:(NSError **)error
 {
   static dispatch_once_t onceToken;
   static NSString *directory;

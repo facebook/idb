@@ -86,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Return Developer directory if exist or nil.
  */
-+ (NSString *)getDeveloperDirectoryIfExists;
++ (nullable NSString *)getDeveloperDirectoryIfExists;
 
 @end
 
