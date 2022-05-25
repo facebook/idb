@@ -68,6 +68,7 @@
 		DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB29DC79283633D000D267BF /* DapMethodHandler.swift */; };
 		DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */; };
 		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
+		DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
 		DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */; };
 		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
@@ -265,6 +266,7 @@
 		DB29DC79283633D000D267BF /* DapMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DapMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctraceRecordMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
+		DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingInterceptor.swift; sourceTree = "<group>"; };
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
 		DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
 		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
@@ -530,6 +532,7 @@
 			children = (
 				DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */,
 				DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */,
+				DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */,
 				DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */,
 			);
 			path = Interceptors;
@@ -976,6 +979,7 @@
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
 				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
 				DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */,
+				DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
 				DBB72C87283BACE10065DDB3 /* TaskTimeout.swift in Sources */,
 				DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */,

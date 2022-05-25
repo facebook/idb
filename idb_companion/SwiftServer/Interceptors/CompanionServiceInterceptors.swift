@@ -14,8 +14,18 @@ import GRPC
 // but make it too explicit from other side.
 final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol {
 
+  private let logger: FBIDBLogger
+  private let reporter: FBEventReporter
+
+  init(logger: FBIDBLogger, reporter: FBEventReporter) {
+    self.logger = logger
+    self.reporter = reporter
+  }
+
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
-    [MethodPathSetterInterceptor(), ProxyDeterminatorInterceptor()]
+    [MethodPathSetterInterceptor(),
+     ProxyDeterminatorInterceptor(),
+     LoggingInterceptor(logger: logger, reporter: reporter)]
   }
 
   func makeconnectInterceptors() -> [ServerInterceptor<Idb_ConnectRequest, Idb_ConnectResponse>] {
