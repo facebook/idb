@@ -275,26 +275,33 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     return [FBFuture futureWithError:error];
   }
 
-  return [BuildAppLaunchConfig(request.appBundleID, request.environment, request.arguments, logger, nil, request.waitForDebugger, queue)
-   onQueue:queue map:^ FBIDBAppHostedTestConfiguration * (FBApplicationLaunchConfiguration *launchConfig) {
-    FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]
-      initWithTestBundle:self.testBundle
-      applicationLaunchConfiguration:launchConfig
-      testHostBundle:self.testHostBundle
-      timeout:0
-      initializeUITesting:request.isUITest
-      useXcodebuild:YES
-      testsToRun:request.testsToRun
-      testsToSkip:request.testsToSkip
-      targetApplicationBundle:nil
-      xcTestRunProperties:properties
-      resultBundlePath:resultBundlePath
-      reportActivities:request.reportActivities
-      coverageDirectoryPath:nil
-      logDirectoryPath:logDirectoryPath
-      reportResultBundle:request.collectResultBundle];
-    return [[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfiguration coverageConfiguration:nil];
-  }];
+  FBApplicationLaunchConfiguration *launchConfig = [[FBApplicationLaunchConfiguration alloc]
+    initWithBundleID:request.appBundleID
+    bundleName:nil
+    arguments:request.arguments ?: @[]
+    environment:request.environment ?: @{}
+    waitForDebugger:request.waitForDebugger
+    io:[[FBProcessIO alloc] initWithStdIn:nil stdOut:nil stdErr:nil]
+    launchMode:FBApplicationLaunchModeFailIfRunning];
+
+  FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration alloc]
+    initWithTestBundle:self.testBundle
+    applicationLaunchConfiguration:launchConfig
+    testHostBundle:self.testHostBundle
+    timeout:0
+    initializeUITesting:request.isUITest
+    useXcodebuild:YES
+    testsToRun:request.testsToRun
+    testsToSkip:request.testsToSkip
+    targetApplicationBundle:nil
+    xcTestRunProperties:properties
+    resultBundlePath:resultBundlePath
+    reportActivities:request.reportActivities
+    coverageDirectoryPath:nil
+    logDirectoryPath:logDirectoryPath
+    reportResultBundle:request.collectResultBundle];
+
+  return [FBFuture futureWithResult:[[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfiguration coverageConfiguration:nil]];
 }
 
 
