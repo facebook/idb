@@ -69,8 +69,8 @@ struct XCTestRunMethodHandler {
                                                 collectResultBundle: request.collectResultBundle)
     case let .ui(ui):
       return FBXCTestRunRequest.uiTest(withTestBundleID: request.testBundleID,
-                                       appBundleID: ui.appBundleID,
                                        testHostAppBundleID: ui.testHostAppBundleID,
+                                       testTargetAppBundleID: ui.appBundleID,
                                        environment: request.environment,
                                        arguments: request.arguments,
                                        testsToRun: testsToRun,

@@ -141,7 +141,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     return [FBFuture futureWithResult:[[FBTestApplicationsPair alloc] initWithApplicationUnderTest:nil testHostApp:nil]];
   }
   if (request.isUITest) {
-    if (!request.appBundleID) {
+    if (!request.testTargetAppBundleID) {
       return [[FBIDBError
         describe:@"Request for UI Test, but no app_bundle_id provided"]
         failFuture];
@@ -149,7 +149,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     NSString *testHostBundleID = request.testHostAppBundleID ?: @"com.apple.Preferences";
     return [[FBFuture
       futureWithFutures:@[
-        [target installedApplicationWithBundleID:request.appBundleID],
+        [target installedApplicationWithBundleID:request.testTargetAppBundleID],
         [target installedApplicationWithBundleID:testHostBundleID],
       ]]
       onQueue:target.asyncQueue map:^(NSArray<FBInstalledApplication *> *applications) {

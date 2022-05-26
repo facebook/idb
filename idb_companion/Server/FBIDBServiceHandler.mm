@@ -336,9 +336,9 @@ static FBXCTestRunRequest *convert_xctest_request(const idb::XctestRunRequest *r
     }
     case idb::XctestRunRequest_Mode::kUi: {
       const idb::XctestRunRequest::UI ui = request->mode().ui();
-      NSString *appBundleID = nsstring_from_c_string(ui.app_bundle_id());
+      NSString *testTargetAppBundleID = nsstring_from_c_string(ui.app_bundle_id());
       NSString *testHostAppBundleID = nsstring_from_c_string(ui.test_host_app_bundle_id());
-      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID appBundleID:appBundleID testHostAppBundleID:testHostAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs collectResultBundle:collectResultBundle];
+      return [FBXCTestRunRequest uiTestWithTestBundleID:testBundleID testHostAppBundleID:testHostAppBundleID testTargetAppBundleID:testTargetAppBundleID environment:environment arguments:arguments testsToRun:testsToRun testsToSkip:testsToSkip testTimeout:testTimeout reportActivities:reportActivities reportAttachments:reportAttachments coverageRequest:coverage collectLogs:collectLogs collectResultBundle:collectResultBundle];
     }
     default:
       return nil;

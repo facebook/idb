@@ -59,7 +59,6 @@ The Initializer for App Tests.
 The Initializer for UI Tests.
 
  @param testBundleID the bundle id of the test to run.
- @param appBundleID the bundle id of the application to automatie.
  @param testHostAppBundleID the bundle id of the application hosting the test bundle.
  @param environment environment for the logic test process.
  @param arguments arguments for the logic test process.
@@ -70,7 +69,7 @@ The Initializer for UI Tests.
  @param coverageRequest information about llvm code coverage collection
  @return an FBXCTestRunRequest instance.
 */
-+ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID appBundleID:(NSString *)appBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
++ (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID testTargetAppBundleID:(NSString *)testTargetAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
 
 #pragma mark Properties
 
@@ -90,14 +89,14 @@ The Initializer for UI Tests.
 @property (nonatomic, copy, readonly) NSString *testBundleID;
 
 /**
- The Bundle ID of the Application to test in, if relevant.
- */
-@property (nonatomic, copy, nullable, readonly) NSString *appBundleID;
-
-/**
  The Bundle ID of the Test Host, if relevant.
  */
 @property (nonatomic, copy, nullable, readonly) NSString *testHostAppBundleID;
+
+/**
+ The Bundle ID of the Test Target (a.k.a. App Under Test), if relevant.
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *testTargetAppBundleID;
 
 /**
  The environment variables for the application, if relevant
