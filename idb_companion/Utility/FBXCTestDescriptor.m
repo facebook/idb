@@ -276,7 +276,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
   }
 
   FBApplicationLaunchConfiguration *launchConfig = [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:request.appBundleID
+    initWithBundleID:@"not.used.bundleId"
     bundleName:nil
     arguments:request.arguments ?: @[]
     environment:request.environment ?: @{}
