@@ -57,7 +57,18 @@
     NSString *targetAppPath = [testTargetProperties objectForKey:@"UITargetAppPath"];
     if (targetAppPath != nil) {
       targetAppPath = [targetAppPath stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
+      targetAppPath = [targetAppPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
       [testTargetProperties setObject:targetAppPath forKey:@"UITargetAppPath"];
+    }
+    NSArray<NSString *> *dependencies = [testTargetProperties objectForKey:@"DependentProductPaths"];
+    if (dependencies && dependencies.count) {
+      NSMutableArray<NSString *> *expandedDeps = [NSMutableArray arrayWithCapacity:dependencies.count];
+      for (NSString *dep in dependencies) {
+          NSString *absPath = [dep stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
+          absPath = [absPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
+          [expandedDeps addObject:absPath];
+      }
+      [testTargetProperties setObject:[NSArray arrayWithArray:expandedDeps] forKey:@"DependentProductPaths"];
     }
     [mutableContents setObject:testTargetProperties forKey:contentKey];
   }
