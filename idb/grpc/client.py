@@ -886,9 +886,6 @@ class Client(ClientBase):
             )
             await drain_to_stream(
                 stream=stream,
-                # pyre-fixme[6]: Expected
-                #  `AsyncIterator[Variable[idb.grpc.stream._TSend]]` for 2nd param but
-                #  got `Generator[typing.Any, None, None]`.
                 generator=grpc_event_iterator,
                 logger=self.logger,
             )
