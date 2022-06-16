@@ -42,7 +42,7 @@ final class GRPCSwiftServer : NSObject {
     let tlsCerts = Self.loadCertificates(tlsCertPath: ports.tlsCertPath, logger: logger)
 
     let clientToCppServer = Self.internalCppClient(portConfiguration: ports, certificates: tlsCerts, group: group)
-    let interceptors = CompanionServiceInterceptors(logger: logger, reporter: reporter)
+    let interceptors = CompanionServiceInterceptors(logger: logger, reporter: reporter, killswitch: IDBConfiguration.idbKillswitch)
 
     self.provider = CompanionServiceProvider(target: target,
                                              commandExecutor: commandExecutor,

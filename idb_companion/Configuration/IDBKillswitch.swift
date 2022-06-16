@@ -15,3 +15,7 @@ enum IDBFeature {
 protocol IDBKillswitch {
   func disabled(_ killswitch: IDBFeature) async -> Bool
 }
+
+final class EmptyIDBKillswitch: IDBKillswitch {
+  func disabled(_ killswitch: IDBFeature) async -> Bool { true }
+}

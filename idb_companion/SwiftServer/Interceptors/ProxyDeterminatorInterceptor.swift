@@ -15,6 +15,13 @@ enum CallSwiftMethodNatively: UserInfo.Key {
 
 final class ProxyDeterminatorInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
 
+
+  private let killswitch: IDBKillswitch
+
+  init(killswitch: IDBKillswitch) {
+    self.killswitch = killswitch
+  }
+
   override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
     switch part {
     case let .metadata(headers):
