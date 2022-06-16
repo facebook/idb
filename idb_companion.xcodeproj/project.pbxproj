@@ -67,6 +67,7 @@
 		DB15C403283647120074D326 /* AddMediaMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15C402283647120074D326 /* AddMediaMethodHandler.swift */; };
 		DB1FCCFE284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCFD284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift */; };
 		DB1FCCFA284F6C8B00EAFB20 /* TaskFBFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */; };
+		DB1FCCFC284F6ECA00EAFB20 /* IDBKillswitchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */; };
 		DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB29DC79283633D000D267BF /* DapMethodHandler.swift */; };
 		DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */; };
 		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
@@ -268,6 +269,7 @@
 		DB15C402283647120074D326 /* AddMediaMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMediaMethodHandler.swift; sourceTree = "<group>"; };
 		DB1FCCFD284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InterceptorRequestPartBuffer.swift; sourceTree = "<group>"; };
 		DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TaskFBFuture.swift; sourceTree = "<group>"; };
+		DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDBKillswitchBridge.swift; sourceTree = "<group>"; };
 		DB29DC79283633D000D267BF /* DapMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DapMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctraceRecordMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
@@ -467,6 +469,7 @@
 				713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */,
 				DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */,
 				DB67DD30283D16EF003EF139 /* IDBKillswitch.swift */,
+				DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -990,6 +993,7 @@
 				DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */,
 				DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */,
 				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
+				DB1FCCFC284F6ECA00EAFB20 /* IDBKillswitchBridge.swift in Sources */,
 				DBB72C87283BACE10065DDB3 /* TaskTimeout.swift in Sources */,
 				DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */,
 				DBCAE6AB2816C8F700C15D07 /* PushMethodHandler.swift in Sources */,

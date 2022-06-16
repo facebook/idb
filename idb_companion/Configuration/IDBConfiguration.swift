@@ -14,4 +14,7 @@ class IDBConfiguration: NSObject {
 
   static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
 
+  @objc static func getIDBKillswitch() -> IDBKillswitchBridge {
+    return idbKillswitch.objcBridged
+  }
 }

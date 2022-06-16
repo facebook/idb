@@ -16,6 +16,12 @@ protocol IDBKillswitch {
   func disabled(_ killswitch: IDBFeature) async -> Bool
 }
 
+extension IDBKillswitch {
+  var objcBridged: IDBKillswitchBridge {
+    .init(idbKillswitch: self)
+  }
+}
+
 final class EmptyIDBKillswitch: IDBKillswitch {
   func disabled(_ killswitch: IDBFeature) async -> Bool { true }
 }
