@@ -10,43 +10,43 @@ import GRPC
 import NIO
 
 
-//  ┌─────────────────────────────────────────────────────────┐
-//  │                                                         │
-//  │   There are 3 ways of start companion now. That         │
-//  │   represents phases of the endpoint rollout.            │
-//  │                                                         │
-//  │   1. Use only cpp (full legacy)                         │
-//  │                                                         │
-//  │   2. Use cpp as main, swift as a sidecar, exposing      │
-//  │      both cpp and swift ports and let client decide     │
-//  │      where to go. IDB_SWIFT_COMPANION_PORT=<port>       │
-//  │                                                         │
-//  │               ┌─────┐     ┌───────┐                     │
-//  │               │     │     │       │                     │
-//  │               │     ├─────►  C++  │                     │
-//  │               │  C  │     │       │                     │
-//  │               │  l  │     └───▲───┘                     │
-//  │               │  i  │         │                         │
-//  │               │  e  │         │                         │
-//  │               │  n  │     ┌───┴───┐                     │
-//  │               │  t  │     │       │                     │
-//  │               │     ├─────► Swift │                     │
-//  │               │     │     │       │                     │
-//  │               └─────┘     └───────┘                     │
-//  │                                                         │
-//  │                                                         │
-//  │   3. Use swift as main, exposing *only* swift endpoint. │
-//  │      Cpp is not exposed and used only as fallback.      │
-//  │      IDB_USE_SWIFT_AS_DEFAULT=YES. In this mode env     │
-//  │      IDB_SWIFT_COMPANION_PORT is ignored                │
-//  │                                                         │
-//  │        ┌────────┐     ┌───────┐     ┌───────┐           │
-//  │        │        │     │       │     │       │           │
-//  │        │ Client ├─────► Swift ├─────►  Cpp  │           │
-//  │        │        │     │       │     │       │           │
-//  │        └────────┘     └───────┘     └───────┘           │
-//  │                                                         │
-//  └─────────────────────────────────────────────────────────┘
+//  ┌──────────────────────────────────────────────────────────┐
+//  │                                                          │
+//  │   There are 3 ways of start companion now. That          │
+//  │   represents phases of the endpoint rollout.             │
+//  │                                                          │
+//  │   1. Use only cpp (full legacy). Happes when swift       │
+//  │      is disabled                                         │
+//  │                                                          │
+//  │   2. Use cpp as main, swift as a sidecar, exposing       │
+//  │      both cpp and swift ports and let client decide      │
+//  │      where to go. IDB_SWIFT_COMPANION_PORT=<port>        │
+//  │                                                          │
+//  │               ┌─────┐     ┌───────┐                      │
+//  │               │     │     │       │                      │
+//  │               │     ├─────►  C++  │                      │
+//  │               │  C  │     │       │                      │
+//  │               │  l  │     └───▲───┘                      │
+//  │               │  i  │         │                          │
+//  │               │  e  │         │                          │
+//  │               │  n  │     ┌───┴───┐                      │
+//  │               │  t  │     │       │                      │
+//  │               │     ├─────► Swift │                      │
+//  │               │     │     │       │                      │
+//  │               └─────┘     └───────┘                      │
+//  │                                                          │
+//  │                                                          │
+//  │   3. Use swift as main, exposing *only* swift endpoint.  │
+//  │      Cpp is not exposed and used only as fallback.       │
+//  │      This mode is default when swift is not disabled     │
+//  │                                                          │
+//  │      ┌────────┐     ┌───────┐     ┌───────┐              │
+//  │      │        │     │       │     │       │              │
+//  │      │ Client ├─────► Swift ├─────►  Cpp  │              │
+//  │      │        │     │       │     │       │              │
+//  │      └────────┘     └───────┘     └───────┘              │
+//  │                                                          │
+//  └──────────────────────────────────────────────────────────┘
 //
 // This object is temporary end exists only to support all intermediate phases of the rollout.
 // All this logic will simplify a lot (back to what it was before moving to swift) and will be deleted
@@ -121,7 +121,6 @@ enum GRPCConnectionTarget: CustomStringConvertible {
     static let grpcPort = "-grpc-port"
 
     static let swiftPortEnv = "IDB_SWIFT_COMPANION_PORT"
-    static let useSwiftAsDefault = "IDB_USE_SWIFT_AS_DEFAULT"
   }
 
   /// The GRPC Unix Domain Socket Path
@@ -178,13 +177,13 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   }
 
   /// Construct a ports object.
-  @objc init(arguments: UserDefaults) {
+  @objc init(arguments: UserDefaults, useSwiftAsDefault: Bool) {
     self.debugserverPort = arguments.string(forKey: Key.debugPort).flatMap(Int.init) ?? 10881
     self.grpcPort = arguments.string(forKey: Key.grpcPort).flatMap(Int.init) ?? 10882
     self.grpcSwiftPort = ProcessInfo.processInfo.environment[Key.swiftPortEnv].flatMap(Int.init) ?? 0
     self.grpcDomainSocket = arguments.string(forKey: Key.grpcDomainSock)
     self.tlsCertPath = arguments.string(forKey: Key.tlsCertPath)
-    self.useSwiftAsDefault = ProcessInfo.processInfo.environment[Key.useSwiftAsDefault] == "YES"
+    self.useSwiftAsDefault = ProcessInfo.processInfo.environment[Key.swiftPortEnv] == nil ? useSwiftAsDefault : false
 
     self.fallbackCppDomainSocket = "/tmp/idb_companion_\(UUID().uuidString.lowercased())"
   }
