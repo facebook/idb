@@ -66,6 +66,7 @@
 		DB15C401283645AF0074D326 /* DebugserverMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15C400283645AF0074D326 /* DebugserverMethodHandler.swift */; };
 		DB15C403283647120074D326 /* AddMediaMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15C402283647120074D326 /* AddMediaMethodHandler.swift */; };
 		DB1FCCFE284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCFD284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift */; };
+		DB1FCCFA284F6C8B00EAFB20 /* TaskFBFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */; };
 		DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB29DC79283633D000D267BF /* DapMethodHandler.swift */; };
 		DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */; };
 		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
@@ -266,6 +267,7 @@
 		DB15C400283645AF0074D326 /* DebugserverMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugserverMethodHandler.swift; sourceTree = "<group>"; };
 		DB15C402283647120074D326 /* AddMediaMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMediaMethodHandler.swift; sourceTree = "<group>"; };
 		DB1FCCFD284F6F7600EAFB20 /* InterceptorRequestPartBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InterceptorRequestPartBuffer.swift; sourceTree = "<group>"; };
+		DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TaskFBFuture.swift; sourceTree = "<group>"; };
 		DB29DC79283633D000D267BF /* DapMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DapMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctraceRecordMethodHandler.swift; sourceTree = "<group>"; };
 		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
@@ -496,6 +498,7 @@
 				DBCAE6B12816E72E00C15D07 /* MultisourceFileReader.swift */,
 				DBE60F3E282A98180043EB57 /* TaskSelect.swift */,
 				DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */,
+				DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */,
 				DBF4764527B69294001E39C2 /* IDBXCTestReporter */,
 				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
 				D72CB1C42277837000265160 /* FBDataDownloadInput.m */,
@@ -975,6 +978,7 @@
 				DBB72C89283BADA00065DDB3 /* CodeLocation.swift in Sources */,
 				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
 				DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */,
+				DB1FCCFA284F6C8B00EAFB20 /* TaskFBFuture.swift in Sources */,
 				DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */,
 				DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */,
 				DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */,
