@@ -16,7 +16,27 @@ final class GRPCSwiftServerErrorDelegate: ServerErrorDelegate {
       // Use default error propagation transformation
       return nil
     }
-    return GRPCStatusAndTrailers(status: GRPCStatus(code: .internalError, message: error.localizedDescription))
+
+    var message = error.localizedDescription
+    if type(of: error) == NSError.self {
+      // Legacy NSError from objc, we should unwrap it for more expressive error handling.
+      // Don't use `is NSError` check because all swift errors bridges to NSError successfully and this check passed
+
+      message = extractMessage(fromLegacyNSError: error as NSError)
+    }
+    return GRPCStatusAndTrailers(status: GRPCStatus(code: .internalError, message: message))
   }
 
+  private func extractMessage(fromLegacyNSError error: NSError) -> String {
+    var userInfo = error.userInfo
+
+    var message: String
+    if let localizedDescription = userInfo.removeValue(forKey: NSLocalizedDescriptionKey) as? String {
+      message = localizedDescription
+    } else {
+      message = error.description
+    }
+    message += "\nInfo: \(userInfo)"
+    return message
+  }
 }
