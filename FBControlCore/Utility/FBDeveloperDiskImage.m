@@ -74,6 +74,16 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   return images;
 }
 
++ (FBDeveloperDiskImage *) unknownDiskImageWithSignature:(NSData *)signature
+{
+  NSOperatingSystemVersion unknownVersion = {
+    .majorVersion = 0,
+    .minorVersion = 0,
+    .patchVersion = 0,
+  };
+  return [[self alloc] initWithDiskImagePath:@"unknown.dmg" signature:signature version:unknownVersion xcodeVersion:unknownVersion];
+}
+
 - (instancetype)initWithDiskImagePath:(NSString *)diskImagePath signature:(NSData *)signature version:(NSOperatingSystemVersion)version xcodeVersion:(NSOperatingSystemVersion)xcodeVersion
 {
   self = [super init];

@@ -17,6 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
+ Returns Disk Image for already mounted disk image.
+
+ @param signature Signature of the mounted image.
+ @return the path of the disk image.
+ */
++ (FBDeveloperDiskImage *) unknownDiskImageWithSignature:(NSData *)signature;
+
+/**
  Finds the Disk Image for the given device, if one can be found.
  If an exact match is not found, the closest match will be used.
 

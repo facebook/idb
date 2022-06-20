@@ -120,7 +120,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
         FBDeveloperDiskImage *image = imagesBySignature[signature];
         if (!image) {
           [logger logFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage];
-          continue;
+          image = [FBDeveloperDiskImage unknownDiskImageWithSignature:signature];
         }
         mountEntryToDiskImage[mountEntry] = image;
       }
