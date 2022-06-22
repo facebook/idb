@@ -13,6 +13,8 @@ import NIOPosix
 import FBControlCore
 import IDBGRPCSwift
 
+struct IDBUnixDomainSocketPathWrongType: Error {}
+
 @objc
 final class GRPCSwiftServer : NSObject {
 
@@ -76,6 +78,16 @@ final class GRPCSwiftServer : NSObject {
     // Start the server and print its address once it has started.
     let future = FBMutableFuture<NSDictionary>()
 
+    if case .unixDomainSocket(let path) = ports.swiftServerTarget {
+      do {
+        try cleanupUnixDomainSocket(path: path)
+      } catch {
+        self.logger.error().log("\(error)")
+        future.resolveWithError(error)
+        return future
+      }
+    }
+
     let server = Server.start(configuration: serverConfig)
     self.server = server
 
@@ -84,20 +96,68 @@ final class GRPCSwiftServer : NSObject {
       logger.info().log("Starting swift server with TLS path \(tlsPath)")
     }
 
-    server.map(\.channel.localAddress).whenSuccess { [weak self, ports] address in
+    server.map(\.channel.localAddress).whenComplete { [weak self, ports] result in
       do {
+        let address = try result.get()
         self?.logServerStartup(address: address)
         try future.resolve(withResult: ports.swiftServerTarget.outputDescription(for: address) as NSDictionary)
       } catch {
+        self?.logger.error().log("\(error)")
         future.resolveWithError(error)
       }
     }
 
     server.flatMap(\.onClose).whenCompleteBlocking(onto: .main) { [completed] _ in
+      self.logger.info().log("Server closed")
       completed.resolve(withResult: NSNull())
     }
 
     return future
+  }
+
+  private func cleanupUnixDomainSocket(path: String) throws {
+    do {
+      self.logger.info().log("Cleaning up UDS if exists")
+      var sb: stat = stat()
+      try withUnsafeMutablePointer(to: &sb) { sbPtr in
+        try syscall {
+          stat(path, sbPtr)
+        }
+      }
+
+      // Only unlink the existing file if it is a socket
+      if sb.st_mode & S_IFSOCK == S_IFSOCK {
+        self.logger.info().log("Existed UDS socket found, unlinking")
+        try syscall {
+          unlink(path)
+        }
+        self.logger.info().log("UDS socket cleaned up")
+      } else {
+        throw IDBUnixDomainSocketPathWrongType()
+      }
+    } catch let err as IOError {
+      // If the filepath did not exist, we consider it cleaned up
+      if err.errnoCode == ENOENT {
+        return
+      }
+      throw err
+    }
+  }
+
+  private func syscall(function: String = #function, _ body: () throws -> Int32) throws {
+    while true {
+      let res = try body()
+      if res == -1 {
+        let err = errno
+        switch err {
+        case EINTR:
+          continue
+        default:
+          throw IOError(errnoCode: err, reason: function)
+        }
+      }
+      return
+    }
   }
 
   private func logServerStartup(address: SocketAddress?) {
