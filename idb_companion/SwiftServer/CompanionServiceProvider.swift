@@ -37,8 +37,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
   var interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol? { interceptorFactory }
 
-  private func shouldHandleNatively(context: GRPCAsyncServerCallContext) -> Bool {
-    return context.userInfo[CallSwiftMethodNatively.self] ?? false
+  private func shouldHandleNatively(context: GRPCAsyncServerCallContext) async throws -> Bool {
+    return try await context.withUserInfo { $0[CallSwiftMethodNatively.self] ?? false }
   }
 
   private var targetLogger: FBControlCoreLogger {
@@ -51,7 +51,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await ConnectMethodHandler(reporter: reporter, logger: logger, target: target)
@@ -59,7 +59,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
         return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
 
@@ -70,7 +70,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func dap(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
 
@@ -81,7 +81,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func describe(request: Idb_TargetDescriptionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TargetDescriptionResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
         return try await proxy(request: request, context: context)
     }
     return try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target, commandExecutor: commandExecutor)
@@ -89,7 +89,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
     try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
@@ -97,7 +97,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func instruments_run(requestStream: GRPCAsyncRequestStream<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -107,7 +107,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func log(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, responseStream: responseStream, context: context)
     }
 
@@ -116,7 +116,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctrace_record(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
 
@@ -127,7 +127,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func accessibility_info(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await AccessibilityInfoMethodHandler(commandExecutor: commandExecutor)
@@ -135,7 +135,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func focus(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -145,7 +145,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func hid(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, context: context)
     }
 
@@ -154,7 +154,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func open_url(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -163,7 +163,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func set_location(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -173,7 +173,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func send_notification(request: Idb_SendNotificationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SendNotificationResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -183,7 +183,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func simulate_memory_warning(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -193,7 +193,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func approve(request: Idb_ApproveRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ApproveResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -202,7 +202,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func clear_keychain(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -211,7 +211,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func contacts_update(request: Idb_ContactsUpdateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsUpdateResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -222,7 +222,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func setting(request: Idb_SettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SettingResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await SettingMethodHandler(commandExecutor: commandExecutor)
@@ -230,7 +230,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func get_setting(request: Idb_GetSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_GetSettingResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -241,7 +241,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func list_settings(request: Idb_ListSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListSettingResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await ListSettingsMethodHandler(commandExecutor: commandExecutor)
@@ -249,7 +249,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func launch(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
       return
     }
@@ -258,7 +258,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func list_apps(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await ListAppsMethodHandler(commandExecutor: commandExecutor)
@@ -266,7 +266,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func terminate(request: Idb_TerminateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TerminateResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -275,7 +275,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func uninstall(request: Idb_UninstallRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_UninstallResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -285,7 +285,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func add_media(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, context: context)
     }
 
@@ -296,7 +296,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func record(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
     return try await RecordMethodHandler(target: target, targetLogger: targetLogger)
@@ -304,7 +304,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func screenshot(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -313,7 +313,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func video_stream(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
 
@@ -324,7 +324,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func crash_delete(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -335,7 +335,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func crash_list(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -346,7 +346,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func crash_show(request: Idb_CrashShowRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashShowResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -357,7 +357,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctest_list_bundles(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -367,7 +367,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctest_list_tests(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -377,7 +377,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func xctest_run(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       try await proxy(request: request, responseStream: responseStream, context: context)
       return
     }
@@ -387,7 +387,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await LsMethodHandler(commandExecutor: commandExecutor)
@@ -395,7 +395,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func mkdir(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
     return try await MkdirMethodHandler(commandExecutor: commandExecutor)
@@ -403,7 +403,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func mv(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -412,7 +412,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func rm(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)
     }
 
@@ -421,7 +421,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func pull(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, responseStream: responseStream, context: context)
     }
     return try await PullMethodHandler(target: target, commandExecutor: commandExecutor)
@@ -429,7 +429,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func push(requestStream: GRPCAsyncRequestStream<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -439,7 +439,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   }
 
   func tail(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard shouldHandleNatively(context: context) else {
+    guard try await shouldHandleNatively(context: context) else {
       return try await proxy(requestStream: requestStream, responseStream: responseStream, context: context)
     }
     return try await FBTeardownContext.withAutocleanup {
@@ -452,12 +452,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 extension CompanionServiceProvider {
 
   private func proxy<Request: Message, Response: Message>(request: Request, context: GRPCAsyncServerCallContext) async throws -> Response {
-    let methodPath = try extractMethodPath(context: context)
+    let methodPath = try await extractMethodPath(context: context)
     return try await internalCppClient.performAsyncUnaryCall(path: methodPath, request: request)
   }
 
   private func proxy<Request: Message, Response: Message>(request: Request, responseStream: GRPCAsyncResponseStreamWriter<Response>, context: GRPCAsyncServerCallContext) async throws {
-    let methodPath = try extractMethodPath(context: context)
+    let methodPath = try await extractMethodPath(context: context)
     let resultStream = internalCppClient.performAsyncServerStreamingCall(path: methodPath, request: request, responseType: Response.self)
 
     for try await response in resultStream {
@@ -466,12 +466,12 @@ extension CompanionServiceProvider {
   }
 
   private func proxy<Request: Message, Response: Message>(requestStream: GRPCAsyncRequestStream<Request>, context: GRPCAsyncServerCallContext) async throws -> Response {
-    let methodPath = try extractMethodPath(context: context)
+    let methodPath = try await extractMethodPath(context: context)
     return try await internalCppClient.performAsyncClientStreamingCall(path: methodPath, requests: requestStream)
   }
 
   private func proxy<Request: Message, Response: Message>(requestStream: GRPCAsyncRequestStream<Request>, responseStream: GRPCAsyncResponseStreamWriter<Response>, context: GRPCAsyncServerCallContext) async throws {
-    let methodPath = try extractMethodPath(context: context)
+    let methodPath = try await extractMethodPath(context: context)
     let resultStream = internalCppClient.performAsyncBidirectionalStreamingCall(path: methodPath, requests: requestStream, responseType: Response.self)
 
     for try await response in resultStream {
@@ -479,8 +479,8 @@ extension CompanionServiceProvider {
     }
   }
 
-  private func extractMethodPath(context: GRPCAsyncServerCallContext) throws -> String {
-    guard let methodPath = context.userInfo[MethodInfoKey.self]?.path else {
+  private func extractMethodPath(context: GRPCAsyncServerCallContext) async throws -> String {
+    guard let methodPath = try await context.withUserInfo({ $0[MethodInfoKey.self]?.path }) else {
       throw GRPCStatus(code: .internalError, message: "Method path not provided. Check idb_companion's grpc interceptor configuration")
     }
     return methodPath
