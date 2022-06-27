@@ -433,13 +433,7 @@
 
       switch (self.configuration.coverageConfiguration.format) {
         case FBCodeCoverageExported:
-          return [[self getCoverageDataExported]
-            onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
-              return [[FBArchiveOperations createGzipDataFromProcessInput:[FBProcessInput inputFromData:coverageData] logger:self.logger]
-              onQueue:self.queue map:^NSData *(FBProcess<NSData *,NSData *,id> *task) {
-                return task.stdOut;
-              }];
-            }];
+              return [self getCoverageDataExported];
         case FBCodeCoverageRaw:
           return [self getCoverageDataDirectory];
         default:
@@ -498,24 +492,47 @@
     withStdErrInMemoryAsString]
     runUntilCompletionWithAcceptableExitCodes:nil];
 
-  return [[[[mergeFuture onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSData *, NSString *> *> *(id _) {
+  return [[mergeFuture onQueue:self.queue fmap:[checkXcrunError copy]]
+    onQueue:self.queue fmap:^FBFuture<FBProcess<NSNull *, NSInputStream *, NSString *> *> *(id _) {
       NSMutableArray<NSString *> *exportArgs = @[@"llvm-cov", @"export", @"-instr-profile", profdataPath].mutableCopy;
       for (NSString *binary in self.configuration.binariesPaths) {
         [exportArgs addObject:@"-object"];
         [exportArgs addObject:binary];
       }
-      return [[[[FBProcessBuilder
+
+      dispatch_queue_t pipeQueue = dispatch_queue_create("com.facebook.xctestreporter.pipe", DISPATCH_QUEUE_CONCURRENT);
+      return [[[[[FBProcessBuilder
         withLaunchPath:@"/usr/bin/xcrun" arguments:exportArgs.copy]
-        withStdOutInMemoryAsData]
+        withStdOutToInputStream]
         withStdErrInMemoryAsString]
-        runUntilCompletionWithAcceptableExitCodes:nil];
-    }]
-    onQueue:self.queue fmap:[checkXcrunError copy]]
-    onQueue:self.queue map:^NSData *(FBProcess<NSNull *,NSData *,NSString *> *task) {
-      return task.stdOut;
+        start]
+        onQueue:pipeQueue fmap:^FBFuture * _Nonnull(FBProcess<NSNull *,NSInputStream *,NSString *> * _Nonnull exportProcess) {
+          FBProcessInput<NSOutputStream *> *gzipProcessInput = FBProcessInput.inputFromStream;
+
+          FBFuture *archiveFuture = [[FBArchiveOperations createGzipDataFromProcessInput:gzipProcessInput logger:self.logger]
+            onQueue:self.queue map:^NSData *(FBProcess<NSData *,NSData *,id> *task) {
+              return task.stdOut;
+          }];
+
+          NSOutputStream *gzipInputStream = gzipProcessInput.contents;
+          NSUInteger oneMega = 1024*1024;
+          uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * oneMega);
+          NSInteger bytesRead = 0;
+          NSInputStream *exportOutputStream = exportProcess.stdOut;
+          [exportOutputStream open];
+          [gzipInputStream open];
+            while((bytesRead = [exportOutputStream read:buffer maxLength:oneMega]) > 0) {
+                [gzipInputStream write:buffer maxLength:bytesRead];
+            }
+          free(buffer);
+          [exportOutputStream close];
+          [gzipInputStream close];
+
+          return [exportProcess.exitCode onQueue:self.queue fmap:^FBFuture * _Nonnull(NSNumber * _Nonnull result) {
+            return archiveFuture;
+          }];
+      }];
     }];
 }
-
 
 @end

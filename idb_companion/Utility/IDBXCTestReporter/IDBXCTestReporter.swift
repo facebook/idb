@@ -340,9 +340,7 @@ extension IDBXCTestReporter {
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
-      let archived = try await BridgeFuture.value(FBArchiveOperations.createGzipData(from: FBProcessInput(from: data), logger: logger))
-      let archivedData = archived.stdOut ?? NSData()
-      return archivedData as Data
+      return data as Data
 
     case .raw:
       return try await gzipFolder(at: config.coverageDirectory)
@@ -386,19 +384,44 @@ extension IDBXCTestReporter {
     + binariesPath.reduce(into: []) {
       $0 += ["-object", $1]
     }
-    let exportProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
-      .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
-      .withStdOutInMemoryAsData()
-      .withStdErrInMemoryAsString()
-      .runUntilCompletion(withAcceptableExitCodes: nil)
+    let exportProcess = try await BridgeFuture.value(
+      FBProcessBuilder<NSNull, NSData, NSString>
+        .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
+        .withStdOutToInputStream()
+        .withStdErrInMemoryAsString()
+        .start()
+    )
 
-    let exportProcess = try await BridgeFuture.value(exportProcessFuture)
-    let exitCode = try await BridgeFuture.value(exportProcess.exitCode)
-    if exitCode != 0 {
-        throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(exportProcess.stdErr ?? "")")
+    let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
+    let archiveFuture = FBArchiveOperations.createGzipData(from: gzipProcessInput as! FBProcessInput<AnyObject>, logger: self.logger)
+
+    let oneMega = 1024*1024;
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: oneMega)
+    defer {
+      buffer.deallocate()
     }
 
-    let stdOut = exportProcess.stdOut ?? NSData()
+    guard let exportOutputStream = exportProcess.stdOut
+    else {
+      throw FBControlCoreError.describe("xcrun llvm-cov export misconfigured. stdOut stream is nil")
+    }
+    exportOutputStream.open()
+
+    let gzipInputStream = gzipProcessInput.contents
+    gzipInputStream.open()
+    while case let bytesRead = exportOutputStream.read(buffer, maxLength: oneMega), bytesRead > 0 {
+      gzipInputStream.write(buffer, maxLength: bytesRead)
+    }
+    exportOutputStream.close()
+    gzipInputStream.close()
+
+    let exitCode = try await BridgeFuture.value(exportProcess.exitCode)
+    if exitCode != 0 {
+      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(exportProcess.stdErr ?? "")")
+    }
+
+    let archiveProcess = try await BridgeFuture.value(archiveFuture)
+    let stdOut = archiveProcess.stdOut ?? NSData()
     return stdOut as Data
   }
 
