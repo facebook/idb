@@ -435,7 +435,7 @@
         case FBCodeCoverageExported:
           return [[self getCoverageDataExported]
             onQueue:self.queue fmap:^FBFuture<NSNull *> *(NSData *coverageData) {
-              return [[FBArchiveOperations createGzipDataFromData:coverageData logger:self.logger]
+              return [[FBArchiveOperations createGzipDataFromProcessInput:[FBProcessInput inputFromData:coverageData] logger:self.logger]
               onQueue:self.queue map:^NSData *(FBProcess<NSData *,NSData *,id> *task) {
                 return task.stdOut;
               }];

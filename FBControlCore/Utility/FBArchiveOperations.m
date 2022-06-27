@@ -70,18 +70,20 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     start];
 }
 
-+ (FBFuture<FBProcess<NSData *, NSData *, id> *> *)createGzipDataFromData:(NSData *)data logger:(id<FBControlCoreLogger>)logger
+
++ (FBFuture<FBProcess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(FBProcessInput *)input logger:(id<FBControlCoreLogger>)logger
 {
-  return (FBFuture<FBProcess<NSData *, NSData *, id> *> *) [[[[[[[FBProcessBuilder
+  return (FBFuture<FBProcess<id, NSData *, id> *> *) [[[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"-", @"--to-stdout"]]
-    withStdInFromData:data]
+    withStdIn:input]
     withStdErrToLoggerAndErrorMessage:logger]
     withStdOutInMemoryAsData]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]
   ];
 }
+
 
 + (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger
 {

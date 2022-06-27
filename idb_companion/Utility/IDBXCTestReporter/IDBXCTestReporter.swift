@@ -340,7 +340,7 @@ extension IDBXCTestReporter {
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
-      let archived = try await BridgeFuture.value(FBArchiveOperations.createGzipData(from: data, logger: logger))
+      let archived = try await BridgeFuture.value(FBArchiveOperations.createGzipData(from: FBProcessInput(from: data), logger: logger))
       let archivedData = archived.stdOut ?? NSData()
       return archivedData as Data
 

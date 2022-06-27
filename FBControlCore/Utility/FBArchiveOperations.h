@@ -76,11 +76,11 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
 /**
  Creates a gzipped archive compressing the data provided.
 
- @param data the data to be compressed.
+ @param input the data to be compressed.
  @param logger the logger to log to.
  @return a Future wrapping the archive data.
  */
-+ (FBFuture<FBProcess<NSData *, NSData *, id> *> *)createGzipDataFromData:(NSData *)data logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBProcess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(FBProcessInput *)input logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
