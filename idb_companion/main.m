@@ -424,12 +424,14 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       }
 
       return [[[IDBConfiguration getIDBKillswitch] disabledWith:FBIDBFeatureKeyGrpcEndpoint] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSNumber * _Nonnull swiftServerKillswithced) {
-        BOOL withSwiftServer = !swiftServerKillswithced.boolValue;
+        BOOL useSwiftAsDefault = !swiftServerKillswithced.boolValue;
         
         NSError *err = nil;
         
         // Start up the companion
-        IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults useSwiftAsDefault:withSwiftServer];
+        IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults useSwiftAsDefault:useSwiftAsDefault];
+        BOOL withSwiftServer = ports.useSwiftAsDefault || ports.grpcSwiftPort != 0;
+        
         // Command Executor
         FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
                                                  commandExecutorForTarget:target
