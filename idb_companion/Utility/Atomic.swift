@@ -23,7 +23,7 @@ final class Atomic<Value>: @unchecked Sendable {
     set { mutex.sync(execute: { value = newValue }) }
   }
 
-  func sync<R>(execute work: (inout Value) -> R) -> R {
-    mutex.sync(execute: { work(&value) })
+  func sync<R>(execute work: (inout Value) throws -> R) rethrows -> R {
+    try mutex.sync(execute: { try work(&value) })
   }
 }

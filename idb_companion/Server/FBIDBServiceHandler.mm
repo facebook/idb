@@ -1185,10 +1185,14 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   }
   reporter.configuration = operation.reporterConfiguration;
 
-  // First wait for the test operation to finish
-  [operation.completed block:&error];
-  // Then make sure we've reported everything, otherwise we could write in the background (use-after-free)
+  // Make sure we've reported everything, otherwise we could write in the background (use-after-free)
   [reporter.reportingTerminated block:&error];
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  
+  // Wait for the test operation to finish
+  [operation.completed block:&error];
   return Status::OK;
 }}
 

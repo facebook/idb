@@ -85,7 +85,12 @@
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
-  const idb::XctestRunResponse_TestRunInfo info = [self runInfoForTestClass:testClass method:method withStatus:status duration:duration logs:logs];
+  NSError *error = nil;
+  const idb::XctestRunResponse_TestRunInfo info = [self runInfoForTestClass:testClass method:method withStatus:status duration:duration logs:logs error: &error];
+  if (error) {
+    [self.reportingTerminatedMutable resolveWithError: error];
+    return;
+  }
   [self writeTestRunInfo:info];
 }
 
@@ -172,7 +177,7 @@
 
 #pragma mark Private
 
-- (const idb::XctestRunResponse_TestRunInfo)runInfoForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
+- (const idb::XctestRunResponse_TestRunInfo)runInfoForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs error:(NSError **)error
 {
   idb::XctestRunResponse_TestRunInfo info;
   info.set_bundle_name(self.currentBundleName.UTF8String ?: "");
@@ -202,9 +207,15 @@
     [self populateSubactivities:activity remaining:self.currentActivityRecords];
     [stackedActivities addObject:activity];
   }
+  NSError *err = nil;
   for (FBActivityRecord *activity in stackedActivities) {
-    [self translateActivity:activity activityOut:info.add_activitylogs()];
+    [self translateActivity:activity activityOut:info.add_activitylogs() error: &err];
+    if (err) {
+      *error = err;
+      return info;
+    }
   }
+  
   [self resetCurrentTestState];
   return info;
 }
@@ -218,7 +229,7 @@
   }
 }
 
-- (void)translateActivity:(FBActivityRecord *)activity activityOut:(idb::XctestRunResponse_TestRunInfo_TestActivity *)activityOut
+- (void)translateActivity:(FBActivityRecord *)activity activityOut:(idb::XctestRunResponse_TestRunInfo_TestActivity *)activityOut error:(NSError **)error
 {
   activityOut->set_title(activity.title.UTF8String ?: "");
   activityOut->set_duration(activity.duration);
@@ -227,6 +238,7 @@
   activityOut->set_start(activity.start.timeIntervalSince1970);
   activityOut->set_finish(activity.finish.timeIntervalSince1970);
   activityOut->set_name(activity.name.UTF8String ?: "");
+  NSError *err = nil;
   if (self.configuration.reportAttachments) {
     for (FBAttachment *attachment in activity.attachments) {
       idb::XctestRunResponse_TestRunInfo_TestAttachment *attachmentOut = activityOut->add_attachments();
@@ -234,12 +246,36 @@
       attachmentOut->set_name(attachment.name.UTF8String ?: "");
       attachmentOut->set_timestamp(attachment.timestamp.timeIntervalSince1970);
       attachmentOut->set_uniform_type_identifier(attachment.uniformTypeIdentifier.UTF8String ?: "");
+      if (attachment.userInfo) {
+        NSData *userInfoJSON = [self translateActivityAttachmentUserInfo: attachment.userInfo error: &err];
+        attachmentOut->set_user_info_json(userInfoJSON.bytes, userInfoJSON.length);
+      }
     }
   }
+  if (err) {
+    *error = err;
+    return;
+  }
+  
   for (FBActivityRecord *subActitvity in activity.subactivities) {
     idb::XctestRunResponse_TestRunInfo_TestActivity *subactivityOut = activityOut->add_sub_activities();
-    [self translateActivity:subActitvity activityOut:subactivityOut];
+    [self translateActivity:subActitvity activityOut:subactivityOut error: &err];
+    if (err) {
+      *error = err;
+      return;
+    }
   }
+}
+
+- (NSData *)translateActivityAttachmentUserInfo:(NSDictionary<NSString *, id> *)userInfo error:(NSError **)error
+{
+  NSError *err = nil;
+  NSData *data = [NSJSONSerialization dataWithJSONObject:userInfo options:0 error:&err];
+  if (!data) {
+    *error = err;
+    return nil;
+  }
+  return data;
 }
 
 - (const idb::XctestRunResponse_TestRunInfo_TestRunFailureInfo)failureInfoWithMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line

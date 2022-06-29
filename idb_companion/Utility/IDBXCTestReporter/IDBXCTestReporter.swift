@@ -115,8 +115,13 @@ extension IDBXCTestReporter {
   }
 
   @objc func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
-    let info = createRunInfo(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? [])
-    write(testRunInfo: info)
+    do {
+      let info = try createRunInfo(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? [])
+      write(testRunInfo: info)
+    } catch {
+      responseStream = nil
+      reportingTerminated.resolveWithError(error)
+    }
   }
 
   @objc func testCaseDidFail(forTestClass testClass: String, method: String, withMessage message: String, file: String?, line: UInt) {
@@ -169,11 +174,11 @@ extension IDBXCTestReporter {
 
   // MARK: - Privates
 
-  private func createRunInfo(testClass: String, method: String, status: FBTestReportStatus, duration: TimeInterval, logs: [String]) -> Idb_XctestRunResponse.TestRunInfo {
+  private func createRunInfo(testClass: String, method: String, status: FBTestReportStatus, duration: TimeInterval, logs: [String]) throws -> Idb_XctestRunResponse.TestRunInfo {
 
     defer { resetCurrentTestState() }
 
-    return _currentInfo.sync { currentInfo in
+    return try _currentInfo.sync { currentInfo in
 
       var stackedActivities: [FBActivityRecord] = []
       currentInfo.activityRecords.sort(by: { $0.start < $1.start })
@@ -184,7 +189,7 @@ extension IDBXCTestReporter {
         stackedActivities.append(activity)
       }
 
-      return Idb_XctestRunResponse.TestRunInfo.with {
+      return try Idb_XctestRunResponse.TestRunInfo.with {
         $0.bundleName = currentInfo.bundleName
         $0.className = testClass
         $0.methodName = method
@@ -194,14 +199,14 @@ extension IDBXCTestReporter {
           $0.failureInfo = failureInfo
         }
         $0.logs = logs
-        $0.activityLogs = stackedActivities.map(translate(activity:))
+        $0.activityLogs = try stackedActivities.map(translate(activity:))
       }
     }
   }
 
-  private func translate(activity: FBActivityRecord) -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
+  private func translate(activity: FBActivityRecord) throws -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
     let subactivities = activity.subactivities as! [FBActivityRecord]
-    return Idb_XctestRunResponse.TestRunInfo.TestActivity.with {
+    return try Idb_XctestRunResponse.TestRunInfo.TestActivity.with {
       $0.title = activity.title
       $0.duration = activity.duration
       $0.uuid = activity.uuid.uuidString
@@ -210,17 +215,24 @@ extension IDBXCTestReporter {
       $0.finish = activity.finish.timeIntervalSince1970
       $0.name = activity.name
       if configuration.reportAttachments {
-        $0.attachments = activity.attachments.map { attachment in
-            .with {
+        $0.attachments = try activity.attachments.map { attachment in
+            try .with {
               $0.payload = attachment.payload ?? Data()
               $0.name = attachment.name
               $0.timestamp = attachment.timestamp.timeIntervalSince1970
               $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
+              if let userInfo = attachment.userInfo {
+                $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
+              }
             }
         }
       }
-      $0.subActivities = subactivities.map(translate(activity:))
+      $0.subActivities = try subactivities.map(translate(activity:))
     }
+  }
+
+  private func translate(attachmentUserInfo userInfo: [AnyHashable: Any]) throws -> Data {
+    try JSONSerialization.data(withJSONObject: userInfo, options: [])
   }
 
   private func resetCurrentTestState() {
