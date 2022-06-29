@@ -20,10 +20,16 @@ struct DebugserverMethodHandler {
       case let .start(start):
         let debugServer = try await BridgeFuture.value(commandExecutor.debugserver_start(start.bundleID))
         try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
+        return
 
       case .status:
-        let debugServer = try await BridgeFuture.value(commandExecutor.debugserver_status())
-        try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
+        // Replicates old cpp server behaviour. We should return `0` exit code if server not started
+        if let debugServer = try? await BridgeFuture.value(commandExecutor.debugserver_status()) {
+          try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
+        } else {
+          try await responseStream.send(.init())
+        }
+        return
 
       case .stop:
         let debugServer = try await BridgeFuture.value(commandExecutor.debugserver_stop())
