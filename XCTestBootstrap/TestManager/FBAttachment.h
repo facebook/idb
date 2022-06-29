@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSDate *timestamp;
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, copy, readonly) NSString *uniformTypeIdentifier;
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *userInfo;
 
 /**
  Constructs a attachment  from a XCTAttachment

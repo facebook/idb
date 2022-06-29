@@ -27,6 +27,7 @@
   _timestamp = attachment.timestamp;
   _name = attachment.name;
   _uniformTypeIdentifier = attachment.uniformTypeIdentifier;
+  _userInfo = attachment.userInfo;
 
   return self;
 }
