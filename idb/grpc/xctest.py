@@ -216,6 +216,7 @@ def translate_activity(
                 timestamp=attachment.timestamp,
                 name=attachment.name,
                 uniform_type_identifier=attachment.uniform_type_identifier,
+                user_info_json=attachment.user_info_json,
             )
             for attachment in activity.attachments or []
         ],

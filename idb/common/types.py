@@ -216,6 +216,7 @@ class TestAttachment:
     timestamp: float
     name: str
     uniform_type_identifier: str
+    user_info_json: bytes
 
 
 @dataclass(frozen=True)
