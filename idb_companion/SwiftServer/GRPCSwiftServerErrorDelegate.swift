@@ -36,7 +36,9 @@ final class GRPCSwiftServerErrorDelegate: ServerErrorDelegate {
     } else {
       message = error.description
     }
-    message += "\nInfo: \(userInfo)"
+    if !userInfo.isEmpty {
+      message += "\nInfo: \(userInfo)"
+    }
     return message
   }
 }
