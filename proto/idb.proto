@@ -703,6 +703,7 @@ message XctestRunResponse {
       double timestamp = 2;
       string name = 3;
       string uniform_type_identifier = 4;
+      bytes user_info_json = 5;
     }
     message TestActivity {
       string title = 1;
