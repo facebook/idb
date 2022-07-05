@@ -142,7 +142,11 @@ def json_format_activity(activity: TestActivity) -> Dict[str, Any]:
                 "timestap": attachment.timestamp,
                 "name": attachment.name,
                 "uniform_type_identifier": attachment.uniform_type_identifier,
-                "user_info": json.loads(attachment.user_info_json.decode("utf-8")),
+                "user_info": (
+                    json.loads(attachment.user_info_json.decode("utf-8"))
+                    if len(attachment.user_info_json)
+                    else {}
+                ),
             }
             for attachment in activity.attachments
         ],
