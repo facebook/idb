@@ -37,6 +37,7 @@ It can be installed via pip:
 ```
 pip3.6 install fb-idb
 ```
+Note: Or e.g. with `pip3.9` if your `pip3 --version` shows _python 3.9_.
 Note: The idb client requires python 3.6 or greater to be installed.
 
 Please refer to [fbidb.io](https://www.fbidb.io/) for detailed installation instructions and a guided tour of idb.
