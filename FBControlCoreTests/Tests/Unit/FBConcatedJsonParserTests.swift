@@ -45,6 +45,13 @@ class FBConcatedJsonParserTests: XCTestCase {
     try XCTAssertEqual(parse(string: json), ["hello": "worl\"d", "second": "value"])
   }
 
+  func testThrowsIncorrectJson() throws {
+    let json = """
+    {"hello": 1"world"1}
+    """
+    XCTAssertThrowsError(try parse(string: json))
+  }
+
   private func parse(string: String) throws -> [String: String] {
     guard let json = try FBConcatedJsonParser.parseConcatenatedJSON(from: string) as? [String: String] else {
       throw NSError(domain: "Json parsed with incorrect type", code: 0)
