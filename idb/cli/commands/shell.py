@@ -23,7 +23,7 @@ class ShellCommand(ClientCommand):
 
     @property
     def description(self) -> str:
-        return "Interactive shell"
+        return "Interactive shell which allows you to chain multiple IDB commands (doesn't open a shell on the simulator)"
 
     @property
     def name(self) -> str:
