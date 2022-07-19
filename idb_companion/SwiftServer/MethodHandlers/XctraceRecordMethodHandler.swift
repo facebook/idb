@@ -33,18 +33,18 @@ struct XctraceRecordMethodHandler {
 
   private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> FBXCTraceRecordOperation {
     let config = xcTraceRecordConfiguration(from: start)
+
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
       guard !finishedWriting.wrappedValue else { return }
 
       let response = Idb_XctraceRecordResponse.with {
         $0.log = data
       }
-      Task {
-        do {
-          try await responseStream.send(response)
-        } catch {
-          finishedWriting.set(true)
-        }
+      do {
+        try responseWriter.send(response)
+      } catch {
+        finishedWriting.set(true)
       }
     }
 

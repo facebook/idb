@@ -9,6 +9,7 @@ import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
 import FBControlCore
+import IDBCompanionUtilities
 
 struct DapMethodHandler {
 
@@ -39,6 +40,7 @@ struct DapMethodHandler {
   private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBProcess<AnyObject, FBDataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
+
 
     let stdOutConsumer = createDataConsumer(to: responseStream)
     targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
@@ -83,16 +85,21 @@ struct DapMethodHandler {
   }
 
   private func createDataConsumer(to responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) -> FBDataConsumer {
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
+
     return FBBlockDataConsumer.synchronousDataConsumer { data in
       let response = Idb_DapResponse.with {
         $0.event = .stdout(
           .with { $0.data = data }
         )
       }
-      Task {
-        try await responseStream.send(response)
+      do {
+        try responseWriter.send(response)
         targetLogger.debug().log("Dap server stdout consumer: sent \(data.count) bytes.")
+      } catch {
+        targetLogger.debug().log("Dap server stdout consumer: error \(error) when tried to send bytes.")
       }
+
     }
   }
 

@@ -8,6 +8,7 @@
 import Foundation
 import IDBGRPCSwift
 import GRPC
+import IDBCompanionUtilities
 
 struct LaunchMethodHandler {
 
@@ -23,12 +24,13 @@ struct LaunchMethodHandler {
     var stdOut = processOutputForNullDevice()
     var stdErr = processOutputForNullDevice()
 
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
     if start.waitFor {
-      let stdOutConsumer = pipeOutput(interface: .stdout, responseWriter: responseStream)
+      let stdOutConsumer = pipeOutput(interface: .stdout, responseWriter: responseWriter)
       completions.append(stdOutConsumer.finishedConsuming)
       stdOut = FBProcessOutput<AnyObject>(for: stdOutConsumer)
 
-      let stdErrConsumer = pipeOutput(interface: .stderr, responseWriter: responseStream)
+      let stdErrConsumer = pipeOutput(interface: .stderr, responseWriter: responseWriter)
       completions.append(stdErrConsumer.finishedConsuming)
       stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
     }
@@ -62,15 +64,13 @@ struct LaunchMethodHandler {
     return FBProcessOutput<AnyObject>.forNullDevice() as! FBProcessOutput<AnyObject>
   }
 
-  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>) -> (FBDataConsumer & FBDataConsumerLifecycle) {
-    return FBBlockDataConsumer.asynchronousDataConsumer(on: BridgeQueues.miscEventReaderQueue) { data in
+  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & FBDataConsumerLifecycle) {
+    return FBBlockDataConsumer.asynchronousDataConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data
         $0.output.interface = interface
       }
-      Task {
-        try? await responseWriter.send(response)
-      }
+      try? responseWriter.send(response)
     }
   }
 

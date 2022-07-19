@@ -20,17 +20,16 @@ struct TailMethodHandler {
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
       guard !finished else { return }
       let response = Idb_TailResponse.with {
         $0.data = data
       }
-      Task {
-        do {
-          try await responseStream.send(response)
-        } catch {
-//          $finished.set(true) will readd in further commit
-        }
+      do {
+        try responseWriter.send(response)
+      } catch {
+        _finished.set(true)
       }
     }
 

@@ -35,7 +35,7 @@ public final class FIFOStreamWriter<StreamWriter: AsyncStreamWriter>: @unchecked
   /// Never ever call that from swift concurrency cooperative pool thread, because it is unsafe
   /// and you will violate swift concurrency contract. Doing that may cause deadlock of whole concurrency runtime.
   public func send(_ value: StreamWriter.Value) throws {
-    // Implementation is indentionally stupid. "Clever" implementation is much harder to understand
+    // Implementation is indentionally naive. "Clever" implementation is much harder to understand
     // and gives 0.01 better results on 1000 of elements. We can live pretty happily with
     // that relatively "slow" impl.
     // There is one downside in current implementation - it is blocking and we consume the thread.
