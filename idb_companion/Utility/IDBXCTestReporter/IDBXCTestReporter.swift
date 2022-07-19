@@ -10,6 +10,7 @@ import GRPC
 import IDBGRPCSwift
 import FBSimulatorControl
 import XCTestBootstrap
+import IDBCompanionUtilities
 
 extension IDBXCTestReporter {
 

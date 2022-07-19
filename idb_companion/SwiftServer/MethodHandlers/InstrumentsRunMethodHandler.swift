@@ -8,6 +8,7 @@
 import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
+import IDBCompanionUtilities
 
 struct InstrumentsRunMethodHandler {
 

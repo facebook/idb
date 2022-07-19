@@ -8,22 +8,22 @@
 import Foundation
 
 @propertyWrapper
-final class Atomic<Value>: @unchecked Sendable {
+public final class Atomic<Value>: @unchecked Sendable {
 
   private var value: Value
   private let mutex: FBMutex
 
-  init(wrappedValue: Value) {
+  public init(wrappedValue: Value) {
     self.mutex = FBMutex()
     self.value = wrappedValue
   }
 
-  var wrappedValue: Value {
+  public var wrappedValue: Value {
     get { mutex.sync(execute: { value }) }
     set { mutex.sync(execute: { value = newValue }) }
   }
 
-  func sync<R>(execute work: (inout Value) throws -> R) rethrows -> R {
+  public func sync<R>(execute work: (inout Value) throws -> R) rethrows -> R {
     try mutex.sync(execute: { try work(&value) })
   }
 }

@@ -8,6 +8,7 @@
 import Foundation
 import GRPC
 import IDBGRPCSwift
+import IDBCompanionUtilities
 
 enum MethodInfoKey: UserInfo.Key {
    typealias Value = GRPCMethodInfo

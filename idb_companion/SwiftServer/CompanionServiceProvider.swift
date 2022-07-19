@@ -11,6 +11,7 @@ import GRPC
 import SwiftProtobuf
 import NIOHPACK
 import XCTestBootstrap
+import IDBCompanionUtilities
 
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 

@@ -7,6 +7,7 @@
 
 import Foundation
 import FBControlCore
+import IDBCompanionUtilities
 
 enum FBFutureError: Error {
 
