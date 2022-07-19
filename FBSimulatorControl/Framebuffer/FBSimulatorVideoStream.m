@@ -411,7 +411,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @interface FBSimulatorVideoStream ()
 
-@property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;

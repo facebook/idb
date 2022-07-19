@@ -25,7 +25,6 @@
 @interface FBSimulatorLifecycleCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readwrite, nullable) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 
@@ -190,7 +189,6 @@
     ]]
     onQueue:self.simulator.workQueue chain:^(FBFuture *_) {
       // Nullify
-      self.framebuffer = nil;
       self.hid = nil;
       self.bridge = nil;
       return FBFuture.empty;
@@ -217,9 +215,6 @@
 
 - (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
-  if (self.framebuffer) {
-    return [FBFuture futureWithResult:self.framebuffer];
-  }
   FBSimulator *simulator = self.simulator;
   return [FBFuture
     onQueue:simulator.workQueue resolveValue:^(NSError **error) {
