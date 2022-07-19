@@ -73,6 +73,10 @@
 		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
 		DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */; };
 		DB41706327BF81EE004609BB /* ProxyDeterminatorInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */; };
+		DB440A92287F01E700D01423 /* FIFOStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */; };
+		DB440A97287F0A7100D01423 /* FIFOStreamWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */; };
+		DB440A9A287F12E400D01423 /* MockStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A99287F12E400D01423 /* MockStreamWriter.swift */; };
+		DB440A9C2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */; };
 		DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */; };
 		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
 		DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */; };
@@ -292,6 +296,10 @@
 		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
 		DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingInterceptor.swift; sourceTree = "<group>"; };
 		DB41706227BF81EE004609BB /* ProxyDeterminatorInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyDeterminatorInterceptor.swift; sourceTree = "<group>"; };
+		DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FIFOStreamWriter.swift; sourceTree = "<group>"; };
+		DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIFOStreamWriterTests.swift; sourceTree = "<group>"; };
+		DB440A99287F12E400D01423 /* MockStreamWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockStreamWriter.swift; sourceTree = "<group>"; };
+		DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift"; sourceTree = "<group>"; };
 		DB4585B728084DE0004065A2 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
 		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
 		DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileContainerValueTransformer.swift; sourceTree = "<group>"; };
@@ -531,6 +539,7 @@
 			isa = PBXGroup;
 			children = (
 				DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */,
+				DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */,
 				DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */,
 				DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */,
 				DB4585BE280863FE004065A2 /* FileDrainWriter.swift */,
@@ -564,6 +573,14 @@
 			path = Utility;
 			sourceTree = "<group>";
 		};
+		DB440A98287F12D900D01423 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				DB440A99287F12E400D01423 /* MockStreamWriter.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
 		DB465CC7279567AB00FD4583 /* Bridging */ = {
 			isa = PBXGroup;
 			children = (
@@ -581,6 +598,7 @@
 				DBE60F3E282A98180043EB57 /* TaskSelect.swift */,
 				DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */,
 				DBA2ED1C27BBA96100926054 /* Atomic.swift */,
+				DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */,
 			);
 			path = IDBCompanionUtilities;
 			sourceTree = "<group>";
@@ -588,7 +606,9 @@
 		DB561293287EE21900D28A07 /* IDBCompanionUtilitiesTests */ = {
 			isa = PBXGroup;
 			children = (
+				DB440A98287F12D900D01423 /* Mocks */,
 				DB561294287EE21900D28A07 /* AtomicTests.swift */,
+				DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */,
 			);
 			path = IDBCompanionUtilitiesTests;
 			sourceTree = "<group>";
@@ -1081,6 +1101,7 @@
 				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
 				DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */,
 				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
+				DB440A9C2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift in Sources */,
 				DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */,
 				DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */,
 				DBB72C85283B957F0065DDB3 /* IDBConfiguration.swift in Sources */,
@@ -1151,6 +1172,7 @@
 				DB56128C287EE1C900D28A07 /* FBTeardownContext.swift in Sources */,
 				DB561283287EE17600D28A07 /* Atomic.swift in Sources */,
 				DB561289287EE1A800D28A07 /* TaskTimeout.swift in Sources */,
+				DB440A92287F01E700D01423 /* FIFOStreamWriter.swift in Sources */,
 				DB56128A287EE1AD00D28A07 /* TaskSelect.swift in Sources */,
 				DB56128B287EE1BE00D28A07 /* Mutex.swift in Sources */,
 			);
@@ -1160,6 +1182,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB440A9A287F12E400D01423 /* MockStreamWriter.swift in Sources */,
+				DB440A97287F0A7100D01423 /* FIFOStreamWriterTests.swift in Sources */,
 				DB561295287EE21900D28A07 /* AtomicTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
