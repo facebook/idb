@@ -19,7 +19,7 @@ struct XctraceRecordMethodHandler {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
 
     @Atomic var finishedWriting = false
-    defer { finishedWriting = true }
+    defer { _finishedWriting.set(true) }
 
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
@@ -43,7 +43,7 @@ struct XctraceRecordMethodHandler {
         do {
           try await responseStream.send(response)
         } catch {
-          finishedWriting.wrappedValue = true
+          finishedWriting.set(true)
         }
       }
     }
@@ -76,7 +76,7 @@ struct XctraceRecordMethodHandler {
                                          queue: BridgeQueues.miscEventReaderQueue,
                                          logger: logger)
     )
-    finishedWriting.wrappedValue = true
+    finishedWriting.set(true)
 
     guard let path = processed.path else {
       throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")

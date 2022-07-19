@@ -16,7 +16,6 @@ struct TailMethodHandler {
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finished = false
-    let finishedBox = _finished // have to use it to please swift concurrency checker
 
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
@@ -30,9 +29,7 @@ struct TailMethodHandler {
         do {
           try await responseStream.send(response)
         } catch {
-          finishedBox.sync { finished in
-            finished = true
-          }
+//          $finished.set(true) will readd in further commit
         }
       }
     }
@@ -44,7 +41,7 @@ struct TailMethodHandler {
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
     try await BridgeFuture.await(tail.cancel())
-    finished = true
+    _finished.set(true)
   }
 
 }

@@ -21,7 +21,7 @@ private final class FBTeardownContextImpl {
     guard !cleanupPerformed else {
       throw FBTeardownContextError.cleanupAlreadyPerformed
     }
-    cleanupList.append(cleanup)
+    _cleanupList.sync { $0.append(cleanup) }
   }
 
   func performCleanup() async throws {

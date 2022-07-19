@@ -43,7 +43,7 @@ struct InstrumentsRunMethodHandler {
           }
           try await responseStream.send(response)
         } catch {
-          finishedWriting.wrappedValue = true
+          finishedWriting.set(true)
         }
       }
     }
@@ -77,7 +77,7 @@ struct InstrumentsRunMethodHandler {
     guard let processedPath = processed.path else {
       throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
     }
-    finishedWriting.wrappedValue = true
+    finishedWriting.set(true)
 
     let archiveOperation = FBArchiveOperations.createGzippedTar(forPath: processedPath, logger: logger)
 

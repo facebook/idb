@@ -62,7 +62,7 @@ struct VideoStreamMethodHandler {
           do {
             try await responseStream.send(response)
           } catch {
-            finished.wrappedValue = true
+            finished.set(true)
           }
         }
       }
