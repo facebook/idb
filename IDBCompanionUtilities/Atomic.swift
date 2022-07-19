@@ -23,6 +23,18 @@ public final class Atomic<Value>: @unchecked Sendable {
     set { mutex.sync(execute: { value = newValue }) }
   }
 
+  /// Convenience plain setter.
+  /// This produces exact same results:
+  /// ```
+  /// @Atomic var counter = 0
+  ///
+  /// $counter.set(1)
+  /// $counter.sync { $0 = 1 }
+  /// ```
+  public func `set`(_ newValue: Value) {
+    mutex.sync(execute: { value = newValue })
+  }
+
   public func sync<R>(execute work: (inout Value) throws -> R) rethrows -> R {
     try mutex.sync(execute: { try work(&value) })
   }
