@@ -121,6 +121,7 @@ from idb.grpc.idb_pb2 import (
     PullRequest,
     PushRequest,
     RecordRequest,
+    RevokeRequest,
     RmRequest,
     ScreenshotRequest,
     SendNotificationRequest,
@@ -178,6 +179,16 @@ APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
     Permission.LOCATION: ApproveRequest.LOCATION,
     Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
     Permission.MICROPHONE: ApproveRequest.MICROPHONE,
+}
+
+REVOKE_MAP: Dict[Permission, "RevokeRequest.Permission"] = {
+    Permission.PHOTOS: RevokeRequest.PHOTOS,
+    Permission.CAMERA: RevokeRequest.CAMERA,
+    Permission.CONTACTS: RevokeRequest.CONTACTS,
+    Permission.URL: RevokeRequest.URL,
+    Permission.LOCATION: RevokeRequest.LOCATION,
+    Permission.NOTIFICATION: RevokeRequest.NOTIFICATION,
+    Permission.MICROPHONE: RevokeRequest.MICROPHONE,
 }
 
 VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
@@ -522,12 +533,30 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("approve")
     async def approve(
-        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
+        self,
+        bundle_id: str,
+        permissions: Set[Permission],
+        scheme: Optional[str] = None,
     ) -> None:
         await self.stub.approve(
             ApproveRequest(
                 bundle_id=bundle_id,
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
+                scheme=scheme,
+            )
+        )
+
+    @log_and_handle_exceptions("revoke")
+    async def revoke(
+        self,
+        bundle_id: str,
+        permissions: Set[Permission],
+        scheme: Optional[str] = None,
+    ) -> None:
+        await self.stub.revoke(
+            RevokeRequest(
+                bundle_id=bundle_id,
+                permissions=[REVOKE_MAP[permission] for permission in permissions],
                 scheme=scheme,
             )
         )

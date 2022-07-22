@@ -728,6 +728,22 @@ class TestParser(TestCase):
             bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
         )
 
+    async def test_revoke(self) -> None:
+        self.client_mock.revoke = AsyncMock(return_value=[])
+        bundle_id = "com.fb.myApp"
+        await cli_main(cmd_input=["revoke", bundle_id, "photos"])
+        self.client_mock.revoke.assert_called_once_with(
+            bundle_id=bundle_id, permissions={Permission.PHOTOS}, scheme=None
+        )
+
+    async def test_revoke_url(self) -> None:
+        self.client_mock.revoke = AsyncMock(return_value=[])
+        bundle_id = "com.fb.myApp"
+        await cli_main(cmd_input=["revoke", bundle_id, "url", "--scheme", "fb"])
+        self.client_mock.revoke.assert_called_once_with(
+            bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
+        )
+
     async def test_video_record(self) -> None:
         mock = AsyncMock()
         with patch(
