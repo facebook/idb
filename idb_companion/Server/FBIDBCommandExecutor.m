@@ -183,7 +183,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
-- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services for_application:(NSString *)bundleID
+- (FBFuture<NSNull *> *)approve:(NSSet<FBTargetSettingsService> *)services for_application:(NSString *)bundleID
 {
   return [self.settingsCommands
     onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {

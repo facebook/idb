@@ -16,9 +16,9 @@ struct ApproveMethodHandler {
 
     // Swift implements custom bridging logic for NSNotificationName and this causes ALL string enums ended with "Notification"
     // suffix translates in this special way
-    let notificationApprovalService = FBSettingsApprovalService.FBSettingsApprovalService
+    let notificationApprovalService = FBTargetSettingsService.FBTargetSettingsService
 
-    let mapping: [Idb_ApproveRequest.Permission: FBSettingsApprovalService] = [
+    let mapping: [Idb_ApproveRequest.Permission: FBTargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
       .camera: .camera,
@@ -29,7 +29,7 @@ struct ApproveMethodHandler {
     ]
 
     var services = try Set(
-      request.permissions.map { permission -> FBSettingsApprovalService in
+      request.permissions.map { permission -> FBTargetSettingsService in
         guard let service = mapping[permission] else {
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized permission \(permission)")
         }

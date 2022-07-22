@@ -861,22 +861,22 @@ Status FBIDBServiceHandler::ls(grpc::ServerContext *context, const idb::LsReques
 Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRequest *request, idb::ApproveResponse *response)
 {@autoreleasepool{
   NSError *error = nil;
-  NSDictionary<NSNumber *, FBSettingsApprovalService> *mapping = @{
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_MICROPHONE): FBSettingsApprovalServiceMicrophone,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_PHOTOS): FBSettingsApprovalServicePhotos,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CAMERA): FBSettingsApprovalServiceCamera,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CONTACTS): FBSettingsApprovalServiceContacts,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_URL): FBSettingsApprovalServiceUrl,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_LOCATION): FBSettingsApprovalServiceLocation,
-    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_NOTIFICATION): FBSettingsApprovalServiceNotification,
+  NSDictionary<NSNumber *, FBTargetSettingsService> *mapping = @{
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_MICROPHONE): FBTargetSettingsServiceMicrophone,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_PHOTOS): FBTargetSettingsServicePhotos,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CAMERA): FBTargetSettingsServiceCamera,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_CONTACTS): FBTargetSettingsServiceContacts,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_URL): FBTargetSettingsServiceUrl,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_LOCATION): FBTargetSettingsServiceLocation,
+    @((int)idb::ApproveRequest_Permission::ApproveRequest_Permission_NOTIFICATION): FBTargetSettingsServiceNotification,
   };
-  NSMutableSet<FBSettingsApprovalService> *services = NSMutableSet.set;
+  NSMutableSet<FBTargetSettingsService> *services = NSMutableSet.set;
   for (int j = 0; j < request->permissions_size(); j++) {
     idb::ApproveRequest_Permission permission = request->permissions(j);
     [services addObject:mapping[@(permission)]];
   }
-  if ([services containsObject:FBSettingsApprovalServiceUrl]) {
-    [services removeObject:FBSettingsApprovalServiceUrl];
+  if ([services containsObject:FBTargetSettingsServiceUrl]) {
+    [services removeObject:FBTargetSettingsServiceUrl];
     [[_commandExecutor approve_deeplink:nsstring_from_c_string(request->scheme())
                         for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
   }
@@ -1190,7 +1190,7 @@ Status FBIDBServiceHandler::xctest_run(ServerContext *context, const idb::Xctest
   if (error) {
     return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
   }
-  
+
   // Wait for the test operation to finish
   [operation.completed block:&error];
   return Status::OK;

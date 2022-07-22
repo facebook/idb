@@ -221,7 +221,7 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  @param bundleID app to approve services for
  @return a Future that resolves when complete.
  */
-- (FBFuture<NSNull *> *)approve:(NSSet<FBSettingsApprovalService> *)services for_application:(NSString *)bundleID;
+- (FBFuture<NSNull *> *)approve:(NSSet<FBTargetSettingsService> *)services for_application:(NSString *)bundleID;
 
 /**
 Approves the deeplink given a schema and app.

@@ -78,7 +78,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     getCurrentPreference:name domain:domain];
 }
 
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services
 {
   // We need at least one approval in the input
   if (services.count == 0) {
@@ -87,7 +87,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       failFuture];
   }
   // We also need at least one bundle id in the input.
-  if (services.count == 0) {
+  if (bundleIDs.count == 0) {
     return [[FBSimulatorError
       describeFormat:@"Cannot approve %@ since no bundle ids were provided", services]
       failFuture];
@@ -97,7 +97,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   NSMutableSet<NSString *> *toApprove = [NSMutableSet setWithSet:services];
   FBOSVersion *iosVer = [self.simulator osVersion];
-  NSDictionary<FBSettingsApprovalService, NSString *> *coreSimulatorSettingMapping;
+  NSDictionary<FBTargetSettingsService, NSString *> *coreSimulatorSettingMapping;
 
   if (iosVer.version.majorVersion >= 13) {
     coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13;
@@ -126,13 +126,13 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     [toApprove minusSet:tccServices];
     [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:tccServices]];
   }
-  if (toApprove.count > 0 && [toApprove containsObject:FBSettingsApprovalServiceLocation]) {
+  if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceLocation]) {
     [futures addObject:[self authorizeLocationSettings:bundleIDs.allObjects]];
-    [toApprove removeObject:FBSettingsApprovalServiceLocation];
+    [toApprove removeObject:FBTargetSettingsServiceLocation];
   }
-  if (toApprove.count > 0 && [toApprove containsObject:FBSettingsApprovalServiceNotification]) {
+  if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceNotification]) {
     [futures addObject:[self authorizeNotificationService:bundleIDs.allObjects]];
-    [toApprove removeObject:FBSettingsApprovalServiceNotification];
+    [toApprove removeObject:FBTargetSettingsServiceNotification];
   }
 
   // Error out if there's nothing we can do to handle a specific approval.
@@ -305,7 +305,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   }
 }
 
-- (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services
+- (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services
 {
   NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
   BOOL isDirectory = YES;
@@ -353,44 +353,44 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return FBFuture.empty;
 }
 
-+ (NSDictionary<FBSettingsApprovalService, NSString *> *)tccDatabaseMapping
++ (NSDictionary<FBTargetSettingsService, NSString *> *)tccDatabaseMapping
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  static NSDictionary<FBTargetSettingsService, NSString *> *mapping;
   dispatch_once(&onceToken, ^{
     mapping = @{
-      FBSettingsApprovalServiceContacts: @"kTCCServiceAddressBook",
-      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
-      FBSettingsApprovalServiceCamera: @"kTCCServiceCamera",
-      FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
+      FBTargetSettingsServiceContacts: @"kTCCServiceAddressBook",
+      FBTargetSettingsServicePhotos: @"kTCCServicePhotos",
+      FBTargetSettingsServiceCamera: @"kTCCServiceCamera",
+      FBTargetSettingsServiceMicrophone: @"kTCCServiceMicrophone",
     };
   });
   return mapping;
 }
 
-+ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMappingPreIos13
++ (NSDictionary<FBTargetSettingsService, NSString *> *)coreSimulatorSettingMappingPreIos13
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  static NSDictionary<FBTargetSettingsService, NSString *> *mapping;
   dispatch_once(&onceToken, ^{
     mapping = @{
-      FBSettingsApprovalServiceContacts: @"kTCCServiceContactsFull",
-      FBSettingsApprovalServicePhotos: @"kTCCServicePhotos",
-      FBSettingsApprovalServiceCamera: @"camera",
-      FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
-      FBSettingsApprovalServiceMicrophone: @"kTCCServiceMicrophone",
+      FBTargetSettingsServiceContacts: @"kTCCServiceContactsFull",
+      FBTargetSettingsServicePhotos: @"kTCCServicePhotos",
+      FBTargetSettingsServiceCamera: @"camera",
+      FBTargetSettingsServiceLocation: @"__CoreLocationAlways",
+      FBTargetSettingsServiceMicrophone: @"kTCCServiceMicrophone",
     };
   });
   return mapping;
 }
 
-+ (NSDictionary<FBSettingsApprovalService, NSString *> *)coreSimulatorSettingMappingPostIos13
++ (NSDictionary<FBTargetSettingsService, NSString *> *)coreSimulatorSettingMappingPostIos13
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<FBSettingsApprovalService, NSString *> *mapping;
+  static NSDictionary<FBTargetSettingsService, NSString *> *mapping;
   dispatch_once(&onceToken, ^{
     mapping = @{
-      FBSettingsApprovalServiceLocation: @"__CoreLocationAlways",
+      FBTargetSettingsServiceLocation: @"__CoreLocationAlways",
     };
   });
   return mapping;
@@ -413,14 +413,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return filenames;
 }
 
-+ (NSSet<FBSettingsApprovalService> *)filteredTCCApprovals:(NSSet<FBSettingsApprovalService> *)approvals
++ (NSSet<FBTargetSettingsService> *)filteredTCCApprovals:(NSSet<FBTargetSettingsService> *)approvals
 {
-  NSMutableSet<FBSettingsApprovalService> *filtered = [NSMutableSet setWithSet:approvals];
+  NSMutableSet<FBTargetSettingsService> *filtered = [NSMutableSet setWithSet:approvals];
   [filtered intersectSet:[NSSet setWithArray:self.tccDatabaseMapping.allKeys]];
   return [filtered copy];
 }
 
-+ (FBFuture<NSString *> *)buildRowsForDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSString *> *)buildRowsForDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(bundleIDs.count >= 1);
   NSParameterAssert(services.count >= 1);
@@ -438,11 +438,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   }];
 }
 
-+ (NSString *)preiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
++ (NSString *)preiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
 {
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+    for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
       [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", serviceName, bundleID]];
     }
@@ -450,12 +450,12 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return [tuples componentsJoinedByString:@", "];
 }
 
-+ (NSString *)postiOS15ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
++ (NSString *)postiOS15ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
 {
   NSUInteger timestamp = (NSUInteger) NSDate.date.timeIntervalSince1970;
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+    for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
       // The first 2 is for auth_value, 2 corresponds to "allowed"
       // The other two 2 and 2 that we set here correspond to auth_reason and auth_version
@@ -467,12 +467,12 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return [tuples componentsJoinedByString:@", "];
 }
 
-+ (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBSettingsApprovalService> *)services
++ (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
 {
   NSUInteger timestamp = (NSUInteger) NSDate.date.timeIntervalSince1970;
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    for (FBSettingsApprovalService service in [self filteredTCCApprovals:services]) {
+    for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
       [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
     }

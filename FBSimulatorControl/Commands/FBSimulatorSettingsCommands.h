@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs the bundle ids to provide access to.
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
 
 /**
  Grants access to the provided deeplink scheme.
