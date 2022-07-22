@@ -191,11 +191,27 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
+- (FBFuture<NSNull *> *)revoke:(NSSet<FBTargetSettingsService> *)services for_application:(NSString *)bundleID
+{
+  return [self.settingsCommands
+    onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+      return [commands revokeAccess:[NSSet setWithObject:bundleID] toServices:services];
+    }];
+}
+
 - (FBFuture<NSNull *> *)approve_deeplink:(NSString *)scheme for_application:(NSString *)bundleID
 {
   return [self.settingsCommands
   onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
     return [commands grantAccess:[NSSet setWithObject:bundleID] toDeeplink:scheme];
+  }];
+}
+
+- (FBFuture<NSNull *> *)revoke_deeplink:(NSString *)scheme for_application:(NSString *)bundleID
+{
+  return [self.settingsCommands
+  onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+    return [commands revokeAccess:[NSSet setWithObject:bundleID] toDeeplink:scheme];
   }];
 }
 

@@ -889,6 +889,37 @@ Status FBIDBServiceHandler::approve(ServerContext *context, const idb::ApproveRe
   return Status::OK;
 }}
 
+Status FBIDBServiceHandler::revoke(ServerContext *context, const idb::RevokeRequest *request, idb::RevokeResponse *response)
+{@autoreleasepool{
+  NSError *error = nil;
+  NSDictionary<NSNumber *, FBTargetSettingsService> *mapping = @{
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_MICROPHONE): FBTargetSettingsServiceMicrophone,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_PHOTOS): FBTargetSettingsServicePhotos,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_CAMERA): FBTargetSettingsServiceCamera,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_CONTACTS): FBTargetSettingsServiceContacts,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_URL): FBTargetSettingsServiceUrl,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_LOCATION): FBTargetSettingsServiceLocation,
+    @((int)idb::RevokeRequest_Permission::RevokeRequest_Permission_NOTIFICATION): FBTargetSettingsServiceNotification,
+  };
+  NSMutableSet<FBTargetSettingsService> *services = NSMutableSet.set;
+  for (int j = 0; j < request->permissions_size(); j++) {
+    idb::RevokeRequest_Permission permission = request->permissions(j);
+    [services addObject:mapping[@(permission)]];
+  }
+  if ([services containsObject:FBTargetSettingsServiceUrl]) {
+    [services removeObject:FBTargetSettingsServiceUrl];
+    [[_commandExecutor revoke_deeplink:nsstring_from_c_string(request->scheme())
+                        for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
+  }
+  if ([services count] > 0 && !error) {
+    [[_commandExecutor revoke:services for_application:nsstring_from_c_string(request->bundle_id())] block:&error];
+  }
+  if (error) {
+    return Status(grpc::StatusCode::INTERNAL, error.localizedDescription.UTF8String);
+  }
+  return Status::OK;
+}}
+
 Status FBIDBServiceHandler::clear_keychain(ServerContext *context, const idb::ClearKeychainRequest *request, idb::ClearKeychainResponse *response)
 {@autoreleasepool{
   NSError *error = nil;

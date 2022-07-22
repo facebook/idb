@@ -202,6 +202,15 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
       .handle(request: request, context: context)
   }
 
+  func revoke(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
+    guard try await shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await RevokeMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
+  }
+
   func clear_keychain(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
     guard try await shouldHandleNatively(context: context) else {
       return try await proxy(request: request, context: context)

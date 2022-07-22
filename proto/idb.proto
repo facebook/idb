@@ -36,6 +36,7 @@ service CompanionService {
       returns (SimulateMemoryWarningResponse) {}
   // Settings
   rpc approve(ApproveRequest) returns (ApproveResponse) {}
+  rpc revoke(RevokeRequest) returns (RevokeResponse) {}
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
   rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
@@ -261,6 +262,23 @@ message ApproveRequest {
 }
 
 message ApproveResponse {}
+
+message RevokeRequest {
+  enum Permission {
+    PHOTOS = 0;
+    CAMERA = 1;
+    CONTACTS = 2;
+    URL = 3;
+    LOCATION = 4;
+    NOTIFICATION = 5;
+    MICROPHONE = 6;
+  }
+  string bundle_id = 1;
+  repeated Permission permissions = 2;
+  string scheme = 3;
+}
+
+message RevokeResponse {}
 
 message ClearKeychainRequest {}
 

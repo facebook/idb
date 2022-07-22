@@ -124,14 +124,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     NSMutableSet<NSString *> *tccServices = [toApprove mutableCopy];
     [tccServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys]];
     [toApprove minusSet:tccServices];
-    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:tccServices]];
+    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:tccServices grantAccess:YES]];
   }
   if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceLocation]) {
     [futures addObject:[self authorizeLocationSettings:bundleIDs.allObjects]];
     [toApprove removeObject:FBTargetSettingsServiceLocation];
   }
   if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceNotification]) {
-    [futures addObject:[self authorizeNotificationService:bundleIDs.allObjects]];
+    [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:YES]];
     [toApprove removeObject:FBTargetSettingsServiceNotification];
   }
 
@@ -139,6 +139,80 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   if (toApprove.count > 0) {
     return [[FBSimulatorError
       describeFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toApprove.allObjects]]
+      failFuture];
+  }
+  // Nothing to do with zero futures.
+  if (futures.count == 0) {
+    return FBFuture.empty;
+  }
+  // Don't wrap if there's only one future.
+  if (futures.count == 1) {
+    return futures.firstObject;
+  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services
+{
+  // We need at least one revoke in the input
+  if (services.count == 0) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot revoke any services for %@ since no services were provided", bundleIDs]
+      failFuture];
+  }
+  // We also need at least one bundle id in the input.
+  if (bundleIDs.count == 0) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot revoke %@ since no bundle ids were provided", services]
+      failFuture];
+  }
+
+  // Composing different futures due to differences in how these operate.
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+  NSMutableSet<NSString *> *toRevoke = [NSMutableSet setWithSet:services];
+  FBOSVersion *iosVer = [self.simulator osVersion];
+  NSDictionary<FBTargetSettingsService, NSString *> *coreSimulatorSettingMapping;
+
+  if (iosVer.version.majorVersion >= 13) {
+    coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13;
+  } else {
+    coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13;
+  }
+
+  // Go through each of the internal APIs, removing them from the pending set as we go.
+  if ([self.simulator.device respondsToSelector:@selector(setPrivacyAccessForService:bundleID:granted:error:)]) {
+    NSMutableSet<NSString *> *simDeviceServices = [toRevoke mutableCopy];
+    [simDeviceServices intersectSet:[NSSet setWithArray:coreSimulatorSettingMapping.allKeys]];
+    // Only revoke these services, where they are serviced by the CoreSimulator API
+    if (simDeviceServices.count > 0) {
+      NSMutableSet<NSString *> *internalServices = [NSMutableSet set];
+      for (NSString *service in simDeviceServices) {
+        NSString *internalService = coreSimulatorSettingMapping[service];
+        [internalServices addObject:internalService];
+      }
+      [toRevoke minusSet:simDeviceServices];
+      [futures addObject:[self coreSimulatorRevokeWithBundleIDs:bundleIDs toServices:internalServices]];
+    }
+  }
+  if (toRevoke.count > 0 && [[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys] intersectsSet:toRevoke]) {
+    NSMutableSet<NSString *> *tccServices = [toRevoke mutableCopy];
+    [tccServices intersectSet:[NSSet setWithArray:FBSimulatorSettingsCommands.tccDatabaseMapping.allKeys]];
+    [toRevoke minusSet:tccServices];
+    [futures addObject:[self modifyTCCDatabaseWithBundleIDs:bundleIDs toServices:tccServices grantAccess:NO]];
+  }
+  if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceLocation]) {
+    [futures addObject:[self revokeLocationSettings:bundleIDs.allObjects]];
+    [toRevoke removeObject:FBTargetSettingsServiceLocation];
+  }
+  if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceNotification]) {
+    [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:NO]];
+    [toRevoke removeObject:FBTargetSettingsServiceNotification];
+  }
+
+  // Error out if there's nothing we can do to handle a specific approval.
+  if (toRevoke.count > 0) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toRevoke.allObjects]]
       failFuture];
   }
   // Nothing to do with zero futures.
@@ -179,8 +253,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }
   }
 
-  //Add magic strings to our plist. This is necessary to skip the dialog when using `idb open`
-  NSString *urlKey = [NSString stringWithFormat:@"com.apple.CoreSimulator.CoreSimulatorBridge-->%@", scheme];
+  NSString *urlKey = [FBSimulatorSettingsCommands magicDeeplinkKeyForScheme:scheme];
   for (NSString *bundleID in bundleIDs) {
     schemeApprovalProperties[urlKey] = bundleID;
   }
@@ -198,6 +271,49 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       failFuture];
   }
   success = [schemeApprovalProperties writeToFile:schemeApprovalPlistPath atomically:YES];
+  if (!success) {
+    return [[FBSimulatorError
+      describe:@"Failed to write scheme approval plist"]
+      failFuture];
+  }
+  return FBFuture.empty;
+}
+
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme
+{
+  if ([scheme length] == 0) {
+    return [[FBSimulatorError
+      describe:@"Empty scheme provided to url revoke"]
+      failFuture];
+  }
+  if ([bundleIDs count] == 0) {
+    return [[FBSimulatorError
+      describe:@"Empty bundleID set provided to url revoke"]
+      failFuture];
+  }
+
+  NSString *preferencesDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/Preferences"];
+  NSString *schemeApprovalPlistPath = [preferencesDirectory stringByAppendingPathComponent:@"com.apple.launchservices.schemeapproval.plist"];
+
+  // Read the existing file if it exists
+  NSMutableDictionary<NSString *, NSString *> *schemeApprovalProperties = [NSMutableDictionary new];
+  if ([NSFileManager.defaultManager fileExistsAtPath:schemeApprovalPlistPath]) {
+    schemeApprovalProperties = [[NSDictionary dictionaryWithContentsOfFile:schemeApprovalPlistPath] mutableCopy];
+    if (schemeApprovalProperties == nil) {
+      return [[FBSimulatorError
+        describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
+        failFuture];
+    }
+  } else {
+    // If the file of scheme approvals doesn't exist, then there's nothing we need to revoke
+    return FBFuture.empty;
+  }
+
+  NSString *urlKey = [FBSimulatorSettingsCommands magicDeeplinkKeyForScheme:scheme];
+  [schemeApprovalProperties removeObjectForKey:urlKey];
+
+  //Write the plist back
+  BOOL success = [schemeApprovalProperties writeToFile:schemeApprovalPlistPath atomically:YES];
   if (!success) {
     return [[FBSimulatorError
       describe:@"Failed to write scheme approval plist"]
@@ -247,7 +363,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     approveLocationServicesForBundleIDs:bundleIDs];
 }
 
-- (FBFuture<NSNull *> *)authorizeNotificationService:(NSArray<NSString *> *)bundleIDs
+- (FBFuture<NSNull *> *)revokeLocationSettings:(NSArray<NSString *> *)bundleIDs
+{
+  return [[FBLocationServicesModificationStrategy
+    strategyWithSimulator:self.simulator]
+    revokeLocationServicesForBundleIDs:bundleIDs];
+}
+
+- (FBFuture<NSNull *> *)updateNotificationService:(NSArray<NSString *> *)bundleIDs approve:(BOOL)approved
 {
   if ([bundleIDs count] == 0) {
     return [[FBSimulatorError
@@ -274,21 +397,24 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     if (data == nil) {
       return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
     }
+      if (approved) {
+        NSError *readError = nil;
+        NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
+        if (readError != nil) {
+          return [FBSimulatorError failFutureWithError:readError];
+        }
+        properties[@"$objects"][2] = bundleID;
+        properties[@"$objects"][3][@"allowsNotifications"] = @(YES);
 
-    NSError *readError = nil;
-    NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
-    if (readError != nil) {
-      return [FBSimulatorError failFutureWithError:readError];
-    }
-    properties[@"$objects"][2] = bundleID;
-    properties[@"$objects"][3][@"allowsNotifications"] = @(YES);
-
-    NSError *writeError = nil;
-    NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
-    if (writeError != nil) {
-      return [FBSimulatorError failFutureWithError:writeError];
-    }
-    sectionInfo[@"sectionInfo"][bundleID] = resultData;
+        NSError *writeError = nil;
+        NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
+        if (writeError != nil) {
+          return [FBSimulatorError failFutureWithError:writeError];
+        }
+        sectionInfo[@"sectionInfo"][bundleID] = resultData;
+      } else {
+        [sectionInfo[@"sectionInfo"] removeObjectForKey:bundleID];
+      }
   }
 
   BOOL result = [sectionInfo writeToFile:notificationsApprovalPlistPath atomically:YES];
@@ -305,7 +431,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   }
 }
 
-- (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services
+- (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services grantAccess:(BOOL)grantAccess
 {
   NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];
   BOOL isDirectory = YES;
@@ -328,16 +454,21 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   id<FBControlCoreLogger> logger = [self.simulator.logger withName:@"sqlite_auth"];
   dispatch_queue_t queue = self.simulator.asyncQueue;
 
-  return [[[FBSimulatorSettingsCommands
-    buildRowsForDatabase:databasePath bundleIDs:bundleIDs services:services queue:queue logger:logger]
-    onQueue:self.simulator.workQueue fmap:^(NSString *rows) {
-      return [FBSimulatorSettingsCommands
-        runSqliteCommandOnDatabase:databasePath
-        arguments:@[[NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", rows]]
-        queue:queue
-        logger:logger];
-    }]
-    mapReplace:NSNull.null];
+  if (grantAccess) {
+    return [self
+      grantAccessInTCCDatabase:databasePath
+      bundleIDs:bundleIDs
+      services:services
+      queue:queue
+      logger:logger];
+  } else {
+    return [self
+      revokeAccessInTCCDatabase:databasePath
+      bundleIDs:bundleIDs
+      services:services
+      queue:queue
+      logger:logger];
+  }
 }
 
 - (FBFuture<NSNull *> *)coreSimulatorApproveWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<NSString *> *)services
@@ -346,6 +477,19 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     for (NSString *internalService in services) {
       NSError *error = nil;
       if (![self.simulator.device setPrivacyAccessForService:internalService bundleID:bundleID granted:YES error:&error]) {
+        return [FBFuture futureWithError:error];
+      }
+    }
+  }
+  return FBFuture.empty;
+}
+
+- (FBFuture<NSNull *> *)coreSimulatorRevokeWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<NSString *> *)services
+{
+  for (NSString *bundleID in bundleIDs) {
+    for (NSString *internalService in services) {
+      NSError *error = nil;
+      if (![self.simulator.device resetPrivacyAccessForService:internalService bundleID:bundleID error:&error]) {
         return [FBFuture futureWithError:error];
       }
     }
@@ -418,6 +562,43 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   NSMutableSet<FBTargetSettingsService> *filtered = [NSMutableSet setWithSet:approvals];
   [filtered intersectSet:[NSSet setWithArray:self.tccDatabaseMapping.allKeys]];
   return [filtered copy];
+}
+
+- (FBFuture<NSNull *> *)grantAccessInTCCDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  return [[[FBSimulatorSettingsCommands
+    buildRowsForDatabase:databasePath bundleIDs:bundleIDs services:services queue:queue logger:logger]
+    onQueue:self.simulator.workQueue fmap:^(NSString *rows) {
+      return [FBSimulatorSettingsCommands
+        runSqliteCommandOnDatabase:databasePath
+        arguments:@[[NSString stringWithFormat:@"INSERT or REPLACE INTO access VALUES %@", rows]]
+        queue:queue
+        logger:logger];
+    }]
+    mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)revokeAccessInTCCDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+{
+  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    for (FBTargetSettingsService service in [FBSimulatorSettingsCommands filteredTCCApprovals:services]) {
+      [futures addObject:
+        [FBSimulatorSettingsCommands
+        runSqliteCommandOnDatabase:databasePath
+        arguments:@[[NSString stringWithFormat:@"DELETE FROM access WHERE service = '%@' AND client = '%@'",
+          [FBSimulatorSettingsCommands tccDatabaseMapping][service],
+          bundleID
+        ]]
+        queue:queue
+        logger:logger]];
+    }
+  }
+  // Nothing to do with zero futures.
+  if (futures.count == 0) {
+    return FBFuture.empty;
+  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
 
 + (FBFuture<NSString *> *)buildRowsForDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -527,6 +708,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   }
 
   return [filePaths copy];
+}
+
+//Add magic strings to our plist. This is necessary to skip the dialog when using `idb open`
++ (NSString *)magicDeeplinkKeyForScheme:(NSString *)scheme {
+  return [NSString stringWithFormat:@"com.apple.CoreSimulator.CoreSimulatorBridge-->%@", scheme];
 }
 
 @end

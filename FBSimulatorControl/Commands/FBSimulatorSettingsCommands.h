@@ -56,6 +56,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
 
 /**
+ Revokes access to the provided services.
+
+ @param bundleIDs the bundle ids to revoke access to.
+ @return A future that resolves when the setting change is complete.
+ */
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
+
+/**
  Grants access to the provided deeplink scheme.
 
  @param bundleIDs the bundle ids to provide access to.
@@ -63,6 +71,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future that resolves when the setting change is complete.
  */
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
+
+/**
+ Revokes access to the provided deeplink scheme.
+
+ @param bundleIDs the bundle ids to revoke access to.
+ @param scheme the deeplink scheme
+ @return A future that resolves when the setting change is complete.
+ */
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
 
 /**
  Updates the contacts on the target, using the provided local databases.

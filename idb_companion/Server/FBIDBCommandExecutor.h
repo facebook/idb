@@ -224,6 +224,15 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
 - (FBFuture<NSNull *> *)approve:(NSSet<FBTargetSettingsService> *)services for_application:(NSString *)bundleID;
 
 /**
+ Revokes the given services for an app
+
+ @param services services to revoke
+ @param bundleID app to revoke services for
+ @return a Future that resolves when complete.
+ */
+- (FBFuture<NSNull *> *)revoke:(NSSet<FBTargetSettingsService> *)services for_application:(NSString *)bundleID;
+
+/**
 Approves the deeplink given a schema and app.
 This allows to avoid the permission popup the first time we open a deeplink
 
@@ -232,6 +241,16 @@ This allows to avoid the permission popup the first time we open a deeplink
 @return a Future that resolves when complete.
 */
 - (FBFuture<NSNull *> *)approve_deeplink:(NSString *)scheme for_application:(NSString *)bundleID;
+
+/**
+Revokes the deeplink given a schema and app.
+This enables the permission popup the first time we open a deeplink
+
+@param scheme scheme of the deeplink url (the part before ":")
+@param bundleID app to revoke services for
+@return a Future that resolves when complete.
+*/
+- (FBFuture<NSNull *> *)revoke_deeplink:(NSString *)scheme for_application:(NSString *)bundleID;
 
 /**
  Open a url on the target

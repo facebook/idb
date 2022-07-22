@@ -76,6 +76,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
 
+/**
+ Revokes Location Services for Applications.
+
+ @param bundleIDs an NSArray<NSString> of bundle IDs to to revoke location settings for.
+ @return a future that resolves when completed.
+ */
+- (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
+
 @end
 
 NS_ASSUME_NONNULL_END
