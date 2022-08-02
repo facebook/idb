@@ -8,17 +8,17 @@
 import IDBGRPCSwift
 import GRPC
 
-struct ApproveMethodHandler {
+struct RevokeMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(request: Idb_ApproveRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ApproveResponse {
+  func handle(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
 
     // Swift implements custom bridging logic for NSNotificationName and this causes ALL string enums ended with "Notification"
     // suffix translates in this special way
     let notificationApprovalService = FBTargetSettingsService.FBTargetSettingsService
 
-    let mapping: [Idb_ApproveRequest.Permission: FBTargetSettingsService] = [
+    let mapping: [Idb_RevokeRequest.Permission: FBTargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
       .camera: .camera,
@@ -38,11 +38,11 @@ struct ApproveMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await BridgeFuture.await(commandExecutor.approve_deeplink(request.scheme, for_application: request.bundleID))
+      try await BridgeFuture.await(commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID))
     }
 
     if !services.isEmpty {
-      try await BridgeFuture.await(commandExecutor.approve(services, for_application: request.bundleID))
+      try await BridgeFuture.await(commandExecutor.revoke(services, for_application: request.bundleID))
     }
     return .init()
   }

@@ -94,6 +94,10 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
     commonInterceptors()
   }
 
+  func makerevokeInterceptors() -> [ServerInterceptor<Idb_RevokeRequest, Idb_RevokeResponse>] {
+    commonInterceptors()
+  }
+
   func makeclear_keychainInterceptors() -> [ServerInterceptor<Idb_ClearKeychainRequest, Idb_ClearKeychainResponse>] {
     commonInterceptors()
   }

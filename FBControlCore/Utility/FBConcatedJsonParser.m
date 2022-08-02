@@ -15,52 +15,54 @@
 #pragma mark Public
 
 + (nullable NSDictionary<NSString *, id> *)parseConcatenatedJSONFromString:(NSString *)str error:(NSError **)error{
-  int bracketCounter = 0;
-  BOOL characterEscaped = false;
-  BOOL inString = false;
+  __block int bracketCounter = 0;
+  __block BOOL characterEscaped = false;
+  __block BOOL inString = false;
+  __block NSError *err = nil;
 
   NSMutableDictionary<NSString *, id> *concatenatedJson = [NSMutableDictionary new];
-  NSMutableString *json = [NSMutableString new];
+  __block NSMutableString *json = [NSMutableString new];
   
-  NSUInteger len = [str length];
-  unichar buffer[len+1];
-
-  [str getCharacters:buffer range:NSMakeRange(0, len)];
-
-  for(NSUInteger i = 0; i < len; i++) {
-    unichar c = buffer[i];
-    
+  [str enumerateSubstringsInRange:NSMakeRange(0, [str length]) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+    if (!substring) {
+      return;
+    }
+    NSString *c = substring;
     BOOL escaped = characterEscaped;
     characterEscaped = false;
     if (escaped) {
-      [json appendFormat:@"%C", c];
-      continue;
+      [json appendString:c];
+      return;
     }
     if (!inString) {
-      if (c == '\n') {
-        continue;
+      if ([c isEqualToString: @"\n"]) {
+        return;
       }
-      if (c == '{') {
+      if ([c isEqualToString: @"{"]) {
         bracketCounter += 1;
-      } else if (c == '}') {
+      } else if ([c isEqualToString:@"}"]) {
         bracketCounter -= 1;
       }
     }
-    if (c == '\\') {
+    if ([c isEqualToString: @"\\"]) {
       characterEscaped = true;
     }
-    if (c == '"') {
+    if ([c isEqualToString: @"\""]) {
       inString = !inString;
     }
-    [json appendFormat:@"%C", c];
+    [json appendString:c];
     if (bracketCounter == 0) {
-      NSDictionary<NSString *, id> *parsed = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options:0 error:error];
+      NSDictionary<NSString *, id> *parsed = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&err];
       if (!parsed) {
-        return nil;
+        *stop = YES;
       }
       json = [NSMutableString new];
       [concatenatedJson addEntriesFromDictionary:parsed];
     }
+  }];
+  if (err) {
+    *error = err;
+    return nil;
   }
 
   return concatenatedJson;

@@ -8,6 +8,7 @@
 import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
+import IDBCompanionUtilities
 
 struct VideoStreamMethodHandler {
 
@@ -52,17 +53,17 @@ struct VideoStreamMethodHandler {
     let consumer: FBDataConsumer
 
     if start.filePath.isEmpty {
+      let responseWriter = FIFOStreamWriter(stream: responseStream)
+
       consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
         guard !finished.wrappedValue else { return }
         let response = Idb_VideoStreamResponse.with {
           $0.payload.data = data
         }
-        Task {
-          do {
-            try await responseStream.send(response)
-          } catch {
-            finished.wrappedValue = true
-          }
+        do {
+          try responseWriter.send(response)
+        } catch {
+          finished.set(true)
         }
       }
     } else {

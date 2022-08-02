@@ -589,6 +589,12 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def revoke(
+        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def record_video(self, stop: asyncio.Event, output_file: str) -> None:
         pass
 

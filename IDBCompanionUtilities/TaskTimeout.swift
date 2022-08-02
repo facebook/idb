@@ -6,13 +6,12 @@
  */
 
 import Foundation
-import GRPC
 
-struct TaskTimeoutError: Error, GRPCStatusTransformable {
+struct TaskTimeoutError: Error, LocalizedError {
   let location: CodeLocation
 
-  public func makeGRPCStatus() -> GRPCStatus {
-    return GRPCStatus(code: .internalError, message: "Received timeout for task. \(location)")
+  var errorDescription: String? {
+    "Received timeout for task. \(location)"
   }
 }
 
@@ -22,7 +21,7 @@ extension Task where Failure == Error {
   /// - Parameters:
   ///   - nanoseconds: Amount of time to wait
   /// - Returns: Job result
-  static func timeout(nanoseconds: UInt64, function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, job: @escaping @Sendable () async throws -> Success) async throws -> Success {
+  public static func timeout(nanoseconds: UInt64, function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, job: @escaping @Sendable () async throws -> Success) async throws -> Success {
     let jobTask = Task<Success, Error> { try await job() }
     let result = await Task<Success, Error>.select(
       jobTask,

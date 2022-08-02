@@ -10,6 +10,7 @@ import GRPC
 import IDBGRPCSwift
 import FBSimulatorControl
 import XCTestBootstrap
+import IDBCompanionUtilities
 
 extension IDBXCTestReporter {
 
@@ -63,7 +64,7 @@ extension IDBXCTestReporter {
 
 
   init(responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
-    self.responseStream = responseStream
+    self._responseStream = .init(wrappedValue: responseStream)
     self.queue = queue
     self.logger = logger
   }
@@ -111,7 +112,7 @@ extension IDBXCTestReporter {
   }
 
   @objc func testSuite(_ testSuite: String, didStartAt startTime: String) {
-    currentInfo.bundleName = testSuite
+    _currentInfo.sync { $0.bundleName = testSuite }
   }
 
   @objc func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
@@ -119,7 +120,7 @@ extension IDBXCTestReporter {
       let info = try createRunInfo(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? [])
       write(testRunInfo: info)
     } catch {
-      responseStream = nil
+      _responseStream.sync { $0 = nil }
       reportingTerminated.resolveWithError(error)
     }
   }
@@ -130,7 +131,9 @@ extension IDBXCTestReporter {
       logger.log("Got failure info for \(testClass)/\(method) but the current known executing test is \(currentInfo.testClass)\(currentInfo.testMethod). Ignoring it")
       return
     }
-    self.currentInfo.failureInfo = createFailureInfo(message: message, file: file, line: line)
+    self._currentInfo.sync {
+      $0.failureInfo = createFailureInfo(message: message, file: file, line: line)
+    }
   }
 
   @objc func testCaseDidStart(forTestClass testClass: String, method: String) {
@@ -146,7 +149,9 @@ extension IDBXCTestReporter {
   }
 
   @objc func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
-    currentInfo.activityRecords.append(activity)
+    _currentInfo.sync {
+      $0.activityRecords.append(activity)
+    }
   }
 
   @objc func finished(with summary: FBTestManagerResultSummary) {
@@ -474,9 +479,11 @@ extension IDBXCTestReporter {
       let regexp = try NSRegularExpression(pattern: "Assertion failed: (.*), function (.*), file (.*), line (\\d+).", options: .caseInsensitive)
       let log = logOutput as NSString
       if let result = regexp.firstMatch(in: logOutput, options: [], range: .init(location: 0, length: log.length)) {
-        currentInfo.failureInfo = failureInfoWith(message: log.substring(with: result.range(at: 1)),
-                                                  file: log.substring(with: result.range(at: 3)),
-                                                  line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
+        _currentInfo.sync {
+          $0.failureInfo = failureInfoWith(message: log.substring(with: result.range(at: 1)),
+                                           file: log.substring(with: result.range(at: 3)),
+                                           line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
+        }
       }
 
     } catch {

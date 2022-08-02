@@ -196,4 +196,48 @@ static NSString *const AppleGlobalDomain = @"Apple Global Domain";
     managingService:@"locationd"];
 }
 
+- (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs
+{
+  NSParameterAssert(bundleIDs);
+
+    FBSimulator *simulator = self.simulator;
+    FBiOSTargetState state = simulator.state;
+    if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
+      return [[FBSimulatorError
+        describeFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+        failFuture];
+    }
+
+    NSString *serviceName = @"locationd";
+
+    // Stop the service, if booted.
+    FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
+      ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
+      : FBFuture.empty;
+
+    NSString *path = [self.simulator.dataDirectory
+                      stringByAppendingPathComponent:@"Library/Caches/locationd/clients.plist"];
+    NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+    for (NSString *bundleID in bundleIDs) {
+      [futures addObject:
+       [self
+        performDefaultsCommandWithArguments:@[
+          @"delete",
+          path,
+          bundleID,
+        ]]];
+    }
+
+    return [[stopFuture
+      onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *_) {
+        return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+      }]
+      onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
+        // Re-start the Service if booted.
+        return state == FBiOSTargetStateBooted
+          ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
+          : FBFuture.empty;
+      }];
+}
+
 @end

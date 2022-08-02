@@ -8,6 +8,7 @@
 import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
+import IDBCompanionUtilities
 
 struct LogMethodHandler {
 
@@ -16,6 +17,7 @@ struct LogMethodHandler {
 
   func handle(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
     let writingDone = FBMutableFuture<NSNull>(name: nil)
+    let streamWriter = FIFOStreamWriter(stream: responseStream)
 
     let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
       if writingDone.hasCompleted {
@@ -24,12 +26,10 @@ struct LogMethodHandler {
       let response = Idb_LogResponse.with {
         $0.output = data
       }
-      Task {
-        do {
-          try await responseStream.send(response)
-        } catch {
-          writingDone.resolveWithError(error)
-        }
+      do {
+        try streamWriter.send(response)
+      } catch {
+        writingDone.resolveWithError(error)
       }
     }
 

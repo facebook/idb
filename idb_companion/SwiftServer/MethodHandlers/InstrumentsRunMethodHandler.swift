@@ -8,6 +8,7 @@
 import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
+import IDBCompanionUtilities
 
 struct InstrumentsRunMethodHandler {
 
@@ -32,18 +33,18 @@ struct InstrumentsRunMethodHandler {
 
   private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> FBInstrumentsOperation {
     let configuration = instrumentsConfiguration(from: request, storageManager: commandExecutor.storageManager)
+
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
       guard !finishedWriting.wrappedValue else { return }
 
-      Task {
-        do {
-          let response = Idb_InstrumentsRunResponse.with {
-            $0.logOutput = data
-          }
-          try await responseStream.send(response)
-        } catch {
-          finishedWriting.wrappedValue = true
+      do {
+        let response = Idb_InstrumentsRunResponse.with {
+          $0.logOutput = data
         }
+        try responseWriter.send(response)
+      } catch {
+        finishedWriting.set(true)
       }
     }
     let logger = FBControlCoreLoggerFactory.compositeLogger(with: [
@@ -76,7 +77,7 @@ struct InstrumentsRunMethodHandler {
     guard let processedPath = processed.path else {
       throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
     }
-    finishedWriting.wrappedValue = true
+    finishedWriting.set(true)
 
     let archiveOperation = FBArchiveOperations.createGzippedTar(forPath: processedPath, logger: logger)
 

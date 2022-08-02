@@ -33,6 +33,7 @@ public:
   Status accessibility_info(ServerContext *context, const idb::AccessibilityInfoRequest *request, idb::AccessibilityInfoResponse *response);
   Status add_media(ServerContext *context,grpc::ServerReader<idb::AddMediaRequest> *reader, idb::AddMediaResponse *response);
   Status approve(ServerContext *context, const idb::ApproveRequest *request, idb::ApproveResponse *response);
+  Status revoke(ServerContext *context, const idb::RevokeRequest *request, idb::RevokeResponse *response);
   Status clear_keychain(ServerContext *context, const idb::ClearKeychainRequest *request, idb::ClearKeychainResponse *response);
   Status connect(ServerContext *context, const idb::ConnectRequest *request, idb::ConnectResponse *response);
   Status contacts_update(ServerContext *context, const idb::ContactsUpdateRequest *request, idb::ContactsUpdateResponse *response);

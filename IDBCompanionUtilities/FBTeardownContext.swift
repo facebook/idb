@@ -21,7 +21,7 @@ private final class FBTeardownContextImpl {
     guard !cleanupPerformed else {
       throw FBTeardownContextError.cleanupAlreadyPerformed
     }
-    cleanupList.append(cleanup)
+    _cleanupList.sync { $0.append(cleanup) }
   }
 
   func performCleanup() async throws {
@@ -57,10 +57,10 @@ private final class FBTeardownContextImpl {
 /// }
 ///
 /// ```
-final class FBTeardownContext {
+public final class FBTeardownContext {
 
   /// Current context that binded to swift concurrency Task. For more info read about `@TaskLocal`
-  @TaskLocal static var current: FBTeardownContext = .init(emptyContext: ())
+  @TaskLocal public static var current: FBTeardownContext = .init(emptyContext: ())
 
   private let contextImpl: FBTeardownContextImpl?
   private let codeLocation: CodeLocation
@@ -80,7 +80,7 @@ final class FBTeardownContext {
   /// Creates `FBContext` and executes operation with it
   /// - Parameter operation: Inside the operation you have `FBTeardownContext.current` available that will be cleaned up on scoping out
   /// - Returns: Operation result
-  static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: @Sendable () async throws -> T) async throws -> T {
+  public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: @Sendable () async throws -> T) async throws -> T {
     let context = FBTeardownContext(function: function, file: file, line: line, column: column)
     context.isAutocleanup = true
     let result = try await FBTeardownContext.$current.withValue(context, operation: operation)
@@ -90,7 +90,7 @@ final class FBTeardownContext {
 
   /// Adds cleanup closure to the stack. All cleanup jobs will be called in LIFO order
   /// - Parameter cleanup: Task with cleanup job. There is no enforcement that job *should* throw an error on failure. This is optional.
-  func addCleanup(_ cleanup: @escaping () async throws -> Void) throws {
+  public func addCleanup(_ cleanup: @escaping () async throws -> Void) throws {
     guard let contextImpl = contextImpl else {
       throw FBTeardownContextError.emptyContext
     }
@@ -98,7 +98,7 @@ final class FBTeardownContext {
   }
 
   /// This method should be called explicitly. Relying on deinit is programmer error.
-  func performCleanup() async throws {
+  public func performCleanup() async throws {
     guard let contextImpl = contextImpl else {
       throw FBTeardownContextError.emptyContext
     }

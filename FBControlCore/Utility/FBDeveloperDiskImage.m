@@ -9,6 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+static NSString *const ExtraDeviceSupportDirEnv = @"IDB_EXTRA_DEVICE_SUPPORT_DIR";
+
 static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSystemVersion target)
 {
   NSInteger major = ABS((current.majorVersion - target.majorVersion) * 10);
@@ -70,6 +72,10 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   static NSArray<FBDeveloperDiskImage *> *images = nil;
   dispatch_once(&onceToken, ^{
     images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:ExtraDeviceSupportDirEnv]) {
+      NSArray<FBDeveloperDiskImage *> *extraImages = [self allDiskImagesFromSearchPath:NSProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+      images = [images arrayByAddingObjectsFromArray:extraImages];
+    }
   });
   return images;
 }

@@ -8,6 +8,7 @@
 import IDBGRPCSwift
 import GRPC
 import FBSimulatorControl
+import IDBCompanionUtilities
 
 struct XctraceRecordMethodHandler {
 
@@ -18,7 +19,7 @@ struct XctraceRecordMethodHandler {
   func handle(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
 
     @Atomic var finishedWriting = false
-    defer { finishedWriting = true }
+    defer { _finishedWriting.set(true) }
 
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
@@ -32,18 +33,18 @@ struct XctraceRecordMethodHandler {
 
   private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> FBXCTraceRecordOperation {
     let config = xcTraceRecordConfiguration(from: start)
+
+    let responseWriter = FIFOStreamWriter(stream: responseStream)
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
       guard !finishedWriting.wrappedValue else { return }
 
       let response = Idb_XctraceRecordResponse.with {
         $0.log = data
       }
-      Task {
-        do {
-          try await responseStream.send(response)
-        } catch {
-          finishedWriting.wrappedValue = true
-        }
+      do {
+        try responseWriter.send(response)
+      } catch {
+        finishedWriting.set(true)
       }
     }
 
@@ -75,7 +76,7 @@ struct XctraceRecordMethodHandler {
                                          queue: BridgeQueues.miscEventReaderQueue,
                                          logger: logger)
     )
-    finishedWriting.wrappedValue = true
+    finishedWriting.set(true)
 
     guard let path = processed.path else {
       throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")

@@ -11,6 +11,7 @@ import GRPC
 import SwiftProtobuf
 import NIOHPACK
 import XCTestBootstrap
+import IDBCompanionUtilities
 
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
@@ -198,6 +199,15 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     }
 
     return try await ApproveMethodHandler(commandExecutor: commandExecutor)
+      .handle(request: request, context: context)
+  }
+
+  func revoke(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
+    guard try await shouldHandleNatively(context: context) else {
+      return try await proxy(request: request, context: context)
+    }
+
+    return try await RevokeMethodHandler(commandExecutor: commandExecutor)
       .handle(request: request, context: context)
   }
 
