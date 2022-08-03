@@ -32,7 +32,6 @@ from typing import (
 
 import idb.common.plugin as plugin
 from grpclib.client import Channel
-from grpclib.events import listen, SendRequest
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
 from idb.common.file import drain_to_file
@@ -150,7 +149,6 @@ from idb.grpc.instruments import (
     instruments_generate_bytes,
     translate_instruments_timings,
 )
-from idb.grpc.interceptors import on_send_request_set_swift_methods
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
 from idb.grpc.stream import (
     cancel_wrapper,
@@ -204,24 +202,9 @@ COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
 }
 
 
-# Caching result of method to not recompute each time
-@lru_cache(maxsize=None)
-def extract_native_swift_methods_from_env() -> Set[str]:
-    env_swift_methods = os.environ.get("IDB_SWIFT_METHODS")
-    if not env_swift_methods:
-        return set()
-    return set(env_swift_methods.split(","))
-
-
 def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
-
-    is_native_swift_call = (
-        os.environ.get("IDB_USE_SWIFT") == "YES"
-        or os.environ.get("IDB_USE_SWIFT_AS_DEFAULT") == "YES"
-    ) and grpc_method_name in extract_native_swift_methods_from_env()
     metadata: LoggingMetadata = {
         "grpc_method_name": grpc_method_name,
-        "grpc_native_swift_call": "yes" if is_native_swift_call else "no",
     }
 
     def decorating(func) -> Any:  # pyre-ignore:
@@ -314,8 +297,6 @@ class Client(ClientBase):
             if isinstance(address, TCPAddress)
             else Channel(path=address.path, loop=asyncio.get_event_loop())
         ) as channel:
-            listen(channel, SendRequest, on_send_request_set_swift_methods)
-
             stub = CompanionServiceStub(channel=channel)
             with tempfile.NamedTemporaryFile(mode="w+b") as f:
                 try:

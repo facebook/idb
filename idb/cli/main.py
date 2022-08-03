@@ -147,27 +147,10 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         "Decompressor should be available at the destination site (where IDB companion is hosted)",
     )
 
-    companion_address = os.environ.get("IDB_COMPANION")
-    swift_address = os.environ.get("IDB_SWIFT_COMPANION")
-    use_swift = os.environ.get("IDB_USE_SWIFT") == "YES"
-    use_swift_as_defaut = os.environ.get("IDB_USE_SWIFT_AS_DEFAULT") == "YES"
-    if use_swift and use_swift_as_defaut:
-        exception_message = "Incorrect swift usage configuration, both IDB_USE_SWIFT=YES and IDB_USE_SWIFT_AS_DEFAULT=YES provided, you should stick with one option"
-        logger.exception(exception_message)
-        raise Exception(exception_message)
-    elif use_swift:
-        if swift_address:
-            companion_address = swift_address
-        else:
-            del os.environ["IDB_USE_SWIFT"]
-            logger.exception(
-                "Incorrect swift usage configuration, IDB_USE_SWIFT=YES provided, but IDB_SWIFT_COMPANION not found. Will try to fallback to another options"
-            )
-
     parser.add_argument(
         "--companion",
         type=str,
-        default=companion_address,
+        default=os.environ.get("IDB_COMPANION"),
         help="A string of the form HOSTNAME:PORT that will describe the companion connect to."
         "Can also be set with the IDB_COMPANION environment variable",
     )
