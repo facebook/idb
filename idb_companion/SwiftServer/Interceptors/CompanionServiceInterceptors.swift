@@ -16,17 +16,14 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
 
   private let logger: FBIDBLogger
   private let reporter: FBEventReporter
-  private let killswitch: IDBKillswitch
 
-  init(logger: FBIDBLogger, reporter: FBEventReporter, killswitch: IDBKillswitch) {
+  init(logger: FBIDBLogger, reporter: FBEventReporter) {
     self.logger = logger
     self.reporter = reporter
-    self.killswitch = killswitch
   }
 
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
     [MethodInfoSetterInterceptor(),
-     ProxyDeterminatorInterceptor(killswitch: killswitch),
      LoggingInterceptor(logger: logger, reporter: reporter)]
   }
 

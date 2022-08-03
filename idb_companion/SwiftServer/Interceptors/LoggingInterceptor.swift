@@ -54,13 +54,8 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
   }
 
   private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
-    let willBeCalledNatively = context.userInfo[CallSwiftMethodNatively.self] == true
-    if !willBeCalledNatively {
-      logger.info().log("Start of \(methodName), proxying to cpp server")
-    } else {
-      logger.info().log("Start of \(methodName), handling natively")
-    }
-    let subject = FBEventReporterSubject(forStartedCall: methodName, arguments: [], reportNativeSwiftMethodCall: willBeCalledNatively)
+    logger.info().log("Start of \(methodName)")
+    let subject = FBEventReporterSubject(forStartedCall: methodName, arguments: [], reportNativeSwiftMethodCall: true)
     reporter.report(subject)
   }
 
@@ -91,13 +86,12 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     let duration = getMethodDuration(context: context)
 
     let subject: FBEventReporterSubject
-    let reportNativeSwiftMethodCall = context.userInfo[CallSwiftMethodNatively.self] == true
     if status.isOk {
       logger.debug().log("Success of \(methodName)")
-      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [], reportNativeSwiftMethodCall: reportNativeSwiftMethodCall)
+      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [], reportNativeSwiftMethodCall: true)
     } else {
       logger.info().log("Failure of \(methodName), \(status)")
-      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [], reportNativeSwiftMethodCall: reportNativeSwiftMethodCall)
+      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [], reportNativeSwiftMethodCall: true)
     }
 
     reporter.report(subject)

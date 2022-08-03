@@ -9,7 +9,6 @@ import Foundation
 
 enum IDBFeature {
   case grpcEndpoint
-  case grpcMethod(String)
 }
 
 protocol IDBKillswitch {

@@ -43,14 +43,12 @@ final class GRPCSwiftServer : NSObject {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     let tlsCerts = Self.loadCertificates(tlsCertPath: ports.tlsCertPath, logger: logger)
 
-    let clientToCppServer = Self.internalCppClient(portConfiguration: ports, certificates: tlsCerts, group: group)
-    let interceptors = CompanionServiceInterceptors(logger: logger, reporter: reporter, killswitch: IDBConfiguration.idbKillswitch)
+    let interceptors = CompanionServiceInterceptors(logger: logger, reporter: reporter)
 
     self.provider = CompanionServiceProvider(target: target,
                                              commandExecutor: commandExecutor,
                                              reporter: reporter,
                                              logger: logger,
-                                             internalCppClient: clientToCppServer,
                                              interceptors: interceptors)
 
     var serverConfiguration = Server.Configuration.default(target: ports.swiftServerTarget.grpcConnection,
@@ -190,29 +188,6 @@ final class GRPCSwiftServer : NSObject {
       fatalError("Unable to load tls certificate. Error: \(error)")
     }
 
-  }
-
-  private static func internalCppClient(portConfiguration: IDBPortsConfiguration, certificates: TLSCertificates?, group: MultiThreadedEventLoopGroup) -> Idb_CompanionServiceAsyncClientProtocol {
-    var config = ClientConnection.Configuration.default(target: portConfiguration.cppServerTarget.grpcConnection, eventLoopGroup: group)
-
-    if portConfiguration.cppServerTarget.supportsTLSCert {
-      config.tlsConfiguration = certificates.map {
-        var nioConf = TLSConfiguration.makeClientConfiguration()
-        nioConf.certificateChain = $0.certificates
-        nioConf.privateKey = $0.privateKey
-        nioConf.certificateVerification = .none
-        return GRPCTLSConfiguration.makeClientConfigurationBackedByNIOSSL(configuration:nioConf)
-      }
-    }
-
-    // Potentially we could have very large files. To improve speed we removing max capacity
-    // and set max frame size to maximum
-    config.maximumReceiveMessageLength = Int.max
-    config.httpMaxFrameSize = 16_777_215
-
-    let connection = ClientConnection(configuration: config)
-
-    return Idb_CompanionServiceAsyncClient(channel: connection)
   }
 
 }
