@@ -385,21 +385,18 @@ static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefau
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
           onQueue:dispatch_get_main_queue() fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
-    return [[[IDBConfiguration getIDBKillswitch] disabledWith:FBIDBFeatureKeyGrpcEndpoint] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSNumber * _Nonnull swiftServerKillswithced) {
-      BOOL withSwiftServer = !swiftServerKillswithced.boolValue;
-      NSError *error = nil;
-      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
-      if (!storageManager) {
-        return [FBFuture futureWithError:error];
-      }
-      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-                                               commandExecutorForTarget:target
-                                               storageManager:storageManager
-                                               temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
-                                               debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults useSwiftAsDefault:withSwiftServer].debugserverPort
-                                               logger:logger];
-      return [commandExecutor clean];
-    }];
+    NSError *error = nil;
+    FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+    if (!storageManager) {
+      return [FBFuture futureWithError:error];
+    }
+    FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                             commandExecutorForTarget:target
+                                             storageManager:storageManager
+                                             temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
+                                             debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults].debugserverPort
+                                             logger:logger];
+    return [commandExecutor clean];
   }];
 }
 
@@ -422,87 +419,51 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       if (!storageManager) {
         return [FBFuture futureWithError:error];
       }
-
-      return [[[IDBConfiguration getIDBKillswitch] disabledWith:FBIDBFeatureKeyGrpcEndpoint] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSNumber * _Nonnull swiftServerKillswithced) {
-        BOOL useSwiftAsDefault = !swiftServerKillswithced.boolValue;
+      NSError *err = nil;
+      
+      // Start up the companion
+      IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
+      
+      // Command Executor
+      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                               commandExecutorForTarget:target
+                                               storageManager:storageManager
+                                               temporaryDirectory:temporaryDirectory
+                                               debugserverPort:ports.debugserverPort
+                                               logger:logger];
+      
+      FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
+      
+      GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
+                                      initWithTarget:target
+                                      commandExecutor:loggingCommandExecutor
+                                      reporter:IDBConfiguration.swiftEventReporter
+                                      logger:logger
+                                      ports:ports
+                                      error:&err];
+      if (!swiftServer) {
+        return [FBFuture futureWithError:err];
+      }
+      
+      return [[swiftServer start] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
+        WriteJSONToStdOut(serverDescription);
+        NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[swiftServer.completed]];
         
-        NSError *err = nil;
-        
-        // Start up the companion
-        IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults useSwiftAsDefault:useSwiftAsDefault];
-        BOOL withSwiftServer = ports.useSwiftAsDefault || ports.grpcSwiftPort != 0;
-        
-        // Command Executor
-        FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-                                                 commandExecutorForTarget:target
-                                                 storageManager:storageManager
-                                                 temporaryDirectory:temporaryDirectory
-                                                 debugserverPort:ports.debugserverPort
-                                                 logger:logger];
-        
-        FBIDBCommandExecutor *cppCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:reporter logger:logger];
-        FBIDBCommandExecutor *swiftCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
-        
-        FBIDBCompanionServer *server = [FBIDBCompanionServer
-                                        companionForTarget:target
-                                        commandExecutor:cppCommandExecutor
-                                        ports:ports.legacyConfigurationObject
-                                        eventReporter:reporter
-                                        logger:logger
-                                        error:&err];
-        if (!server) {
-          return [FBFuture futureWithError:err];
+        if (terminateOffline) {
+          [logger.info logFormat:@"Companion will terminate when target goes offline"];
+          [futures addObject:TargetOfflineFuture(target, logger)];
+        } else {
+          [logger.info logFormat:@"Companion will stay alive if target goes offline"];
         }
         
-        GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
-                                        initWithTarget:target
-                                        commandExecutor:swiftCommandExecutor
-                                        reporter:IDBConfiguration.swiftEventReporter
-                                        logger:logger
-                                        ports:ports
-                                        error:&err];
-        if (!swiftServer) {
-          return [FBFuture futureWithError:err];
-        }
-        
-        return [[[server start] onQueue:target.workQueue fmap:^FBFuture * _Nonnull(NSDictionary<NSString *,id> * _Nonnull cppServerDescrption) {
-          if (withSwiftServer) {
-            return [[swiftServer start] onQueue:target.workQueue map: ^(NSDictionary<NSString *,id> * _Nonnull swiftServerDescription) {
-              if (ports.useSwiftAsDefault) {
-                // We should not expose cpp description in default swift endpoint mode
-                return swiftServerDescription;
-              }
-              NSMutableDictionary<NSString *,id> * resultDictionary = [cppServerDescrption mutableCopy];
-              [resultDictionary addEntriesFromDictionary:swiftServerDescription];
-              
-              return (NSDictionary<NSString *,id> *)resultDictionary;
-            }];
-          }
-          return [FBFuture futureWithResult: cppServerDescrption];
-        }] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
-          WriteJSONToStdOut(serverDescription);
-          NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[server.completed]];
-          if (swiftServer) {
-            [futures addObject: swiftServer.completed];
-          }
-          
-          if (terminateOffline) {
-            [logger.info logFormat:@"Companion will terminate when target goes offline"];
-            [futures addObject:TargetOfflineFuture(target, logger)];
-          } else {
-            [logger.info logFormat:@"Companion will stay alive if target goes offline"];
-          }
-          
-          FBFuture<NSNull *> *completed = [FBFuture race: futures];
-          return [completed
-                  onQueue:target.workQueue chain:^(FBFuture *future) {
-            [temporaryDirectory cleanOnExit];
-            return future;
-          }];
+        FBFuture<NSNull *> *completed = [FBFuture race: futures];
+        return [completed
+                onQueue:target.workQueue chain:^(FBFuture *future) {
+          [temporaryDirectory cleanOnExit];
+          return future;
         }];
       }];
-
-    }];
+  }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
