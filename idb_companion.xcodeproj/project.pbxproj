@@ -19,7 +19,6 @@
 		713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */; };
 		717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */; };
 		717AFB7528328C11009714AB /* XCTestListBundlesMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */; };
-		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
 		A21CDD3827CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */; };
 		A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
@@ -190,10 +189,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
-		2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
-		409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
-		5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
 		623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
 		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
 		710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityInfoMethodHandler.swift; sourceTree = "<group>"; };
@@ -209,7 +204,6 @@
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListTestsMethodHandler.swift; sourceTree = "<group>"; };
 		717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListBundlesMethodHandler.swift; sourceTree = "<group>"; };
-		79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.debug.xcconfig"; sourceTree = "<group>"; };
 		A21CDD3627CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDsymInstallLinkToBundle.h; sourceTree = "<group>"; };
 		A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDsymInstallLinkToBundle.m; sourceTree = "<group>"; };
 		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
@@ -223,9 +217,6 @@
 		AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterConfiguration.h; sourceTree = "<group>"; };
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
-		BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idb_companion.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idbGRPC.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.release.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.release.xcconfig"; sourceTree = "<group>"; };
 		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
@@ -339,7 +330,6 @@
 				DB561284287EE18700D28A07 /* IDBCompanionUtilities.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
-				7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */,
 				DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -392,7 +382,6 @@
 				DB561293287EE21900D28A07 /* IDBCompanionUtilitiesTests */,
 				D7D6DF132265DDEC00B01F14 /* Products */,
 				D7D6DF872265DE4E00B01F14 /* Frameworks */,
-				E47FF620763B1FAD507E99B9 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -419,8 +408,6 @@
 				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
 				D7D6DFA32265E76200B01F14 /* libprotobuf.a */,
 				D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */,
-				BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */,
-				CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -652,19 +639,6 @@
 			path = SwiftServer;
 			sourceTree = "<group>";
 		};
-		E47FF620763B1FAD507E99B9 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */,
-				D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */,
-				409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */,
-				5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */,
-				1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */,
-				2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -715,12 +689,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */;
 			buildPhases = (
-				4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */,
 				D7D6DF0E2265DDEC00B01F14 /* Sources */,
 				D7D6DF9E2265E35300B01F14 /* Headers */,
 				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
 				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
-				273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -729,8 +701,6 @@
 				DB561287287EE18700D28A07 /* PBXTargetDependency */,
 			);
 			name = idb_companion;
-			packageProductDependencies = (
-			);
 			productName = idb_companion;
 			productReference = D7D6DF122265DDEC00B01F14 /* idb_companion */;
 			productType = "com.apple.product-type.tool";
@@ -749,8 +719,6 @@
 			dependencies = (
 			);
 			name = IDBCompanionUtilities;
-			packageProductDependencies = (
-			);
 			productName = IDBCompanionUtilities;
 			productReference = DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */;
 			productType = "com.apple.product-type.framework";
@@ -870,45 +838,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-idb_companion-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 		DBF5D5D1278EF9BD00633753 /* Build protoc plugin */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1192,7 +1121,6 @@
 		};
 		D7D6DF1A2265DDEC00B01F14 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
@@ -1214,7 +1142,6 @@
 		};
 		D7D6DF1B2265DDEC00B01F14 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
