@@ -16,7 +16,6 @@
 #import "FBIDBStorageManager.h"
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
-#import "FBIDBPortsConfiguration.h"
 #import "FBDsymInstallLinkToBundle.h"
 
 FBFileContainerKind const FBFileContainerKindXctest = @"xctest";

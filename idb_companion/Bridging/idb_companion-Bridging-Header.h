@@ -22,5 +22,3 @@
 #import "../Request/FBCodeCoverageRequest.h"
 #import "../Request/FBDsymInstallLinkToBundle.h"
 
-// Configuration
-#import "../Configuration/FBIDBPortsConfiguration.h"

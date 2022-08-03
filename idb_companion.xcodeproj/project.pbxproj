@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */; };
 		623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */; };
 		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
 		710FD8182811AFE1000832EA /* AccessibilityInfoMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */; };
@@ -25,7 +24,6 @@
 		A21CDD3927CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */; };
 		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
 		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
-		AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */; };
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
 		AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */; };
 		AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */; };
@@ -35,7 +33,6 @@
 		AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */; };
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
-		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
 		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
 		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
@@ -43,16 +40,10 @@
 		D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */; };
 		D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
 		D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
-		D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */; };
 		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
 		D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */; };
-		D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */; };
-		D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */; };
-		D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */; };
-		D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */; };
 		D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */; };
 		D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */; };
-		D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */; };
 		D7D6E0282265F0DF00B01F14 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE32265F0DF00B01F14 /* main.m */; };
 		D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */; };
 		D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */; };
@@ -111,7 +102,6 @@
 		DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */; };
 		DB6E6C452824152600144D97 /* TailMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6E6C442824152600144D97 /* TailMethodHandler.swift */; };
 		DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */; };
-		DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
 		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
 		DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */; };
 		DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */; };
@@ -144,22 +134,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
-		D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */ = {
-			isa = PBXBuildRule;
-			compilerSpec = com.apple.compilers.proxy.script;
-			filePatterns = "*.proto";
-			fileType = pattern.proxy;
-			inputFiles = (
-			);
-			isEditable = 1;
-			outputFiles = (
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.h",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.cc",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.h",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.cc",
-			);
-			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin:$HOME/homebrew/bin/\n\necho $PATH\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
-		};
 		DBF5D5D2278EF9F000633753 /* PBXBuildRule */ = {
 			isa = PBXBuildRule;
 			compilerSpec = com.apple.compilers.proxy.script;
@@ -240,7 +214,6 @@
 		A21CDD3727CFEF66003DBFB8 /* FBDsymInstallLinkToBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDsymInstallLinkToBundle.m; sourceTree = "<group>"; };
 		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
 		AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
-		AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBXCTestReporter.mm; sourceTree = "<group>"; };
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
 		AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
 		AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
@@ -253,7 +226,6 @@
 		BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idb_companion.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idbGRPC.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.release.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.release.xcconfig"; sourceTree = "<group>"; };
-		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
 		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
 		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
 		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
@@ -262,18 +234,12 @@
 		D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D7D6DF942265DF2200B01F14 /* libidbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidbGRPC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF992265DF2B00B01F14 /* idb.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = idb.proto; sourceTree = "<group>"; };
 		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
 		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
 		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
-		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
-		D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBPortsConfiguration.m; sourceTree = "<group>"; };
-		D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBServiceHandler.mm; sourceTree = "<group>"; };
-		D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCompanionServer.h; sourceTree = "<group>"; };
 		D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBCommandExecutor.m; sourceTree = "<group>"; };
 		D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCommandExecutor.h; sourceTree = "<group>"; };
-		D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBServiceHandler.h; sourceTree = "<group>"; };
 		D7D6DFE32265F0DF00B01F14 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D7D6DFE62265F0DF00B01F14 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDescriptor.m; sourceTree = "<group>"; };
@@ -372,18 +338,9 @@
 				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
 				DB561284287EE18700D28A07 /* IDBCompanionUtilities.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
-				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
 				7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */,
 				DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D7D6DF922265DF2200B01F14 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -443,7 +400,6 @@
 			isa = PBXGroup;
 			children = (
 				D7D6DF122265DDEC00B01F14 /* idb_companion */,
-				D7D6DF942265DF2200B01F14 /* libidbGRPC.a */,
 				DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */,
 				DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */,
 				DB561292287EE21900D28A07 /* IDBCompanionUtilitiesTests.xctest */,
@@ -508,8 +464,6 @@
 			isa = PBXGroup;
 			children = (
 				DBB72C84283B957F0065DDB3 /* IDBConfiguration.swift */,
-				D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */,
-				D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */,
 				DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */,
 				713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */,
 				713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */,
@@ -525,10 +479,6 @@
 			children = (
 				D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */,
 				D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */,
-				D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */,
-				D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */,
-				D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */,
-				D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */,
 			);
 			path = Server;
 			sourceTree = "<group>";
@@ -553,7 +503,6 @@
 				AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */,
 				AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */,
 				AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */,
-				AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */,
 				D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */,
 				D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */,
 				D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */,
@@ -719,28 +668,18 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		D7D6DF902265DF2200B01F14 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D7D6DF9E2265E35300B01F14 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
 				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
-				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
 				713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */,
 				AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */,
 				AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */,
 				D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */,
-				D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */,
 				623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */,
 				713C709426F52F970086D8DF /* FBCodeCoverageRequest.h in Headers */,
-				D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */,
 				D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */,
 				AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */,
 				D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */,
@@ -795,26 +734,6 @@
 			productName = idb_companion;
 			productReference = D7D6DF122265DDEC00B01F14 /* idb_companion */;
 			productType = "com.apple.product-type.tool";
-		};
-		D7D6DF932265DF2200B01F14 /* idbGRPC */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */;
-			buildPhases = (
-				8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */,
-				D7D6DF912265DF2200B01F14 /* Sources */,
-				D7D6DF902265DF2200B01F14 /* Headers */,
-				D7D6DF922265DF2200B01F14 /* Frameworks */,
-				D7D6DF9B2265DF3900B01F14 /* ShellScript */,
-			);
-			buildRules = (
-				D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */,
-			);
-			dependencies = (
-			);
-			name = idbGRPC;
-			productName = idbGRPC;
-			productReference = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */;
-			productType = "com.apple.product-type.library.static";
 		};
 		DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */ = {
 			isa = PBXNativeTarget;
@@ -891,9 +810,6 @@
 						CreatedOnToolsVersion = 10.2;
 						LastSwiftMigration = 1320;
 					};
-					D7D6DF932265DF2200B01F14 = {
-						CreatedOnToolsVersion = 10.2;
-					};
 					DB561276287EE0EF00D28A07 = {
 						CreatedOnToolsVersion = 13.4;
 					};
@@ -922,7 +838,6 @@
 			projectRoot = "";
 			targets = (
 				D7D6DF112265DDEC00B01F14 /* idb_companion */,
-				D7D6DF932265DF2200B01F14 /* idbGRPC */,
 				DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */,
 				DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */,
 				DB561291287EE21900D28A07 /* IDBCompanionUtilitiesTests */,
@@ -994,45 +909,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-idbGRPC-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		D7D6DF9B2265DF3900B01F14 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
-		};
 		DBF5D5D1278EF9BD00633753 /* Build protoc plugin */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1062,7 +938,6 @@
 			files = (
 				DB4585B828084DE0004065A2 /* EmptyEventReporter.swift in Sources */,
 				DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */,
-				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
 				DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */,
 				DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */,
 				AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */,
@@ -1113,8 +988,6 @@
 				DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */,
 				DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */,
 				DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */,
-				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
-				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
 				DBE60F3D282A95D10043EB57 /* VideoStreamMethodHandler.swift in Sources */,
 				DB6177C928194EDF00C33A0A /* RmMethodHandler.swift in Sources */,
 				DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */,
@@ -1146,17 +1019,8 @@
 				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
 				DB6177BF28182C1B00C33A0A /* LogMethodHandler.swift in Sources */,
 				DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */,
-				AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */,
 				713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */,
 				DB67DD31283D16EF003EF139 /* IDBKillswitch.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D7D6DF912265DF2200B01F14 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				DB95E2F227BBA23D00ACB64B /* idb.proto in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1369,28 +1233,6 @@
 			};
 			name = Release;
 		};
-		D7D6DF962265DF2300B01F14 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */;
-			buildSettings = {
-				CODE_SIGN_STYLE = Manual;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-			};
-			name = Debug;
-		};
-		D7D6DF972265DF2300B01F14 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */;
-			buildSettings = {
-				CODE_SIGN_STYLE = Manual;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-			};
-			name = Release;
-		};
 		DB56127C287EE0F000D28A07 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1582,15 +1424,6 @@
 			buildConfigurations = (
 				D7D6DF1A2265DDEC00B01F14 /* Debug */,
 				D7D6DF1B2265DDEC00B01F14 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D7D6DF962265DF2300B01F14 /* Debug */,
-				D7D6DF972265DF2300B01F14 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -12,10 +12,8 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBIDBCompanionServer.h"
 #import "FBIDBError.h"
 #import "FBIDBLogger.h"
-#import "FBIDBPortsConfiguration.h"
 #import "FBiOSTargetProvider.h"
 #import "FBiOSTargetStateChangeNotifier.h"
 #import "FBiOSTargetDescription.h"
