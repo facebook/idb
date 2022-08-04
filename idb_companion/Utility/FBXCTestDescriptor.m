@@ -26,9 +26,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
 
   if (processLogDirectory) {
     FBXCTestLogger *mirrorLogger = [FBXCTestLogger defaultLoggerInDirectory:processLogDirectory];
-    NSUUID *udid = NSUUID.UUID;
-    stdOutFuture = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:udid logger:logger];
-    stdErrFuture = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger];
+    stdOutFuture = [mirrorLogger logConsumptionOf:stdOutConsumer toFileNamed:@"test_process_stdout.out" logger:logger];
+    stdErrFuture = [mirrorLogger logConsumptionOf:stdErrConsumer toFileNamed:@"test_process_stderr.err" logger:logger];
   }
 
   return [[FBFuture

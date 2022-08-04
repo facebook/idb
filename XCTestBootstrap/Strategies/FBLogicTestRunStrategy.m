@@ -283,9 +283,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *shimFuture = [FBFuture futureWithResult:shimConsumer];
   if (mirrorToFiles) {
     FBXCTestLogger *mirrorLogger = self.configuration.logDirectoryPath ? [FBXCTestLogger defaultLoggerInDirectory:self.configuration.logDirectoryPath] : [FBXCTestLogger defaultLoggerInDefaultDirectory];
-    stdOutFuture = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:udid logger:logger];
-    stdErrFuture = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger];
-    shimFuture = [mirrorLogger logConsumptionToFile:shimConsumer outputKind:@"shim" udid:udid logger:logger];
+    stdOutFuture = [mirrorLogger logConsumptionOf:stdOutConsumer toFileNamed:@"test_process_stdout.out" logger:logger];
+    stdErrFuture = [mirrorLogger logConsumptionOf:stdErrConsumer toFileNamed:@"test_process_stderr.err" logger:logger];
+    shimFuture = [mirrorLogger logConsumptionOf:shimConsumer toFileNamed:@"shimulator_logs.shim" logger:logger];
   }
   return [[FBFuture
     futureWithFutures:@[
