@@ -69,9 +69,6 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     }
 
     switch part {
-    case .message where methodInfo.callType == .serverStreaming || methodInfo.callType == .bidirectionalStreaming:
-      logger.debug().log("Send frame of \(methodInfo.name)")
-
     case let .end(status, _):
       reportMethodEnd(methodName: methodInfo.name, status: status, context: context)
 
