@@ -47,6 +47,14 @@ class Permission(Enum):
     LOCATION = 4
     NOTIFICATION = 5
     MICROPHONE = 6
+    CALENDAR = 7
+    FACEID = 8
+    MEDIA = 9
+    REMINDERS = 10
+    MOTION = 11
+    SIRI = 12
+    SPEECH = 13
+    USER_TRACKING = 14
 
 
 class TargetType(str, Enum):

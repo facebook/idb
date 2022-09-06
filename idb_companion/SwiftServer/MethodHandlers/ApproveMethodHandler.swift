@@ -26,6 +26,14 @@ struct ApproveMethodHandler {
       .url: .url,
       .location: .location,
       .notification: notificationApprovalService,
+      .calendar: .calendar,
+      .faceid: .faceID,
+      .media: .media,
+      .reminders: .reminders,
+      .motion: .motion,
+      .siri: .siri,
+      .speech: .speech,
+      .userTracking: .userTracking,
     ]
 
     var services = try Set(
