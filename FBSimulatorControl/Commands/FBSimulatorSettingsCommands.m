@@ -588,25 +588,30 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 - (FBFuture<NSNull *> *)revokeAccessInTCCDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+  NSMutableArray<NSString *> *deletions = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
     for (FBTargetSettingsService service in [FBSimulatorSettingsCommands filteredTCCApprovals:services]) {
-      [futures addObject:
-        [FBSimulatorSettingsCommands
-        runSqliteCommandOnDatabase:databasePath
-        arguments:@[[NSString stringWithFormat:@"DELETE FROM access WHERE service = '%@' AND client = '%@'",
-          [FBSimulatorSettingsCommands tccDatabaseMapping][service],
-          bundleID
-        ]]
-        queue:queue
-        logger:logger]];
+      [deletions addObject:
+       [NSString stringWithFormat:@"(service = '%@' AND client = '%@')",
+        [FBSimulatorSettingsCommands tccDatabaseMapping][service],
+        bundleID]
+      ];
     }
   }
-  // Nothing to do with zero futures.
-  if (futures.count == 0) {
+  // Nothing to do with no modifications
+  if (deletions.count == 0) {
     return FBFuture.empty;
   }
-  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+  return [
+    [FBSimulatorSettingsCommands
+      runSqliteCommandOnDatabase:databasePath
+      arguments:@[
+        [NSString stringWithFormat:@"DELETE FROM access WHERE %@",
+        [deletions componentsJoinedByString:@" OR "]]
+      ]
+      queue:queue
+      logger:logger]
+    mapReplace:NSNull.null];
 }
 
 + (FBFuture<NSString *> *)buildRowsForDatabase:(NSString *)databasePath bundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
