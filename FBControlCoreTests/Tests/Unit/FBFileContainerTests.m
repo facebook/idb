@@ -247,6 +247,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
     @"tree.json",
     @"app_default_set.crash",
     @"assetsd_custom_set.crash",
+    @"xctest-concated-json-crash.ips",
     @"agent_custom_set.crash",
     @"photo0.png",
     @"simulator_system.log",
