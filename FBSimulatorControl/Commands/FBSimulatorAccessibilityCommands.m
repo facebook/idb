@@ -61,6 +61,14 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
+inline static id ensureJSONSerializable(id obj)
+{
+  if (obj == nil) {
+    return NSNull.null;
+  }
+  return [NSJSONSerialization isValidJSONObject:@[obj]] ? obj : [obj description];
+}
+
 @implementation FBSimulatorAccessibilityCommands_SimulatorBridge
 
 - (instancetype)initWithBridge:(FBSimulatorBridge *)bridge
@@ -254,28 +262,32 @@ static NSString *const AXPrefix = @"AX";
   if ([role hasPrefix:AXPrefix]) {
     role = [role substringFromIndex:2];
   }
+  NSMutableArray *customActions = [[NSMutableArray alloc] init];
+  for(NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
+    [customActions addObject:ensureJSONSerializable(name)];
+  }
   return @{
     // These values are the "legacy" values that mirror their equivalents in SimulatorBridge
-    @"AXLabel": element.accessibilityLabel ?: NSNull.null,
+    @"AXLabel": ensureJSONSerializable(element.accessibilityLabel),
     @"AXFrame": NSStringFromRect(frame),
-    @"AXValue": element.accessibilityValue ?: NSNull.null,
-    @"AXUniqueId": element.accessibilityIdentifier ?: NSNull.null,
+    @"AXValue": ensureJSONSerializable(element.accessibilityValue),
+    @"AXUniqueId": ensureJSONSerializable(element.accessibilityIdentifier),
     // There are additional synthetic values from the old output.
-    @"type": role ?: NSNull.null,
+    @"type": ensureJSONSerializable(role),
     // These are new values in this output
-    @"title": element.accessibilityTitle ?: NSNull.null,
+    @"title": ensureJSONSerializable(element.accessibilityTitle),
     @"frame": @{
       @"x": @(frame.origin.x),
       @"y": @(frame.origin.y),
       @"width": @(frame.size.width),
       @"height": @(frame.size.height),
     },
-    @"help": element.accessibilityHelp ?: NSNull.null,
+    @"help": ensureJSONSerializable(element.accessibilityHelp),
     @"enabled": @(element.accessibilityEnabled),
-    @"custom_actions": [element.accessibilityCustomActions valueForKey:@"name"] ?: @[],
-    @"role": element.accessibilityRole ?: NSNull.null,
-    @"role_description": element.accessibilityRoleDescription ?: NSNull.null,
-    @"subrole": element.accessibilitySubrole ?: NSNull.null,
+    @"custom_actions": [customActions copy],
+    @"role": ensureJSONSerializable(element.accessibilityRole),
+    @"role_description": ensureJSONSerializable(element.accessibilityRoleDescription),
+    @"subrole": ensureJSONSerializable(element.accessibilitySubrole),
     @"content_required": @(element.accessibilityRequired),
   };
 }
