@@ -72,7 +72,8 @@
   XCTTestIdentifierSetBuilder *b = [[XCTTestIdentifierSetBuilder_class alloc] init];
   Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");;
   for (NSString *test in tests) {
-    [b addTestIdentifier: [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test]];
+    XCTTestIdentifier *identifier = [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test preserveModulePrefix:YES];
+    [b addTestIdentifier: identifier];
   }
   
   return b.testIdentifierSet;
