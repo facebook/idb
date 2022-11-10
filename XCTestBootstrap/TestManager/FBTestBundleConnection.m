@@ -183,13 +183,13 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       testBundleProxy = results[0];
       return [self.bundleReadyFuture timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"];
     }]
+    onQueue:self.requestQueue handleError:^(NSError *error) {
+      return [self performDiagnosisOnBundleConnectionError:error];
+    }]
     onQueue:self.requestQueue pop:^(id result) {
       [self.logger logFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion];
       [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
       return self.bundleDisconnectedSuccessfully;
-    }]
-    onQueue:self.requestQueue handleError:^(NSError *error) {
-      return [self performDiagnosisOnBundleConnectionError:error];
     }];
 }
 
