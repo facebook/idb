@@ -290,21 +290,27 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
         return FBFuture.empty;
       }
       [self.logger logFormat:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
-      return [[self
-        findCrashedProcessLog]
-        onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
-          FBCrashLog *crashLog = future.result;
-          if (!crashLog) {
-            return [[[XCTestBootstrapError
-              describeFormat:@"Lost connection to test process, but could not find a crash log"]
-              code:XCTestBootstrapErrorCodeLostConnection]
-              failFuture];
-          }
-          return [[XCTestBootstrapError
-            describeFormat:@"Test Bundle Crashed: %@", crashLog]
-            failFuture];
-        }];
+      return [self
+               failedFutureWithCrashLogOrNotFoundErrorDescription:@"Lost connection to test process, but could not find a crash log"];
     }];
+}
+
+- (FBFuture<NSNull *> *)failedFutureWithCrashLogOrNotFoundErrorDescription:(NSString *)notFoundErrorDescription
+{
+  return [[[self
+    findCrashedProcessLog]
+    onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
+      FBCrashLog *crashLog = future.result;
+      if (!crashLog) {
+        return [[[XCTestBootstrapError
+          describe:notFoundErrorDescription]
+          code:XCTestBootstrapErrorCodeLostConnection]
+          failFuture];
+      }
+      return [[XCTestBootstrapError
+        describeFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]
+        failFuture];
+    }] mapReplace:NSNull.null];
 }
 
 - (FBFuture<FBCrashLog *> *)findCrashedProcessLog
