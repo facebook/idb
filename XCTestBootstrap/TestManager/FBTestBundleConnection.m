@@ -138,10 +138,10 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
              processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
             onQueue:self.requestQueue handleError:^FBFuture *(NSError *pidLookupError) {
     NSString *msg = @"Error while establishing connection to test bundle: "
-                    @"Could not find process for test host application. "
-                    @"The host application is likely to have crashed during startup.";
+                    @"The host application is likely to have crashed during startup, "
+                    @"but could not find a crash log.";
     // In this case the application lived long enough to avoid a relaunch (see bellow), but crashed before idb could connect to it.
-    return [[[FBXCTestError describe:msg] causedBy:pidLookupError] failFuture];
+    return [self failedFutureWithCrashLogOrNotFoundErrorDescription:msg];
   }]
   onQueue:self.requestQueue fmap:^FBFuture *(NSNumber *runningPid) {
     if (self.testHostApplication.processIdentifier != runningPid.intValue) {
