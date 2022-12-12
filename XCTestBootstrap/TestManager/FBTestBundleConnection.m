@@ -153,8 +153,21 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       // idb can't work with this 'vanilla' app process, resulting in errors connecting to the bundle (there won't be a bundle to connect to).
       return [[[FBXCTestError describe:msg] causedBy:error] failFuture];
     }
-    // No obvious issue with the process, returning the original error
-    return [FBFuture futureWithError:error];
+
+    // Application process still running.
+    // Try to sample process stack.
+    return [[[FBProcessFetcher
+      performSampleStackshotForProcessIdentifier:self.testHostApplication.processIdentifier
+      queue:self.target.workQueue]
+    onQueue:self.requestQueue handleError:^FBFuture<NSNull *> *(NSError *_) {
+      // Could not sample stack, returning original error
+      return [FBFuture futureWithError:error];
+    }]
+    onQueue:self.requestQueue fmap:^FBFuture<id> *(NSString *stackshot) {
+      return [[FBXCTestError
+        describeFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]
+        failFuture];
+    }];
   }];
 }
 
