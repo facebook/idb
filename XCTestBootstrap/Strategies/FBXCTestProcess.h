@@ -43,18 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
 */
 + (nullable NSString *)describeFailingExitCode:(int)exitCode;
 
-/**
- Performs a stackshot on the provided process id.
- Does not terminate the process after performing the stackshot.
- Returns a future in the error state, with the stackshot in the error message.
-
- @param processIdentifier the process identifier of the process to stackshot.
- @param timeout the original timeout that prompted this call.
- @param queue the queue to use.
- @param logger the logger to use.
- */
-+ (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
-
 @end
 
 NS_ASSUME_NONNULL_END

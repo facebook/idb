@@ -160,11 +160,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     onQueue:queue timeout:timeout handler:^{
       // The timeout is applied to the lifecycle of the entire application.
       [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
-      return [[FBXCTestProcess
-        performSampleStackshotOnProcessIdentifier:launchedApplication.processIdentifier
-        forTimeout:timeout
-        queue:queue
-        logger:logger]
+      return [[[FBProcessFetcher
+        performSampleStackshotForProcessIdentifier:launchedApplication.processIdentifier
+        queue:queue]
+      onQueue:queue fmap:^FBFuture<id> *(NSString *stackshot) {
+        return [[FBXCTestError
+          describeFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]
+          failFuture];
+      }]
       onQueue:queue chain:^FBFuture *(FBFuture *future) {
         return [[self terminateSpawnedProcesses] chainReplace:future];
       }];

@@ -15,8 +15,11 @@
 #include <sys/sysctl.h>
 
 #import "FBProcessInfo.h"
+#import "FBProcessBuilder.h"
 
 #define PID_MAX 99999
+
+static NSTimeInterval const SampleDuration = 1;
 
 #pragma mark Calling libproc
 
@@ -346,7 +349,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
 + (FBFuture<NSNull *> *) waitStopSignalForProcess:(pid_t) processIdentifier
 {
   FBProcessFetcher *processFetcher = [[FBProcessFetcher alloc] init];
-  
+
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.corecontrol.wait_for_stop", DISPATCH_QUEUE_SERIAL);
   return [FBFuture
     onQueue:waitQueue resolveOrFailWhen:^FBFutureLoopState (NSError **error){
@@ -359,6 +362,23 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
     } else {
       return FBFutureLoopContinue;
     }
+    }];
+}
+
++ (FBFuture<NSString *> *)performSampleStackshotForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue
+{
+  return [[[[[FBProcessBuilder
+    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
+    withStdOutInMemoryAsString]
+    runUntilCompletionWithAcceptableExitCodes:nil]
+    onQueue:queue handleError:^(NSError *error) {
+      return [[[FBControlCoreError
+        describeFormat:@"Failed to obtain a stack sample of process %d", processIdentifier]
+        causedBy:error]
+        failFuture];
+    }]
+    onQueue:queue map:^(FBProcess<NSNull *, NSData *, NSData *> *task) {
+      return task.stdOut;
     }];
 }
 

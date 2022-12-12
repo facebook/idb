@@ -109,11 +109,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Wait for process to receive SIGSTOP.
- 
+
  @param processIdentifier the Process Identifier of the process.
  @return A future waitting for the process to be in SSTOP state.
  */
 + (FBFuture<NSNull *> *) waitStopSignalForProcess:(pid_t) processIdentifier;
+
+/**
+ Performs a stackshot on the provided process id.
+ Does not terminate the process after performing the stackshot.
+ Returns a future to a string containing the stackshot.
+
+ @param processIdentifier the process identifier of the process to stackshot.
+ @param queue the queue to use.
+*/
++ (FBFuture<id> *)performSampleStackshotForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue;
+
 @end
 
 NS_ASSUME_NONNULL_END
