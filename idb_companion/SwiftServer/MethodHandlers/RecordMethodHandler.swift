@@ -20,9 +20,9 @@ struct RecordMethodHandler {
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expect start as initial request frame") }
 
     let filePath =
-    start.filePath.isEmpty
-    ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
-    : start.filePath
+      start.filePath.isEmpty
+      ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
+      : start.filePath
 
     _ = try await BridgeFuture.value(target.startRecording(toFile: filePath))
 

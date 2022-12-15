@@ -36,12 +36,12 @@ struct LsMethodHandler {
 
     return .with {
       $0.listings = pathsToPaths.map { containerPath, paths in
-          .with {
-            $0.parent = .with {
-              $0.path = containerPath
-            }
-            $0.files = paths.map(toFileInfo)
+        .with {
+          $0.parent = .with {
+            $0.path = containerPath
           }
+          $0.files = paths.map(toFileInfo)
+        }
       }
     }
   }

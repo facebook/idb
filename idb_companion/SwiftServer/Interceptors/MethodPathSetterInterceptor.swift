@@ -11,7 +11,7 @@ import IDBGRPCSwift
 import IDBCompanionUtilities
 
 enum MethodInfoKey: UserInfo.Key {
-   typealias Value = GRPCMethodInfo
+  typealias Value = GRPCMethodInfo
 }
 
 struct GRPCMethodInfo {

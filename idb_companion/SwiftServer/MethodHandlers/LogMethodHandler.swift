@@ -34,8 +34,8 @@ struct LogMethodHandler {
     }
 
     let operationFuture = request.source == .companion
-    ? commandExecutor.tail_companion_logs(consumer)
-    : target.tailLog(request.arguments, consumer: consumer)
+      ? commandExecutor.tail_companion_logs(consumer)
+      : target.tailLog(request.arguments, consumer: consumer)
 
     let operation = try await BridgeFuture.value(operationFuture)
 

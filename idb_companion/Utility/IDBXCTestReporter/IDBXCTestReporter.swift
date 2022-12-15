@@ -221,15 +221,15 @@ extension IDBXCTestReporter {
       $0.name = activity.name
       if configuration.reportAttachments {
         $0.attachments = try activity.attachments.map { attachment in
-            try .with {
-              $0.payload = attachment.payload ?? Data()
-              $0.name = attachment.name
-              $0.timestamp = attachment.timestamp.timeIntervalSince1970
-              $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
-              if let userInfo = attachment.userInfo {
-                $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
-              }
+          try .with {
+            $0.payload = attachment.payload ?? Data()
+            $0.name = attachment.name
+            $0.timestamp = attachment.timestamp.timeIntervalSince1970
+            $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
+            if let userInfo = attachment.userInfo {
+              $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
             }
+          }
         }
       }
       $0.subActivities = try subactivities.map(translate(activity:))
@@ -381,7 +381,7 @@ extension IDBXCTestReporter {
       .filter { $0.pathExtension == "profraw" }
 
     let mergeArgs: [String] = ["llvm-profdata", "merge", "-o", profdataPath.path]
-    + profraws.map(\.path)
+      + profraws.map(\.path)
 
     let mergeProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
       .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
@@ -398,9 +398,9 @@ extension IDBXCTestReporter {
 
   private func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
     let exportArgs: [String] = ["llvm-cov", "export", "-instr-profile", profdataPath.path]
-    + binariesPath.reduce(into: []) {
-      $0 += ["-object", $1]
-    }
+      + binariesPath.reduce(into: []) {
+        $0 += ["-object", $1]
+      }
     let exportProcess = try await BridgeFuture.value(
       FBProcessBuilder<NSNull, NSData, NSString>
         .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
