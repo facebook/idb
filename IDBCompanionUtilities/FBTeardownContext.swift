@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum FBTeardownContextError: Error {
+enum FBTeardownContextError: Error, Sendable {
   case emptyContext
   case cleanupAlreadyPerformed
 }
 
-private final class FBTeardownContextImpl {
+private final class FBTeardownContextImpl: @unchecked Sendable {
 
   @Atomic private var cleanupList: [() async throws -> Void] = []
   @Atomic var cleanupPerformed = false
@@ -57,23 +57,25 @@ private final class FBTeardownContextImpl {
 /// }
 ///
 /// ```
-public final class FBTeardownContext {
+public final class FBTeardownContext: Sendable {
 
   /// Current context that binded to swift concurrency Task. For more info read about `@TaskLocal`
   @TaskLocal public static var current: FBTeardownContext = .init(emptyContext: ())
 
   private let contextImpl: FBTeardownContextImpl?
   private let codeLocation: CodeLocation
-  private var isAutocleanup = false
+  private let isAutocleanup: Bool
 
   private init(emptyContext: ()) {
     self.contextImpl = nil
+    self.isAutocleanup = false
     self.codeLocation = .init(function: nil, file: "", line: 0, column: 0)
   }
 
   /// Initializer is private intentionally to restrict to `withAutocleanup` usage
-  private init(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column) {
+  private init(isAutocleanup: Bool, function: String = #function, file: String = #file, line: Int = #line, column: Int = #column) {
     self.contextImpl = FBTeardownContextImpl()
+    self.isAutocleanup = isAutocleanup
     self.codeLocation = .init(function: function, file: file, line: line, column: column)
   }
 
@@ -81,8 +83,7 @@ public final class FBTeardownContext {
   /// - Parameter operation: Inside the operation you have `FBTeardownContext.current` available that will be cleaned up on scoping out
   /// - Returns: Operation result
   public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: @Sendable () async throws -> T) async throws -> T {
-    let context = FBTeardownContext(function: function, file: file, line: line, column: column)
-    context.isAutocleanup = true
+    let context = FBTeardownContext(isAutocleanup: true, function: function, file: file, line: line, column: column)
     let result = try await FBTeardownContext.$current.withValue(context, operation: operation)
     try await context.performCleanup()
     return result
