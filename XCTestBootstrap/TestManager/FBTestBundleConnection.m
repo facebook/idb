@@ -26,8 +26,8 @@
 #import "FBTestManagerAPIMediator.h"
 
 static NSTimeInterval BundleReadyTimeout = 60; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval IDEInterfaceReadyTimeout = 10; // Time for `XCTestManager_IDEInterface` to be returned.
-static NSTimeInterval DaemonSessionReadyTimeout = 10; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
+static NSTimeInterval IDEInterfaceReadyTimeout = 30; // Time for `XCTestManager_IDEInterface` to be returned.
+static NSTimeInterval DaemonSessionReadyTimeout = 30; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
 static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash report to be generated.
 
 #pragma clang diagnostic push
