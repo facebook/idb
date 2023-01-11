@@ -45,6 +45,7 @@ extension IDBXCTestReporter {
     var testMethod = ""
     var activityRecords: [FBActivityRecord] = []
     var failureInfo: Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo?
+    var otherFailures: [Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo] = []
   }
 }
 
@@ -125,14 +126,19 @@ extension IDBXCTestReporter {
     }
   }
 
-  @objc func testCaseDidFail(forTestClass testClass: String, method: String, withMessage message: String, file: String?, line: UInt) {
+  @objc func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
     let currentInfo = self.currentInfo
     if testClass == currentInfo.testClass && method != currentInfo.testMethod {
       logger.log("Got failure info for \(testClass)/\(method) but the current known executing test is \(currentInfo.testClass)\(currentInfo.testMethod). Ignoring it")
       return
     }
     self._currentInfo.sync {
-      $0.failureInfo = createFailureInfo(message: message, file: file, line: line)
+      if let firstExceptionInfo = exceptions.first {
+        $0.failureInfo = createFailureInfo(exceptionInfo: firstExceptionInfo)
+        $0.otherFailures = exceptions.dropFirst().map{ createFailureInfo(exceptionInfo: $0) }
+      } else {
+        logger.log("No exceptions were returned in the failure. This shouldn't happen.")
+      }
     }
   }
 
@@ -205,6 +211,7 @@ extension IDBXCTestReporter {
         }
         $0.logs = logs
         $0.activityLogs = try stackedActivities.map(translate(activity:))
+        $0.otherFailures = currentInfo.otherFailures
       }
     }
   }
@@ -246,6 +253,7 @@ extension IDBXCTestReporter {
       $0.failureInfo = nil
       $0.testClass = ""
       $0.testMethod = ""
+      $0.otherFailures.removeAll()
     }
   }
 
@@ -450,6 +458,14 @@ extension IDBXCTestReporter {
     }
   }
 
+  private func createFailureInfo(exceptionInfo: FBExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
+    return Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo.with {
+      $0.failureMessage = exceptionInfo.message
+      $0.file = exceptionInfo.file ?? ""
+      $0.line = UInt64(exceptionInfo.line)
+    }
+  }
+
   private func responseFor(crashMessage: String) -> Idb_XctestRunResponse {
     defer { resetCurrentTestState() }
 
@@ -461,6 +477,7 @@ extension IDBXCTestReporter {
       $0.failureInfo = currentInfo.failureInfo ?? .init()
       $0.failureInfo.failureMessage = crashMessage
       $0.status = .crashed
+      $0.otherFailures = currentInfo.otherFailures
     }
 
     return Idb_XctestRunResponse.with {

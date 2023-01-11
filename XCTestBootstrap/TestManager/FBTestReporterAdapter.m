@@ -67,7 +67,9 @@
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.reporter testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line.unsignedIntegerValue];
+    [self.reporter testCaseDidFailForTestClass:testClass method:method exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
+        ]]];
   return nil;
 }
 
