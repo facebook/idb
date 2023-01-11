@@ -747,6 +747,7 @@ message XctestRunResponse {
     TestRunFailureInfo failure_info = 6;
     repeated string logs = 7;
     repeated TestActivity activityLogs = 8;
+    repeated TestRunFailureInfo other_failures = 9;
   }
   enum Status {
     RUNNING = 0;
