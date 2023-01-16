@@ -16,8 +16,8 @@
 @property (nullable, nonatomic, copy, readonly) NSString *file;
 @property (nonatomic, assign, readonly) NSUInteger line;
 
-- (instancetype)initWithMessage:(nonnull NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
+- (instancetype _Nonnull)initWithMessage:(nonnull NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
 
-- (instancetype)initWithMessage:(nonnull NSString *)message;
+- (instancetype _Nonnull)initWithMessage:(nonnull NSString *)message;
 
 @end

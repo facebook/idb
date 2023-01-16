@@ -478,6 +478,8 @@
 		D7C55B30217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */; };
 		D7E70C122440A2B40092422C /* FBAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = D7E70C102440A2B40092422C /* FBAttachment.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D7E70C132440A2B40092422C /* FBAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = D7E70C112440A2B40092422C /* FBAttachment.m */; };
+		DB523BF4297199A10005D7AE /* FBExceptionInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = DB523BF0297199A10005D7AE /* FBExceptionInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DB523BF5297199A10005D7AE /* FBExceptionInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = DB523BF3297199A10005D7AE /* FBExceptionInfo.m */; };
 		DB5F4876281079AD000FC7C7 /* FBConcatedJsonParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */; };
 		DB5F4879281079CC000FC7C7 /* FBConcatedJsonParser.m in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4877281079CC000FC7C7 /* FBConcatedJsonParser.m */; };
 		DB5F487A281079CC000FC7C7 /* FBConcatedJsonParser.h in Headers */ = {isa = PBXBuildFile; fileRef = DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1273,6 +1275,8 @@
 		D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorMediaCommandsTests.m; sourceTree = "<group>"; };
 		D7E70C102440A2B40092422C /* FBAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAttachment.h; sourceTree = "<group>"; };
 		D7E70C112440A2B40092422C /* FBAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAttachment.m; sourceTree = "<group>"; };
+		DB523BF0297199A10005D7AE /* FBExceptionInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBExceptionInfo.h; sourceTree = "<group>"; };
+		DB523BF3297199A10005D7AE /* FBExceptionInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBExceptionInfo.m; sourceTree = "<group>"; };
 		DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FBConcatedJsonParserTests.swift; sourceTree = "<group>"; };
 		DB5F4877281079CC000FC7C7 /* FBConcatedJsonParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBConcatedJsonParser.m; sourceTree = "<group>"; };
 		DB5F4878281079CC000FC7C7 /* FBConcatedJsonParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBConcatedJsonParser.h; sourceTree = "<group>"; };
@@ -2251,6 +2255,8 @@
 		AAE5A0831EDF90DB00A1A811 /* Reporters */ = {
 			isa = PBXGroup;
 			children = (
+				DB523BF0297199A10005D7AE /* FBExceptionInfo.h */,
+				DB523BF3297199A10005D7AE /* FBExceptionInfo.m */,
 				2F8294C71FBC571A0011E722 /* FBJSONTestReporter.h */,
 				AAE5A0891EDF919700A1A811 /* FBJSONTestReporter.m */,
 				2F8294C91FBC571A0011E722 /* FBLogicReporterAdapter.h */,
@@ -2858,6 +2864,7 @@
 				EE1277621C9338D700DE52A1 /* FBTestManagerAPIMediator.h in Headers */,
 				AA12D5441CE1086300CCD944 /* FBTestReporterAdapter.h in Headers */,
 				842A2B731F6AC89C00063EB1 /* FBActivityRecord.h in Headers */,
+				DB523BF4297199A10005D7AE /* FBExceptionInfo.h in Headers */,
 				D7E70C122440A2B40092422C /* FBAttachment.h in Headers */,
 				AAFD455925E54161001407CC /* FBTestConfiguration.h in Headers */,
 				D75ACC6C264BEF82009862C4 /* FBOToolDynamicLibs.h in Headers */,
@@ -3473,6 +3480,7 @@
 				D75ACC6B264BEF82009862C4 /* FBOToolDynamicLibs.m in Sources */,
 				AA12D5451CE1086300CCD944 /* FBTestReporterAdapter.m in Sources */,
 				1C5091E924EDB8F600FAB67E /* FBXCTestResultBundleParser.m in Sources */,
+				DB523BF5297199A10005D7AE /* FBExceptionInfo.m in Sources */,
 				AAE5A0821EDF8C9C00A1A811 /* FBXCTestLogger.m in Sources */,
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
 				D7E70C132440A2B40092422C /* FBAttachment.m in Sources */,
