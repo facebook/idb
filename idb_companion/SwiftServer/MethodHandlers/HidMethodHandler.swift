@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import GRPC
+import IDBGRPCSwift
 
 struct HidMethodHandler {
 
@@ -94,5 +94,4 @@ struct HidMethodHandler {
       return nil
     }
   }
-
 }

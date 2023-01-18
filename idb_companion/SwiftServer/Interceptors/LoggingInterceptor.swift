@@ -101,5 +101,4 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     }
     return Date().timeIntervalSince(methodStartDate)
   }
-
 }

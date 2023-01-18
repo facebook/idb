@@ -6,9 +6,9 @@
  */
 
 import Foundation
-import IDBGRPCSwift
 import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct LaunchMethodHandler {
 
@@ -73,5 +73,4 @@ struct LaunchMethodHandler {
       try? responseWriter.send(response)
     }
   }
-
 }

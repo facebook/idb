@@ -32,5 +32,4 @@ extension Task where Failure == Error {
     )
     return try await result.value
   }
-
 }

@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
-import FBSimulatorControl
 import FBControlCore
+import FBSimulatorControl
+import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct DapMethodHandler {
 
@@ -36,11 +36,9 @@ struct DapMethodHandler {
     try await responseStream.send(stoppedResponse)
   }
 
-
   private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBProcess<AnyObject, FBDataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
-
 
     let stdOutConsumer = createDataConsumer(to: responseStream)
     targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
@@ -99,8 +97,6 @@ struct DapMethodHandler {
       } catch {
         targetLogger.debug().log("Dap server stdout consumer: error \(error) when tried to send bytes.")
       }
-
     }
   }
-
 }

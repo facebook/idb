@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
 import FBControlCore
+import Foundation
 import IDBCompanionUtilities
 
 enum FBFutureError: Error {
@@ -106,7 +106,6 @@ enum BridgeFuture {
     return objcValue as! [T]
   }
 
-
   /// Awaitable value that waits for publishing from the wrapped future.
   /// This is convenient bridgeable overload for dealing with objc `NSDictionary`.
   /// - Warning: This operation not safe (as most of objc bridge). That means you should be sure that type bridging will succeed.
@@ -154,7 +153,6 @@ enum BridgeFuture {
     let future: FBFuture<AnyObject> = mutableFuture
     return future as! FBFuture<T>
   }
-
 
   /// Split FBFutureContext to two pieces: result and later cleanup closure
   /// - Parameter futureContext: source future context

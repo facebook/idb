@@ -42,5 +42,4 @@ struct FileDrainWriter {
       throw GRPCStatus(code: .internalError, message: "Draining operation failed with exit code \(exitCode)")
     }
   }
-
 }

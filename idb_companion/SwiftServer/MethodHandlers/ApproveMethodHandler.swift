@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct ApproveMethodHandler {
 
@@ -46,5 +46,4 @@ struct ApproveMethodHandler {
     }
     return .init()
   }
-
 }

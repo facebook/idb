@@ -8,5 +8,4 @@
 import FBSimulatorControl
 
 extension FBControlCoreError: Error {
-
 }

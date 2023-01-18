@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct SetLocationMethodHandler {
 
@@ -16,5 +16,4 @@ struct SetLocationMethodHandler {
     try await BridgeFuture.await(commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude))
     return .init()
   }
-
 }

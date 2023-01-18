@@ -5,17 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
 import FBSimulatorControl
-
+import Foundation
 
 /// Mock class for OSS implementation. It is easier to have mock than to use optional everywhere.
 @objc final class EmptyEventReporter: NSObject, FBEventReporter {
 
   @objc static let shared = EmptyEventReporter()
 
-  var metadata: [String : String] = [:]
+  var metadata: [String: String] = [:]
 
   func report(_ subject: FBEventReporterSubject) {}
-  func addMetadata(_ metadata: [String : String]) {}
+  func addMetadata(_ metadata: [String: String]) {}
 }

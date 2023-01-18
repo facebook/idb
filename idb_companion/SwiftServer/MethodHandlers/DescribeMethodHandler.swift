@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
 import FBControlCore
+import Foundation
 import GRPC
+import IDBGRPCSwift
 
 struct DescribeMethodHandler {
 
@@ -16,7 +16,6 @@ struct DescribeMethodHandler {
   let logger: FBIDBLogger
   let target: FBiOSTarget
   let commandExecutor: FBIDBCommandExecutor
-
 
   func handle(request: Idb_TargetDescriptionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TargetDescriptionResponse {
     var response = Idb_TargetDescriptionResponse.with {
@@ -37,7 +36,7 @@ struct DescribeMethodHandler {
           }
         }
         if let extData = try? JSONSerialization.data(withJSONObject: target.extendedInformation) {
-          $0.extended = extData;
+          $0.extended = extData
         }
       }
       $0.companion = Idb_CompanionInfo.with {
@@ -64,5 +63,4 @@ struct DescribeMethodHandler {
     let data = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])
     info.metadata = data
   }
-
 }

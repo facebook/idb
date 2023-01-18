@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import XCTest
 @testable import IDBCompanionUtilities
+import XCTest
 
 class FIFOStreamWriterTests: XCTestCase {
 
@@ -31,5 +31,4 @@ class FIFOStreamWriterTests: XCTestCase {
 
     XCTAssertEqual(sequentialValues, mockWriter.storage)
   }
-
 }

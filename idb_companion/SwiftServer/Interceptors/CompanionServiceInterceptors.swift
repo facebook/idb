@@ -6,8 +6,8 @@
  */
 
 import Foundation
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 // By design in grpc-swift we should provide interceptor for each method separately.
 // This gives us ability to precicely control which interceptors will be used for concrete method from one side,
@@ -198,6 +198,4 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
   func maketailInterceptors() -> [ServerInterceptor<Idb_TailRequest, Idb_TailResponse>] {
     commonInterceptors()
   }
-
-
 }

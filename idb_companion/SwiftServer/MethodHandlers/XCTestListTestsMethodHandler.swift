@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import Foundation
+import GRPC
+import IDBGRPCSwift
 
 struct XCTestListTestsMethodHandler {
 

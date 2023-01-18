@@ -94,5 +94,4 @@ final class FBCrashLogInfoTests: XCTestCase {
       ]
     }
   }
-
 }

@@ -31,5 +31,4 @@ extension AsyncSequence {
       return next
     }
   }
-
 }

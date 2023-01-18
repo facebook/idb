@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct LogMethodHandler {
 
@@ -46,5 +46,4 @@ struct LogMethodHandler {
 
     try await BridgeFuture.await(operation.completed.cancel())
   }
-
 }

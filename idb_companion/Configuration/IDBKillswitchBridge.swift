@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
 import FBSimulatorControl
+import Foundation
 
 /// Bridge for killswitch from objc world. Should be subset of `IDBFeature`. Use from objc
 @objc(FBIDBFeatureKey) enum IDBFeatureBridge: Int {

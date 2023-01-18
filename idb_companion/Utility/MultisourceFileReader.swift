@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
 import FBControlCore
+import Foundation
 import GRPC
 import IDBGRPCSwift
 
@@ -47,7 +47,7 @@ enum MultisourceFileReader {
     }
   }
 
-  static private func compressionFormat(from request: Idb_Payload.Compression) -> FBCompressionFormat {
+  private static func compressionFormat(from request: Idb_Payload.Compression) -> FBCompressionFormat {
     switch request {
     case .gzip:
       return .GZIP
@@ -58,7 +58,7 @@ enum MultisourceFileReader {
     }
   }
 
-  static private func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: GRPCAsyncRequestStream<Request>) async throws -> [URL] {
+  private static func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: GRPCAsyncRequestStream<Request>) async throws -> [URL] {
     var filePaths = [initial]
 
     for try await request in requestStream {
@@ -74,12 +74,11 @@ enum MultisourceFileReader {
     return filePaths
   }
 
-  static private func filepathsFromTar(temporaryDirectory: FBTemporaryDirectory, input: FBProcessInput<OutputStream>, extractFromSubdir: Bool, compression: FBCompressionFormat) async throws -> [URL] {
+  private static func filepathsFromTar(temporaryDirectory: FBTemporaryDirectory, input: FBProcessInput<OutputStream>, extractFromSubdir: Bool, compression: FBCompressionFormat) async throws -> [URL] {
     let mappedInput = input as! FBProcessInput<AnyObject>
     let tarContext = temporaryDirectory.withArchiveExtracted(fromStream: mappedInput, compression: compression)
     if extractFromSubdir {
       return try await BridgeFuture.values(temporaryDirectory.files(fromSubdirs: tarContext))
-
     } else {
       let extractionDir = try await BridgeFuture.value(tarContext)
       return try FileManager.default.contentsOfDirectory(at: extractionDir as URL, includingPropertiesForKeys: [.isDirectoryKey], options: [])
@@ -87,7 +86,7 @@ enum MultisourceFileReader {
   }
 
   // TODO: Do we really need multithreading here? Isnt we just fill the stream sequentially while read is blocked and only then read starts?
-  static private func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: GRPCAsyncRequestStream<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
+  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: GRPCAsyncRequestStream<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
 
@@ -112,5 +111,4 @@ enum MultisourceFileReader {
 
     return (readFromStreamTask, input)
   }
-
 }

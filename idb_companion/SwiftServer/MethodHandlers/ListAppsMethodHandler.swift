@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
 import FBControlCore
+import Foundation
 import GRPC
+import IDBGRPCSwift
 
 struct ListAppsMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
-
 
   func handle(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs
@@ -38,5 +37,4 @@ struct ListAppsMethodHandler {
       }
     }
   }
-
 }

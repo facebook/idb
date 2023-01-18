@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import Foundation
+import GRPC
+import IDBGRPCSwift
 import XCTestBootstrap
 
 struct XCTestListBundlesMethodHandler {
@@ -30,5 +30,4 @@ struct XCTestListBundlesMethodHandler {
       $0.architectures = Array(descriptor.architectures)
     }
   }
-
 }

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import XCTest
 @testable import IDBCompanionUtilities
+import XCTest
 
 class AtomicTests: XCTestCase {
 
@@ -48,5 +48,4 @@ class AtomicTests: XCTestCase {
 
     XCTAssertEqual(counter, iterationCount, "Conters not match. Caution: this maby flacky, because tests possible race condition.")
   }
-
 }

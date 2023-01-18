@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorControl
 import Foundation
 import GRPC
-import IDBGRPCSwift
-import FBSimulatorControl
-import XCTestBootstrap
 import IDBCompanionUtilities
+import IDBGRPCSwift
+import XCTestBootstrap
 
 extension IDBXCTestReporter {
 
@@ -36,7 +36,6 @@ extension IDBXCTestReporter {
       self.reportAttachments = legacy.reportAttachments
       self.reportResultBundle = legacy.reportResultBundle
     }
-
   }
 
   struct CurrentTestInfo {
@@ -63,13 +62,11 @@ extension IDBXCTestReporter {
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
-
   init(responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self._responseStream = .init(wrappedValue: responseStream)
     self.queue = queue
     self.logger = logger
   }
-
 
   // MARK: - FBDataConsumer implementation
 
@@ -135,7 +132,7 @@ extension IDBXCTestReporter {
     self._currentInfo.sync {
       if let firstExceptionInfo = exceptions.first {
         $0.failureInfo = createFailureInfo(exceptionInfo: firstExceptionInfo)
-        $0.otherFailures = exceptions.dropFirst().map{ createFailureInfo(exceptionInfo: $0) }
+        $0.otherFailures = exceptions.dropFirst().map { createFailureInfo(exceptionInfo: $0) }
       } else {
         logger.log("No exceptions were returned in the failure. This shouldn't happen.")
       }
@@ -420,7 +417,7 @@ extension IDBXCTestReporter {
     let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
     let archiveFuture = FBArchiveOperations.createGzipData(from: gzipProcessInput as! FBProcessInput<AnyObject>, logger: self.logger)
 
-    let oneMega = 1024*1024;
+    let oneMega = 1024 * 1024
     let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: oneMega)
     defer {
       buffer.deallocate()
@@ -502,7 +499,6 @@ extension IDBXCTestReporter {
                                            line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
         }
       }
-
     } catch {
       assertionFailure(error.localizedDescription)
       logger.error().log("Incorrect regexp \(error.localizedDescription)")
@@ -523,5 +519,4 @@ extension IDBXCTestReporter {
       $0.line = UInt64(line)
     }
   }
-
 }

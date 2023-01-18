@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
 import FBControlCore
+import Foundation
 import GRPC
+import IDBGRPCSwift
 
 struct InstallMethodHandler {
 
@@ -25,7 +25,6 @@ struct InstallMethodHandler {
     }
     try await responseStream.send(response)
   }
-
 
   private func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
 
@@ -62,7 +61,7 @@ struct InstallMethodHandler {
 
     var linkToBundle: FBDsymInstallLinkToBundle?
 
-    //(2022-03-02) REMOVE! Keeping only for retrocompatibility
+    // (2022-03-02) REMOVE! Keeping only for retrocompatibility
     if case let .bundleID(id) = request.value {
       linkToBundle = .init(id, bundle_type: .app)
       request = try await requestStream.requiredNext
@@ -196,7 +195,6 @@ struct InstallMethodHandler {
     return input
   }
 
-
   private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> FBDsymInstallLinkToBundle {
     return .init(link.bundleID,
                  bundle_type: readDsymBundleType(from: link.bundleType))
@@ -221,5 +219,4 @@ struct InstallMethodHandler {
       return .ZSTD
     }
   }
-
 }

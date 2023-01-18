@@ -7,8 +7,8 @@
 
 import Foundation
 import GRPC
-import IDBGRPCSwift
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 enum MethodInfoKey: UserInfo.Key {
   typealias Value = GRPCMethodInfo
@@ -56,5 +56,4 @@ final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Re
       .suffix(from: path.lastIndex(of: "/")!)
       .dropFirst()
   }
-
 }

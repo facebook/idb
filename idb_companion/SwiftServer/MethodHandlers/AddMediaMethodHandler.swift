@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct AddMediaMethodHandler {
 
@@ -18,7 +18,5 @@ struct AddMediaMethodHandler {
 
     try await BridgeFuture.await(commandExecutor.add_media(extractedFileURLs))
     return .init()
-
   }
-
 }

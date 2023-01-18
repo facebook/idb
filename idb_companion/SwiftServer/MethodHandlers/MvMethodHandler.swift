@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct MvMethodHandler {
 
@@ -17,5 +17,4 @@ struct MvMethodHandler {
     try await BridgeFuture.await(commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer))
     return .init()
   }
-
 }

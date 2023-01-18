@@ -25,5 +25,4 @@ enum TestFixtures {
 
   static let appCrashWithJSONFormat = Bundle(for: BundleFinder.self)
     .path(forResource: "xctest-concated-json-crash", ofType: "ips")!
-
 }
