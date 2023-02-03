@@ -12,3 +12,4 @@ FBArchitecture const FBArchitectureX86_64 = @"x86_64";
 FBArchitecture const FBArchitectureArmv7 = @"armv7";
 FBArchitecture const FBArchitectureArmv7s = @"armv7s";
 FBArchitecture const FBArchitectureArm64 = @"arm64";
+FBArchitecture const FBArchitectureArm64e = @"arm64e";

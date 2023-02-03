@@ -19,5 +19,6 @@ extern FBArchitecture const FBArchitectureX86_64;
 extern FBArchitecture const FBArchitectureArmv7;
 extern FBArchitecture const FBArchitectureArmv7s;
 extern FBArchitecture const FBArchitectureArm64;
+extern FBArchitecture const FBArchitectureArm64e;
 
 NS_ASSUME_NONNULL_END
