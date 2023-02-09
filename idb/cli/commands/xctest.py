@@ -6,6 +6,7 @@
 
 import json
 import os.path
+import sys
 from argparse import ArgumentParser, Namespace, REMAINDER
 from pathlib import Path
 from typing import Optional, Set
@@ -220,7 +221,8 @@ class CommonRunXcTestCommand(ClientCommand):
             if args.install_dsym_test_bundle:
                 if is_ui or is_app:
                     print(
-                        "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests."
+                        "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests.",
+                        file=sys.stderr,
                     )
                 await self.install_dsym_test_bundle(args, client, test_bundle_location)
 
