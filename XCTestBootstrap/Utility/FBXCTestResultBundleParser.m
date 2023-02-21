@@ -276,7 +276,9 @@ static inline NSDate *dateFromString(NSString *date)
   [reporter testCaseDidStartForTestClass:testClassName method:testMethodName];
   if (status == FBTestReportStatusFailed) {
     NSArray *failureSummaries = readArrayFromDict(testMethod, @"FailureSummaries");
-    [reporter testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessageLegacy:failureSummaries] file:nil line:0];
+    [reporter testCaseDidFailForTestClass:testClassName method:testMethodName exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessageLegacy:failureSummaries]
+        ]]];
   }
 
   [reporter testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
@@ -446,7 +448,11 @@ static inline NSDate *dateFromString(NSString *date)
   else {
     [logger log:@"Test failed and no test results found in the bundle"];
     NSArray *failureSummaries = accessAndUnwrapValues(targetTest, @"failureSummaries", logger);
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+
+    [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessage:failureSummaries logger:logger]
+        ]]];
+
   }
 }
 
@@ -483,7 +489,9 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger log:@"Test failed and no target test results found in the bundle"];
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
   }
 }
 
@@ -520,7 +528,10 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger log:@"Test failed and no test class results found in the bundle"];
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
+
   }
 }
 
@@ -558,7 +569,9 @@ static inline NSDate *dateFromString(NSString *date)
   }
   else {
     [logger logFormat:@"Test failed for %@ and no test method results found", testClassName];
-    [reporter testCaseDidFailForTestClass:testClassName method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
   }
 }
 
@@ -615,7 +628,9 @@ static inline NSDate *dateFromString(NSString *date)
       onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary) {
         if (status == FBTestReportStatusFailed) {
           NSArray *failureSummaries = accessAndUnwrapValues(actionTestSummary, @"failureSummaries", logger);
-          [reporter testCaseDidFailForTestClass:testClassName method:testMethodIdentifier withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+            [reporter testCaseDidFailForTestClass:testClassName method:testMethodIdentifier exceptions:@[
+                [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessage:failureSummaries logger:logger]]
+            ]];
         }
 
         NSArray<NSDictionary *> *performanceMetrics = accessAndUnwrapValues(actionTestSummary, @"performanceMetrics", logger);

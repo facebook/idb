@@ -16,5 +16,4 @@ struct CodeLocation: CustomStringConvertible {
   var description: String {
     "Located at file: \(file), line: \(line), column: \(column)" + (function.map { ", function: " + $0 } ?? "")
   }
-
 }

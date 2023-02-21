@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
 import FBControlCore
+import Foundation
 import GRPC
+import IDBGRPCSwift
 
 struct ListAppsMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
-
 
   func handle(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs
@@ -22,21 +21,20 @@ struct ListAppsMethodHandler {
 
     return .with {
       $0.apps = apps.map { app, processState in
-          .with {
-            $0.bundleID = app.bundle.identifier
-            $0.name = app.bundle.name
-            $0.installType = app.installTypeString
-            $0.architectures = app.bundle.binary?.architectures.map(\.rawValue) ?? []
-            if let processID = processState as? NSNumber {
-              $0.processState = .running
-              $0.processIdentifier = processID.uint64Value
-            } else {
-              $0.processState = .unknown
-            }
-            $0.debuggable = app.installType == .userDevelopment && persistedBundleIDs.contains(app.bundle.identifier)
+        .with {
+          $0.bundleID = app.bundle.identifier
+          $0.name = app.bundle.name
+          $0.installType = app.installTypeString
+          $0.architectures = app.bundle.binary?.architectures.map(\.rawValue) ?? []
+          if let processID = processState as? NSNumber {
+            $0.processState = .running
+            $0.processIdentifier = processID.uint64Value
+          } else {
+            $0.processState = .unknown
           }
+          $0.debuggable = app.installType == .userDevelopment && persistedBundleIDs.contains(app.bundle.identifier)
+        }
       }
     }
   }
-
 }

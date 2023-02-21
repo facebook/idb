@@ -9,7 +9,6 @@ import Foundation
 import GRPC
 import NIO
 
-
 enum GRPCConnectionTarget: CustomStringConvertible {
   enum ExtractionError: Error {
     case socketAddressIsEmpty
@@ -104,5 +103,4 @@ enum GRPCConnectionTarget: CustomStringConvertible {
     self.grpcDomainSocket = arguments.string(forKey: Key.grpcDomainSock)
     self.tlsCertPath = arguments.string(forKey: Key.tlsCertPath)
   }
-
 }

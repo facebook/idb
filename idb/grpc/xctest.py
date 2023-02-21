@@ -181,15 +181,7 @@ def make_results(
             ),
             duration=result.duration,
             passed=result.status == XctestRunResponse.TestRunInfo.PASSED,
-            failure_info=(
-                TestRunFailureInfo(
-                    message=result.failure_info.failure_message,
-                    file=result.failure_info.file,
-                    line=result.failure_info.line,
-                )
-                if result.failure_info
-                else None
-            ),
+            failure_info=(make_failure_info(result) if result.failure_info else None),
             activityLogs=[
                 translate_activity(activity) for activity in result.activityLogs or []
             ],
@@ -197,6 +189,35 @@ def make_results(
         )
         for result in response.results or []
     ]
+
+
+def make_failure_info(result: XctestRunResponse.TestRunInfo) -> TestRunFailureInfo:
+    if result.other_failures is None or len(result.other_failures) == 0:
+        return TestRunFailureInfo(
+            message=result.failure_info.failure_message,
+            file=result.failure_info.file,
+            line=result.failure_info.line,
+        )
+    else:
+        message = (
+            "line:"
+            + str(result.failure_info.line)
+            + " "
+            + result.failure_info.failure_message
+        )
+        for other_failure in result.other_failures:
+            message = (
+                message
+                + ", line:"
+                + str(other_failure.line)
+                + " "
+                + other_failure.failure_message
+            )
+        return TestRunFailureInfo(
+            message=message,
+            file=result.failure_info.file,
+            line=result.failure_info.line,
+        )
 
 
 def translate_activity(

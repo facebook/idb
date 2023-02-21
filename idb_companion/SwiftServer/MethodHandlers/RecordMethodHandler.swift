@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct RecordMethodHandler {
 
@@ -20,9 +20,9 @@ struct RecordMethodHandler {
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expect start as initial request frame") }
 
     let filePath =
-    start.filePath.isEmpty
-    ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
-    : start.filePath
+      start.filePath.isEmpty
+      ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
+      : start.filePath
 
     _ = try await BridgeFuture.value(target.startRecording(toFile: filePath))
 
@@ -38,7 +38,6 @@ struct RecordMethodHandler {
         let response = Idb_RecordResponse.with { $0.payload.data = data }
         try await responseStream.send(response)
       }
-
     } else {
       let response = Idb_RecordResponse.with {
         $0.output = .payload(.with { $0.source = .filePath(start.filePath) })

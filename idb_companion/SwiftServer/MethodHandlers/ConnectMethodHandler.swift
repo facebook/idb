@@ -6,8 +6,8 @@
  */
 
 import Foundation
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct ConnectMethodHandler {
 
@@ -32,5 +32,4 @@ struct ConnectMethodHandler {
       }
     }
   }
-
 }

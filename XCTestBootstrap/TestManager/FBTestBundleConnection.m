@@ -25,9 +25,9 @@
 #import "FBTestManagerContext.h"
 #import "FBTestManagerAPIMediator.h"
 
-static NSTimeInterval BundleReadyTimeout = 20; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval IDEInterfaceReadyTimeout = 10; // Time for `XCTestManager_IDEInterface` to be returned.
-static NSTimeInterval DaemonSessionReadyTimeout = 10; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
+static NSTimeInterval BundleReadyTimeout = 60; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
+static NSTimeInterval IDEInterfaceReadyTimeout = 30; // Time for `XCTestManager_IDEInterface` to be returned.
+static NSTimeInterval DaemonSessionReadyTimeout = 30; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
 static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash report to be generated.
 
 #pragma clang diagnostic push
@@ -138,10 +138,10 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
              processIDWithBundleID:self.context.testHostLaunchConfiguration.bundleID]
             onQueue:self.requestQueue handleError:^FBFuture *(NSError *pidLookupError) {
     NSString *msg = @"Error while establishing connection to test bundle: "
-                    @"Could not find process for test host application. "
-                    @"The host application is likely to have crashed during startup.";
+                    @"The host application is likely to have crashed during startup, "
+                    @"but could not find a crash log.";
     // In this case the application lived long enough to avoid a relaunch (see bellow), but crashed before idb could connect to it.
-    return [[[FBXCTestError describe:msg] causedBy:pidLookupError] failFuture];
+    return [self failedFutureWithCrashLogOrNotFoundErrorDescription:msg];
   }]
   onQueue:self.requestQueue fmap:^FBFuture *(NSNumber *runningPid) {
     if (self.testHostApplication.processIdentifier != runningPid.intValue) {
@@ -153,8 +153,21 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       // idb can't work with this 'vanilla' app process, resulting in errors connecting to the bundle (there won't be a bundle to connect to).
       return [[[FBXCTestError describe:msg] causedBy:error] failFuture];
     }
-    // No obvious issue with the process, returning the original error
-    return [FBFuture futureWithError:error];
+
+    // Application process still running.
+    // Try to sample process stack.
+    return [[[FBProcessFetcher
+      performSampleStackshotForProcessIdentifier:self.testHostApplication.processIdentifier
+      queue:self.target.workQueue]
+    onQueue:self.requestQueue handleError:^FBFuture<NSNull *> *(NSError *_) {
+      // Could not sample stack, returning original error
+      return [FBFuture futureWithError:error];
+    }]
+    onQueue:self.requestQueue fmap:^FBFuture<id> *(NSString *stackshot) {
+      return [[FBXCTestError
+        describeFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]
+        failFuture];
+    }];
   }];
 }
 
@@ -183,13 +196,13 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
       testBundleProxy = results[0];
       return [self.bundleReadyFuture timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"];
     }]
+    onQueue:self.requestQueue handleError:^(NSError *error) {
+      return [self performDiagnosisOnBundleConnectionError:error];
+    }]
     onQueue:self.requestQueue pop:^(id result) {
       [self.logger logFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion];
       [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
       return self.bundleDisconnectedSuccessfully;
-    }]
-    onQueue:self.requestQueue handleError:^(NSError *error) {
-      return [self performDiagnosisOnBundleConnectionError:error];
     }];
 }
 
@@ -290,21 +303,27 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
         return FBFuture.empty;
       }
       [self.logger logFormat:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
-      return [[self
-        findCrashedProcessLog]
-        onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
-          FBCrashLog *crashLog = future.result;
-          if (!crashLog) {
-            return [[[XCTestBootstrapError
-              describeFormat:@"Lost connection to test process, but could not find a crash log"]
-              code:XCTestBootstrapErrorCodeLostConnection]
-              failFuture];
-          }
-          return [[XCTestBootstrapError
-            describeFormat:@"Test Bundle Crashed: %@", crashLog]
-            failFuture];
-        }];
+      return [self
+               failedFutureWithCrashLogOrNotFoundErrorDescription:@"Lost connection to test process, but could not find a crash log"];
     }];
+}
+
+- (FBFuture<NSNull *> *)failedFutureWithCrashLogOrNotFoundErrorDescription:(NSString *)notFoundErrorDescription
+{
+  return [[[self
+    findCrashedProcessLog]
+    onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
+      FBCrashLog *crashLog = future.result;
+      if (!crashLog) {
+        return [[[XCTestBootstrapError
+          describe:notFoundErrorDescription]
+          code:XCTestBootstrapErrorCodeLostConnection]
+          failFuture];
+      }
+      return [[XCTestBootstrapError
+        describeFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]
+        failFuture];
+    }] mapReplace:NSNull.null];
 }
 
 - (FBFuture<FBCrashLog *> *)findCrashedProcessLog

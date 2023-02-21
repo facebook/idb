@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorControl
 import Foundation
 import GRPC
-import IDBGRPCSwift
-import FBSimulatorControl
-import XCTestBootstrap
 import IDBCompanionUtilities
+import IDBGRPCSwift
+import XCTestBootstrap
 
 extension IDBXCTestReporter {
 
@@ -36,7 +36,6 @@ extension IDBXCTestReporter {
       self.reportAttachments = legacy.reportAttachments
       self.reportResultBundle = legacy.reportResultBundle
     }
-
   }
 
   struct CurrentTestInfo {
@@ -45,6 +44,7 @@ extension IDBXCTestReporter {
     var testMethod = ""
     var activityRecords: [FBActivityRecord] = []
     var failureInfo: Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo?
+    var otherFailures: [Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo] = []
   }
 }
 
@@ -62,13 +62,11 @@ extension IDBXCTestReporter {
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
-
   init(responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self._responseStream = .init(wrappedValue: responseStream)
     self.queue = queue
     self.logger = logger
   }
-
 
   // MARK: - FBDataConsumer implementation
 
@@ -125,14 +123,19 @@ extension IDBXCTestReporter {
     }
   }
 
-  @objc func testCaseDidFail(forTestClass testClass: String, method: String, withMessage message: String, file: String?, line: UInt) {
+  @objc func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
     let currentInfo = self.currentInfo
     if testClass == currentInfo.testClass && method != currentInfo.testMethod {
       logger.log("Got failure info for \(testClass)/\(method) but the current known executing test is \(currentInfo.testClass)\(currentInfo.testMethod). Ignoring it")
       return
     }
     self._currentInfo.sync {
-      $0.failureInfo = createFailureInfo(message: message, file: file, line: line)
+      if let firstExceptionInfo = exceptions.first {
+        $0.failureInfo = createFailureInfo(exceptionInfo: firstExceptionInfo)
+        $0.otherFailures = exceptions.dropFirst().map { createFailureInfo(exceptionInfo: $0) }
+      } else {
+        logger.log("No exceptions were returned in the failure. This shouldn't happen.")
+      }
     }
   }
 
@@ -205,6 +208,7 @@ extension IDBXCTestReporter {
         }
         $0.logs = logs
         $0.activityLogs = try stackedActivities.map(translate(activity:))
+        $0.otherFailures = currentInfo.otherFailures
       }
     }
   }
@@ -221,15 +225,15 @@ extension IDBXCTestReporter {
       $0.name = activity.name
       if configuration.reportAttachments {
         $0.attachments = try activity.attachments.map { attachment in
-            try .with {
-              $0.payload = attachment.payload ?? Data()
-              $0.name = attachment.name
-              $0.timestamp = attachment.timestamp.timeIntervalSince1970
-              $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
-              if let userInfo = attachment.userInfo {
-                $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
-              }
+          try .with {
+            $0.payload = attachment.payload ?? Data()
+            $0.name = attachment.name
+            $0.timestamp = attachment.timestamp.timeIntervalSince1970
+            $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
+            if let userInfo = attachment.userInfo {
+              $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
             }
+          }
         }
       }
       $0.subActivities = try subactivities.map(translate(activity:))
@@ -246,6 +250,7 @@ extension IDBXCTestReporter {
       $0.failureInfo = nil
       $0.testClass = ""
       $0.testMethod = ""
+      $0.otherFailures.removeAll()
     }
   }
 
@@ -381,7 +386,7 @@ extension IDBXCTestReporter {
       .filter { $0.pathExtension == "profraw" }
 
     let mergeArgs: [String] = ["llvm-profdata", "merge", "-o", profdataPath.path]
-    + profraws.map(\.path)
+      + profraws.map(\.path)
 
     let mergeProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
       .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
@@ -398,9 +403,9 @@ extension IDBXCTestReporter {
 
   private func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
     let exportArgs: [String] = ["llvm-cov", "export", "-instr-profile", profdataPath.path]
-    + binariesPath.reduce(into: []) {
-      $0 += ["-object", $1]
-    }
+      + binariesPath.reduce(into: []) {
+        $0 += ["-object", $1]
+      }
     let exportProcess = try await BridgeFuture.value(
       FBProcessBuilder<NSNull, NSData, NSString>
         .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
@@ -412,7 +417,7 @@ extension IDBXCTestReporter {
     let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
     let archiveFuture = FBArchiveOperations.createGzipData(from: gzipProcessInput as! FBProcessInput<AnyObject>, logger: self.logger)
 
-    let oneMega = 1024*1024;
+    let oneMega = 1024 * 1024
     let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: oneMega)
     defer {
       buffer.deallocate()
@@ -450,6 +455,14 @@ extension IDBXCTestReporter {
     }
   }
 
+  private func createFailureInfo(exceptionInfo: FBExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
+    return Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo.with {
+      $0.failureMessage = exceptionInfo.message
+      $0.file = exceptionInfo.file ?? ""
+      $0.line = UInt64(exceptionInfo.line)
+    }
+  }
+
   private func responseFor(crashMessage: String) -> Idb_XctestRunResponse {
     defer { resetCurrentTestState() }
 
@@ -461,6 +474,7 @@ extension IDBXCTestReporter {
       $0.failureInfo = currentInfo.failureInfo ?? .init()
       $0.failureInfo.failureMessage = crashMessage
       $0.status = .crashed
+      $0.otherFailures = currentInfo.otherFailures
     }
 
     return Idb_XctestRunResponse.with {
@@ -485,7 +499,6 @@ extension IDBXCTestReporter {
                                            line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
         }
       }
-
     } catch {
       assertionFailure(error.localizedDescription)
       logger.error().log("Incorrect regexp \(error.localizedDescription)")
@@ -506,5 +519,4 @@ extension IDBXCTestReporter {
       $0.line = UInt64(line)
     }
   }
-
 }

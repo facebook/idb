@@ -5,18 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 import GRPC
-import NIOCore
-import NIOSSL
-import NIOPosix
-import FBControlCore
 import IDBGRPCSwift
+import NIOCore
+import NIOPosix
+import NIOSSL
 
 struct IDBUnixDomainSocketPathWrongType: Error {}
 
 @objc
-final class GRPCSwiftServer : NSObject {
+final class GRPCSwiftServer: NSObject {
 
   private struct TLSCertificates {
     let certificates: [NIOSSLCertificateSource]
@@ -31,7 +31,7 @@ final class GRPCSwiftServer : NSObject {
   private let ports: IDBPortsConfiguration
 
   @objc
-  let completed : FBMutableFuture<NSNull>
+  let completed: FBMutableFuture<NSNull>
 
   @objc
   init(target: FBiOSTarget,
@@ -187,7 +187,5 @@ final class GRPCSwiftServer : NSObject {
       logger.error().log("Unable to load tls certificate. Error: \(error)")
       fatalError("Unable to load tls certificate. Error: \(error)")
     }
-
   }
-
 }

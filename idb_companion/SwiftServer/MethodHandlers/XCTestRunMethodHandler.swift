@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import Foundation
+import GRPC
+import IDBGRPCSwift
 
 struct XCTestRunMethodHandler {
 
@@ -36,7 +36,6 @@ struct XCTestRunMethodHandler {
     // TODO: operation.completed throws an error in case of binary crash. We should handle it gracefully
     try? await BridgeFuture.await(operation.completed)
   }
-
 
   func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {
     let testsToRun = request.testsToRun.isEmpty ? nil : Set(request.testsToRun)

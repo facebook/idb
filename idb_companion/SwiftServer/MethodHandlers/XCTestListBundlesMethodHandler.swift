@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import Foundation
+import GRPC
+import IDBGRPCSwift
 import XCTestBootstrap
 
 struct XCTestListBundlesMethodHandler {
@@ -17,18 +17,17 @@ struct XCTestListBundlesMethodHandler {
 
   func handle(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
     let descriptors: [FBXCTestDescriptor] = try await BridgeFuture.value(
-        commandExecutor.list_test_bundles()
+      commandExecutor.list_test_bundles()
     )
     return .with {
-        $0.bundles = descriptors.map(toBundle(descriptor:))
+      $0.bundles = descriptors.map(toBundle(descriptor:))
     }
   }
-    private func toBundle(descriptor: FBXCTestDescriptor) -> Idb_XctestListBundlesResponse.Bundles {
-      return .with {
-          $0.name = descriptor.name
-          $0.bundleID = descriptor.testBundleID
-          $0.architectures = Array(descriptor.architectures)
-      }
+  private func toBundle(descriptor: FBXCTestDescriptor) -> Idb_XctestListBundlesResponse.Bundles {
+    return .with {
+      $0.name = descriptor.name
+      $0.bundleID = descriptor.testBundleID
+      $0.architectures = Array(descriptor.architectures)
     }
-
+  }
 }

@@ -10,6 +10,8 @@
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
+#import <XCTestBootstrap/FBExceptionInfo.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -66,11 +68,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param testClass the test class that has failed.
  @param method the test method that has failed.
- @param message the failure message.
- @param file the failing file.
- @param line the failing line number.
+ @param exceptions an array of the exceptions that caused the failure.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method exceptions:(NSArray<FBExceptionInfo *> *)exceptions;
 
 /**
  Called when a test case has started

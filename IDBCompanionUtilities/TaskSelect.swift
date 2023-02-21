@@ -35,14 +35,6 @@ extension Task {
 
     let state = Atomic<TaskSelectState<Success, Failure>>(wrappedValue: .init())
     return await withTaskCancellationHandler {
-      let tasks = state.sync { state -> [Task<Success, Failure>] in
-        defer { state.tasks = nil }
-        return state.tasks ?? []
-      }
-      for task in tasks {
-        task.cancel()
-      }
-    } operation: {
       await withUnsafeContinuation { continuation in
         for task in tasks {
           Task<Void, Never> {
@@ -59,6 +51,15 @@ extension Task {
             state.add(task)
           }?.cancel()
         }
+      }
+    } onCancel: {
+
+      let tasks = state.sync { state -> [Task<Success, Failure>] in
+        defer { state.tasks = nil }
+        return state.tasks ?? []
+      }
+      for task in tasks {
+        task.cancel()
       }
     }
   }

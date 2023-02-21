@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct OpenUrlMethodHandler {
 
@@ -16,5 +16,4 @@ struct OpenUrlMethodHandler {
     try await BridgeFuture.await(commandExecutor.open_url(request.url))
     return .init()
   }
-
 }

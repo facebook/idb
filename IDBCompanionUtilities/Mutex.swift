@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Foundation
 import Darwin
+import Foundation
 
 /// Helper wrapper around `pthread_mutex`
 final class FBMutex: @unchecked Sendable {

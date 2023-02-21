@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct GetSettingMethodHandler {
 
@@ -29,5 +29,4 @@ struct GetSettingMethodHandler {
       throw GRPCStatus(code: .invalidArgument, message: "Unknown setting case")
     }
   }
-
 }

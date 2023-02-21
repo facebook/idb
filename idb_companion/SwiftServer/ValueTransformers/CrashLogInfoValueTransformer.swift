@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import FBSimulatorControl
+import IDBGRPCSwift
 
 enum CrashLogInfoValueTransformer {
 
@@ -20,5 +20,4 @@ enum CrashLogInfoValueTransformer {
       $0.timestamp = UInt64(crash.date.timeIntervalSince1970)
     }
   }
-
 }

@@ -219,7 +219,7 @@
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
   NSError *error = nil;
-  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@\\[|$",[NSRegularExpression escapedPatternForString:bundleID]];
+  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@(\\[|$)",[NSRegularExpression escapedPatternForString:bundleID]];
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
     return [[FBSimulatorError

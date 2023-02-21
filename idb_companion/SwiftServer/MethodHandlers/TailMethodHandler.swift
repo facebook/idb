@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct TailMethodHandler {
 
@@ -42,5 +42,4 @@ struct TailMethodHandler {
     try await BridgeFuture.await(tail.cancel())
     _finished.set(true)
   }
-
 }

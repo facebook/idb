@@ -29,5 +29,4 @@ enum CrashLogQueryValueTransformer {
     }
     return NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
   }
-
 }

@@ -1391,7 +1391,7 @@
 			repositoryURL = "https://github.com/grpc/grpc-swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.8.0;
+				version = 1.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

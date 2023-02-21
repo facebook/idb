@@ -128,11 +128,18 @@
 
 - (void)reportTestFailureForTestClass:(NSString *)testClass testName:(NSString *)testName endTestEvent:(NSDictionary *)JSONEvent
 {
-  NSDictionary *exception = [JSONEvent[kReporter_EndTest_ExceptionsKey] lastObject];
-  NSString *message = exception[kReporter_EndTest_Exception_ReasonKey];
-  NSString *file = exception[kReporter_EndTest_Exception_FilePathInProjectKey];
-  NSUInteger line = [exception[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
-  [self.reporter testCaseDidFailForTestClass:testClass method:testName withMessage:message file:file line:line];
+  NSArray<NSDictionary *> *exceptionDicts = JSONEvent[kReporter_EndTest_ExceptionsKey];
+    NSMutableArray<FBExceptionInfo *> *parsedExceptions = [NSMutableArray new];
+
+    for (NSDictionary *exceptionDict in exceptionDicts) {
+        NSString *message = exceptionDict[kReporter_EndTest_Exception_ReasonKey];
+        NSString *file = exceptionDict[kReporter_EndTest_Exception_FilePathInProjectKey];
+        NSUInteger line = [exceptionDict[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
+        FBExceptionInfo *exception = [[FBExceptionInfo alloc]initWithMessage:message file:file line:line];
+        [parsedExceptions addObject:exception];
+    }
+
+  [self.reporter testCaseDidFailForTestClass:testClass method:testName exceptions:[parsedExceptions copy]];
 }
 
 - (void)didCrashDuringTest:(NSError *)error

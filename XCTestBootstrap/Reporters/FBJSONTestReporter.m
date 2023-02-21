@@ -111,10 +111,14 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self printEvent:[FBJSONTestReporter beginTestCaseEvent:testClass testMethod:method]];
 }
 
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
 {
   NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
-  [self.xctestNameExceptionsMapping[xctestName] addObject:[FBJSONTestReporter exceptionEvent:message file:file line:line]];
+    for (FBExceptionInfo *exception in exceptions) {
+        [self.xctestNameExceptionsMapping[xctestName] addObject:[FBJSONTestReporter exceptionEvent:exception.message
+                                                                                              file:exception.file
+                                                                                              line:exception.line]];
+    }
 }
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs

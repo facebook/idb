@@ -247,6 +247,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
     @"tree.json",
     @"app_default_set.crash",
     @"assetsd_custom_set.crash",
+    @"xctest-concated-json-crash.ips",
     @"agent_custom_set.crash",
     @"photo0.png",
     @"simulator_system.log",
@@ -386,7 +387,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertNil(error);
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
 }
-  
+
 - (void)testMappedPathPullRootPath
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
@@ -457,6 +458,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
     @"tree.json",
     @"app_default_set.crash",
     @"assetsd_custom_set.crash",
+    @"xctest-concated-json-crash.ips",
     @"agent_custom_set.crash",
     @"photo0.png",
     @"simulator_system.log",
@@ -509,7 +511,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
   XCTAssertNil([[container contentsOfDirectory:@"bar/moved_dir"] await:nil]);
 }
-  
+
 - (void)testMappedPathDeleteFile
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];
@@ -522,7 +524,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertNil(error);
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
 }
-  
+
 - (void)testMappedPathDeleteDirectory
 {
   id<FBFileContainer> container = [self setUpMappedPathContainer];

@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct XctraceRecordMethodHandler {
 
@@ -112,5 +112,4 @@ struct XctraceRecordMethodHandler {
                  processEnv: request.target.launchProcess.processEnv,
                  shim: nil)
   }
-
 }

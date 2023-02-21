@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorControl
 import Foundation
 import GRPC
 import IDBGRPCSwift
-import FBSimulatorControl
 
 struct PullMethodHandler {
 
@@ -59,5 +59,4 @@ struct PullMethodHandler {
     }
     try await responseStream.send(response)
   }
-
 }

@@ -116,7 +116,7 @@ BOOL FBXCTestMain()
   if([NSKeyedUnarchiver respondsToSelector:@selector(xct_unarchivedObjectOfClass:fromData:)]){
     configuration = (XCTestConfiguration *)[NSKeyedUnarchiver xct_unarchivedObjectOfClass:NSClassFromString(@"XCTestConfiguration") fromData:data];
   } else {
-    configuration = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+    configuration = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSString class] fromData:data error:&error];
   }
   if (!configuration) {
     NSLog(@"Loaded XCTestConfiguration is nil");

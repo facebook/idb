@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
 import GRPC
+import IDBGRPCSwift
 
 struct UninstallMethodHandler {
 
@@ -16,5 +16,4 @@ struct UninstallMethodHandler {
     try await BridgeFuture.await(commandExecutor.uninstall_application(request.bundleID))
     return .init()
   }
-
 }

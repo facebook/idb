@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import IDBGRPCSwift
-import GRPC
 import FBSimulatorControl
+import GRPC
 import IDBCompanionUtilities
+import IDBGRPCSwift
 
 struct LogMethodHandler {
 
@@ -34,8 +34,8 @@ struct LogMethodHandler {
     }
 
     let operationFuture = request.source == .companion
-    ? commandExecutor.tail_companion_logs(consumer)
-    : target.tailLog(request.arguments, consumer: consumer)
+      ? commandExecutor.tail_companion_logs(consumer)
+      : target.tailLog(request.arguments, consumer: consumer)
 
     let operation = try await BridgeFuture.value(operationFuture)
 
@@ -46,5 +46,4 @@ struct LogMethodHandler {
 
     try await BridgeFuture.await(operation.completed.cancel())
   }
-
 }
