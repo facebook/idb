@@ -322,6 +322,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         print(e.args[0], file=sys.stderr)
         return 1
     except SystemExit as e:
+        # pyre-fixme[7]: Expected `int` but got `Union[None, int, str]`.
         return e.code
     except Exception:
         logger.exception("Exception thrown in main")
