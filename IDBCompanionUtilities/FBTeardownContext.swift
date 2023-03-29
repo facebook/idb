@@ -92,7 +92,7 @@ public final class FBTeardownContext: Sendable {
   /// Adds cleanup closure to the stack. All cleanup jobs will be called in LIFO order
   /// - Parameter cleanup: Task with cleanup job. There is no enforcement that job *should* throw an error on failure. This is optional.
   public func addCleanup(_ cleanup: @escaping () async throws -> Void) throws {
-    guard let contextImpl = contextImpl else {
+    guard let contextImpl else {
       throw FBTeardownContextError.emptyContext
     }
     try contextImpl.add(cleanup: cleanup)
@@ -100,14 +100,14 @@ public final class FBTeardownContext: Sendable {
 
   /// This method should be called explicitly. Relying on deinit is programmer error.
   public func performCleanup() async throws {
-    guard let contextImpl = contextImpl else {
+    guard let contextImpl else {
       throw FBTeardownContextError.emptyContext
     }
     try await contextImpl.performCleanup()
   }
 
   deinit {
-    if let contextImpl = contextImpl, contextImpl.cleanupPerformed == false {
+    if let contextImpl, contextImpl.cleanupPerformed == false {
 
       if !Task.isCancelled && !isAutocleanup {
         // Despite that we can cleanup automatically, this should be done explicitly

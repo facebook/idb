@@ -28,7 +28,7 @@ class MockStreamWriter: AsyncStreamWriter {
     _storage.sync { $0.append(value) }
 
     if value == terminator {
-      guard let completion = completion else {
+      guard let completion else {
         throw MockStreamError.completionIsNil
       }
       completion()
