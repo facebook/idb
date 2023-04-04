@@ -325,7 +325,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<NSNull *> *)kill_application:(NSString *)bundleID
 {
-  return [self.target killApplicationWithBundleID:bundleID];
+  return [[self.target killApplicationWithBundleID:bundleID] fallback:NSNull.null];
 }
 
 - (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
