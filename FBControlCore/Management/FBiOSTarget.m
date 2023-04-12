@@ -105,13 +105,12 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
 NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
 {
   return [NSString stringWithFormat:
-    @"%@ | %@ | %@ | %@ | %@ | %@",
+    @"%@ | %@ | %@ | %@ | %@ ",
     target.udid,
     target.name,
     FBiOSTargetStateStringFromState(target.state),
     target.deviceType.model,
-    target.osVersion,
-    target.architecture
+    target.osVersion
   ];
 }
 

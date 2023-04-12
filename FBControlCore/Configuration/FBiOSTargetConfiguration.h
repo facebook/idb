@@ -231,11 +231,6 @@ extern FBOSVersionName const FBOSVersionNamemac;
 @property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
 
 /**
- The Native Simulator Arhitecture.
- */
-@property (nonatomic, copy, readonly) FBArchitecture simulatorArchitecture;
-
-/**
  The Supported Product Family.
  */
 @property (nonatomic, assign, readonly) FBControlCoreProductFamily family;
@@ -314,7 +309,7 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *baseArchToCompatibleArch;
++ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures;
 
 @end
 

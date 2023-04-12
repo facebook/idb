@@ -59,9 +59,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBDeviceType *deviceType;
 
 /**
- The Architecture of the iOS Target
+ Available architecture of the iOS Target
  */
-@property (nonatomic, copy, readonly) FBArchitecture architecture;
+@property (nonatomic, copy, readonly) NSArray<FBArchitecture> *architectures;
 
 /**
  The OS Version of the Target.

@@ -14,7 +14,6 @@
 
 @implementation FBiOSTargetDescription
 
-@synthesize architecture = _architecture;
 @synthesize deviceType = _deviceType;
 @synthesize extendedInformation = _extendedInformation;
 @synthesize name = _name;
@@ -23,6 +22,7 @@
 @synthesize targetType = _targetType;
 @synthesize udid = _udid;
 @synthesize uniqueIdentifier = _uniqueIdentifier;
+@synthesize architectures = _architectures;
 
 - (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target
 {
@@ -31,7 +31,6 @@
     return nil;
   }
 
-  _architecture = target.architecture;
   _extendedInformation = target.extendedInformation;
   _model = target.deviceType.model;
   _name = target.name;
@@ -60,7 +59,6 @@ static NSString *const KeyUDID = @"udid";
 - (NSDictionary<NSString *, id> *)asJSON
 {
   NSMutableDictionary<NSString *, id> *representation = [NSMutableDictionary dictionaryWithDictionary:@{
-    KeyArchitecture : self.architecture ?: NSNull.null,
     KeyModel : self.model ?: NSNull.null,
     KeyName : self.name ?: NSNull.null,
     KeyOSVersion : self.osVersion.name ?: NSNull.null,

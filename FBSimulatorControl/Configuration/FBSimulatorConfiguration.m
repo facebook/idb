@@ -93,10 +93,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@' | Architecture '%@'",
+    @"Device '%@' | OS Version '%@'",
     self.deviceModel,
-    self.osVersionString,
-    self.architecture
+    self.osVersionString
   ];
 }
 
@@ -154,11 +153,6 @@
 - (FBOSVersionName)osVersionString
 {
   return self.os.name;
-}
-
-- (FBArchitecture)architecture
-{
-  return self.device.simulatorArchitecture;
 }
 
 @end

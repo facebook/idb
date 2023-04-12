@@ -480,7 +480,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
          failFuture];
       }
       NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-      NSSet<NSString *> *supportedArchitectures = FBiOSTargetConfiguration.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+      NSSet<NSString *> *supportedArchitectures = [FBiOSTargetConfiguration baseArchsToCompatibleArch:self.simulator.architectures];
       if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
         return [[FBSimulatorError
           describeFormat:

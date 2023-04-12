@@ -65,7 +65,12 @@
 {
   self = [super init];
   if (self) {
-    _architecture = FBArchitectureX86_64;
+    
+#if TARGET_CPU_X86_64
+    _architectures = @[FBArchitectureX86_64];
+#else
+    _architectures = @[FBArchitectureX86_64, FBArchitectureArm64];
+#endif
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 #ifdef DEBUG
     // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there
@@ -238,7 +243,7 @@
 
 #pragma mark - FBiOSTarget
 
-@synthesize architecture = _architecture;
+@synthesize architectures = _architectures;
 @synthesize asyncQueue = _asyncQueue;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize name = _name;
