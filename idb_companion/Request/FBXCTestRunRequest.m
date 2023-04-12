@@ -78,7 +78,8 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     mirroring:FBLogicTestMirrorFileLogs
     coverageConfiguration:coverageConfig
     binaryPath:testDescriptor.testBundle.binary.path
-    logDirectoryPath:logDirectoryPath];
+    logDirectoryPath:logDirectoryPath
+    architectures:testDescriptor.architectures];
 
   return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
 }
