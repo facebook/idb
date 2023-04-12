@@ -228,7 +228,7 @@ class CommonRunXcTestCommand(ClientCommand):
 
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
-        app_bundle_id = args.app_bundle_id if hasattr(args, "app_bundle_id") else None
+        app_bundle_id = getattr(args, "app_bundle_id", None)
         test_host_app_bundle_id = (
             args.test_host_app_bundle_id
             if hasattr(args, "test_host_app_bundle_id")
