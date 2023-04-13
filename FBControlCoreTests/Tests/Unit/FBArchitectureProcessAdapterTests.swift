@@ -16,13 +16,11 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
   let targetQueue = DispatchQueue(label: "test_queue", qos: .userInteractive)
   var tmpDir: FBTemporaryDirectory!
 
-
   override func setUp() {
     tmpDir = .init(logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: true))
     adapter = .init()
     processConfiguration = .init(launchPath: TestFixtures.xctestBinary, arguments: [], environment: [:], io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(), mode: .posixSpawn)
   }
-
 
   override func tearDown() {
     tmpDir.cleanOnExit()
@@ -34,10 +32,8 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
       .adaptProcessConfiguration(processConfiguration, availableArchitectures: [.arm64], compatibleArchitecture: .arm64, queue: targetQueue, temporaryDirectory: tmpdir)
       .await(withTimeout: 10)
 
-
     XCTAssertEqual(process.launchPath, processConfiguration.launchPath)
   }
-
 
   func testX86_64ExtractedOnArchitectureMismatch() throws {
     let tmpdir = tmpDir.temporaryDirectory()
@@ -54,9 +50,7 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
       .adaptProcessConfiguration(processConfiguration, availableArchitectures: [.X86_64], compatibleArchitecture: .arm64, queue: targetQueue, temporaryDirectory: tmpdir)
       .await(withTimeout: 10)
 
-
     let frameworkPath = try XCTUnwrap(process.environment["DYLD_FRAMEWORK_PATH"])
     XCTAssertFalse(frameworkPath.isEmpty)
   }
-
 }
