@@ -22,6 +22,7 @@ from idb.common.format import (
 )
 from idb.common.logging import log_call
 from idb.common.types import (
+    Architecture,
     Companion as CompanionBase,
     ECIDFilter,
     IdbException,
@@ -156,17 +157,25 @@ class CompanionServerConfig:
 
 class Companion(CompanionBase):
     def __init__(
-        self, companion_path: str, device_set_path: Optional[str], logger: Logger
+        self,
+        companion_path: str,
+        device_set_path: Optional[str],
+        logger: Logger,
+        architecture: Architecture = Architecture.ANY,
     ) -> None:
         self._companion_path = companion_path
         self._device_set_path = device_set_path
         self._logger = logger
+        self._architecture = architecture
 
     @asynccontextmanager
     async def _start_companion_command(
         self, arguments: List[str]
     ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
-        cmd: List[str] = [self._companion_path]
+        cmd: List[str] = []
+        if self._architecture != Architecture.ANY:
+            cmd = ["arch", "-" + self._architecture.value]
+        cmd += [self._companion_path]
         device_set_path = self._device_set_path
         if device_set_path is not None:
             cmd.extend(["--device-set-path", device_set_path])
@@ -239,7 +248,10 @@ class Companion(CompanionBase):
                 "Listing available targets on this host and spawning "
                 "companions will not work"
             )
-        arguments: List[str] = (
+        arguments: List[str] = []
+        if self._architecture != Architecture.ANY:
+            arguments = ["arch", "-" + self._architecture.value]
+        arguments += (
             [
                 self._companion_path,
                 "--udid",

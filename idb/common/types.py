@@ -63,6 +63,12 @@ class ECIDFilter:
 OnlyFilter = Union[TargetType, ECIDFilter]
 
 
+class Architecture(Enum):
+    ANY = "any"
+    X86 = "x86_64"
+    ARM64 = "arm64"
+
+
 class VideoFormat(Enum):
     H264 = "h264"
     RBGA = "rbga"
