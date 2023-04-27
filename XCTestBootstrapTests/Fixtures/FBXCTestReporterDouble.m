@@ -75,11 +75,6 @@
   [self.mutableStartedSuites addObject:testSuite];
 }
 
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
-{
-
-}
-
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
   [self.mutableEndedSuites addObject:summary.testSuite];
@@ -140,6 +135,11 @@
 {
   
 }
+
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions {
+  
+}
+
 
 #pragma mark Accessors
 
