@@ -243,6 +243,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertNil(error);
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
   expectedFiles = [NSSet setWithArray:@[
+    @"xctest",
     @"app_custom_set.crash",
     @"tree.json",
     @"app_default_set.crash",
@@ -454,6 +455,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertNil(error);
   XCTAssertEqualObjects(expectedFiles, [NSSet setWithArray:actualFiles]);
   expectedFiles = [NSSet setWithArray:@[
+    @"xctest",
     @"app_custom_set.crash",
     @"tree.json",
     @"app_default_set.crash",

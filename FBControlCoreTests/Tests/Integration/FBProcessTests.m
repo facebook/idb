@@ -467,7 +467,7 @@
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateFailed);
   XCTAssertEqual(process.signal.state, FBFutureStateDone);
-  XCTAssertEqual(process.signal.result, @(SIGKILL));
+  XCTAssertEqual(process.signal.result.intValue, SIGKILL);
 
   success = [process.statLoc await:&error] != nil;
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
