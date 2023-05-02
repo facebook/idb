@@ -15,38 +15,35 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBArchitectureProcessAdapter : NSObject
 
-/// This approach forcing binaries to be launched in desired architectures.
+/// Force binaries to be launched in desired architectures.
 ///
-/// By default subprocess spawned by companion has the same architecture as companion itself.
-/// To force subprocess being spawned in other architecture, there is `arch` utility that does not work in simulator context.
-/// As a workaround, we lipo desired architecture out of the test binary.
-/// For example, if idb companion is `arm64`, but test binary is `x86_64`, we need to spawn `x86_64` subprocess.
-/// But `xctest` binary that wraps test execution has both `x86_64` and `arm64` and when we launch it, it catches companion's `arm64` architecture
-/// and as a result, can not open test binary inside itself because of mismatched architecture. To address that problem, we lipoing out only `x86_64` arch from `xctest`
-/// and spawning it, making tests work as expected.
-/// - Parameters:
-///   - processConfiguration: Initial process configuration
-///   - architectures: Available architectures of binary under test
-///   - queue: Target Queue
-///   - temporaryDirectory: Target directory where we put lipoed binary
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration availableArchitectures:(NSSet<FBArchitecture> *)architectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
+/// Convenience method for `-[FBArchitectureProcessAdapter adaptProcessConfiguration:toAnyArchitectureIn:hostArchitectures:queue:temporaryDirectory:]`
+-(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
 
-/// This approach forcing binaries to be launched in desired architectures.
-/// 
-/// By default subprocess spawned by companion has the same architecture as companion itself.
+/// Force binaries to be launched in desired architectures.
+///
+/// Up to Xcode 14.2, subprocesses were spawned in the same architecture as parent process by default.
+/// But from Xcode 14.3, subprocesses are spawned in arm64 when running on a arm64, regardless of parent process architecture.
 /// To force subprocess being spawned in other architecture, there is `arch` utility that does not work in simulator context.
-/// As a workaround, we lipo desired architecture out of the test binary.
-/// For example, if idb companion is `arm64`, but test binary is `x86_64`, we need to spawn `x86_64` subprocess.
-/// But `xctest` binary that wraps test execution has both `x86_64` and `arm64` and when we launch it, it catches companion's `arm64` architecture
-/// and as a result, can not open test binary inside itself because of mismatched architecture. To address that problem, we lipoing out only `x86_64` arch from `xctest`
-/// and spawning it, making tests work as expected.
+///
+/// As a workaround, to bring predictability into which architecture spawned process will be spawned,
+/// we lipo-thin the executable to an architecture supported by the host machine.
+///
+/// The selection of the final architecture is done by comparing consiliating the architectures idb companion needs
+/// the process to run with (often dictactated by the architecture of the binary code we want to inject into
+/// the spawned process) and the architectures supported by the processor of the host machine.
+///
+/// As an example, on an arm64 machine, when idb companion needs to inject an x86_64 lib into a process that could
+/// run in either x86_64 or arm64, the target process needs to be thinned down to `x86_64` to ensure it runs in the
+/// same of the lib that needs to be injected.
+///
 /// - Parameters:
 ///   - processConfiguration: Initial process configuration
-///   - architectures: Available architectures of binary under test
-///   - compatibleArchitecture: Architecture that binary will be lipoed to if available architectures do not contain one
+///   - toAnyArchitectureIn: Set of architectures the process needs to be spawned with. `arm64` will take precedence over `x86_64`
 ///   - queue: Target Queue
+///   - hostArchitectures: Set of architectures supported by the host machine
 ///   - temporaryDirectory: Target directory where we put lipoed binary
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration availableArchitectures:(NSSet<FBArchitecture> *)architectures compatibleArchitecture:(FBArchitecture)compatibleArchitecture queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
+-(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)architectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
 
 @end
 
