@@ -321,7 +321,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   
   // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
   // For more information look at `FBArchitectureProcessAdapter` docs.
-  return [[[adapter adaptProcessConfiguration:configuration availableArchitectures:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]
+  return [[[adapter adaptProcessConfiguration:configuration toAnyArchitectureIn:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]
            onQueue:queue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
     return [self.target launchProcess:mappedConfiguration];
   }]

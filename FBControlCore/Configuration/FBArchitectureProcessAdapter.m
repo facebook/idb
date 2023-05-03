@@ -8,23 +8,60 @@
 #import "FBArchitectureProcessAdapter.h"
 
 #import "FBProcessSpawnConfiguration.h"
+#import "FBCollectionInformation.h"
 #import "FBArchitecture.h"
 #import "FBProcessBuilder.h"
 #import "FBFuture.h"
 #import "FBControlCoreError.h"
+#import <mach-o/arch.h>
+#include <sys/sysctl.h>
+
+
+// https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment#Determine-Whether-Your-App-Is-Running-as-a-Translated-Binary
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+static int processIsTranslated(void)
+{
+   int ret = 0;
+   size_t size = sizeof(ret);
+   // patternlint-disable-next-line prefer-metasystemcontrol-byname
+   if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1)
+   {
+      if (errno == ENOENT)
+         return 0;
+      return -1;
+   }
+   return ret;
+}
+#pragma clang diagnostic pop
 
 @implementation FBArchitectureProcessAdapter
 
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration availableArchitectures:(NSSet<FBArchitecture> *)architectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
-  return [self adaptProcessConfiguration:processConfiguration availableArchitectures:architectures compatibleArchitecture:[self currentCompanionArchitecture] queue:queue temporaryDirectory:temporaryDirectory];
+-(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
+  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[self hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
 }
 
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration availableArchitectures:(NSSet<FBArchitecture> *)architectures compatibleArchitecture:(FBArchitecture)compatibleArchitecture queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
-  // We should not do any shenanigans if architectures match.
-  if (![self shouldExtractBinaryDesiredArchitecture:architectures compatibleArchitecture:compatibleArchitecture]) {
-    return [FBFuture futureWithResult:processConfiguration];
+- (nullable FBArchitecture)selectArchitectureFrom:(NSSet<FBArchitecture> *)requestedArchitectures supportedArchitectures:(NSSet<FBArchitecture> *)supportedArchitectures
+{
+
+  if([requestedArchitectures containsObject:FBArchitectureArm64] && [supportedArchitectures containsObject:FBArchitectureArm64]) {
+    return FBArchitectureArm64;
   }
-  FBArchitecture architecture = [self getDesiredBinaryArchitecture];
+
+  if([requestedArchitectures containsObject:FBArchitectureX86_64] && [supportedArchitectures containsObject:FBArchitectureX86_64]) {
+    return FBArchitectureX86_64;
+  }
+  return nil;
+}
+
+-(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
+  FBArchitecture architecture = [self selectArchitectureFrom:requestedArchitectures supportedArchitectures:hostArchitectures];
+  if (!architecture) {
+    return [[FBControlCoreError
+             describeFormat:@"Could not select an architecture from %@ compatible with %@", [FBCollectionInformation oneLineDescriptionFromArray:requestedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:hostArchitectures.allObjects]
+            ] failFuture];
+  }
+
   return [[[self verifyArchitectureAvailable:processConfiguration.launchPath architecture:architecture queue:queue]
            onQueue:queue fmap:^FBFuture *(NSNull * _) {
     NSString *fileName = [[[[processConfiguration.launchPath lastPathComponent] stringByAppendingString:[[NSUUID new] UUIDString]] stringByAppendingString:@"."] stringByAppendingString:architecture];
@@ -117,7 +154,7 @@
 -(NSSet<NSString *> *)extractRpathsFromOtoolOutput:(NSString *)otoolOutput {
   NSArray<NSString *> *lines = [otoolOutput componentsSeparatedByString: @"\n"];
   NSMutableSet<NSString *> *result = [NSMutableSet new];
-  
+
   // Rpath entry looks like:
   // ```
   // Load command 19
@@ -127,11 +164,11 @@
   // ```
   // So if we found occurence of `cmd LC_RPATH` rpath value will be two lines below.
   NSUInteger lcRpathValueOffset = 2;
-  
+
   [lines enumerateObjectsUsingBlock:^(NSString *line, NSUInteger index, BOOL *_) {
     if ([self isLcPathDefinitionLine:line] && index + lcRpathValueOffset < lines.count) {
       NSString *rpathLine = lines[index + lcRpathValueOffset];
-      
+
       NSString *rpath = [self extractRpathValueFromLine:rpathLine];
       if (rpath) {
         [result addObject:rpath];
@@ -168,30 +205,19 @@
   return nil;
 }
 
--(bool)shouldExtractBinaryDesiredArchitecture:(NSSet<FBArchitecture> *)architectures compatibleArchitecture:(FBArchitecture)compatibleArchitecture {
-  return ![architectures containsObject:compatibleArchitecture];
-}
-
-/// We can only run either x86_64 or arm64 logic tests.
-/// Possible situations:
-/// 1. Bundle architectures contain companion's architecture. This check happens higher and stack and we do nothing.
-/// 2. Companion is arm64, there is no arm64 in binary => we want x86_64, because arm64 can launch x86_64 under rosetta
-/// 3. Companion is x86_64, there is no x86_64 in binary => we still can be on M1 machine and can launch arm64 binary.
-///   Note that we validata available architectures in `xctest` binary too, so if we on Intel machine we will throw "no arm64 arch in xctest" down the stack
--(FBArchitecture)getDesiredBinaryArchitecture {
+-(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
 #if TARGET_CPU_X86_64
-  return FBArchitectureArm64;
+  int isTranslated = processIsTranslated();
+  if (isTranslated == 1) {
+    // Companion running as x86_64 with translation (Rosetta) -> Processor supports Arm64 and x86_64
+    return [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureX86_64]];
+  } else {
+    // Companion running as x86_64 and translation is disabled or unknown
+    // Assuming processor only supports x86_64 even if translation state is unknown
+    return [NSSet setWithArray:@[FBArchitectureX86_64]];
+  }
 #else
-  return FBArchitectureX86_64;
-#endif
-}
-
--(FBArchitecture)currentCompanionArchitecture {
-// It is either arm or x86_64 for companion
-#if TARGET_CPU_X86_64
-  return FBArchitectureX86_64;
-#else
-  return FBArchitectureArm64;
+  return [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureX86_64]];
 #endif
 }
 
