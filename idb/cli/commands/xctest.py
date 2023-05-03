@@ -38,10 +38,19 @@ class XctestInstallCommand(ClientCommand):
         parser.add_argument(
             "test_bundle_path", help="Bundle path of the test bundle", type=str
         )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        async for install_response in client.install_xctest(args.test_bundle_path):
+        async for install_response in client.install_xctest(
+            args.test_bundle_path, args.skip_signing_bundles
+        ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
             elif args.json:
@@ -203,6 +212,13 @@ class CommonRunXcTestCommand(ClientCommand):
             const=NO_SPECIFIED_PATH,
             help="Install debug symbols together with bundle. Specify path for debug symbols; otherwise, we'll try to infer it. (requires --install)",
         )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -266,7 +282,9 @@ class CommonRunXcTestCommand(ClientCommand):
             print(formatter(test_result))
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
-        async for test in client.install_xctest(args.test_bundle_id):
+        async for test in client.install_xctest(
+            args.test_bundle_id, args.skip_signing_bundles
+        ):
             args.test_bundle_id = test.name
 
     async def install_dsym_test_bundle(

@@ -366,6 +366,7 @@ class Client(ClientBase):
         bundle_id: Optional[str],
         bundle_type: Optional[FileContainerType],
         override_modification_time: Optional[bool] = None,
+        skip_signing_bundles: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -413,6 +414,10 @@ class Client(ClientBase):
                     InstallRequest(
                         override_modification_time=override_modification_time
                     )
+                )
+            if skip_signing_bundles is not None:
+                await stream.send_message(
+                    InstallRequest(skip_signing_bundles=skip_signing_bundles)
                 )
             if compression is not None:
                 await stream.send_message(
@@ -695,7 +700,11 @@ class Client(ClientBase):
             yield response
 
     @log_and_handle_exceptions("install")
-    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install_xctest(
+        self,
+        xctest: Bundle,
+        skip_signing_bundles: Optional[bool] = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=xctest,
             destination=InstallRequest.XCTEST,
@@ -703,6 +712,7 @@ class Client(ClientBase):
             make_debuggable=None,
             bundle_id=None,
             bundle_type=None,
+            skip_signing_bundles=skip_signing_bundles,
         ):
             yield response
 

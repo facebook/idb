@@ -461,7 +461,7 @@ class TestParser(TestCase):
         self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
         test_bundle_path = "testBundle.xctest"
         await cli_main(cmd_input=["xctest", "install", test_bundle_path])
-        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path)
+        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, None)
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
@@ -495,6 +495,7 @@ class TestParser(TestCase):
         namespace.install = False
         namespace.companion_tls = False
         namespace.install_dsym_test_bundle = None
+        namespace.skip_signing_bundles = None
         return namespace
 
     async def test_xctest_run_app(self) -> None:

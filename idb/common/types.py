@@ -506,7 +506,7 @@ class Client(ABC):
 
     @abstractmethod
     async def install_xctest(
-        self, xctest: Union[str, IO[bytes]]
+        self, xctest: Union[str, IO[bytes]], skip_signing_bundles: Optional[bool] = None
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
