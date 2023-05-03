@@ -155,6 +155,11 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 
 - (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle
 {
+    return [self saveBundle:bundle skipSigningBundles:NO];
+}
+
+- (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle skipSigningBundles:(BOOL)skipSigningBundles
+{
   // Check that the bundle matches the architecture of the target.
   NSError *error = nil;
   if (![self checkArchitecture:bundle error:&error]) {
@@ -177,7 +182,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid path:destinationBundlePath];
-  if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned]) {
+  if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned] || skipSigningBundles) {
     return [FBFuture futureWithResult:artifact];
   }
   bundle = [FBBundleDescriptor bundleFromPath:destinationBundlePath.path error:&error];
@@ -258,7 +263,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 #pragma mark Public
 
-- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory skipSigningBundles:(BOOL)skipSigningBundles
 {
   // Find .xctest or .xctestrun in directory.
   NSError *error = nil;
@@ -287,7 +292,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
 
   if (xctestBundleURL) {
-    return [self saveTestBundle:xctestBundleURL];
+    return [self saveTestBundle:xctestBundleURL skipSigningBundles:skipSigningBundles];
   }
   if (xctestrunURL) {
     return [self saveTestRun:xctestrunURL];
@@ -297,11 +302,11 @@ static NSString *const XctestRunExtension = @"xctestrun";
     failFuture];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath skipSigningBundles:(BOOL)skipSigningBundles
 {
   // save .xctest or .xctestrun
   if ([filePath.pathExtension isEqualToString:XctestExtension]) {
-    return [self saveTestBundle:filePath];
+    return [self saveTestBundle:filePath skipSigningBundles:skipSigningBundles];
   }
   if ([filePath.pathExtension isEqualToString:XctestRunExtension]) {
     return [self saveTestRun:filePath];
@@ -505,7 +510,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xctestrunURL name:testTarget testBundle:testBundle testHostBundle:testHostBundle];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL
+- (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL skipSigningBundles:(BOOL)skipSigningBundles
 {
   // Test Bundles don't always have a bundle id, so fallback to another name if it's not there.
   NSError *error = nil;
@@ -513,7 +518,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
-  return [self saveBundle:bundle];
+  return [self saveBundle:bundle skipSigningBundles:skipSigningBundles];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)saveTestRun:(NSURL *)XCTestRunURL
