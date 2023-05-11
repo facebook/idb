@@ -72,7 +72,10 @@ static int processIsTranslated(void)
     return [[self getFixedupDyldFrameworkPathFromOriginalBinary:processConfiguration.launchPath queue:queue]
             onQueue:queue map:^FBProcessSpawnConfiguration *(NSString *dyldFrameworkPath) {
       NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [processConfiguration.environment mutableCopy];
+      // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framewosk"s in binary
+      // DYLD_LIBRARY_PATH adds additional search paths for required "*.dyld"s in binary
       [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_FRAMEWORK_PATH"];
+      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_LIBRARY_PATH"];
       return [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:extractedBinary arguments:processConfiguration.arguments environment:updatedEnvironment io:processConfiguration.io mode:processConfiguration.mode];
     }];
   }];
