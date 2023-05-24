@@ -146,7 +146,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   
   if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
-             describeFormat:@"The supported archiectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]
+             describeFormat:@"The supported architectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]
             failBool:error];
   }
   
