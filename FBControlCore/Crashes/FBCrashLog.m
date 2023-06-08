@@ -85,7 +85,7 @@
 }
 
 + (id<FBCrashLogParser>)getPreferredCrashLogParserForCrashString:(NSString *)crashString {
-  if ([crashString characterAtIndex:0] == '{') {
+  if (crashString.length > 0 && [crashString characterAtIndex:0] == '{') {
     return [[FBConcatedJSONCrashLogParser alloc] init];
   } else {
     return [[FBPlainTextCrashLogParser alloc] init];
