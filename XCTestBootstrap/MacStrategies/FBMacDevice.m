@@ -450,13 +450,20 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
+  NSError *error = nil;
+  FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:bundlePath error:&error];
+  if (!bundleDescriptor) {
+    return [FBFuture futureWithError:error];
+  }
+  
   FBListTestConfiguration *configuration = [FBListTestConfiguration
     configurationWithEnvironment:@{}
     workingDirectory:self.auxillaryDirectory
     testBundlePath:bundlePath
     runnerAppPath:appPath
     waitForDebugger:NO
-    timeout:timeout];
+    timeout:timeout
+    architectures:bundleDescriptor.binary.architectures];
 
   return [[[FBListTestStrategy alloc]
     initWithTarget:self
