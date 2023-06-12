@@ -38,7 +38,7 @@ static int processIsTranslated(void)
 @implementation FBArchitectureProcessAdapter
 
 -(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
-  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[self hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
+  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
 }
 
 - (nullable FBArchitecture)selectArchitectureFrom:(NSSet<FBArchitecture> *)requestedArchitectures supportedArchitectures:(NSSet<FBArchitecture> *)supportedArchitectures
@@ -208,7 +208,7 @@ static int processIsTranslated(void)
   return nil;
 }
 
--(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
++(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
 #if TARGET_CPU_X86_64
   int isTranslated = processIsTranslated();
   if (isTranslated == 1) {

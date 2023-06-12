@@ -66,11 +66,7 @@
   self = [super init];
   if (self) {
     
-#if TARGET_CPU_X86_64
-    _architectures = @[FBArchitectureX86_64];
-#else
-    _architectures = @[FBArchitectureX86_64, FBArchitectureArm64];
-#endif
+    _architectures = [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 #ifdef DEBUG
     // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there

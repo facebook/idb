@@ -45,6 +45,10 @@ NS_ASSUME_NONNULL_BEGIN
 ///   - temporaryDirectory: Target directory where we put lipoed binary
 -(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)architectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
 
+
+/// Returns supported architectures based on companion launch architecture and launch under rosetta determination.
++(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures;
+
 @end
 
 NS_ASSUME_NONNULL_END
