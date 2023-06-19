@@ -74,7 +74,24 @@
       describe:@"No crash path provided"]
       fail:error];
   }
-  NSString *crashString = [[NSString alloc] initWithContentsOfFile:crashPath encoding:NSUTF8StringEncoding error:error];
+  if (![NSFileManager.defaultManager fileExistsAtPath:crashPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"File does not exist at given crash path: %@", crashPath]
+      fail:error];
+  }
+  if (![NSFileManager.defaultManager isReadableFileAtPath:crashPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"Crash file at %@ is not readable", crashPath]
+      fail:error];
+  }
+  NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
+  if (!crashFileData || error || crashFileData.length == 0) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not extract data from %@", crashPath]
+      fail:error];
+  }
+
+  NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
   if (!crashString) {
     return [[FBControlCoreError
       describeFormat:@"Could not extract string from %@", crashPath]
