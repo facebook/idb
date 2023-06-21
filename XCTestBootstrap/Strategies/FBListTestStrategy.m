@@ -211,6 +211,8 @@
   NSString *launchPath = xctestPath;
   NSTimeInterval timeout = configuration.testTimeout;
 
+    
+  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
     // Since we're loading the test bundle in app binary's process without booting a simulator,
@@ -236,20 +238,25 @@
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
     launchPath = appBundle.binary.path;
-  }
-
-  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
-  FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
-
-  FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
+    FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    return [FBListTestStrategy listTestProcessWithSpawnConfiguration:spawnConfiguration onTarget:target timeout:timeout logger:logger];
     
-  // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
-  // For more information look at `FBArchitectureProcessAdapter` docs.
-  return [[[adapter adaptProcessConfiguration:spawnConfiguration toAnyArchitectureIn:configuration.architectures queue:target.workQueue temporaryDirectory:temporaryDirectory]
-           onQueue:target.workQueue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
-    return [target launchProcess:mappedConfiguration];
-  }]
-          onQueue:target.workQueue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
+  } else {
+    FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
+    
+    // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
+    // For more information look at `FBArchitectureProcessAdapter` docs.
+    return [[adapter adaptProcessConfiguration:spawnConfiguration toAnyArchitectureIn:configuration.architectures queue:target.workQueue temporaryDirectory:temporaryDirectory]
+            onQueue:target.workQueue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
+      return [FBListTestStrategy listTestProcessWithSpawnConfiguration:mappedConfiguration onTarget:target timeout:timeout logger:logger];
+    }];
+  }
+}
+
++(FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithSpawnConfiguration:(FBProcessSpawnConfiguration *)spawnConfiguration onTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target timeout:(NSTimeInterval )timeout logger:(id<FBControlCoreLogger>)logger
+{
+  return [[target launchProcess:spawnConfiguration] onQueue:target.workQueue map:^id _Nonnull(FBProcess * _Nonnull process) {
     return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
   }];
 }
