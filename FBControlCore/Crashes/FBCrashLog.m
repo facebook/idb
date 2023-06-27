@@ -85,10 +85,14 @@
       fail:error];
   }
   NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
-  if (!crashFileData || error || crashFileData.length == 0) {
+  if (!crashFileData) {
     return [[FBControlCoreError
-      describeFormat:@"Could not extract data from %@", crashPath]
+      describeFormat:@"Could not read data from %@", crashPath]
       fail:error];
+  } else if (crashFileData.length == 0) {
+      return [[FBControlCoreError
+        describeFormat:@"Crash file at %@ is empty", crashPath]
+        fail:error];
   }
 
   NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
