@@ -68,18 +68,12 @@
     
     _architectures = [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-#ifdef DEBUG
-    // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there
-    _auxillaryDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"idb-debug"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
-#else
     NSString *explicitTmpDirectory = NSProcessInfo.processInfo.environment[@"IDB_MAC_AUXILLIARY_DIR"];
     if (explicitTmpDirectory) {
       _auxillaryDirectory = [[explicitTmpDirectory stringByAppendingPathComponent:@"idb-mac-aux"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     } else {
-      _auxillaryDirectory = [[NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:@"idb-mac-cwd"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+      _auxillaryDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"idb-mac-cwd"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     }
-
-#endif
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _udid = [FBMacDevice resolveDeviceUDID];
