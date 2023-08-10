@@ -20,7 +20,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 #pragma mark Initializers
 
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate keyFrameRate:(nullable NSNumber *) keyFrameRate
 {
   self = [super init];
   if (!self) {
@@ -32,6 +32,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
   _compressionQuality = compressionQuality ?: @0.2;
   _scaleFactor = scaleFactor;
   _avgBitrate = avgBitrate;
+  _keyFrameRate = keyFrameRate ?: @10.0;
 
   return self;
 }
@@ -56,23 +57,25 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
       && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond])
       && (self.compressionQuality == object.compressionQuality || [self.compressionQuality isEqualToNumber:object.compressionQuality])
       && (self.scaleFactor == object.scaleFactor || [self.scaleFactor isEqualToNumber:object.scaleFactor])
-      && (self.avgBitrate == object.avgBitrate || [self.avgBitrate isEqualToNumber:object.avgBitrate]);
+      && (self.avgBitrate == object.avgBitrate || [self.avgBitrate isEqualToNumber:object.avgBitrate])
+      && (self.keyFrameRate == object.keyFrameRate || [self.keyFrameRate isEqualToNumber:object.keyFrameRate]);
 }
 
 - (NSUInteger)hash
 {
-  return self.encoding.hash ^ self.framesPerSecond.hash ^ self.compressionQuality.hash ^ self.scaleFactor.hash ^ self.avgBitrate.hash;
+  return self.encoding.hash ^ self.framesPerSecond.hash ^ self.compressionQuality.hash ^ self.scaleFactor.hash ^ self.avgBitrate.hash ^ self.keyFrameRate.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Encoding %@ | FPS %@ | Quality %@ | Scale %@ | Avg Bitrate %@",
+    @"Encoding %@ | FPS %@ | Quality %@ | Scale %@ | Avg Bitrate %@ | Key frame rate %@",
     self.encoding,
     self.framesPerSecond,
     self.compressionQuality,
     self.scaleFactor,
-    self.avgBitrate
+    self.avgBitrate,
+    self.keyFrameRate
   ];
 }
 

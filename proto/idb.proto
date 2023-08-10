@@ -463,6 +463,7 @@ message VideoStreamRequest {
     double compression_quality = 4;
     double scale_factor = 5;
     double avg_bitrate = 6;
+    double key_frame_rate = 7;
   }
   message Stop {}
   oneof control {
