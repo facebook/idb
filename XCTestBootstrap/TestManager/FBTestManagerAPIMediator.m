@@ -155,7 +155,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     onQueue:queue fmap:^(NSNull *_) {
       // The bundle has disconnected at this point, but we also need to terminate any processes
       // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
-      return [[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated];
+      return [[[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated] cancel];
     }]
     onQueue:queue timeout:timeout handler:^{
       // The timeout is applied to the lifecycle of the entire application.
