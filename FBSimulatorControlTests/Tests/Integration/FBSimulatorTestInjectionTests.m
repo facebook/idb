@@ -106,6 +106,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -143,6 +144,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -168,6 +170,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -256,7 +259,7 @@
 
 - (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
 {
-  
+
 }
 
 

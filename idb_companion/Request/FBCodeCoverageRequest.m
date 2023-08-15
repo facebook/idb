@@ -9,16 +9,16 @@
 
 @implementation FBCodeCoverageRequest
 
-- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format
+- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format coverageFileSuffix:(nonnull NSString *)coverageFileSuffix
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  
+
   _collect = collect;
   _format = format;
-
+  _coverageFileSuffix = coverageFileSuffix;
   return self;
 }
 

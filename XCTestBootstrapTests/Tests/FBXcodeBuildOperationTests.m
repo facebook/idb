@@ -46,6 +46,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 

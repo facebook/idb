@@ -179,12 +179,13 @@
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
       hostApplicationAdditionalEnvironment[kEnv_WaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? @"YES" : @"NO";
       if (testLaunchConfiguration.coverageDirectoryPath) {
-        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
+        NSString *coverageFileSuffix = testLaunchConfiguration.coverageFileSuffix;
+        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", hostApplication.bundle.identifier, coverageFileSuffix];
         NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];
         hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = hostCoveragePath;
 
         if (testLaunchConfiguration.targetApplicationBundle != nil) {
-          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier];
+          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier, coverageFileSuffix];
           NSString *targetAppCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:targetCoverageFile];
           testedApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = targetAppCoveragePath;
         }

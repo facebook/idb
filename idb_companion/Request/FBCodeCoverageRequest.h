@@ -27,7 +27,12 @@ NS_ASSUME_NONNULL_BEGIN
 */
 @property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
 
-- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format;
+/**
+ Suffix of the coverage file
+ */
+@property (nonatomic, strong, readonly) NSString *coverageFileSuffix;
+
+- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format coverageFileSuffix:(NSString *)coverageFileSuffix;
 
 @end
 

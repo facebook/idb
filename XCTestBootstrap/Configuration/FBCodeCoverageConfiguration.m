@@ -10,22 +10,23 @@
 
 @implementation FBCodeCoverageConfiguration
 
--(instancetype) initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format
+-(instancetype) initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format coverageFileSuffix:(NSString *)coverageFileSuffix
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  
+
   _coverageDirectory = coverageDirectory;
   _format = format;
+  _coverageFileSuffix = coverageFileSuffix;
 
   return self;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Coverage Directory %@ | Format %lu", self.coverageDirectory, (unsigned long)self.format];
+  return [NSString stringWithFormat:@"Coverage Directory %@ | Format %lu | File Suffix '%@'", self.coverageDirectory, (unsigned long)self.format, self.coverageFileSuffix];
 }
 
 

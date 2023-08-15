@@ -29,7 +29,12 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
 */
 @property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
 
-- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format;
+/**
+ Suffix of the coverage file
+ */
+@property (nonatomic, strong, readonly) NSString *coverageFileSuffix;
+
+- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format coverageFileSuffix:(NSString *)coverageFileSuffix;
 
 @end
 

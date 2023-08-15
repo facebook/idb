@@ -71,6 +71,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 }
@@ -91,6 +92,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    coverageFileSuffix:nil
     logDirectoryPath:nil
     reportResultBundle:NO];
 }

@@ -96,12 +96,12 @@ struct XCTestRunMethodHandler {
     if request.hasCodeCoverage {
       switch request.codeCoverage.format {
       case .raw:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw)
+        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw, coverageFileSuffix: request.codeCoverage.coverageFileSuffix)
       case .exported, .UNRECOGNIZED:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported)
+        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported, coverageFileSuffix: request.codeCoverage.coverageFileSuffix)
       }
     }
     // fallback to deprecated request field for backwards compatibility
-    return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported)
+    return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported, coverageFileSuffix: request.codeCoverage.coverageFileSuffix)
   }
 }
