@@ -15,6 +15,7 @@
 #import "XCTestBootstrapError.h"
 #import "FBListTestStrategy.h"
 #import "FBXCTestConfiguration.h"
+#import "FBMacLaunchedApplication.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
 - (void)_XCT_requestConnectedSocketForTransport:(void (^)(NSFileHandle *, NSError *))arg1;
@@ -339,7 +340,7 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (FBFuture<FBProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBMacLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
@@ -352,10 +353,14 @@
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ FBProcess * (FBProcess *task) {
+    onQueue:self.workQueue map:^ FBMacLaunchedApplication* (FBProcess *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
-      return task;
-    }];
+      return [[FBMacLaunchedApplication alloc]
+       initWithBundleID:bundle.identifier
+       processIdentifier:task.processIdentifier
+       device:self
+       queue:self.workQueue];
+  }];
 }
 
 - (nonnull FBFuture<NSDictionary<NSString *,FBProcessInfo *> *> *)runningApplications
