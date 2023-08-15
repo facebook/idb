@@ -180,6 +180,10 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Outputs code coverage information. See --coverage-format option.",
         )
         parser.add_argument(
+            "--coverage-file-suffix",
+            help="Suffix of the (.profraw) coverage file.",
+        )
+        parser.add_argument(
             "--coverage-format",
             choices=[str(key) for (key, _) in CodeCoverageFormat.__members__.items()],
             default="EXPORTED",
@@ -275,6 +279,7 @@ class CommonRunXcTestCommand(ClientCommand):
             report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
+            coverage_file_suffix=args.coverage_file_suffix,
             coverage_format=coverage_format,
             log_directory_path=args.log_directory_path,
             wait_for_debugger=args.wait_for_debugger,

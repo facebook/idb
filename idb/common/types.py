@@ -472,6 +472,7 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        coverage_file_suffix: Optional[str] = None,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,

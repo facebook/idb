@@ -489,6 +489,7 @@ class TestParser(TestCase):
         namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.coverage_file_suffix = None
         namespace.coverage_format = "EXPORTED"
         namespace.log_directory_path = None
         namespace.wait_for_debugger = False
