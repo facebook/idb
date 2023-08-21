@@ -315,12 +315,12 @@ static NSTimeInterval CrashCheckWaitLimit = 60;  // Time to wait for crash repor
     onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
       FBCrashLog *crashLog = future.result;
       if (!crashLog) {
-        return [[[XCTestBootstrapError
+        return [[[FBXCTestError
           describe:notFoundErrorDescription]
           code:XCTestBootstrapErrorCodeLostConnection]
           failFuture];
       }
-      return [[XCTestBootstrapError
+      return [[FBXCTestError
         describeFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]
         failFuture];
     }] mapReplace:NSNull.null];
