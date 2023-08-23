@@ -482,6 +482,8 @@
 		DB15123829E5C54800A7C0A9 /* xctest in Resources */ = {isa = PBXBuildFile; fileRef = DB15123729E5C54800A7C0A9 /* xctest */; };
 		DB1B3C8929DD9F1F003695C4 /* FBArchitectureProcessAdapter.h in Headers */ = {isa = PBXBuildFile; fileRef = DB1B3C8629DD9D75003695C4 /* FBArchitectureProcessAdapter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DB1B3C8B29DD9F36003695C4 /* FBArchitectureProcessAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = DB1B3C8A29DD9F36003695C4 /* FBArchitectureProcessAdapter.m */; };
+		DB22F7072A8FBC7400695320 /* FBMacLaunchedApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */; };
+		DB22F7082A8FBC7400695320 /* FBMacLaunchedApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */; };
 		DB523BF4297199A10005D7AE /* FBExceptionInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = DB523BF0297199A10005D7AE /* FBExceptionInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DB523BF5297199A10005D7AE /* FBExceptionInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = DB523BF3297199A10005D7AE /* FBExceptionInfo.m */; };
 		DB5F4876281079AD000FC7C7 /* FBConcatedJsonParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */; };
@@ -1283,6 +1285,8 @@
 		DB15123729E5C54800A7C0A9 /* xctest */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = xctest; sourceTree = "<group>"; };
 		DB1B3C8629DD9D75003695C4 /* FBArchitectureProcessAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBArchitectureProcessAdapter.h; sourceTree = "<group>"; };
 		DB1B3C8A29DD9F36003695C4 /* FBArchitectureProcessAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBArchitectureProcessAdapter.m; sourceTree = "<group>"; };
+		DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBMacLaunchedApplication.h; sourceTree = "<group>"; };
+		DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacLaunchedApplication.m; sourceTree = "<group>"; };
 		DB523BF0297199A10005D7AE /* FBExceptionInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBExceptionInfo.h; sourceTree = "<group>"; };
 		DB523BF3297199A10005D7AE /* FBExceptionInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBExceptionInfo.m; sourceTree = "<group>"; };
 		DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FBConcatedJsonParserTests.swift; sourceTree = "<group>"; };
@@ -2452,6 +2456,8 @@
 		EE2586F61FB0727000E7526E /* MacStrategies */ = {
 			isa = PBXGroup;
 			children = (
+				DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */,
+				DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */,
 				EE2586EF1FB06D9C00E7526E /* FBMacDevice.h */,
 				EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */,
 			);
@@ -2855,6 +2861,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */,
+				DB22F7072A8FBC7400695320 /* FBMacLaunchedApplication.h in Headers */,
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
 				EE48229D1FBD91C500AAA56E /* FBManagedTestRunStrategy.h in Headers */,
 				AA7414F01CE3102F00C9641D /* FBTestBundleConnection.h in Headers */,
@@ -3499,6 +3506,7 @@
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
 				D7E70C132440A2B40092422C /* FBAttachment.m in Sources */,
 				EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */,
+				DB22F7082A8FBC7400695320 /* FBMacLaunchedApplication.m in Sources */,
 				AAFD455725E54161001407CC /* FBTestConfiguration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
