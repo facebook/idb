@@ -288,9 +288,10 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
     if (error) {
       [self.logger logFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error];
       [future resolveWithError:error];
+      return;
     }
+    [self.logger logFormat:@"testmanagerd handled session request using protocol version requested=%ld received=%ld", FBProtocolVersion, version.longValue];
     [future resolveWithResult:version];
-    [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
   }];
 
   return [future timeout:DaemonSessionReadyTimeout waitingFor:@"%@ to be resolved", sessionStartMethod];
