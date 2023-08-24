@@ -18,8 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestExtendedCommands;
 @protocol FBXCTestReporter;
 
-extern const NSInteger FBProtocolVersion;
-extern const NSInteger FBProtocolMinimumVersion;
 
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.

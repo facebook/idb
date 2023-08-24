@@ -29,6 +29,9 @@ static NSTimeInterval BundleReadyTimeout = 60; // Time for `_XCT_testBundleReady
 static NSTimeInterval IDEInterfaceReadyTimeout = 60; // Time for `XCTestManager_IDEInterface` to be returned.
 static NSTimeInterval DaemonSessionReadyTimeout = 60; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
 static NSTimeInterval CrashCheckWaitLimit = 60;  // Time to wait for crash report to be generated.
+static const NSInteger FBProtocolVersion = 0x16;
+static const NSInteger FBProtocolMinimumVersion = 0x8;
+
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"

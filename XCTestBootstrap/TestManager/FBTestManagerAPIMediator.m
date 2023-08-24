@@ -31,9 +31,6 @@
 #import "FBXCTestReporter.h"
 
 
-const NSInteger FBProtocolVersion = 0x16;
-const NSInteger FBProtocolMinimumVersion = 0x8;
-
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
