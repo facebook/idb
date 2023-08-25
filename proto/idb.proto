@@ -694,7 +694,7 @@ message XctestRunRequest {
     }
     bool collect = 1;
     Format format = 2;
-    string coverage_file_suffix = 3;
+    bool enable_continuous_coverage_collection = 3;
   }
   Mode mode = 1;
   string test_bundle_id = 2;

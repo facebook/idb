@@ -111,7 +111,7 @@ def make_request(
     report_activities: bool,
     report_attachments: bool,
     collect_coverage: bool,
-    coverage_file_suffix: Optional[str],
+    enable_continuous_coverage_collection: bool,
     coverage_format: CodeCoverageFormat,
     collect_logs: bool,
     wait_for_debugger: bool,
@@ -134,7 +134,7 @@ def make_request(
 
         coverage_object = XctestRunRequest.CodeCoverage(
             collect=True,
-            coverage_file_suffix=coverage_file_suffix,
+            enable_continuous_coverage_collection=enable_continuous_coverage_collection,
             format=CODE_COVERAGE_FORMAT_MAP[coverage_format],
         )
 

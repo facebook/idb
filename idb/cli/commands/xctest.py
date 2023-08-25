@@ -180,8 +180,9 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Outputs code coverage information. See --coverage-format option.",
         )
         parser.add_argument(
-            "--coverage-file-suffix",
-            help="Suffix of the (.profraw) coverage file.",
+            "--enable-continuous-coverage-collection",
+            action="store_true",
+            help="Enable continuous coverage collection mode in llvm",
         )
         parser.add_argument(
             "--coverage-format",
@@ -279,7 +280,7 @@ class CommonRunXcTestCommand(ClientCommand):
             report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
-            coverage_file_suffix=args.coverage_file_suffix,
+            enable_continuous_coverage_collection=args.enable_continuous_coverage_collection,
             coverage_format=coverage_format,
             log_directory_path=args.log_directory_path,
             wait_for_debugger=args.wait_for_debugger,
