@@ -10,7 +10,7 @@
 
 @implementation FBCodeCoverageConfiguration
 
--(instancetype) initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format coverageFileSuffix:(NSString *)coverageFileSuffix
+-(instancetype) initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection
 {
   self = [super init];
   if (!self) {
@@ -19,14 +19,14 @@
 
   _coverageDirectory = coverageDirectory;
   _format = format;
-  _coverageFileSuffix = coverageFileSuffix;
+  _shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection;
 
   return self;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Coverage Directory %@ | Format %lu | File Suffix '%@'", self.coverageDirectory, (unsigned long)self.format, self.coverageFileSuffix];
+  return [NSString stringWithFormat:@"Coverage Directory %@ | Format %lu | Enable Continuous Coverage Collection %d", self.coverageDirectory, (unsigned long)self.format, self.shouldEnableContinuousCoverageCollection];
 }
 
 

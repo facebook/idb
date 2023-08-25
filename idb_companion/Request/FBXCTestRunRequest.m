@@ -49,7 +49,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
     NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
     NSString *coverageDirPath = [dir.path stringByAppendingPathComponent:coverageDirName];
-    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:self.coverageRequest.format coverageFileSuffix:self.coverageRequest.coverageFileSuffix];
+    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:self.coverageRequest.format enableContinuousCoverageCollection:self.coverageRequest.shouldEnableContinuousCoverageCollection];
   }
 
   NSString *testFilter = nil;

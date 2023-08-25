@@ -9,7 +9,7 @@
 
 @implementation FBCodeCoverageRequest
 
-- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format coverageFileSuffix:(nonnull NSString *)coverageFileSuffix
+- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection
 {
   self = [super init];
   if (!self) {
@@ -18,7 +18,7 @@
 
   _collect = collect;
   _format = format;
-  _coverageFileSuffix = coverageFileSuffix;
+  _shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection;
   return self;
 }
 

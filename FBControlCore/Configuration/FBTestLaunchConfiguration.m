@@ -17,7 +17,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(NSString *)coverageDirectoryPath coverageFileSuffix:(NSString *)coverageFileSuffix logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(NSDictionary *)xcTestRunProperties resultBundlePath:(NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle
 {
   self = [super init];
   if (!self) {
@@ -37,7 +37,7 @@
   _resultBundlePath = resultBundlePath;
   _reportActivities = reportActivities;
   _coverageDirectoryPath = coverageDirectoryPath;
-  _coverageFileSuffix = coverageFileSuffix ?: @"";
+  _shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection;
   _logDirectoryPath = logDirectoryPath;
   _reportResultBundle = reportResultBundle;
 
@@ -72,20 +72,20 @@
          (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
          (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]) &&
          (self.coverageDirectoryPath == configuration.coverageDirectoryPath || [self.coverageDirectoryPath isEqualToString:configuration.coverageDirectoryPath]) &&
-         (self.coverageFileSuffix == configuration.coverageFileSuffix || [self.coverageFileSuffix isEqualToString:configuration.coverageFileSuffix]) &&
+         (self.shouldEnableContinuousCoverageCollection == configuration.shouldEnableContinuousCoverageCollection) &&
          (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath]) &&
          self.reportResultBundle == configuration.reportResultBundle;
 }
 
 - (NSUInteger)hash
 {
-  return self.testBundle.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostBundle.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coverageDirectoryPath.hash ^ self.coverageFileSuffix.hash ^ self.logDirectoryPath.hash;
+  return self.testBundle.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostBundle.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ (unsigned long) self.shouldUseXcodebuild ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationBundle.hash ^ self.xcTestRunProperties.hash ^ self.resultBundlePath.hash ^ self.coverageDirectoryPath.hash ^ (unsigned long) self.shouldEnableContinuousCoverageCollection ^ self.logDirectoryPath.hash;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | CoverageFileSuffix %@ | LogDirectoryPath %@ | ReportResultBundle %d" ,
+    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | EnableContinuousCoverageCollection %d | LogDirectoryPath %@ | ReportResultBundle %d" ,
     self.testBundle,
     self.applicationLaunchConfiguration,
     self.testHostBundle,
@@ -97,7 +97,7 @@
     self.xcTestRunProperties,
     self.resultBundlePath,
     self.coverageDirectoryPath,
-    self.coverageFileSuffix,
+    self.shouldEnableContinuousCoverageCollection,
     self.logDirectoryPath,
     self.reportResultBundle
   ];

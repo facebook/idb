@@ -71,7 +71,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    coverageFileSuffix:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 }
@@ -92,7 +92,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    coverageFileSuffix:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 }

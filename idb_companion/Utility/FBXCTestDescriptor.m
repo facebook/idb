@@ -177,7 +177,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
   if (request.coverageRequest.collect) {
     NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
     NSString *coverageDirPath = [self.targetAuxillaryDirectory stringByAppendingPathComponent:coverageDirName];
-    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:request.coverageRequest.format coverageFileSuffix:request.coverageRequest.coverageFileSuffix];
+    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:request.coverageRequest.format enableContinuousCoverageCollection:request.coverageRequest.shouldEnableContinuousCoverageCollection];
   }
 
   return [appLaunchConfigFuture onQueue:queue map:^ FBIDBAppHostedTestConfiguration * (FBApplicationLaunchConfiguration *applicationLaunchConfiguration) {
@@ -195,7 +195,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
       resultBundlePath:nil
       reportActivities:request.reportActivities
       coverageDirectoryPath:coverageConfig.coverageDirectory
-      coverageFileSuffix:coverageConfig.coverageFileSuffix
+      enableContinuousCoverageCollection:coverageConfig.shouldEnableContinuousCoverageCollection
       logDirectoryPath:logDirectoryPath
       reportResultBundle:request.collectResultBundle];
     return [[FBIDBAppHostedTestConfiguration alloc] initWithTestLaunchConfiguration:testLaunchConfig coverageConfiguration:coverageConfig];
@@ -298,7 +298,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
     resultBundlePath:resultBundlePath
     reportActivities:request.reportActivities
     coverageDirectoryPath:nil
-    coverageFileSuffix:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:logDirectoryPath
     reportResultBundle:request.collectResultBundle];
 
