@@ -228,8 +228,11 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 #pragma mark - XCTestManager_IDEInterface protocol
 
-#pragma mark Process Launch Delegation
+#pragma mark Process Launch Delegation (UI Tests)
 
+/// This callback is called when the UI tests call `-[XCUIApplication launch]` to launch the target app
+/// It should return an NSNumber containing an unique identifier to this process, the `token`
+/// This `token` will be used later on for further requests ralated to this process
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
@@ -268,6 +271,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return receipt;
 }
 
+/// After _XCT_launchProcessWithPath:bundleID:arguments:environmentVariables: is called,
+/// this method will be called to check on wherer the process has already been launched or not
+/// return should be 0 or 1.
+///
+/// If 0 is returned, `_XCT_getProgressForLaunch:` will be called again until 1 is returned
+///
+/// Since we only invoke `_XCT_launchProcessWithPath:bundleID:arguments:environmentVariables:`'s receipt
+/// completion after the process is launched, we just return 1 (because the process is already launched)
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
@@ -276,6 +287,13 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return receipt;
 }
 
+/// Called whenever the target process needs to be killed, for instance when `-[XCUIApplication launch]`
+/// is called to launch the target app for the next test.
+///
+/// `token` identifies which process should be terminated. It contains the value that
+/// `_XCT_launchProcessWithPath:bundleID:arguments:environmentVariables:` defined
+///
+/// This method doesn't seem to be called when all the tests finish execution.
 - (id)_XCT_terminateProcess:(id)token
 {
   [self.logger logFormat:@"Test process requested process termination with token %@", token];
@@ -304,8 +322,6 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   }
   return receipt;
 }
-
-#pragma mark iOS 10.x
 
 - (id)_XCT_didBeginInitializingForUITesting
 {
