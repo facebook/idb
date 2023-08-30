@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7197B82C2A9E39CC00234737 /* XTSwizzle.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B82A2A9E39CC00234737 /* XTSwizzle.h */; };
+		7197B82D2A9E39CC00234737 /* XTSwizzle.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B82A2A9E39CC00234737 /* XTSwizzle.h */; };
+		7197B82E2A9E39CC00234737 /* XTSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B82B2A9E39CC00234737 /* XTSwizzle.m */; };
+		7197B82F2A9E39CC00234737 /* XTSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B82B2A9E39CC00234737 /* XTSwizzle.m */; };
 		71B9E0D9268C61B800D40A91 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
 		EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
 		EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
@@ -30,6 +34,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7197B82A2A9E39CC00234737 /* XTSwizzle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTSwizzle.h; sourceTree = "<group>"; };
+		7197B82B2A9E39CC00234737 /* XTSwizzle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XTSwizzle.m; sourceTree = "<group>"; };
 		AA017F411BD7776B00F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libShimulator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA56EAE21EEF08720062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMaculator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EED62ED820D12209006E86E5 /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
@@ -102,6 +108,8 @@
 				EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */,
 				EED62EE920D12431006E86E5 /* FBRuntimeTools.m */,
 				EED62EDB20D12217006E86E5 /* XCTestPrivate.h */,
+				7197B82A2A9E39CC00234737 /* XTSwizzle.h */,
+				7197B82B2A9E39CC00234737 /* XTSwizzle.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -142,6 +150,7 @@
 				EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE220D12242006E86E5 /* FBXCTestConstants.h in Headers */,
+				7197B82C2A9E39CC00234737 /* XTSwizzle.h in Headers */,
 				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -154,6 +163,7 @@
 				EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE320D12242006E86E5 /* FBXCTestConstants.h in Headers */,
+				7197B82D2A9E39CC00234737 /* XTSwizzle.h in Headers */,
 				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -282,6 +292,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7197B82E2A9E39CC00234737 /* XTSwizzle.m in Sources */,
 				EED62EF920D1243E006E86E5 /* FBXCTestMain.m in Sources */,
 				EED62EF320D12432006E86E5 /* FBDebugLog.m in Sources */,
 				EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */,
@@ -294,6 +305,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7197B82F2A9E39CC00234737 /* XTSwizzle.m in Sources */,
 				EED62EEE20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
 				EED62EFA20D1243E006E86E5 /* FBXCTestMain.m in Sources */,
 				EED62EF420D12432006E86E5 /* FBDebugLog.m in Sources */,
