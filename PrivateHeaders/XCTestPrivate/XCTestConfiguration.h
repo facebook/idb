@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSArray, NSDictionary, NSNumber, NSString, NSURL, NSUUID, XCTAggregateSuiteRunStatistics;
+@class NSArray, NSDictionary, NSNumber, NSString, NSURL, NSUUID, XCTAggregateSuiteRunStatistics, XCTCapabilities;
 
 @interface XCTestConfiguration : NSObject <NSSecureCoding, NSCopying>
 {
@@ -40,12 +40,14 @@
     long long _userAttachmentLifetime;
     long long _testExecutionOrdering;
     NSNumber *_randomExecutionOrderingSeed;
+    XCTCapabilities *_IDECapabilities;
 }
 
 + (id)configurationWithContentsOfFile:(id)arg1;
 + (id)activeTestConfiguration;
 + (void)setActiveTestConfiguration:(id)arg1;
 + (_Bool)supportsSecureCoding;
+@property(retain) XCTCapabilities *IDECapabilities; // @synthesize IDECapabilities=_IDECapabilities;
 @property(retain) NSNumber *randomExecutionOrderingSeed; // @synthesize randomExecutionOrderingSeed=_randomExecutionOrderingSeed;
 @property long long testExecutionOrdering; // @synthesize testExecutionOrdering=_testExecutionOrdering;
 @property long long userAttachmentLifetime; // @synthesize userAttachmentLifetime=_userAttachmentLifetime;
