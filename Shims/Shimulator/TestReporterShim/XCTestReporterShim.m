@@ -12,6 +12,7 @@
 #import <objc/runtime.h>
 
 #import "FBXCTestConstants.h"
+#import "XCTestCaseHelpers.h"
 #import "XCTestPrivate.h"
 #import "XTSwizzle.h"
 
@@ -28,48 +29,6 @@ static FILE *__stderr;
 
 static NSMutableArray<NSDictionary<NSString *, id> *> *__testExceptions = nil;
 static int __testSuiteDepth = 0;
-
-static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
-{
-  NSString *className = NSStringFromClass(testCase.class);
-  NSString *methodName;
-  if ([testCase respondsToSelector:@selector(languageAgnosticTestMethodName)]) {
-    methodName = [testCase languageAgnosticTestMethodName];
-  } else {
-    methodName = NSStringFromSelector([testCase.invocation selector]);
-  }
-  NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
-  if (classNameOut) {
-    *classNameOut = className;
-  }
-  if (methodNameOut) {
-    *methodNameOut = methodName;
-  }
-  if (testKeyOut) {
-    *testKeyOut = testKey;
-  }
-}
-
-static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
-{
-  NSString *testKey = nil;
-  for (id test in suite.tests) {
-    if (![test isKindOfClass:NSClassFromString(@"XCTestCase")]) {
-      return [suite name];
-    }
-    XCTestCase *testCase = test;
-    NSString *innerTestKey = nil;
-    parseXCTestCase(testCase, &innerTestKey, nil, nil);
-    if (!testKey) {
-      testKey = innerTestKey;
-      continue;
-    }
-    if (![innerTestKey isEqualToString:testKey]) {
-      return [suite name];
-    }
-  }
-  return testKey ?: [suite name];
-}
 
 NSDictionary<NSString *, id> *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
