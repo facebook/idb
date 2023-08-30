@@ -1339,6 +1339,7 @@
 		DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBCrashLogInfoTests.swift; sourceTree = "<group>"; };
 		DB5F4881281156C4000FC7C7 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 		DB5F488328115C5E000FC7C7 /* xctest-concated-json-crash.ips */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "xctest-concated-json-crash.ips"; sourceTree = "<group>"; };
+		DB6578002A978C72003C687B /* XCTIssue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTIssue.h; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -2668,6 +2669,7 @@
 				EE4F0DD91C91B85800608E89 /* XCTestManager_TestsInterface-Protocol.h */,
 				717901D12A963C07000FBF19 /* DTXConnection-XCTestAdditions.h */,
 				717901D22A963E3E000FBF19 /* DTXProxyChannel-XCTestAdditions.h */,
+				DB6578002A978C72003C687B /* XCTIssue.h */,
 			);
 			path = XCTestPrivate;
 			sourceTree = "<group>";

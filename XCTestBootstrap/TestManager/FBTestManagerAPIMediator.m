@@ -14,6 +14,7 @@
 #import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
 
 #import <XCTestPrivate/XCTTestIdentifier.h>
+#import <XCTestPrivate/XCTIssue.h>
 
 #import <DTXConnectionServices/DTXConnection.h>
 #import <DTXConnectionServices/DTXProxyChannel.h>
@@ -394,6 +395,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2 {
+  [self.logger logFormat:@"Test Case %@/%@ did fail: %@", arg1.firstComponent, arg1.lastComponent, arg2.detailedDescription ?: arg2.compactDescription];
+  return [self.reporterAdapter _XCT_testCaseDidFailForTestClass:arg1.firstComponent method:arg1.lastComponent
+                                                    withMessage:arg2.compactDescription
+                                                           file:arg2.sourceCodeContext.location.fileURL.absoluteString
+                                                           line:@(arg2.sourceCodeContext.location.lineNumber)];
+}
+
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
   [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
@@ -571,12 +580,6 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordExpectedFailure:(XCTExpectedFailure *)arg2 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }
-
-
-- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2 {
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
 
 - (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didStallOnMainThreadInFile:(NSString *)arg2 line:(NSNumber *)arg3 {
   return [self handleUnimplementedXCTRequest:_cmd];
