@@ -8,12 +8,15 @@
 #import "FBXCTestMain.h"
 
 #import <dlfcn.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 #import "FBDebugLog.h"
 #import "FBRuntimeTools.h"
 #import "FBXCTestConstants.h"
+#import "XCTestCaseHelpers.h"
 #import "XCTestPrivate.h"
+#import "XTSwizzle.h"
 
 #include "TargetConditionals.h"
 
@@ -96,11 +99,32 @@ void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
    }];
 }
 
+/// Construct an XCTTestIdentifier using the same logic used to list the tests.
+/// The identifier will contain the swift module prefix for tests written in swift,
+/// as they used to in Xcode versions prior to 15.0
+static id XCTestCase__xctTestIdentifier(id self, SEL sel)
+{
+  NSString *classNameOut = nil;
+  NSString *methodNameOut = nil;
+  NSString *testKeyOut = nil;
+  parseXCTestCase(self, &classNameOut, &methodNameOut, &testKeyOut);
+
+  Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");
+  return [[XCTTestIdentifier_class alloc] initWithStringRepresentation:[NSString stringWithFormat:@"%@/%@", classNameOut, methodNameOut] preserveModulePrefix:YES];
+}
+
 BOOL FBXCTestMain()
 {
   if (!FBLoadXCTestIfNeeded()) {
     exit(TestShimExitCodeXCTestFailedLoading);
   }
+
+  XTSwizzleSelectorForFunction(
+    objc_getClass("XCTestCase"),
+    @selector(_xctTestIdentifier),
+    (IMP)XCTestCase__xctTestIdentifier
+  );
+
   NSString *configurationPath = NSProcessInfo.processInfo.environment[@"XCTestConfigurationFilePath"];
   if (!configurationPath) {
     NSLog(@"Failed to load XCTest as XCTestConfigurationFilePath environment variable is empty");
