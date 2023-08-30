@@ -11,6 +11,7 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 #import <XCTestPrivate/XCTestConfiguration.h>
+#import <XCTestPrivate/XCTCapabilities.h>
 
 @interface FBTestConfigurationTests : XCTestCase
 
@@ -37,6 +38,7 @@
   XCTAssertEqual(testConfiguration.path, @"ConfigPath");
   XCTAssertTrue(testConfiguration.shouldInitializeForUITesting);
   XCTAssertEqual(testConfiguration.xcTestConfiguration, xcTestConfig);
+    
 }
 
 - (void)testSaveAs
@@ -73,6 +75,9 @@
   XCTAssertEqual(xcTestConfig.targetApplicationBundleID, @"targetBundleID");
   XCTAssertEqual(xcTestConfig.reportActivities, NO);
   XCTAssertEqual(xcTestConfig.reportResultsToIDE, YES);
+  
+  NSDictionary *capabilities = @{@"XCTIssue capability": @1, @"ubiquitous test identifiers": @1};
+  XCTAssertEqualObjects(xcTestConfig.IDECapabilities.capabilitiesDictionary, capabilities);
 }
 
 @end

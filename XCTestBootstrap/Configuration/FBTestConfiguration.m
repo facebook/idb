@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <XCTestPrivate/XCTCapabilitiesBuilder.h>
 #import <XCTestPrivate/XCTestConfiguration.h>
 #import <XCTestPrivate/XCTTestIdentifier.h>
 #import <XCTestPrivate/XCTTestIdentifierSet.h>
@@ -39,6 +40,11 @@
   testConfiguration.reportActivities = reportActivities;
   testConfiguration.testsDrivenByIDE = NO;
   testConfiguration.testApplicationDependencies = testApplicationDependencies;
+  
+  XCTCapabilitiesBuilder *capabilitiesBuilder = [objc_lookUpClass("XCTCapabilitiesBuilder") new];
+  [capabilitiesBuilder registerCapability:@"XCTIssue capability"];
+  [capabilitiesBuilder registerCapability:@"ubiquitous test identifiers"];
+  testConfiguration.IDECapabilities = [capabilitiesBuilder capabilities];
   
 
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
