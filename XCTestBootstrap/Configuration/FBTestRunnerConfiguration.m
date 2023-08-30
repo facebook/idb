@@ -15,7 +15,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration
 {
   self = [super init];
   if (!self) {
@@ -26,6 +26,7 @@
   _testRunner = testRunner;
   _launchEnvironment = launchEnvironment;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
+  _testConfiguration = testConfiguration;
 
   return self;
 }
@@ -212,7 +213,8 @@
         initWithSessionIdentifier:sessionIdentifier
         testRunner:hostApplication.bundle
         launchEnvironment:launchEnvironment
-        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]];
+        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]
+        testConfiguration:testConfiguration];
     }];
 }
 

@@ -48,7 +48,7 @@
   if (![data writeToFile:savePath options:NSDataWritingAtomic error:error]) {
     return nil;
   }
-  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting];
+  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
 }
 
 + (void) setTestsToRun: (NSSet<NSString *> *) toRun andTestsToSkip: (NSSet<NSString *> *) toSkip to: (XCTestConfiguration *) configuration
@@ -79,17 +79,18 @@
   return b.testIdentifierSet;
 }
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   return [[self alloc]
     initWithSessionIdentifier:sessionIdentifier
     moduleName:moduleName
     testBundlePath:testBundlePath
     path:path
-    uiTesting:uiTesting];
+    uiTesting:uiTesting
+    xcTestConfiguration:xcTestConfiguration];
 }
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   self = [super init];
   if (!self) {
@@ -101,6 +102,7 @@
   _testBundlePath = testBundlePath;
   _path = path;
   _shouldInitializeForUITesting = uiTesting;
+  _xcTestConfiguration=xcTestConfiguration;
 
   return self;
 }

@@ -7,7 +7,10 @@
 
 #import <XCTest/XCTest.h>
 
+#import <objc/runtime.h>
+
 #import <XCTestBootstrap/XCTestBootstrap.h>
+#import <XCTestPrivate/XCTestConfiguration.h>
 
 @interface FBTestConfigurationTests : XCTestCase
 
@@ -17,13 +20,15 @@
 
 - (void)testSimpleConstructor
 {
+  XCTestConfiguration * xcTestConfig = [objc_lookUpClass("XCTestConfiguration") new];
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
   FBTestConfiguration *testConfiguration = [FBTestConfiguration
     configurationWithSessionIdentifier:sessionIdentifier
     moduleName:@"Franek"
     testBundlePath:@"BundlePath"
     path:@"ConfigPath"
-    uiTesting:YES];
+    uiTesting:YES
+    xcTestConfiguration:xcTestConfig];
 
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier);
@@ -31,17 +36,19 @@
   XCTAssertEqual(testConfiguration.testBundlePath, @"BundlePath");
   XCTAssertEqual(testConfiguration.path, @"ConfigPath");
   XCTAssertTrue(testConfiguration.shouldInitializeForUITesting);
+  XCTAssertEqual(testConfiguration.xcTestConfiguration, xcTestConfig);
 }
 
 - (void)testSaveAs
 {
   NSError *error;
   NSUUID *sessionIdentifier = NSUUID.UUID;
+  NSString *someRandomPath = NSTemporaryDirectory();
 
   FBTestConfiguration *testConfiguration = [FBTestConfiguration
     configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
     moduleName:@"ModuleName"
-    testBundlePath:NSTemporaryDirectory()
+    testBundlePath:someRandomPath
     uiTesting:YES
     testsToRun:[NSSet set]
     testsToSkip:[NSSet set]
@@ -55,6 +62,17 @@
   XCTAssertNil(error);
   XCTAssertNotNil(testConfiguration);
   XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:testConfiguration.path]);
+
+  XCTestConfiguration *xcTestConfig = testConfiguration.xcTestConfiguration;
+
+  XCTAssertNotNil(xcTestConfig);
+  XCTAssertEqual(xcTestConfig.productModuleName, @"ModuleName");
+  XCTAssertEqualObjects(xcTestConfig.testBundleURL, [NSURL fileURLWithPath:someRandomPath]);
+  XCTAssertEqual(xcTestConfig.initializeForUITesting, YES);
+  XCTAssertEqual(xcTestConfig.targetApplicationPath, @"targetAppPath");
+  XCTAssertEqual(xcTestConfig.targetApplicationBundleID, @"targetBundleID");
+  XCTAssertEqual(xcTestConfig.reportActivities, NO);
+  XCTAssertEqual(xcTestConfig.reportResultsToIDE, YES);
 }
 
 @end

@@ -3846,6 +3846,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3855,6 +3856,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3864,6 +3866,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
