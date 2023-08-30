@@ -460,6 +460,16 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didFinishActivity:(XCActivityRecord *)arg2 {
+  [self.reporterAdapter _XCT_testCase:arg1.firstComponent method:arg1.lastComponent didFinishActivity:arg2];
+  return nil;
+}
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 willStartActivity:(XCActivityRecord *)arg2 {
+  [self.reporterAdapter _XCT_testCase:arg1.firstComponent method:arg1.lastComponent willStartActivity:arg2];
+  return nil;
+}
+
 #pragma mark - Unimplemented
 
 - (id)_XCT_nativeFocusItemDidChangeAtTime:(NSNumber *)arg1 parameterSnapshot:(XCElementSnapshot *)arg2 applicationSnapshot:(XCElementSnapshot *)arg3
@@ -610,14 +620,6 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 }
 
 - (id)_XCT_reportSelfDiagnosisIssue:(NSString *)arg1 description:(NSString *)arg2 {
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didFinishActivity:(XCActivityRecord *)arg2 {
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 willStartActivity:(XCActivityRecord *)arg2 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }
 
