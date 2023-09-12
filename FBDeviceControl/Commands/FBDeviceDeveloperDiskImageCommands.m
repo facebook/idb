@@ -185,8 +185,8 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
     connectToDeviceWithPurpose:@"mount_disk_image"]
     onQueue:self.device.asyncQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
       NSDictionary<NSString *, id> *options = @{
-        @"ImageSignature": diskImage.signature,
-        @"ImageType": imageType,
+        ImageSignatureKey: diskImage.signature,
+        ImageTypeKey: imageType,
       };
       int status = device.calls.MountImage(
         device.amDeviceRef,
