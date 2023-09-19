@@ -210,7 +210,9 @@ class Companion(CompanionBase):
                     process.communicate(), timeout=timeout.total_seconds()
                 )
                 if process.returncode != 0:
-                    raise IdbException(f"Failed to run {arguments}")
+                    message = f"Failed to run {arguments}"
+                    self._logger.error(f"{message}. Output: [[{output}]]")
+                    raise IdbException(message)
                 self._logger.info(f"Ran {arguments} successfully.")
                 return output.decode()
             except asyncio.TimeoutError:
