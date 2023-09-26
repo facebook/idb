@@ -293,6 +293,11 @@
       describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
       failFuture];
   }
+
+  if (![[NSFileManager defaultManager] fileExistsAtPath:bundle.path]) {
+    return [FBFuture futureWithResult:[NSNull null]];
+  }
+
   NSError *error;
   if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
     return [FBFuture futureWithError:error];
