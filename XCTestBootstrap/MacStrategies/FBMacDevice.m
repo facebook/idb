@@ -39,7 +39,9 @@
   static dispatch_once_t onceToken;
   static NSString *_value;
   dispatch_once(&onceToken, ^{
-    _value = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    NSString *uuid = [[NSUUID UUID] UUIDString];
+    NSString *parentDir = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    _value = [parentDir stringByAppendingPathComponent:uuid];
   });
   return _value;
 }
@@ -66,7 +68,7 @@
 {
   self = [super init];
   if (self) {
-    
+
     _architectures = [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
     NSString *explicitTmpDirectory = NSProcessInfo.processInfo.environment[@"IDB_MAC_AUXILLIARY_DIR"];
@@ -455,7 +457,7 @@
   if (!bundleDescriptor) {
     return [FBFuture futureWithError:error];
   }
-  
+
   FBListTestConfiguration *configuration = [FBListTestConfiguration
     configurationWithEnvironment:@{}
     workingDirectory:self.auxillaryDirectory
