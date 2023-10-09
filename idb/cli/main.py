@@ -118,7 +118,13 @@ logger: logging.Logger = logging.getLogger()
 def get_default_companion_path() -> Optional[str]:
     if sys.platform != "darwin":
         return None
-    return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
+    for path in (
+        shutil.which("idb_companion"),
+        "/opt/homebrew/bin/idb_companion",
+        "/usr/local/bin/idb_companion",
+    ):
+        if path and os.path.exists(path):
+            return path
 
 
 async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
