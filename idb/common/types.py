@@ -8,12 +8,12 @@ import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
 from asyncio import StreamReader, StreamWriter
+from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
-    AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
@@ -371,9 +371,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def boot_headless(  # pyre-fixme
+    @asynccontextmanager
+    async def boot_headless(
         self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
-    ) -> AsyncContextManager[None]:
+    ) -> AsyncGenerator[None, None]:
         yield
 
     @abstractmethod
@@ -425,9 +426,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def unix_domain_server(  # pyre-fixme
+    @asynccontextmanager
+    async def unix_domain_server(
         self, udid: str, path: str, only: Optional[OnlyFilter] = None
-    ) -> AsyncContextManager[str]:
+    ) -> AsyncGenerator[str, None]:
         yield
 
 

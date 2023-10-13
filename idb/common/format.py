@@ -74,9 +74,8 @@ def human_format_test_info(test: TestRunInfo) -> str:
 
 def human_format_activities(activities: List[TestActivity]) -> str:
     tree: Tree = Tree()
-    start = activities[0].start
+    start: float = activities[0].start
 
-    # pyre-fixme[53]: Captured variable `start` is not annotated.
     def process_activity(activity: TestActivity, parent: Optional[str] = None) -> None:
         tree.create_node(
             f"{activity.name} ({activity.finish - start:.2f}s)",

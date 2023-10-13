@@ -14,7 +14,6 @@ import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamReader, StreamWriter
-from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import (
@@ -222,9 +221,7 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
 
         @functools.wraps(func)
         @log_call(name=func.__name__, metadata=metadata)
-        # pyre-fixme[53]: Captured variable `func` is not annotated.
-        # pyre-fixme[3]: Return annotation cannot be `Any`.
-        async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
+        async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
             try:
                 async for item in func(*args, **kwargs):
                     yield item
