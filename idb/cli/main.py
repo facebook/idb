@@ -361,5 +361,9 @@ def main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
         loop.close()
 
 
-if __name__ == "__main__":
+def main_2() -> None:
     sys.exit(main())
+
+
+if __name__ == "__main__":
+    main_2()
