@@ -321,6 +321,26 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
+  if (configuration.launchMode == FBApplicationLaunchModeFailIfRunning) {
+    return [[self processIDWithBundleID:configuration.bundleID] onQueue:self.device.asyncQueue chain:^ (FBFuture<NSNumber *>* processIdQueryResult) {
+      if (processIdQueryResult.state == FBFutureStateDone) {
+        return [[FBDeviceControlError
+          describeFormat:@"Application %@ already running with pid %@", configuration.bundleID, processIdQueryResult.result]
+          failFuture];
+      } else if (processIdQueryResult.state == FBFutureStateFailed) {
+        return (FBFuture*)[self launchApplicationIgnoreCurrentState:configuration];
+      } else {
+        return (FBFuture*)processIdQueryResult;
+      }
+    }];
+  }
+  return [self launchApplicationIgnoreCurrentState:configuration];
+}
+
+#pragma mark Private
+
+- (FBFuture<id<FBLaunchedProcess>> *)launchApplicationIgnoreCurrentState:(FBApplicationLaunchConfiguration *)configuration
+{
   return [[[self
     remoteInstrumentsClient]
     onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
@@ -334,8 +354,6 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
         queue:self.device.workQueue];
     }];
 }
-
-#pragma mark Private
 
 - (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier
 {
