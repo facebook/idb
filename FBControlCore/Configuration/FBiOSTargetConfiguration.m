@@ -683,6 +683,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 {
 
   NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *mapping = @{
+    FBArchitectureArm64e : [NSSet setWithArray:@[FBArchitectureArm64e, FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7s : [NSSet setWithArray:@[FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7 : [NSSet setWithArray:@[FBArchitectureArmv7]],
