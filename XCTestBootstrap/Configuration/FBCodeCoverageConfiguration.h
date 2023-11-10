@@ -29,7 +29,12 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
 */
 @property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
 
-- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format;
+/**
+ Determines whether should enable continuous coverage collection
+ */
+@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+
+- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 
 @end
 

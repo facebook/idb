@@ -38,7 +38,7 @@ static int processIsTranslated(void)
 @implementation FBArchitectureProcessAdapter
 
 -(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
-  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[self hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
+  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
 }
 
 - (nullable FBArchitecture)selectArchitectureFrom:(NSSet<FBArchitecture> *)requestedArchitectures supportedArchitectures:(NSSet<FBArchitecture> *)supportedArchitectures
@@ -72,7 +72,10 @@ static int processIsTranslated(void)
     return [[self getFixedupDyldFrameworkPathFromOriginalBinary:processConfiguration.launchPath queue:queue]
             onQueue:queue map:^FBProcessSpawnConfiguration *(NSString *dyldFrameworkPath) {
       NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [processConfiguration.environment mutableCopy];
+      // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framewosk"s in binary
+      // DYLD_LIBRARY_PATH adds additional search paths for required "*.dyld"s in binary
       [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_FRAMEWORK_PATH"];
+      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_LIBRARY_PATH"];
       return [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:extractedBinary arguments:processConfiguration.arguments environment:updatedEnvironment io:processConfiguration.io mode:processConfiguration.mode];
     }];
   }];
@@ -205,7 +208,7 @@ static int processIsTranslated(void)
   return nil;
 }
 
--(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
++(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
 #if TARGET_CPU_X86_64
   int isTranslated = processIsTranslated();
   if (isTranslated == 1) {

@@ -8,12 +8,12 @@ import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
 from asyncio import StreamReader, StreamWriter
+from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
-    AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
@@ -371,9 +371,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def boot_headless(  # pyre-fixme
+    @asynccontextmanager
+    async def boot_headless(
         self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
-    ) -> AsyncContextManager[None]:
+    ) -> AsyncGenerator[None, None]:
         yield
 
     @abstractmethod
@@ -425,9 +426,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def unix_domain_server(  # pyre-fixme
+    @asynccontextmanager
+    async def unix_domain_server(
         self, udid: str, path: str, only: Optional[OnlyFilter] = None
-    ) -> AsyncContextManager[str]:
+    ) -> AsyncGenerator[str, None]:
         yield
 
 
@@ -472,6 +474,7 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        enable_continuous_coverage_collection: bool = False,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
@@ -506,7 +509,7 @@ class Client(ABC):
 
     @abstractmethod
     async def install_xctest(
-        self, xctest: Union[str, IO[bytes]]
+        self, xctest: Union[str, IO[bytes]], skip_signing_bundles: Optional[bool] = None
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 

@@ -74,7 +74,28 @@
       describe:@"No crash path provided"]
       fail:error];
   }
-  NSString *crashString = [[NSString alloc] initWithContentsOfFile:crashPath encoding:NSUTF8StringEncoding error:error];
+  if (![NSFileManager.defaultManager fileExistsAtPath:crashPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"File does not exist at given crash path: %@", crashPath]
+      fail:error];
+  }
+  if (![NSFileManager.defaultManager isReadableFileAtPath:crashPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"Crash file at %@ is not readable", crashPath]
+      fail:error];
+  }
+  NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
+  if (!crashFileData) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not read data from %@", crashPath]
+      fail:error];
+  } else if (crashFileData.length == 0) {
+      return [[FBControlCoreError
+        describeFormat:@"Crash file at %@ is empty", crashPath]
+        fail:error];
+  }
+
+  NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
   if (!crashString) {
     return [[FBControlCoreError
       describeFormat:@"Could not extract string from %@", crashPath]
@@ -85,7 +106,7 @@
 }
 
 + (id<FBCrashLogParser>)getPreferredCrashLogParserForCrashString:(NSString *)crashString {
-  if ([crashString characterAtIndex:0] == '{') {
+  if (crashString.length > 0 && [crashString characterAtIndex:0] == '{') {
     return [[FBConcatedJSONCrashLogParser alloc] init];
   } else {
     return [[FBPlainTextCrashLogParser alloc] init];

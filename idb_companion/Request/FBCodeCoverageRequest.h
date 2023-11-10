@@ -27,7 +27,12 @@ NS_ASSUME_NONNULL_BEGIN
 */
 @property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
 
-- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format;
+/**
+ Determines whether should enable continuous coverage collection
+ */
+@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+
+- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 
 @end
 

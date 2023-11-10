@@ -162,11 +162,13 @@ class Companion(CompanionBase):
         device_set_path: Optional[str],
         logger: Logger,
         architecture: Architecture = Architecture.ANY,
+        only: Optional[OnlyFilter] = None,
     ) -> None:
         self._companion_path = companion_path
         self._device_set_path = device_set_path
         self._logger = logger
         self._architecture = architecture
+        self._only = only
 
     @asynccontextmanager
     async def _start_companion_command(
@@ -179,6 +181,8 @@ class Companion(CompanionBase):
         device_set_path = self._device_set_path
         if device_set_path is not None:
             cmd.extend(["--device-set-path", device_set_path])
+        if self._only is not None:
+            cmd.extend(_only_arg_from_filter(only=self._only))
         cmd.extend(arguments)
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -189,7 +193,7 @@ class Companion(CompanionBase):
                 else subprocess.DEVNULL
             ),
         )
-        logger = self._logger.getChild(f"{process.pid}:{' '.join(arguments)}")
+        logger = self._logger.getChild(f"{process.pid}:{' '.join(cmd)}")
         logger.info("Launched process")
         try:
             yield process
@@ -210,7 +214,9 @@ class Companion(CompanionBase):
                     process.communicate(), timeout=timeout.total_seconds()
                 )
                 if process.returncode != 0:
-                    raise IdbException(f"Failed to run {arguments}")
+                    message = f"Failed to run {arguments}"
+                    self._logger.error(f"{message}. Output: [[{output}]]")
+                    raise IdbException(message)
                 self._logger.info(f"Ran {arguments} successfully.")
                 return output.decode()
             except asyncio.TimeoutError:
@@ -491,6 +497,4 @@ class Companion(CompanionBase):
             if grpc_path is None:
                 raise IdbException(f"No grpc_path in {line}")
             self._logger.info(f"Started domain sock server on {grpc_path}")
-            # pyre-fixme[7]: Expected `AsyncGenerator[str, None]` but got
-            #  `AsyncGenerator[Union[int, str], None]`.
-            yield grpc_path
+            yield grpc_path if isinstance(grpc_path, str) else str(grpc_path)

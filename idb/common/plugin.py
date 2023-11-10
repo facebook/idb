@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
 import asyncio
 import importlib
 import logging
@@ -13,10 +15,11 @@ from argparse import ArgumentParser
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, overload, TypeVar
 
 from idb.common.command import Command
 from idb.common.types import LoggingMetadata
+from pyre_extensions import ParameterSpecification
 
 
 def package_exists(package_name: str) -> bool:
@@ -40,12 +43,29 @@ _META_ENVIRON_PREFIX = "IDB_META_"
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-# pyre-ignore
-def swallow_exceptions(f: object):
+P = ParameterSpecification("P")
+T = TypeVar("T")
+
+
+@overload
+def swallow_exceptions(
+    f: Callable[P, Awaitable[T]]
+) -> Callable[P, Awaitable[T | None]]:
+    ...
+
+
+@overload
+def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]:
+    ...
+
+
+def swallow_exceptions(
+    f: Callable[P, T] | Callable[P, Awaitable[T]]
+) -> Callable[P, T | None] | Callable[P, Awaitable[T | None]]:
     if asyncio.iscoroutinefunction(f):
 
         @wraps(f)
-        async def inner(*args, **kwargs) -> None:
+        async def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
                 return await f(*args, **kwargs)
             except Exception:
@@ -53,14 +73,13 @@ def swallow_exceptions(f: object):
 
     else:
 
-        # pyre-fixme[6]: For 1st param expected `(...) -> Any` but got `object`.
         @wraps(f)
-        def inner(*args, **kwargs) -> None:  # pyre-ignore
+        def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
-                # pyre-fixme[29]: `object` is not a function.
+                # pyre-ignore[7]
                 return f(*args, **kwargs)
             except Exception:
-                # pyre-fixme[16]: `object` has no attribute `__name__`.
+                # pyre-ignore[16]
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
     return inner

@@ -67,7 +67,8 @@
       testBundlePath:testBundlePath
       runnerAppPath:runnerAppPath
       waitForDebugger:waitForDebugger
-      timeout:timeout];
+      timeout:timeout
+      architectures: [NSSet setWithArray:@[@"arm64", @"x86_64"]]];
   } else if ([argumentSet containsObject:@"-logicTest"]) {
     configuration = [FBLogicTestConfiguration
       configurationWithEnvironment:environment

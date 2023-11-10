@@ -77,7 +77,8 @@ struct VideoStreamMethodHandler {
                                             framesPerSecond: framesPerSecond,
                                             compressionQuality: .init(value: start.compressionQuality),
                                             scaleFactor: .init(value: start.scaleFactor),
-                                            avgBitrate: avgBitrate)
+                                            avgBitrate: avgBitrate,
+                                            keyFrameRate: .init(value: start.keyFrameRate))
 
     let videoStream = try await BridgeFuture.value(target.createStream(with: config))
 

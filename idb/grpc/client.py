@@ -14,7 +14,6 @@ import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamReader, StreamWriter
-from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import (
@@ -222,9 +221,7 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
 
         @functools.wraps(func)
         @log_call(name=func.__name__, metadata=metadata)
-        # pyre-fixme[53]: Captured variable `func` is not annotated.
-        # pyre-fixme[3]: Return annotation cannot be `Any`.
-        async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:
+        async def func_wrapper_gen(*args: Any, **kwargs: Any) -> Any:  # pyre-ignore
             try:
                 async for item in func(*args, **kwargs):
                     yield item
@@ -366,6 +363,7 @@ class Client(ClientBase):
         bundle_id: Optional[str],
         bundle_type: Optional[FileContainerType],
         override_modification_time: Optional[bool] = None,
+        skip_signing_bundles: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -413,6 +411,10 @@ class Client(ClientBase):
                     InstallRequest(
                         override_modification_time=override_modification_time
                     )
+                )
+            if skip_signing_bundles is not None:
+                await stream.send_message(
+                    InstallRequest(skip_signing_bundles=skip_signing_bundles)
                 )
             if compression is not None:
                 await stream.send_message(
@@ -695,7 +697,11 @@ class Client(ClientBase):
             yield response
 
     @log_and_handle_exceptions("install")
-    async def install_xctest(self, xctest: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install_xctest(
+        self,
+        xctest: Bundle,
+        skip_signing_bundles: Optional[bool] = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=xctest,
             destination=InstallRequest.XCTEST,
@@ -703,6 +709,7 @@ class Client(ClientBase):
             make_debuggable=None,
             bundle_id=None,
             bundle_type=None,
+            skip_signing_bundles=skip_signing_bundles,
         ):
             yield response
 
@@ -1180,6 +1187,7 @@ class Client(ClientBase):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        enable_continuous_coverage_collection: bool = False,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
@@ -1204,6 +1212,7 @@ class Client(ClientBase):
                 ),
                 report_attachments=report_attachments,
                 collect_coverage=coverage_output_path is not None,
+                enable_continuous_coverage_collection=enable_continuous_coverage_collection,
                 coverage_format=coverage_format,
                 collect_logs=log_directory_path is not None,
                 wait_for_debugger=wait_for_debugger,

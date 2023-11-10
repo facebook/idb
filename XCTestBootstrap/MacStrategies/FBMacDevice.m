@@ -15,6 +15,7 @@
 #import "XCTestBootstrapError.h"
 #import "FBListTestStrategy.h"
 #import "FBXCTestConfiguration.h"
+#import "FBMacLaunchedApplication.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
 - (void)_XCT_requestConnectedSocketForTransport:(void (^)(NSFileHandle *, NSError *))arg1;
@@ -38,7 +39,9 @@
   static dispatch_once_t onceToken;
   static NSString *_value;
   dispatch_once(&onceToken, ^{
-    _value = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    NSString *uuid = [[NSUUID UUID] UUIDString];
+    NSString *parentDir = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    _value = [parentDir stringByAppendingPathComponent:uuid];
   });
   return _value;
 }
@@ -65,25 +68,15 @@
 {
   self = [super init];
   if (self) {
-    
-#if TARGET_CPU_X86_64
-    _architectures = @[FBArchitectureX86_64];
-#else
-    _architectures = @[FBArchitectureX86_64, FBArchitectureArm64];
-#endif
+
+    _architectures = [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-#ifdef DEBUG
-    // currentDirectoryPath is setted to root ("/") in debug builds and we dont have permission to write there
-    _auxillaryDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"idb-debug"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
-#else
     NSString *explicitTmpDirectory = NSProcessInfo.processInfo.environment[@"IDB_MAC_AUXILLIARY_DIR"];
     if (explicitTmpDirectory) {
       _auxillaryDirectory = [[explicitTmpDirectory stringByAppendingPathComponent:@"idb-mac-aux"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     } else {
-      _auxillaryDirectory = [[NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:@"idb-mac-cwd"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+      _auxillaryDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"idb-mac-cwd"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     }
-
-#endif
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _udid = [FBMacDevice resolveDeviceUDID];
@@ -302,6 +295,11 @@
       describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
       failFuture];
   }
+
+  if (![[NSFileManager defaultManager] fileExistsAtPath:bundle.path]) {
+    return [FBFuture futureWithResult:[NSNull null]];
+  }
+
   NSError *error;
   if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
     return [FBFuture futureWithError:error];
@@ -349,7 +347,7 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (FBFuture<FBProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBMacLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
@@ -362,10 +360,14 @@
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ FBProcess * (FBProcess *task) {
+    onQueue:self.workQueue map:^ FBMacLaunchedApplication* (FBProcess *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
-      return task;
-    }];
+      return [[FBMacLaunchedApplication alloc]
+       initWithBundleID:bundle.identifier
+       processIdentifier:task.processIdentifier
+       device:self
+       queue:self.workQueue];
+  }];
 }
 
 - (nonnull FBFuture<NSDictionary<NSString *,FBProcessInfo *> *> *)runningApplications
@@ -450,13 +452,20 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
+  NSError *error = nil;
+  FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:bundlePath error:&error];
+  if (!bundleDescriptor) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBListTestConfiguration *configuration = [FBListTestConfiguration
     configurationWithEnvironment:@{}
     workingDirectory:self.auxillaryDirectory
     testBundlePath:bundlePath
     runnerAppPath:appPath
     waitForDebugger:NO
-    timeout:timeout];
+    timeout:timeout
+    architectures:bundleDescriptor.binary.architectures];
 
   return [[[FBListTestStrategy alloc]
     initWithTarget:self

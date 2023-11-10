@@ -11,6 +11,11 @@
 #import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
+#import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
+
+#import <XCTestPrivate/XCTTestIdentifier.h>
+#import <XCTestPrivate/XCTIssue.h>
+
 #import <DTXConnectionServices/DTXConnection.h>
 #import <DTXConnectionServices/DTXProxyChannel.h>
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
@@ -31,10 +36,7 @@
 #import "FBXCTestReporter.h"
 
 
-const NSInteger FBProtocolVersion = 0x16;
-const NSInteger FBProtocolMinimumVersion = 0x8;
-
-@interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
+@interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget, FBXCTestExtendedCommands> target;
@@ -148,14 +150,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [[[FBTestBundleConnection
     connectAndRunBundleToCompletionWithContext:self.context
     target:self.target
-    interface:(id)self
+    interface:self
     testHostApplication:launchedApplication
     requestQueue:self.requestQueue
     logger:logger]
     onQueue:queue fmap:^(NSNull *_) {
       // The bundle has disconnected at this point, but we also need to terminate any processes
       // spawned through `_XCT_launchProcessWithPath`and wait for the host application to terminate
-      return [[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated];
+      return [[[self terminateSpawnedProcesses] chainReplace:launchedApplication.applicationTerminated] cancel];
     }]
     onQueue:queue timeout:timeout handler:^{
       // The timeout is applied to the lifecycle of the entire application.
@@ -231,8 +233,11 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 #pragma mark - XCTestManager_IDEInterface protocol
 
-#pragma mark Process Launch Delegation
+#pragma mark Process Launch Delegation (UI Tests)
 
+/// This callback is called when the UI tests call `-[XCUIApplication launch]` to launch the target app
+/// It should return an NSNumber containing an unique identifier to this process, the `token`
+/// This `token` will be used later on for further requests ralated to this process
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
@@ -271,6 +276,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return receipt;
 }
 
+/// After _XCT_launchProcessWithPath:bundleID:arguments:environmentVariables: is called,
+/// this method will be called to check on wherer the process has already been launched or not
+/// return should be 0 or 1.
+///
+/// If 0 is returned, `_XCT_getProgressForLaunch:` will be called again until 1 is returned
+///
+/// Since we only invoke `_XCT_launchProcessWithPath:bundleID:arguments:environmentVariables:`'s receipt
+/// completion after the process is launched, we just return 1 (because the process is already launched)
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
@@ -279,6 +292,13 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return receipt;
 }
 
+/// Called whenever the target process needs to be killed, for instance when `-[XCUIApplication launch]`
+/// is called to launch the target app for the next test.
+///
+/// `token` identifies which process should be terminated. It contains the value that
+/// `_XCT_launchProcessWithPath:bundleID:arguments:environmentVariables:` defined
+///
+/// This method doesn't seem to be called when all the tests finish execution.
 - (id)_XCT_terminateProcess:(id)token
 {
   [self.logger logFormat:@"Test process requested process termination with token %@", token];
@@ -307,8 +327,6 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   }
   return receipt;
 }
-
-#pragma mark iOS 10.x
 
 - (id)_XCT_didBeginInitializingForUITesting
 {
@@ -345,6 +363,12 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testSuiteWithIdentifier:(XCTTestIdentifier *)suiteIdentifier didStartAt:(NSString *)time {
+  [self _XCT_testSuite:[suiteIdentifier _identifierString] didStartAt:time]; // for some reason the property accessor (-[XCTTestIdentifier identifierString]) crashes
+  return nil;
+}
+
+
 - (id)_XCT_didBeginExecutingTestPlan
 {
   [self.logger logFormat:@"Test Plan Started"];
@@ -371,6 +395,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2 {
+  [self.logger logFormat:@"Test Case %@/%@ did fail: %@", arg1.firstComponent, arg1.lastComponent, arg2.detailedDescription ?: arg2.compactDescription];
+  return [self.reporterAdapter _XCT_testCaseDidFailForTestClass:arg1.firstComponent method:arg1.lastComponent
+                                                    withMessage:arg2.compactDescription
+                                                           file:arg2.sourceCodeContext.location.fileURL.absoluteString
+                                                           line:@(arg2.sourceCodeContext.location.lineNumber)];
+}
+
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
   [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
@@ -386,6 +418,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_logMessage:(NSString *)message
 {
+  [self.logger logFormat:@"_XCT_logMessage: %@", message];
   return nil;
 }
 
@@ -396,12 +429,24 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)identifier didFinishWithStatus:(NSString *)statusString duration:(NSNumber *)duration {
+  return [self _XCT_testCaseDidFinishForTestClass:identifier.firstComponent method:identifier.lastComponent withStatus:statusString duration:duration];
+}
+
+
 - (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
   [self.logger logFormat:@"Test Suite Did Finish %@", testSuite];
-  [self. reporterAdapter _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
+  [self.reporterAdapter _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
   return nil;
 }
+
+- (id)_XCT_testSuiteWithIdentifier:(XCTTestIdentifier *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 skipCount:(NSNumber *)arg4 failureCount:(NSNumber *)arg5 expectedFailureCount:(NSNumber *)arg6 uncaughtExceptionCount:(NSNumber *)arg7 testDuration:(NSNumber *)arg8 totalDuration:(NSNumber *)arg9 {
+  // do nothing as the values reported by the legacy method _XCT_testSuite:didFinishAt:runCount:withFailures:unexpected:testDuration:
+  // are ignored on IDBXCTestReporter
+  return nil;
+}
+
 
 - (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method didFinishActivity:(XCActivityRecord *)activity
 {
@@ -412,6 +457,16 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)_XCT_testCase:(NSString *)testCase method:(NSString *)method willStartActivity:(XCActivityRecord *)activity
 {
   [self.reporterAdapter _XCT_testCase:testCase method:method willStartActivity:activity];
+  return nil;
+}
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didFinishActivity:(XCActivityRecord *)arg2 {
+  [self.reporterAdapter _XCT_testCase:arg1.firstComponent method:arg1.lastComponent didFinishActivity:arg2];
+  return nil;
+}
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 willStartActivity:(XCActivityRecord *)arg2 {
+  [self.reporterAdapter _XCT_testCase:arg1.firstComponent method:arg1.lastComponent willStartActivity:arg2];
   return nil;
 }
 
@@ -482,6 +537,21 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [self handleUnimplementedXCTRequest:_cmd];
 }
 
+- (id)_XCT_testCaseWasSkippedForTestClass:(NSString *)arg1 method:(NSString *)arg2 withMessage:(NSString *)arg3 file:(NSString *)arg4 line:(NSNumber *)arg5 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 skipCount:(NSNumber *)arg4 failureCount:(NSNumber *)arg5 expectedFailureCount:(NSNumber *)arg6 uncaughtExceptionCount:(NSNumber *)arg7 testDuration:(NSNumber *)arg8 totalDuration:(NSNumber *)arg9 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 skipCount:(NSNumber *)arg4 failureCount:(NSNumber *)arg5 unexpectedFailureCount:(NSNumber *)arg6 testDuration:(NSNumber *)arg7 totalDuration:(NSNumber *)arg8 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
 - (id)_XCT_testMethod:(NSString *)arg1 ofClass:(NSString *)arg2 didMeasureValues:(NSArray *)arg3 forPerformanceMetricID:(NSString *)arg4 name:(NSString *)arg5 withUnits:(NSString *)arg6 baselineName:(NSString *)arg7 baselineAverage:(NSNumber *)arg8 maxPercentRegression:(NSNumber *)arg9 maxPercentRelativeStandardDeviation:(NSNumber *)arg10 file:(NSString *)arg11 line:(NSNumber *)arg12
 {
   return [self handleUnimplementedXCTRequest:_cmd];
@@ -497,6 +567,45 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return [self handleUnimplementedXCTRequest:_cmd];
 }
 
+- (id)_XCT_didFailToBootstrapWithError:(NSError *)arg1 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_reportTestWithIdentifier:(XCTTestIdentifier *)arg1 didExceedExecutionTimeAllowance:(NSNumber *)arg2 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testCaseDidStartWithIdentifier:(XCTTestIdentifier *)arg1 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testCaseDidStartWithIdentifier:(XCTTestIdentifier *)arg1 iteration:(NSNumber *)arg2 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordExpectedFailure:(XCTExpectedFailure *)arg2 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didStallOnMainThreadInFile:(NSString *)arg2 line:(NSNumber *)arg3 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 wasSkippedWithMessage:(NSString *)arg2 sourceCodeContext:(XCTSourceCodeContext *)arg3 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
+- (id)_XCT_testSuiteWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+
 - (NSString *)unknownMessageForSelector:(SEL)aSelector
 {
   return [NSString stringWithFormat:@"Received call for unhandled method (%@). Probably you should have a look at _IDETestManagerAPIMediator in IDEFoundation.framework and implement it. Good luck!", NSStringFromSelector(aSelector)];
@@ -508,6 +617,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   [self.logger log:[self unknownMessageForSelector:aSelector]];
   NSAssert(nil, [self unknownMessageForSelector:_cmd]);
   return nil;
+}
+
+- (id)_XCT_reportSelfDiagnosisIssue:(NSString *)arg1 description:(NSString *)arg2 {
+  return [self handleUnimplementedXCTRequest:_cmd];
+}
+
+- (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didMeasureMetric:(NSDictionary *)arg2 file:(NSString *)arg3 line:(NSNumber *)arg4 {
+  return [self handleUnimplementedXCTRequest:_cmd];
 }
 
 @end

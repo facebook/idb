@@ -38,6 +38,14 @@ FBDeviceModel const FBDeviceModeliPhone13mini = @"iPhone 13 mini";
 FBDeviceModel const FBDeviceModeliPhone13 = @"iPhone 13";
 FBDeviceModel const FBDeviceModeliPhone13Pro = @"iPhone 13 Pro";
 FBDeviceModel const FBDeviceModeliPhone13ProMax = @"iPhone 13 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone14 = @"iPhone 14";
+FBDeviceModel const FBDeviceModeliPhone14Plus = @"iPhone 14 Plus";
+FBDeviceModel const FBDeviceModeliPhone14Pro = @"iPhone 14 Pro";
+FBDeviceModel const FBDeviceModeliPhone14ProMax = @"iPhone 14 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone15 = @"iPhone 15";
+FBDeviceModel const FBDeviceModeliPhone15Plus = @"iPhone 15 Plus";
+FBDeviceModel const FBDeviceModeliPhone15Pro = @"iPhone 15 Pro";
+FBDeviceModel const FBDeviceModeliPhone15ProMax = @"iPhone 15 Pro Max";
 FBDeviceModel const FBDeviceModeliPodTouch_7thGeneration = @"iPod touch (7th generation)";
 FBDeviceModel const FBDeviceModeliPad2 = @"iPad 2";
 FBDeviceModel const FBDeviceModeliPadRetina = @"iPad Retina";
@@ -466,6 +474,14 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13 productTypes:@[@"iPhone14,5"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13Pro productTypes:@[@"iPhone14,2"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13ProMax productTypes:@[@"iPhone14,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14 productTypes:@[@"iPhone14,7"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14Plus productTypes:@[@"iPhone14,8"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14Pro productTypes:@[@"iPhone15,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14ProMax productTypes:@[@"iPhone15,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15 productTypes:@[@"iPhone15,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15Plus productTypes:@[@"iPhone15,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15Pro productTypes:@[@"iPhone16,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15ProMax productTypes:@[@"iPhone16,2"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPodTouch_7thGeneration productTypes:@[@"iPod9,1"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7],
@@ -665,15 +681,16 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 + (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures
 {
-  
+
   NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *mapping = @{
+    FBArchitectureArm64e : [NSSet setWithArray:@[FBArchitectureArm64e, FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7s : [NSSet setWithArray:@[FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7 : [NSSet setWithArray:@[FBArchitectureArmv7]],
     FBArchitectureI386 : [NSSet setWithObject:FBArchitectureI386],
     FBArchitectureX86_64 : [NSSet setWithArray:@[FBArchitectureX86_64, FBArchitectureI386]],
   };
-  
+
   NSMutableSet<FBArchitecture> *result = [NSMutableSet new];
   for (FBArchitecture arch in architectures) {
     [result unionSet:mapping[arch]];

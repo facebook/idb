@@ -101,9 +101,14 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @interface FBListTestConfiguration : FBXCTestConfiguration
 
 /**
+ The supported architectures of the test bundle.
+ */
+@property (nonatomic, strong, readonly, nonnull) NSSet<NSString *> *architectures;
+
+/**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
 
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;
 

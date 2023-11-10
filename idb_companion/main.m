@@ -418,10 +418,10 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
         return [FBFuture futureWithError:error];
       }
       NSError *err = nil;
-      
+
       // Start up the companion
       IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
-      
+
       // Command Executor
       FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
                                                commandExecutorForTarget:target
@@ -429,9 +429,9 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
                                                temporaryDirectory:temporaryDirectory
                                                debugserverPort:ports.debugserverPort
                                                logger:logger];
-      
+
       FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
-      
+
       GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
                                       initWithTarget:target
                                       commandExecutor:loggingCommandExecutor
@@ -442,18 +442,18 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
       if (!swiftServer) {
         return [FBFuture futureWithError:err];
       }
-      
+
       return [[swiftServer start] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
         WriteJSONToStdOut(serverDescription);
         NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[swiftServer.completed]];
-        
+
         if (terminateOffline) {
           [logger.info logFormat:@"Companion will terminate when target goes offline"];
           [futures addObject:TargetOfflineFuture(target, logger)];
         } else {
           [logger.info logFormat:@"Companion will stay alive if target goes offline"];
         }
-        
+
         FBFuture<NSNull *> *completed = [FBFuture race: futures];
         return [completed
                 onQueue:target.workQueue chain:^(FBFuture *future) {
@@ -597,12 +597,12 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
     }];
 }
 
-static NSString *EnvDescription()
+static NSString *EnvDescription(void)
 {
   return [FBCollectionInformation oneLineDescriptionFromDictionary:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment];
 }
 
-static NSString *ArchName()
+static NSString *ArchName(void)
 {
 #if TARGET_CPU_ARM64
   return @"arm64";

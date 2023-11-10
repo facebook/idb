@@ -38,10 +38,19 @@ class XctestInstallCommand(ClientCommand):
         parser.add_argument(
             "test_bundle_path", help="Bundle path of the test bundle", type=str
         )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        async for install_response in client.install_xctest(args.test_bundle_path):
+        async for install_response in client.install_xctest(
+            args.test_bundle_path, args.skip_signing_bundles
+        ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
             elif args.json:
@@ -171,6 +180,11 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Outputs code coverage information. See --coverage-format option.",
         )
         parser.add_argument(
+            "--enable-continuous-coverage-collection",
+            action="store_true",
+            help="Enable continuous coverage collection mode in llvm",
+        )
+        parser.add_argument(
             "--coverage-format",
             choices=[str(key) for (key, _) in CodeCoverageFormat.__members__.items()],
             default="EXPORTED",
@@ -202,6 +216,13 @@ class CommonRunXcTestCommand(ClientCommand):
             nargs="?",
             const=NO_SPECIFIED_PATH,
             help="Install debug symbols together with bundle. Specify path for debug symbols; otherwise, we'll try to infer it. (requires --install)",
+        )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
         )
         super().add_parser_arguments(parser)
 
@@ -259,6 +280,7 @@ class CommonRunXcTestCommand(ClientCommand):
             report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
+            enable_continuous_coverage_collection=args.enable_continuous_coverage_collection,
             coverage_format=coverage_format,
             log_directory_path=args.log_directory_path,
             wait_for_debugger=args.wait_for_debugger,
@@ -266,7 +288,9 @@ class CommonRunXcTestCommand(ClientCommand):
             print(formatter(test_result))
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
-        async for test in client.install_xctest(args.test_bundle_id):
+        async for test in client.install_xctest(
+            args.test_bundle_id, args.skip_signing_bundles
+        ):
             args.test_bundle_id = test.name
 
     async def install_dsym_test_bundle(
