@@ -122,6 +122,8 @@
   NSDate *date = nil;
   pid_t processIdentifier = -1;
   pid_t parentProcessIdentifier = -1;
+  NSString *exceptionDescription = nil;
+  NSString *crashedThreadDescription = nil;
 
   NSError *err;
   [parser parseCrashLogFromString:crashString
@@ -132,6 +134,8 @@
     processIdentifierOut:&processIdentifier
     parentProcessIdentifierOut:&parentProcessIdentifier
     dateOut:&date
+    exceptionDescription:&exceptionDescription
+    crashedThreadDescription:&crashedThreadDescription
     error:&err];
 
   if (err) {
@@ -187,12 +191,13 @@
     parentProcessName:parentProcessName
     parentProcessIdentifier:parentProcessIdentifier
     date:date
-    processType:processType];
+    processType:processType
+    exceptionDescription:exceptionDescription
+    crashedThreadDescription:crashedThreadDescription];
 }
 
 
-- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType
-{
+- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType exceptionDescription:(NSString *)exceptionDescription crashedThreadDescription:(NSString *)crashedThreadDescription{
   self = [super init];
   if (!self) {
     return nil;
@@ -207,6 +212,8 @@
   _parentProcessIdentifier = parentProcessIdentifier;
   _date = date;
   _processType = processType;
+  _exceptionDescription = exceptionDescription;
+  _crashedThreadDescription = crashedThreadDescription;
 
   return self;
 }
@@ -229,7 +236,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@",
+    @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@ | Exception: %@ | Trace: %@",
     self.identifier,
     self.executablePath,
     self.processName,
@@ -237,7 +244,9 @@
     self.parentProcessName,
     self.parentProcessIdentifier,
     self.date,
-    self.crashPath
+    self.crashPath,
+    self.exceptionDescription,
+    self.crashedThreadDescription
   ];
 }
 

@@ -81,6 +81,16 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 @property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
 
+/**
+ The description of the exception
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *exceptionDescription;
+
+/**
+ List of symbols on the crashed thread
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *crashedThreadDescription;
+
 #pragma mark Helpers
 
 /**
