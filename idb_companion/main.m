@@ -12,13 +12,13 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBIDBError.h"
-#import "FBIDBLogger.h"
-#import "FBiOSTargetProvider.h"
+#import <CompanionLib/FBIDBError.h>
+#import <CompanionLib/FBIDBLogger.h>
+#import <CompanionLib/FBiOSTargetProvider.h>
 #import "FBiOSTargetStateChangeNotifier.h"
 #import "FBiOSTargetDescription.h"
-#import "FBIDBStorageManager.h"
-#import "FBIDBCommandExecutor.h"
+#import <CompanionLib/FBIDBStorageManager.h>
+#import <CompanionLib/FBIDBCommandExecutor.h>
 
 #import "idb-Swift.h"
 
