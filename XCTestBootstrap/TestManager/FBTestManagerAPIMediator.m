@@ -395,6 +395,13 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   return nil;
 }
 
+- (id)_XCT_testCaseDidStartWithIdentifier:(XCTTestIdentifier *)arg1 testCaseRunConfiguration:(XCTestCaseRunConfiguration *)arg2 
+{
+    [self.logger logFormat:@"Test Case %@/%@ did start", arg1.firstComponent, arg1.lastComponent];
+    [self.reporterAdapter _XCT_testCaseDidStartForTestClass:arg1.firstComponent method:arg1.lastComponent];
+    return nil;
+}
+
 - (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2 {
   [self.logger logFormat:@"Test Case %@/%@ did fail: %@", arg1.firstComponent, arg1.lastComponent, arg2.detailedDescription ?: arg2.compactDescription];
   return [self.reporterAdapter _XCT_testCaseDidFailForTestClass:arg1.firstComponent method:arg1.lastComponent

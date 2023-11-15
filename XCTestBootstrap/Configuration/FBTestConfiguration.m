@@ -46,7 +46,6 @@
   [capabilitiesBuilder registerCapability:@"ubiquitous test identifiers"];
   testConfiguration.IDECapabilities = [capabilitiesBuilder capabilities];
   
-
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
 
   // Write it to file.
