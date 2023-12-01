@@ -265,6 +265,11 @@
   return self.crashPath.lastPathComponent;
 }
 
+- (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
+{
+  return [NSString stringWithContentsOfFile:self.crashPath encoding:NSUTF8StringEncoding error:error];
+}
+
 #pragma mark Bulk Collection
 
 + (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date logger:(id<FBControlCoreLogger>)logger
@@ -297,7 +302,7 @@
 - (FBCrashLog *)obtainCrashLogWithError:(NSError **)error
 {
   NSError *innerError = nil;
-  NSString *contents = [NSString stringWithContentsOfFile:self.crashPath encoding:NSUTF8StringEncoding error:&innerError];
+  NSString *contents = [self loadRawCrashLogStringWithError:&innerError];
   if (!contents) {
     return [[[FBControlCoreError
       describeFormat:@"Failed to read crash log at path %@", self.crashPath]
