@@ -11,11 +11,23 @@
 #import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
+// Protocol for RPC with testmanagerd daemon
+#import <XCTestPrivate/XCTMessagingChannel_IDEToDaemon-Protocol.h>
+#import <XCTestPrivate/XCTMessagingChannel_DaemonToIDE-Protocol.h>
+
+// Protocol for RPC with XCTest runner (within the host app process)
+#import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
+#import <XCTestPrivate/XCTMessagingChannel_IDEToRunner-Protocol.h>
+
+
 #import <DTXConnectionServices/DTXConnection.h>
 #import <DTXConnectionServices/DTXProxyChannel.h>
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
 #import <DTXConnectionServices/DTXTransport.h>
 #import <DTXConnectionServices/DTXSocketTransport.h>
+
+#import <XCTestPrivate/DTXConnection-XCTestAdditions.h>
+#import <XCTestPrivate/DTXProxyChannel-XCTestAdditions.h>
 
 #import <objc/runtime.h>
 
@@ -24,21 +36,25 @@
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerAPIMediator.h"
+#import "FBTestConfiguration.h"
+
+static const NSInteger FBProtocolVersion = 36;
+static const NSInteger FBProtocolMinimumVersion = 0x8;
 
 static NSTimeInterval BundleReadyTimeout = 60; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval IDEInterfaceReadyTimeout = 30; // Time for `XCTestManager_IDEInterface` to be returned.
-static NSTimeInterval DaemonSessionReadyTimeout = 30; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
-static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash report to be generated.
+static NSTimeInterval IDEInterfaceReadyTimeout = 60; // Time for `XCTestManager_IDEInterface` to be returned.
+static NSTimeInterval DaemonSessionReadyTimeout = 60; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
+static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash report to be generated.
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
-@interface FBTestBundleConnection () <XCTestManager_IDEInterface>
+@interface FBTestBundleConnection () <XCTestManager_IDEInterface, XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_RunnerToIDE>
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBiOSTarget, FBXCTestExtendedCommands> target;
-@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, strong, readonly) id<FBLaunchedApplication> testHostApplication;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
@@ -75,7 +91,7 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -119,7 +135,7 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 
 #pragma mark Public
 
-+ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
   return [connection connectAndRunToCompletion];
@@ -246,8 +262,8 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
 
   [connection
-    handleProxyRequestForInterface:@protocol(XCTestManager_IDEInterface)
-    peerInterface:@protocol(XCTestDriverInterface)
+    xct_handleProxyRequestForInterface:@protocol(XCTMessagingChannel_RunnerToIDE)
+    peerInterface:@protocol(XCTMessagingChannel_IDEToRunner)
     handler:^(DTXProxyChannel *channel){
       [self.logger logFormat:@"Got proxy channel request from test bundle"];
       [channel setExportedObject:self queue:self.target.workQueue];
@@ -264,8 +280,9 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [connection
-    makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
-    exportedInterface:@protocol(XCTestManager_IDEInterface)];
+    xct_makeProxyChannelWithRemoteInterface:@protocol(XCTMessagingChannel_IDEToDaemon)
+    exportedInterface:@protocol(XCTMessagingChannel_DaemonToIDE)];
+  [proxyChannel xct_setAllowedClassesForTestingProtocols];
   [proxyChannel setExportedObject:self queue:self.target.workQueue];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
@@ -285,9 +302,10 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     if (error) {
       [self.logger logFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error];
       [future resolveWithError:error];
+      return;
     }
+    [self.logger logFormat:@"testmanagerd handled session request using protocol version requested=%ld received=%ld", FBProtocolVersion, version.longValue];
     [future resolveWithResult:version];
-    [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
   }];
 
   return [future timeout:DaemonSessionReadyTimeout waitingFor:@"%@ to be resolved", sessionStartMethod];
@@ -315,12 +333,12 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
     onQueue:self.target.workQueue chain:^ FBFuture<NSNull *> * (FBFuture<FBCrashLog *> *future) {
       FBCrashLog *crashLog = future.result;
       if (!crashLog) {
-        return [[[XCTestBootstrapError
+        return [[[FBXCTestError
           describe:notFoundErrorDescription]
           code:XCTestBootstrapErrorCodeLostConnection]
           failFuture];
       }
-      return [[XCTestBootstrapError
+      return [[FBXCTestError
         describeFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]
         failFuture];
     }] mapReplace:NSNull.null];
@@ -420,11 +438,20 @@ static NSTimeInterval CrashCheckWaitLimit = 30;  // Time to wait for crash repor
   return nil;
 }
 
+/// Method called to notify us (the "IDE") that XCTest "runner" has been
+/// loaded into the host app process and is ready.
+///
+/// Return value must be an XCTestConfiguration object that specifies which
+/// tests should run alongside other options for the test execution.
 - (id)_XCT_testRunnerReadyWithCapabilities:(XCTCapabilities *)arg1
 {
   [self.logger logFormat:@"Test Bundle is Ready"];
+
+  DTXRemoteInvocationReceipt *receipt = [[objc_lookUpClass("DTXRemoteInvocationReceipt") alloc] init];
+  [receipt invokeCompletionWithReturnValue:self.context.testConfiguration.xcTestConfiguration error:nil];
+
   [self.bundleReadyFuture resolveWithResult:NSNull.null];
-  return nil;
+  return receipt;
 }
 
 @end

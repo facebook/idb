@@ -18,7 +18,7 @@
 
 @end
 
-static NSDictionary *beginTestSuiteDict() {
+static NSDictionary *beginTestSuiteDict(void) {
   return @{
     @"event": @"begin-test-suite",
     @"suite": @"NARANJA",
@@ -26,7 +26,7 @@ static NSDictionary *beginTestSuiteDict() {
   };
 }
 
-static NSDictionary *testEventDict() {
+static NSDictionary *testEventDict(void) {
   return @{
     @"className": @"OmniClass",
     @"methodName": @"theMethod:toRule:themAll:",

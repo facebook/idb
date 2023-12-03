@@ -478,6 +478,12 @@
 		D7C55B30217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */; };
 		D7E70C122440A2B40092422C /* FBAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = D7E70C102440A2B40092422C /* FBAttachment.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D7E70C132440A2B40092422C /* FBAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = D7E70C112440A2B40092422C /* FBAttachment.m */; };
+		DB15123429E5C34C00A7C0A9 /* FBArchitectureProcessAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15123329E5C34C00A7C0A9 /* FBArchitectureProcessAdapterTests.swift */; };
+		DB15123829E5C54800A7C0A9 /* xctest in Resources */ = {isa = PBXBuildFile; fileRef = DB15123729E5C54800A7C0A9 /* xctest */; };
+		DB1B3C8929DD9F1F003695C4 /* FBArchitectureProcessAdapter.h in Headers */ = {isa = PBXBuildFile; fileRef = DB1B3C8629DD9D75003695C4 /* FBArchitectureProcessAdapter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DB1B3C8B29DD9F36003695C4 /* FBArchitectureProcessAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = DB1B3C8A29DD9F36003695C4 /* FBArchitectureProcessAdapter.m */; };
+		DB22F7072A8FBC7400695320 /* FBMacLaunchedApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */; };
+		DB22F7082A8FBC7400695320 /* FBMacLaunchedApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */; };
 		DB523BF4297199A10005D7AE /* FBExceptionInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = DB523BF0297199A10005D7AE /* FBExceptionInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DB523BF5297199A10005D7AE /* FBExceptionInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = DB523BF3297199A10005D7AE /* FBExceptionInfo.m */; };
 		DB5F4876281079AD000FC7C7 /* FBConcatedJsonParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */; };
@@ -703,6 +709,48 @@
 		30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTTestIdentifierSetBuilder.h; sourceTree = "<group>"; };
 		713C709626F534050086D8DF /* FBCodeCoverageConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageConfiguration.h; sourceTree = "<group>"; };
 		713C709726F534050086D8DF /* FBCodeCoverageConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageConfiguration.m; sourceTree = "<group>"; };
+		717901682A960B4C000FBF19 /* XCTMessagingRole_ControlSessionInitiation-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ControlSessionInitiation-Protocol.h"; sourceTree = "<group>"; };
+		717901692A960B4C000FBF19 /* XCTMessagingRole_TestReporting_Legacy-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_TestReporting_Legacy-Protocol.h"; sourceTree = "<group>"; };
+		7179016A2A960B4C000FBF19 /* XCTMessagingChannel_DaemonRecorderToIDE-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_DaemonRecorderToIDE-Protocol.h"; sourceTree = "<group>"; };
+		7179016B2A960B4C000FBF19 /* XCTMessagingRole_DebugLogging-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_DebugLogging-Protocol.h"; sourceTree = "<group>"; };
+		7179016C2A960B4C000FBF19 /* XCTMessagingRole_DiagnosticsCollection-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_DiagnosticsCollection-Protocol.h"; sourceTree = "<group>"; };
+		7179016D2A960B4D000FBF19 /* XCTMessagingRole_CapabilityExchange-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_CapabilityExchange-Protocol.h"; sourceTree = "<group>"; };
+		7179016E2A960B4D000FBF19 /* XCTMessagingRole_AccessibilityNotificationReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_AccessibilityNotificationReporting-Protocol.h"; sourceTree = "<group>"; };
+		7179016F2A960B4D000FBF19 /* XCTMessagingRole_ActivityReporting_Legacy-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ActivityReporting_Legacy-Protocol.h"; sourceTree = "<group>"; };
+		717901702A960B4D000FBF19 /* XCTMessagingRole_ProcessMonitoring-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ProcessMonitoring-Protocol.h"; sourceTree = "<group>"; };
+		717901712A960B4D000FBF19 /* XCTMessagingRole_SelfDiagnosisIssueReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_SelfDiagnosisIssueReporting-Protocol.h"; sourceTree = "<group>"; };
+		717901722A960B4E000FBF19 /* XCTMessagingChannel_RunnerToIDE-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_RunnerToIDE-Protocol.h"; sourceTree = "<group>"; };
+		717901732A960B4E000FBF19 /* XCTMessagingChannel_DaemonToRunner-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_DaemonToRunner-Protocol.h"; sourceTree = "<group>"; };
+		717901742A960B4E000FBF19 /* _XCTMessaging_VoidProtocol-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "_XCTMessaging_VoidProtocol-Protocol.h"; sourceTree = "<group>"; };
+		717901752A960B4E000FBF19 /* XCTMessagingRole_UIApplicationStateUpdating-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_UIApplicationStateUpdating-Protocol.h"; sourceTree = "<group>"; };
+		717901762A960B4E000FBF19 /* XCTMessagingRole_EventSynthesis-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_EventSynthesis-Protocol.h"; sourceTree = "<group>"; };
+		717901772A960B4E000FBF19 /* XCTMessagingRole_UIRecordingControl-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_UIRecordingControl-Protocol.h"; sourceTree = "<group>"; };
+		717901782A960B4F000FBF19 /* XCTMessagingRole_MemoryTesting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_MemoryTesting-Protocol.h"; sourceTree = "<group>"; };
+		717901792A960B4F000FBF19 /* XCTMessagingRole_UIAutomationProcess-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_UIAutomationProcess-Protocol.h"; sourceTree = "<group>"; };
+		7179017A2A960B4F000FBF19 /* XCTMessagingRole_ProtectedResourceAuthorization-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ProtectedResourceAuthorization-Protocol.h"; sourceTree = "<group>"; };
+		7179017B2A960B4F000FBF19 /* XCTMessagingRole_PerformanceMeasurementReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_PerformanceMeasurementReporting-Protocol.h"; sourceTree = "<group>"; };
+		7179017C2A960B4F000FBF19 /* XCTMessagingRole_TestExecution_Legacy-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_TestExecution_Legacy-Protocol.h"; sourceTree = "<group>"; };
+		7179017D2A960B4F000FBF19 /* XCTMessagingRole_UIAutomation-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_UIAutomation-Protocol.h"; sourceTree = "<group>"; };
+		7179017E2A960B4F000FBF19 /* XCTMessagingRole_TestReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_TestReporting-Protocol.h"; sourceTree = "<group>"; };
+		7179017F2A960B50000FBF19 /* XCTMessagingRole_SiriAutomation-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_SiriAutomation-Protocol.h"; sourceTree = "<group>"; };
+		717901802A960B50000FBF19 /* XCTMessagingRole_ActivityReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ActivityReporting-Protocol.h"; sourceTree = "<group>"; };
+		717901812A960B50000FBF19 /* XCTMessagingRole_BundleRequesting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_BundleRequesting-Protocol.h"; sourceTree = "<group>"; };
+		717901822A960B50000FBF19 /* XCTMessagingChannel_DaemonToIDE-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_DaemonToIDE-Protocol.h"; sourceTree = "<group>"; };
+		717901832A960B50000FBF19 /* XCTMessagingRole_RunnerSessionInitiation-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_RunnerSessionInitiation-Protocol.h"; sourceTree = "<group>"; };
+		717901842A960B50000FBF19 /* XCTMessagingChannel_RunnerToUIProcess-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_RunnerToUIProcess-Protocol.h"; sourceTree = "<group>"; };
+		717901852A960B50000FBF19 /* XCTMessagingRole_CrashReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_CrashReporting-Protocol.h"; sourceTree = "<group>"; };
+		717901862A960B50000FBF19 /* XCTMessagingChannel_IDEToDaemon-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_IDEToDaemon-Protocol.h"; sourceTree = "<group>"; };
+		717901872A960B50000FBF19 /* XCTMessagingRole_ForcePressureSupportQuerying-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_ForcePressureSupportQuerying-Protocol.h"; sourceTree = "<group>"; };
+		717901882A960B50000FBF19 /* XCTMessagingRole_PerformanceMeasurementReporting_Legacy-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_PerformanceMeasurementReporting_Legacy-Protocol.h"; sourceTree = "<group>"; };
+		717901892A960B50000FBF19 /* XCTMessagingRole_UIAutomationEventReporting-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_UIAutomationEventReporting-Protocol.h"; sourceTree = "<group>"; };
+		7179018A2A960B51000FBF19 /* XCTMessagingChannel_DaemonToIDE_All-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_DaemonToIDE_All-Protocol.h"; sourceTree = "<group>"; };
+		7179018B2A960B51000FBF19 /* XCTMessagingChannel_IDEToRunner-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_IDEToRunner-Protocol.h"; sourceTree = "<group>"; };
+		7179018C2A960B51000FBF19 /* XCTMessagingChannel_RunnerToDaemon-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingChannel_RunnerToDaemon-Protocol.h"; sourceTree = "<group>"; };
+		7179018D2A960B51000FBF19 /* XCTMessagingRole_TestExecution-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTMessagingRole_TestExecution-Protocol.h"; sourceTree = "<group>"; };
+		717901D12A963C07000FBF19 /* DTXConnection-XCTestAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXConnection-XCTestAdditions.h"; sourceTree = "<group>"; };
+		717901D22A963E3E000FBF19 /* DTXProxyChannel-XCTestAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXProxyChannel-XCTestAdditions.h"; sourceTree = "<group>"; };
+		718DC4CE2A9910B8003B5511 /* XCTCapabilitiesBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTCapabilitiesBuilder.h; sourceTree = "<group>"; };
+		718DC4D12A9910B8003B5511 /* XCTCapabilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTCapabilities.h; sourceTree = "<group>"; };
 		71B9E0BB268C616200D40A91 /* Shimulator.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Shimulator.xcodeproj; sourceTree = "<group>"; };
 		71C4D3172638555D00DD186B /* FBOToolOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBOToolOperation.m; sourceTree = "<group>"; };
 		71C4D3182638555D00DD186B /* FBOToolOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBOToolOperation.h; sourceTree = "<group>"; };
@@ -1275,6 +1323,12 @@
 		D7C55B2F217E28D000A9BCB7 /* FBSimulatorMediaCommandsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorMediaCommandsTests.m; sourceTree = "<group>"; };
 		D7E70C102440A2B40092422C /* FBAttachment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBAttachment.h; sourceTree = "<group>"; };
 		D7E70C112440A2B40092422C /* FBAttachment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBAttachment.m; sourceTree = "<group>"; };
+		DB15123329E5C34C00A7C0A9 /* FBArchitectureProcessAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBArchitectureProcessAdapterTests.swift; sourceTree = "<group>"; };
+		DB15123729E5C54800A7C0A9 /* xctest */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = xctest; sourceTree = "<group>"; };
+		DB1B3C8629DD9D75003695C4 /* FBArchitectureProcessAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBArchitectureProcessAdapter.h; sourceTree = "<group>"; };
+		DB1B3C8A29DD9F36003695C4 /* FBArchitectureProcessAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBArchitectureProcessAdapter.m; sourceTree = "<group>"; };
+		DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBMacLaunchedApplication.h; sourceTree = "<group>"; };
+		DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacLaunchedApplication.m; sourceTree = "<group>"; };
 		DB523BF0297199A10005D7AE /* FBExceptionInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBExceptionInfo.h; sourceTree = "<group>"; };
 		DB523BF3297199A10005D7AE /* FBExceptionInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBExceptionInfo.m; sourceTree = "<group>"; };
 		DB5F4875281079AD000FC7C7 /* FBConcatedJsonParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FBConcatedJsonParserTests.swift; sourceTree = "<group>"; };
@@ -1285,6 +1339,7 @@
 		DB5F487F28115683000FC7C7 /* FBCrashLogInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBCrashLogInfoTests.swift; sourceTree = "<group>"; };
 		DB5F4881281156C4000FC7C7 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 		DB5F488328115C5E000FC7C7 /* xctest-concated-json-crash.ips */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "xctest-concated-json-crash.ips"; sourceTree = "<group>"; };
+		DB6578002A978C72003C687B /* XCTIssue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTIssue.h; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMacDevice.m; sourceTree = "<group>"; };
@@ -1650,6 +1705,7 @@
 				AA2076B21F0B7541001F180C /* FBiOSTargetTests.m */,
 				AA8F5E1C1F272AB900FAAC0F /* FBXcodeDirectoryTests.m */,
 				AA9319B722B78FB800C68F65 /* FBBinaryDescriptorTests.m */,
+				DB15123329E5C34C00A7C0A9 /* FBArchitectureProcessAdapterTests.swift */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -1871,6 +1927,8 @@
 				EE9E1E441D6CB2CC00860830 /* FBProcessLaunchConfiguration.h */,
 				EE9E1E451D6CB2CC00860830 /* FBProcessLaunchConfiguration.m */,
 				AAD99D1B25ED459A0078DAE4 /* FBProcessSpawnConfiguration.h */,
+				DB1B3C8629DD9D75003695C4 /* FBArchitectureProcessAdapter.h */,
+				DB1B3C8A29DD9F36003695C4 /* FBArchitectureProcessAdapter.m */,
 				AAD99D1C25ED459A0078DAE4 /* FBProcessSpawnConfiguration.m */,
 				D76F950B1F56D6700003D341 /* FBTestLaunchConfiguration.h */,
 				D76F950C1F56D6700003D341 /* FBTestLaunchConfiguration.m */,
@@ -2287,6 +2345,7 @@
 			isa = PBXGroup;
 			children = (
 				AA7FDA0C1C981231009F7828 /* agent_custom_set.crash */,
+				DB15123729E5C54800A7C0A9 /* xctest */,
 				AA7FDA0D1C981231009F7828 /* app_custom_set.crash */,
 				AA7FDA0E1C981231009F7828 /* app_default_set.crash */,
 				AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */,
@@ -2440,6 +2499,8 @@
 		EE2586F61FB0727000E7526E /* MacStrategies */ = {
 			isa = PBXGroup;
 			children = (
+				DB22F7052A8FBC7400695320 /* FBMacLaunchedApplication.h */,
+				DB22F7062A8FBC7400695320 /* FBMacLaunchedApplication.m */,
 				EE2586EF1FB06D9C00E7526E /* FBMacDevice.h */,
 				EE2586EE1FB06D9C00E7526E /* FBMacDevice.m */,
 			);
@@ -2557,6 +2618,46 @@
 		EE4F0DD21C91B85800608E89 /* XCTestPrivate */ = {
 			isa = PBXGroup;
 			children = (
+				718DC4D12A9910B8003B5511 /* XCTCapabilities.h */,
+				718DC4CE2A9910B8003B5511 /* XCTCapabilitiesBuilder.h */,
+				717901742A960B4E000FBF19 /* _XCTMessaging_VoidProtocol-Protocol.h */,
+				7179016A2A960B4C000FBF19 /* XCTMessagingChannel_DaemonRecorderToIDE-Protocol.h */,
+				7179018A2A960B51000FBF19 /* XCTMessagingChannel_DaemonToIDE_All-Protocol.h */,
+				717901822A960B50000FBF19 /* XCTMessagingChannel_DaemonToIDE-Protocol.h */,
+				717901732A960B4E000FBF19 /* XCTMessagingChannel_DaemonToRunner-Protocol.h */,
+				717901862A960B50000FBF19 /* XCTMessagingChannel_IDEToDaemon-Protocol.h */,
+				7179018B2A960B51000FBF19 /* XCTMessagingChannel_IDEToRunner-Protocol.h */,
+				7179018C2A960B51000FBF19 /* XCTMessagingChannel_RunnerToDaemon-Protocol.h */,
+				717901722A960B4E000FBF19 /* XCTMessagingChannel_RunnerToIDE-Protocol.h */,
+				717901842A960B50000FBF19 /* XCTMessagingChannel_RunnerToUIProcess-Protocol.h */,
+				7179016E2A960B4D000FBF19 /* XCTMessagingRole_AccessibilityNotificationReporting-Protocol.h */,
+				7179016F2A960B4D000FBF19 /* XCTMessagingRole_ActivityReporting_Legacy-Protocol.h */,
+				717901802A960B50000FBF19 /* XCTMessagingRole_ActivityReporting-Protocol.h */,
+				717901812A960B50000FBF19 /* XCTMessagingRole_BundleRequesting-Protocol.h */,
+				7179016D2A960B4D000FBF19 /* XCTMessagingRole_CapabilityExchange-Protocol.h */,
+				717901682A960B4C000FBF19 /* XCTMessagingRole_ControlSessionInitiation-Protocol.h */,
+				717901852A960B50000FBF19 /* XCTMessagingRole_CrashReporting-Protocol.h */,
+				7179016B2A960B4C000FBF19 /* XCTMessagingRole_DebugLogging-Protocol.h */,
+				7179016C2A960B4C000FBF19 /* XCTMessagingRole_DiagnosticsCollection-Protocol.h */,
+				717901762A960B4E000FBF19 /* XCTMessagingRole_EventSynthesis-Protocol.h */,
+				717901872A960B50000FBF19 /* XCTMessagingRole_ForcePressureSupportQuerying-Protocol.h */,
+				717901782A960B4F000FBF19 /* XCTMessagingRole_MemoryTesting-Protocol.h */,
+				717901882A960B50000FBF19 /* XCTMessagingRole_PerformanceMeasurementReporting_Legacy-Protocol.h */,
+				7179017B2A960B4F000FBF19 /* XCTMessagingRole_PerformanceMeasurementReporting-Protocol.h */,
+				717901702A960B4D000FBF19 /* XCTMessagingRole_ProcessMonitoring-Protocol.h */,
+				7179017A2A960B4F000FBF19 /* XCTMessagingRole_ProtectedResourceAuthorization-Protocol.h */,
+				717901832A960B50000FBF19 /* XCTMessagingRole_RunnerSessionInitiation-Protocol.h */,
+				717901712A960B4D000FBF19 /* XCTMessagingRole_SelfDiagnosisIssueReporting-Protocol.h */,
+				7179017F2A960B50000FBF19 /* XCTMessagingRole_SiriAutomation-Protocol.h */,
+				7179017C2A960B4F000FBF19 /* XCTMessagingRole_TestExecution_Legacy-Protocol.h */,
+				7179018D2A960B51000FBF19 /* XCTMessagingRole_TestExecution-Protocol.h */,
+				717901692A960B4C000FBF19 /* XCTMessagingRole_TestReporting_Legacy-Protocol.h */,
+				7179017E2A960B4F000FBF19 /* XCTMessagingRole_TestReporting-Protocol.h */,
+				717901752A960B4E000FBF19 /* XCTMessagingRole_UIApplicationStateUpdating-Protocol.h */,
+				7179017D2A960B4F000FBF19 /* XCTMessagingRole_UIAutomation-Protocol.h */,
+				717901892A960B50000FBF19 /* XCTMessagingRole_UIAutomationEventReporting-Protocol.h */,
+				717901792A960B4F000FBF19 /* XCTMessagingRole_UIAutomationProcess-Protocol.h */,
+				717901772A960B4E000FBF19 /* XCTMessagingRole_UIRecordingControl-Protocol.h */,
 				30DF57E5266E3C6F00EC9015 /* XCTTestIdentifier.h */,
 				30DF57E6266E3C6F00EC9015 /* XCTTestIdentifierSet.h */,
 				30DF57E7266E3C6F00EC9015 /* XCTTestIdentifierSetBuilder.h */,
@@ -2566,6 +2667,9 @@
 				EE4F0DD71C91B85800608E89 /* XCTestManager_IDEInterface-Protocol.h */,
 				EE4F0DD81C91B85800608E89 /* XCTestManager_ManagerInterface-Protocol.h */,
 				EE4F0DD91C91B85800608E89 /* XCTestManager_TestsInterface-Protocol.h */,
+				717901D12A963C07000FBF19 /* DTXConnection-XCTestAdditions.h */,
+				717901D22A963E3E000FBF19 /* DTXProxyChannel-XCTestAdditions.h */,
+				DB6578002A978C72003C687B /* XCTIssue.h */,
 			);
 			path = XCTestPrivate;
 			sourceTree = "<group>";
@@ -2843,6 +2947,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */,
+				DB22F7072A8FBC7400695320 /* FBMacLaunchedApplication.h in Headers */,
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
 				EE48229D1FBD91C500AAA56E /* FBManagedTestRunStrategy.h in Headers */,
 				AA7414F01CE3102F00C9641D /* FBTestBundleConnection.h in Headers */,
@@ -2967,6 +3072,7 @@
 				AA685CB22550252100E2DD9D /* FBDeveloperDiskImage.h in Headers */,
 				A2FD7D082739891900542291 /* FBMemoryCommands.h in Headers */,
 				AA7728AE1E5238A6008FCF7C /* FBFileWriter.h in Headers */,
+				DB1B3C8929DD9F1F003695C4 /* FBArchitectureProcessAdapter.h in Headers */,
 				AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */,
 				1F34A50C2512B604001A12F7 /* FBPowerCommands.h in Headers */,
 				1C0AAAB5254B646000001D3C /* FBXCTestShimConfiguration.h in Headers */,
@@ -3282,6 +3388,7 @@
 			files = (
 				AA7FDA131C981231009F7828 /* assetsd_custom_set.crash in Resources */,
 				AA7FDA121C981231009F7828 /* app_default_set.crash in Resources */,
+				DB15123829E5C54800A7C0A9 /* xctest in Resources */,
 				AA6F22451C916A31009F5CE4 /* simulator_system.log in Resources */,
 				AA7FDA101C981231009F7828 /* agent_custom_set.crash in Resources */,
 				AA6F22441C916A31009F5CE4 /* photo0.png in Resources */,
@@ -3485,6 +3592,7 @@
 				AA6062F31EE4B59900E2EFEE /* FBLogicTestRunStrategy.m in Sources */,
 				D7E70C132440A2B40092422C /* FBAttachment.m in Sources */,
 				EE2586F01FB06D9C00E7526E /* FBMacDevice.m in Sources */,
+				DB22F7082A8FBC7400695320 /* FBMacLaunchedApplication.m in Sources */,
 				AAFD455725E54161001407CC /* FBTestConfiguration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3560,6 +3668,7 @@
 				1C0AAAB4254B646000001D3C /* FBXCTestShimConfiguration.m in Sources */,
 				AA2B266426821F1200EF31AA /* FBVideoFileWriter.m in Sources */,
 				DB5F487E28114E7B000FC7C7 /* FBCrashLogParser.m in Sources */,
+				DB1B3C8B29DD9F36003695C4 /* FBArchitectureProcessAdapter.m in Sources */,
 				AADBB6B525E5689600AFB15D /* FBSettingsCommands.m in Sources */,
 				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
 				73E0A9751F4F361800A216AD /* FBBundleDescriptor+Application.m in Sources */,
@@ -3596,6 +3705,7 @@
 				AAB475F420C80F7D00B37634 /* FBiOSTargetCommandForwarderTests.m in Sources */,
 				AA71A1171FA8E49D00BB10DA /* FBControlCoreRunLoopTests.m in Sources */,
 				AA2076BB1F0B7542001F180C /* FBiOSTargetConfigurationTests.m in Sources */,
+				DB15123429E5C34C00A7C0A9 /* FBArchitectureProcessAdapterTests.swift in Sources */,
 				AA2076B91F0B7542001F180C /* FBProcessTests.m in Sources */,
 				DB5F4882281156C4000FC7C7 /* TestFixtures.swift in Sources */,
 				AA9319B822B78FB800C68F65 /* FBBinaryDescriptorTests.m in Sources */,
@@ -3822,6 +3932,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3831,6 +3942,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3840,6 +3952,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

@@ -450,7 +450,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       describeFormat:@"Database file at path %@ is not writable", databasePath]
       failFuture];
   }
-
+  
   id<FBControlCoreLogger> logger = [self.simulator.logger withName:@"sqlite_auth"];
   dispatch_queue_t queue = self.simulator.asyncQueue;
 
@@ -622,7 +622,9 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return [[self
     runSqliteCommandOnDatabase:databasePath arguments:@[@".schema access"] queue:queue logger:logger]
     onQueue:queue map:^(NSString *result) {
-      if ([result containsString:@"auth_value"]) {
+      if ([result containsString:@"last_reminded"]) {
+        return [FBSimulatorSettingsCommands postiOS17ApprovalRowsForBundleIDs:bundleIDs services:services];
+      } else if ([result containsString:@"auth_value"]) {
         return [FBSimulatorSettingsCommands postiOS15ApprovalRowsForBundleIDs:bundleIDs services:services];
       } else if ([result containsString:@"last_modified"]) {
         return [FBSimulatorSettingsCommands postiOS12ApprovalRowsForBundleIDs:bundleIDs services:services];
@@ -639,6 +641,19 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
       [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 0, 0, 0)", serviceName, bundleID]];
+    }
+  }
+  return [tuples componentsJoinedByString:@", "];
+}
+
++ (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
+{
+  NSUInteger timestamp = (NSUInteger) NSDate.date.timeIntervalSince1970;
+  NSMutableArray<NSString *> *tuples = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
+      NSString *serviceName = self.tccDatabaseMapping[service];
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
     }
   }
   return [tuples componentsJoinedByString:@", "];
@@ -661,14 +676,37 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return [tuples componentsJoinedByString:@", "];
 }
 
-+ (NSString *)postiOS12ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
++ (NSString *)postiOS17ApprovalRowsForBundleIDs:(NSSet<NSString *> *)bundleIDs services:(NSSet<FBTargetSettingsService> *)services
 {
   NSUInteger timestamp = (NSUInteger) NSDate.date.timeIntervalSince1970;
   NSMutableArray<NSString *> *tuples = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
     for (FBTargetSettingsService service in [self filteredTCCApprovals:services]) {
       NSString *serviceName = self.tccDatabaseMapping[service];
-      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu)", serviceName, bundleID, timestamp]];
+      // iOS 17 access table schema:
+      //   CREATE TABLE access (
+      //     service        TEXT        NOT NULL,
+      //     client         TEXT        NOT NULL,
+      //     client_type    INTEGER     NOT NULL,
+      //     auth_value     INTEGER     NOT NULL,
+      //     auth_reason    INTEGER     NOT NULL,
+      //     auth_version   INTEGER     NOT NULL,
+      //     csreq          BLOB,
+      //     policy_id      INTEGER,
+      //     indirect_object_identifier_type    INTEGER,
+      //     indirect_object_identifier         TEXT NOT NULL DEFAULT 'UNUSED',
+      //     indirect_object_code_identity      BLOB,
+      //     flags          INTEGER,
+      //     last_modified  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),
+      //     pid            INTEGER,
+      //     pid_version    INTEGER,
+      //     boot_uuid      TEXT NOT NULL DEFAULT 'UNUSED',
+      //     last_reminded  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),
+      //     PRIMARY KEY (service, client, client_type, indirect_object_identifier),
+      //     FOREIGN KEY (policy_id) REFERENCES policies(id) ON DELETE CASCADE ON UPDATE CASCADE
+      //   );
+
+      [tuples addObject:[NSString stringWithFormat:@"('%@', '%@', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, %lu, NULL, NULL, 'UNUSED', %lu)", serviceName, bundleID, timestamp, timestamp]];
     }
   }
   return [tuples componentsJoinedByString:@", "];

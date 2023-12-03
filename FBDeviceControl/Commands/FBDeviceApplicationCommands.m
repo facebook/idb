@@ -321,6 +321,11 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 
 - (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
+    if (self.device.osVersion.version.majorVersion >= 17) {
+        return [[FBDeviceControlError
+                 describeFormat:@"Launching applications is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
+          failFuture];
+    }
   return [[[self
     remoteInstrumentsClient]
     onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {

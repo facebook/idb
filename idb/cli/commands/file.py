@@ -9,7 +9,7 @@ import os
 import sys
 import tempfile
 from abc import abstractmethod
-from argparse import ArgumentParser, Namespace
+from argparse import _MutuallyExclusiveGroup, ArgumentParser, Namespace
 from typing import List, Tuple
 
 import aiofiles
@@ -19,11 +19,11 @@ from idb.common.types import Client, Compression, FileContainer, FileContainerTy
 
 
 def _add_container_types_to_group(
-    parser: ArgumentParser, containers: List[Tuple[FileContainerType, str]]
+    group: _MutuallyExclusiveGroup, containers: List[Tuple[FileContainerType, str]]
 ) -> None:
     for (container_type, help_text) in containers:
         argument_name = container_type.value.replace("_", "-")
-        parser.add_argument(
+        group.add_argument(
             f"--{argument_name}",
             action="store_const",
             dest="container_type",
@@ -43,7 +43,7 @@ class FSCommand(ClientCommand):
             default=None,
         )
         _add_container_types_to_group(
-            group,  # pyre-fixme[6]: _MutuallyExclusiveGroup is not public.
+            group,
             [
                 (
                     FileContainerType.APPLICATION,

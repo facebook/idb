@@ -115,9 +115,9 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return FBiOSTargetTypeSimulator;
 }
 
-- (FBArchitecture)architecture
+- (NSArray<FBArchitecture> *)architectures
 {
-  return self.configuration.device.simulatorArchitecture;
+  return [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
 }
 
 - (FBDeviceType *)deviceType

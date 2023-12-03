@@ -49,7 +49,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     NSURL *dir = [temporaryDirectory ephemeralTemporaryDirectory];
     NSString *coverageDirName =[NSString stringWithFormat:@"coverage_%@", NSUUID.UUID.UUIDString];
     NSString *coverageDirPath = [dir.path stringByAppendingPathComponent:coverageDirName];
-    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:self.coverageRequest.format];
+    coverageConfig = [[FBCodeCoverageConfiguration alloc] initWithDirectory:coverageDirPath format:self.coverageRequest.format enableContinuousCoverageCollection:self.coverageRequest.shouldEnableContinuousCoverageCollection];
   }
 
   NSString *testFilter = nil;
@@ -78,7 +78,8 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
     mirroring:FBLogicTestMirrorFileLogs
     coverageConfiguration:coverageConfig
     binaryPath:testDescriptor.testBundle.binary.path
-    logDirectoryPath:logDirectoryPath];
+    logDirectoryPath:logDirectoryPath
+    architectures:testDescriptor.architectures];
 
   return [self startTestExecution:configuration target:target reporter:reporter logger:logger];
 }

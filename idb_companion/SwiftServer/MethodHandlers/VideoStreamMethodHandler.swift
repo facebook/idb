@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionLib
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -77,7 +78,8 @@ struct VideoStreamMethodHandler {
                                             framesPerSecond: framesPerSecond,
                                             compressionQuality: .init(value: start.compressionQuality),
                                             scaleFactor: .init(value: start.scaleFactor),
-                                            avgBitrate: avgBitrate)
+                                            avgBitrate: avgBitrate,
+                                            keyFrameRate: .init(value: start.keyFrameRate))
 
     let videoStream = try await BridgeFuture.value(target.createStream(with: config))
 

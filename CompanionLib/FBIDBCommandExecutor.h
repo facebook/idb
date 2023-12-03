@@ -99,17 +99,19 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  Installs an xctest bundle by file path.
 
  @param filePath the local file path of the xctest bundle
+ @param skipSigningBundles pass true to skip signing xctest bundles.
  @return a Future that resolves with the xctest identifier.
  */
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath skipSigningBundles:(BOOL)skipSigningBundles;
 
 /**
  Installs an xctest bundle by a stream of tar data
 
  @param input a tar stream of the xctest data.
+ @param skipSigningBundles pass true to skip signing xctest bundles.
  @return a Future that resolves with the xctest identifier.
  */
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)input;
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)input skipSigningBundles:(BOOL)skipSigningBundles;
 
 /**
  Installs a dylib from a file path.

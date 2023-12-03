@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionLib
 import FBControlCore
 import Foundation
 import GRPC
@@ -25,7 +26,6 @@ struct DescribeMethodHandler {
         $0.state = FBiOSTargetStateStringFromState(target.state).rawValue
         $0.targetType = FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased()
         $0.osVersion = target.osVersion.name.rawValue
-        $0.architecture = target.architecture.rawValue
         if let screenInfo = target.screenInfo {
           $0.screenDimensions = .with {
             $0.width = UInt64(screenInfo.widthPixels)

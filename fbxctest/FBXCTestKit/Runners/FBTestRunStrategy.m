@@ -102,6 +102,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 

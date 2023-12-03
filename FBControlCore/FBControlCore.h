@@ -94,3 +94,4 @@
 #import <FBControlCore/NSPredicate+FBControlCore.h>
 #import <FBControlCore/FBConcatedJsonParser.h>
 #import <FBControlCore/FBCrashLogParser.h>
+#import <FBControlCore/FBArchitectureProcessAdapter.h>

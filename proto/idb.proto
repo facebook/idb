@@ -208,6 +208,7 @@ message InstallRequest {
                           // Link dSYM to app bundle_id
     LinkDsymToBundle link_dsym_to_bundle = 6;
     bool override_modification_time = 7;
+    bool skip_signing_bundles = 8;
   }
 }
 
@@ -478,6 +479,7 @@ message VideoStreamRequest {
     double compression_quality = 4;
     double scale_factor = 5;
     double avg_bitrate = 6;
+    double key_frame_rate = 7;
   }
   message Stop {}
   oneof control {
@@ -708,6 +710,7 @@ message XctestRunRequest {
     }
     bool collect = 1;
     Format format = 2;
+    bool enable_continuous_coverage_collection = 3;
   }
   Mode mode = 1;
   string test_bundle_id = 2;

@@ -144,7 +144,8 @@ class CompanionSet:
                         and companion.address.path == destination.path
                     )
                 ]
+            else:
+                to_remove = []
             for companion in to_remove:
                 companions.remove(companion)
-            # pyre-fixme[61]: `to_remove` may not be initialized here.
             return to_remove

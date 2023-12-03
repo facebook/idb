@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionLib
 import FBControlCore
 import Foundation
 import GRPC
@@ -59,6 +60,12 @@ struct InstallMethodHandler {
       request = try await requestStream.requiredNext
     }
 
+    var skipSigningBundles = false
+    if case let .skipSigningBundles(skip) = request.value {
+      skipSigningBundles = skip
+      request = try await requestStream.requiredNext
+    }
+
     var linkToBundle: FBDsymInstallLinkToBundle?
 
     // (2022-03-02) REMOVE! Keeping only for retrocompatibility
@@ -88,7 +95,8 @@ struct InstallMethodHandler {
                                  makeDebuggable: makeDebuggable,
                                  linkToBundle: linkToBundle,
                                  compression: compression,
-                                 overrideModificationTime: overrideModificationTime)
+                                 overrideModificationTime: overrideModificationTime,
+                                 skipSigningBundles: skipSigningBundles)
   }
 
   private func installData(from source: Idb_Payload.OneOf_Source?,
@@ -98,9 +106,10 @@ struct InstallMethodHandler {
                            makeDebuggable: Bool,
                            linkToBundle: FBDsymInstallLinkToBundle?,
                            compression: FBCompressionFormat,
-                           overrideModificationTime: Bool) async throws -> FBInstalledArtifact {
+                           overrideModificationTime: Bool,
+                           skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
 
-    func installSource(dataStream: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
+    func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
         return try await BridgeFuture.value(
@@ -108,7 +117,7 @@ struct InstallMethodHandler {
         )
       case .xctest:
         return try await BridgeFuture.value(
-          commandExecutor.install_xctest_app_stream(dataStream)
+          commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
         )
       case .dsym:
         return try await BridgeFuture.value(
@@ -130,7 +139,7 @@ struct InstallMethodHandler {
     switch source {
     case let .data(data):
       let dataStream = pipeToInputOutput(initial: data, requestStream: requestStream) as! FBProcessInput<AnyObject>
-      return try await installSource(dataStream: dataStream)
+      return try await installSource(dataStream: dataStream, skipSigningBundles: skipSigningBundles)
 
     case let .url(urlString):
       guard let url = URL(string: urlString) else {
@@ -139,7 +148,7 @@ struct InstallMethodHandler {
       let download = FBDataDownloadInput.dataDownload(with: url, logger: targetLogger)
       let input = download.input as! FBProcessInput<AnyObject>
 
-      return try await installSource(dataStream: input)
+      return try await installSource(dataStream: input, skipSigningBundles: skipSigningBundles)
 
     case let .filePath(filePath):
       switch destination {
@@ -149,7 +158,7 @@ struct InstallMethodHandler {
         )
       case .xctest:
         return try await BridgeFuture.value(
-          commandExecutor.install_xctest_app_file_path(filePath)
+          commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
         )
       case .dsym:
         return try await BridgeFuture.value(

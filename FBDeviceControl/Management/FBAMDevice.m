@@ -90,9 +90,9 @@
   return self.allValues[FBDeviceKeyUniqueDeviceID];
 }
 
-- (NSString *)architecture
+- (NSArray<FBArchitecture> *)architectures
 {
-  return self.allValues[FBDeviceKeyCPUArchitecture];
+  return @[self.allValues[FBDeviceKeyCPUArchitecture]];
 }
 
 - (NSString *)buildVersion

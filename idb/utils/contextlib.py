@@ -68,7 +68,7 @@ class AbstractAsyncContextManager(abc.ABC):
         return NotImplemented
 
 
-class ContextDecorator(object):
+class ContextDecorator:
     "A base class or mixin that enables context managers to work as decorators."
 
     def _recreate_cm(self):

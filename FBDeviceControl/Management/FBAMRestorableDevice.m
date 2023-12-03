@@ -74,9 +74,10 @@ static NSString *const UnknownValue = @"unknown";
   return [FBDeviceType genericWithName:productString];
 }
 
-- (FBArchitecture)architecture
+
+- (NSArray<FBArchitecture> *)architectures
 {
-  return UnknownValue;
+    return @[UnknownValue];
 }
 
 - (FBiOSTargetType)targetType

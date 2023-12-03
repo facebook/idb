@@ -11,7 +11,7 @@ import logging
 import os
 import shutil
 import sys
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 
 import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
@@ -121,7 +121,10 @@ def get_default_companion_path() -> Optional[str]:
     return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
 
 
-async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
+SysExitArg = Union[int, str, None]
+
+
+async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
     # Make sure all files are created with global rw permissions
     os.umask(0o000)
     # Setup parser
@@ -350,7 +353,7 @@ async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
         pass
 
 
-def main(cmd_input: Optional[List[str]] = None) -> int:
+def main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
     loop = asyncio.get_event_loop()
     try:
         return loop.run_until_complete(gen_main(cmd_input))
@@ -358,5 +361,9 @@ def main(cmd_input: Optional[List[str]] = None) -> int:
         loop.close()
 
 
-if __name__ == "__main__":
+def main_2() -> None:
     sys.exit(main())
+
+
+if __name__ == "__main__":
+    main_2()

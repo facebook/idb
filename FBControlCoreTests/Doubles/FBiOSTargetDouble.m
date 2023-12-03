@@ -9,7 +9,7 @@
 
 @implementation FBiOSTargetDouble
 
-@synthesize architecture;
+@synthesize architectures;
 @synthesize logger;
 @synthesize platformRootDirectory;
 @synthesize runtimeRootDirectory;

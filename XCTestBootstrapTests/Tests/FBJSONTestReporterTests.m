@@ -147,7 +147,8 @@
 {
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
-  [self.reporter testCaseDidFailForTestClass:@"FooTest" method:@"BarCase" withMessage:@"BadBar" file:@"BadFile" line:42];
+  [self.reporter testCaseDidFailForTestClass:@"FooTest" method:@"BarCase" exceptions:@[[[FBExceptionInfo alloc] initWithMessage:@"BadBar" file:@"BadFile" line:42
+  ]]];
   [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1 logs:nil];
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;

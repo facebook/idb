@@ -58,6 +58,14 @@ extern FBDeviceModel const FBDeviceModeliPhone13mini;
 extern FBDeviceModel const FBDeviceModeliPhone13;
 extern FBDeviceModel const FBDeviceModeliPhone13Pro;
 extern FBDeviceModel const FBDeviceModeliPhone13ProMax;
+extern FBDeviceModel const FBDeviceModeliPhone14;
+extern FBDeviceModel const FBDeviceModeliPhone14Plus;
+extern FBDeviceModel const FBDeviceModeliPhone14Pro;
+extern FBDeviceModel const FBDeviceModeliPhone14ProMax;
+extern FBDeviceModel const FBDeviceModeliPhone15;
+extern FBDeviceModel const FBDeviceModeliPhone15Plus;
+extern FBDeviceModel const FBDeviceModeliPhone15Pro;
+extern FBDeviceModel const FBDeviceModeliPhone15ProMax;
 extern FBDeviceModel const FBDeviceModeliPodTouch_7thGeneration;
 extern FBDeviceModel const FBDeviceModeliPad2;
 extern FBDeviceModel const FBDeviceModeliPad_6thGeneration;
@@ -231,11 +239,6 @@ extern FBOSVersionName const FBOSVersionNamemac;
 @property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
 
 /**
- The Native Simulator Arhitecture.
- */
-@property (nonatomic, copy, readonly) FBArchitecture simulatorArchitecture;
-
-/**
  The Supported Product Family.
  */
 @property (nonatomic, assign, readonly) FBControlCoreProductFamily family;
@@ -314,7 +317,7 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *baseArchToCompatibleArch;
++ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures;
 
 @end
 

@@ -100,9 +100,8 @@ static NSTimeInterval const KillBackoffTimeout = 1;
     crashLogsForTerminationOfProcess:process since:startDate crashLogCommands:crashLogCommands crashLogWaitTime:crashLogWaitTime queue:queue]
     rephraseFailure:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", process.processIdentifier]
     onQueue:queue fmap:^(FBCrashLogInfo *crashInfo) {
-      NSString *crashString = [NSString stringWithContentsOfFile:crashInfo.crashPath encoding:NSUTF8StringEncoding error:nil];
       return [[FBXCTestError
-        describeFormat:@"xctest process crashed\n %@", crashString]
+        describeFormat:@"xctest process crashed\n%@\n\nRaw Crash File Contents\n%@", crashInfo, [crashInfo loadRawCrashLogStringWithError:nil]]
         failFuture];
     }];
 }

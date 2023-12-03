@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionLib
 import FBSimulatorControl
 import Foundation
 import GRPC
@@ -31,10 +32,16 @@ struct XCTestRunMethodHandler {
     let operation = try await BridgeFuture.value(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
-    _ = try await BridgeFuture.value(reporter.reportingTerminated)
+    do {
+      try await BridgeFuture.await(operation.completed)
+    } catch let error as NSError {
+      // We should ignore errors that came from test binary. Like when exception is throwed or binary crashed.
+      if error.domain != FBTestErrorDomain {
+        throw error
+      }
+    }
 
-    // TODO: operation.completed throws an error in case of binary crash. We should handle it gracefully
-    try? await BridgeFuture.await(operation.completed)
+    _ = try await BridgeFuture.value(reporter.reportingTerminated)
   }
 
   func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {
@@ -90,12 +97,12 @@ struct XCTestRunMethodHandler {
     if request.hasCodeCoverage {
       switch request.codeCoverage.format {
       case .raw:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw)
+        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
       case .exported, .UNRECOGNIZED:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported)
+        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
       }
     }
     // fallback to deprecated request field for backwards compatibility
-    return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported)
+    return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
   }
 }

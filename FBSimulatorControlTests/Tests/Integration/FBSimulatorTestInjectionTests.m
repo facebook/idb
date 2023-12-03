@@ -106,6 +106,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -143,6 +144,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -168,6 +170,7 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
+    enableContinuousCoverageCollection:NO
     logDirectoryPath:nil
     reportResultBundle:NO];
 
@@ -199,11 +202,6 @@
     case FBTestReportStatusUnknown:
       break;
   }
-}
-
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
-{
-
 }
 
 - (void)testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
@@ -258,5 +256,11 @@
 {
 
 }
+
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
+{
+
+}
+
 
 @end

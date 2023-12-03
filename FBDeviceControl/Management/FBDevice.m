@@ -38,7 +38,7 @@
 @synthesize activationState = _activationState;
 @synthesize allValues = _allValues;
 @synthesize amDevice = _amDevice;
-@synthesize architecture = _architecture;
+@synthesize architectures = _architectures;
 @synthesize buildVersion = _buildVersion;
 @synthesize calls = _calls;
 @synthesize deviceType = _deviceType;
@@ -181,8 +181,8 @@
   if (!_allValues || overwrite) {
     _allValues = targetInfo.allValues;
   }
-  if (!_architecture || overwrite) {
-    _architecture = targetInfo.architecture;
+  if (!_architectures || overwrite) {
+    _architectures = targetInfo.architectures;
   }
   if (!_buildVersion || overwrite) {
     _buildVersion = targetInfo.buildVersion;

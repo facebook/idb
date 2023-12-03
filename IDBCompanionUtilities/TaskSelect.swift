@@ -12,7 +12,7 @@ struct TaskSelectState<Success: Sendable, Failure: Error>: Sendable {
   var tasks: [Task<Success, Failure>]? = []
 
   mutating func add(_ task: Task<Success, Failure>) -> Task<Success, Failure>? {
-    if var tasks = tasks {
+    if var tasks {
       tasks.append(task)
       self.tasks = tasks
       return nil

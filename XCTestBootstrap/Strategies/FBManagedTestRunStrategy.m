@@ -43,7 +43,8 @@
         initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
         timeout:configuration.timeout
         testHostLaunchConfiguration:testHostLaunchConfiguration
-        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment
+        testConfiguration:runnerConfiguration.testConfiguration];
 
       // Construct and run the mediator, the core of the test execution.
       return [FBTestManagerAPIMediator

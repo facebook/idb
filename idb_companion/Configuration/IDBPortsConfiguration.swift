@@ -29,7 +29,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   }
 
   func outputDescription(for socketAddress: SocketAddress?) throws -> [String: Any] {
-    guard let socketAddress = socketAddress else {
+    guard let socketAddress else {
       throw ExtractionError.socketAddressIsEmpty
     }
     switch self {
@@ -89,7 +89,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   let tlsCertPath: String?
 
   var swiftServerTarget: GRPCConnectionTarget {
-    if let grpcDomainSocket = grpcDomainSocket, !grpcDomainSocket.isEmpty {
+    if let grpcDomainSocket, !grpcDomainSocket.isEmpty {
       return .unixDomainSocket(grpcDomainSocket)
     } else {
       return .tcpPort(port: grpcPort)

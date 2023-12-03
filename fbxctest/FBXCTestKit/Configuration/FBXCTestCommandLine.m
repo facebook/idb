@@ -67,7 +67,8 @@
       testBundlePath:testBundlePath
       runnerAppPath:runnerAppPath
       waitForDebugger:waitForDebugger
-      timeout:timeout];
+      timeout:timeout
+      architectures: [NSSet setWithArray:@[@"arm64", @"x86_64"]]];
   } else if ([argumentSet containsObject:@"-logicTest"]) {
     configuration = [FBLogicTestConfiguration
       configurationWithEnvironment:environment
@@ -79,7 +80,8 @@
       mirroring:FBLogicTestMirrorFileLogs
       coverageConfiguration:nil
       binaryPath:nil
-      logDirectoryPath:nil];
+      logDirectoryPath:nil
+      architectures:[NSSet setWithArray:@[@"arm64", @"x86_64"]]];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
     [allEnvironment addEntriesFromDictionary:environment];

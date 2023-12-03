@@ -58,6 +58,11 @@ Much of the implementation here comes from:
 
 - (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
+  if (self.device.osVersion.version.majorVersion >= 17) {
+    return [[FBDeviceControlError
+           describeFormat:@"Debugging is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
+        failFuture];
+  }
   return [[self
     lldbBootstrapCommandsForApplicationAtPath:application.path port:port]
     onQueue:self.device.workQueue fmap:^(NSArray<NSString *> *commands) {

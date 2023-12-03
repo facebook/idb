@@ -112,25 +112,27 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSString *launchPath = xctestPath;
   NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
-  return [[FBOToolDynamicLibs
-    findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
-    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
+  return [[[FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger] withTemporaryDirectory]
+          onQueue:self.target.workQueue pop:^FBFuture *(NSURL *temporaryDirectory) {
+    return [[FBOToolDynamicLibs
+             findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
+            onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
       NSDictionary<NSString *, NSString *> *environment = [FBLogicTestRunStrategy
-        setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
-        withLibraries:libraries
-        shimOutputFilePath:outputs.shimOutput.filePath
-        shimPath:shimPath
-        bundlePath:self.configuration.testBundlePath
-        coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
-        logDirectoryPath:self.configuration.logDirectoryPath
-        waitForDebugger:self.configuration.waitForDebugger];
-
+                                                           setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
+                                                           withLibraries:libraries
+                                                           shimOutputFilePath:outputs.shimOutput.filePath
+                                                           shimPath:shimPath
+                                                           bundlePath:self.configuration.testBundlePath
+                                                           coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
+                                                           logDirectoryPath:self.configuration.logDirectoryPath
+                                                           waitForDebugger:self.configuration.waitForDebugger];
       return [[self
-        startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs]
-        onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
-          return [self completeLaunchedProcess:exitCode outputs:outputs];
-        }];
+               startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs temporaryDirectory:temporaryDirectory]
+              onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
+        return [self completeLaunchedProcess:exitCode outputs:outputs];
+      }];
     }];
+  }];
 }
 
 + (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
@@ -301,7 +303,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (FBFuture<FBFuture<NSNumber *> *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment outputs:(FBLogicTestRunOutputs *)outputs
+- (FBFuture<FBFuture<NSNumber *> *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment outputs:(FBLogicTestRunOutputs *)outputs temporaryDirectory:(NSURL *)temporaryDirectory
 {
   dispatch_queue_t queue = self.target.workQueue;
   id<FBControlCoreLogger> logger = self.logger;
@@ -315,16 +317,19 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   ];
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:outputs.stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:outputs.stdErrConsumer]];
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModePosixSpawn];
-
-  return [[self.target
-    launchProcess:configuration]
-    onQueue:queue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
-      return [[FBLogicTestRunStrategy
-        fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
-        onQueue:queue fmap:^(id _) {
-          return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
-        }];
+  FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
+  
+  // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
+  // For more information look at `FBArchitectureProcessAdapter` docs.
+  return [[[adapter adaptProcessConfiguration:configuration toAnyArchitectureIn:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]
+           onQueue:queue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
+    return [self.target launchProcess:mappedConfiguration];
+  }]
+          onQueue:queue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
+    return [[FBLogicTestRunStrategy fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter] onQueue:queue fmap:^(id _) {
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
     }];
+  }];
 }
 
 @end

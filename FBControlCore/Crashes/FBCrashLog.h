@@ -81,12 +81,23 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 @property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
 
+/**
+ The description of the exception
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *exceptionDescription;
+
+/**
+ List of symbols on the crashed thread
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *crashedThreadDescription;
+
 #pragma mark Helpers
 
 /**
  The Diagnostics Report Paths for the User.
  */
 @property (nonatomic, class, copy, readonly) NSArray<NSString *> *diagnosticReportsPaths;
+
 
 #pragma mark Initializers
 
@@ -130,6 +141,11 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return the crash log if one could be read.
  */
 - (nullable FBCrashLog *)obtainCrashLogWithError:(NSError **)error;
+
+/**
+ Reads the contents of the crash log on disk, as a string.
+ */
+ - (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
 
 #pragma mark Predicates
 

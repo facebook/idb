@@ -8,7 +8,7 @@
 #import "FBiOSTargetStateChangeNotifier.h"
 
 #import "FBiOSTargetDescription.h"
-#import "FBIDBError.h"
+#import <CompanionLib/FBIDBError.h>
 
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 

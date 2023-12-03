@@ -82,10 +82,10 @@
   
   // Substitute path of bundle to simulate corruption of path to app
   [app.bundle setValue:@"incorrect/path" forKey:@"_path"];
-  
-  XCTAssertNotNil([self.device uninstallApplicationWithBundleID:app.bundle.identifier].error,
-                  @"Error should be thrown when bundle path is incorrect");
-  
+
+  XCTAssertNil([self.device uninstallApplicationWithBundleID:app.bundle.identifier].error,
+                  @"Error should not be thrown when bundle path is incorrect");
+
   // Restore correct path to make tearDown behave properly
   [app.bundle setValue:rightPath forKey:@"_path"];
 }

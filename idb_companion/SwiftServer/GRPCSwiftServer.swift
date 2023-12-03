@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionLib
 import FBControlCore
 import Foundation
 import GRPC
@@ -160,7 +161,7 @@ final class GRPCSwiftServer: NSObject {
 
   private func logServerStartup(address: SocketAddress?) {
     let message = "Swift server started on "
-    if let address = address {
+    if let address {
       logger.info().log(message + address.description)
     } else {
       logger.error().log(message + " unknown address")

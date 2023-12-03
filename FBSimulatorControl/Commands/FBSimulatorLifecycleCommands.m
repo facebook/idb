@@ -22,6 +22,8 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 
+const int OPEN_URL_RETRIES = 2;
+
 @interface FBSimulatorLifecycleCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -243,13 +245,20 @@
 {
   NSParameterAssert(url);
   NSError *error = nil;
-  if (![self.simulator.device openURL:url error:&error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
-      causedBy:error]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:[NSNull null]];
+
+  int retry = 0;
+  do {
+    // Retry openURL 2 times to alleviate Rosetta startup slowness.
+    if ([self.simulator.device openURL:url error:&error]) {
+      return [FBFuture futureWithResult:[NSNull null]];
+    }
+    retry++;
+  } while (retry <= OPEN_URL_RETRIES);
+
+  return [[[FBSimulatorError
+    describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
+    causedBy:error]
+    failFuture];
 }
 
 @end

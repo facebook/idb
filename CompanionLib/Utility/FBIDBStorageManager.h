@@ -186,16 +186,17 @@ extern NSString *const IdbFrameworksFolder;
  @param baseDirectory the directory containing the test bundle.
  @return the bundle id of the installed test, or nil if failed
  */
-- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory;
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRunFromBaseDirectory:(NSURL *)baseDirectory skipSigningBundles:(BOOL)skipSigningBundles;
 
 /**
  Stores a test bundle, based on the file path of the actual test bundle.
  This is useful when the test bundle is from an existing and local file path, instead of passed in an archive.
 
  @param filePath the file path of the bundle.
+ @param skipSigningBundles pass true to skip signing xctest bundles.
  @return the bundle id of the installed test, or nil if failed
  */
-- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath;
+- (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath skipSigningBundles:(BOOL)skipSigningBundles;
 
 /**
  Get descriptors for all installed test bundles and xctestrun files.

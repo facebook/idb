@@ -27,7 +27,7 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
   return YES;
 }
 
-static NSData *AnnexBNALUStartCodeData()
+static NSData *AnnexBNALUStartCodeData(void)
 {
   // https://www.programmersought.com/article/3901815022/
   // Annex-B is simpler as it is purely based on a start code to denote the start of the NALU.
@@ -51,7 +51,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
   }
   NSData *headerData = AnnexBNALUStartCodeData();
   NSMutableData *consumableData = [NSMutableData alloc];
-  
+
   bool isKeyFrame = false;
   CFArrayRef attachments =
       CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
@@ -175,7 +175,7 @@ BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsum
     if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
       NSData *data = [NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO];
       [consumer consumeData:data];
-    } else {  
+    } else {
       NSData *data = [NSData dataWithBytes:dataPointer length:lengthAtOffset];
       [consumer consumeData:data];
     }

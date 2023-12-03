@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <XCTestPrivate/XCTCapabilitiesBuilder.h>
 #import <XCTestPrivate/XCTestConfiguration.h>
 #import <XCTestPrivate/XCTTestIdentifier.h>
 #import <XCTestPrivate/XCTTestIdentifierSet.h>
@@ -40,7 +41,11 @@
   testConfiguration.testsDrivenByIDE = NO;
   testConfiguration.testApplicationDependencies = testApplicationDependencies;
   
-
+  XCTCapabilitiesBuilder *capabilitiesBuilder = [objc_lookUpClass("XCTCapabilitiesBuilder") new];
+  [capabilitiesBuilder registerCapability:@"XCTIssue capability"];
+  [capabilitiesBuilder registerCapability:@"ubiquitous test identifiers"];
+  testConfiguration.IDECapabilities = [capabilitiesBuilder capabilities];
+  
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
 
   // Write it to file.
@@ -48,7 +53,7 @@
   if (![data writeToFile:savePath options:NSDataWritingAtomic error:error]) {
     return nil;
   }
-  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting];
+  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
 }
 
 + (void) setTestsToRun: (NSSet<NSString *> *) toRun andTestsToSkip: (NSSet<NSString *> *) toSkip to: (XCTestConfiguration *) configuration
@@ -79,17 +84,18 @@
   return b.testIdentifierSet;
 }
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   return [[self alloc]
     initWithSessionIdentifier:sessionIdentifier
     moduleName:moduleName
     testBundlePath:testBundlePath
     path:path
-    uiTesting:uiTesting];
+    uiTesting:uiTesting
+    xcTestConfiguration:xcTestConfiguration];
 }
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   self = [super init];
   if (!self) {
@@ -101,6 +107,7 @@
   _testBundlePath = testBundlePath;
   _path = path;
   _shouldInitializeForUITesting = uiTesting;
+  _xcTestConfiguration=xcTestConfiguration;
 
   return self;
 }

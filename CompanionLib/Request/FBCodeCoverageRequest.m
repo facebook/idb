@@ -9,16 +9,16 @@
 
 @implementation FBCodeCoverageRequest
 
-- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format
+- (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  
+
   _collect = collect;
   _format = format;
-
+  _shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection;
   return self;
 }
 

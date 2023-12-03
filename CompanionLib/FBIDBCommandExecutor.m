@@ -91,14 +91,14 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromStream:input compression:compression overrideModificationTime:overrideModificationTime] makeDebuggable:makeDebuggable];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_file_path:(NSString *)filePath skipSigningBundles:(BOOL)skipSigningBundles
 {
-  return [self installXctestFilePath:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]]];
+  return [self installXctestFilePath:[FBFutureContext futureContextWithFuture:[FBFuture futureWithResult:[NSURL fileURLWithPath:filePath]]] skipSigningBundles:skipSigningBundles];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream
+- (FBFuture<FBInstalledArtifact *> *)install_xctest_app_stream:(FBProcessInput *)stream skipSigningBundles:(BOOL)skipSigningBundles
 {
-  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream compression:FBCompressionFormatGZIP]];
+  return [self installXctest:[self.temporaryDirectory withArchiveExtractedFromStream:stream compression:FBCompressionFormatGZIP] skipSigningBundles:skipSigningBundles];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)install_dylib_file_path:(NSString *)filePath
@@ -325,7 +325,7 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
 
 - (FBFuture<NSNull *> *)kill_application:(NSString *)bundleID
 {
-  return [self.target killApplicationWithBundleID:bundleID];
+  return [[self.target killApplicationWithBundleID:bundleID] fallback:NSNull.null];
 }
 
 - (FBFuture<id<FBLaunchedApplication>> *)launch_app:(FBApplicationLaunchConfiguration *)configuration
@@ -882,19 +882,19 @@ static const NSTimeInterval ListTestBundleTimeout = 60.0;
     }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest
+- (FBFuture<FBInstalledArtifact *> *)installXctest:(FBFutureContext<NSURL *> *)extractedXctest skipSigningBundles:(BOOL)skipSigningBundles
 {
   return [extractedXctest
     onQueue:self.target.workQueue pop:^(NSURL *extractionDirectory) {
-      return [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory];
+      return [self.storageManager.xctest saveBundleOrTestRunFromBaseDirectory:extractionDirectory skipSigningBundles:skipSigningBundles];
   }];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)installXctestFilePath:(FBFutureContext<NSURL *> *)bundle
+- (FBFuture<FBInstalledArtifact *> *)installXctestFilePath:(FBFutureContext<NSURL *> *)bundle skipSigningBundles:(BOOL)skipSigningBundles
 {
   return [bundle
     onQueue:self.target.workQueue pop:^(NSURL *xctestURL) {
-      return [self.storageManager.xctest saveBundleOrTestRun:xctestURL];
+      return [self.storageManager.xctest saveBundleOrTestRun:xctestURL skipSigningBundles:skipSigningBundles];
     }];
 }
 
