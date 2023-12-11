@@ -20,12 +20,12 @@ enum FBFutureError: Error {
 
 /// Swift compiler does not allow usage of generic parameters of objc classes in extension
 /// so we need to create a bridge for convenience.
-enum BridgeFuture {
+public enum BridgeFuture {
 
   /// Use this to receive results from multiple futures. The results are **ordered in the same order as passed futures**, so you can safely access them from
   /// array by indexes.
   /// - Note: We should *not* use @discardableResult, results should be dropped explicitly by the callee.
-  static func values<T: AnyObject>(_ futures: FBFuture<T>...) async throws -> [T] {
+  public static func values<T: AnyObject>(_ futures: FBFuture<T>...) async throws -> [T] {
     let futuresArr: [FBFuture<T>] = futures
     return try await values(futuresArr)
   }
@@ -33,7 +33,7 @@ enum BridgeFuture {
   /// Use this to receive results from multiple futures. The results are **ordered in the same order as passed futures**, so you can safely access them from
   /// array by indexes.
   /// - Note: We should *not* use @discardableResult, results should be dropped explicitly by the callee.
-  static func values<T: AnyObject>(_ futures: [FBFuture<T>]) async throws -> [T] {
+  public static func values<T: AnyObject>(_ futures: [FBFuture<T>]) async throws -> [T] {
     return try await withThrowingTaskGroup(of: (Int, T).self, returning: [T].self) { group in
       var results = [T?].init(repeating: nil, count: futures.count)
 
@@ -59,13 +59,14 @@ enum BridgeFuture {
 
   /// Awaitable value that waits for publishing from the wrapped future
   /// - Note: We should *not* use @discardableResult, results should be dropped explicitly by the callee.
-  static func value<T: AnyObject>(_ future: FBFuture<T>) async throws -> T {
+  public static func value<T: AnyObject>(_ future: FBFuture<T>) async throws -> T {
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         future.onQueue(BridgeQueues.futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
           if let error = resultFuture.error {
             continuation.resume(throwing: error)
           } else if let value = resultFuture.result {
+            // swiftlint:disable force_cast
             continuation.resume(returning: value as! T)
           } else {
             continuation.resume(throwing: FBFutureError.continuationFullfilledWithoutValues)
@@ -101,8 +102,9 @@ enum BridgeFuture {
   ///
   ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
   /// ```
-  static func value<T>(_ future: FBFuture<NSArray>) async throws -> [T] {
+  public static func value<T>(_ future: FBFuture<NSArray>) async throws -> [T] {
     let objcValue = try await value(future)
+    // swiftlint:disable force_cast
     return objcValue as! [T]
   }
 
@@ -130,34 +132,36 @@ enum BridgeFuture {
   ///
   ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
   /// ```
-  static func value<T: Hashable, U>(_ future: FBFuture<NSDictionary>) async throws -> [T: U] {
+  public static func value<T: Hashable, U>(_ future: FBFuture<NSDictionary>) async throws -> [T: U] {
     let objcValue = try await value(future)
+    // swiftlint:disable force_cast
     return objcValue as! [T: U]
   }
 
   /// NSNull is Void equivalent in objc reference world. So is is safe to ignore the result.
-  static func await(_ future: FBFuture<NSNull>) async throws {
+  public static func await(_ future: FBFuture<NSNull>) async throws {
     _ = try await Self.value(future)
   }
 
   /// This overload exists because of `FBMutableFuture` does not convert its exact generic type automatically but it can be automatically converted to `FBFuture<AnyObject>`
   /// without any problems. This decision may be revisited in future.
-  static func await(_ future: FBFuture<AnyObject>) async throws {
+  public static func await(_ future: FBFuture<AnyObject>) async throws {
     _ = try await Self.value(future)
   }
 
   /// Interop between swift and objc generics are quite bad, so we have to write wrappers like this.
   /// By default swift bridge compiler could not convert generic type of `FBMutableFuture`. But this force cast is 100% valid and works in runtime
   /// so we just use this little helper.
-  static func convertToFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) -> FBFuture<T> {
+  public static func convertToFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) -> FBFuture<T> {
     let future: FBFuture<AnyObject> = mutableFuture
+    // swiftlint:disable force_cast
     return future as! FBFuture<T>
   }
 
   /// Split FBFutureContext to two pieces: result and later cleanup closure
   /// - Parameter futureContext: source future context
   /// - Returns: Tuple of extracted result and cleanup closure that **should** be called later to perform all required cleanups
-  static func value<T: AnyObject>(_ futureContext: FBFutureContext<T>) async throws -> T {
+  public static func value<T: AnyObject>(_ futureContext: FBFutureContext<T>) async throws -> T {
     try FBTeardownContext.current.addCleanup {
       let cleanupFuture = futureContext.onQueue(BridgeQueues.futureSerialFullfillmentQueue) { (result: Any, teardown: FBMutableFuture<NSNull>) -> NSNull in
         teardown.resolve(withResult: NSNull())
@@ -193,8 +197,9 @@ enum BridgeFuture {
   ///
   ///  self.someMethod(accepts: BridgeFuture.value(futureFromObjc)
   /// ```
-  static func values<T: AnyObject, U>(_ futureContext: FBFutureContext<T>) async throws -> [U] {
+  public static func values<T: AnyObject, U>(_ futureContext: FBFutureContext<T>) async throws -> [U] {
     let objcValue = try await value(futureContext)
+    // swiftlint:disable force_cast
     return objcValue as! [U]
   }
 }

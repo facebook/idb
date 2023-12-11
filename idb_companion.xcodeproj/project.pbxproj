@@ -49,6 +49,8 @@
 		7135AF7F2A8CC5FC00D8B882 /* CompanionLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF7E2A8CC5FC00D8B882 /* CompanionLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */; };
 		717AFB7528328C11009714AB /* XCTestListBundlesMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */; };
+		7185380C2B22884200D2C033 /* BridgeFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7185380A2B22884200D2C033 /* BridgeFuture.swift */; };
+		7185380D2B22884200D2C033 /* BridgeQueues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7185380B2B22884200D2C033 /* BridgeQueues.swift */; };
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
@@ -114,9 +116,7 @@
 		DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */; };
 		DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */; };
 		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
-		DBA2ED1F27BBA96100926054 /* BridgeFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */; };
 		DBA31DD127BE72EF0032091C /* AsyncSequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */; };
-		DBB3278527F5CDF3001A8E3A /* BridgeQueues.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */; };
 		DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */; };
 		DBCAE6A82816B6AE00C15D07 /* MkdirMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6A72816B6AE00C15D07 /* MkdirMethodHandler.swift */; };
 		DBCAE6AB2816C8F700C15D07 /* PushMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6AA2816C8F700C15D07 /* PushMethodHandler.swift */; };
@@ -244,6 +244,8 @@
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListTestsMethodHandler.swift; sourceTree = "<group>"; };
 		717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListBundlesMethodHandler.swift; sourceTree = "<group>"; };
+		7185380A2B22884200D2C033 /* BridgeFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeFuture.swift; sourceTree = "<group>"; };
+		7185380B2B22884200D2C033 /* BridgeQueues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeQueues.swift; sourceTree = "<group>"; };
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
@@ -308,10 +310,8 @@
 		DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBXCTestReporter.swift; sourceTree = "<group>"; };
 		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
 		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
-		DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeFuture.swift; sourceTree = "<group>"; };
 		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncSequence+Extension.swift"; sourceTree = "<group>"; };
-		DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeQueues.swift; sourceTree = "<group>"; };
 		DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LaunchMethodHandler.swift; sourceTree = "<group>"; };
 		DBB72C84283B957F0065DDB3 /* IDBConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBConfiguration.swift; sourceTree = "<group>"; };
 		DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskTimeout.swift; sourceTree = "<group>"; };
@@ -392,6 +392,7 @@
 		7135AF0B2A8C1B6100D8B882 /* CompanionLib */ = {
 			isa = PBXGroup;
 			children = (
+				718538092B22884200D2C033 /* BridgeFuture */,
 				7135AF0C2A8C1B6100D8B882 /* Configuration */,
 				7135AF0F2A8C1B6100D8B882 /* FBIDBCommandExecutor.h */,
 				7135AF102A8C1B6100D8B882 /* FBIDBCommandExecutor.m */,
@@ -457,6 +458,15 @@
 				7135AF2B2A8C1B6100D8B882 /* FBXCTestRunFileReader.m */,
 			);
 			path = Utility;
+			sourceTree = "<group>";
+		};
+		718538092B22884200D2C033 /* BridgeFuture */ = {
+			isa = PBXGroup;
+			children = (
+				7185380A2B22884200D2C033 /* BridgeFuture.swift */,
+				7185380B2B22884200D2C033 /* BridgeQueues.swift */,
+			);
+			path = BridgeFuture;
 			sourceTree = "<group>";
 		};
 		D7D6DF092265DDEC00B01F14 = {
@@ -548,8 +558,6 @@
 			isa = PBXGroup;
 			children = (
 				DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */,
-				DBA2ED1B27BBA96000926054 /* BridgeFuture.swift */,
-				DBB3278427F5CDF3001A8E3A /* BridgeQueues.swift */,
 				DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */,
 				DB4585BE280863FE004065A2 /* FileDrainWriter.swift */,
 				DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */,
@@ -965,10 +973,12 @@
 				7135AF4D2A8C1C4100D8B882 /* FBXCTestRunRequest.m in Sources */,
 				7135AF6A2A8CC19900D8B882 /* FBIDBAppHostedTestConfiguration.m in Sources */,
 				7135AF412A8C1C2500D8B882 /* FBDataDownloadInput.m in Sources */,
+				7185380C2B22884200D2C033 /* BridgeFuture.swift in Sources */,
 				7135AF442A8C1C2500D8B882 /* FBXCTestDescriptor.m in Sources */,
 				7135AF3F2A8C1C2500D8B882 /* FBXCTestRunFileReader.m in Sources */,
 				7135AF4E2A8C1C4100D8B882 /* FBCodeCoverageRequest.m in Sources */,
 				7135AF522A8C1C5100D8B882 /* FBIDBError.m in Sources */,
+				7185380D2B22884200D2C033 /* BridgeQueues.swift in Sources */,
 				7135AF422A8C1C2500D8B882 /* FBIDBTestOperation.m in Sources */,
 				7135AF4A2A8C1C2500D8B882 /* FBTestApplicationsPair.m in Sources */,
 				7135AF452A8C1C2500D8B882 /* FBXCTestReporterConfiguration.m in Sources */,
@@ -1032,7 +1042,6 @@
 				DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */,
 				DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */,
 				DB6177C1281837A100C33A0A /* RecordMethodHandler.swift in Sources */,
-				DBB3278527F5CDF3001A8E3A /* BridgeQueues.swift in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
 				DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */,
 				7135AF6B2A8CC25500D8B882 /* IDBConfiguration.swift in Sources */,
@@ -1044,7 +1053,6 @@
 				DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */,
 				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
 				DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */,
-				DBA2ED1F27BBA96100926054 /* BridgeFuture.swift in Sources */,
 				717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */,
 				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
@@ -1135,7 +1143,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++20";
@@ -1172,7 +1180,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++20";

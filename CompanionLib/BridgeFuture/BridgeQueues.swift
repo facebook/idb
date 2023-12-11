@@ -8,10 +8,10 @@
 import Foundation
 
 /// Queues collection to bring objc and async-swift worlds together
-enum BridgeQueues {
+public enum BridgeQueues {
 
   /// Plain serial queue that is primarily used to convert *all* FBFuture calls to swift awaitable values
-  static let futureSerialFullfillmentQueue = DispatchQueue(label: "com.facebook.fbfuture.fullfilment")
+  public static let futureSerialFullfillmentQueue = DispatchQueue(label: "com.facebook.fbfuture.fullfilment")
 
   /// Some of *commandExecutor* operations requires DispatchQueue to send response.
   /// The only purpose of everything handled inside this queue is to passthrough call to swift async world via calling swift `Task` api
@@ -23,5 +23,5 @@ enum BridgeQueues {
   /// }
   /// ```
   ///
-  static let miscEventReaderQueue = DispatchQueue(label: "com.facebook.miscellaneous.reader", qos: .userInitiated, attributes: .concurrent)
+  public static let miscEventReaderQueue = DispatchQueue(label: "com.facebook.miscellaneous.reader", qos: .userInitiated, attributes: .concurrent)
 }
