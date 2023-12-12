@@ -67,7 +67,16 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
     reporter:set.reporter];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+- (instancetype)initWithDevice:(id)device logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter {
+    return [self initWithDevice:device
+                  configuration:[FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
+                            set:nil
+             auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
+                         logger:logger
+                       reporter:reporter];
+}
+
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
   if (!self) {
