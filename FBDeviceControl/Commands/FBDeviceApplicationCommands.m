@@ -15,6 +15,7 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBInstrumentsClient.h"
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 @interface FBDeviceWorkflowStatistics : NSObject
 
@@ -322,22 +323,29 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
 - (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
     if (self.device.osVersion.version.majorVersion >= 17) {
-        return [[FBDeviceControlError
-                 describeFormat:@"Launching applications is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
-          failFuture];
+        FBAppleDevicectlCommandExecutor *devicectl = [[FBAppleDevicectlCommandExecutor alloc] initWithDevice:self.device];
+        return [[devicectl launchApplicationWithConfiguration:configuration]
+                onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber* pid) {
+            return [[FBDeviceLaunchedApplication alloc]
+                    initWithProcessIdentifier:pid.intValue
+                    configuration:configuration
+                    commands:self
+                    queue:self.device.workQueue];
+        }];
+    } else {
+        return [[[self
+                  remoteInstrumentsClient]
+                 onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
+            return [client launchApplication:configuration];
+        }]
+                onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
+            return [[FBDeviceLaunchedApplication alloc]
+                    initWithProcessIdentifier:pid.intValue
+                    configuration:configuration
+                    commands:self
+                    queue:self.device.workQueue];
+        }];
     }
-  return [[[self
-    remoteInstrumentsClient]
-    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
-      return [client launchApplication:configuration];
-    }]
-    onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
-      return [[FBDeviceLaunchedApplication alloc]
-        initWithProcessIdentifier:pid.intValue
-        configuration:configuration
-        commands:self
-        queue:self.device.workQueue];
-    }];
 }
 
 #pragma mark Private
