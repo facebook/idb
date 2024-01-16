@@ -147,6 +147,7 @@
   if ([self.reporter respondsToSelector:@selector(didCrashDuringTest:)]) {
     [self.reporter didCrashDuringTest:error];
   }
+  [self.reporter processUnderTestDidExit];
 }
 
 @end
