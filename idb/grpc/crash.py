@@ -16,6 +16,7 @@ from idb.grpc.idb_pb2 import (
 
 
 def _to_crash_log_info_list(response: CrashLogResponse) -> List[CrashLogInfo]:
+    # pyre-fixme[16]: `RepeatedCompositeFieldContainer` has no attribute `__iter__`.
     return [_to_crash_log_info(proto) for proto in response.list]
 
 
