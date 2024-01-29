@@ -1,0 +1,22 @@
+name: build_and_deploy
+on:
+  push:
+    branches:
+    - main
+env:
+  GITHUB_TOKEN: xxxx5056
+jobs:
+  deploy-website:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: node:16.14.0
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Deploying to GitHub Pages
+      run: |-
+        git config --global user.email "docusaurus-bot@users.noreply.github.com"
+        git config --global user.name "Website Deployment Script"
+        echo "machine github.com login docusaurus-bot password $GITHUB_TOKEN" > ~/.netrc
+        echo "Deploying website..."
+        cd website && yarn install && GIT_USER=docusaurus-bot USE_SSH=false yarn deploy
