@@ -6,10 +6,11 @@ on:
 jobs:
   deploy-website:
     runs-on: ubuntu-latest
-    container:
-      image: node:16.14.0
     steps:
     - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 16.14.0
     - name: Deploying to GitHub Pages
       run: |
         git config --global user.email "docusaurus-bot@users.noreply.github.com"
