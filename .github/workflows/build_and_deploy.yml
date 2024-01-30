@@ -1,4 +1,4 @@
-name: build_and_deploy
+name: facebook/idb/build_and_deploy
 on:
   push:
     branches:
