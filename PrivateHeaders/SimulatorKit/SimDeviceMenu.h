@@ -23,7 +23,7 @@
 @property (retain, nonatomic) NSMutableDictionary *menuItemPairForDeviceUDID;
 @property(nonatomic, assign) unsigned long long regID; // @synthesize regID=_regID;
 @property (retain, nonatomic) SimDeviceSet *deviceSet;
-@property (nonatomic, assign) id <SimDeviceMenuDelegate> simDeviceMenuDelegate;
+@property (nonatomic, weak) id <SimDeviceMenuDelegate> simDeviceMenuDelegate;
 
 - (BOOL)selectDevice:(id)arg1;
 - (void)clearSelectedDevice;
