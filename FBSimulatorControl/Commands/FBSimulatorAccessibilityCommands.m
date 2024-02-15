@@ -18,6 +18,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
+#import "FBSimulatorError.h"
 
 //
 // # About the implementation of Accessibility within CoreSimulator
@@ -360,6 +361,11 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
     onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
       [self pushSimulator:simulator token:request.token];
       AXPTranslationObject *translation = [request performWithTranslator:self.translator];
+      if (translation == nil) {
+        return [[FBSimulatorError
+          describeFormat:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
+          fail:error];
+      }
       translation.bridgeDelegateToken = request.token;
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
       element.translation.bridgeDelegateToken = request.token;
