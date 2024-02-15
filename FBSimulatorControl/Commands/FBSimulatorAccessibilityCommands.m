@@ -53,14 +53,6 @@
 // This is needed so that we know which Simulator the request belongs to, since the Translator is a singleton object, we need to be able to de-duplicate here.
 //
 
-static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
-
-@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations>
-
-@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
-
-@end
-
 inline static id ensureJSONSerializable(id obj)
 {
   if (obj == nil) {
@@ -68,6 +60,113 @@ inline static id ensureJSONSerializable(id obj)
   }
   return [NSJSONSerialization isValidJSONObject:@[obj]] ? obj : [obj description];
 }
+
+@interface FBSimulatorAccessibilitySerializer : NSObject
+
+@end
+
+@implementation FBSimulatorAccessibilitySerializer
+
+static NSString *const AXPrefix = @"AX";
+
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
+{
+  element.translation.bridgeDelegateToken = token;
+  if (nestedFormat) {
+    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token]];
+  }
+  return [self.class flatRecursiveDescriptionFromElement:element token:token];
+}
+
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
+{
+  element.translation.bridgeDelegateToken = token;
+  if (nestedFormat) {
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token];
+  }
+  return [self.class accessibilityDictionaryForElement:element token:token];
+}
+
+// The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token
+{
+  // The token must always be set so that the right callback is called
+  element.translation.bridgeDelegateToken = token;
+
+  NSRect frame = element.accessibilityFrame;
+  // The value returned in accessibilityRole is may be prefixed with "AX".
+  // If that's the case, then let's strip it to make it like the SimulatorBridge implementation.
+  NSString *role = element.accessibilityRole;
+  if ([role hasPrefix:AXPrefix]) {
+    role = [role substringFromIndex:2];
+  }
+  NSMutableArray *customActions = [[NSMutableArray alloc] init];
+  for(NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
+    [customActions addObject:ensureJSONSerializable(name)];
+  }
+  return @{
+    // These values are the "legacy" values that mirror their equivalents in SimulatorBridge
+    @"AXLabel": ensureJSONSerializable(element.accessibilityLabel),
+    @"AXFrame": NSStringFromRect(frame),
+    @"AXValue": ensureJSONSerializable(element.accessibilityValue),
+    @"AXUniqueId": ensureJSONSerializable(element.accessibilityIdentifier),
+    // There are additional synthetic values from the old output.
+    @"type": ensureJSONSerializable(role),
+    // These are new values in this output
+    @"title": ensureJSONSerializable(element.accessibilityTitle),
+    @"frame": @{
+      @"x": @(frame.origin.x),
+      @"y": @(frame.origin.y),
+      @"width": @(frame.size.width),
+      @"height": @(frame.size.height),
+    },
+    @"help": ensureJSONSerializable(element.accessibilityHelp),
+    @"enabled": @(element.accessibilityEnabled),
+    @"custom_actions": [customActions copy],
+    @"role": ensureJSONSerializable(element.accessibilityRole),
+    @"role_description": ensureJSONSerializable(element.accessibilityRoleDescription),
+    @"subrole": ensureJSONSerializable(element.accessibilitySubrole),
+    @"content_required": @(element.accessibilityRequired),
+    @"pid": @(element.translation.pid),
+  };
+}
+
+// This replicates the non-heirarchical system that was previously present in SimulatorBridge.
+// In this case the values of frames must be relative to the root, rather than the parent frame.
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
+{
+  NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
+  [values addObject:[self accessibilityDictionaryForElement:element token:token]];
+  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
+    childElement.translation.bridgeDelegateToken = token;
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token];
+    [values addObjectsFromArray:childValues];
+  }
+  return values;
+}
+
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
+{
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token] mutableCopy];
+  NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
+  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
+    childElement.translation.bridgeDelegateToken = token;
+    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token];
+    [childrenValues addObject:childValues];
+  }
+  values[@"children"] = childrenValues;
+  return values;
+}
+
+@end
+
+static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
+
+@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations>
+
+@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
+
+@end
 
 @implementation FBSimulatorAccessibilityCommands_SimulatorBridge
 
@@ -161,7 +260,7 @@ inline static id ensureJSONSerializable(id obj)
       translation.bridgeDelegateToken = token;
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
       element.translation.bridgeDelegateToken = token;
-      NSArray<NSDictionary<NSString *, id> *> *formatted = [self.class recursiveDescriptionFromElement:element token:token nestedFormat:nestedFormat];
+      NSArray<NSDictionary<NSString *, id> *> *formatted = [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:token nestedFormat:nestedFormat];
       [self popSimulator:token];
       return formatted;
     }];
@@ -176,7 +275,7 @@ inline static id ensureJSONSerializable(id obj)
       translation.bridgeDelegateToken = token;
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
       element.translation.bridgeDelegateToken = token;
-      NSDictionary<NSString *, id> *formatted = [self.class formattedDescriptionOfElement:element token:token nestedFormat:nestedFormat];
+      NSDictionary<NSString *, id> *formatted = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:token nestedFormat:nestedFormat];
       [self popSimulator:token];
       return formatted;
     }];
@@ -228,98 +327,6 @@ inline static id ensureJSONSerializable(id obj)
     return response;
   };
 }
-
-static NSString *const AXPrefix = @"AX";
-
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
-{
-  element.translation.bridgeDelegateToken = token;
-  if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token]];
-  }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token];
-}
-
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
-{
-  element.translation.bridgeDelegateToken = token;
-  if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token];
-  }
-  return [self.class accessibilityDictionaryForElement:element token:token];
-}
-
-// The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token
-{
-  // The token must always be set so that the right callback is called
-  element.translation.bridgeDelegateToken = token;
-
-  NSRect frame = element.accessibilityFrame;
-  // The value returned in accessibilityRole is may be prefixed with "AX".
-  // If that's the case, then let's strip it to make it like the SimulatorBridge implementation.
-  NSString *role = element.accessibilityRole;
-  if ([role hasPrefix:AXPrefix]) {
-    role = [role substringFromIndex:2];
-  }
-  NSMutableArray *customActions = [[NSMutableArray alloc] init];
-  for(NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
-    [customActions addObject:ensureJSONSerializable(name)];
-  }
-  return @{
-    // These values are the "legacy" values that mirror their equivalents in SimulatorBridge
-    @"AXLabel": ensureJSONSerializable(element.accessibilityLabel),
-    @"AXFrame": NSStringFromRect(frame),
-    @"AXValue": ensureJSONSerializable(element.accessibilityValue),
-    @"AXUniqueId": ensureJSONSerializable(element.accessibilityIdentifier),
-    // There are additional synthetic values from the old output.
-    @"type": ensureJSONSerializable(role),
-    // These are new values in this output
-    @"title": ensureJSONSerializable(element.accessibilityTitle),
-    @"frame": @{
-      @"x": @(frame.origin.x),
-      @"y": @(frame.origin.y),
-      @"width": @(frame.size.width),
-      @"height": @(frame.size.height),
-    },
-    @"help": ensureJSONSerializable(element.accessibilityHelp),
-    @"enabled": @(element.accessibilityEnabled),
-    @"custom_actions": [customActions copy],
-    @"role": ensureJSONSerializable(element.accessibilityRole),
-    @"role_description": ensureJSONSerializable(element.accessibilityRoleDescription),
-    @"subrole": ensureJSONSerializable(element.accessibilitySubrole),
-    @"content_required": @(element.accessibilityRequired),
-    @"pid": @(element.translation.pid),
-  };
-}
-
-// This replicates the non-heirarchical system that was previously present in SimulatorBridge.
-// In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
-{
-  NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element token:token]];
-  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token];
-    [values addObjectsFromArray:childValues];
-  }
-  return values;
-}
-
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
-{
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token] mutableCopy];
-  NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
-  for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
-    childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token];
-    [childrenValues addObject:childValues];
-  }
-  values[@"children"] = childrenValues;
-  return values;
-}
-
 
 #pragma mark AXPTranslationTokenDelegateHelper
 
