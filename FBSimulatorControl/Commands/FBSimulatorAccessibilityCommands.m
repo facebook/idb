@@ -206,6 +206,93 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
+@interface FBSimulator_TranslationRequest : NSObject
+
+@property (nonatomic, assign, readonly) BOOL nestedFormat;
+@property (nonatomic, copy, readonly) NSString *token;
+
+@end
+
+@implementation FBSimulator_TranslationRequest
+
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _token = NSUUID.UUID.UUIDString;
+  _nestedFormat = nestedFormat;
+  
+  return self;
+}
+
+- (AXPTranslationObject *)performWithTranslator:(AXPTranslator *)translator
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (id)serialize:(AXPMacPlatformElement *)element
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end
+
+@interface FBSimulator_TranslationRequest_FrontmostApplication : FBSimulator_TranslationRequest
+
+@end
+
+@implementation FBSimulator_TranslationRequest_FrontmostApplication
+
+- (AXPTranslationObject *)performWithTranslator:(AXPTranslator *)translator
+{
+  return [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:self.token];
+}
+
+- (id)serialize:(AXPMacPlatformElement *)element
+{
+  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat];
+}
+
+@end
+
+@interface FBSimulator_TranslationRequest_Point : FBSimulator_TranslationRequest
+
+@property (nonatomic, assign, readonly) CGPoint point;
+
+@end
+
+@implementation FBSimulator_TranslationRequest_Point
+
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point
+{
+  self = [super initWithNestedFormat:nestedFormat];
+  if (!self) {
+    return nil;
+  }
+
+  _point = point;
+  
+  return self;
+}
+
+- (AXPTranslationObject *)performWithTranslator:(AXPTranslator *)translator
+{
+  return [translator objectAtPoint:self.point displayId:0 bridgeDelegateToken:self.token];
+}
+
+- (id)serialize:(AXPMacPlatformElement *)element
+{
+  return [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
+}
+
+@end
+
+
 @interface FBSimulator_TranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
 
 @property (nonatomic, weak, readonly) AXPTranslator *translator;
@@ -251,41 +338,25 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark Public
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)frontmostApplicationForSimulator:(FBSimulator *)simulator displayId:(unsigned int)displayId nestedFormat:(BOOL)nestedFormat
+- (FBFuture<id> *)simulator:(FBSimulator *)simulator performRequest:(FBSimulator_TranslationRequest *)request
 {
   return [FBFuture
     onQueue:simulator.workQueue resolveValue:^(NSError **error) {
-      NSString *token = [self pushSimulator:simulator];
-      AXPTranslationObject *translation = [self.translator frontmostApplicationWithDisplayId:displayId bridgeDelegateToken:token];
+      NSString *token = [self pushSimulator:simulator token:request.token];
+      AXPTranslationObject *translation = [request performWithTranslator:self.translator];
       translation.bridgeDelegateToken = token;
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
       element.translation.bridgeDelegateToken = token;
-      NSArray<NSDictionary<NSString *, id> *> *formatted = [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:token nestedFormat:nestedFormat];
+      id serializedResponse = [request serialize:element];
       [self popSimulator:token];
-      return formatted;
-    }];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)objectAtPointForSimulator:(FBSimulator *)simulator displayId:(unsigned int)displayId atPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
-{
-  return [FBFuture
-    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
-      NSString *token = [self pushSimulator:simulator];
-      AXPTranslationObject *translation = [self.translator objectAtPoint:point displayId:displayId bridgeDelegateToken:token];
-      translation.bridgeDelegateToken = token;
-      AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
-      element.translation.bridgeDelegateToken = token;
-      NSDictionary<NSString *, id> *formatted = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:token nestedFormat:nestedFormat];
-      [self popSimulator:token];
-      return formatted;
+      return serializedResponse;
     }];
 }
 
 #pragma mark Private
 
-- (NSString *)pushSimulator:(FBSimulator *)simulator
+- (NSString *)pushSimulator:(FBSimulator *)simulator token:(NSString *)token
 {
-  NSString *token = NSUUID.UUID.UUIDString;
   NSParameterAssert([self.tokenToSimulator objectForKey:token] == nil);
   [self.tokenToSimulator setObject:simulator forKey:token];
   [self.logger logFormat:@"Simulator %@ backed by token %@", simulator, token];
@@ -374,14 +445,23 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark FBSimulatorAccessibilityCommands Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
 {
-  return [FBSimulator_TranslationDispatcher.sharedInstance frontmostApplicationForSimulator:self.simulator displayId:0 nestedFormat:nestedFormat];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat];
+  return [self accessibilityElementWithTranslationRequest:translationRequest];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
 {
-  return [FBSimulator_TranslationDispatcher.sharedInstance objectAtPointForSimulator:self.simulator displayId:0 atPoint:point nestedFormat:nestedFormat];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point];
+  return [self accessibilityElementWithTranslationRequest:translationRequest];
+}
+
+#pragma mark Private
+
+- (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request
+{
+  return [FBSimulator_TranslationDispatcher.sharedInstance simulator:self.simulator performRequest:request];
 }
 
 @end
