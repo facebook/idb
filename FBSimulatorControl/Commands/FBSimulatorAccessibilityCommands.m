@@ -372,10 +372,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return simulator;
 }
 
+#pragma mark AXPTranslationTokenDelegateHelper
+
 // Since we're using an async callback-based function in CoreSimulator this needs to be converted to a synchronous variant for the AXTranslator callbacks.
 // In order to do this we have a dispatch group acting as a mutex.
 // This also means that the queue that this happens on should **never be the main queue**. An async global queue will suffice here.
-- (AXPTranslationCallback)translationCallbackForToken:(NSString *)token
+- (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token
 {
   FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
   if (!simulator) {
@@ -397,13 +399,6 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
     [simulator.logger logFormat:@"Got Accessibility Response %@", response];
     return response;
   };
-}
-
-#pragma mark AXPTranslationTokenDelegateHelper
-
-- (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token
-{
-  return [self translationCallbackForToken:token];
 }
 
 - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withToken:(NSString *)token
