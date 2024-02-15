@@ -240,6 +240,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return nil;
 }
 
+- (instancetype)cloneWithNewToken
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 @end
 
 @interface FBSimulator_TranslationRequest_FrontmostApplication : FBSimulator_TranslationRequest
@@ -256,6 +262,11 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (id)serialize:(AXPMacPlatformElement *)element
 {
   return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat];
+}
+
+- (instancetype)cloneWithNewToken
+{
+  return [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat];
 }
 
 @end
@@ -288,6 +299,11 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (id)serialize:(AXPMacPlatformElement *)element
 {
   return [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
+}
+
+- (instancetype)cloneWithNewToken
+{
+  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point];
 }
 
 @end
@@ -338,18 +354,20 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark Public
 
-- (FBFuture<id> *)simulator:(FBSimulator *)simulator performRequest:(FBSimulator_TranslationRequest *)request
+- (FBFutureContext<NSArray<id> *> *)translationObjectAndMacPlatformElementForSimulator:(FBSimulator *)simulator request:(FBSimulator_TranslationRequest *)request
 {
-  return [FBFuture
-    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
-      NSString *token = [self pushSimulator:simulator token:request.token];
+  return [[FBFuture
+    onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
+      [self pushSimulator:simulator token:request.token];
       AXPTranslationObject *translation = [request performWithTranslator:self.translator];
-      translation.bridgeDelegateToken = token;
+      translation.bridgeDelegateToken = request.token;
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
-      element.translation.bridgeDelegateToken = token;
-      id serializedResponse = [request serialize:element];
-      [self popSimulator:token];
-      return serializedResponse;
+      element.translation.bridgeDelegateToken = request.token;
+      return @[translation, element];
+    }]
+    onQueue:simulator.workQueue contextualTeardown:^ FBFuture<NSNull *> * (id _, FBFutureState __){
+      [self popSimulator:request.token];
+      return FBFuture.empty;
     }];
 }
 
@@ -443,20 +461,93 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
 {
   FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat];
-  return [self accessibilityElementWithTranslationRequest:translationRequest];
+  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
 }
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
 {
   FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point];
-  return [self accessibilityElementWithTranslationRequest:translationRequest];
+  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 #pragma mark Private
 
-- (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request
++ (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
 {
-  return [FBSimulator_TranslationDispatcher.sharedInstance simulator:self.simulator performRequest:request];
+  return [[[[FBSimulator_TranslationDispatcher.sharedInstance
+    translationObjectAndMacPlatformElementForSimulator:simulator request:request]
+    // This next steps appends remediation information (if required).
+    // The remediation detection has a short circuit so that the common case (no remediation required) is fast.
+    onQueue:simulator.asyncQueue pend:^ FBFuture<NSArray<id> *> * (NSArray<id> *tuple){
+      AXPTranslationObject *translationObject = tuple[0];
+      AXPMacPlatformElement *macPlatformElement = tuple[1];
+      // Only see if remediation is needed if requested. This also ensures that the attempt *after* remediation will not infinitely recurse.
+      if (remediationPermitted) {
+        return [[FBSimulatorAccessibilityCommands_CoreSimulator
+          remediationRequiredForSimulator:simulator
+          translationObject:translationObject
+          macPlatformElement:macPlatformElement]
+          onQueue:simulator.asyncQueue map:^ NSArray<id> * (NSNumber *remediationRequired) {
+            return @[translationObject, macPlatformElement, remediationRequired];
+          }];
+      }
+      return [FBFuture futureWithResult:@[translationObject, macPlatformElement, @NO]];
+    }]
+    onQueue:simulator.workQueue pop:^ id (NSArray<id> *tuple){
+      // If remediation is required, then return an empty value, we pop the context here to finish the translation process.
+      BOOL remediationRequired = [tuple[2] boolValue];
+      if (remediationRequired) {
+        return FBFuture.empty;
+      }
+      // Otherwise serialize now, when the context has popped the token is then deregistered.
+      AXPMacPlatformElement *element = tuple[1];
+      return [FBFuture futureWithResult:[request serialize:element]];
+    }]
+    onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id result) {
+      // At this point we will either have an empty result, or the result.
+      // In the empty (remediation) state, then we should recurse, but not allow further remediation.
+      if ([result isEqual:NSNull.null]) {
+        FBSimulator_TranslationRequest *nextRequest = [request cloneWithNewToken];
+        return [[self
+          remediateSpringBoardForSimulator:simulator]
+          onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id _) {
+            return [self accessibilityElementWithTranslationRequest:nextRequest simulator:simulator remediationPermitted:NO];
+          }];
+      }
+      return [FBFuture futureWithResult:result];
+    }];
+}
+
+static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
+
++ (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator translationObject:(AXPTranslationObject *)translationObject macPlatformElement:(AXPMacPlatformElement *)macPlatformElement
+{
+  // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
+  if (CGRectEqualToRect(macPlatformElement.accessibilityFrame, CGRectZero) == NO) {
+    return [FBFuture futureWithResult:@(NO)];
+  }
+  // Then confirm whether the pid of the translation object represents a real pid within the simulator.
+  // If it does not, then it likely means that we got the pid of the crashed SpringBoard.
+  // A crashed SpringBoard, means that there is a new one running (or else the Simulator is completely hosed).
+  // In this case, the remediation is to restart CoreSimulatorBridge, since the CoreSimulatorBridge needs restarting upon a crash.
+  // In all likelihood CoreSimulatorBridge contains a constant reference to the pid of SpringBoard and the most effective way of resolving this is to stop it.
+  // The Simulator's launchctl will then make sure that the SimulatorBridge is restarted (just like it does for SpringBoard itself).
+  pid_t processIdentifier = translationObject.pid;
+  return [[[simulator
+    serviceNameForProcessIdentifier:processIdentifier]
+    mapReplace:@(NO)]
+    onQueue:simulator.workQueue handleError:^(NSError *error) {
+      [simulator.logger logFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName];
+      return [FBFuture futureWithResult:@(YES)];
+    }];
+}
+
++ (FBFuture<NSNull *> *)remediateSpringBoardForSimulator:(FBSimulator *)simulator
+{
+  return [[[simulator
+    stopServiceWithName:CoreSimulatorBridgeServiceName]
+    mapReplace:NSNull.null]
+    rephraseFailure:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName];
 }
 
 @end
