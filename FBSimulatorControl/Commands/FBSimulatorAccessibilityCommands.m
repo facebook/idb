@@ -289,6 +289,7 @@ static NSString *const AXPrefix = @"AX";
     @"role_description": ensureJSONSerializable(element.accessibilityRoleDescription),
     @"subrole": ensureJSONSerializable(element.accessibilitySubrole),
     @"content_required": @(element.accessibilityRequired),
+    @"pid": @(element.translation.pid),
   };
 }
 
