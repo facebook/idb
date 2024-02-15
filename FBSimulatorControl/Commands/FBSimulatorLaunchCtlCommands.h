@@ -22,6 +22,15 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Querying Services
 
 /**
+ Finds the Service Name for a provided process identifier
+ Will fail if there is no process matching the Process Info found.
+
+ @param pid the process identifier to obtain the name for.
+ @return A Future, wrapping the Service Name.
+ */
+- (FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)pid;
+
+/**
  Finds the Service Name for a provided process.
  Will fail if there is no process matching the Process Info found.
 
