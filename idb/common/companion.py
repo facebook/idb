@@ -50,7 +50,7 @@ class CompanionSpawnerException(Exception):
     pass
 
 
-async def _terminate_process(
+async def terminate_process(
     process: asyncio.subprocess.Process, timeout: timedelta, logger: logging.Logger
 ) -> None:
     returncode = process.returncode
@@ -198,7 +198,7 @@ class Companion(CompanionBase):
         try:
             yield process
         finally:
-            await _terminate_process(
+            await terminate_process(
                 process=process,
                 timeout=DEFAULT_COMPANION_TEARDOWN_TIMEOUT,
                 logger=logger,
