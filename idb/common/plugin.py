@@ -52,13 +52,11 @@ T = TypeVar("T")
 @overload
 def swallow_exceptions(
     f: Callable[P, Awaitable[T]]
-) -> Callable[P, Awaitable[T | None]]:
-    ...
+) -> Callable[P, Awaitable[T | None]]: ...
 
 
 @overload
-def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]:
-    ...
+def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]: ...
 
 
 def swallow_exceptions(

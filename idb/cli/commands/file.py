@@ -23,7 +23,7 @@ from idb.common.types import Client, Compression, FileContainer, FileContainerTy
 def _add_container_types_to_group(
     group: _MutuallyExclusiveGroup, containers: List[Tuple[FileContainerType, str]]
 ) -> None:
-    for (container_type, help_text) in containers:
+    for container_type, help_text in containers:
         argument_name = container_type.value.replace("_", "-")
         group.add_argument(
             f"--{argument_name}",
