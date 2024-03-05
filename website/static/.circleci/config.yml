@@ -1,0 +1,20 @@
+# No workflows or jobs should run for this config. If something does run, it
+# should fail. This is useful for gh-pages branches, which are static deploys.
+version: 2.1
+
+jobs:
+  fail:
+    docker:
+      - image: circleci/node:latest
+    resource_class: small
+    steps:
+      - run: exit 1
+
+workflows:
+  version: 2
+  noop:
+    jobs:
+      - fail:
+        filters:
+          branches:
+            ignore: /.*/
