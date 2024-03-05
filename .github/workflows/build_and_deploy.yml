@@ -1,0 +1,20 @@
+name: facebook/idb/build_and_deploy
+on:
+  push:
+    branches:
+    - main
+jobs:
+  deploy-website:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 16.14.0
+    - name: Deploying to GitHub Pages
+      run: |
+        git config --global user.email "docusaurus-bot@users.noreply.github.com"
+        git config --global user.name "Website Deployment Script"
+        echo "machine github.com login docusaurus-bot password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+        echo "Deploying website..."
+        cd website && yarn install && GIT_USER=docusaurus-bot USE_SSH=false yarn deploy
