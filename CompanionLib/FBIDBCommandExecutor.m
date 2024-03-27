@@ -288,7 +288,8 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   }];
 }
 
-static const NSTimeInterval ListTestBundleTimeout = 60.0;
+// Some Mac tests are big that dlopen might take long
+static const NSTimeInterval ListTestBundleTimeout = 180.0;
 
 - (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID with_app:(NSString *)appPath
 {
