@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from typing import List
 
 from idb.common.types import CrashLog, CrashLogInfo, CrashLogQuery
@@ -16,6 +18,7 @@ from idb.grpc.idb_pb2 import (
 
 
 def _to_crash_log_info_list(response: CrashLogResponse) -> List[CrashLogInfo]:
+    # pyre-fixme[16]: `RepeatedCompositeFieldContainer` has no attribute `__iter__`.
     return [_to_crash_log_info(proto) for proto in response.list]
 
 

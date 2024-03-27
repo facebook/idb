@@ -123,7 +123,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
                                                            shimOutputFilePath:outputs.shimOutput.filePath
                                                            shimPath:shimPath
                                                            bundlePath:self.configuration.testBundlePath
-                                                           coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
+                                                           coverageConfiguration:self.configuration.coverageConfiguration
                                                            logDirectoryPath:self.configuration.logDirectoryPath
                                                            waitForDebugger:self.configuration.waitForDebugger];
       return [[self
@@ -135,7 +135,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   }];
 }
 
-+ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
 {
   NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
@@ -146,9 +146,10 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     @"TEST_SHIM_BUNDLE_PATH": bundlePath,
     kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
   }];
-  if (coverageDirectoryPath) {
-    NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", [bundlePath lastPathComponent]];
-    NSString *coveragePath = [coverageDirectoryPath stringByAppendingPathComponent:coverageFile];
+  if (coverageConfiguration) {
+    NSString *continuousCoverageCollectionMode = coverageConfiguration.shouldEnableContinuousCoverageCollection ? @"%c" : @"";
+    NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", [bundlePath lastPathComponent], continuousCoverageCollectionMode];
+    NSString *coveragePath = [coverageConfiguration.coverageDirectory stringByAppendingPathComponent:coverageFile];
     environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
   }
   if (logDirectoryPath) {

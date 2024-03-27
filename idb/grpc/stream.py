@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import asyncio
 from logging import Logger
 from typing import AsyncIterator, Dict, Generic, Optional, TypeVar
@@ -18,17 +20,13 @@ _TRecv = TypeVar("_TRecv")
 class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
     metadata: Dict[str, str] = {}
 
-    async def recv_message(self) -> Optional[_TRecv]:
-        ...
+    async def recv_message(self) -> Optional[_TRecv]: ...
 
-    async def send_message(self, message: _TSend) -> None:
-        ...
+    async def send_message(self, message: _TSend) -> None: ...
 
-    async def end(self) -> None:
-        ...
+    async def end(self) -> None: ...
 
-    async def cancel(self) -> None:
-        ...
+    async def cancel(self) -> None: ...
 
 
 async def drain_to_stream(

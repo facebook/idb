@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from __future__ import annotations
 
 import asyncio
@@ -50,13 +52,11 @@ T = TypeVar("T")
 @overload
 def swallow_exceptions(
     f: Callable[P, Awaitable[T]]
-) -> Callable[P, Awaitable[T | None]]:
-    ...
+) -> Callable[P, Awaitable[T | None]]: ...
 
 
 @overload
-def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]:
-    ...
+def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]: ...
 
 
 def swallow_exceptions(

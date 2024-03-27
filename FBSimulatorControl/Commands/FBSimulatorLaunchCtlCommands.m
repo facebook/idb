@@ -62,15 +62,15 @@
 
 #pragma mark Querying Services
 
-- (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process
+- (FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)pid
 {
   NSError *error = nil;
-  NSString *pattern = [NSString stringWithFormat:@"^%@\t", [NSRegularExpression escapedPatternForString:@(process.processIdentifier).stringValue]];
+  NSString *pattern = [NSString stringWithFormat:@"^%@\t", [NSRegularExpression escapedPatternForString:@(pid).stringValue]];
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
     return [[FBSimulatorError
-             describeFormat:@"Couldn't build search pattern for '%@'", process]
-             failFuture];
+      describeFormat:@"Couldn't build search pattern for '%@'", @(pid)]
+      failFuture];
   }
 
   return [[self
@@ -78,6 +78,12 @@
     onQueue:self.simulator.asyncQueue map:^(NSArray<id> *tuple) {
       return [tuple firstObject];
     }];
+}
+
+
+- (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process
+{
+  return [self serviceNameForProcessIdentifier:process.processIdentifier];
 }
 
 - (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersMatching:(NSRegularExpression *)regex

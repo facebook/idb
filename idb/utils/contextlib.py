@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-ignore-all-errors
+
 
 import abc
 import sys
@@ -29,7 +31,6 @@ def _check_methods(C, *methods):
 
 
 class AbstractContextManager(abc.ABC):
-
     """An abstract base class for context managers."""
 
     def __enter__(self):
@@ -49,7 +50,6 @@ class AbstractContextManager(abc.ABC):
 
 
 class AbstractAsyncContextManager(abc.ABC):
-
     """An abstract base class for asynchronous context managers."""
 
     async def __aenter__(self):

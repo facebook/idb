@@ -40,13 +40,13 @@
   testConfiguration.reportActivities = reportActivities;
   testConfiguration.testsDrivenByIDE = NO;
   testConfiguration.testApplicationDependencies = testApplicationDependencies;
-  
+
   XCTCapabilitiesBuilder *capabilitiesBuilder = [objc_lookUpClass("XCTCapabilitiesBuilder") new];
   [capabilitiesBuilder registerCapability:@"XCTIssue capability"];
   [capabilitiesBuilder registerCapability:@"ubiquitous test identifiers"];
   testConfiguration.IDECapabilities = [capabilitiesBuilder capabilities];
-  
-  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
+
+  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration requiringSecureCoding:NO error:nil];
 
   // Write it to file.
   NSString *savePath = [testBundlePath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
@@ -72,7 +72,7 @@
   if (tests == nil) {
     return nil;
   }
-  
+
   Class XCTTestIdentifierSetBuilder_class = objc_lookUpClass("XCTTestIdentifierSetBuilder");
   XCTTestIdentifierSetBuilder *b = [[XCTTestIdentifierSetBuilder_class alloc] init];
   Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");;
@@ -80,7 +80,7 @@
     XCTTestIdentifier *identifier = [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test preserveModulePrefix:YES];
     [b addTestIdentifier: identifier];
   }
-  
+
   return b.testIdentifierSet;
 }
 
