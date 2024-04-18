@@ -263,23 +263,7 @@
 - (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
-  NSFileManager *fm = [NSFileManager defaultManager];
-  if (![fm fileExistsAtPath:FBMacDevice.applicationInstallDirectory]) {
-    if (![fm createDirectoryAtPath:FBMacDevice.applicationInstallDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-  }
-
-  NSString *dest = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:path.lastPathComponent];
-  if ([fm fileExistsAtPath:dest]) {
-    if (![fm removeItemAtPath:dest error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-  }
-  if (![fm copyItemAtPath:path toPath:dest error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:dest error:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:&error];
   if (error) {
     return [FBFuture futureWithError:error];
   }
