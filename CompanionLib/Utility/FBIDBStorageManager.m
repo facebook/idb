@@ -175,11 +175,10 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   // Copy over bundle
   NSURL *sourceBundlePath = [NSURL fileURLWithPath:bundle.path];
   NSURL *destinationBundlePath = [storageDirectory URLByAppendingPathComponent:sourceBundlePath.lastPathComponent];
-  [self.logger logFormat:@"Persisting %@ to %@", bundle.identifier, destinationBundlePath];
-  if (![NSFileManager.defaultManager copyItemAtURL:sourceBundlePath toURL:destinationBundlePath error:&error]) {
+  [self.logger logFormat:@"Symlink %@ to %@", bundle.identifier, destinationBundlePath];
+  if (![NSFileManager.defaultManager createSymbolicLinkAtURL:destinationBundlePath withDestinationURL:sourceBundlePath error:&error]) {
     return [FBFuture futureWithError:error];
   }
-  [self.logger logFormat:@"Persisted %@", bundle.identifier];
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid path:destinationBundlePath];
   if (!self.relocateLibraries || ![self.target requiresBundlesToBeSigned] || skipSigningBundles) {
