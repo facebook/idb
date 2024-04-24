@@ -49,11 +49,12 @@
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration requiringSecureCoding:NO error:nil];
 
   // Write it to file.
-  NSString *savePath = [testBundlePath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
-  if (![data writeToFile:savePath options:NSDataWritingAtomic error:error]) {
+  NSString *testBundleContainerPath = testBundlePath.stringByDeletingLastPathComponent;
+  NSString *testConfigPath = [testBundleContainerPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
+  if (![data writeToFile:testConfigPath options:NSDataWritingAtomic error:error]) {
     return nil;
   }
-  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
+  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:testConfigPath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
 }
 
 + (void) setTestsToRun: (NSSet<NSString *> *) toRun andTestsToSkip: (NSSet<NSString *> *) toSkip to: (XCTestConfiguration *) configuration

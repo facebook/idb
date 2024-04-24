@@ -160,7 +160,7 @@
     automationFrameworkPath:automationFrameworkPath
     reportActivities:testLaunchConfiguration.reportActivities
     error:&error];
-  if (!testBundle) {
+  if (!testConfiguration) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test configuration"]
       causedBy:error]
