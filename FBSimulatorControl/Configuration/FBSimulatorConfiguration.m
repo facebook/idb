@@ -87,7 +87,7 @@
 
   return [self.deviceModel isEqualToString:object.deviceModel] &&
          [self.osVersionString isEqualToString:object.osVersionString];
-  
+
 }
 
 - (NSString *)description
@@ -130,7 +130,7 @@
   NSParameterAssert(device);
   // Use the current os if compatible
   FBOSVersion *os = self.os;
-  if ([FBSimulatorConfiguration device:device andOSPairSupported:os]) {
+  if ([os.families containsObject:@(device.family)]) {
     return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
   }
   // Attempt to find the newest OS for this device, otherwise use what we had before.
@@ -139,11 +139,6 @@
 }
 
 #pragma mark Private
-
-+ (BOOL)device:(FBDeviceType *)device andOSPairSupported:(FBOSVersion *)os
-{
-  return [os.families containsObject:@(device.family)];
-}
 
 - (FBDeviceModel)deviceModel
 {
