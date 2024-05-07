@@ -128,9 +128,11 @@
 - (instancetype)withDevice:(FBDeviceType *)device
 {
   NSParameterAssert(device);
-  // Use the current os if compatible
+  // Use the current os if compatible.
+  // If os.families is empty, it was probably created via [FBOSVersion +genericWithName:]
+  // which has no information about families; in that case we assume it is compatible.
   FBOSVersion *os = self.os;
-  if ([os.families containsObject:@(device.family)]) {
+  if (!os.families.count || [os.families containsObject:@(device.family)]) {
     return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
   }
   // Attempt to find the newest OS for this device, otherwise use what we had before.
