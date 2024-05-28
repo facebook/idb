@@ -9,12 +9,12 @@
 import os.path
 import plistlib
 import tempfile
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 from idb.grpc.xctest import extract_paths_from_xctestrun
 
 
-class XCTestsTestCase(TestCase):
+class XCTestsTestCase(IsolatedAsyncioTestCase):
     async def test_extract_paths_from_xctestrun(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = os.path.join(tmp_dir, "test.plist")
