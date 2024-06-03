@@ -18,6 +18,10 @@ class XCTestsTestCase(IsolatedAsyncioTestCase):
     async def test_extract_paths_from_xctestrun(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = os.path.join(tmp_dir, "test.plist")
+            with open(os.path.join(tmp_dir, "rest1"), "w") as rest1:
+                rest1.write("rest1")
+            with open(os.path.join(tmp_dir, "rest2"), "w") as rest2:
+                rest2.write("rest2")
             with open(file_path, "wb+") as f:
                 plistlib.dump(
                     {
