@@ -66,6 +66,7 @@ class HidTests(TestCase):
                     swipe=GrpcHIDSwipe(
                         start=GrpcPoint(x=1, y=2),
                         end=GrpcPoint(x=3, y=4),
+                        # pyre-ignore
                         delta=delta,
                         duration=0.5,
                     )

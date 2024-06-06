@@ -57,8 +57,11 @@ def screen_dimensions_to_grpc(dimensions: ScreenDimensions) -> GrpcScreenDimensi
     return GrpcScreenDimensions(
         width=dimensions.width,
         height=dimensions.height,
+        # pyre-ignore
         density=dimensions.density,
+        # pyre-ignore
         width_points=dimensions.width_points,
+        # pyre-ignore
         height_points=dimensions.height_points,
     )
 

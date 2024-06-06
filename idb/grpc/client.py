@@ -527,6 +527,7 @@ class Client(ClientBase):
             ApproveRequest(
                 bundle_id=bundle_id,
                 permissions=[APPROVE_MAP[permission] for permission in permissions],
+                # pyre-ignore
                 scheme=scheme,
             )
         )
@@ -542,6 +543,7 @@ class Client(ClientBase):
             RevokeRequest(
                 bundle_id=bundle_id,
                 permissions=[REVOKE_MAP[permission] for permission in permissions],
+                # pyre-ignore
                 scheme=scheme,
             )
         )
@@ -812,6 +814,7 @@ class Client(ClientBase):
                 src_path=src_path,
                 # not sending the destination to remote companion
                 # so it streams the file back
+                # pyre-ignore
                 dst_path=dest_path if self.is_local else None,
                 container=file_container_to_grpc(container),
             )
@@ -1067,6 +1070,7 @@ class Client(ClientBase):
             else:
                 self.logger.info("Starting video recording with response data")
                 await stream.send_message(
+                    # pyre-ignore
                     RecordRequest(start=RecordRequest.Start(file_path=None))
                 )
             await stop.wait()
@@ -1102,6 +1106,7 @@ class Client(ClientBase):
                     VideoStreamRequest(
                         start=VideoStreamRequest.Start(
                             file_path=output_file,
+                            # pyre-ignore
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
                             compression_quality=compression_quality,
@@ -1114,7 +1119,9 @@ class Client(ClientBase):
                 await stream.send_message(
                     VideoStreamRequest(
                         start=VideoStreamRequest.Start(
+                            # pyre-ignore
                             file_path=None,
+                            # pyre-ignore
                             fps=fps,
                             format=VIDEO_FORMAT_MAP[format],
                             compression_quality=compression_quality,
@@ -1315,6 +1322,7 @@ class Client(ClientBase):
                     value=value,
                     name=name,
                     value_type=value_type,
+                    # pyre-ignore
                     domain=domain,
                 )
             )
@@ -1328,6 +1336,7 @@ class Client(ClientBase):
     @log_and_handle_exceptions("get_setting")
     async def get_preference(self, name: str, domain: Optional[str]) -> str:
         response = await self.stub.get_setting(
+            # pyre-ignore
             GetSettingRequest(setting=AnySetting, name=name, domain=domain)
         )
         return response.value
@@ -1376,9 +1385,12 @@ class Client(ClientBase):
             else:
                 target = XctraceRecordRequest.Target(
                     launch_process=XctraceRecordRequest.LauchProcess(
+                        # pyre-ignore
                         process_to_launch=process_to_launch,
                         launch_args=launch_args,
+                        # pyre-ignore
                         target_stdin=target_stdin,
+                        # pyre-ignore
                         target_stdout=target_stdout,
                         process_env=process_env,
                     )
@@ -1387,7 +1399,9 @@ class Client(ClientBase):
                 XctraceRecordRequest(
                     start=XctraceRecordRequest.Start(
                         template_name=template_name,
+                        # pyre-ignore
                         time_limit=time_limit,
+                        # pyre-ignore
                         package=package,
                         target=target,
                     )
@@ -1406,6 +1420,7 @@ class Client(ClientBase):
             await stream.send_message(
                 XctraceRecordRequest(
                     stop=XctraceRecordRequest.Stop(
+                        # pyre-ignore
                         timeout=stop_timeout,
                         args=post_args,
                     )

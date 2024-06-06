@@ -71,9 +71,13 @@ def translate_instruments_timings(
 ) -> Optional[InstrumentsRunRequest.InstrumentsTimings]:
     return (
         InstrumentsRunRequest.InstrumentsTimings(
+            # pyre-ignore
             terminate_timeout=timings.terminate_timeout,
+            # pyre-ignore
             launch_retry_timeout=timings.launch_retry_timeout,
+            # pyre-ignore
             launch_error_timeout=timings.launch_error_timeout,
+            # pyre-ignore
             operation_duration=timings.operation_duration,
         )
         if timings
