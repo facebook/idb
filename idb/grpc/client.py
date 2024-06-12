@@ -178,6 +178,14 @@ APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
     Permission.LOCATION: ApproveRequest.LOCATION,
     Permission.NOTIFICATION: ApproveRequest.NOTIFICATION,
     Permission.MICROPHONE: ApproveRequest.MICROPHONE,
+    Permission.CALENDAR: ApproveRequest.CALENDAR,
+    Permission.FACEID: ApproveRequest.FACEID,
+    Permission.MEDIA: ApproveRequest.MEDIA,
+    Permission.REMINDERS: ApproveRequest.REMINDERS,
+    Permission.MOTION: ApproveRequest.MOTION,
+    Permission.SIRI: ApproveRequest.SIRI,
+    Permission.SPEECH: ApproveRequest.SPEECH,
+    Permission.USER_TRACKING: ApproveRequest.USER_TRACKING,
 }
 
 REVOKE_MAP: Dict[Permission, "RevokeRequest.Permission"] = {
@@ -188,6 +196,14 @@ REVOKE_MAP: Dict[Permission, "RevokeRequest.Permission"] = {
     Permission.LOCATION: RevokeRequest.LOCATION,
     Permission.NOTIFICATION: RevokeRequest.NOTIFICATION,
     Permission.MICROPHONE: RevokeRequest.MICROPHONE,
+    Permission.CALENDAR: RevokeRequest.CALENDAR,
+    Permission.FACEID: RevokeRequest.FACEID,
+    Permission.MEDIA: RevokeRequest.MEDIA,
+    Permission.REMINDERS: RevokeRequest.REMINDERS,
+    Permission.MOTION: RevokeRequest.MOTION,
+    Permission.SIRI: RevokeRequest.SIRI,
+    Permission.SPEECH: RevokeRequest.SPEECH,
+    Permission.USER_TRACKING: RevokeRequest.USER_TRACKING,
 }
 
 VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {

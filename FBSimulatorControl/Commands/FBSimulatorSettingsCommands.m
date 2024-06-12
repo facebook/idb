@@ -507,6 +507,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       FBTargetSettingsServicePhotos: @"kTCCServicePhotos",
       FBTargetSettingsServiceCamera: @"kTCCServiceCamera",
       FBTargetSettingsServiceMicrophone: @"kTCCServiceMicrophone",
+      FBTargetSettingsServiceCalendar: @"kTCCServiceCalendar",
+      FBTargetSettingsServiceFaceID: @"kTCCServiceFaceID",
+      FBTargetSettingsServiceMedia: @"kTCCServiceMediaLibrary",
+      FBTargetSettingsServiceReminders: @"kTCCServiceReminders",
+      FBTargetSettingsServiceMotion: @"kTCCServiceMotion",
+      FBTargetSettingsServiceSiri: @"kTCCServiceSiri",
+      FBTargetSettingsServiceSpeech: @"kTCCServiceSpeechRecognition",
+      FBTargetSettingsServiceUserTracking: @"kTCCServiceUserTracking",
     };
   });
   return mapping;
