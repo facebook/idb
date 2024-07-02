@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -31,7 +31,7 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  @param compressionQuality the compression quality to use.
  @param scaleFactor the scale factor, between 0-1. nil for no scaling.
  */
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor;
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate keyFrameRate:(nullable NSNumber *)keyFrameRate;
 
 /**
  The encoding of the stream.
@@ -53,6 +53,16 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  The scale factor between 0-1. nil for no scaling.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
+
+/**
+ Average bitrate.
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *avgBitrate;
+
+/**
+ Send a key frame every N seconds.
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *keyFrameRate;
 
 @end
 

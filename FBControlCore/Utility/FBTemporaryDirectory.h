@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Extracts archive data to a temporary location.
- For the supported archives see -[FBArchiveOperations extractArchiveFromStream:toPath:queue:logger:]
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:overrideModificationTime:queue:logger:]
 
  @param tarData NSData representation of the tar to extract
  @return a Context Future containing the root of the extraction tar
@@ -58,22 +58,43 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Extracts a archive stream to a temporary location.
- For the supported archives see -[FBArchiveOperations extractArchiveFromStream:toPath:queue:logger:]
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:overrideModificationTime:queue:logger:]
 
  @param input stream containing tar data
- @param compression compression format used by client
+ @param compression archive compression format
  @return a Context Future containing the root of the extraction tar
  */
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression;
 
 /**
+ Extracts a archive stream to a temporary location.
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:overrideModificationTime:queue:logger:]
+
+ @param input stream containing tar data
+ @param compression archive compression format
+ @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
+ @return a Context Future containing the root of the extraction tar
+ */
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression overrideModificationTime:(BOOL)overrideMTime;
+
+/**
  Extracts an archive file to a temporary location.
- For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:queue:logger:]
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:overrideModificationTime:queue:logger:]
 
  @param filePath the file path to extract
  @return a Context Future containing the root of the extraction tar
  */
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath;
+
+/**
+ Extracts an archive file to a temporary location.
+ For the supported archives see -[FBArchiveOperations extractArchiveAtPath:toPath:overrideModificationTime:queue:logger:]
+
+ @param filePath the file path to extract
+ @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
+ @return a Context Future containing the root of the extraction tar
+ */
+- (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath overrideModificationTime:(BOOL)overrideMTime;
 
 /**
  Takes the extraction directory of a tar and returns a list of files contained

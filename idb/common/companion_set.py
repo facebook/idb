@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import asyncio
 import json
@@ -144,7 +146,8 @@ class CompanionSet:
                         and companion.address.path == destination.path
                     )
                 ]
+            else:
+                to_remove = []
             for companion in to_remove:
                 companions.remove(companion)
-            # pyre-fixme[61]: `to_remove` may not be initialized here.
             return to_remove

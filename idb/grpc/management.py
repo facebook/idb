@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import asyncio
 import logging
@@ -17,12 +19,12 @@ from idb.common.logging import log_call
 from idb.common.types import (
     ClientManager as ClientManagerBase,
     CompanionInfo,
-    OnlyFilter,
     ConnectionDestination,
     DomainSocketAddress,
     IdbException,
-    TargetType,
+    OnlyFilter,
     TargetDescription,
+    TargetType,
     TCPAddress,
 )
 from idb.grpc.client import Client

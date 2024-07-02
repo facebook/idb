@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import json
 from typing import List, Sequence
@@ -55,8 +57,11 @@ def screen_dimensions_to_grpc(dimensions: ScreenDimensions) -> GrpcScreenDimensi
     return GrpcScreenDimensions(
         width=dimensions.width,
         height=dimensions.height,
+        # pyre-ignore
         density=dimensions.density,
+        # pyre-ignore
         width_points=dimensions.width_points,
+        # pyre-ignore
         height_points=dimensions.height_points,
     )
 

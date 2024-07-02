@@ -45,7 +45,7 @@ There are a number of function calls relevant to this type, dealing with sending
 
 It is important to stress that this types is just a "Transport" rather than a "Protocol". Each "lockdown service" may have it's own very different binary protocol for sending and recieving data. In the simple case of `com.apple.syslog_relay`, the service just repeatedly sends text over the connection. Other protocols, for instance those used by Instruments are far more complicated. There is no single Protocol that is used by all lockdown services.
 
-There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDServiceConnection.h#L83). This is implemented in `AMDServiceConnection(Send|Recieve)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It's essentially wiring a length header followed by a binary plist, this is used on both the send and recieve sides.
+There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDServiceConnection.h#L83). This is implemented in `AMDServiceConnection(Send|Recieve)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It's essentially wiring a length header followed by a binary plist, this is used on both the send and receive sides.
 
 ## `AFC`: "Apple File Connection"
 
@@ -126,6 +126,79 @@ The client-side implementation of this protocol is provided via `DTXConnectionSe
 
 One of the key features of `FBDeviceControl` is the ability to stream the iPhone's screen to the host over USB. You might be familiar with this within QuickTime's "Screen Recording" feature, where you can record video from a connected iOS Device to an `.mp4` file on your Mac.
 
-Access to this [is provided via `AVFoundation`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Video/FBDeviceVideo.m#L38) as a "Capture Device". Usage of "Capture Devices" on macOS also requires that the hosting process (The process using `FBDeviceControl`) has system-level permissions for this on more recent versions of macOS. With a Capture Device for the iOS Device screen, it is then possible to create a "Capture Session" with the device. A "Capture Session" can thent be established, with relevant configuration so that frames are recieved in the most optimal format for the consumer. `FBDeviceControl` recieves frame samples from the device and these samples are either re-encoded or not before being passed on to a stream of data. 
+Access to this [is provided via `AVFoundation`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Video/FBDeviceVideo.m#L38) as a "Capture Device". Usage of "Capture Devices" on macOS also requires that the hosting process (The process using `FBDeviceControl`) has system-level permissions for this on more recent versions of macOS. With a Capture Device for the iOS Device screen, it is then possible to create a "Capture Session" with the device. A "Capture Session" can thent be established, with relevant configuration so that frames are received in the most optimal format for the consumer. `FBDeviceControl` receives frame samples from the device and these samples are either re-encoded or not before being passed on to a stream of data.
 
 `FBDeviceControl` supports writing to an `mp4` video file or as a stream of encoded data. For streams of data, these can be passed to other Applications for cases like webRTC or HTTP Live-Streaming.
+
+## Debugging Applications
+
+`idb` (via `FBDeviceControl`) has support for launching a `debugserver` on an iOS Device. This enables debugging Apps on iOS Devices, without having to run via Xcode. There are some important considerations in terms of what is possible:
+
+- Only `lldb` may be used as the debugger client.
+- Only "Developer Signed" Applications may be debugged. Debugging Enterprise signed or App Store Apps is not supported or allowed by iOS.
+- Attaching to an already-launched Application is not supported or allowed by iOS. Debugged Applications must be launched by the debugger.
+
+Debugging an app on an iOS Device isn't quite as simple as an `lldb` one-liner. However, the only process that changes is how to start a debugging session. The process for a device is as follows:
+
+1. The Application to debug is installed on the iOS Device. A copy of the Application is also present/saved on the host attached to the device. The copy of the App is required on the host as this is needed for `lldb` to be able to symbolicate symbols within the debugged app.
+2. [A Developer Disk Image](#developer-disk-images) for the current device is mounted. This is required as the `debugserver` lockdown service is contained within the Developer Disk Image.
+3. The [`debugserver` service is started via lockdown](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceDebuggerCommands.m#L76). This results in a bi-directional socket stream that `lldb` can talk to. This is a [remote debugging server, using the gdb protocol](https://lldb.llvm.org/use/remote.html).
+4. The `debugserver` service must be made accessible to `lldb`. This is done by wrapping the `debugserver` connection within a socket, so that it can be connected to outside of the process that obtained the `debugserver` socket.
+5. `lldb` is started and then connects to the `debugserver` via the exposed socket. A series of commands are sent to `lldb` so that it understands how to connect to the remote debugserver and how to talk to it.
+6. `lldb` can now launch and debug the application.
+
+### A "debuggable app"
+
+Aside from the previously-mentioned requirement that an App is only debuggable if it is "Developer Signed", there is an additional contraint around App debuggability; a copy of the Application must be persisted on the host attached to the device. This is required so that `lldb` has a local copy of the Application available to it for the purpose of symbolication.
+
+`idb` can do this via the `--make-debuggable` flag upon an `idb install`:
+
+```
+# Install an app, also persisting it to disk so that idb can later find it when launching a debugserver
+$ idb install --make-debuggable /path/to/SomeApp.app
+```
+
+You can also confirm whether an app is debuggable or not in the output of `idb list-apps`:
+
+```
+$ idb list-apps | grep SomeApp
+com.foo.SomeApp | SomeApp | user_development | no archs available | Unknown | Debuggable | pid=None
+```
+
+If the application is listed as "Debuggable" then a `debugserver` can be started against it.
+
+### Starting a `debugserver`
+
+A `debugserver` can then be started for any "Debuggable" App. This is done with the `idb debugserver` command.
+
+```
+# Start the debugserver, a list of bootstrapping commands are returned on stdout
+$ idb debugserver start com.foo.SomeApp
+platform select remote-ios --sysroot '/Users/Someone/Library/Developer/Xcode/iOS DeviceSupport/15.2.1 (19C63) arm64e/Symbols'
+target create '/private/tmp/idb-applications/com.foo.SomeApp/SomeApp.app'
+script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec("/private/var/containers/Bundle/Application/64B4DDB3-1049-458C-AA0B-F56AF4DCF0E0/SomeApp.app"))
+process connect connect://localhost:10881
+```
+
+The bootstrapping commands returned can then be used to initialize a debug session via `lldb`.
+
+### Bootstrapping via `lldb`
+
+```
+# Start lldb and pass the bootrapping commands from above
+$ lldb
+(lldb) platform select remote-ios --sysroot '/Users/Someone/Library/Developer/Xcode/iOS DeviceSupport/15.2.1 (19C63) arm64e/Symbols'
+  Platform: remote-ios
+ Connected: no
+  SDK Path: "/Users/Someone/Library/Developer/Xcode/iOS DeviceSupport/15.2.1 (19C63) arm64e/Symbols"
+(lldb) target create '/private/tmp/idb-applications/com.foo.SomeApp/SomeApp.app'
+script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec("/private/var/containers/Bundle/Application/64B4DDB3-1049-458C-AA0B-F56AF4DCF0E0/SomeApp.app"))Current executable set to '/private/tmp/idb-applications/com.foo.SomeApp/SomeApp.app' (arm64).
+(lldb) script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec("/private/var/containers/Bundle/Application/64B4DDB3-1049-458C-AA0B-F56AF4DCF0E0/SomeApp.app"))
+True
+(lldb) process connect connect://localhost:10881
+(lldb) r
+Process 10416 launched: '/private/tmp/idb-applications/com.foo.SomeApp/SomeApp.app/SomeApp' (arm64)
+```
+
+Upon `process connect` completing, the `lldb` will then be attached to the remote `debugserver`. The app will in a ready state, but not launched, this can be done with the `run` command in `lldb` that will launch the app.
+At this point `lldb` can be used as a regular debugger, there's some [good documentation about how to use `lldb` via it's command prompt in `lldb`'s documenation](https://lldb.llvm.org/use/map.html). One important note is that you can only have one debug session with a launched debugserver. To start a new debug session after `process connect`, the debugserver needs to be re-started via `idb debugserver stop` and subsequently running `idb debugserver start` again.

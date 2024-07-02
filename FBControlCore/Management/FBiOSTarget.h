@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,16 +7,18 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBArchitecture.h>
-#import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBCrashLogCommands.h>
-#import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBDapServerCommands.h>
+#import <FBControlCore/FBDebuggerCommands.h>
 #import <FBControlCore/FBInstrumentsCommands.h>
+#import <FBControlCore/FBLifecycleCommands.h>
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 
@@ -29,47 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBiOSTargetDiagnostics;
 @class FBiOSTargetScreenInfo;
 @protocol FBControlCoreLogger;
-
-/**
- Uses the known values of SimDevice State, to construct an enumeration.
- These mirror the values from -[SimDeviceState state].
- */
-typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
-  FBiOSTargetStateCreating = 0,
-  FBiOSTargetStateShutdown = 1,
-  FBiOSTargetStateBooting = 2,
-  FBiOSTargetStateBooted = 3,
-  FBiOSTargetStateShuttingDown = 4,
-  FBiOSTargetStateDFU = 5,
-  FBiOSTargetStateRecovery = 6,
-  FBiOSTargetStateRestoreOS = 7,
-  FBiOSTargetStateUnknown = 99,
-};
-
-/**
- Represents the kind of a target, device or simulator.
- */
-typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
-  FBiOSTargetTypeNone = 0,
-  FBiOSTargetTypeSimulator = 1 << 0,
-  FBiOSTargetTypeDevice = 1 << 1,
-  FBiOSTargetTypeLocalMac = 1 << 2,
-  FBiOSTargetTypeAll = FBiOSTargetTypeSimulator | FBiOSTargetTypeDevice | FBiOSTargetTypeLocalMac,
-};
-
-/**
- String Representations of Simulator State.
- */
-typedef NSString *FBiOSTargetStateString NS_STRING_ENUM;
-extern FBiOSTargetStateString const FBiOSTargetStateStringCreating;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShutdown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooting;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooted;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringDFU;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRecovery;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS;
-extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 
 /**
  A protocol that defines an informational target.
@@ -98,9 +59,9 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 @property (nonatomic, copy, readonly) FBDeviceType *deviceType;
 
 /**
- The Architecture of the iOS Target
+ Available architecture of the iOS Target
  */
-@property (nonatomic, copy, readonly) FBArchitecture architecture;
+@property (nonatomic, copy, readonly) NSArray<FBArchitecture> *architectures;
 
 /**
  The OS Version of the Target.
@@ -129,7 +90,7 @@ extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
 /**
  A protocol that defines an interactible and informational target.
  */
-@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands>
+@protocol FBiOSTarget <NSObject, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommands, FBInstrumentsCommands, FBLifecycleCommands>
 
 /**
  The Target's Logger.
@@ -220,9 +181,9 @@ extern FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState s
 extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
 
 /**
- The canonical string representations of the target type Option Set.
+ The canonical string representations of the FBiOSTargetType Enum.
  */
-extern NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
+extern NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
 
 /**
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.
@@ -243,6 +204,16 @@ extern NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
  Constructs an NSPredicate matching the specified UDIDs.
  */
 extern NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
+
+/**
+ Constructs a future that resolves when the target resolves to a provided state.
+ */
+extern FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state);
+
+/**
+ Constructs a future that resolves when the target leaves a provided state.
+ */
+extern FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state);
 
 #if defined __cplusplus
 };

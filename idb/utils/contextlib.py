@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-ignore-all-errors
 
 
 import abc
@@ -29,7 +31,6 @@ def _check_methods(C, *methods):
 
 
 class AbstractContextManager(abc.ABC):
-
     """An abstract base class for context managers."""
 
     def __enter__(self):
@@ -49,7 +50,6 @@ class AbstractContextManager(abc.ABC):
 
 
 class AbstractAsyncContextManager(abc.ABC):
-
     """An abstract base class for asynchronous context managers."""
 
     async def __aenter__(self):
@@ -68,7 +68,7 @@ class AbstractAsyncContextManager(abc.ABC):
         return NotImplemented
 
 
-class ContextDecorator(object):
+class ContextDecorator:
     "A base class or mixin that enables context managers to work as decorators."
 
     def _recreate_cm(self):

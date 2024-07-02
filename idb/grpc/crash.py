@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 from typing import List
 
@@ -37,8 +39,12 @@ def _to_crash_log(proto: CrashShowResponse) -> CrashLog:
 
 def _to_crash_log_query_proto(query: CrashLogQuery) -> CrashLogQueryProto:
     return CrashLogQueryProto(
+        # pyre-ignore
         before=query.before,
+        # pyre-ignore
         since=query.since,
+        # pyre-ignore
         bundle_id=query.bundle_id,
+        # pyre-ignore
         name=query.name,
     )

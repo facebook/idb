@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -75,11 +75,6 @@
   [self.mutableStartedSuites addObject:testSuite];
 }
 
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
-{
-
-}
-
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
   [self.mutableEndedSuites addObject:summary.testSuite];
@@ -140,6 +135,11 @@
 {
   
 }
+
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions {
+  
+}
+
 
 #pragma mark Accessors
 

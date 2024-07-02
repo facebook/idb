@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -114,7 +114,7 @@
 
 - (FBFuture<NSNull *> *)returnSimulator:(FBSimulator *)simulator
 {
-  return [[self.simulatorControl.set deleteSimulator:simulator] mapReplace:NSNull.null];
+  return [[self.simulatorControl.set delete:simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark Private

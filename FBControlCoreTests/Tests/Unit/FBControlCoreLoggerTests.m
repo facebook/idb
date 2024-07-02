@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,7 +22,7 @@
   [[NSFileManager defaultManager] createFileAtPath:temporaryFilePath contents:nil attributes:nil];
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:temporaryFilePath];
 
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO];
+  id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO];
   [logger log:@"Some content"];
   [fileHandle synchronizeFile];
   [fileHandle closeFile];
@@ -36,7 +36,7 @@
 - (void)testLoggingToConsumer
 {
   id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
+  id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:consumer];
 
   [logger log:@"HELLO"];
   [logger log:@"WORLD"];
@@ -56,7 +56,7 @@
 - (void)testThreadSafetyOfConsumableLogger
 {
   id<FBConsumableBuffer> consumer = FBDataBuffer.consumableBuffer;
-  id<FBControlCoreLogger> logger = [FBControlCoreLogger loggerToConsumer:consumer];
+  id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:consumer];
 
   dispatch_group_t group = dispatch_group_create();
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);

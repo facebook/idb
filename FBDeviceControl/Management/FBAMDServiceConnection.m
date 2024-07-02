@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,6 +7,7 @@
 
 #import "FBAMDServiceConnection.h"
 
+#import "FBAFCConnection.h"
 #import "FBDeviceControlError.h"
 
 typedef uint32_t HeaderIntType;
@@ -18,7 +19,7 @@ static size_t ReadBufferSize = 1024 * 4;
 @interface FBAMDServiceConnection ()
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size;
-- (ssize_t)recieve:(void *)buffer size:(size_t)size;
+- (ssize_t)receive:(void *)buffer size:(size_t)size;
 
 @end
 
@@ -64,7 +65,7 @@ static size_t ReadBufferSize = 1024 * 4;
   dispatch_async(self.queue, ^{
     void *buffer = alloca(ReadBufferSize);
     while (self.state == FBFileReaderStateReading && self.finishedReadingMutable.state == FBFutureStateRunning) {
-      ssize_t readBytes = [connection recieve:buffer size:ReadBufferSize];
+      ssize_t readBytes = [connection receive:buffer size:ReadBufferSize];
       if (readBytes < 1) {
         break;
       }
@@ -111,14 +112,6 @@ static size_t ReadBufferSize = 1024 * 4;
 
 @end
 
-@interface FBAMDServiceConnection_TransferRaw : FBAMDServiceConnection
-
-@end
-
-@interface FBAMDServiceConnection_TransferServiceConnection : FBAMDServiceConnection
-
-@end
-
 @implementation FBAMDServiceConnection
 
 #pragma mark Initializers
@@ -127,11 +120,8 @@ static size_t ReadBufferSize = 1024 * 4;
 {
   // Use Raw transfer when there's no Secure Context, otherwise we must use the service connection wrapping.
   AMSecureIOContext secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection);
-  if (secureIOContext == NULL) {
-    return [[FBAMDServiceConnection_TransferRaw alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
-  } else {
-    return [[FBAMDServiceConnection_TransferServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
-  }
+  [logger logFormat:@"Constructing service connection for %@ %@ Secure", name, secureIOContext ? @"is" : @"is not"];
+  return [[FBAMDServiceConnection alloc] initWithName:name connection:connection device:device calls:calls logger:logger];
 }
 
 - (instancetype)initWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger;
@@ -180,7 +170,7 @@ static size_t ReadBufferSize = 1024 * 4;
   if (result != 0) {
     NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(result));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve message (%@): code %d", errorDescription, result]
+      describeFormat:@"Failed to receive message (%@): code %d", errorDescription, result]
       fail:error];
   }
   return CFBridgingRelease(message);
@@ -219,16 +209,23 @@ static size_t ReadBufferSize = 1024 * 4;
   return YES;
 }
 
-#pragma mark Properties
+#pragma mark AFC
 
-- (int)socket
+- (FBAFCConnection *)asAFCConnectionWithCalls:(AFCCalls)calls callback:(AFCNotificationCallback)callback logger:(id<FBControlCoreLogger>)logger
 {
-  return self.calls.ServiceConnectionGetSocket(self.connection);
-}
-
-- (AMSecureIOContext)secureIOContext
-{
-  return self.calls.ServiceConnectionGetSecureIOContext(self.connection);
+  AFCConnectionRef afcConnection = calls.Create(
+    0x0,
+    self.calls.ServiceConnectionGetSocket(self.connection),
+    0x0,
+    callback,
+    0x0
+  );
+  // We need to apply the Secure Context if it's present on the service connection.
+  AMSecureIOContext secureIOContext = self.calls.ServiceConnectionGetSecureIOContext(self.connection);;
+  if (secureIOContext != NULL) {
+    calls.SetSecureContext(afcConnection, secureIOContext);
+  }
+  return [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:self.logger];
 }
 
 #pragma mark FBAMDServiceConnectionTransfer Implementation
@@ -293,47 +290,33 @@ static size_t SendBufferSize = 1024 * 4;
   return YES;
 }
 
+- (BOOL)sendUnsignedInt32:(uint32_t)value error:(NSError **)error
+{
+  NSData *data = [[NSData alloc] initWithBytes:&value length:sizeof(uint32_t)];
+  return [self send:data error:error];
+}
+
 - (NSData *)receive:(size_t)size error:(NSError **)error
 {
-  // Create a buffer that contains the data to return and a temp buffer for reading into.
+  // Create a buffer that contains the data to return and how to append it from the enumerator
   NSMutableData *data = NSMutableData.data;
-  void *buffer = alloca(ReadBufferSize);
-
-  // Start reading in a loop, until there's no more bytes to read.
-  size_t bytesRemaining = size;
-  while (bytesRemaining > 0) {
-    // Don't read more bytes than are remaining.
-    size_t maxReadBytes = MIN(ReadBufferSize, bytesRemaining);
-    ssize_t result = [self recieve:buffer size:maxReadBytes];
-    // End of file.
-    if (result == 0) {
-      break;
-    }
-    // A negative return indicates an error
-    if (result == -1) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failure in receive of %zu bytes: %s", maxReadBytes, strerror(errno)]
-        fail:error];
-    }
-    // Check an over-read to prevent unsigned integer overflow.
-    size_t readBytes = (size_t) result;
-    if (readBytes > bytesRemaining) {
-      return [[FBDeviceControlError
-        describeFormat:@"Failure in receive: Read %zu bytes but only %zu bytes remaining", readBytes, bytesRemaining]
-        fail:error];
-    }
-    // Decrement the number of bytes to read and add it to the return buffer.
-    bytesRemaining -= readBytes;
-    [data appendBytes:buffer length:readBytes];
-  }
-
-  // Check that we've read the right number of bytes.
-  if (bytesRemaining != 0) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to receive %zu bytes, %zu remaining to read", size, bytesRemaining]
-      fail:error];
+  void(^enumerator)(NSData *) = ^(NSData *chunk){
+    [data appendData:[chunk copy]];
+  };
+  // Start the byte recieve.
+  BOOL success = [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
+  if (!success) {
+    return nil;
   }
   return data;
+}
+
+- (BOOL)receive:(size_t)size toFile:(NSFileHandle *)fileHandle error:(NSError **)error
+{
+  void(^enumerator)(NSData *) = ^(NSData *chunk){
+    [fileHandle writeData:chunk];
+  };
+  return [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
 }
 
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
@@ -344,6 +327,36 @@ static size_t SendBufferSize = 1024 * 4;
   }
   memcpy(destination, data.bytes, data.length);
   return YES;
+}
+
+- (NSData *)receiveUpTo:(size_t)size error:(NSError **)error
+{
+  // Create a buffer that contains the data
+  void *buffer = alloca(size);
+  // Read the underlying bytes.
+  ssize_t result = [self receive:buffer size:size];
+  // End of file.
+  if (result == 0) {
+    return NSData.data;
+  }
+  // A negative return indicates an error
+  if (result == -1) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failure in receive of up to %zu bytes: %s", size, strerror(errno)]
+      fail:error];
+  }
+  size_t readBytes = (size_t) result;
+  return [[NSData alloc] initWithBytes:buffer length:readBytes];
+}
+
+- (BOOL)receiveUnsignedInt32:(uint32_t *)valueOut error:(NSError **)error
+{
+  return [self receive:valueOut ofSize:sizeof(uint32_t) error:error];
+}
+
+- (BOOL)receiveUnsignedInt64:(uint64_t *)valueOut error:(NSError **)error
+{
+  return [self receive:valueOut ofSize:sizeof(uint64_t) error:error];
 }
 
 - (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
@@ -362,42 +375,55 @@ static size_t SendBufferSize = 1024 * 4;
 
 - (ssize_t)send:(const void *)buffer size:(size_t)size
 {
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return -1;
-}
-
-@end
-
-@implementation FBAMDServiceConnection_TransferRaw
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
-  return write(self.socket, buffer, size);
-}
-
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
-{
-  return read(self.socket, buffer, size);
-}
-
-@end
-
-@implementation FBAMDServiceConnection_TransferServiceConnection
-
-- (ssize_t)send:(const void *)buffer size:(size_t)size
-{
   return self.calls.ServiceConnectionSend(self.connection, buffer, size);
 }
 
-- (ssize_t)recieve:(void *)buffer size:(size_t)size
+- (ssize_t)receive:(void *)buffer size:(size_t)size
 {
   return self.calls.ServiceConnectionReceive(self.connection, buffer, size);
+}
+
+- (BOOL)enumateReceiveOfLength:(size_t)size chunkSize:(size_t)chunkSize enumerator:(void(^)(NSData *))enumerator error:(NSError **)error
+{
+  // Create a buffer that contains the incremental enumerated data.
+  void *buffer = alloca(chunkSize);
+
+  // Start reading in a loop, until there's no more bytes to read.
+  size_t bytesRemaining = size;
+  while (bytesRemaining > 0) {
+    // Don't read more bytes than are remaining.
+    size_t maxReadBytes = MIN(chunkSize, bytesRemaining);
+    ssize_t result = [self receive:buffer size:maxReadBytes];
+    // End of file.
+    if (result == 0) {
+      break;
+    }
+    // A negative return indicates an error
+    if (result == -1) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive of %zu bytes: %s", maxReadBytes, strerror(errno)]
+        failBool:error];
+    }
+    // Check an over-read to prevent unsigned integer overflow.
+    size_t readBytes = (size_t) result;
+    if (readBytes > bytesRemaining) {
+      return [[FBDeviceControlError
+        describeFormat:@"Failure in receive: Read %zu bytes but only %zu bytes remaining", readBytes, bytesRemaining]
+        failBool:error];
+    }
+    // Decrement the number of bytes to read and pass it to the callback
+    bytesRemaining -= readBytes;
+    NSData *readData = [[NSData alloc] initWithBytesNoCopy:buffer length:readBytes freeWhenDone:NO];
+    enumerator(readData);
+  }
+
+  // Check that we've read the right number of bytes.
+  if (bytesRemaining != 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Failed to receive %zu bytes, %zu remaining to read and eof reached.", size, bytesRemaining]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end

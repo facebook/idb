@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,15 +15,51 @@
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebuggerCommands.h"
 #import "FBInstrumentsClient.h"
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
-static void UninstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
+@interface FBDeviceWorkflowStatistics : NSObject
+
+@property (nonatomic, copy, readonly) NSString *workflowType;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *lastEvent;
+
+@end
+
+@implementation FBDeviceWorkflowStatistics
+
+- (instancetype)initWithWorkflowType:(NSString *)workflowType logger:(id<FBControlCoreLogger>)logger
 {
-  [device.logger logFormat:@"Uninstall Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _workflowType = workflowType;
+  _logger = logger;
+
+  return self;
 }
 
-static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
+- (void)pushProgress:(NSDictionary<NSString *, id> *)event
 {
-  [device.logger logFormat:@"Install Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+  [self.logger logFormat:@"%@ Progress: %@", self.workflowType, [FBCollectionInformation oneLineDescriptionFromDictionary:event]];
+  self.lastEvent = event;
+}
+
+- (NSString *)summaryOfRecentEvents
+{
+  NSDictionary<NSString *, id> *lastEvent = self.lastEvent;
+  if (!lastEvent) {
+    return [NSString stringWithFormat:@"No events from %@", self.lastEvent];
+  }
+  return [NSString stringWithFormat:@"Last event %@", [FBCollectionInformation oneLineDescriptionFromDictionary:lastEvent]];
+}
+
+@end
+
+static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, FBDeviceWorkflowStatistics *statistics)
+{
+  [statistics pushProgress:callbackDictionary];
 }
 
 @interface FBDeviceApplicationCommands ()
@@ -114,21 +150,44 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     return [FBFuture futureWithError:error];
   }
 
-  // 'PackageType=Developer' signifies that the passed payload is a .app
-  // 'AMDeviceSecureInstallApplicationBundle' performs:
-  // 1) The transfer of the application bundle to the device.
-  // 2) The installation of the application after the transfer.
-  // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
-  // 'ShadowParentKey' must be provided in 'AMDeviceSecureInstallApplicationBundle' if 'Developer' is the 'PackageType
+  // Construct the options for the underlying install API. This mirrors as much of Xcode's call to the same API as is reasonable.
+  // `@"PreferWifi": @1` may also be passed by Xcode. However, this being preferable is highly dependent on a fast WiFi network and both host/device on the same network. Since this is harder to pick a sane default for this option, this is omitted from the options.
   NSURL *appURL = [NSURL fileURLWithPath:path isDirectory:YES];
   NSDictionary<NSString *, id> *options = @{
-    @"PackageType" : @"Developer",
-    @"ShadowParentKey": self.deltaUpdateDirectory,
+    @"CFBundleIdentifier": bundle.identifier,  // Lets the installer know what the Bundle ID is of the passed in artifact.
+    @"CloseOnInvalidate": @1,  // Standard arguments of lockdown services to ensure that the socket is closed on teardown.
+    @"InvalidateOnDetach": @1,  // Similar to the above.
+    @"IsUserInitiated": @1, // Improves installation performance. This has a strong effect on time taken in "VerifyingApplication" stage of installation, which is CPU/IO bound on the attached device.
+    @"PackageType": @"Developer", // Signifies that the passed payload is a .app
+    @"ShadowParentKey": self.deltaUpdateDirectory, // Must be provided if 'Developer' is the 'PackageType'. Specifies where incremental install data and apps are persisted for faster future installs of the same bundle.
   };
- 
+
   // Perform the install and lookup the app after.
-  return [[self
-    secureInstallApplicationBundle:appURL options:options]
+  return [[[self.device
+    connectToDeviceWithPurpose:@"install"]
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      [self.device.logger logFormat:@"Installing Application %@", appURL];
+      // 'AMDeviceSecureInstallApplicationBundle' performs:
+      // 1) The transfer of the application bundle to the device.
+      // 2) The installation of the application after the transfer.
+      // 3) The performing of the relevant delta updates in the directory pointed to by 'ShadowParentKey'
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
+      int status = device.calls.SecureInstallApplicationBundle(
+        device.amDeviceRef,
+        (__bridge CFURLRef _Nonnull)(appURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
+      );
+      if (status != 0) {
+        NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+        return [[FBDeviceControlError
+          describeFormat:@"Failed to install application %@ 0x%x (%@). %@", appURL.lastPathComponent, status, errorMessage, statistics.summaryOfRecentEvents]
+          failFuture];
+      }
+      [self.device.logger logFormat:@"Installed Application %@", appURL];
+      return FBFuture.empty;
+    }]
     onQueue:self.device.asyncQueue fmap:^(id _) {
       return [self installedApplicationWithBundleID:bundle.identifier];
     }];
@@ -162,19 +221,20 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   return [[self.device
     connectToDeviceWithPurpose:@"uninstall_%@", bundleID]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
       [self.device.logger logFormat:@"Uninstalling Application %@", bundleID];
       int status = device.calls.SecureUninstallApplication(
         0,
         device.amDeviceRef,
         (__bridge CFStringRef _Nonnull)(bundleID),
         0,
-        (AMDeviceProgressCallback) UninstallCallback,
-        (__bridge void *) (device)
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
       );
       if (status != 0) {
         NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
         return [[FBDeviceControlError
-          describeFormat:@"Failed to uninstall application '%@' with error 0x%x (%@)", bundleID, status, internalMessage]
+          describeFormat:@"Failed to uninstall application '%@' with error 0x%x (%@). %@", bundleID, status, internalMessage, statistics.summaryOfRecentEvents]
           failFuture];
       }
       [self.device.logger logFormat:@"Uninstalled Application %@", bundleID];
@@ -300,18 +360,30 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
 
 - (FBFuture<id<FBLaunchedApplication>> *)launchApplicationIgnoreCurrentState:(FBApplicationLaunchConfiguration *)configuration
 {
-  return [[[self
-    remoteInstrumentsClient]
-    onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
-      return [client launchApplication:configuration];
-    }]
-    onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
-      return [[FBDeviceLaunchedApplication alloc]
-        initWithProcessIdentifier:pid.intValue
-        configuration:configuration
-        commands:self
-        queue:self.device.workQueue];
-    }];
+    if (self.device.osVersion.version.majorVersion >= 17) {
+        FBAppleDevicectlCommandExecutor *devicectl = [[FBAppleDevicectlCommandExecutor alloc] initWithDevice:self.device];
+        return [[devicectl launchApplicationWithConfiguration:configuration]
+                onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber* pid) {
+            return [[FBDeviceLaunchedApplication alloc]
+                    initWithProcessIdentifier:pid.intValue
+                    configuration:configuration
+                    commands:self
+                    queue:self.device.workQueue];
+        }];
+    } else {
+        return [[[self
+                  remoteInstrumentsClient]
+                 onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
+            return [client launchApplication:configuration];
+        }]
+                onQueue:self.device.asyncQueue map:^ id<FBLaunchedApplication> (NSNumber *pid) {
+            return [[FBDeviceLaunchedApplication alloc]
+                    initWithProcessIdentifier:pid.intValue
+                    configuration:configuration
+                    commands:self
+                    queue:self.device.workQueue];
+        }];
+    }
 }
 
 - (FBFuture<NSNull *> *)killApplicationWithProcessIdentifier:(pid_t)processIdentifier
@@ -320,30 +392,6 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
     remoteInstrumentsClient]
     onQueue:self.device.asyncQueue pop:^(FBInstrumentsClient *client) {
       return [client killProcess:processIdentifier];
-    }];
-}
-
-- (FBFuture<NSNull *> *)secureInstallApplicationBundle:(NSURL *)hostAppURL options:(NSDictionary<NSString *, id> *)options
-{
-  return [[self.device
-    connectToDeviceWithPurpose:@"install"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      [self.device.logger logFormat:@"Installing Application %@", hostAppURL];
-      int status = device.calls.SecureInstallApplicationBundle(
-        device.amDeviceRef,
-        (__bridge CFURLRef _Nonnull)(hostAppURL),
-        (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) InstallCallback,
-        (__bridge void *) (device)
-      );
-      if (status != 0) {
-        NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
-          failFuture];
-      }
-      [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
-      return FBFuture.empty;
     }];
 }
 
@@ -425,13 +473,13 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
       NSData *data = [connection receive:1 error:&error];
       if (!data) {
         return [[FBDeviceControlError
-          describeFormat:@"Failed to recieve 1 byte after PidList %@", error]
+          describeFormat:@"Failed to receive 1 byte after PidList %@", error]
           failFuture];
       }
       NSDictionary<NSString *, id> *response = [connection receiveMessageWithError:&error];
       if (!response) {
         return [[FBDeviceControlError
-          describeFormat:@"Failed to recieve PidList response %@", error]
+          describeFormat:@"Failed to receive PidList response %@", error]
           failFuture];
       }
       NSString *status = response[@"Status"];
@@ -460,15 +508,13 @@ static void InstallCallback(NSDictionary<NSString *, id> *callbackDictionary, id
   NSString *bundleName = app[FBApplicationInstallInfoKeyBundleName] ?: @"";
   NSString *path = app[FBApplicationInstallInfoKeyPath] ?: @"";
   NSString *bundleID = app[FBApplicationInstallInfoKeyBundleIdentifier];
-  FBApplicationInstallType installType = [FBInstalledApplication
-    installTypeFromString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")
-    signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")];
 
   FBBundleDescriptor *bundle = [[FBBundleDescriptor alloc] initWithName:bundleName identifier:bundleID path:path binary:nil];
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:installType
+    installTypeString:(app[FBApplicationInstallInfoKeyApplicationType] ?: @"")
+    signerIdentity:(app[FBApplicationInstallInfoKeySignerIdentity] ? : @"")
     dataContainer:nil];
 }
 

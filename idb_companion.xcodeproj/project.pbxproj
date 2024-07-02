@@ -3,81 +3,192 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */; };
-		623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */; };
-		623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */; };
-		713C709426F52F970086D8DF /* FBCodeCoverageRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */; };
-		713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */; };
-		713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */; };
-		713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */; };
-		713C70AD26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */; };
-		713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */; };
-		7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */; };
-		AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */; };
-		AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */; };
-		AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */; };
+		710FD8182811AFE1000832EA /* AccessibilityInfoMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */; };
+		712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */; };
+		7135AF3A2A8C1C0300D8B882 /* FBIDBCommandExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF0F2A8C1B6100D8B882 /* FBIDBCommandExecutor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF3B2A8C1C0B00D8B882 /* FBIDBCommandExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF102A8C1B6100D8B882 /* FBIDBCommandExecutor.m */; };
+		7135AF3C2A8C1C2500D8B882 /* FBIDBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF1E2A8C1B6100D8B882 /* FBIDBLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF3D2A8C1C2500D8B882 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF1C2A8C1B6100D8B882 /* FBDataDownloadInput.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF3E2A8C1C2500D8B882 /* FBXCTestRunFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF2A2A8C1B6100D8B882 /* FBXCTestRunFileReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF3F2A8C1C2500D8B882 /* FBXCTestRunFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF2B2A8C1B6100D8B882 /* FBXCTestRunFileReader.m */; };
+		7135AF402A8C1C2500D8B882 /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF212A8C1B6100D8B882 /* FBIDBStorageManager.m */; };
+		7135AF412A8C1C2500D8B882 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF1D2A8C1B6100D8B882 /* FBDataDownloadInput.m */; };
+		7135AF422A8C1C2500D8B882 /* FBIDBTestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF232A8C1B6100D8B882 /* FBIDBTestOperation.m */; };
+		7135AF432A8C1C2500D8B882 /* FBXCTestDescriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF262A8C1B6100D8B882 /* FBXCTestDescriptor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF442A8C1C2500D8B882 /* FBXCTestDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF272A8C1B6100D8B882 /* FBXCTestDescriptor.m */; };
+		7135AF452A8C1C2500D8B882 /* FBXCTestReporterConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF292A8C1B6100D8B882 /* FBXCTestReporterConfiguration.m */; };
+		7135AF462A8C1C2500D8B882 /* FBIDBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF1F2A8C1B6100D8B882 /* FBIDBLogger.m */; };
+		7135AF472A8C1C2500D8B882 /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF202A8C1B6100D8B882 /* FBIDBStorageManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF482A8C1C2500D8B882 /* FBXCTestReporterConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF282A8C1B6100D8B882 /* FBXCTestReporterConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF492A8C1C2500D8B882 /* FBTestApplicationsPair.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF242A8C1B6100D8B882 /* FBTestApplicationsPair.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF4A2A8C1C2500D8B882 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF252A8C1B6100D8B882 /* FBTestApplicationsPair.m */; };
+		7135AF4B2A8C1C2500D8B882 /* FBIDBTestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF222A8C1B6100D8B882 /* FBIDBTestOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF4C2A8C1C4100D8B882 /* FBDsymInstallLinkToBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF182A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.m */; };
+		7135AF4D2A8C1C4100D8B882 /* FBXCTestRunRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF1A2A8C1B6100D8B882 /* FBXCTestRunRequest.m */; };
+		7135AF4E2A8C1C4100D8B882 /* FBCodeCoverageRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF162A8C1B6100D8B882 /* FBCodeCoverageRequest.m */; };
+		7135AF4F2A8C1C4100D8B882 /* FBXCTestRunRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF192A8C1B6100D8B882 /* FBXCTestRunRequest.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF502A8C1C4100D8B882 /* FBCodeCoverageRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF152A8C1B6100D8B882 /* FBCodeCoverageRequest.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF512A8C1C4100D8B882 /* FBDsymInstallLinkToBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF172A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF522A8C1C5100D8B882 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF132A8C1B6100D8B882 /* FBIDBError.m */; };
+		7135AF532A8C1C5500D8B882 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF122A8C1B6100D8B882 /* FBIDBError.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF592A8C2A1100D8B882 /* EmptyEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF582A8C2A1100D8B882 /* EmptyEventReporter.swift */; };
+		7135AF5C2A8C2C6A00D8B882 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF5A2A8C2C6A00D8B882 /* FBiOSTargetProvider.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7135AF5D2A8C2C6A00D8B882 /* FBiOSTargetProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF5B2A8C2C6A00D8B882 /* FBiOSTargetProvider.m */; };
+		7135AF692A8CC19600D8B882 /* FBIDBAppHostedTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF0D2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.h */; };
+		7135AF6A2A8CC19900D8B882 /* FBIDBAppHostedTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 7135AF0E2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.m */; };
+		7135AF6B2A8CC25500D8B882 /* IDBConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB72C84283B957F0065DDB3 /* IDBConfiguration.swift */; };
+		7135AF6C2A8CC28E00D8B882 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
+		7135AF6F2A8CC2B000D8B882 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */; };
+		7135AF722A8CC2EC00D8B882 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
+		7135AF762A8CC3B800D8B882 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7135AF752A8CC3B800D8B882 /* FBSimulatorControl.framework */; };
+		7135AF792A8CC51200D8B882 /* CompanionLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7135AF312A8C1BBA00D8B882 /* CompanionLib.framework */; };
+		7135AF7F2A8CC5FC00D8B882 /* CompanionLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 7135AF7E2A8CC5FC00D8B882 /* CompanionLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */; };
+		717AFB7528328C11009714AB /* XCTestListBundlesMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */; };
+		7185380C2B22884200D2C033 /* BridgeFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7185380A2B22884200D2C033 /* BridgeFuture.swift */; };
+		7185380D2B22884200D2C033 /* BridgeQueues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7185380B2B22884200D2C033 /* BridgeQueues.swift */; };
 		AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */; };
-		AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */; };
-		AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */; };
-		AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */; };
-		AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */; };
-		AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */; };
-		AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */; };
 		AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */; };
 		AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */; };
-		D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */; };
-		D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */ = {isa = PBXBuildFile; fileRef = D72CB1C32277837000265160 /* FBDataDownloadInput.h */; };
-		D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */ = {isa = PBXBuildFile; fileRef = D72CB1C42277837000265160 /* FBDataDownloadInput.m */; };
 		D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */; };
 		D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */; };
 		D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */; };
 		D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */; };
 		D7D6DF9A2265DF2B00B01F14 /* idb.proto in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DF992265DF2B00B01F14 /* idb.proto */; };
-		D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */; };
-		D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */; };
-		D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */; };
-		D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */; };
-		D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */; };
-		D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */; };
-		D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */; };
-		D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */; };
-		D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */; };
-		D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */; };
-		D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */; };
-		D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */; };
 		D7D6E0282265F0DF00B01F14 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE32265F0DF00B01F14 /* main.m */; };
-		D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */; };
-		D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */; };
-		D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */; };
 		D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */; };
-		D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */; };
-		D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */; };
-		D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */; };
 		D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */; };
+		DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */; };
+		DB15C401283645AF0074D326 /* DebugserverMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15C400283645AF0074D326 /* DebugserverMethodHandler.swift */; };
+		DB15C403283647120074D326 /* AddMediaMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB15C402283647120074D326 /* AddMediaMethodHandler.swift */; };
+		DB1FCCFA284F6C8B00EAFB20 /* TaskFBFuture.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */; };
+		DB1FCCFC284F6ECA00EAFB20 /* IDBKillswitchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */; };
+		DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB29DC79283633D000D267BF /* DapMethodHandler.swift */; };
+		DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */; };
+		DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */; };
+		DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */; };
+		DB440A92287F01E700D01423 /* FIFOStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */; };
+		DB440A97287F0A7100D01423 /* FIFOStreamWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */; };
+		DB440A9A287F12E400D01423 /* MockStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A99287F12E400D01423 /* MockStreamWriter.swift */; };
+		DB440A9C2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */; };
+		DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */; };
+		DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */; };
+		DB4585BF280863FE004065A2 /* FileDrainWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585BE280863FE004065A2 /* FileDrainWriter.swift */; };
+		DB4585C32808661B004065A2 /* PullMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4585C22808661B004065A2 /* PullMethodHandler.swift */; };
+		DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */; };
+		DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */; };
+		DB4B33CC282D1A100080EDEF /* GetSettingMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */; };
+		DB561283287EE17600D28A07 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1C27BBA96100926054 /* Atomic.swift */; };
+		DB561284287EE18700D28A07 /* IDBCompanionUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */; };
+		DB561289287EE1A800D28A07 /* TaskTimeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */; };
+		DB56128A287EE1AD00D28A07 /* TaskSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE60F3E282A98180043EB57 /* TaskSelect.swift */; };
+		DB56128B287EE1BE00D28A07 /* Mutex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1A27BBA96000926054 /* Mutex.swift */; };
+		DB56128C287EE1C900D28A07 /* FBTeardownContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177CD2819540C00C33A0A /* FBTeardownContext.swift */; };
+		DB56128D287EE1CE00D28A07 /* CodeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB72C88283BADA00065DDB3 /* CodeLocation.swift */; };
+		DB561295287EE21900D28A07 /* AtomicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB561294287EE21900D28A07 /* AtomicTests.swift */; };
+		DB561296287EE21900D28A07 /* IDBCompanionUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */; };
+		DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */; };
+		DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */; };
+		DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */; };
+		DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */; };
+		DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */; };
+		DB6177B72817ED3400C33A0A /* TerminateMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */; };
+		DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */; };
+		DB6177BB2817FFC300C33A0A /* SettingMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177BA2817FFC300C33A0A /* SettingMethodHandler.swift */; };
+		DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177BC281808B200C33A0A /* ClearKeychainMethodHandler.swift */; };
+		DB6177BF28182C1B00C33A0A /* LogMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177BE28182C1B00C33A0A /* LogMethodHandler.swift */; };
+		DB6177C1281837A100C33A0A /* RecordMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177C0281837A100C33A0A /* RecordMethodHandler.swift */; };
+		DB6177C928194EDF00C33A0A /* RmMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177C828194EDF00C33A0A /* RmMethodHandler.swift */; };
+		DB6177CB2819501E00C33A0A /* MvMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177CA2819501E00C33A0A /* MvMethodHandler.swift */; };
+		DB6177D4281A956600C33A0A /* HidMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6177D3281A956600C33A0A /* HidMethodHandler.swift */; };
+		DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = DB67676527EB2BAD002BBE32 /* GRPC */; };
+		DB67DD31283D16EF003EF139 /* IDBKillswitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB67DD30283D16EF003EF139 /* IDBKillswitch.swift */; };
+		DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */; };
+		DB6E6C452824152600144D97 /* TailMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6E6C442824152600144D97 /* TailMethodHandler.swift */; };
+		DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */; };
+		DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */; };
+		DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */; };
+		DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */; };
+		DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */; };
+		DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */; };
+		DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */; };
+		DBA31DD127BE72EF0032091C /* AsyncSequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */; };
+		DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */; };
+		DBCAE6A82816B6AE00C15D07 /* MkdirMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6A72816B6AE00C15D07 /* MkdirMethodHandler.swift */; };
+		DBCAE6AB2816C8F700C15D07 /* PushMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6AA2816C8F700C15D07 /* PushMethodHandler.swift */; };
+		DBCAE6B22816E72E00C15D07 /* MultisourceFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCAE6B12816E72E00C15D07 /* MultisourceFileReader.swift */; };
+		DBCD82DB27D60FF300293F77 /* GrpcDataMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */; };
+		DBD20681289939F600145AE5 /* RevokeMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD20680289939F600145AE5 /* RevokeMethodHandler.swift */; };
+		DBE60F3D282A95D10043EB57 /* VideoStreamMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE60F3C282A95D10043EB57 /* VideoStreamMethodHandler.swift */; };
+		DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */; };
+		DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */; };
+		DBF88BBC282900D1003B1494 /* UninstallMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */; };
+		DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */; };
+		DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */; };
+		DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */; };
+		DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */; };
+		DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */; };
+		DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */; };
+		DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */; };
+		DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */; };
+		DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
-		D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */ = {
+		DBF5D5D2278EF9F000633753 /* PBXBuildRule */ = {
 			isa = PBXBuildRule;
 			compilerSpec = com.apple.compilers.proxy.script;
 			filePatterns = "*.proto";
 			fileType = pattern.proxy;
 			inputFiles = (
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-grpc-swift",
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-swift",
 			);
 			isEditable = 1;
+			name = "Files '*.proto' using Script";
 			outputFiles = (
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.h",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.cc",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.h",
-				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.pb.cc",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).pb.swift",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).grpc.swift",
 			);
-			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin\n\nprotoc --proto_path=$INPUT_FILE_DIR --cpp_out=$DERIVED_FILE_DIR --grpc_out=$DERIVED_FILE_DIR --plugin=protoc-gen-grpc=$(brew --prefix)/bin/grpc_cpp_plugin $INPUT_FILE_PATH\n\n# Copy headers\nmkdir -p ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\ncp -a ${DERIVED_FILES_DIR}/*.h ${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}\n";
+			runOncePerArchitecture = 0;
+			script = "# Generate grpc code from .proto\nPATH=$PATH:/opt/homebrew/bin/:/usr/local/bin:$HOME/homebrew/bin/\n\nGRPC_PACKAGE_DIR=${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\n\nprotoc \\\n  --proto_path=$INPUT_FILE_DIR \\\n  --swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_out=$DERIVED_FILE_DIR \\\n  --grpc-swift_opt=Visibility=Public \\\n  --swift_opt=Visibility=Public \\\n  --plugin=protoc-gen-grpc-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-grpc-swift \\\n  --plugin=protoc-gen-swift=$GRPC_PACKAGE_DIR/.build/release/protoc-gen-swift \\\n  $INPUT_FILE_PATH\n";
 		};
 /* End PBXBuildRule section */
+
+/* Begin PBXContainerItemProxy section */
+		7135AF7B2A8CC51200D8B882 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7135AF302A8C1BBA00D8B882;
+			remoteInfo = CompanionLib;
+		};
+		DB561286287EE18700D28A07 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DB561276287EE0EF00D28A07;
+			remoteInfo = IDBCompanionUtilities;
+		};
+		DB561297287EE21900D28A07 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DB561276287EE0EF00D28A07;
+			remoteInfo = IDBCompanionUtilities;
+		};
+		DBF5D5CD278EF97500633753 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7D6DF0A2265DDEC00B01F14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DBF5D5C3278EF96E00633753;
+			remoteInfo = idbGRPCSwift;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		D7D6DF102265DDEC00B01F14 /* CopyFiles */ = {
@@ -92,116 +203,282 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
-		2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idb_companion-idbGRPC/Pods-idb_companion-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
-		409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.debug.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.debug.xcconfig"; sourceTree = "<group>"; };
-		5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idbGRPC.release.xcconfig"; path = "Target Support Files/Pods-idbGRPC/Pods-idbGRPC.release.xcconfig"; sourceTree = "<group>"; };
-		623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
-		623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
-		713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageRequest.h; sourceTree = "<group>"; };
-		713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageRequest.m; sourceTree = "<group>"; };
-		713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunRequest.h; sourceTree = "<group>"; };
-		713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunRequest.m; sourceTree = "<group>"; };
-		713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBAppHostedTestConfiguration.h; sourceTree = "<group>"; };
-		713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBAppHostedTestConfiguration.m; sourceTree = "<group>"; };
+		710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityInfoMethodHandler.swift; sourceTree = "<group>"; };
+		712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescribeMethodHandler.swift; sourceTree = "<group>"; };
+		7135AF0D2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBAppHostedTestConfiguration.h; sourceTree = "<group>"; };
+		7135AF0E2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBAppHostedTestConfiguration.m; sourceTree = "<group>"; };
+		7135AF0F2A8C1B6100D8B882 /* FBIDBCommandExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBCommandExecutor.h; sourceTree = "<group>"; };
+		7135AF102A8C1B6100D8B882 /* FBIDBCommandExecutor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBCommandExecutor.m; sourceTree = "<group>"; };
+		7135AF122A8C1B6100D8B882 /* FBIDBError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
+		7135AF132A8C1B6100D8B882 /* FBIDBError.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
+		7135AF152A8C1B6100D8B882 /* FBCodeCoverageRequest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBCodeCoverageRequest.h; sourceTree = "<group>"; };
+		7135AF162A8C1B6100D8B882 /* FBCodeCoverageRequest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBCodeCoverageRequest.m; sourceTree = "<group>"; };
+		7135AF172A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDsymInstallLinkToBundle.h; sourceTree = "<group>"; };
+		7135AF182A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDsymInstallLinkToBundle.m; sourceTree = "<group>"; };
+		7135AF192A8C1B6100D8B882 /* FBXCTestRunRequest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunRequest.h; sourceTree = "<group>"; };
+		7135AF1A2A8C1B6100D8B882 /* FBXCTestRunRequest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunRequest.m; sourceTree = "<group>"; };
+		7135AF1C2A8C1B6100D8B882 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
+		7135AF1D2A8C1B6100D8B882 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
+		7135AF1E2A8C1B6100D8B882 /* FBIDBLogger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBLogger.h; sourceTree = "<group>"; };
+		7135AF1F2A8C1B6100D8B882 /* FBIDBLogger.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBLogger.m; sourceTree = "<group>"; };
+		7135AF202A8C1B6100D8B882 /* FBIDBStorageManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
+		7135AF212A8C1B6100D8B882 /* FBIDBStorageManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
+		7135AF222A8C1B6100D8B882 /* FBIDBTestOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
+		7135AF232A8C1B6100D8B882 /* FBIDBTestOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
+		7135AF242A8C1B6100D8B882 /* FBTestApplicationsPair.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBTestApplicationsPair.h; sourceTree = "<group>"; };
+		7135AF252A8C1B6100D8B882 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
+		7135AF262A8C1B6100D8B882 /* FBXCTestDescriptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBXCTestDescriptor.h; sourceTree = "<group>"; };
+		7135AF272A8C1B6100D8B882 /* FBXCTestDescriptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDescriptor.m; sourceTree = "<group>"; };
+		7135AF282A8C1B6100D8B882 /* FBXCTestReporterConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterConfiguration.h; sourceTree = "<group>"; };
+		7135AF292A8C1B6100D8B882 /* FBXCTestReporterConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterConfiguration.m; sourceTree = "<group>"; };
+		7135AF2A2A8C1B6100D8B882 /* FBXCTestRunFileReader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunFileReader.h; sourceTree = "<group>"; };
+		7135AF2B2A8C1B6100D8B882 /* FBXCTestRunFileReader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunFileReader.m; sourceTree = "<group>"; };
+		7135AF312A8C1BBA00D8B882 /* CompanionLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CompanionLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7135AF582A8C2A1100D8B882 /* EmptyEventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmptyEventReporter.swift; sourceTree = "<group>"; };
+		7135AF5A2A8C2C6A00D8B882 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
+		7135AF5B2A8C2C6A00D8B882 /* FBiOSTargetProvider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetProvider.m; sourceTree = "<group>"; };
+		7135AF752A8CC3B800D8B882 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7135AF7E2A8CC5FC00D8B882 /* CompanionLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CompanionLib.h; sourceTree = "<group>"; };
 		716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libgrpc++.dylib"; path = "/usr/local/lib/libgrpc++.dylib"; sourceTree = "<absolute>"; };
 		716E3C2126210B9B00D7DA42 /* libgrpc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgrpc.dylib; path = /usr/local/lib/libgrpc.dylib; sourceTree = "<absolute>"; };
 		716E3C782625D7AE00D7DA42 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
-		79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.debug.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.debug.xcconfig"; sourceTree = "<group>"; };
-		AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBTestOperation.m; sourceTree = "<group>"; };
-		AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBTestOperation.h; sourceTree = "<group>"; };
-		AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBXCTestReporter.mm; sourceTree = "<group>"; };
+		717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListTestsMethodHandler.swift; sourceTree = "<group>"; };
+		717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestListBundlesMethodHandler.swift; sourceTree = "<group>"; };
+		7185380A2B22884200D2C033 /* BridgeFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeFuture.swift; sourceTree = "<group>"; };
+		7185380B2B22884200D2C033 /* BridgeQueues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BridgeQueues.swift; sourceTree = "<group>"; };
 		AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBXCTestReporter.h; sourceTree = "<group>"; };
-		AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBStorageManager.m; sourceTree = "<group>"; };
-		AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBStorageManager.h; sourceTree = "<group>"; };
-		AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunFileReader.h; sourceTree = "<group>"; };
-		AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunFileReader.m; sourceTree = "<group>"; };
-		AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterConfiguration.m; sourceTree = "<group>"; };
-		AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterConfiguration.h; sourceTree = "<group>"; };
 		AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDescription.h; sourceTree = "<group>"; };
 		AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescription.m; sourceTree = "<group>"; };
-		BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idb_companion.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-idbGRPC.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-idb_companion.release.xcconfig"; path = "Target Support Files/Pods-idb_companion/Pods-idb_companion.release.xcconfig"; sourceTree = "<group>"; };
-		D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBCompanionServer.mm; sourceTree = "<group>"; };
 		D720AE7323CE1D6E0040F01B /* libcares.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcares.2.dylib; path = /usr/local/lib/libcares.2.dylib; sourceTree = "<group>"; };
-		D72CB1C32277837000265160 /* FBDataDownloadInput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDataDownloadInput.h; sourceTree = "<group>"; };
-		D72CB1C42277837000265160 /* FBDataDownloadInput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDataDownloadInput.m; sourceTree = "<group>"; };
 		D7D6DF122265DDEC00B01F14 /* idb_companion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = idb_companion; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF882265DE4E00B01F14 /* FBControlCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBControlCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8A2265DE4E00B01F14 /* FBDeviceControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D7D6DF942265DF2200B01F14 /* libidbGRPC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidbGRPC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7D6DF992265DF2B00B01F14 /* idb.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = idb.proto; sourceTree = "<group>"; };
 		D7D6DFA32265E76200B01F14 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = /usr/local/lib/libprotobuf.a; sourceTree = "<group>"; };
-		D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBError.h; sourceTree = "<group>"; };
-		D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBError.m; sourceTree = "<group>"; };
-		D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBPortsConfiguration.h; sourceTree = "<group>"; };
-		D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBConfiguration.m; sourceTree = "<group>"; };
-		D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBConfiguration.h; sourceTree = "<group>"; };
-		D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBPortsConfiguration.m; sourceTree = "<group>"; };
-		D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FBIDBServiceHandler.mm; sourceTree = "<group>"; };
-		D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCompanionServer.h; sourceTree = "<group>"; };
-		D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIDBCommandExecutor.m; sourceTree = "<group>"; };
-		D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBCommandExecutor.h; sourceTree = "<group>"; };
-		D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIDBServiceHandler.h; sourceTree = "<group>"; };
 		D7D6DFE32265F0DF00B01F14 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D7D6DFE62265F0DF00B01F14 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDescriptor.m; sourceTree = "<group>"; };
-		D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetProvider.m; sourceTree = "<group>"; };
-		D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestApplicationsPair.h; sourceTree = "<group>"; };
 		D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetStateChangeNotifier.h; sourceTree = "<group>"; };
-		D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestDescriptor.h; sourceTree = "<group>"; };
-		D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetProvider.h; sourceTree = "<group>"; };
-		D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestApplicationsPair.m; sourceTree = "<group>"; };
 		D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetStateChangeNotifier.m; sourceTree = "<group>"; };
+		DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServerErrorDelegate.swift; sourceTree = "<group>"; };
+		DB15C400283645AF0074D326 /* DebugserverMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugserverMethodHandler.swift; sourceTree = "<group>"; };
+		DB15C402283647120074D326 /* AddMediaMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMediaMethodHandler.swift; sourceTree = "<group>"; };
+		DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TaskFBFuture.swift; sourceTree = "<group>"; };
+		DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDBKillswitchBridge.swift; sourceTree = "<group>"; };
+		DB29DC79283633D000D267BF /* DapMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DapMethodHandler.swift; sourceTree = "<group>"; };
+		DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XctraceRecordMethodHandler.swift; sourceTree = "<group>"; };
+		DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogInfoValueTransformer.swift; sourceTree = "<group>"; };
+		DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingInterceptor.swift; sourceTree = "<group>"; };
+		DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FIFOStreamWriter.swift; sourceTree = "<group>"; };
+		DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIFOStreamWriterTests.swift; sourceTree = "<group>"; };
+		DB440A99287F12E400D01423 /* MockStreamWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockStreamWriter.swift; sourceTree = "<group>"; };
+		DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift"; sourceTree = "<group>"; };
+		DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListAppsMethodHandler.swift; sourceTree = "<group>"; };
+		DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileContainerValueTransformer.swift; sourceTree = "<group>"; };
+		DB4585BE280863FE004065A2 /* FileDrainWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDrainWriter.swift; sourceTree = "<group>"; };
+		DB4585C22808661B004065A2 /* PullMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PullMethodHandler.swift; sourceTree = "<group>"; };
+		DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "idb_companion-Bridging-Header.h"; sourceTree = "<group>"; };
+		DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsUpdateMethodHandler.swift; sourceTree = "<group>"; };
+		DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetSettingMethodHandler.swift; sourceTree = "<group>"; };
+		DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBCompanionUtilities.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB561292287EE21900D28A07 /* IDBCompanionUtilitiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IDBCompanionUtilitiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB561294287EE21900D28A07 /* AtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicTests.swift; sourceTree = "<group>"; };
+		DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRPCSwiftServer.swift; sourceTree = "<group>"; };
+		DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodPathSetterInterceptor.swift; sourceTree = "<group>"; };
+		DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceInterceptors.swift; sourceTree = "<group>"; };
+		DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSettingsMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminateMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApproveMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177BA2817FFC300C33A0A /* SettingMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177BC281808B200C33A0A /* ClearKeychainMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearKeychainMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177BE28182C1B00C33A0A /* LogMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177C0281837A100C33A0A /* RecordMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177C828194EDF00C33A0A /* RmMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RmMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177CA2819501E00C33A0A /* MvMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MvMethodHandler.swift; sourceTree = "<group>"; };
+		DB6177CD2819540C00C33A0A /* FBTeardownContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBTeardownContext.swift; sourceTree = "<group>"; };
+		DB6177D3281A956600C33A0A /* HidMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HidMethodHandler.swift; sourceTree = "<group>"; };
+		DB67DD30283D16EF003EF139 /* IDBKillswitch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBKillswitch.swift; sourceTree = "<group>"; };
+		DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LsMethodHandler.swift; sourceTree = "<group>"; };
+		DB6E6C442824152600144D97 /* TailMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TailMethodHandler.swift; sourceTree = "<group>"; };
+		DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDBPortsConfiguration.swift; sourceTree = "<group>"; };
+		DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMethodHandler.swift; sourceTree = "<group>"; };
+		DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallMethodHandler.swift; sourceTree = "<group>"; };
+		DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestRunMethodHandler.swift; sourceTree = "<group>"; };
+		DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenUrlMethodHandler.swift; sourceTree = "<group>"; };
+		DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBXCTestReporter.swift; sourceTree = "<group>"; };
+		DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FBControlCoreError+Extension.swift"; sourceTree = "<group>"; };
+		DBA2ED1A27BBA96000926054 /* Mutex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mutex.swift; sourceTree = "<group>"; };
+		DBA2ED1C27BBA96100926054 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
+		DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncSequence+Extension.swift"; sourceTree = "<group>"; };
+		DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LaunchMethodHandler.swift; sourceTree = "<group>"; };
+		DBB72C84283B957F0065DDB3 /* IDBConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IDBConfiguration.swift; sourceTree = "<group>"; };
+		DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskTimeout.swift; sourceTree = "<group>"; };
+		DBB72C88283BADA00065DDB3 /* CodeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeLocation.swift; sourceTree = "<group>"; };
+		DBCAE6A72816B6AE00C15D07 /* MkdirMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MkdirMethodHandler.swift; sourceTree = "<group>"; };
+		DBCAE6AA2816C8F700C15D07 /* PushMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushMethodHandler.swift; sourceTree = "<group>"; };
+		DBCAE6B12816E72E00C15D07 /* MultisourceFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultisourceFileReader.swift; sourceTree = "<group>"; };
+		DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GrpcDataMappings.swift; sourceTree = "<group>"; };
+		DBD20680289939F600145AE5 /* RevokeMethodHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RevokeMethodHandler.swift; sourceTree = "<group>"; };
+		DBE60F3C282A95D10043EB57 /* VideoStreamMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStreamMethodHandler.swift; sourceTree = "<group>"; };
+		DBE60F3E282A98180043EB57 /* TaskSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskSelect.swift; sourceTree = "<group>"; };
+		DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IDBGRPCSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionServiceProvider.swift; sourceTree = "<group>"; };
+		DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulateMemoryWarningMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendNotificationMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetLocationMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsRunMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashListMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogQueryValueTransformer.swift; sourceTree = "<group>"; };
+		DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashShowMethodHandler.swift; sourceTree = "<group>"; };
+		DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDeleteMethodHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7135AF2E2A8C1BBA00D8B882 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7135AF6F2A8CC2B000D8B882 /* FBDeviceControl.framework in Frameworks */,
+				7135AF762A8CC3B800D8B882 /* FBSimulatorControl.framework in Frameworks */,
+				7135AF722A8CC2EC00D8B882 /* XCTestBootstrap.framework in Frameworks */,
+				7135AF6C2A8CC28E00D8B882 /* FBControlCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D7D6DF0F2265DDEC00B01F14 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				D7D6DF892265DE4E00B01F14 /* FBControlCore.framework in Frameworks */,
 				D7D6DF8B2265DE4E00B01F14 /* FBDeviceControl.framework in Frameworks */,
+				DB561284287EE18700D28A07 /* IDBCompanionUtilities.framework in Frameworks */,
 				D7D6DF8D2265DE4E00B01F14 /* FBSimulatorControl.framework in Frameworks */,
-				D7D6DF9D2265E04800B01F14 /* libidbGRPC.a in Frameworks */,
 				D7D6DF8F2265DE4E00B01F14 /* XCTestBootstrap.framework in Frameworks */,
-				7E30A85F7039E2EB464C03DE /* libPods-idb_companion.a in Frameworks */,
+				DBF5D5CB278EF97500633753 /* IDBGRPCSwift.framework in Frameworks */,
+				7135AF792A8CC51200D8B882 /* CompanionLib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D7D6DF922265DF2200B01F14 /* Frameworks */ = {
+		DB561274287EE0EF00D28A07 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1CF77457F352C3C1079A442C /* libPods-idbGRPC.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB56128F287EE21900D28A07 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB561296287EE21900D28A07 /* IDBCompanionUtilities.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5C1278EF96E00633753 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB67676627EB2BAD002BBE32 /* GRPC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		713C709126F52F970086D8DF /* Request */ = {
+		7135AF0B2A8C1B6100D8B882 /* CompanionLib */ = {
 			isa = PBXGroup;
 			children = (
-				713C709F26F53BC80086D8DF /* FBXCTestRunRequest.h */,
-				713C70A026F53BC80086D8DF /* FBXCTestRunRequest.m */,
-				713C709226F52F970086D8DF /* FBCodeCoverageRequest.h */,
-				713C709326F52F970086D8DF /* FBCodeCoverageRequest.m */,
+				718538092B22884200D2C033 /* BridgeFuture */,
+				7135AF0C2A8C1B6100D8B882 /* Configuration */,
+				7135AF0F2A8C1B6100D8B882 /* FBIDBCommandExecutor.h */,
+				7135AF102A8C1B6100D8B882 /* FBIDBCommandExecutor.m */,
+				7135AF112A8C1B6100D8B882 /* Reporting */,
+				7135AF142A8C1B6100D8B882 /* Request */,
+				7135AF1B2A8C1B6100D8B882 /* Utility */,
+				7135AF7E2A8CC5FC00D8B882 /* CompanionLib.h */,
+			);
+			path = CompanionLib;
+			sourceTree = "<group>";
+		};
+		7135AF0C2A8C1B6100D8B882 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				7135AF0D2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.h */,
+				7135AF0E2A8C1B6100D8B882 /* FBIDBAppHostedTestConfiguration.m */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		7135AF112A8C1B6100D8B882 /* Reporting */ = {
+			isa = PBXGroup;
+			children = (
+				7135AF122A8C1B6100D8B882 /* FBIDBError.h */,
+				7135AF132A8C1B6100D8B882 /* FBIDBError.m */,
+			);
+			path = Reporting;
+			sourceTree = "<group>";
+		};
+		7135AF142A8C1B6100D8B882 /* Request */ = {
+			isa = PBXGroup;
+			children = (
+				7135AF152A8C1B6100D8B882 /* FBCodeCoverageRequest.h */,
+				7135AF162A8C1B6100D8B882 /* FBCodeCoverageRequest.m */,
+				7135AF172A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.h */,
+				7135AF182A8C1B6100D8B882 /* FBDsymInstallLinkToBundle.m */,
+				7135AF192A8C1B6100D8B882 /* FBXCTestRunRequest.h */,
+				7135AF1A2A8C1B6100D8B882 /* FBXCTestRunRequest.m */,
 			);
 			path = Request;
+			sourceTree = "<group>";
+		};
+		7135AF1B2A8C1B6100D8B882 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				7135AF5A2A8C2C6A00D8B882 /* FBiOSTargetProvider.h */,
+				7135AF5B2A8C2C6A00D8B882 /* FBiOSTargetProvider.m */,
+				7135AF1C2A8C1B6100D8B882 /* FBDataDownloadInput.h */,
+				7135AF1D2A8C1B6100D8B882 /* FBDataDownloadInput.m */,
+				7135AF1E2A8C1B6100D8B882 /* FBIDBLogger.h */,
+				7135AF1F2A8C1B6100D8B882 /* FBIDBLogger.m */,
+				7135AF202A8C1B6100D8B882 /* FBIDBStorageManager.h */,
+				7135AF212A8C1B6100D8B882 /* FBIDBStorageManager.m */,
+				7135AF222A8C1B6100D8B882 /* FBIDBTestOperation.h */,
+				7135AF232A8C1B6100D8B882 /* FBIDBTestOperation.m */,
+				7135AF242A8C1B6100D8B882 /* FBTestApplicationsPair.h */,
+				7135AF252A8C1B6100D8B882 /* FBTestApplicationsPair.m */,
+				7135AF262A8C1B6100D8B882 /* FBXCTestDescriptor.h */,
+				7135AF272A8C1B6100D8B882 /* FBXCTestDescriptor.m */,
+				7135AF282A8C1B6100D8B882 /* FBXCTestReporterConfiguration.h */,
+				7135AF292A8C1B6100D8B882 /* FBXCTestReporterConfiguration.m */,
+				7135AF2A2A8C1B6100D8B882 /* FBXCTestRunFileReader.h */,
+				7135AF2B2A8C1B6100D8B882 /* FBXCTestRunFileReader.m */,
+			);
+			path = Utility;
+			sourceTree = "<group>";
+		};
+		718538092B22884200D2C033 /* BridgeFuture */ = {
+			isa = PBXGroup;
+			children = (
+				7185380A2B22884200D2C033 /* BridgeFuture.swift */,
+				7185380B2B22884200D2C033 /* BridgeQueues.swift */,
+			);
+			path = BridgeFuture;
 			sourceTree = "<group>";
 		};
 		D7D6DF092265DDEC00B01F14 = {
 			isa = PBXGroup;
 			children = (
+				7135AF0B2A8C1B6100D8B882 /* CompanionLib */,
 				D7D6DFA82265F0DF00B01F14 /* idb_companion */,
 				D7D6DF982265DF2B00B01F14 /* proto */,
+				DB561278287EE0F000D28A07 /* IDBCompanionUtilities */,
+				DB561293287EE21900D28A07 /* IDBCompanionUtilitiesTests */,
 				D7D6DF132265DDEC00B01F14 /* Products */,
 				D7D6DF872265DE4E00B01F14 /* Frameworks */,
-				E47FF620763B1FAD507E99B9 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -209,7 +486,10 @@
 			isa = PBXGroup;
 			children = (
 				D7D6DF122265DDEC00B01F14 /* idb_companion */,
-				D7D6DF942265DF2200B01F14 /* libidbGRPC.a */,
+				DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */,
+				DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */,
+				DB561292287EE21900D28A07 /* IDBCompanionUtilitiesTests.xctest */,
+				7135AF312A8C1BBA00D8B882 /* CompanionLib.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -217,6 +497,7 @@
 		D7D6DF872265DE4E00B01F14 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7135AF752A8CC3B800D8B882 /* FBSimulatorControl.framework */,
 				716E3C782625D7AE00D7DA42 /* libz.tbd */,
 				716E3C2126210B9B00D7DA42 /* libgrpc.dylib */,
 				716E3C1E26210B5C00D7DA42 /* libgrpc++.dylib */,
@@ -226,8 +507,6 @@
 				D7D6DF8C2265DE4E00B01F14 /* FBSimulatorControl.framework */,
 				D7D6DFA32265E76200B01F14 /* libprotobuf.a */,
 				D7D6DF8E2265DE4E00B01F14 /* XCTestBootstrap.framework */,
-				BEC79D15EF2190287C8A0D82 /* libPods-idb_companion.a */,
-				CEFAE887E28B2550E73E65C6 /* libPods-idbGRPC.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -243,10 +522,10 @@
 		D7D6DFA82265F0DF00B01F14 /* idb_companion */ = {
 			isa = PBXGroup;
 			children = (
+				DB465CC7279567AB00FD4583 /* Bridging */,
+				DBF5D5D3278EFA7900633753 /* SwiftServer */,
 				D7D6DFBD2265F0DF00B01F14 /* Configuration */,
 				D7D6DFB52265F0DF00B01F14 /* Reporting */,
-				713C709126F52F970086D8DF /* Request */,
-				D7D6DFC52265F0DF00B01F14 /* Server */,
 				D7D6DFE72265F0DF00B01F14 /* Utility */,
 				D7D6DFE62265F0DF00B01F14 /* Info.plist */,
 				D7D6DFE32265F0DF00B01F14 /* main.m */,
@@ -257,8 +536,6 @@
 		D7D6DFB52265F0DF00B01F14 /* Reporting */ = {
 			isa = PBXGroup;
 			children = (
-				D7D6DFBB2265F0DF00B01F14 /* FBIDBError.h */,
-				D7D6DFBC2265F0DF00B01F14 /* FBIDBError.m */,
 				AA8F751D249116B700F3BF18 /* FBiOSTargetDescription.h */,
 				AA8F751E249116B700F3BF18 /* FBiOSTargetDescription.m */,
 			);
@@ -268,78 +545,187 @@
 		D7D6DFBD2265F0DF00B01F14 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
-				D7D6DFC32265F0DF00B01F14 /* FBIDBConfiguration.h */,
-				D7D6DFBF2265F0DF00B01F14 /* FBIDBConfiguration.m */,
-				D7D6DFBE2265F0DF00B01F14 /* FBIDBPortsConfiguration.h */,
-				D7D6DFC42265F0DF00B01F14 /* FBIDBPortsConfiguration.m */,
-				713C70AB26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h */,
-				713C70AC26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m */,
+				7135AF582A8C2A1100D8B882 /* EmptyEventReporter.swift */,
+				DBB72C84283B957F0065DDB3 /* IDBConfiguration.swift */,
+				DB7BCC1928212A80001C1C8D /* IDBPortsConfiguration.swift */,
+				DB67DD30283D16EF003EF139 /* IDBKillswitch.swift */,
+				DB1FCCFB284F6ECA00EAFB20 /* IDBKillswitchBridge.swift */,
 			);
 			path = Configuration;
-			sourceTree = "<group>";
-		};
-		D7D6DFC52265F0DF00B01F14 /* Server */ = {
-			isa = PBXGroup;
-			children = (
-				D7D6DFCB2265F0DF00B01F14 /* FBIDBCommandExecutor.h */,
-				D7D6DFC82265F0DF00B01F14 /* FBIDBCommandExecutor.m */,
-				D7D6DFC72265F0DF00B01F14 /* FBIDBCompanionServer.h */,
-				D7107CF722E708BF0007FF32 /* FBIDBCompanionServer.mm */,
-				D7D6DFCD2265F0DF00B01F14 /* FBIDBServiceHandler.h */,
-				D7D6DFC62265F0DF00B01F14 /* FBIDBServiceHandler.mm */,
-			);
-			path = Server;
 			sourceTree = "<group>";
 		};
 		D7D6DFE72265F0DF00B01F14 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				D72CB1C32277837000265160 /* FBDataDownloadInput.h */,
-				D72CB1C42277837000265160 /* FBDataDownloadInput.m */,
-				623D9F0B22E40DCB00D9129C /* FBIDBLogger.h */,
-				623D9F0C22E40DCB00D9129C /* FBIDBLogger.m */,
-				AA34E73B228EBF1B0085F93F /* FBIDBStorageManager.h */,
-				AA34E73A228EBF1B0085F93F /* FBIDBStorageManager.m */,
-				AA0DB07C23CF0D9800E8CDEE /* FBIDBTestOperation.h */,
-				AA0DB07B23CF0D9800E8CDEE /* FBIDBTestOperation.m */,
+				DBA31DD027BE72EF0032091C /* AsyncSequence+Extension.swift */,
+				DBA2ED1927BBA96000926054 /* FBControlCoreError+Extension.swift */,
+				DB4585BE280863FE004065A2 /* FileDrainWriter.swift */,
+				DB440A9B2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift */,
+				DBCAE6B12816E72E00C15D07 /* MultisourceFileReader.swift */,
+				DB1FCCF9284F6C8B00EAFB20 /* TaskFBFuture.swift */,
+				DBF4764527B69294001E39C2 /* IDBXCTestReporter */,
 				AA0DB08023CF0DCB00E8CDEE /* FBIDBXCTestReporter.h */,
-				AA0DB07F23CF0DCA00E8CDEE /* FBIDBXCTestReporter.mm */,
-				D7D6DFF22265F0DF00B01F14 /* FBiOSTargetProvider.h */,
-				D7D6DFEB2265F0DF00B01F14 /* FBiOSTargetProvider.m */,
 				D7D6DFEE2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h */,
 				D7D6DFF52265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m */,
-				D7D6DFED2265F0DF00B01F14 /* FBTestApplicationsPair.h */,
-				D7D6DFF42265F0DF00B01F14 /* FBTestApplicationsPair.m */,
-				D7D6DFF02265F0DF00B01F14 /* FBXCTestDescriptor.h */,
-				D7D6DFE92265F0DF00B01F14 /* FBXCTestDescriptor.m */,
-				AA37EEF626A1B096007FA6F0 /* FBXCTestReporterConfiguration.h */,
-				AA37EEF526A1B096007FA6F0 /* FBXCTestReporterConfiguration.m */,
-				AA37EEF126A1B000007FA6F0 /* FBXCTestRunFileReader.h */,
-				AA37EEF226A1B000007FA6F0 /* FBXCTestRunFileReader.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
 		};
-		E47FF620763B1FAD507E99B9 /* Pods */ = {
+		DB440A98287F12D900D01423 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */,
-				D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */,
-				409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */,
-				5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */,
-				1665EB692F9D40164D398C85 /* Pods-idb_companion-idbGRPC.debug.xcconfig */,
-				2F9F718F1D3B7619BFEB9E4E /* Pods-idb_companion-idbGRPC.release.xcconfig */,
+				DB440A99287F12E400D01423 /* MockStreamWriter.swift */,
 			);
-			path = Pods;
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		DB465CC7279567AB00FD4583 /* Bridging */ = {
+			isa = PBXGroup;
+			children = (
+				DB465CCA279567AB00FD4583 /* idb_companion-Bridging-Header.h */,
+			);
+			path = Bridging;
+			sourceTree = "<group>";
+		};
+		DB561278287EE0F000D28A07 /* IDBCompanionUtilities */ = {
+			isa = PBXGroup;
+			children = (
+				DBB72C88283BADA00065DDB3 /* CodeLocation.swift */,
+				DB6177CD2819540C00C33A0A /* FBTeardownContext.swift */,
+				DBA2ED1A27BBA96000926054 /* Mutex.swift */,
+				DBE60F3E282A98180043EB57 /* TaskSelect.swift */,
+				DBB72C86283BACE10065DDB3 /* TaskTimeout.swift */,
+				DBA2ED1C27BBA96100926054 /* Atomic.swift */,
+				DB440A90287F01E700D01423 /* FIFOStreamWriter.swift */,
+			);
+			path = IDBCompanionUtilities;
+			sourceTree = "<group>";
+		};
+		DB561293287EE21900D28A07 /* IDBCompanionUtilitiesTests */ = {
+			isa = PBXGroup;
+			children = (
+				DB440A98287F12D900D01423 /* Mocks */,
+				DB561294287EE21900D28A07 /* AtomicTests.swift */,
+				DB440A96287F0A7100D01423 /* FIFOStreamWriterTests.swift */,
+			);
+			path = IDBCompanionUtilitiesTests;
+			sourceTree = "<group>";
+		};
+		DB5C38E327B5511F00401F91 /* Interceptors */ = {
+			isa = PBXGroup;
+			children = (
+				DB5C38E427B5512D00401F91 /* MethodPathSetterInterceptor.swift */,
+				DB36C9FC28339B9D00105C7D /* LoggingInterceptor.swift */,
+				DB5C38E627B5514500401F91 /* CompanionServiceInterceptors.swift */,
+			);
+			path = Interceptors;
+			sourceTree = "<group>";
+		};
+		DB9722D427CCCCA200E37D78 /* MethodHandlers */ = {
+			isa = PBXGroup;
+			children = (
+				DBD20680289939F600145AE5 /* RevokeMethodHandler.swift */,
+				710FD8172811AFE1000832EA /* AccessibilityInfoMethodHandler.swift */,
+				DB9722D527CCCCCC00E37D78 /* ConnectMethodHandler.swift */,
+				DB9722DB27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift */,
+				717AFB7228326638009714AB /* XCTestListTestsMethodHandler.swift */,
+				DB9722D927CCCE4600E37D78 /* InstallMethodHandler.swift */,
+				DB4585B92808532B004065A2 /* ListAppsMethodHandler.swift */,
+				712F098827E8B3FC005EFD42 /* DescribeMethodHandler.swift */,
+				DBB3278627F5D157001A8E3A /* LaunchMethodHandler.swift */,
+				DB4585C22808661B004065A2 /* PullMethodHandler.swift */,
+				DB6BBBA22816ABE2003D3894 /* LsMethodHandler.swift */,
+				DBCAE6A72816B6AE00C15D07 /* MkdirMethodHandler.swift */,
+				DB6177B22817EA7200C33A0A /* ListSettingsMethodHandler.swift */,
+				DB6177B42817EBE500C33A0A /* ScreenshotMethodHandler.swift */,
+				DB6177B62817ED3400C33A0A /* TerminateMethodHandler.swift */,
+				DB6177B82817EF0100C33A0A /* ApproveMethodHandler.swift */,
+				DB6177BA2817FFC300C33A0A /* SettingMethodHandler.swift */,
+				DB6177BC281808B200C33A0A /* ClearKeychainMethodHandler.swift */,
+				DB6177BE28182C1B00C33A0A /* LogMethodHandler.swift */,
+				DB6177C0281837A100C33A0A /* RecordMethodHandler.swift */,
+				DB6177C828194EDF00C33A0A /* RmMethodHandler.swift */,
+				DB6177CA2819501E00C33A0A /* MvMethodHandler.swift */,
+				DB6177D3281A956600C33A0A /* HidMethodHandler.swift */,
+				DB9B072F281A985700F2C119 /* OpenUrlMethodHandler.swift */,
+				DBCAE6AA2816C8F700C15D07 /* PushMethodHandler.swift */,
+				DB6E6C442824152600144D97 /* TailMethodHandler.swift */,
+				DBF88BBB282900D1003B1494 /* UninstallMethodHandler.swift */,
+				DBF88BBD2829032A003B1494 /* FocusMethodHandler.swift */,
+				DBF88BBF2829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift */,
+				DBF88BC12829057F003B1494 /* SendNotificationMethodHandler.swift */,
+				DBF88BC32829152A003B1494 /* SetLocationMethodHandler.swift */,
+				DBF88BCC28294572003B1494 /* CrashListMethodHandler.swift */,
+				DBF88BD028294A7B003B1494 /* CrashShowMethodHandler.swift */,
+				DBF88BD228294B5E003B1494 /* CrashDeleteMethodHandler.swift */,
+				DB4B33C9282D18230080EDEF /* ContactsUpdateMethodHandler.swift */,
+				DB4B33CB282D1A100080EDEF /* GetSettingMethodHandler.swift */,
+				DBE60F3C282A95D10043EB57 /* VideoStreamMethodHandler.swift */,
+				717AFB7428328C11009714AB /* XCTestListBundlesMethodHandler.swift */,
+				DBF88BC528291C9A003B1494 /* InstrumentsRunMethodHandler.swift */,
+				DB36C9F728324A6100105C7D /* XctraceRecordMethodHandler.swift */,
+				DB29DC79283633D000D267BF /* DapMethodHandler.swift */,
+				DB15C400283645AF0074D326 /* DebugserverMethodHandler.swift */,
+				DB15C402283647120074D326 /* AddMediaMethodHandler.swift */,
+			);
+			path = MethodHandlers;
+			sourceTree = "<group>";
+		};
+		DBCD82D927D60FF300293F77 /* ValueTransformers */ = {
+			isa = PBXGroup;
+			children = (
+				DBCD82DA27D60FF300293F77 /* GrpcDataMappings.swift */,
+				DB4585BC280862F7004065A2 /* FileContainerValueTransformer.swift */,
+				DBF88BCE282945D4003B1494 /* CrashLogQueryValueTransformer.swift */,
+				DB36C9F928329B7500105C7D /* CrashLogInfoValueTransformer.swift */,
+			);
+			path = ValueTransformers;
+			sourceTree = "<group>";
+		};
+		DBF4764527B69294001E39C2 /* IDBXCTestReporter */ = {
+			isa = PBXGroup;
+			children = (
+				DBA2ED1727BBA95900926054 /* IDBXCTestReporter.swift */,
+			);
+			path = IDBXCTestReporter;
+			sourceTree = "<group>";
+		};
+		DBF5D5D3278EFA7900633753 /* SwiftServer */ = {
+			isa = PBXGroup;
+			children = (
+				DBCD82D927D60FF300293F77 /* ValueTransformers */,
+				DB9722D427CCCCA200E37D78 /* MethodHandlers */,
+				DB5C38E327B5511F00401F91 /* Interceptors */,
+				DB5C38E127B54FCA00401F91 /* GRPCSwiftServer.swift */,
+				DB0AEE8927C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift */,
+				DBF5D5D5278EFA9C00633753 /* CompanionServiceProvider.swift */,
+			);
+			path = SwiftServer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		D7D6DF902265DF2200B01F14 /* Headers */ = {
+		7135AF2C2A8C1BBA00D8B882 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7135AF3E2A8C1C2500D8B882 /* FBXCTestRunFileReader.h in Headers */,
+				7135AF492A8C1C2500D8B882 /* FBTestApplicationsPair.h in Headers */,
+				7135AF3C2A8C1C2500D8B882 /* FBIDBLogger.h in Headers */,
+				7135AF692A8CC19600D8B882 /* FBIDBAppHostedTestConfiguration.h in Headers */,
+				7135AF3A2A8C1C0300D8B882 /* FBIDBCommandExecutor.h in Headers */,
+				7135AF3D2A8C1C2500D8B882 /* FBDataDownloadInput.h in Headers */,
+				7135AF472A8C1C2500D8B882 /* FBIDBStorageManager.h in Headers */,
+				7135AF482A8C1C2500D8B882 /* FBXCTestReporterConfiguration.h in Headers */,
+				7135AF502A8C1C4100D8B882 /* FBCodeCoverageRequest.h in Headers */,
+				7135AF512A8C1C4100D8B882 /* FBDsymInstallLinkToBundle.h in Headers */,
+				7135AF4F2A8C1C4100D8B882 /* FBXCTestRunRequest.h in Headers */,
+				7135AF5C2A8C2C6A00D8B882 /* FBiOSTargetProvider.h in Headers */,
+				7135AF532A8C1C5500D8B882 /* FBIDBError.h in Headers */,
+				7135AF4B2A8C1C2500D8B882 /* FBIDBTestOperation.h in Headers */,
+				7135AF432A8C1C2500D8B882 /* FBXCTestDescriptor.h in Headers */,
+				7135AF7F2A8CC5FC00D8B882 /* CompanionLib.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,72 +733,127 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D72CB1C52277837000265160 /* FBDataDownloadInput.h in Headers */,
-				D7D6E0122265F0DF00B01F14 /* FBIDBCommandExecutor.h in Headers */,
-				D7D6E00E2265F0DF00B01F14 /* FBIDBCompanionServer.h in Headers */,
-				713C70A126F53BC80086D8DF /* FBXCTestRunRequest.h in Headers */,
-				AA37EEF326A1B000007FA6F0 /* FBXCTestRunFileReader.h in Headers */,
 				AA0DB08223CF0DCB00E8CDEE /* FBIDBXCTestReporter.h in Headers */,
-				D7D6E00B2265F0DF00B01F14 /* FBIDBConfiguration.h in Headers */,
-				D7D6E0052265F0DF00B01F14 /* FBIDBError.h in Headers */,
-				D7D6E0072265F0DF00B01F14 /* FBIDBPortsConfiguration.h in Headers */,
-				623D9F0D22E40DCB00D9129C /* FBIDBLogger.h in Headers */,
-				713C709426F52F970086D8DF /* FBCodeCoverageRequest.h in Headers */,
-				D7D6E0142265F0DF00B01F14 /* FBIDBServiceHandler.h in Headers */,
-				D7D6E0332265F0DF00B01F14 /* FBiOSTargetProvider.h in Headers */,
-				AA37EEF826A1B096007FA6F0 /* FBXCTestReporterConfiguration.h in Headers */,
 				D7D6E02F2265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.h in Headers */,
 				AA8F751F249116B700F3BF18 /* FBiOSTargetDescription.h in Headers */,
-				713C70AD26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.h in Headers */,
-				AA0DB07E23CF0D9800E8CDEE /* FBIDBTestOperation.h in Headers */,
-				D7D6E02E2265F0DF00B01F14 /* FBTestApplicationsPair.h in Headers */,
-				AA34E73D228EBF1B0085F93F /* FBIDBStorageManager.h in Headers */,
-				D7D6E0312265F0DF00B01F14 /* FBXCTestDescriptor.h in Headers */,
+				DB465CCC279567AB00FD4583 /* idb_companion-Bridging-Header.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB561272287EE0EF00D28A07 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5BF278EF96E00633753 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D7D6DF112265DDEC00B01F14 /* idb_companion */ = {
+		7135AF302A8C1BBA00D8B882 /* CompanionLib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */;
+			buildConfigurationList = 7135AF372A8C1BBA00D8B882 /* Build configuration list for PBXNativeTarget "CompanionLib" */;
 			buildPhases = (
-				4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */,
-				D7D6DF0E2265DDEC00B01F14 /* Sources */,
-				D7D6DF9E2265E35300B01F14 /* Headers */,
-				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
-				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
-				273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */,
+				7135AF2C2A8C1BBA00D8B882 /* Headers */,
+				7135AF2D2A8C1BBA00D8B882 /* Sources */,
+				7135AF2E2A8C1BBA00D8B882 /* Frameworks */,
+				7135AF2F2A8C1BBA00D8B882 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			name = CompanionLib;
+			productName = CompanionLib;
+			productReference = 7135AF312A8C1BBA00D8B882 /* CompanionLib.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D7D6DF112265DDEC00B01F14 /* idb_companion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D7D6DF192265DDEC00B01F14 /* Build configuration list for PBXNativeTarget "idb_companion" */;
+			buildPhases = (
+				D7D6DF0E2265DDEC00B01F14 /* Sources */,
+				D7D6DF9E2265E35300B01F14 /* Headers */,
+				D7D6DF0F2265DDEC00B01F14 /* Frameworks */,
+				D7D6DF102265DDEC00B01F14 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DBF5D5CE278EF97500633753 /* PBXTargetDependency */,
+				DB561287287EE18700D28A07 /* PBXTargetDependency */,
+				7135AF7C2A8CC51200D8B882 /* PBXTargetDependency */,
 			);
 			name = idb_companion;
 			productName = idb_companion;
 			productReference = D7D6DF122265DDEC00B01F14 /* idb_companion */;
 			productType = "com.apple.product-type.tool";
 		};
-		D7D6DF932265DF2200B01F14 /* idbGRPC */ = {
+		DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */;
+			buildConfigurationList = DB56127B287EE0F000D28A07 /* Build configuration list for PBXNativeTarget "IDBCompanionUtilities" */;
 			buildPhases = (
-				8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */,
-				D7D6DF912265DF2200B01F14 /* Sources */,
-				D7D6DF902265DF2200B01F14 /* Headers */,
-				D7D6DF922265DF2200B01F14 /* Frameworks */,
-				D7D6DF9B2265DF3900B01F14 /* ShellScript */,
+				DB561272287EE0EF00D28A07 /* Headers */,
+				DB561273287EE0EF00D28A07 /* Sources */,
+				DB561274287EE0EF00D28A07 /* Frameworks */,
+				DB561275287EE0EF00D28A07 /* Resources */,
 			);
 			buildRules = (
-				D7D6DF9C2265DF4E00B01F14 /* PBXBuildRule */,
 			);
 			dependencies = (
 			);
-			name = idbGRPC;
-			productName = idbGRPC;
-			productReference = D7D6DF942265DF2200B01F14 /* libidbGRPC.a */;
-			productType = "com.apple.product-type.library.static";
+			name = IDBCompanionUtilities;
+			productName = IDBCompanionUtilities;
+			productReference = DB561277287EE0EF00D28A07 /* IDBCompanionUtilities.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		DB561291287EE21900D28A07 /* IDBCompanionUtilitiesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB561299287EE21900D28A07 /* Build configuration list for PBXNativeTarget "IDBCompanionUtilitiesTests" */;
+			buildPhases = (
+				DB56128E287EE21900D28A07 /* Sources */,
+				DB56128F287EE21900D28A07 /* Frameworks */,
+				DB561290287EE21900D28A07 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DB561298287EE21900D28A07 /* PBXTargetDependency */,
+			);
+			name = IDBCompanionUtilitiesTests;
+			productName = IDBCompanionUtilitiesTests;
+			productReference = DB561292287EE21900D28A07 /* IDBCompanionUtilitiesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DBF5D5C8278EF96E00633753 /* Build configuration list for PBXNativeTarget "IDBGRPCSwift" */;
+			buildPhases = (
+				DBF5D5D1278EF9BD00633753 /* Build protoc plugin */,
+				DBF5D5BF278EF96E00633753 /* Headers */,
+				DBF5D5C0278EF96E00633753 /* Sources */,
+				DBF5D5C1278EF96E00633753 /* Frameworks */,
+				DBF5D5C2278EF96E00633753 /* Resources */,
+			);
+			buildRules = (
+				DBF5D5D2278EF9F000633753 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = IDBGRPCSwift;
+			packageProductDependencies = (
+				DB67676527EB2BAD002BBE32 /* GRPC */,
+			);
+			productName = idbGRPCSwift;
+			productReference = DBF5D5C4278EF96E00633753 /* IDBGRPCSwift.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -420,14 +861,26 @@
 		D7D6DF0A2265DDEC00B01F14 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 1340;
 				LastUpgradeCheck = 1020;
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
+					7135AF302A8C1BBA00D8B882 = {
+						CreatedOnToolsVersion = 14.3;
+						LastSwiftMigration = 1430;
+					};
 					D7D6DF112265DDEC00B01F14 = {
 						CreatedOnToolsVersion = 10.2;
+						LastSwiftMigration = 1320;
 					};
-					D7D6DF932265DF2200B01F14 = {
-						CreatedOnToolsVersion = 10.2;
+					DB561276287EE0EF00D28A07 = {
+						CreatedOnToolsVersion = 13.4;
+					};
+					DB561291287EE21900D28A07 = {
+						CreatedOnToolsVersion = 13.4;
+					};
+					DBF5D5C3278EF96E00633753 = {
+						CreatedOnToolsVersion = 13.2;
 					};
 				};
 			};
@@ -440,79 +893,55 @@
 				Base,
 			);
 			mainGroup = D7D6DF092265DDEC00B01F14;
+			packageReferences = (
+				DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */,
+			);
 			productRefGroup = D7D6DF132265DDEC00B01F14 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D7D6DF112265DDEC00B01F14 /* idb_companion */,
-				D7D6DF932265DF2200B01F14 /* idbGRPC */,
+				DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */,
+				DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */,
+				DB561291287EE21900D28A07 /* IDBCompanionUtilitiesTests */,
+				7135AF302A8C1BBA00D8B882 /* CompanionLib */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		7135AF2F2A8C1BBA00D8B882 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB561275287EE0EF00D28A07 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB561290287EE21900D28A07 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5C2278EF96E00633753 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXShellScriptBuildPhase section */
-		273B5E1B76569E02D4F3E178 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-idb_companion/Pods-idb_companion-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		4AC0E3B025661EF33E389D53 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-idb_companion-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		8D0D65049282F70481EC4EDD /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-idbGRPC-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		D7D6DF9B2265DF3900B01F14 /* ShellScript */ = {
+		DBF5D5D1278EF9BD00633753 /* Build protoc plugin */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -521,47 +950,144 @@
 			);
 			inputPaths = (
 			);
+			name = "Build protoc plugin";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-grpc-swift",
+				"$(BUILD_DIR)/../../SourcePackages/checkouts/grpc-swift/.build/release/protoc-gen-swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n";
+			shellScript = "cd ${BUILD_DIR}\npwd\ncd ${BUILD_DIR%Build/*}SourcePackages/checkouts/grpc-swift\nmake plugins\npwd\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7135AF2D2A8C1BBA00D8B882 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7135AF3B2A8C1C0B00D8B882 /* FBIDBCommandExecutor.m in Sources */,
+				7135AF402A8C1C2500D8B882 /* FBIDBStorageManager.m in Sources */,
+				7135AF4D2A8C1C4100D8B882 /* FBXCTestRunRequest.m in Sources */,
+				7135AF6A2A8CC19900D8B882 /* FBIDBAppHostedTestConfiguration.m in Sources */,
+				7135AF412A8C1C2500D8B882 /* FBDataDownloadInput.m in Sources */,
+				7185380C2B22884200D2C033 /* BridgeFuture.swift in Sources */,
+				7135AF442A8C1C2500D8B882 /* FBXCTestDescriptor.m in Sources */,
+				7135AF3F2A8C1C2500D8B882 /* FBXCTestRunFileReader.m in Sources */,
+				7135AF4E2A8C1C4100D8B882 /* FBCodeCoverageRequest.m in Sources */,
+				7135AF522A8C1C5100D8B882 /* FBIDBError.m in Sources */,
+				7185380D2B22884200D2C033 /* BridgeQueues.swift in Sources */,
+				7135AF422A8C1C2500D8B882 /* FBIDBTestOperation.m in Sources */,
+				7135AF4A2A8C1C2500D8B882 /* FBTestApplicationsPair.m in Sources */,
+				7135AF452A8C1C2500D8B882 /* FBXCTestReporterConfiguration.m in Sources */,
+				7135AF462A8C1C2500D8B882 /* FBIDBLogger.m in Sources */,
+				7135AF4C2A8C1C4100D8B882 /* FBDsymInstallLinkToBundle.m in Sources */,
+				7135AF5D2A8C2C6A00D8B882 /* FBiOSTargetProvider.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D7D6DF0E2265DDEC00B01F14 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D7107CF822E708C00007FF32 /* FBIDBCompanionServer.mm in Sources */,
-				AA0DB07D23CF0D9800E8CDEE /* FBIDBTestOperation.m in Sources */,
+				DB5C38E227B54FCA00401F91 /* GRPCSwiftServer.swift in Sources */,
+				DBF88BC22829057F003B1494 /* SendNotificationMethodHandler.swift in Sources */,
+				DBF88BBE2829032A003B1494 /* FocusMethodHandler.swift in Sources */,
+				DB4585C32808661B004065A2 /* PullMethodHandler.swift in Sources */,
+				DBCAE6B22816E72E00C15D07 /* MultisourceFileReader.swift in Sources */,
+				DB4585BF280863FE004065A2 /* FileDrainWriter.swift in Sources */,
+				DBF88BBC282900D1003B1494 /* UninstallMethodHandler.swift in Sources */,
 				AA8F7520249116B700F3BF18 /* FBiOSTargetDescription.m in Sources */,
-				D7D6E00F2265F0DF00B01F14 /* FBIDBCommandExecutor.m in Sources */,
-				AA34E73C228EBF1B0085F93F /* FBIDBStorageManager.m in Sources */,
-				AA37EEF426A1B000007FA6F0 /* FBXCTestRunFileReader.m in Sources */,
-				AA37EEF726A1B096007FA6F0 /* FBXCTestReporterConfiguration.m in Sources */,
-				D72CB1C62277837000265160 /* FBDataDownloadInput.m in Sources */,
-				713C709526F52F970086D8DF /* FBCodeCoverageRequest.m in Sources */,
-				713C70AE26F8D0700086D8DF /* FBIDBAppHostedTestConfiguration.m in Sources */,
-				D7D6E0082265F0DF00B01F14 /* FBIDBConfiguration.m in Sources */,
-				D7D6E0062265F0DF00B01F14 /* FBIDBError.m in Sources */,
-				D7D6E00C2265F0DF00B01F14 /* FBIDBPortsConfiguration.m in Sources */,
-				D7D6E00D2265F0DF00B01F14 /* FBIDBServiceHandler.mm in Sources */,
-				D7D6E02C2265F0DF00B01F14 /* FBiOSTargetProvider.m in Sources */,
+				DB15C403283647120074D326 /* AddMediaMethodHandler.swift in Sources */,
+				717AFB7528328C11009714AB /* XCTestListBundlesMethodHandler.swift in Sources */,
+				DB6E6C452824152600144D97 /* TailMethodHandler.swift in Sources */,
+				DB6177CB2819501E00C33A0A /* MvMethodHandler.swift in Sources */,
+				DBA31DD127BE72EF0032091C /* AsyncSequence+Extension.swift in Sources */,
+				DBD20681289939F600145AE5 /* RevokeMethodHandler.swift in Sources */,
+				710FD8182811AFE1000832EA /* AccessibilityInfoMethodHandler.swift in Sources */,
+				DBF88BC42829152A003B1494 /* SetLocationMethodHandler.swift in Sources */,
+				DBCAE6A82816B6AE00C15D07 /* MkdirMethodHandler.swift in Sources */,
+				DBA2ED1827BBA95900926054 /* IDBXCTestReporter.swift in Sources */,
+				DBB3278727F5D157001A8E3A /* LaunchMethodHandler.swift in Sources */,
+				DB4B33CC282D1A100080EDEF /* GetSettingMethodHandler.swift in Sources */,
+				DB6177BB2817FFC300C33A0A /* SettingMethodHandler.swift in Sources */,
+				DB6177B72817ED3400C33A0A /* TerminateMethodHandler.swift in Sources */,
+				DB9B0730281A985700F2C119 /* OpenUrlMethodHandler.swift in Sources */,
+				DBF88BCD28294572003B1494 /* CrashListMethodHandler.swift in Sources */,
+				DB9722DA27CCCE4600E37D78 /* InstallMethodHandler.swift in Sources */,
+				DB36C9F828324A6100105C7D /* XctraceRecordMethodHandler.swift in Sources */,
+				DB6177B52817EBE500C33A0A /* ScreenshotMethodHandler.swift in Sources */,
+				DB5C38E527B5512D00401F91 /* MethodPathSetterInterceptor.swift in Sources */,
+				DB440A9C2880152C00D01423 /* GRPCAsyncResponseStreamWriter+AsyncStreamWriter.swift in Sources */,
+				DBA2ED1D27BBA96100926054 /* FBControlCoreError+Extension.swift in Sources */,
+				DB36C9FA28329B7500105C7D /* CrashLogInfoValueTransformer.swift in Sources */,
+				DBF88BD328294B5E003B1494 /* CrashDeleteMethodHandler.swift in Sources */,
+				DB15C401283645AF0074D326 /* DebugserverMethodHandler.swift in Sources */,
+				7135AF592A8C2A1100D8B882 /* EmptyEventReporter.swift in Sources */,
+				DBF88BD128294A7B003B1494 /* CrashShowMethodHandler.swift in Sources */,
+				DBCD82DB27D60FF300293F77 /* GrpcDataMappings.swift in Sources */,
+				DB6177D4281A956600C33A0A /* HidMethodHandler.swift in Sources */,
+				DB5C38E727B5514500401F91 /* CompanionServiceInterceptors.swift in Sources */,
+				DB7BCC1A28212A80001C1C8D /* IDBPortsConfiguration.swift in Sources */,
+				DB9722DC27CCCF3A00E37D78 /* XCTestRunMethodHandler.swift in Sources */,
+				DB6177B32817EA7200C33A0A /* ListSettingsMethodHandler.swift in Sources */,
+				DBE60F3D282A95D10043EB57 /* VideoStreamMethodHandler.swift in Sources */,
+				DB6177C928194EDF00C33A0A /* RmMethodHandler.swift in Sources */,
+				DB6177B92817EF0100C33A0A /* ApproveMethodHandler.swift in Sources */,
+				DBF88BC628291C9A003B1494 /* InstrumentsRunMethodHandler.swift in Sources */,
+				DB1FCCFA284F6C8B00EAFB20 /* TaskFBFuture.swift in Sources */,
+				DB4585BA2808532D004065A2 /* ListAppsMethodHandler.swift in Sources */,
+				DBF88BCF282945D4003B1494 /* CrashLogQueryValueTransformer.swift in Sources */,
+				DB4585BD280862F7004065A2 /* FileContainerValueTransformer.swift in Sources */,
+				DB6177C1281837A100C33A0A /* RecordMethodHandler.swift in Sources */,
 				D7D6E0362265F0DF00B01F14 /* FBiOSTargetStateChangeNotifier.m in Sources */,
-				D7D6E0352265F0DF00B01F14 /* FBTestApplicationsPair.m in Sources */,
-				D7D6E02A2265F0DF00B01F14 /* FBXCTestDescriptor.m in Sources */,
+				DB6177BD281808B200C33A0A /* ClearKeychainMethodHandler.swift in Sources */,
+				7135AF6B2A8CC25500D8B882 /* IDBConfiguration.swift in Sources */,
+				DB36C9FD28339B9D00105C7D /* LoggingInterceptor.swift in Sources */,
+				DBF5D5D6278EFA9C00633753 /* CompanionServiceProvider.swift in Sources */,
+				DB1FCCFC284F6ECA00EAFB20 /* IDBKillswitchBridge.swift in Sources */,
+				DB4B33CA282D18230080EDEF /* ContactsUpdateMethodHandler.swift in Sources */,
+				DBCAE6AB2816C8F700C15D07 /* PushMethodHandler.swift in Sources */,
+				DB29DC7A283633D000D267BF /* DapMethodHandler.swift in Sources */,
+				712F098927E8B3FC005EFD42 /* DescribeMethodHandler.swift in Sources */,
+				DB6BBBA32816ABE2003D3894 /* LsMethodHandler.swift in Sources */,
+				717AFB7328326638009714AB /* XCTestListTestsMethodHandler.swift in Sources */,
+				DB0AEE8A27C3822C005048F0 /* GRPCSwiftServerErrorDelegate.swift in Sources */,
 				D7D6E0282265F0DF00B01F14 /* main.m in Sources */,
-				623D9F0E22E40DCB00D9129C /* FBIDBLogger.m in Sources */,
-				AA0DB08123CF0DCB00E8CDEE /* FBIDBXCTestReporter.mm in Sources */,
-				713C70A226F53BC80086D8DF /* FBXCTestRunRequest.m in Sources */,
+				DBF88BC02829046A003B1494 /* SimulateMemoryWarningMethodHandler.swift in Sources */,
+				DB6177BF28182C1B00C33A0A /* LogMethodHandler.swift in Sources */,
+				DB9722D627CCCCCC00E37D78 /* ConnectMethodHandler.swift in Sources */,
+				DB67DD31283D16EF003EF139 /* IDBKillswitch.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D7D6DF912265DF2200B01F14 /* Sources */ = {
+		DB561273287EE0EF00D28A07 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB56128D287EE1CE00D28A07 /* CodeLocation.swift in Sources */,
+				DB56128C287EE1C900D28A07 /* FBTeardownContext.swift in Sources */,
+				DB561283287EE17600D28A07 /* Atomic.swift in Sources */,
+				DB561289287EE1A800D28A07 /* TaskTimeout.swift in Sources */,
+				DB440A92287F01E700D01423 /* FIFOStreamWriter.swift in Sources */,
+				DB56128A287EE1AD00D28A07 /* TaskSelect.swift in Sources */,
+				DB56128B287EE1BE00D28A07 /* Mutex.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB56128E287EE21900D28A07 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB440A9A287F12E400D01423 /* MockStreamWriter.swift in Sources */,
+				DB440A97287F0A7100D01423 /* FIFOStreamWriterTests.swift in Sources */,
+				DB561295287EE21900D28A07 /* AtomicTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBF5D5C0278EF96E00633753 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -571,7 +1097,103 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		7135AF7C2A8CC51200D8B882 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7135AF302A8C1BBA00D8B882 /* CompanionLib */;
+			targetProxy = 7135AF7B2A8CC51200D8B882 /* PBXContainerItemProxy */;
+		};
+		DB561287287EE18700D28A07 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */;
+			targetProxy = DB561286287EE18700D28A07 /* PBXContainerItemProxy */;
+		};
+		DB561298287EE21900D28A07 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DB561276287EE0EF00D28A07 /* IDBCompanionUtilities */;
+			targetProxy = DB561297287EE21900D28A07 /* PBXContainerItemProxy */;
+		};
+		DBF5D5CE278EF97500633753 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DBF5D5C3278EF96E00633753 /* IDBGRPCSwift */;
+			targetProxy = DBF5D5CD278EF97500633753 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		7135AF382A8C1BBA00D8B882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.CompanionLib;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		7135AF392A8C1BBA00D8B882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.CompanionLib;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
 		D7D6DF172265DDEC00B01F14 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -623,11 +1245,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "idb-Swift.h";
 			};
 			name = Debug;
 		};
@@ -676,17 +1299,18 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "idb-Swift.h";
 			};
 			name = Release;
 		};
 		D7D6DF1A2265DDEC00B01F14 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 79B8968AB3BFDB9737B0FF9E /* Pods-idb_companion.debug.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
@@ -695,15 +1319,20 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "idb_companion/Bridging/idb_companion-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		D7D6DF1B2265DDEC00B01F14 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D5D2CAAA6E490662111C69F6 /* Pods-idb_companion.release.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
@@ -712,36 +1341,201 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/idb_companion/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "idb_companion/Bridging/idb_companion-Bridging-Header.h";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
-		D7D6DF962265DF2300B01F14 /* Debug */ = {
+		DB56127C287EE0F000D28A07 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 409D3E336E3BC34257F5C8D8 /* Pods-idbGRPC.debug.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_STYLE = Manual;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBCompanionUtilities;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
-		D7D6DF972265DF2300B01F14 /* Release */ = {
+		DB56127D287EE0F000D28A07 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5821D9A6984DF4BCB878A87A /* Pods-idbGRPC.release.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_STYLE = Manual;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBCompanionUtilities;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		DB56129A287EE21900D28A07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBCompanionUtilitiesTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DB56129B287EE21900D28A07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBCompanionUtilitiesTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		DBF5D5C9278EF96E00633753 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBGRPCSwift;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		DBF5D5CA278EF96E00633753 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 Facebook. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.IDBGRPCSwift;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7135AF372A8C1BBA00D8B882 /* Build configuration list for PBXNativeTarget "CompanionLib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7135AF382A8C1BBA00D8B882 /* Debug */,
+				7135AF392A8C1BBA00D8B882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		D7D6DF0D2265DDEC00B01F14 /* Build configuration list for PBXProject "idb_companion" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -760,16 +1554,53 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D7D6DF952265DF2300B01F14 /* Build configuration list for PBXNativeTarget "idbGRPC" */ = {
+		DB56127B287EE0F000D28A07 /* Build configuration list for PBXNativeTarget "IDBCompanionUtilities" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D7D6DF962265DF2300B01F14 /* Debug */,
-				D7D6DF972265DF2300B01F14 /* Release */,
+				DB56127C287EE0F000D28A07 /* Debug */,
+				DB56127D287EE0F000D28A07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DB561299287EE21900D28A07 /* Build configuration list for PBXNativeTarget "IDBCompanionUtilitiesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB56129A287EE21900D28A07 /* Debug */,
+				DB56129B287EE21900D28A07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DBF5D5C8278EF96E00633753 /* Build configuration list for PBXNativeTarget "IDBGRPCSwift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DBF5D5C9278EF96E00633753 /* Debug */,
+				DBF5D5CA278EF96E00633753 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/grpc/grpc-swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB67676527EB2BAD002BBE32 /* GRPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB67676427EB2BAD002BBE32 /* XCRemoteSwiftPackageReference "grpc-swift" */;
+			productName = GRPC;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D7D6DF0A2265DDEC00B01F14 /* Project object */;
 }

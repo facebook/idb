@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import asyncio
 import sys
+from typing import Optional
 
 from idb.common.format import json_format_debugger_info
 from idb.common.types import DebuggerInfo
@@ -13,7 +16,9 @@ from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse, ProcessOutput
 from idb.grpc.stream import Stream
 
 
-async def drain_launch_stream(stream: Stream[LaunchRequest, LaunchResponse]) -> None:
+async def drain_launch_stream(
+    stream: Stream[LaunchRequest, LaunchResponse], pid_file: Optional[str]
+) -> None:
     async for message in stream:
         output = message.output
         data = output.data
@@ -29,8 +34,13 @@ async def drain_launch_stream(stream: Stream[LaunchRequest, LaunchResponse]) -> 
         debugger_pid = debugger_info.pid
         if debugger_pid is not None and debugger_pid != 0:
             info = DebuggerInfo(pid=debugger_info.pid)
-            sys.stdout.buffer.write(json_format_debugger_info(info).encode())
-            sys.stdout.buffer.flush()
+            if pid_file is None:
+                sys.stdout.buffer.write(json_format_debugger_info(info).encode())
+                sys.stdout.buffer.flush()
+            else:
+                with open(pid_file, "wb") as f:
+                    f.write(json_format_debugger_info(info).encode())
+                    f.flush()
 
 
 async def end_launch_stream(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @return the accessibility elements for the main screen, wrapped in a Future.
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat;
+- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat;
 
 /**
  Obtain the acessibility element for the main screen at the given point.
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @return the accessibility element at the provided point, wrapped in a Future.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat;
+- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat;
 
 @end
 

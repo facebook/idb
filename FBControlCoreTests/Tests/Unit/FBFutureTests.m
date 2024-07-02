@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -496,7 +496,7 @@
       [late2Cancelled fulfill];
       return FBFuture.empty;
     }];
-  
+
   NSError *error = [NSError errorWithDomain:@"Future with error" code:2 userInfo:nil];
   FBFuture<NSNumber *> *raceFuture = [[FBFuture
       race:@[
@@ -969,7 +969,7 @@
     }]
     onQueue:self.queue handleError:^(NSError *error) {
       // should not be called and should not affect teardowns
-      XCTAssertTrue(NO);
+      XCTFail();
       return [FBFuture futureWithError:error];
     }]
     onQueue:self.queue pop:^(id value) {

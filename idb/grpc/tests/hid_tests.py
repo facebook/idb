@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from idb.grpc.hid import (
+    event_to_grpc,
     GrpcHIDButton,
     GrpcHIDDelay,
     GrpcHIDEvent,
@@ -23,7 +26,6 @@ from idb.grpc.hid import (
     HIDSwipe,
     HIDTouch,
     Point,
-    event_to_grpc,
 )
 from idb.utils.testing import TestCase
 
@@ -64,6 +66,7 @@ class HidTests(TestCase):
                     swipe=GrpcHIDSwipe(
                         start=GrpcPoint(x=1, y=2),
                         end=GrpcPoint(x=3, y=4),
+                        # pyre-ignore
                         delta=delta,
                         duration=0.5,
                     )

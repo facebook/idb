@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,61 +13,87 @@
 
 @interface FBDeviceDebugServer_TwistedPairFiles : NSObject
 
-@property (nonatomic, assign, readonly) int source;
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *sink;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) dispatch_queue_t sinkWriteQueue;
-@property (nonatomic, strong, readonly) dispatch_queue_t sinkReadQueue;
-
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> sourceWriter;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileReader> sourceReader;
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> sinkWriter;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileReader> sinkReader;
+@property (nonatomic, assign, readonly) int socket;
+@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) dispatch_queue_t socketToConnectionQueue;
+@property (nonatomic, strong, readonly) dispatch_queue_t connectionToSocketQueue;
 
 @end
 
 @implementation FBDeviceDebugServer_TwistedPairFiles
 
-- (instancetype)initWithSource:(int)source sink:(FBAMDServiceConnection *)sink queue:(dispatch_queue_t)queue
+- (instancetype)initWithSocket:(int)socket connection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _source = source;
-  _sink = sink;
-  _queue = queue;
-  _sinkWriteQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver_sink_write", DISPATCH_QUEUE_SERIAL);
-  _sinkReadQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver_sink_read", DISPATCH_QUEUE_SERIAL);
+  _socket = socket;
+  _connection = connection;
+  _logger = logger;
+  _socketToConnectionQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver.socket_to_connection", DISPATCH_QUEUE_SERIAL);
+  _connectionToSocketQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.debugserver.connection_to_socket", DISPATCH_QUEUE_SERIAL);
 
   return self;
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)start
+static size_t const ConnectionReadSizeLimit = 1024;
+
+- (FBFuture<NSNull *> *)startWithError:(NSError **)error
 {
-  NSError *error = nil;
-  id<FBDataConsumer, FBDataConsumerLifecycle> sourceWriter = [FBFileWriter asyncWriterWithFileDescriptor:self.source closeOnEndOfFile:NO error:&error];
-  if (!sourceWriter) {
-    return [FBFuture futureWithError:error];
+  if (@available(macOS 10.15, *)) {
+    id<FBControlCoreLogger> logger = self.logger;
+    int socket = self.socket;
+    NSFileHandle *socketReadHandle = [[NSFileHandle alloc] initWithFileDescriptor:socket closeOnDealloc:NO];
+    NSFileHandle *socketWriteHandle = [[NSFileHandle alloc] initWithFileDescriptor:socket closeOnDealloc:NO];
+    FBAMDServiceConnection *connection = self.connection;
+    FBMutableFuture<NSNull *> *socketReadCompleted = FBMutableFuture.future;
+    FBMutableFuture<NSNull *> *connectionReadCompleted = FBMutableFuture.future;
+    dispatch_async(self.socketToConnectionQueue, ^{
+      while (socketReadCompleted.state == FBFutureStateRunning && connectionReadCompleted.state == FBFutureStateRunning) {
+        NSError *innerError = nil;
+        NSData *data = [socketReadHandle availableData];
+        if (data.length == 0) {
+          [logger log:@"Socket read reached end of file"];
+          break;
+        }
+        if (![connection send:data error:&innerError]) {
+          [logger logFormat:@"Sending data to remote debugserver failed: %@", innerError];
+          break;
+        }
+      }
+      [logger logFormat:@"Exiting socket %d read loop", socket];
+      [socketReadCompleted resolveWithResult:NSNull.null];
+    });
+    dispatch_async(self.connectionToSocketQueue, ^{
+      while (socketReadCompleted.state == FBFutureStateRunning && connectionReadCompleted.state == FBFutureStateRunning) {
+        NSError *innerError = nil;
+        NSData *data = [connection receiveUpTo:ConnectionReadSizeLimit error:&innerError];
+        if (data.length == 0) {
+          [logger logFormat:@"debugserver read ended: %@", innerError];
+          break;
+        }
+        if (![socketWriteHandle writeData:data error:&innerError]) {
+          [logger logFormat:@"Socket write failed: %@", innerError];
+          break;
+        }
+      }
+      [logger logFormat:@"Exiting connection %@ read loop", connection];
+      [connectionReadCompleted resolveWithResult:NSNull.null];
+    });
+    return [[FBFuture
+      futureWithFutures:@[
+        socketReadCompleted,
+        connectionReadCompleted,
+      ]]
+      onQueue:self.connectionToSocketQueue notifyOfCompletion:^(id _) {
+        [logger logFormat:@"Closing socket file descriptor %d", socket];
+        close(socket);
+      }];
   }
-  self.sourceWriter = sourceWriter;
-  self.sinkWriter = [self.sink writeWithConsumerWritingOnQueue:self.sinkWriteQueue];
-  self.sourceReader = [FBFileReader readerWithFileDescriptor:self.source closeOnEndOfFile:NO consumer:self.sinkWriter logger:nil];
-  self.sinkReader = [self.sink readFromConnectionWritingToConsumer:self.sourceWriter onQueue:self.sinkReadQueue];
-  return [[FBFuture
-    futureWithFutures:@[
-      [self.sourceReader startReading],
-      [self.sinkReader startReading],
-    ]]
-    onQueue:self.queue map:^(id _) {
-      return [[FBFuture
-        race:@[
-          self.sourceReader.finishedReading,
-          self.sinkReader.finishedReading,
-        ]]
-        mapReplace:NSNull.null];
-    }];
+  return nil;
 }
 
 @end
@@ -131,17 +157,19 @@
     return;
   }
   [self.logger log:@"Client connected, connecting all file handles"];
-  self.twistedPair = [[FBDeviceDebugServer_TwistedPairFiles alloc] initWithSource:fileDescriptor sink:self.serviceConnection queue:self.queue];
-  [[[self.twistedPair
-    start]
-    onQueue:self.queue fmap:^(FBFuture<NSNull *> *finished) {
-      [self.logger log:@"File handles connected"];
-      return finished;
-    }]
-    onQueue:self.queue notifyOfCompletion:^(id _) {
-      [self.logger log:@"Client Disconnected"];
-      self.twistedPair = nil;
-    }];
+  FBDeviceDebugServer_TwistedPairFiles *twistedPair = [[FBDeviceDebugServer_TwistedPairFiles alloc] initWithSocket:fileDescriptor connection:self.serviceConnection logger:self.logger];
+  NSError *error = nil;
+  FBFuture<NSNull *> *completed = [twistedPair startWithError:&error];
+  if (!completed) {
+    [self.logger logFormat:@"Failed to start connection %@", error];
+    return;
+  }
+  [completed onQueue:self.queue notifyOfCompletion:^(id _) {
+    [self.logger log:@"Client Disconnected"];
+    self.twistedPair = nil;
+  }];
+  [self.teardown resolveFromFuture:completed];
+  self.twistedPair = twistedPair;
 }
 
 #pragma mark FBiOSTargetOperation

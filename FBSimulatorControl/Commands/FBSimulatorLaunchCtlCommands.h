@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,6 +20,15 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBSimulatorLaunchCtlCommands <NSObject, FBiOSTargetCommand>
 
 #pragma mark Querying Services
+
+/**
+ Finds the Service Name for a provided process identifier
+ Will fail if there is no process matching the Process Info found.
+
+ @param pid the process identifier to obtain the name for.
+ @return A Future, wrapping the Service Name.
+ */
+- (FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)pid;
 
 /**
  Finds the Service Name for a provided process.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -32,10 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param name preference name
  @param value preference value
+ @param type preverence value type. If null defaults to `string`.
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
@@ -52,7 +53,15 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs the bundle ids to provide access to.
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBSettingsApprovalService> *)services;
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
+
+/**
+ Revokes access to the provided services.
+
+ @param bundleIDs the bundle ids to revoke access to.
+ @return A future that resolves when the setting change is complete.
+ */
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
 
 /**
  Grants access to the provided deeplink scheme.
@@ -62,6 +71,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return A future that resolves when the setting change is complete.
  */
 - (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
+
+/**
+ Revokes access to the provided deeplink scheme.
+
+ @param bundleIDs the bundle ids to revoke access to.
+ @param scheme the deeplink scheme
+ @return A future that resolves when the setting change is complete.
+ */
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
 
 /**
  Updates the contacts on the target, using the provided local databases.

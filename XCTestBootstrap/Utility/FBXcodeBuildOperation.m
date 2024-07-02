@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -47,7 +47,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
   NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
   environment[XcodebuildEnvironmentTargetUDID] = udid;
-  
+
   // Add environments for xcodebuild method swizzling if a simulator device set is provided
   if (simDeviceSetPath) {
     if (!macOSTestShimPath) {
@@ -173,7 +173,8 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
       // This will execute only if the operation completes successfully.
       [logger logFormat:@"xcodebuild operation completed successfully %@", task];
       if (configuration.resultBundlePath) {
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger];
+        // If we don't want to return result bundle in payload, there is no need to do expensive screenshot extraction
+        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger extractScreenshots:configuration.reportResultBundle];
       }
       [logger log:@"No result bundle to parse"];
       return FBFuture.empty;

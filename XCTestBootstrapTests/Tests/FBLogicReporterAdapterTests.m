@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,7 +18,7 @@
 
 @end
 
-static NSDictionary *beginTestSuiteDict() {
+static NSDictionary *beginTestSuiteDict(void) {
   return @{
     @"event": @"begin-test-suite",
     @"suite": @"NARANJA",
@@ -26,7 +26,7 @@ static NSDictionary *beginTestSuiteDict() {
   };
 }
 
-static NSDictionary *testEventDict() {
+static NSDictionary *testEventDict(void) {
   return @{
     @"className": @"OmniClass",
     @"methodName": @"theMethod:toRule:themAll:",

@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7197B82C2A9E39CC00234737 /* XTSwizzle.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B82A2A9E39CC00234737 /* XTSwizzle.h */; };
+		7197B82D2A9E39CC00234737 /* XTSwizzle.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B82A2A9E39CC00234737 /* XTSwizzle.h */; };
+		7197B82E2A9E39CC00234737 /* XTSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B82B2A9E39CC00234737 /* XTSwizzle.m */; };
+		7197B82F2A9E39CC00234737 /* XTSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B82B2A9E39CC00234737 /* XTSwizzle.m */; };
+		7197B8382A9E3FD500234737 /* XCTestCaseHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B8362A9E3FD500234737 /* XCTestCaseHelpers.h */; };
+		7197B8392A9E3FD500234737 /* XCTestCaseHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 7197B8362A9E3FD500234737 /* XCTestCaseHelpers.h */; };
+		7197B83A2A9E3FD500234737 /* XCTestCaseHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B8372A9E3FD500234737 /* XCTestCaseHelpers.m */; };
+		7197B83B2A9E3FD500234737 /* XCTestCaseHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 7197B8372A9E3FD500234737 /* XCTestCaseHelpers.m */; };
 		71B9E0D9268C61B800D40A91 /* TestCrashShim.m in Sources */ = {isa = PBXBuildFile; fileRef = EED62EE620D1224C006E86E5 /* TestCrashShim.m */; };
 		EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
 		EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = EED62EDB20D12217006E86E5 /* XCTestPrivate.h */; };
@@ -30,6 +38,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7197B82A2A9E39CC00234737 /* XTSwizzle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTSwizzle.h; sourceTree = "<group>"; };
+		7197B82B2A9E39CC00234737 /* XTSwizzle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XTSwizzle.m; sourceTree = "<group>"; };
+		7197B8362A9E3FD500234737 /* XCTestCaseHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestCaseHelpers.h; sourceTree = "<group>"; };
+		7197B8372A9E3FD500234737 /* XCTestCaseHelpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestCaseHelpers.m; sourceTree = "<group>"; };
 		AA017F411BD7776B00F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libShimulator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA56EAE21EEF08720062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMaculator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EED62ED820D12209006E86E5 /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
@@ -102,6 +114,10 @@
 				EED62EEA20D12431006E86E5 /* FBRuntimeTools.h */,
 				EED62EE920D12431006E86E5 /* FBRuntimeTools.m */,
 				EED62EDB20D12217006E86E5 /* XCTestPrivate.h */,
+				7197B82A2A9E39CC00234737 /* XTSwizzle.h */,
+				7197B82B2A9E39CC00234737 /* XTSwizzle.m */,
+				7197B8362A9E3FD500234737 /* XCTestCaseHelpers.h */,
+				7197B8372A9E3FD500234737 /* XCTestCaseHelpers.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -142,6 +158,8 @@
 				EED62EF720D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF120D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE220D12242006E86E5 /* FBXCTestConstants.h in Headers */,
+				7197B82C2A9E39CC00234737 /* XTSwizzle.h in Headers */,
+				7197B8382A9E3FD500234737 /* XCTestCaseHelpers.h in Headers */,
 				EED62EDE20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EEF20D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -154,6 +172,8 @@
 				EED62EF820D1243E006E86E5 /* FBXCTestMain.h in Headers */,
 				EED62EF220D12432006E86E5 /* FBDebugLog.h in Headers */,
 				EED62EE320D12242006E86E5 /* FBXCTestConstants.h in Headers */,
+				7197B82D2A9E39CC00234737 /* XTSwizzle.h in Headers */,
+				7197B8392A9E3FD500234737 /* XCTestCaseHelpers.h in Headers */,
 				EED62EDF20D12217006E86E5 /* XCTestPrivate.h in Headers */,
 				EED62EF020D12432006E86E5 /* FBRuntimeTools.h in Headers */,
 			);
@@ -166,7 +186,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA017F451BD7776B00F45E9D /* Build configuration list for PBXNativeTarget "Shimulator" */;
 			buildPhases = (
-				2F430FD31FD829C200B2B8B6 /* Don't allow ARM binaries */,
 				AA017F3D1BD7776B00F45E9D /* Sources */,
 				AA017F3E1BD7776B00F45E9D /* Frameworks */,
 				AA017F3F1BD7776B00F45E9D /* Headers */,
@@ -236,20 +255,6 @@
 /* End PBXProject section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		2F430FD31FD829C200B2B8B6 /* Don't allow ARM binaries */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 12;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Don't allow ARM binaries";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [[ \"${ARCHS}\" == *\"arm\"* ]];then\necho \"error: This will build an ARM binary, you (probably) don't want this (${ARCHS})\"\necho \"error: Tip: Perform a Run with Release configuration and use the resulting binary\"\nexit 1\nfi\n";
-		};
 		71B9E0DB268C792900D40A91 /* Print Shim Path */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -297,10 +302,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7197B82E2A9E39CC00234737 /* XTSwizzle.m in Sources */,
 				EED62EF920D1243E006E86E5 /* FBXCTestMain.m in Sources */,
 				EED62EF320D12432006E86E5 /* FBDebugLog.m in Sources */,
 				EED62EE720D1224C006E86E5 /* TestCrashShim.m in Sources */,
 				EED62EED20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
+				7197B83A2A9E3FD500234737 /* XCTestCaseHelpers.m in Sources */,
 				EED62EE420D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -309,10 +316,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7197B82F2A9E39CC00234737 /* XTSwizzle.m in Sources */,
 				EED62EEE20D12432006E86E5 /* FBRuntimeTools.m in Sources */,
 				EED62EFA20D1243E006E86E5 /* FBXCTestMain.m in Sources */,
 				EED62EF420D12432006E86E5 /* FBDebugLog.m in Sources */,
 				71B9E0D9268C61B800D40A91 /* TestCrashShim.m in Sources */,
+				7197B83B2A9E3FD500234737 /* XCTestCaseHelpers.m in Sources */,
 				EED62EE520D12242006E86E5 /* XCTestReporterShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -354,7 +363,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 			};
 			name = Debug;
 		};
@@ -362,7 +370,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EED62ED820D12209006E86E5 /* Maculator.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
 			};
 			name = Release;
 		};

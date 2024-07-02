@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -60,14 +60,14 @@
       [statLocFuture resolveWithResult:@(statLoc)];
       if (WIFSIGNALED(statLoc)) {
         int signalCode = WTERMSIG(statLoc);
-        NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with signal %d", processIdentifier, configuration.processName, signalCode];
+        NSString *message = [NSString stringWithFormat:@"Process %d (%@) exited with signal %d", processIdentifier, configuration.processName, signalCode];
         [logger log:message];
         NSError *error = [[FBControlCoreError describe:message] build];
         [exitCodeFuture resolveWithError:error];
         [signalFuture resolveWithResult:@(signalCode)];
       } else {
         int exitCode = WEXITSTATUS(statLoc);
-        NSString *message = [NSString stringWithFormat:@"Process %d (%@) died with exit code %d", processIdentifier, configuration.processName, exitCode];
+        NSString *message = [NSString stringWithFormat:@"Process %d (%@) exited with code %d", processIdentifier, configuration.processName, exitCode];
         [logger log:message];
         NSError *error = [[FBControlCoreError describe:message] build];
         [signalFuture resolveWithError:error];

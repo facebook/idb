@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,7 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 
-static NSInteger const MaxAllowedUnprocessedDataCounts = 10;
+static NSInteger const MaxAllowedUnprocessedDataCounts = 2;
 
 BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger) {
   if ([consumer conformsToProtocol:@protocol(FBDataConsumerAsync)]) {
@@ -27,7 +27,7 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
   return YES;
 }
 
-static NSData *AnnexBNALUStartCodeData()
+static NSData *AnnexBNALUStartCodeData(void)
 {
   // https://www.programmersought.com/article/3901815022/
   // Annex-B is simpler as it is purely based on a start code to denote the start of the NALU.
@@ -50,9 +50,19 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
       failBool:error];
   }
   NSData *headerData = AnnexBNALUStartCodeData();
-  NSArray<id> *attachmentsArray = (NSArray<id> *) CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
-  BOOL hasKeyframe = attachmentsArray[0][(NSString *) kCMSampleAttachmentKey_NotSync] != nil;
-  if (hasKeyframe) {
+  NSMutableData *consumableData = [NSMutableData alloc];
+
+  bool isKeyFrame = false;
+  CFArrayRef attachments =
+      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  if (CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    CFBooleanRef dependsOnOthers = (CFBooleanRef)CFDictionaryGetValue(
+        attachment, kCMSampleAttachmentKey_DependsOnOthers);
+    isKeyFrame = (dependsOnOthers == kCFBooleanFalse);
+  }
+
+  if (isKeyFrame) {
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     size_t spsSize, spsCount;
     const uint8_t *spsParameterSet;
@@ -86,10 +96,10 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     }
     NSData *spsData = [NSData dataWithBytes:spsParameterSet length:spsSize];
     NSData *ppsData = [NSData dataWithBytes:ppsParameterSet length:ppsSize];
-    [consumer consumeData:headerData];
-    [consumer consumeData:spsData];
-    [consumer consumeData:headerData];
-    [consumer consumeData:ppsData];
+    [consumableData appendData:headerData];
+    [consumableData appendData:spsData];
+    [consumableData appendData:headerData];
+    [consumableData appendData:ppsData];
   }
 
   // Get the underlying data buffer.
@@ -113,7 +123,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
   size_t dataOffset = 0;
   while (dataOffset < dataLength - AVCCHeaderLength) {
     // Write start code to the elementary stream
-    [consumer consumeData:headerData];
+    [consumableData appendData:headerData];
 
     // Get our current position in the buffer
     void *currentDataPointer = dataPointer + dataOffset;
@@ -129,15 +139,16 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     void *nalUnitPointer = currentDataPointer + AVCCHeaderLength;
     if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
       NSData *nalUnitData = [NSData dataWithBytesNoCopy:nalUnitPointer length:nalLength freeWhenDone:NO];
-      [consumer consumeData:nalUnitData];
+      [consumableData appendData:nalUnitData];
     } else {
       NSData *nalUnitData = [NSData dataWithBytes:nalUnitPointer length:nalLength];
-      [consumer consumeData:nalUnitData];
+      [consumableData appendData:nalUnitData];
     }
 
     // Increment the offset for the next iteration.
     dataOffset += AVCCHeaderLength + nalLength;
   }
+  [consumer consumeData:consumableData];
   return YES;
 }
 
@@ -164,7 +175,7 @@ BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsum
     if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
       NSData *data = [NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO];
       [consumer consumeData:data];
-    } else {  
+    } else {
       NSData *data = [NSData dataWithBytes:dataPointer length:lengthAtOffset];
       [consumer consumeData:data];
     }

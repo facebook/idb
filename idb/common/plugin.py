@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
+
+from __future__ import annotations
 
 import asyncio
 import importlib
@@ -13,10 +17,11 @@ from argparse import ArgumentParser
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, overload, TypeVar
 
 from idb.common.command import Command
 from idb.common.types import LoggingMetadata
+from pyre_extensions import ParameterSpecification
 
 
 def package_exists(package_name: str) -> bool:
@@ -40,12 +45,27 @@ _META_ENVIRON_PREFIX = "IDB_META_"
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-# pyre-ignore
-def swallow_exceptions(f):
+P = ParameterSpecification("P")
+T = TypeVar("T")
+
+
+@overload
+def swallow_exceptions(
+    f: Callable[P, Awaitable[T]]
+) -> Callable[P, Awaitable[T | None]]: ...
+
+
+@overload
+def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]: ...
+
+
+def swallow_exceptions(
+    f: Callable[P, T] | Callable[P, Awaitable[T]]
+) -> Callable[P, T | None] | Callable[P, Awaitable[T | None]]:
     if asyncio.iscoroutinefunction(f):
 
         @wraps(f)
-        async def inner(*args, **kwargs) -> None:
+        async def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
                 return await f(*args, **kwargs)
             except Exception:
@@ -54,10 +74,12 @@ def swallow_exceptions(f):
     else:
 
         @wraps(f)
-        def inner(*args, **kwargs) -> None:  # pyre-ignore
+        def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
+                # pyre-ignore[7]
                 return f(*args, **kwargs)
             except Exception:
+                # pyre-ignore[16]
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
     return inner
@@ -75,11 +97,7 @@ def on_launch(logger: Logger) -> None:
 @swallow_exceptions
 async def on_close(logger: Logger) -> None:
     await asyncio.gather(
-        *[
-            plugin.on_close(logger)  # pyre-ignore
-            for plugin in PLUGINS
-            if hasattr(plugin, "on_close")
-        ],
+        *[plugin.on_close(logger) for plugin in PLUGINS if hasattr(plugin, "on_close")],
     )
 
 
@@ -87,7 +105,7 @@ async def on_close(logger: Logger) -> None:
 async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.before_invocation(name=name, metadata=metadata)  # pyre-ignore
+            plugin.before_invocation(name=name, metadata=metadata)
             for plugin in PLUGINS
             if hasattr(plugin, "before_invocation")
         ]
@@ -98,9 +116,7 @@ async def before_invocation(name: str, metadata: LoggingMetadata) -> None:
 async def after_invocation(name: str, duration: int, metadata: LoggingMetadata) -> None:
     await asyncio.gather(
         *[
-            plugin.after_invocation(  # pyre-ignore
-                name=name, duration=duration, metadata=metadata
-            )
+            plugin.after_invocation(name=name, duration=duration, metadata=metadata)
             for plugin in PLUGINS
             if hasattr(plugin, "after_invocation")
         ]
@@ -113,7 +129,7 @@ async def failed_invocation(
 ) -> None:
     await asyncio.gather(
         *[
-            plugin.failed_invocation(  # pyre-ignore
+            plugin.failed_invocation(
                 name=name, duration=duration, exception=exception, metadata=metadata
             )
             for plugin in PLUGINS

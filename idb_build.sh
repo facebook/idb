@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -80,16 +80,11 @@ function all_frameworks_build() {
 }
 
 function strip_framework() {
-  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Debug/$1"
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Release/$1"
   if [ -d "$FRAMEWORK_PATH" ]; then
     echo "Stripping Framework $FRAMEWORK_PATH"
     rm -r "$FRAMEWORK_PATH"
   fi
-}
-
-function strip_idb_grpc() {
-  echo "Stripping idbGRPC from $BUILD_DIRECTORY"
-  rm -rf $BUILD_DIRECTORY/Build/Products/Debug/*idbGRPC*
 }
 
 function cli_build() {
@@ -98,10 +93,12 @@ function cli_build() {
   local script_directory=$1/Scripts
 
   invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
     -workspace $name.xcworkspace \
     -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
+    -configuration Release \
     build
 
   strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
@@ -118,8 +115,8 @@ function cli_build() {
 function cli_install() {
   local output_directory=$1
   local script_directory=$2
-  local cli_artifact="$BUILD_DIRECTORY/Build/Products/Debug/idb_companion"
-  local framework_artifact="$BUILD_DIRECTORY/Build/Products/Debug/*.framework"
+  local cli_artifact="$BUILD_DIRECTORY/Build/Products/Release/idb_companion"
+  local framework_artifact="$BUILD_DIRECTORY/Build/Products/Release/*.framework"
   local output_directory_cli="$output_directory/bin"
   local output_directory_framework="$output_directory/Frameworks"
 

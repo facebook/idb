@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -97,6 +97,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Future context that resolves with an implementation of the file container.
  */
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages;
+
+/**
+ Returns a file container for manipulating device symbols.
+
+ @return a Future context that resolves with an implementation of the file container.
+ */
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols;
 
 @end
 

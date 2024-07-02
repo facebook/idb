@@ -1,11 +1,13 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #import <Foundation/Foundation.h>
+
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,16 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDevice broadcasts.
-
- @param simDevice the FBSimulator to relay events from.
- @param queue the queue to call the block on.
- @param block the block to call when events are sent from the SimDevice.
- @return an instance of FBSimDeviceNotifier for later termination.
- */
-+ (instancetype)notifierForSimDevice:(SimDevice *)simDevice queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block;
-
-/**
  Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Set.
 
  @param set the FBSimulator to relay events from.
@@ -38,7 +30,16 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
-+ (instancetype)notifierForSet:(FBSimulatorSet *)set queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block;
++ (instancetype)notifierForSet:(FBSimulatorSet *)set queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary<NSString *, id> *info))block;
+
+/**
+ Waits for the state to leave the state on the provided SimDevice.
+
+ @param state the state to resolve.
+ @param device the SimDevice to resolve state on.
+ @return a future that resolves when the state resolves.
+ */
++ (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state forSimDevice:(SimDevice *)device;
 
 #pragma mark Public Methods
 

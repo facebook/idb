@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,7 +15,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBBundleDescriptor *)testRunner launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration
 {
   self = [super init];
   if (!self) {
@@ -26,6 +26,7 @@
   _testRunner = testRunner;
   _launchEnvironment = launchEnvironment;
   _testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment;
+  _testConfiguration = testConfiguration;
 
   return self;
 }
@@ -159,7 +160,7 @@
     automationFrameworkPath:automationFrameworkPath
     reportActivities:testLaunchConfiguration.reportActivities
     error:&error];
-  if (!testBundle) {
+  if (!testConfiguration) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test configuration"]
       causedBy:error]
@@ -179,12 +180,13 @@
       hostApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = shimPath;
       hostApplicationAdditionalEnvironment[kEnv_WaitForDebugger] = testLaunchConfiguration.applicationLaunchConfiguration.waitForDebugger ? @"YES" : @"NO";
       if (testLaunchConfiguration.coverageDirectoryPath) {
-        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", hostApplication.bundle.identifier];
+        NSString *continuousCoverageCollectionMode = testLaunchConfiguration.shouldEnableContinuousCoverageCollection ? @"%c" : @"";
+        NSString *hostCoverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", hostApplication.bundle.identifier, continuousCoverageCollectionMode];
         NSString *hostCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:hostCoverageFile];
         hostApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = hostCoveragePath;
 
         if (testLaunchConfiguration.targetApplicationBundle != nil) {
-          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier];
+          NSString *targetCoverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", testLaunchConfiguration.targetApplicationBundle.identifier, continuousCoverageCollectionMode];
           NSString *targetAppCoveragePath = [testLaunchConfiguration.coverageDirectoryPath stringByAppendingPathComponent:targetCoverageFile];
           testedApplicationAdditionalEnvironment[kEnv_LLVMProfileFile] = targetAppCoveragePath;
         }
@@ -211,7 +213,8 @@
         initWithSessionIdentifier:sessionIdentifier
         testRunner:hostApplication.bundle
         launchEnvironment:launchEnvironment
-        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]];
+        testedApplicationAdditionalEnvironment:[testedApplicationAdditionalEnvironment copy]
+        testConfiguration:testConfiguration];
     }];
 }
 

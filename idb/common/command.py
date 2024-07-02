@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
@@ -20,21 +22,17 @@ class Command(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def description(self) -> str:
-        ...
+    def description(self) -> str: ...
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @abstractmethod
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        ...
+    def add_parser_arguments(self, parser: ArgumentParser) -> None: ...
 
     @abstractmethod
-    async def run(self, args: Namespace) -> None:
-        ...
+    async def run(self, args: Namespace) -> None: ...
 
     def resolve_command_from_args(self, args: Namespace) -> "Command":
         return self

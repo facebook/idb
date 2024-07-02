@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -52,12 +52,11 @@ NS_ASSUME_NONNULL_BEGIN
  Logs the Consumption of the consumer to a file
 
  @param consumer the consumer to wrap.
- @param outputKind kind of output that is written.
- @param uuid a UUID to identify the current invocation.
+ @param fileName file to be written.
  @param logger the logger to log the mirrored path to.
  @return a Future that resolves with the new consumer.
  */
-- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger;
+- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionOf:(id<FBDataConsumer>)consumer toFileNamed:(NSString *)fileName logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

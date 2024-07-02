@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import json
-from argparse import REMAINDER, ArgumentParser, Namespace
+import os.path
+import sys
+from argparse import ArgumentParser, Namespace, REMAINDER
 from pathlib import Path
 from typing import Optional, Set
 
@@ -18,7 +22,9 @@ from idb.common.format import (
     json_format_test_info,
 )
 from idb.common.misc import get_env_with_idb_prefix
-from idb.common.types import Client, CodeCoverageFormat, ExitWithCodeException
+from idb.common.types import Client, CodeCoverageFormat, FileContainerType, IdbException
+
+NO_SPECIFIED_PATH = "NO_SPECIFIED_PATH"
 
 
 class XctestInstallCommand(ClientCommand):
@@ -34,10 +40,19 @@ class XctestInstallCommand(ClientCommand):
         parser.add_argument(
             "test_bundle_path", help="Bundle path of the test bundle", type=str
         )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        async for install_response in client.install_xctest(args.test_bundle_path):
+        async for install_response in client.install_xctest(
+            args.test_bundle_path, args.skip_signing_bundles
+        ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")
             elif args.json:
@@ -167,6 +182,11 @@ class CommonRunXcTestCommand(ClientCommand):
             help="Outputs code coverage information. See --coverage-format option.",
         )
         parser.add_argument(
+            "--enable-continuous-coverage-collection",
+            action="store_true",
+            help="Enable continuous coverage collection mode in llvm",
+        )
+        parser.add_argument(
             "--coverage-format",
             choices=[str(key) for (key, _) in CodeCoverageFormat.__members__.items()],
             default="EXPORTED",
@@ -191,31 +211,59 @@ class CommonRunXcTestCommand(ClientCommand):
             "to be paths instead. They are installed before running.",
             action="store_true",
         )
+        parser.add_argument(
+            "--install-dsym-test-bundle",
+            default=None,
+            type=str,
+            nargs="?",
+            const=NO_SPECIFIED_PATH,
+            help="Install debug symbols together with bundle. Specify path for debug symbols; otherwise, we'll try to infer it. (requires --install)",
+        )
+        parser.add_argument(
+            "--skip-signing-bundles",
+            help="idb will skip signing the test and/or apps bundles",
+            action="store_true",
+            default=None,
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await super().run_with_client(args, client)
+
+        is_ui = args.run == "ui"
+        is_logic = args.run == "logic"
+        is_app = args.run == "app"
+
         if args.install:
+            # Note for --install specified, test_bundle_id is a path initially, but
+            # `install_bundles` will override it.
+            test_bundle_location = args.test_bundle_id
+
             await self.install_bundles(args, client)
+            if args.install_dsym_test_bundle:
+                if is_ui or is_app:
+                    print(
+                        "--install-dsym-test-bundle is experimental for ui and app tests; this flag is only supported for logic tests.",
+                        file=sys.stderr,
+                    )
+                await self.install_dsym_test_bundle(args, client, test_bundle_location)
+
         tests_to_run = self.get_tests_to_run(args)
         tests_to_skip = self.get_tests_to_skip(args)
-        app_bundle_id = args.app_bundle_id if hasattr(args, "app_bundle_id") else None
+        app_bundle_id = getattr(args, "app_bundle_id", None)
         test_host_app_bundle_id = (
             args.test_host_app_bundle_id
             if hasattr(args, "test_host_app_bundle_id")
             else None
         )
         arguments = getattr(args, "test_arguments", [])
-        is_ui = args.run == "ui"
-        is_logic = args.run == "logic"
-
         if args.wait_for_debugger and is_ui:
             print(
                 "--wait_for_debugger flag is NOT supported for ui tests. It will default to False"
             )
 
         formatter = json_format_test_info if args.json else human_format_test_info
-        crashed_outside_test_case = False
         coverage_format = CodeCoverageFormat[args.coverage_format]
 
         async for test_result in client.run_xctest(
@@ -234,20 +282,43 @@ class CommonRunXcTestCommand(ClientCommand):
             report_attachments=args.report_attachments,
             activities_output_path=args.activities_output_path,
             coverage_output_path=args.coverage_output_path,
+            enable_continuous_coverage_collection=args.enable_continuous_coverage_collection,
             coverage_format=coverage_format,
             log_directory_path=args.log_directory_path,
             wait_for_debugger=args.wait_for_debugger,
         ):
             print(formatter(test_result))
-            crashed_outside_test_case = (
-                crashed_outside_test_case or test_result.crashed_outside_test_case
-            )
-        if crashed_outside_test_case:
-            raise ExitWithCodeException(3)
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
-        async for test in client.install_xctest(args.test_bundle_id):
+        async for test in client.install_xctest(
+            args.test_bundle_id, args.skip_signing_bundles
+        ):
             args.test_bundle_id = test.name
+
+    async def install_dsym_test_bundle(
+        self, args: Namespace, client: Client, test_bundle_location: str
+    ) -> Optional[str]:
+        dsym_name = None
+        dsym_path_location = args.install_dsym_test_bundle
+        if args.install_dsym_test_bundle == NO_SPECIFIED_PATH:
+            dsym_path_location = test_bundle_location + ".dSYM"
+
+        if not os.path.exists(dsym_path_location):
+            raise IdbException(
+                "XCTest run failed! Error: --install-dsym flag was used but there is no file at location {}.".format(
+                    dsym_path_location
+                )
+            )
+
+        async for install_response in client.install_dsym(
+            dsym=dsym_path_location,
+            bundle_id=args.test_bundle_id,
+            bundle_type=FileContainerType.XCTEST,
+            compression=None,
+        ):
+            if install_response.progress == 0.0:
+                dsym_name = install_response.name
+        return dsym_name
 
     def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
         return None

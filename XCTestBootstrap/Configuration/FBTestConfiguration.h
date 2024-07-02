@@ -1,11 +1,13 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #import <Foundation/Foundation.h>
+
+@class XCTestConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -40,8 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param moduleName name the test module name.
  @param testBundlePath the absolute path to the test bundle.
  @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
+ @param xcTestConfiguration underlying XCTestConfiguration object
  */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting;
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration;
 
 /**
  The session identifier
@@ -72,6 +75,8 @@ NS_ASSUME_NONNULL_BEGIN
  Determines whether should initialize for UITesting
  */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
+
+@property (nonatomic, strong, readonly) XCTestConfiguration *xcTestConfiguration;
 
 @end
 

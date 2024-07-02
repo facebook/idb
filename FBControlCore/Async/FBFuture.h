@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -135,7 +135,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param futures the futures to compose.
  @return a new future with the resolved results of all the composed futures.
  */
-+ (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures;
++ (FBFuture<NSArray<T> *> *)futureWithFutures:(NSArray<FBFuture<T> *> *)futures NS_SWIFT_UNAVAILABLE("Use BridgeFuture.values instead");
 
 /**
  Constructrs a Future from an Array of Futures.

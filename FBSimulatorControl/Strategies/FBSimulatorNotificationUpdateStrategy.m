@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -56,7 +56,7 @@
 - (void)startNotifyingOfStateChanges
 {
   __weak typeof(self) weakSelf = self;
-  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set queue:dispatch_get_main_queue() block:^(NSDictionary *info) {
+  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set queue:self.set.workQueue block:^(NSDictionary *info) {
     SimDevice *device = info[@"device"];
     if (!device) {
       return;
@@ -75,6 +75,7 @@
   if (!simulator) {
     return;
   }
+  [simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:simulator.logger];
   [_set.delegate targetUpdated:simulator inTargetSet:simulator.set];
 }
 

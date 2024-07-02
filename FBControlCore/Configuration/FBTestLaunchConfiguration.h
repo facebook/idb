@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
  */
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip  targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip  targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle;
 
 /**
  XCTest bundle used for testing
@@ -89,9 +89,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *coverageDirectoryPath;
 
 /**
+ Determines whether should enable continuous coverage collection
+ */
+@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+
+/**
  The Directory to use for storing logs generated during the execution of the test run.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
+
+/*
+ Path to the result bundle.
+ */
+@property (nonatomic, assign, readonly) BOOL reportResultBundle;
 
 @end
 

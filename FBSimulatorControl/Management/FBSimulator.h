@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,8 +42,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Simulator Set that the Simulator belongs to.
+ Reference to `FBSimulatorSet` results to a strong-strong reference cycle between `FBSimulatorSet` and `FBSimulator`.
+ However, this cycle is explicitly broken by `FBSimulatorSet` when a `FBSimulator` is removed from the set that `FBSimulatorSet` wraps.
  */
-@property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
+@property (nonatomic, strong, readonly, nonnull) FBSimulatorSet *set;
 
 /**
  The Product Family of the Simulator.

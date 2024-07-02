@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -105,7 +105,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 #pragma mark PUBLIC
 
-+ (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger extractScreenshots:(BOOL)extractScreenshots
 {
   [logger logFormat:@"Parsing the result bundle %@", resultBundlePath];
 
@@ -136,7 +136,7 @@ static inline NSDate *dateFromString(NSString *date)
             onQueue:target.workQueue doOnResolved:^void (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *xcresults) {
               [logger logFormat:@"Parsing summaries for id %@", bundleObjectId];
               NSArray<NSDictionary *> *summaries = accessAndUnwrapValues(xcresults, @"summaries", logger);
-              [self reportSummaries:summaries reporter:reporter queue:target.asyncQueue resultBundlePath:resultBundlePath logger:logger];
+              [self reportSummaries:summaries reporter:reporter queue:target.asyncQueue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
               [logger logFormat:@"Done parsing summaries for id %@", bundleObjectId];
             }];
           [operations addObject:operation];
@@ -276,7 +276,9 @@ static inline NSDate *dateFromString(NSString *date)
   [reporter testCaseDidStartForTestClass:testClassName method:testMethodName];
   if (status == FBTestReportStatusFailed) {
     NSArray *failureSummaries = readArrayFromDict(testMethod, @"FailureSummaries");
-    [reporter testCaseDidFailForTestClass:testClassName method:testMethodName withMessage:[self buildErrorMessageLegacy:failureSummaries] file:nil line:0];
+    [reporter testCaseDidFailForTestClass:testClassName method:testMethodName exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessageLegacy:failureSummaries]
+        ]]];
   }
 
   [reporter testCaseDidFinishForTestClass:testClassName method:testMethodName withStatus:status duration:[duration doubleValue] logs:[logs copy]];
@@ -390,12 +392,13 @@ static inline NSDate *dateFromString(NSString *date)
                   queue:(dispatch_queue_t)queue
        resultBundlePath:(NSString *)resultBundlePath
                  logger:(id<FBControlCoreLogger>)logger
+     extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(summaries, @"Test summaries have no value");
   NSAssert([summaries isKindOfClass:NSArray.class], @"Test summary values not a NSArray");
 
   for (NSDictionary<NSString *, NSDictionary *> *summary in summaries) {
-    [self reportResults:summary reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportResults:summary reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -404,11 +407,12 @@ static inline NSDate *dateFromString(NSString *date)
                 queue:(dispatch_queue_t)queue
      resultBundlePath:(NSString *)resultBundlePath
                logger:(id<FBControlCoreLogger>)logger
+   extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert([results isKindOfClass:NSDictionary.class], @"Test results not a NSDictionary");
   NSArray<NSDictionary *> *testTargets = accessAndUnwrapValues(results, @"testableSummaries", logger);
 
-  [self reportTargetTests:testTargets reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+  [self reportTargetTests:testTargets reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
 }
 
 + (void)reportTargetTests:(NSArray<NSDictionary *> *)targetTests
@@ -416,12 +420,13 @@ static inline NSDate *dateFromString(NSString *date)
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
+       extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(targetTests, @"targetTests is nil");
   NSAssert([targetTests isKindOfClass:NSArray.class], @"targetTests not a NSArray");
 
   for (NSDictionary<NSString *, NSDictionary *> *targetTest in targetTests) {
-    [self reportTargetTest:targetTest reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTargetTest:targetTest reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -430,6 +435,7 @@ static inline NSDate *dateFromString(NSString *date)
                    queue:(dispatch_queue_t)queue
         resultBundlePath:(NSString *)resultBundlePath
                   logger:(id<FBControlCoreLogger>)logger
+      extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(targetTest, @"targetTest is nil");
   NSAssert([targetTest isKindOfClass:NSDictionary.class], @"targetTest not a NSDictionary");
@@ -437,12 +443,16 @@ static inline NSDate *dateFromString(NSString *date)
 
   NSArray<NSDictionary *> *selectedTests = accessAndUnwrapValues(targetTest, @"tests", logger);
   if (selectedTests != nil) {
-    [self reportSelectedTests:selectedTests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportSelectedTests:selectedTests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
   else {
     [logger log:@"Test failed and no test results found in the bundle"];
     NSArray *failureSummaries = accessAndUnwrapValues(targetTest, @"failureSummaries", logger);
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+
+    [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessage:failureSummaries logger:logger]
+        ]]];
+
   }
 }
 
@@ -452,12 +462,13 @@ static inline NSDate *dateFromString(NSString *date)
                       queue:(dispatch_queue_t)queue
            resultBundlePath:(NSString *)resultBundlePath
                      logger:(id<FBControlCoreLogger>)logger
+         extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(selectedTests, @"selectedTests is nil");
   NSAssert([selectedTests isKindOfClass:NSArray.class], @"selectedTests not a NSArray");
 
   for (NSDictionary *selectedTest in selectedTests) {
-    [self reportSelectedTest:selectedTest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportSelectedTest:selectedTest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -467,17 +478,20 @@ static inline NSDate *dateFromString(NSString *date)
                      queue:(dispatch_queue_t)queue
           resultBundlePath:(NSString *)resultBundlePath
                     logger:(id<FBControlCoreLogger>)logger
+        extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(selectedTest, @"selectedTest is nil");
   NSAssert([selectedTest isKindOfClass:NSDictionary.class], @"selectedTest not a NSDictionary");
 
   NSArray<NSDictionary *> *testTargetXctests = accessAndUnwrapValues(selectedTest, @"subtests", logger);
   if (testTargetXctests != nil) {
-    [self reportTestTargetXctests:testTargetXctests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestTargetXctests:testTargetXctests testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
   else {
     [logger log:@"Test failed and no target test results found in the bundle"];
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
   }
 }
 
@@ -487,12 +501,13 @@ static inline NSDate *dateFromString(NSString *date)
                           queue:(dispatch_queue_t)queue
                resultBundlePath:(NSString *)resultBundlePath
                          logger:(id<FBControlCoreLogger>)logger
+             extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testTargetXctests, @"testTargetXctests is nil");
   NSAssert([testTargetXctests isKindOfClass:NSArray.class], @"testTargetXctests not a NSArray");
 
   for (NSDictionary *testTargetXctest in testTargetXctests) {
-    [self reportTestTargetXctest:testTargetXctest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestTargetXctest:testTargetXctest testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -502,17 +517,21 @@ static inline NSDate *dateFromString(NSString *date)
                          queue:(dispatch_queue_t)queue
               resultBundlePath:(NSString *)resultBundlePath
                         logger:(id<FBControlCoreLogger>)logger
+            extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testTargetXctest, @"selectedTest is nil");
   NSAssert([testTargetXctest isKindOfClass:NSDictionary.class], @"testTargetXctest not a NSDictionary");
 
   NSArray *testClasses = accessAndUnwrapValues(testTargetXctest, @"subtests", logger);
   if (testClasses != nil) {
-    [self reportTestClasses:testClasses testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestClasses:testClasses testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
   else {
     [logger log:@"Test failed and no test class results found in the bundle"];
-    [reporter testCaseDidFailForTestClass:@"" method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
+
   }
 }
 
@@ -522,12 +541,13 @@ static inline NSDate *dateFromString(NSString *date)
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
+       extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testClasses, @"selectedTest is nil");
   NSAssert([testClasses isKindOfClass:NSArray.class], @"testClasses not a NSArray");
 
   for (NSDictionary *testClass in testClasses) {
-    [self reportTestClass:testClass testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestClass:testClass testBundleName:testBundleName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -537,6 +557,7 @@ static inline NSDate *dateFromString(NSString *date)
                   queue:(dispatch_queue_t)queue
        resultBundlePath:(NSString *)resultBundlePath
                  logger:(id<FBControlCoreLogger>)logger
+     extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testClass, @"selectedTest is nil");
   NSAssert([testClass isKindOfClass:NSDictionary.class], @"testClass not a NSDictionary");
@@ -544,11 +565,13 @@ static inline NSDate *dateFromString(NSString *date)
   NSString *testClassName = (NSString *)accessAndUnwrapValue(testClass, @"identifier", logger);
   NSArray<NSDictionary *> *testMethods = accessAndUnwrapValues(testClass, @"subtests", logger);
   if (testMethods != nil) {
-    [self reportTestMethods:testMethods testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestMethods:testMethods testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
   else {
     [logger logFormat:@"Test failed for %@ and no test method results found", testClassName];
-    [reporter testCaseDidFailForTestClass:testClassName method:@"" withMessage:@"" file:nil line:0];
+      [reporter testCaseDidFailForTestClass:@"" method:@"" exceptions:@[
+          [[FBExceptionInfo alloc]initWithMessage:@""
+          ]]];
   }
 }
 
@@ -559,12 +582,13 @@ static inline NSDate *dateFromString(NSString *date)
                     queue:(dispatch_queue_t)queue
          resultBundlePath:(NSString *)resultBundlePath
                    logger:(id<FBControlCoreLogger>)logger
+       extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testMethods, @"testMethods is nil");
   NSAssert([testMethods isKindOfClass:NSArray.class], @"testMethods not a NSArray");
 
   for (NSDictionary *testMethod in testMethods) {
-    [self reportTestMethod:testMethod testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger];
+    [self reportTestMethod:testMethod testBundleName:testBundleName testClassName:testClassName reporter:reporter queue:queue resultBundlePath:resultBundlePath logger:logger extractScreenshots:extractScreenshots];
   }
 }
 
@@ -575,6 +599,7 @@ static inline NSDate *dateFromString(NSString *date)
                    queue:(dispatch_queue_t)queue
         resultBundlePath:(NSString *)resultBundlePath
                   logger:(id<FBControlCoreLogger>)logger
+      extractScreenshots:(BOOL)extractScreenshots
 {
   NSAssert(testMethod, @"testMethod is nil");
   NSAssert([testMethod isKindOfClass:NSDictionary.class], @"testMethod not a NSDictionary");
@@ -603,7 +628,9 @@ static inline NSDate *dateFromString(NSString *date)
       onQueue:queue doOnResolved:^(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *actionTestSummary) {
         if (status == FBTestReportStatusFailed) {
           NSArray *failureSummaries = accessAndUnwrapValues(actionTestSummary, @"failureSummaries", logger);
-          [reporter testCaseDidFailForTestClass:testClassName method:testMethodIdentifier withMessage:[self buildErrorMessage:failureSummaries logger:logger] file:nil line:0];
+            [reporter testCaseDidFailForTestClass:testClassName method:testMethodIdentifier exceptions:@[
+                [[FBExceptionInfo alloc]initWithMessage:[self buildErrorMessage:failureSummaries logger:logger]]
+            ]];
         }
 
         NSArray<NSDictionary *> *performanceMetrics = accessAndUnwrapValues(actionTestSummary, @"performanceMetrics", logger);
@@ -617,7 +644,9 @@ static inline NSDate *dateFromString(NSString *date)
         }
 
         NSArray<NSDictionary *> *activitySummaries = accessAndUnwrapValues(actionTestSummary, @"activitySummaries", logger);
-        [self extractScreenshotsFromActivities:activitySummaries queue:queue resultBundlePath:resultBundlePath logger:logger];
+        if (extractScreenshots) {
+          [self extractScreenshotsFromActivities:activitySummaries queue:queue resultBundlePath:resultBundlePath logger:logger];
+        }
 
 
         NSMutableArray *logs = [self buildTestLog:activitySummaries

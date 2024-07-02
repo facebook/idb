@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -57,9 +57,9 @@ static NSString *const IconJSONFile = @"icons.json";
   return [FBFuture futureWithResult:self.validFilenames];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
-  NSString *filename = containerPath.lastPathComponent;
+  NSString *filename = sourcePath.lastPathComponent;
   return [[FBFuture
     onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
       if (![self.validFilenames containsObject:filename]) {
@@ -95,7 +95,7 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
     iconLayoutFromSourcePath:sourcePath toDestinationFile:destinationPath.lastPathComponent]
@@ -104,7 +104,7 @@ static NSString *const IconJSONFile = @"icons.json";
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -132,13 +132,13 @@ static NSString *const IconJSONFile = @"icons.json";
     failFuture];
 }
 
-- (FBFuture<IconLayoutType> *)iconLayoutFromSourcePath:(NSURL *)sourcePath toDestinationFile:(NSString *)filename
+- (FBFuture<IconLayoutType> *)iconLayoutFromSourcePath:(NSString *)sourcePath toDestinationFile:(NSString *)filename
 {
   return [FBFuture
     onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
       if ([filename isEqualToString:IconJSONFile]) {
         NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
         if (!data) {
           return [FBFuture futureWithError:error];
         }
@@ -150,7 +150,7 @@ static NSString *const IconJSONFile = @"icons.json";
       }
       if ([filename isEqualToString:IconPlistFile]) {
         NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
         if (!data) {
           return [FBFuture futureWithError:error];
         }
@@ -267,7 +267,7 @@ static size_t IconLayoutSize = 4;
       if (![self.connection sendMessage:@{@"command": @"setIconState", @"iconState": iconLayout} error:error]) {
         return nil;
       }
-      // Recieve some data to know that it reached the other side, in the event of a failure we will recive no bytes. 
+      // Recieve some data to know that it reached the other side, in the event of a failure we will receive no bytes. 
       NSData *data = [self.connection receive:IconLayoutSize error:error];
       if (!data) {
         return nil;

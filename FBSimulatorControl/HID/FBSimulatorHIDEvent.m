@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -124,10 +124,8 @@ static NSString *const KeyY = @"y";
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Touch %@ at (%lu,%lu)",
-    [FBSimulatorHIDEvent directionStringFromDirection:self.direction],
-    (unsigned long)self.x,
-    (unsigned long)self.y
+    @"Touch %@ at <hidden>",
+    [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
   ];
 }
 
@@ -272,8 +270,7 @@ static NSString *const KeyKeycode = @"keycode";
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Keyboard Code=%d %@",
-    self.keyCode,
+    @"Keyboard Code=<hidden> %@",
     [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
   ];
 }
@@ -425,12 +422,15 @@ static NSString *const KeyDuration = @"duration";
   double dx = (xEnd - xStart) / steps;
   double dy = (yEnd - yStart) / steps;
 
-  double stepDelay = duration/(steps + 1);
+  double stepDelay = duration/(steps + 2);
 
   for (int i = 0 ; i <= steps ; ++i) {
     [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
     [events addObject:[self delay:stepDelay]];
   }
+  // Add an additional touch down event at the end of the swipe to avoid intertial scroll on arm simulators.
+  [events addObject:[self touchDownAtX:(xStart + dx * steps) y:(yStart + dy * steps)]];
+  [events addObject:[self delay:stepDelay]];
 
   [events addObject:[self touchUpAtX:xEnd y:yEnd]];
 

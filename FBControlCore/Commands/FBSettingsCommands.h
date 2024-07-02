@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,16 +10,16 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Enumeration Representing Approval of Services.
+ An Enumeration Representing Services.
  */
-typedef NSString *FBSettingsApprovalService NS_STRING_ENUM;
+typedef NSString *FBTargetSettingsService NS_STRING_ENUM;
 
-extern FBSettingsApprovalService const FBSettingsApprovalServiceContacts;
-extern FBSettingsApprovalService const FBSettingsApprovalServicePhotos;
-extern FBSettingsApprovalService const FBSettingsApprovalServiceCamera;
-extern FBSettingsApprovalService const FBSettingsApprovalServiceLocation;
-extern FBSettingsApprovalService const FBSettingsApprovalServiceMicrophone;
-extern FBSettingsApprovalService const FBSettingsApprovalServiceUrl;
-extern FBSettingsApprovalService const FBSettingsApprovalServiceNotification;
+extern FBTargetSettingsService const FBTargetSettingsServiceContacts;
+extern FBTargetSettingsService const FBTargetSettingsServicePhotos;
+extern FBTargetSettingsService const FBTargetSettingsServiceCamera;
+extern FBTargetSettingsService const FBTargetSettingsServiceLocation;
+extern FBTargetSettingsService const FBTargetSettingsServiceMicrophone;
+extern FBTargetSettingsService const FBTargetSettingsServiceUrl;
+extern FBTargetSettingsService const FBTargetSettingsServiceNotification;
 
 NS_ASSUME_NONNULL_END

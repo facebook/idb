@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import functools
 import inspect
@@ -10,7 +12,7 @@ import logging
 import time
 from concurrent.futures import CancelledError
 from types import TracebackType
-from typing import Any, AsyncContextManager, Collection, Optional, Tuple, Type
+from typing import Any, AsyncContextManager, Optional, Sequence, Tuple, Type
 from uuid import uuid4
 
 import idb.common.plugin as plugin
@@ -22,11 +24,10 @@ logger: logging.Logger = logging.getLogger("idb")
 
 
 def _initial_info(
-    args: Collection[Any], metadata: Optional[LoggingMetadata]  # pyre-ignore
+    args: Sequence[object], metadata: Optional[LoggingMetadata]
 ) -> Tuple[LoggingMetadata, int]:
     _metadata: LoggingMetadata = metadata or {}
     if len(args):
-        # pyre-fixme[16]: `Collection` has no attribute `__getitem__`.
         self_meta: Optional[LoggingMetadata] = getattr(args[0], "metadata", None)
         if self_meta:
             _metadata.update(self_meta)
@@ -49,14 +50,10 @@ class log_call(AsyncContextManager[None]):
         self.start = int(time.time())
         await plugin.before_invocation(name=name, metadata=self.metadata)
 
-    # pyre-fixme[14]: `__aexit__` overrides method defined in `AsyncContextManager`
-    #  inconsistently.
-    # pyre-fixme[14]: `__aexit__` overrides method defined in `AsyncContextManager`
-    #  inconsistently.
     async def __aexit__(
         self,
-        exc_type: Optional[Type[Exception]],
-        exception: Optional[Exception],
+        exc_type: Optional[Type[BaseException]],
+        exception: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> bool:
         name = none_throws(self.name)

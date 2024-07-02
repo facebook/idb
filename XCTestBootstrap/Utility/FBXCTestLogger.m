@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -67,14 +67,14 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
   // Create an empty file so that it can be appeneded to.
   NSString *path = [directory stringByAppendingPathComponent:name];
-  success = [NSFileManager.defaultManager createFileAtPath:path contents:nil attributes:nil];
-  NSAssert(success, @"Expected to create file at path %@, but could not", path);
+  success = [[NSData new] writeToFile:path options:0 error:&error];
+  NSAssert(success, @"Expected to create file at path %@, but could not: %@", path, error);
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
   NSAssert(fileHandle, @"Could not create a writable file handle for file at path %@", fileHandle);
 
-  id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
-    [[FBControlCoreLogger systemLoggerWritingToStderr:YES withDebugLogging:YES] withDateFormatEnabled:YES],
-    [[FBControlCoreLogger loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO] withDateFormatEnabled:YES],
+  id<FBControlCoreLogger> baseLogger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[
+    [[FBControlCoreLoggerFactory systemLoggerWritingToStderr:YES withDebugLogging:YES] withDateFormatEnabled:YES],
+    [[FBControlCoreLoggerFactory loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO] withDateFormatEnabled:YES],
   ]];
 
   return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];
@@ -156,10 +156,9 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return self.baseLogger.level;
 }
 
-- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionToFile:(id<FBDataConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionOf:(id<FBDataConsumer>)consumer toFileNamed:(NSString *)fileName logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-  NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
   NSString *filePath = [self.logDirectory stringByAppendingPathComponent:fileName];
 
   return [[FBFileWriter

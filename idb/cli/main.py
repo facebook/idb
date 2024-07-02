@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import argparse
 import asyncio
@@ -11,7 +13,7 @@ import logging
 import os
 import shutil
 import sys
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 
 import idb.common.plugin as plugin
 from idb.cli.commands.accessibility import (
@@ -41,15 +43,15 @@ from idb.cli.commands.debugserver import (
 from idb.cli.commands.dsym import DsymInstallCommand
 from idb.cli.commands.dylib import DylibInstallCommand
 from idb.cli.commands.file import (
+    FBSReadCommand,
     FSListCommand,
     FSMkdirCommand,
     FSMoveCommand,
     FSPullCommand,
     FSPushCommand,
-    FSWriteCommand,
     FSRemoveCommand,
     FSTailCommand,
-    FBSReadCommand,
+    FSWriteCommand,
 )
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
@@ -70,11 +72,12 @@ from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.memory import SimulateMemoryWarningCommand
 from idb.cli.commands.notification import SendNotificationCommand
+from idb.cli.commands.revoke import RevokeCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import (
-    SetPreferenceCommand,
     GetPreferenceCommand,
     ListCommand,
+    SetPreferenceCommand,
 )
 from idb.cli.commands.shell import ShellCommand
 from idb.cli.commands.target import (
@@ -101,7 +104,7 @@ from idb.cli.commands.xctest import (
 )
 from idb.cli.commands.xctrace import XctraceRecordCommand
 from idb.common.command import Command, CommandGroup
-from idb.common.types import IdbException, ExitWithCodeException, Compression
+from idb.common.types import Compression, IdbException
 
 
 COROUTINE_DRAIN_TIMEOUT = 2
@@ -120,7 +123,10 @@ def get_default_companion_path() -> Optional[str]:
     return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
 
 
-async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
+SysExitArg = Union[int, str, None]
+
+
+async def gen_main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
     # Make sure all files are created with global rw permissions
     os.umask(0o000)
     # Setup parser
@@ -145,6 +151,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         "Compressor should be available at this host. "
         "Decompressor should be available at the destination site (where IDB companion is hosted)",
     )
+
     parser.add_argument(
         "--companion",
         type=str,
@@ -223,6 +230,7 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
         SimulateMemoryWarningCommand(),
         SendNotificationCommand(),
         ApproveCommand(),
+        RevokeCommand(),
         TargetConnectCommand(),
         TargetDisconnectCommand(),
         TargetListCommand(),
@@ -318,8 +326,6 @@ async def gen_main(cmd_input: Optional[List[str]] = None) -> int:
     except IdbException as e:
         print(e.args[0], file=sys.stderr)
         return 1
-    except ExitWithCodeException as e:
-        return e.exit_code
     except SystemExit as e:
         return e.code
     except Exception:
@@ -349,7 +355,7 @@ async def drain_coroutines(pending: Set[asyncio.Task]) -> None:
         pass
 
 
-def main(cmd_input: Optional[List[str]] = None) -> int:
+def main(cmd_input: Optional[List[str]] = None) -> SysExitArg:
     loop = asyncio.get_event_loop()
     try:
         return loop.run_until_complete(gen_main(cmd_input))
@@ -357,5 +363,9 @@ def main(cmd_input: Optional[List[str]] = None) -> int:
         loop.close()
 
 
-if __name__ == "__main__":
+def main_2() -> None:
     sys.exit(main())
+
+
+if __name__ == "__main__":
+    main_2()

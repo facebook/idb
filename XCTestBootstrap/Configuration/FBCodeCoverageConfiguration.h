@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,7 +29,12 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
 */
 @property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
 
-- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format;
+/**
+ Determines whether should enable continuous coverage collection
+ */
+@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+
+- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 
 @end
 

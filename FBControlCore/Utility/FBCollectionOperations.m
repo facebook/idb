@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,10 +11,10 @@
 
 #pragma mark Public
 
-+ (NSArray<NSNumber *> *)arrayFromIndeces:(NSIndexSet *)indeces
++ (NSArray<NSNumber *> *)arrayFromIndices:(NSIndexSet *)indices
 {
   NSMutableArray<NSNumber *> *array = [NSMutableArray array];
-  [indeces enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *_) {
+  [indices enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *_) {
     [array addObject:@(index)];
   }];
   return [array copy];
@@ -46,7 +46,7 @@
   return output;
 }
 
-+ (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array
++ (NSIndexSet *)indicesFromArray:(NSArray<NSNumber *> *)array
 {
   NSMutableIndexSet *indexSet = [NSMutableIndexSet indexSet];
   for (NSNumber *number in array) {

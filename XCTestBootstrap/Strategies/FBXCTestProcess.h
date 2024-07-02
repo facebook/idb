@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,18 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a String representing the error, nil otherwise.
 */
 + (nullable NSString *)describeFailingExitCode:(int)exitCode;
-
-/**
- Performs a stackshot on the provided process id.
- Does not terminate the process after performing the stackshot.
- Returns a future in the error state, with the stackshot in the error message.
-
- @param processIdentifier the process identifier of the process to stackshot.
- @param timeout the original timeout that prompted this call.
- @param queue the queue to use.
- @param logger the logger to use.
- */
-+ (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

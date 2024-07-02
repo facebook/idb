@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,17 +22,6 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
   FBApplicationInstallTypeUserEnterprise = 4, /** The Application has been installed by the user and signed with a distribution certificate */
   FBApplicationInstallTypeUserDevelopment = 5, /** The Application has been installed by the user and signed with a development certificate */
 };
-
-/**
- String Representations of the Installed Type.
- */
-typedef NSString *FBApplicationInstallTypeString NS_STRING_ENUM;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserEnterprise;
-extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserDevelopment;
 
 /**
  Keys from UserInfo about Applications
@@ -61,6 +50,16 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
  */
 + (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
 
+/**
+ The Designated Initializer.
+
+ @param bundle the Application Bundle. This represents the bundle as-installed on the target, rather than pre-install.
+ @param installTypeString the string representation of the install type.
+ @param dataContainer the Data Container Path, may be nil.
+ @return a new Installed Application Instance.
+ */
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installTypeString:(nullable NSString *)installTypeString signerIdentity:(nullable NSString *)signerIdentity dataContainer:(nullable NSString *)dataContainer;
+
 #pragma mark Properties
 
 /**
@@ -74,28 +73,14 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 @property (nonatomic, assign, readonly) FBApplicationInstallType installType;
 
 /**
+ The "Install Type" enum of the Application, represented as a string.
+ */
+@property (nonatomic, copy, readonly) NSString *installTypeString;
+
+/**
  The data container path of the Application.
  */
 @property (nonatomic, copy, nullable, readonly) NSString *dataContainer;
-
-#pragma mark Install Type
-
-/**
- Returns a String Represnting the Application Install Type.
-
- @param installType the install type enum.
- @return a string of the install type.
- */
-+ (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
-
-/**
- Returns the FBApplicationInstallType from the string representation.
-
- @param installTypeString install type as a string
- @param signerIdentity the signer identity.
- @return an FBApplicationInstallType
- */
-+ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString signerIdentity:(nullable NSString *)signerIdentity;
 
 @end
 

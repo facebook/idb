@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,6 +11,7 @@
 
 #import <AppKit/AppKit.h>
 
+#import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -21,10 +22,11 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 
+const int OPEN_URL_RETRIES = 2;
+
 @interface FBSimulatorLifecycleCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readwrite, nullable) FBFramebuffer *framebuffer;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 
@@ -62,7 +64,7 @@
 
 - (FBFuture<NSNull *> *)shutdown
 {
-  return [[self.simulator.set killSimulator:self.simulator] mapReplace:NSNull.null];
+  return [[self.simulator.set shutdown:self.simulator] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)reboot
@@ -78,17 +80,19 @@
 
 - (FBFuture<NSNull *> *)erase
 {
-  return [[self.simulator.set eraseSimulator:self.simulator] mapReplace:NSNull.null];
+  return [[self.simulator.set erase:self.simulator] mapReplace:NSNull.null];
 }
 
 #pragma mark States
 
 - (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
 {
-  FBSimulator *simulator = self.simulator;
-  return [FBFuture onQueue:simulator.workQueue resolveWhen:^ BOOL {
-    return simulator.state == state;
-  }];
+  return FBiOSTargetResolveState(self.simulator, state);
+}
+
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
+{
+  return [FBCoreSimulatorNotifier resolveLeavesState:state forSimDevice:self.simulator.device];
 }
 
 #pragma mark Focus
@@ -187,7 +191,6 @@
     ]]
     onQueue:self.simulator.workQueue chain:^(FBFuture *_) {
       // Nullify
-      self.framebuffer = nil;
       self.hid = nil;
       self.bridge = nil;
       return FBFuture.empty;
@@ -214,9 +217,6 @@
 
 - (FBFuture<FBFramebuffer *> *)connectToFramebuffer
 {
-  if (self.framebuffer) {
-    return [FBFuture futureWithResult:self.framebuffer];
-  }
   FBSimulator *simulator = self.simulator;
   return [FBFuture
     onQueue:simulator.workQueue resolveValue:^(NSError **error) {
@@ -245,13 +245,20 @@
 {
   NSParameterAssert(url);
   NSError *error = nil;
-  if (![self.simulator.device openURL:url error:&error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
-      causedBy:error]
-      failFuture];
-  }
-  return [FBFuture futureWithResult:[NSNull null]];
+
+  int retry = 0;
+  do {
+    // Retry openURL 2 times to alleviate Rosetta startup slowness.
+    if ([self.simulator.device openURL:url error:&error]) {
+      return [FBFuture futureWithResult:[NSNull null]];
+    }
+    retry++;
+  } while (retry <= OPEN_URL_RETRIES);
+
+  return [[[FBSimulatorError
+    describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
+    causedBy:error]
+    failFuture];
 }
 
 @end

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -99,7 +99,8 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
 {
-  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.simulator.dataDirectory]];
+  NSString *mediaDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Media"];
+  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:mediaDirectory]];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
@@ -131,6 +132,13 @@
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+    failFutureContext];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
 {
   return [[FBControlCoreError
     describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]

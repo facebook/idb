@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -38,7 +38,7 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call
  @return a scuba sample
  */
-+ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments;
++ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall;
 
 /**
  Construct a sample for a successful call.
@@ -49,7 +49,7 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call.
  @return a scuba sample
  */
-+ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments;
++ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall;
 
 /**
  Construct a sample for a failing call.
@@ -61,7 +61,7 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call
  @return a scuba sample
  */
-+ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments;
++ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall;
 
 #pragma mark Properties
 
@@ -95,6 +95,10 @@ extern FBEventType const FBEventTypeFailure;
  */
 @property (nonatomic, copy, nullable, readonly) NSString *message;
 
+/**
+ Marks is method was called natively in swift
+ */
+@property (readonly) BOOL reportNativeSwiftMethodCall;
 
 @end
 

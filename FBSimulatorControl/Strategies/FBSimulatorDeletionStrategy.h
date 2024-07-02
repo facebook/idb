@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,25 +19,23 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorDeletionStrategy : NSObject
 
-#pragma mark Initializers
-
-/**
- Creates a FBSimulatorEraseStrategy.
-
- @param set the Simulator Set to log.
- @return a configured FBSimulatorDeletionStrategy instance.
- */
-+ (instancetype)strategyForSet:(FBSimulatorSet *)set;
-
 #pragma mark Public Methods
 
 /**
- Intelligently Deletes Simulators.
+ Deletes a simulator.
+
+ @param simulator the Simulator to Delete.
+ @return a future wrapping the array of deleted simulator uuids.
+ */
++ (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator;
+
+/**
+ Batch operation for deleting multipole simulators.
 
  @param simulators the Simulators to Delete.
  @return a future wrapping the array of deleted simulator uuids.
  */
-- (FBFuture<NSArray<NSString *> *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators;
++ (FBFuture<NSNull *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 
 @end
 

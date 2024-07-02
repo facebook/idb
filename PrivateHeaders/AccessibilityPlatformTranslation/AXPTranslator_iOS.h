@@ -1,13 +1,15 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <AccessibilityPlatformTranslation/AXPTranslator.h>
 
-@class AXUIElement, NSMutableDictionary, NSObject<OS_dispatch_queue>;
+@class AXUIElement;
 
 @interface AXPTranslator_iOS : AXPTranslator
 {
@@ -16,8 +18,7 @@
     NSObject<OS_dispatch_queue> *_cacheQueue;
     struct __IOHIDEventSystemClient *_ioSystemPostBackClient;
     BOOL _axAppReadyFlag;
-    BOOL _accessibilityEnabled;
-    struct __AXObserver *_axEventObserver;
+    id _axEventObserver;
     AXUIElement *_systemAppElement;
     AXUIElement *_systemWideElement;
 }
@@ -25,10 +26,9 @@
 + (id)_iosParameterFromPlatformParameter:(id)arg1;
 + (id)translationObjectFromUIKitObject:(id)arg1;
 + (id)sharedInstance;
-- (void).cxx_destruct;
 @property(retain, nonatomic) AXUIElement *systemWideElement; // @synthesize systemWideElement=_systemWideElement;
 @property(retain, nonatomic) AXUIElement *systemAppElement; // @synthesize systemAppElement=_systemAppElement;
-@property(retain, nonatomic) struct __AXObserver *axEventObserver; // @synthesize axEventObserver=_axEventObserver;
+@property(retain, nonatomic) id axEventObserver; // @synthesize axEventObserver=_axEventObserver;
 - (BOOL)accessibilityEnabled;
 - (id)remoteTranslationDataWithTranslation:(id)arg1 pid:(int)arg2;
 - (id)translationObjectFromData:(id)arg1;

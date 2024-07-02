@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy) NSString *logDirectoryPath;
 
 /**
- Get events by name that were recieved from `-[FBXCTestReporter handleExternalEvent:]`
+ Get events by name that were received from `-[FBXCTestReporter handleExternalEvent:]`
  */
 - (NSArray<NSDictionary *> *)eventsWithName:(NSString *)name;
 

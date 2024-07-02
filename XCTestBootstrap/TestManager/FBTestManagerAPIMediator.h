@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,8 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestExtendedCommands;
 @protocol FBXCTestReporter;
 
-extern const NSInteger FBProtocolVersion;
-extern const NSInteger FBProtocolMinimumVersion;
 
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.

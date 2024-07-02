@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,8 +14,25 @@
 #import "NSPredicate+FBControlCore.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
+#import "FBConcatedJsonParser.h"
+#import "FBCrashLogParser.h"
+#import <Foundation/Foundation.h>
 
 @implementation FBCrashLog
+
+
++ (NSDateFormatter *)dateFormatter
+{
+  static dispatch_once_t onceToken;
+  static NSDateFormatter *dateFormatter = nil;
+  dispatch_once(&onceToken, ^{
+    dateFormatter = [NSDateFormatter new];
+    dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS Z";
+    dateFormatter.lenient = YES;
+    dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+  });
+  return dateFormatter;
+}
 
 #pragma mark Initializers
 
@@ -51,19 +68,52 @@
 
 #pragma mark Initializers
 
-+ (instancetype)fromCrashLogAtPath:(NSString *)crashPath error:(NSError **)error
-{
++ (nullable instancetype)fromCrashLogAtPath:(NSString *)crashPath error:(NSError **)error {
   if (!crashPath) {
     return [[FBControlCoreError
       describe:@"No crash path provided"]
       fail:error];
   }
-  FILE *file = fopen(crashPath.UTF8String, "r");
-  if (!file) {
+  if (![NSFileManager.defaultManager fileExistsAtPath:crashPath]) {
     return [[FBControlCoreError
-      describeFormat:@"Could not open file at path %@: %s", crashPath, strerror(errno)]
+      describeFormat:@"File does not exist at given crash path: %@", crashPath]
       fail:error];
   }
+  if (![NSFileManager.defaultManager isReadableFileAtPath:crashPath]) {
+    return [[FBControlCoreError
+      describeFormat:@"Crash file at %@ is not readable", crashPath]
+      fail:error];
+  }
+  NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
+  if (!crashFileData) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not read data from %@", crashPath]
+      fail:error];
+  } else if (crashFileData.length == 0) {
+      return [[FBControlCoreError
+        describeFormat:@"Crash file at %@ is empty", crashPath]
+        fail:error];
+  }
+
+  NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
+  if (!crashString) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not extract string from %@", crashPath]
+      fail:error];
+  }
+
+  return [self fromCrashLogString:crashString crashPath:crashPath parser:[self getPreferredCrashLogParserForCrashString:crashString] error:error];
+}
+
++ (id<FBCrashLogParser>)getPreferredCrashLogParserForCrashString:(NSString *)crashString {
+  if (crashString.length > 0 && [crashString characterAtIndex:0] == '{') {
+    return [[FBConcatedJSONCrashLogParser alloc] init];
+  } else {
+    return [[FBPlainTextCrashLogParser alloc] init];
+  }
+}
+
++ (nullable instancetype)fromCrashLogString:(NSString *)crashString crashPath:(NSString *)crashPath parser:(id<FBCrashLogParser>)parser error:(NSError **)error {
 
   NSString *executablePath = nil;
   NSString *identifier = nil;
@@ -72,14 +122,65 @@
   NSDate *date = nil;
   pid_t processIdentifier = -1;
   pid_t parentProcessIdentifier = -1;
+  NSString *exceptionDescription = nil;
+  NSString *crashedThreadDescription = nil;
 
-  if (![self extractFromFile:file executablePathOut:&executablePath identifierOut:&identifier processNameOut:&processName parentProcessNameOut:&parentProcessName processIdentifierOut:&processIdentifier parentProcessIdentifierOut:&parentProcessIdentifier dateOut:&date error:error]) {
-    fclose(file);
-    return nil;
+  NSError *err;
+  [parser parseCrashLogFromString:crashString
+    executablePathOut:&executablePath
+    identifierOut:&identifier
+    processNameOut:&processName
+    parentProcessNameOut:&parentProcessName
+    processIdentifierOut:&processIdentifier
+    parentProcessIdentifierOut:&parentProcessIdentifier
+    dateOut:&date
+    exceptionDescription:&exceptionDescription
+    crashedThreadDescription:&crashedThreadDescription
+    error:&err];
+
+  if (err) {
+    return [[FBControlCoreError
+             describeFormat:@"Could not parse crash string %@", err]
+            fail:error];
+  }
+
+  if (processName == nil) {
+    return [[FBControlCoreError
+             describe:@"Missing process name in crash log"]
+            fail:error];
+  }
+  if (identifier == nil) {
+    return [[FBControlCoreError
+             describe:@"Missing identifier in crash log"]
+            fail:error];
+  }
+  if (parentProcessName == nil) {
+    return [[FBControlCoreError
+             describe:@"Missing process name in crash log"]
+            fail:error];
+  }
+  if (executablePath == nil) {
+    return [[FBControlCoreError
+             describe:@"Missing executable path in crash log"]
+            fail:error];
+  }
+  if (processIdentifier == -1) {
+    return [[FBControlCoreError
+             describe:@"Missing process identifier in crash log"]
+            fail:error];
+  }
+  if (parentProcessIdentifier == -1) {
+    return [[FBControlCoreError
+             describe:@"Missing parent process identifier in crash log"]
+            fail:error];
+  }
+  if (date == nil) {
+    return [[FBControlCoreError
+             describe:@"Missing date in crash log"]
+            fail:error];
   }
 
   FBCrashLogInfoProcessType processType = [self processTypeForExecutablePath:executablePath];
-  fclose(file);
 
   return [[FBCrashLogInfo alloc]
     initWithCrashPath:crashPath
@@ -90,11 +191,13 @@
     parentProcessName:parentProcessName
     parentProcessIdentifier:parentProcessIdentifier
     date:date
-    processType:processType];
+    processType:processType
+    exceptionDescription:exceptionDescription
+    crashedThreadDescription:crashedThreadDescription];
 }
 
-- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType
-{
+
+- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType exceptionDescription:(NSString *)exceptionDescription crashedThreadDescription:(NSString *)crashedThreadDescription{
   self = [super init];
   if (!self) {
     return nil;
@@ -109,6 +212,8 @@
   _parentProcessIdentifier = parentProcessIdentifier;
   _date = date;
   _processType = processType;
+  _exceptionDescription = exceptionDescription;
+  _crashedThreadDescription = crashedThreadDescription;
 
   return self;
 }
@@ -118,17 +223,9 @@
 + (BOOL)isParsableCrashLog:(NSData *)data
 {
 #if defined(__apple_build_version__)
-  if (@available(macOS 10.13, *)) {
-    FILE *file = fmemopen((void *)data.bytes, data.length, "r");
-    if (!file) {
-      return NO;
-    }
-    BOOL parsable = [self extractFromFile:file executablePathOut:nil identifierOut:nil processNameOut:nil parentProcessNameOut:nil processIdentifierOut:nil parentProcessIdentifierOut:nil dateOut:nil error:nil];
-    fclose(file);
-    return parsable;
-  } else {
-    return NO;
-  }
+  NSString *crashString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  FBCrashLogInfo *parsable = [self fromCrashLogString:crashString crashPath:@"" parser:[self getPreferredCrashLogParserForCrashString:crashString] error:nil];
+  return parsable != nil;
 #else
   return NO;
 #endif
@@ -139,7 +236,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@",
+    @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@ | Exception: %@ | Trace: %@",
     self.identifier,
     self.executablePath,
     self.processName,
@@ -147,7 +244,9 @@
     self.parentProcessName,
     self.parentProcessIdentifier,
     self.date,
-    self.crashPath
+    self.crashPath,
+    self.exceptionDescription,
+    self.crashedThreadDescription
   ];
 }
 
@@ -164,6 +263,11 @@
 - (NSString *)name
 {
   return self.crashPath.lastPathComponent;
+}
+
+- (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
+{
+  return [NSString stringWithContentsOfFile:self.crashPath encoding:NSUTF8StringEncoding error:error];
 }
 
 #pragma mark Bulk Collection
@@ -198,7 +302,7 @@
 - (FBCrashLog *)obtainCrashLogWithError:(NSError **)error
 {
   NSError *innerError = nil;
-  NSString *contents = [NSString stringWithContentsOfFile:self.crashPath encoding:NSUTF8StringEncoding error:&innerError];
+  NSString *contents = [self loadRawCrashLogStringWithError:&innerError];
   if (!contents) {
     return [[[FBControlCoreError
       describeFormat:@"Failed to read crash log at path %@", self.crashPath]
@@ -262,109 +366,6 @@
 
 #pragma mark Private
 
-static NSUInteger MaxLineSearch = 20;
-
-+ (BOOL)extractFromFile:(FILE *)file executablePathOut:(NSString **)executablePathOut identifierOut:(NSString **)identifierOut processNameOut:(NSString **)processNameOut parentProcessNameOut:(NSString **)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate **)dateOut error:(NSError **)error
-{
-  // Buffers for the sscanf
-  size_t lineSize = sizeof(char) * 4098;
-  char *line = malloc(lineSize);
-  char value[lineSize];
-
-  // Values that should exist after scanning
-  NSDate *date = nil;
-  NSString *executablePath = nil;
-  NSString *identifier = nil;
-  NSString *parentProcessName = nil;
-  NSString *processName = nil;
-  pid_t processIdentifier = -1;
-  pid_t parentProcessIdentifier = -1;
-
-  NSUInteger lineNumber = 0;
-  while (lineNumber++ < MaxLineSearch && getline(&line, &lineSize, file) > 0) {
-    if (sscanf(line, "Process: %s [%d]", value, &processIdentifier) > 0) {
-      processName = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
-      continue;
-    }
-    if (sscanf(line, "Identifier: %s", value) > 0) {
-      identifier = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
-      continue;
-    }
-    if (sscanf(line, "Parent Process: %s [%d]", value, &parentProcessIdentifier) > 0) {
-      parentProcessName = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
-      continue;
-    }
-    if (sscanf(line, "Path: %s", value) > 0) {
-      executablePath = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
-      continue;
-    }
-    if (sscanf(line, "Date/Time: %[^\n]", value) > 0) {
-      NSString *dateString = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
-      date = [self.dateFormatter dateFromString:dateString];
-      continue;
-    }
-  }
-
-  free(line);
-  if (processName == nil) {
-    return [[FBControlCoreError
-      describe:@"Missing process name in crash log"]
-      failBool:error];
-  }
-  if (identifier == nil) {
-    return [[FBControlCoreError
-      describe:@"Missing identifier in crash log"]
-      failBool:error];
-  }
-  if (parentProcessName == nil) {
-    return [[FBControlCoreError
-      describe:@"Missing process name in crash log"]
-      failBool:error];
-  }
-  if (executablePath == nil) {
-    return [[FBControlCoreError
-      describe:@"Missing executable path in crash log"]
-      failBool:error];
-  }
-  if (processIdentifier == -1) {
-    return [[FBControlCoreError
-      describe:@"Missing process identifier in crash log"]
-      failBool:error];
-  }
-  if (parentProcessIdentifier == -1) {
-    return [[FBControlCoreError
-      describe:@"Missing parent process identifier in crash log"]
-      failBool:error];
-  }
-  if (date == nil) {
-    return [[FBControlCoreError
-      describe:@"Missing date in crash log"]
-      failBool:error];
-  }
-  if (executablePathOut) {
-    *executablePathOut = executablePath;
-  }
-  if (identifierOut) {
-    *identifierOut = identifier;
-  }
-  if (processNameOut) {
-    *processNameOut = processName;
-  }
-  if (parentProcessNameOut) {
-    *parentProcessNameOut = parentProcessName;
-  }
-  if (processIdentifierOut) {
-    *processIdentifierOut = processIdentifier;
-  }
-  if (parentProcessIdentifierOut) {
-    *parentProcessIdentifierOut = parentProcessIdentifier;
-  }
-  if (dateOut) {
-    *dateOut = date;
-  }
-  return YES;
-}
-
 + (FBCrashLogInfoProcessType)processTypeForExecutablePath:(NSString *)executablePath
 {
   if ([executablePath containsString:@"Platforms/iPhoneSimulator.platform"]) {
@@ -391,19 +392,6 @@ static NSUInteger MaxLineSearch = 20;
     [NSPredicate predicateWithFormat:@"pathExtension == %@", extension],
     datePredicate
   ]];
-}
-
-+ (NSDateFormatter *)dateFormatter
-{
-  static dispatch_once_t onceToken;
-  static NSDateFormatter *dateFormatter = nil;
-  dispatch_once(&onceToken, ^{
-    dateFormatter = [NSDateFormatter new];
-    dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss.SSS Z";
-    dateFormatter.lenient = YES;
-    dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
-  });
-  return dateFormatter;
 }
 
 @end

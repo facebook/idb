@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,6 +11,7 @@
 #import "FBDevice+Private.h"
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceDebugSymbolsCommands.h"
 #import "FBDeviceProvisioningProfileCommands.h"
 #import "FBManagedConfigClient.h"
 #import "FBSpringboardServicesClient.h"
@@ -37,7 +38,7 @@
   return self;
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [self handleAFCOperation:^ NSNull * (FBAFCConnection *afc, NSError **error) {
     BOOL success = [afc copyFromHost:sourcePath toContainerPath:destinationPath error:error];
@@ -48,14 +49,14 @@
   }];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   NSString *destination = destinationPath;
   if ([FBDeviceFileContainer isDirectory:destinationPath]){
-    destination = [destinationPath stringByAppendingPathComponent:containerPath.lastPathComponent];
+    destination = [destinationPath stringByAppendingPathComponent:sourcePath.lastPathComponent];
   }
   return [[self
-    readFileFromPathInContainer:containerPath]
+    readFileFromPathInContainer:sourcePath]
     onQueue:self.queue fmap:^FBFuture<NSString *> *(NSData *fileData) {
      NSError *error;
      if (![fileData writeToFile:destination options:0 error:&error]) {
@@ -68,7 +69,7 @@
    }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -171,10 +172,10 @@
   return [FBFuture futureWithResult:@[FBWallpaperNameHomescreen, FBWallpaperNameLockscreen]];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[self.springboard
-    wallpaperImageDataForKind:containerPath.lastPathComponent]
+    wallpaperImageDataForKind:sourcePath.lastPathComponent]
     onQueue:self.queue fmap:^ FBFuture<NSString *> * (NSData *data) {
       NSError *error = nil;
       if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
@@ -184,12 +185,12 @@
     }];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
@@ -197,7 +198,7 @@
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -256,19 +257,19 @@
   return [self.managedConfig getProfileList];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
       NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfURL:sourcePath options:0 error:&error];
+      NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
       if (!data) {
         return [FBFuture futureWithError:error];
       }
@@ -276,7 +277,7 @@
     }];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -328,21 +329,21 @@ static NSString *const MountRootPath = @"mounted";
   return self;
 }
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
     describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
     failFuture];
 }
 
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
     describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
@@ -443,7 +444,7 @@ static NSString *const MountRootPath = @"mounted";
     onQueue:self.queue map:^(NSDictionary<NSString *, FBDeveloperDiskImage *> *mountedDiskImages) {
       // Construct the full list of all paths, including the mounted & available images.
       NSMutableArray<NSString *> *paths = NSMutableArray.array;
-      [paths addObjectsFromArray:self.mountableDiskImagesByPath.allKeys];
+      [paths addObjectsFromArray:[self.mountableDiskImagesByPath keysSortedByValueUsingSelector:@selector(compare:)]];
       [paths addObject:MountRootPath];
       [paths addObjectsFromArray:mountedDiskImages.allKeys];
       return [paths copy];
@@ -477,6 +478,85 @@ static NSString *const MountRootPath = @"mounted";
 }
 
 @end
+
+@interface FBDeviceFileCommands_Symbols : NSObject <FBFileContainer>
+
+@property (nonatomic, strong, readonly) id<FBDeviceDebugSymbolsCommands> commands;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+
+@end
+
+@implementation FBDeviceFileCommands_Symbols
+
+static NSString *const ExtractedSymbolsDirectory = @"Symbols";
+
+- (instancetype)initWithCommands:(id<FBDeviceDebugSymbolsCommands>)commands queue:(dispatch_queue_t)queue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _commands = commands;
+  _queue = queue;
+
+  return self;
+}
+
+- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
+{
+  if ([sourcePath isEqualToString:ExtractedSymbolsDirectory]) {
+    return [self.commands pullAndExtractSymbolsToDestinationDirectory:destinationPath];
+  }
+  return [self.commands pullSymbolFile:sourcePath toDestinationPath:destinationPath];
+}
+
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSNull *> *)remove:(NSString *)path
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+    failFuture];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
+{
+  return [[self.commands
+    listSymbols]
+    onQueue:self.queue map:^(NSArray<NSString *> *listedSymbols) {
+      return [listedSymbols arrayByAddingObject:ExtractedSymbolsDirectory];
+    }];
+}
+
+@end
+
 
 @interface FBDeviceFileCommands ()
 
@@ -599,6 +679,11 @@ static NSString *const MountRootPath = @"mounted";
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
 {
   return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_DiskImages alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
+}
+
+- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
+{
+  return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_Symbols alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
 }
 
 @end

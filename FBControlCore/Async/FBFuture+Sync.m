@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -91,7 +91,7 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
 
 static NSTimeInterval const ForeverTimeout = DBL_MAX;
 
-static dispatch_queue_t blockQueue()
+static dispatch_queue_t blockQueue(void)
 {
   return dispatch_queue_create("com.facebook.fbfuture.block", DISPATCH_QUEUE_SERIAL);
 }

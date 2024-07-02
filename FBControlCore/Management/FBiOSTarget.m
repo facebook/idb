@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,17 +8,6 @@
 #import "FBiOSTarget.h"
 
 #import "FBiOSTargetConfiguration.h"
-
-FBiOSTargetStateString const FBiOSTargetStateStringCreating = @"Creating";
-FBiOSTargetStateString const FBiOSTargetStateStringShutdown = @"Shutdown";
-FBiOSTargetStateString const FBiOSTargetStateStringBooting = @"Booting";
-FBiOSTargetStateString const FBiOSTargetStateStringBooted = @"Booted";
-FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown = @"Shutting Down";
-FBiOSTargetStateString const FBiOSTargetStateStringDFU = @"DFU";
-FBiOSTargetStateString const FBiOSTargetStateStringRecovery = @"Recovery";
-FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS = @"RestoreOS";
-FBiOSTargetStateString const FBiOSTargetStateStringUnknown = @"Unknown";
-
 
 NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
 {
@@ -74,19 +63,18 @@ FBiOSTargetState FBiOSTargetStateFromStateString(NSString *stateString)
   return FBiOSTargetStateUnknown;
 }
 
-NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType)
+NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType)
 {
-  NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((targetType & FBiOSTargetTypeDevice) == FBiOSTargetTypeDevice) {
-    [strings addObject:@"Device"];
+  if (targetType == FBiOSTargetTypeDevice) {
+    return @"Device";
   }
-  if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
-    [strings addObject:@"Simulator"];
+  if (targetType == FBiOSTargetTypeSimulator) {
+    return @"Simulator";
   }
-  if ((targetType & FBiOSTargetTypeLocalMac) == FBiOSTargetTypeLocalMac) {
-    [strings addObject:@"Mac"];
+  if (targetType == FBiOSTargetTypeLocalMac) {
+    return @"Mac";
   }
-  return [strings copy];
+  return @"Unknown";
 }
 
 NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
@@ -117,13 +105,12 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
 NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
 {
   return [NSString stringWithFormat:
-    @"%@ | %@ | %@ | %@ | %@ | %@",
+    @"%@ | %@ | %@ | %@ | %@ ",
     target.udid,
     target.name,
     FBiOSTargetStateStringFromState(target.state),
     target.deviceType.model,
-    target.osVersion,
-    target.architecture
+    target.osVersion
   ];
 }
 
@@ -139,5 +126,19 @@ NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids)
 
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
     return [udidsSet containsObject:candidate.udid];
+  }];
+}
+
+FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state)
+{
+  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
+    return target.state == state;
+  }];
+}
+
+FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state)
+{
+  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
+    return target.state != state;
   }];
 }

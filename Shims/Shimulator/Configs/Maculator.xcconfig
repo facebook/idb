@@ -8,3 +8,4 @@ EXECUTABLE_PREFIX = lib
 SDKROOT = macosx
 MACOSX_DEPLOYMENT_TARGET = 10.13
 COPY_PHASE_STRIP = NO
+CODE_SIGN_IDENTITY = - // Maculator Shims must be CodeSigned, to work for injection.

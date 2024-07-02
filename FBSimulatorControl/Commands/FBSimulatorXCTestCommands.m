@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -68,7 +68,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       self.isRunningXcodeBuildOperation = YES;
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
-    onQueue:self.simulator.workQueue map:^(FBProcess *task) {
+    onQueue:self.simulator.workQueue fmap:^(FBProcess *task) {
       return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.simulator logger:logger];
     }]
     onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
@@ -125,13 +125,20 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
+  NSError *error = nil;
+  FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:bundlePath error:&error];
+  if (!bundleDescriptor) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBListTestConfiguration *configuration = [FBListTestConfiguration
     configurationWithEnvironment:@{}
     workingDirectory:self.simulator.auxillaryDirectory
     testBundlePath:bundlePath
     runnerAppPath:appPath
     waitForDebugger:NO
-    timeout:timeout];
+    timeout:timeout
+    architectures:bundleDescriptor.binary.architectures];
 
   return [[[FBListTestStrategy alloc]
     initWithTarget:self.simulator configuration:configuration logger:self.simulator.logger]

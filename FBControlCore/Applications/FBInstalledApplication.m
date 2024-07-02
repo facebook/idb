@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,12 +9,12 @@
 
 #import "FBBundleDescriptor.h"
 
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem = @"system";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac = @"mac";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser = @"user";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserEnterprise = @"user_enterprise";
-FBApplicationInstallTypeString const FBApplicationInstallTypeStringUserDevelopment = @"user_development";
+static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
+static NSString *const FBApplicationInstallTypeStringSystem = @"system";
+static NSString *const FBApplicationInstallTypeStringMac = @"mac";
+static NSString *const FBApplicationInstallTypeStringUser = @"user";
+static NSString *const FBApplicationInstallTypeStringUserEnterprise = @"user_enterprise";
+static NSString *const FBApplicationInstallTypeStringUserDevelopment = @"user_development";
 
 FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType = @"ApplicationType";
 FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = @"CFBundleIdentifier";
@@ -29,6 +29,11 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
 + (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
 {
   return [[self alloc] initWithBundle:bundle installType:installType dataContainer:dataContainer];
+}
+
++ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installTypeString:(NSString *)installTypeString signerIdentity:(NSString *)signerIdentity dataContainer:(NSString *)dataContainer
+{
+  return [self installedApplicationWithBundle:bundle installType:[self installTypeFromString:installTypeString signerIdentity:signerIdentity] dataContainer:dataContainer];
 }
 
 - (instancetype)initWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
@@ -67,7 +72,7 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
   return [NSString stringWithFormat:
     @"Bundle %@ | Install Type %@ | Container %@",
     self.bundle.description,
-    [FBInstalledApplication stringFromApplicationInstallType:self.installType],
+    self.installTypeString,
     self.dataContainer
   ];
 }
@@ -79,9 +84,16 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
   return self;
 }
 
+#pragma mark Properties
+
+- (NSString *)installTypeString
+{
+  return [FBInstalledApplication stringFromApplicationInstallType:self.installType];
+}
+
 #pragma mark Install Type
 
-+ (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType
++ (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType
 {
   switch (installType) {
     case FBApplicationInstallTypeUser:
@@ -99,7 +111,7 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
   }
 }
 
-+ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString signerIdentity:(nullable NSString *)signerIdentity
++ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString signerIdentity:(nullable NSString *)signerIdentity
 {
   if (!installTypeString) {
     return FBApplicationInstallTypeUnknown;

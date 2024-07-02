@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,6 +26,7 @@ extern FBFileContainerKind const FBFileContainerKindMedia;
 extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
 extern FBFileContainerKind const FBFileContainerKindRoot;
 extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
+extern FBFileContainerKind const FBFileContainerKindSymbols;
 extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 @protocol FBDataConsumer;
@@ -45,25 +46,25 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param destinationPath the destination path to copy to, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath;
+- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath;
 
 /**
  Copy a path from inside the container, to the host.
 
- @param containerPath the source path, relative to the root of the container. May be Files and/or Directories.
+ @param sourcePath the source path, relative to the root of the container. May be Files and/or Directories.
  @param destinationPath the destination path on the host.
  @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath;
+- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath;
 
 /**
- Tails a path from inside the container, to a consumer.
+ Tails the contents of a file path inside the container, to a data consumer.
  
- @param containerPath the source path to tail, relative to the root of the container. Must be a file
+ @param path the source path to tail, relative to the root of the container. Must be a file
  @param consumer the consumer to write to.
  @return a Future that resolves with a Future when the tailing has completed. The wrapped future can be cancelled to end the tailing operation.
  */
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer;
+- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer;
 
 /**
  Create a directory inside the container.
@@ -97,6 +98,95 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @return A future containing the list of entries that resolves when successful.
  */
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path;
+
+@end
+
+/**
+ An abstraction over a file. The file can be local to the host, or remote.
+ */
+@protocol FBContainedFile <NSObject>
+
+/**
+ Removes a file path.
+ If the path is a directory, the entire directory is removed and all contents, recursively.
+
+ @param error an error out for any error that occurs.
+ @return YES on success, NO otherwise.
+ */
+- (BOOL)removeItemWithError:(NSError **)error;
+
+/**
+ List the contents of a path.
+
+ @param error an error out for any error that occurs.
+ @return an array of strings representing the directory contents.
+ */
+- (nullable NSArray<NSString *> *)contentsOfDirectoryWithError:(NSError **)error;
+
+/**
+ Obtains the contents of the contained file.
+
+ @param error an error out for any error that occurs.
+ @return Data for the file, or an nil on error.
+ */
+- (nullable NSData *)contentsOfFileWithError:(NSError **)error;
+
+/**
+ Creates a directory at the given path.
+
+ @param error an error out for any error that occurs.
+ @return YES on success, NO otherwise.
+ */
+- (BOOL)createDirectoryWithError:(NSError **)error;
+
+/**
+ Checks whether the path exists, optionally providing information about whether the path is a regular file or directory.
+
+ @param isDirectoryOut an outparam for indicating if the path represents a directory.
+ @return YES if exists, NO otherwise.
+ */
+- (BOOL)fileExistsIsDirectory:(BOOL *)isDirectoryOut;
+
+/**
+ Moves the receiver to the provided destination file.
+
+ @param destination the destination to move to.
+ @param error an error out for any error that occurs.
+ */
+- (BOOL)moveTo:(id<FBContainedFile>)destination error:(NSError **)error;
+
+/**
+ Replaces the contents of the wrapped file with the provided path on the host filesystem.
+
+ @param path the path to pull contents from.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)populateWithContentsOfHostPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Replaces provided path on the host filesystem with the contents of the wrapped file.
+
+ @param path the path to push contents to.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)populateHostPathWithContents:(NSString *)path error:(NSError **)error;
+
+/**
+ Constructs a new contained file by appending a path component.
+
+ @param component the component to add.
+ @param error an error out if the path is invalid.
+ @return the new contained file.
+ */
+- (id<FBContainedFile>)fileByAppendingPathComponent:(NSString *)component error:(NSError **)error;
+
+/**
+ The host path corresponding to this file, if any.
+ If the file is remote, this will be nil
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *pathOnHostFileSystem;
 
 @end
 

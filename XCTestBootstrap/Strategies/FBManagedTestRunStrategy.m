@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -43,7 +43,8 @@
         initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
         timeout:configuration.timeout
         testHostLaunchConfiguration:testHostLaunchConfiguration
-        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment];
+        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment
+        testConfiguration:runnerConfiguration.testConfiguration];
 
       // Construct and run the mediator, the core of the test execution.
       return [FBTestManagerAPIMediator

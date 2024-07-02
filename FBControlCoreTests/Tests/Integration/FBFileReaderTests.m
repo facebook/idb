@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -76,7 +76,7 @@
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
   [pipe.fileHandleForWriting writeData:expected];
 
-  // Stop reading, we may recieve the consumeEndOfFile on a different queue
+  // Stop reading, we may receive the consumeEndOfFile on a different queue
   // This is fine as this call will block until the call has happened.
   // Also the assignment is atomic.
   NSNumber *result = [[reader stopReading] await:&error];

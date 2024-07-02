@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -81,22 +81,22 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Desctructive Methods
 
 /**
- Kills a Simulator in the Set.
- The Set to which the Simulator belongs must be the receiver.
+ Shuts down a simulator in the set.
+ The Set to which the Simulator belongs must be present the receiver.
 
- @param simulator the Simulator to delete. Must not be nil.
- @return an Future that resolves when successful.
+ @param simulator the Simulator to shutdown. Must not be nil.
+ @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
 
 /**
  Erases a Simulator in the Set.
  The Set to which the Simulator belongs must be the receiver.
 
  @param simulator the Simulator to erase. Must not be nil.
- @return A future wrapping the erased simulators udids.
+ @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator;
 
 /**
  Deletes a Simulator in the Set.
@@ -105,55 +105,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to delete. Must not be nil.
  @return A future wrapping the delegate simulators.
  */
-- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator;
+- (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator;
 
 /**
- Kills all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to kill. Must not be nil.
- @return an Future that resolves when successful.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
- Erases all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to erase. Must not be nil.
- @return A future wrapping the erased simulators.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
- Erases all provided Simulators.
- The Set to which the Simulators belong must be the receiver.
-
- @param simulators the Simulators to delete. Must not be nil.
- @return A future wrapping the erased simulators udids.
- */
-- (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
-
-/**
- Kills all of the Simulators that belong to the receiver.
+ Performs a shutdown all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll;
-
-/**
- Kills all of the Simulators that belong to the receiver.
-
- @return A future wrapping the erased simulators.
- */
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll;
+- (FBFuture<NSNull *> *)shutdownAll;
 
 /**
  Delete all of the Simulators that belong to the receiver.
 
  @return A future wrapping the erased simulators udids.
  */
-- (FBFuture<NSArray<NSString *> *> *)deleteAll;
+- (FBFuture<NSNull *> *)deleteAll;
 
 /**
  The Logger to use.
@@ -179,6 +145,16 @@ NS_ASSUME_NONNULL_BEGIN
  An NSArray<FBSimulator> of all Simulators in the Set.
 */
 @property (nonatomic, copy, readonly) NSArray<FBSimulator *> *allSimulators;
+
+/**
+ The work queue that will be used by all simulators within the set.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ The async queue that will be used by all simulators within the set.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 @end
 

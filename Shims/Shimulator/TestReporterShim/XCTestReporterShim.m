@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,9 @@
 #import <objc/runtime.h>
 
 #import "FBXCTestConstants.h"
+#import "XCTestCaseHelpers.h"
 #import "XCTestPrivate.h"
+#import "XTSwizzle.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
@@ -28,48 +30,6 @@ static FILE *__stderr;
 static NSMutableArray<NSDictionary<NSString *, id> *> *__testExceptions = nil;
 static int __testSuiteDepth = 0;
 
-static void parseXCTestCase(XCTestCase *testCase, NSString **classNameOut, NSString **methodNameOut, NSString **testKeyOut)
-{
-  NSString *className = NSStringFromClass(testCase.class);
-  NSString *methodName;
-  if ([testCase respondsToSelector:@selector(languageAgnosticTestMethodName)]) {
-    methodName = [testCase languageAgnosticTestMethodName];
-  } else {
-    methodName = NSStringFromSelector([testCase.invocation selector]);
-  }
-  NSString *testKey = [NSString stringWithFormat:@"-[%@ %@]", className, methodName];
-  if (classNameOut) {
-    *classNameOut = className;
-  }
-  if (methodNameOut) {
-    *methodNameOut = methodName;
-  }
-  if (testKeyOut) {
-    *testKeyOut = testKey;
-  }
-}
-
-static NSString *parseXCTestSuiteKey(XCTestSuite *suite)
-{
-  NSString *testKey = nil;
-  for (id test in suite.tests) {
-    if (![test isKindOfClass:NSClassFromString(@"XCTestCase")]) {
-      return [suite name];
-    }
-    XCTestCase *testCase = test;
-    NSString *innerTestKey = nil;
-    parseXCTestCase(testCase, &innerTestKey, nil, nil);
-    if (!testKey) {
-      testKey = innerTestKey;
-      continue;
-    }
-    if (![innerTestKey isEqualToString:testKey]) {
-      return [suite name];
-    }
-  }
-  return testKey ?: [suite name];
-}
-
 NSDictionary<NSString *, id> *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
   NSMutableDictionary<NSString *, id> *eventJSON = [NSMutableDictionary dictionaryWithDictionary:@{
@@ -80,43 +40,6 @@ NSDictionary<NSString *, id> *EventDictionaryWithNameAndContent(NSString *name, 
   return eventJSON;
 }
 
-void XTSwizzleClassSelectorForFunction(Class cls, SEL sel, IMP newImp) __attribute__((no_sanitize("nullability-arg")))
-{
-  Class clscls = object_getClass((id)cls);
-  Method originalMethod = class_getClassMethod(cls, sel);
-
-  NSString *selectorName = [[NSString alloc] initWithFormat:
-                            @"__%s_%s",
-                            class_getName(cls),
-                            sel_getName(sel)];
-  SEL newSelector = sel_registerName([selectorName UTF8String]);
-
-  class_addMethod(clscls, newSelector, newImp, method_getTypeEncoding(originalMethod));
-  Method replacedMethod = class_getClassMethod(cls, newSelector);
-  method_exchangeImplementations(originalMethod, replacedMethod);
-}
-
-void XTSwizzleSelectorForFunction(Class cls, SEL sel, IMP newImp)
-{
-  Method originalMethod = class_getInstanceMethod(cls, sel);
-  const char *typeEncoding = method_getTypeEncoding(originalMethod);
-
-  NSString *selectorName = [[NSString alloc] initWithFormat:
-                            @"__%s_%s",
-                            class_getName(cls),
-                            sel_getName(sel)];
-  SEL newSelector = sel_registerName([selectorName UTF8String]);
-
-  class_addMethod(cls, newSelector, newImp, typeEncoding);
-
-  Method newMethod = class_getInstanceMethod(cls, newSelector);
-  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
-  if (class_addMethod(cls, sel, newImp, typeEncoding)) {
-    class_replaceMethod(cls, newSelector, method_getImplementation(originalMethod), typeEncoding);
-  } else {
-    method_exchangeImplementations(originalMethod, newMethod);
-  }
-}
 
 NSArray<XCTestCase *> *TestsFromSuite(id testSuite)
 {

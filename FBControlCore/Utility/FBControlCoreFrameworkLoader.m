@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,10 +7,11 @@
 
 #import "FBControlCoreFrameworkLoader.h"
 
-#import "FBControlCoreLogger.h"
-#import "FBControlCoreGlobalConfiguration.h"
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
-#import "FBWeakFrameworkLoader.h"
+#import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCoreLogger.h"
+#import "FBWeakFramework.h"
 
 #include <dlfcn.h>
 
@@ -56,7 +57,7 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
   if (self.hasLoadedFrameworks) {
     return YES;
   }
-  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:self.frameworks logger:logger error:error];
+  BOOL result = [FBControlCoreFrameworkLoader loadPrivateFrameworks:self.frameworks logger:logger error:error];
   if (result) {
     _hasLoadedFrameworks = YES;
   }
@@ -79,6 +80,26 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
   NSAssert(NO, message);
   // However if assertions are compiled out, then we still need to abort.
   abort();
+}
+
+#pragma mark Private
+
++ (BOOL)loadPrivateFrameworks:(NSArray<FBWeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  for (FBWeakFramework *framework in weakFrameworks) {
+    NSError *innerError = nil;
+    if (![framework loadWithLogger:logger error:&innerError]) {
+      return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+    }
+  }
+
+  // We're done with loading Frameworks.
+  [logger.debug logFormat:
+    @"Loaded All Private Frameworks %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]
+  ];
+
+  return YES;
 }
 
 @end

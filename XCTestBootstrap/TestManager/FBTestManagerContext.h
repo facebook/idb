@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,8 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+
+@class FBTestConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment;
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration;
 
 /**
  A session identifier of test that should be started
@@ -45,6 +47,8 @@ NS_ASSUME_NONNULL_BEGIN
  Additional environment for the app-under-test.
  */
 @property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+
+@property (nonatomic, strong, readonly) FBTestConfiguration *testConfiguration;
 
 @end
 

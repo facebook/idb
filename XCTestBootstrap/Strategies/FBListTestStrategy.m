@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -112,29 +112,33 @@
     [FBLoggingDataConsumer consumerWithLogger:self.logger],
   ]];
     
-  return [[FBOToolDynamicLibs
-    findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
-    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
+  return [[[FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger] withTemporaryDirectory]
+          onQueue:self.target.workQueue pop:^FBFuture *(NSURL *temporaryDirectory) {
+    return [[FBOToolDynamicLibs
+             findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
+            onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
       NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
-        
+      
       return [[FBListTestStrategy
-        listTestProcessWithTarget:self.target
-        configuration:self.configuration
-        xctestPath:self.target.xctestPath
-        environment:environment
-        stdOutConsumer:stdOutConsumer
-        stdErrConsumer:stdErrConsumer
-        logger:self.logger]
-        onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
-          return [FBListTestStrategy
-            launchedProcessWithExitCode:exitCode
-            shimOutput:shimOutput
-            shimBuffer:shimBuffer
-            stdOutBuffer:stdOutBuffer
-            stdErrBuffer:stdErrBuffer
-            queue:self.target.workQueue];
-        }];
+               listTestProcessWithTarget:self.target
+               configuration:self.configuration
+               xctestPath:self.target.xctestPath
+               environment:environment
+               stdOutConsumer:stdOutConsumer
+               stdErrConsumer:stdErrConsumer
+               logger:self.logger
+               temporaryDirectory:temporaryDirectory]
+              onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
+        return [FBListTestStrategy
+                launchedProcessWithExitCode:exitCode
+                shimOutput:shimOutput
+                shimBuffer:shimBuffer
+                stdOutBuffer:stdOutBuffer
+                stdErrBuffer:stdErrBuffer
+                queue:self.target.workQueue];
+      }];
     }];
+  }];
 }
 
 + (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimPath:(NSString *)shimPath shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath
@@ -202,11 +206,13 @@
     }];
 }
 
-+ (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target configuration:(FBListTestConfiguration *)configuration xctestPath:(NSString *)xctestPath environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target configuration:(FBListTestConfiguration *)configuration xctestPath:(NSString *)xctestPath environment:(NSDictionary<NSString *, NSString *> *)environment stdOutConsumer:(id<FBDataConsumer>)stdOutConsumer stdErrConsumer:(id<FBDataConsumer>)stdErrConsumer logger:(id<FBControlCoreLogger>)logger temporaryDirectory: (NSURL *)temporaryDirectory
 {
   NSString *launchPath = xctestPath;
   NSTimeInterval timeout = configuration.testTimeout;
 
+    
+  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
     // Since we're loading the test bundle in app binary's process without booting a simulator,
@@ -232,16 +238,27 @@
 
     FBBundleDescriptor *appBundle = [FBBundleDescriptor bundleFromPath:configuration.runnerAppPath error:nil];
     launchPath = appBundle.binary.path;
-  }
-
-  FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
-  FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    return [FBListTestStrategy listTestProcessWithSpawnConfiguration:spawnConfiguration onTarget:target timeout:timeout logger:logger];
     
-  return [[target
-    launchProcess:spawnConfiguration]
-    onQueue:target.asyncQueue map:^(FBProcess *process) {
-      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
+  } else {
+    FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
+    FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
+    
+    // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
+    // For more information look at `FBArchitectureProcessAdapter` docs.
+    return [[adapter adaptProcessConfiguration:spawnConfiguration toAnyArchitectureIn:configuration.architectures queue:target.workQueue temporaryDirectory:temporaryDirectory]
+            onQueue:target.workQueue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
+      return [FBListTestStrategy listTestProcessWithSpawnConfiguration:mappedConfiguration onTarget:target timeout:timeout logger:logger];
     }];
+  }
+}
+
++(FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithSpawnConfiguration:(FBProcessSpawnConfiguration *)spawnConfiguration onTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target timeout:(NSTimeInterval )timeout logger:(id<FBControlCoreLogger>)logger
+{
+  return [[target launchProcess:spawnConfiguration] onQueue:target.workQueue map:^id _Nonnull(FBProcess * _Nonnull process) {
+    return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
+  }];
 }
 
 - (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter

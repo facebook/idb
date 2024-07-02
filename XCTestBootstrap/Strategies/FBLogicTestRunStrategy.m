@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -112,28 +112,30 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSString *launchPath = xctestPath;
   NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
-  return [[FBOToolDynamicLibs
-    findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
-    onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
+  return [[[FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger] withTemporaryDirectory]
+          onQueue:self.target.workQueue pop:^FBFuture *(NSURL *temporaryDirectory) {
+    return [[FBOToolDynamicLibs
+             findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
+            onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
       NSDictionary<NSString *, NSString *> *environment = [FBLogicTestRunStrategy
-        setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
-        withLibraries:libraries
-        shimOutputFilePath:outputs.shimOutput.filePath
-        shimPath:shimPath
-        bundlePath:self.configuration.testBundlePath
-        coverageDirectoryPath:self.configuration.coverageConfiguration.coverageDirectory
-        logDirectoryPath:self.configuration.logDirectoryPath
-        waitForDebugger:self.configuration.waitForDebugger];
-
+                                                           setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
+                                                           withLibraries:libraries
+                                                           shimOutputFilePath:outputs.shimOutput.filePath
+                                                           shimPath:shimPath
+                                                           bundlePath:self.configuration.testBundlePath
+                                                           coverageConfiguration:self.configuration.coverageConfiguration
+                                                           logDirectoryPath:self.configuration.logDirectoryPath
+                                                           waitForDebugger:self.configuration.waitForDebugger];
       return [[self
-        startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs]
-        onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
-          return [self completeLaunchedProcess:exitCode outputs:outputs];
-        }];
+               startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs temporaryDirectory:temporaryDirectory]
+              onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
+        return [self completeLaunchedProcess:exitCode outputs:outputs];
+      }];
     }];
+  }];
 }
 
-+ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
 {
   NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
@@ -144,9 +146,10 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     @"TEST_SHIM_BUNDLE_PATH": bundlePath,
     kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
   }];
-  if (coverageDirectoryPath) {
-    NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@.profraw", [bundlePath lastPathComponent]];
-    NSString *coveragePath = [coverageDirectoryPath stringByAppendingPathComponent:coverageFile];
+  if (coverageConfiguration) {
+    NSString *continuousCoverageCollectionMode = coverageConfiguration.shouldEnableContinuousCoverageCollection ? @"%c" : @"";
+    NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", [bundlePath lastPathComponent], continuousCoverageCollectionMode];
+    NSString *coveragePath = [coverageConfiguration.coverageDirectory stringByAppendingPathComponent:coverageFile];
     environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
   }
   if (logDirectoryPath) {
@@ -225,21 +228,18 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   if (!waitFor) {
     return FBFuture.empty;
   }
-
   // Report from the current queue, but wait in a special queue.
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
-
-  return [FBFuture
-    onQueue:waitQueue resolve:^FBFuture<NSNull *> *(){
-      siginfo_t sig_info;
-      if (waitid(P_PID, (id_t)processIdentifier, &sig_info, WSTOPPED) != 0) {
-        return [[XCTestBootstrapError
-                  describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%s'", processIdentifier, strerror(errno)]
-                failFuture];
-      }
-      [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
-      return FBFuture.empty;
-    }];
+  
+  return [[FBProcessFetcher waitStopSignalForProcess:processIdentifier] onQueue:waitQueue chain:^FBFuture *(FBFuture *future) {
+    if (future.error){
+      return [[XCTestBootstrapError
+         describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]
+       failFuture];
+    }
+    [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
+    return FBFuture.empty;
+  }];
 }
 
 - (FBFuture<FBLogicTestRunOutputs *> *)buildOutputsForUUID:(NSUUID *)udid
@@ -286,9 +286,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *shimFuture = [FBFuture futureWithResult:shimConsumer];
   if (mirrorToFiles) {
     FBXCTestLogger *mirrorLogger = self.configuration.logDirectoryPath ? [FBXCTestLogger defaultLoggerInDirectory:self.configuration.logDirectoryPath] : [FBXCTestLogger defaultLoggerInDefaultDirectory];
-    stdOutFuture = [mirrorLogger logConsumptionToFile:stdOutConsumer outputKind:@"out" udid:udid logger:logger];
-    stdErrFuture = [mirrorLogger logConsumptionToFile:stdErrConsumer outputKind:@"err" udid:udid logger:logger];
-    shimFuture = [mirrorLogger logConsumptionToFile:shimConsumer outputKind:@"shim" udid:udid logger:logger];
+    stdOutFuture = [mirrorLogger logConsumptionOf:stdOutConsumer toFileNamed:@"test_process_stdout.out" logger:logger];
+    stdErrFuture = [mirrorLogger logConsumptionOf:stdErrConsumer toFileNamed:@"test_process_stderr.err" logger:logger];
+    shimFuture = [mirrorLogger logConsumptionOf:shimConsumer toFileNamed:@"shimulator_logs.shim" logger:logger];
   }
   return [[FBFuture
     futureWithFutures:@[
@@ -304,7 +304,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     }];
 }
 
-- (FBFuture<FBFuture<NSNumber *> *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment outputs:(FBLogicTestRunOutputs *)outputs
+- (FBFuture<FBFuture<NSNumber *> *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment outputs:(FBLogicTestRunOutputs *)outputs temporaryDirectory:(NSURL *)temporaryDirectory
 {
   dispatch_queue_t queue = self.target.workQueue;
   id<FBControlCoreLogger> logger = self.logger;
@@ -317,17 +317,20 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
   ];
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:outputs.stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:outputs.stdErrConsumer]];
-  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModeDefault];
-
-  return [[self.target
-    launchProcess:configuration]
-    onQueue:queue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
-      return [[FBLogicTestRunStrategy
-        fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter]
-        onQueue:queue fmap:^(id _) {
-          return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
-        }];
+  FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModePosixSpawn];
+  FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
+  
+  // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
+  // For more information look at `FBArchitectureProcessAdapter` docs.
+  return [[[adapter adaptProcessConfiguration:configuration toAnyArchitectureIn:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]
+           onQueue:queue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
+    return [self.target launchProcess:mappedConfiguration];
+  }]
+          onQueue:queue map:^ FBFuture<NSNumber *> * (FBProcess *process) {
+    return [[FBLogicTestRunStrategy fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter] onQueue:queue fmap:^(id _) {
+      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
     }];
+  }];
 }
 
 @end

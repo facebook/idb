@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 
 import asyncio
@@ -10,10 +12,7 @@ import re
 from logging import Logger
 from typing import AsyncIterator, Optional
 
-from idb.grpc.idb_pb2 import (
-    XctraceRecordRequest,
-    XctraceRecordResponse,
-)
+from idb.grpc.idb_pb2 import XctraceRecordRequest, XctraceRecordResponse
 from idb.grpc.stream import Stream
 from idb.utils.typing import none_throws
 

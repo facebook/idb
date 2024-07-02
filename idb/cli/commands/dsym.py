@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import Client
+from idb.common.types import Client, Compression, FileContainerType
 
 
 class DsymInstallCommand(ClientCommand):
@@ -32,8 +34,16 @@ class DsymInstallCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        compression = (
+            Compression[args.compression] if args.compression is not None else None
+        )
+
+        bundle_type = FileContainerType.APPLICATION if args.bundle_id else None
         async for install_response in client.install_dsym(
-            args.dsym_path, args.bundle_id
+            args.dsym_path,
+            args.bundle_id,
+            compression,
+            bundle_type,
         ):
             if install_response.progress != 0.0 and not args.json:
                 print("Installed {install_response.progress}%")

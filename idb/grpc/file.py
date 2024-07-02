@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 from idb.common.types import FileContainer, FileContainerType
 from idb.grpc.idb_pb2 import FileContainer as GrpcFileContainer
@@ -35,4 +37,14 @@ def container_to_grpc(container: FileContainer) -> GrpcFileContainer:
         return GrpcFileContainer(kind=GrpcFileContainer.APPLICATION_CONTAINER)
     if container == FileContainerType.AUXILLARY:
         return GrpcFileContainer(kind=GrpcFileContainer.AUXILLARY)
+    if container == FileContainerType.XCTEST:
+        return GrpcFileContainer(kind=GrpcFileContainer.XCTEST)
+    if container == FileContainerType.DYLIB:
+        return GrpcFileContainer(kind=GrpcFileContainer.DYLIB)
+    if container == FileContainerType.DSYM:
+        return GrpcFileContainer(kind=GrpcFileContainer.DSYM)
+    if container == FileContainerType.FRAMEWORK:
+        return GrpcFileContainer(kind=GrpcFileContainer.FRAMEWORK)
+    if container == FileContainerType.SYMBOLS:
+        return GrpcFileContainer(kind=GrpcFileContainer.SYMBOLS)
     return GrpcFileContainer(kind=GrpcFileContainer.NONE)

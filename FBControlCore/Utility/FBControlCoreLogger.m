@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -93,7 +93,7 @@
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
-  message = [FBControlCoreLogger loggableStringLine:message];
+  message = [FBControlCoreLoggerFactory loggableStringLine:message];
   if (!message) {
     return self;
   }
@@ -203,7 +203,7 @@
 
 - (id<FBControlCoreLogger>)log:(NSString *)message
 {
-  message = [FBControlCoreLogger loggableStringLine:message];
+  message = [FBControlCoreLoggerFactory loggableStringLine:message];
   if (!message) {
     return self;
   }
@@ -266,7 +266,7 @@
 
 @end
 
-@implementation FBControlCoreLogger
+@implementation FBControlCoreLoggerFactory
 
 #pragma mark Public
 
@@ -286,7 +286,7 @@
 
   // If the system logger will log to stderr in the current build environment or runtime
   // don't bother adding a logger that will additionally log to stderr.
-  if (FBControlCoreLogger.systemLoggerWillLogToStdErr) {
+  if (FBControlCoreLoggerFactory.systemLoggerWillLogToStdErr) {
     return systemLogger;
   }
 

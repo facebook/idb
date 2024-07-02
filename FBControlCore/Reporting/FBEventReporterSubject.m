@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -23,27 +23,28 @@ FBEventType const FBEventTypeFailure = @"failure";
 @synthesize duration = _duration;
 @synthesize message = _message;
 @synthesize size = _size;
+@synthesize reportNativeSwiftMethodCall = _reportNativeSwiftMethodCall;
 
 #pragma mark Initializers
 
 + (instancetype)subjectForEvent:(NSString *)eventName
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete arguments:nil duration:nil size:nil message:nil];
+  return [[FBEventReporterSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete arguments:nil duration:nil size:nil message:nil reportNativeSwiftMethodCall:NO];
 }
 
-+ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments
++ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeStarted arguments:arguments duration:nil size:nil message:nil];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeStarted arguments:arguments duration:nil size:nil message:nil reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
 }
 
-+ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments
++ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess arguments:arguments duration:[self durationMilliseconds:duration] size:size message:nil];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess arguments:arguments duration:[self durationMilliseconds:duration] size:size message:nil reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
 }
 
-+ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments
++ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeFailure arguments:arguments duration:[self durationMilliseconds:duration] size:size message:message];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeFailure arguments:arguments duration:[self durationMilliseconds:duration] size:size message:message reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
 }
 
 + (NSNumber *)durationMilliseconds:(NSTimeInterval)timeInterval
@@ -52,7 +53,7 @@ FBEventType const FBEventTypeFailure = @"failure";
   return @(milliseconds);
 }
 
-- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
 {
   self = [super init];
   if (!self) {
@@ -65,6 +66,7 @@ FBEventType const FBEventTypeFailure = @"failure";
   _duration = duration;
   _size = size;
   _message = message;
+  _reportNativeSwiftMethodCall = reportNativeSwiftMethodCall;
 
   return self;
 }

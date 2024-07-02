@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -102,7 +102,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 
   __block id<FBiOSTargetOperation> tailLogOperation = nil;
   FBFuture<NSNull *> *executionFinished = [FBManagedTestRunStrategy

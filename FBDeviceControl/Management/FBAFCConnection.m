@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -49,22 +49,10 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
 {
   return [[FBFuture
     onQueue:queue resolve:^{
-      AFCConnectionRef afcConnection = calls.Create(
-        0x0,
-        serviceConnection.socket,
-        0x0,
-        AFCConnectionCallback,
-        0x0
-      );
-      // We need to apply the Secure Context if it's present on the service connection.
-      AMSecureIOContext secureIOContext = serviceConnection.secureIOContext;
-      if (secureIOContext != NULL) {
-        calls.SetSecureContext(afcConnection, secureIOContext);
-      }
-      FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:calls logger:logger];
+      FBAFCConnection *connection = [serviceConnection asAFCConnectionWithCalls:calls callback:AFCConnectionCallback logger:logger];
       if (![connection connectionIsValid]) {
         return [[FBDeviceControlError
-          describeFormat:@"Created AFC Connection %@ is not valid", afcConnection]
+          describeFormat:@"Created AFC Connection %@ is not valid", connection]
           failFuture];
       }
       return [FBFuture futureWithResult:connection];
@@ -77,21 +65,21 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
 
 #pragma mark Public Methods
 
-- (BOOL)copyFromHost:(NSURL *)url toContainerPath:(NSString *)containerPath error:(NSError **)error
+- (BOOL)copyFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error
 {
-  NSNumber *isDir;
-  if (![url getResourceValue:&isDir forKey:NSURLIsDirectoryKey error:error]) {
+  BOOL isDir;
+  if (![NSFileManager.defaultManager fileExistsAtPath:hostPath isDirectory:&isDir]) {
     return NO;
   }
-  if (isDir.boolValue) {
-    containerPath = [containerPath stringByAppendingPathComponent:url.lastPathComponent];
+  if (isDir) {
+    containerPath = [containerPath stringByAppendingPathComponent:hostPath.lastPathComponent];
     BOOL success = [self createDirectory:containerPath error:error];
     if (!success) {
       return NO;
     }
-    return [self copyContentsOfHostDirectory:url toContainerPath:containerPath error:error];
+    return [self copyContentsOfHostDirectory:hostPath toContainerPath:containerPath error:error];
   } else {
-    return [self copyFileFromHost:url toContainerPath:[containerPath stringByAppendingPathComponent:url.lastPathComponent] error:error];
+    return [self copyFileFromHost:hostPath toContainerPath:[containerPath stringByAppendingPathComponent:hostPath.lastPathComponent] error:error];
   }
 }
 
@@ -224,13 +212,13 @@ const char *DoubleDot = "..";
 
 #pragma mark Private
 
-- (BOOL)copyFileFromHost:(NSURL *)path toContainerPath:(NSString *)containerPath error:(NSError **)error
+- (BOOL)copyFileFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error
 {
-  [self.logger logFormat:@"Copying %@ to %@", path, containerPath];
-  NSData *data = [NSData dataWithContentsOfURL:path];
+  [self.logger logFormat:@"Copying %@ to %@", hostPath, containerPath];
+  NSData *data = [NSData dataWithContentsOfFile:hostPath];
   if (!data) {
     return [[FBDeviceControlError
-      describeFormat:@"Could not find file on host: %@", path]
+      describeFormat:@"Could not find file on host: %@", hostPath]
       failBool:error];
   }
 
@@ -258,28 +246,28 @@ const char *DoubleDot = "..";
       describeFormat:@"Error when writing file %@: %@", containerPath, [self errorMessageWithCode:writeResult]]
       failBool:error];
   }
-  [self.logger logFormat:@"Copied from %@ to %@", path, containerPath];
+  [self.logger logFormat:@"Copied from %@ to %@", hostPath, containerPath];
   return YES;
 }
 
-- (BOOL)copyContentsOfHostDirectory:(NSURL *)path toContainerPath:(NSString *)containerPath error:(NSError **)error
+- (BOOL)copyContentsOfHostDirectory:(NSString *)hostDirectory toContainerPath:(NSString *)containerPath error:(NSError **)error
 {
-  [self.logger logFormat:@"Copying from %@ to %@", path, containerPath];
+  [self.logger logFormat:@"Copying from %@ to %@", hostDirectory, containerPath];
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSDirectoryEnumerator<NSURL *> *urls = [fileManager
-    enumeratorAtURL:path
+    enumeratorAtURL:[NSURL fileURLWithPath:hostDirectory]
     includingPropertiesForKeys:@[NSURLIsDirectoryKey]
     options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
     errorHandler:NULL];
 
   for (NSURL *url in urls) {
-    BOOL success = [self copyFromHost:url toContainerPath:containerPath error:error];
+    BOOL success = [self copyFromHost:url.path toContainerPath:containerPath error:error];
     if (!success) {
-      [self.logger logFormat:@"Failed to copy %@ to %@ with error %@", path, containerPath, *error];
+      [self.logger logFormat:@"Failed to copy %@ to %@ with error %@", url, containerPath, *error];
       return NO;
     }
   }
-  [self.logger logFormat:@"Copied from %@ to %@", path, containerPath];
+  [self.logger logFormat:@"Copied from %@ to %@", hostDirectory, containerPath];
   return YES;
 }
 

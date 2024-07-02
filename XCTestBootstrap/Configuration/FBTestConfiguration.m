@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,10 +9,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <XCTest/XCTestConfiguration.h>
-#import <XCTest/XCTTestIdentifier.h>
-#import <XCTest/XCTTestIdentifierSet.h>
-#import <XCTest/XCTTestIdentifierSetBuilder.h>
+#import <XCTestPrivate/XCTCapabilitiesBuilder.h>
+#import <XCTestPrivate/XCTestConfiguration.h>
+#import <XCTestPrivate/XCTTestIdentifier.h>
+#import <XCTestPrivate/XCTTestIdentifierSet.h>
+#import <XCTestPrivate/XCTTestIdentifierSetBuilder.h>
 
 #import <objc/runtime.h>
 
@@ -39,16 +40,21 @@
   testConfiguration.reportActivities = reportActivities;
   testConfiguration.testsDrivenByIDE = NO;
   testConfiguration.testApplicationDependencies = testApplicationDependencies;
-  
 
-  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
+  XCTCapabilitiesBuilder *capabilitiesBuilder = [objc_lookUpClass("XCTCapabilitiesBuilder") new];
+  [capabilitiesBuilder registerCapability:@"XCTIssue capability"];
+  [capabilitiesBuilder registerCapability:@"ubiquitous test identifiers"];
+  testConfiguration.IDECapabilities = [capabilitiesBuilder capabilities];
+
+  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration requiringSecureCoding:NO error:nil];
 
   // Write it to file.
-  NSString *savePath = [testBundlePath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
-  if (![data writeToFile:savePath options:NSDataWritingAtomic error:error]) {
+  NSString *testBundleContainerPath = testBundlePath.stringByDeletingLastPathComponent;
+  NSString *testConfigPath = [testBundleContainerPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
+  if (![data writeToFile:testConfigPath options:NSDataWritingAtomic error:error]) {
     return nil;
   }
-  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting];
+  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:testConfigPath uiTesting:uiTesting xcTestConfiguration:testConfiguration];
 }
 
 + (void) setTestsToRun: (NSSet<NSString *> *) toRun andTestsToSkip: (NSSet<NSString *> *) toSkip to: (XCTestConfiguration *) configuration
@@ -67,28 +73,30 @@
   if (tests == nil) {
     return nil;
   }
-  
+
   Class XCTTestIdentifierSetBuilder_class = objc_lookUpClass("XCTTestIdentifierSetBuilder");
   XCTTestIdentifierSetBuilder *b = [[XCTTestIdentifierSetBuilder_class alloc] init];
   Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");;
   for (NSString *test in tests) {
-    [b addTestIdentifier: [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test]];
+    XCTTestIdentifier *identifier = [[XCTTestIdentifier_class alloc] initWithStringRepresentation: test preserveModulePrefix:YES];
+    [b addTestIdentifier: identifier];
   }
-  
+
   return b.testIdentifierSet;
 }
 
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   return [[self alloc]
     initWithSessionIdentifier:sessionIdentifier
     moduleName:moduleName
     testBundlePath:testBundlePath
     path:path
-    uiTesting:uiTesting];
+    uiTesting:uiTesting
+    xcTestConfiguration:xcTestConfiguration];
 }
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration
 {
   self = [super init];
   if (!self) {
@@ -100,6 +108,7 @@
   _testBundlePath = testBundlePath;
   _path = path;
   _shouldInitializeForUITesting = uiTesting;
+  _xcTestConfiguration=xcTestConfiguration;
 
   return self;
 }

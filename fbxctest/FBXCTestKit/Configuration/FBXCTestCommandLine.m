@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -67,7 +67,8 @@
       testBundlePath:testBundlePath
       runnerAppPath:runnerAppPath
       waitForDebugger:waitForDebugger
-      timeout:timeout];
+      timeout:timeout
+      architectures: [NSSet setWithArray:@[@"arm64", @"x86_64"]]];
   } else if ([argumentSet containsObject:@"-logicTest"]) {
     configuration = [FBLogicTestConfiguration
       configurationWithEnvironment:environment
@@ -79,7 +80,8 @@
       mirroring:FBLogicTestMirrorFileLogs
       coverageConfiguration:nil
       binaryPath:nil
-      logDirectoryPath:nil];
+      logDirectoryPath:nil
+      architectures:[NSSet setWithArray:@[@"arm64", @"x86_64"]]];
   } else if ([argumentSet containsObject:@"-appTest"]) {
     NSMutableDictionary<NSString *, NSString *> *allEnvironment = [NSProcessInfo.processInfo.environment mutableCopy];
     [allEnvironment addEntriesFromDictionary:environment];

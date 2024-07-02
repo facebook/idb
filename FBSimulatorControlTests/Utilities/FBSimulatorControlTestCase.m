@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -105,14 +105,14 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 - (void)setUp
 {
   self.continueAfterFailure = NO;
-  self.simulatorConfiguration = [FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModeliPhoneSE_1stGeneration];
+  self.simulatorConfiguration = [FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModeliPhone8];
   self.bootConfiguration = [[FBSimulatorBootConfiguration alloc] initWithOptions:FBSimulatorControlTestCase.bootOptions environment:@{}];
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
 }
 
 - (void)tearDown
 {
-  [[self.control.set killAll] await:nil];
+  [[self.control.set shutdownAll] await:nil];
   _control = nil;
 }
 

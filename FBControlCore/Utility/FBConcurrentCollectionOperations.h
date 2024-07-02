@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBConcurrentCollectionOperations : NSObject
 
 /**
- Generate an array of objects from indeces. Indeces where nil is returned will contain `NSNull.null`
+ Generate an array of objects from indices. Indices where nil is returned will contain `NSNull.null`
 
  @param count the number of generations to execute
  @param block the block to generate objects from.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -166,16 +166,24 @@
 
 - (IOSurface *)extractImmediatelyAvailableSurface
 {
+  IOSurface *framebufferSurface = self.surface.framebufferSurface;
+  if (framebufferSurface) {
+    return framebufferSurface;
+  }
   return self.surface.ioSurface;
 }
 
 - (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
 {
-  [self.surface registerCallbackWithUUID:uuid ioSurfaceChangeCallback:^(IOSurface *surface) {
+  void (^ioSurfaceChanged)(IOSurface *) = ^void(IOSurface *surface) {
     dispatch_async(queue, ^{
       [consumer didChangeIOSurface:surface];
     });
-  }];
+  };
+
+  [self.surface registerCallbackWithUUID:uuid ioSurfacesChangeCallback:ioSurfaceChanged];
+  [self.surface registerCallbackWithUUID:uuid ioSurfaceChangeCallback:ioSurfaceChanged];
+
   [self.surface registerCallbackWithUUID:uuid damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
     dispatch_async(queue, ^{
       for (NSValue *value in frames) {
@@ -187,7 +195,9 @@
 
 - (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid
 {
+  [self.surface unregisterIOSurfacesChangeCallbackWithUUID:uuid];
   [self.surface unregisterIOSurfaceChangeCallbackWithUUID:uuid];
+
   [self.surface unregisterDamageRectanglesCallbackWithUUID:uuid];
 }
 

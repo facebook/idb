@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,10 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
  Creates and returns an Array of Numbers from an index set.
  Index Sets can be used for storing a collection of Integers, as can Arrays of Numbers.
 
- @param indeces the indeces to extract numbers from.
- @return an Array of Numbers of the indeces in the index set.
+ @param indices the indices to extract numbers from.
+ @return an Array of Numbers of the indices in the index set.
  */
-+ (NSArray<NSNumber *> *)arrayFromIndeces:(NSIndexSet *)indeces;
++ (NSArray<NSNumber *> *)arrayFromIndices:(NSIndexSet *)indices;
 
 /**
  Returns a recursive copy of the dictionary, filtering out any elements that are not JSON-Serializable. Values that are acceptable are:
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param array an array of numbers to extract values from
  @return an Index Set of the values in the array.
  */
-+ (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array;
++ (NSIndexSet *)indicesFromArray:(NSArray<NSNumber *> *)array;
 
 /**
  objectForKey, converting NSNull to nil.

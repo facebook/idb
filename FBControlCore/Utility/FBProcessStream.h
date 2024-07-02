@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,6 +36,11 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  Whether the attachment represents an input or an output.
  */
 @property (nonatomic, assign, readonly) FBProcessStreamAttachmentMode mode;
+
+/**
+ Checks fileDescriptor status and closes it if necessary;
+ */
+-(void)close;
 
 @end
 

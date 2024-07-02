@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -219,7 +219,7 @@
 - (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID
 {
   NSError *error = nil;
-  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@\\[|$",[NSRegularExpression escapedPatternForString:bundleID]];
+  NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@(\\[|$)",[NSRegularExpression escapedPatternForString:bundleID]];
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
     return [[FBSimulatorError
@@ -454,7 +454,8 @@ static NSString *const KeyDataContainer = @"DataContainer";
 
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:[FBInstalledApplication installTypeFromString:typeString signerIdentity:nil]
+    installTypeString:typeString
+    signerIdentity:nil
     dataContainer:dataContainer.path];
 }
 
@@ -479,7 +480,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
          failFuture];
       }
       NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-      NSSet<NSString *> *supportedArchitectures = FBiOSTargetConfiguration.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+      NSSet<NSString *> *supportedArchitectures = [FBiOSTargetConfiguration baseArchsToCompatibleArch:self.simulator.architectures];
       if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
         return [[FBSimulatorError
           describeFormat:

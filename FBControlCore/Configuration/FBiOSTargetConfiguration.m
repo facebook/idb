@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -34,6 +34,18 @@ FBDeviceModel const FBDeviceModeliPhone12mini = @"iPhone 12 mini";
 FBDeviceModel const FBDeviceModeliPhone12 = @"iPhone 12";
 FBDeviceModel const FBDeviceModeliPhone12Pro = @"iPhone 12 Pro";
 FBDeviceModel const FBDeviceModeliPhone12ProMax = @"iPhone 12 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone13mini = @"iPhone 13 mini";
+FBDeviceModel const FBDeviceModeliPhone13 = @"iPhone 13";
+FBDeviceModel const FBDeviceModeliPhone13Pro = @"iPhone 13 Pro";
+FBDeviceModel const FBDeviceModeliPhone13ProMax = @"iPhone 13 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone14 = @"iPhone 14";
+FBDeviceModel const FBDeviceModeliPhone14Plus = @"iPhone 14 Plus";
+FBDeviceModel const FBDeviceModeliPhone14Pro = @"iPhone 14 Pro";
+FBDeviceModel const FBDeviceModeliPhone14ProMax = @"iPhone 14 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone15 = @"iPhone 15";
+FBDeviceModel const FBDeviceModeliPhone15Plus = @"iPhone 15 Plus";
+FBDeviceModel const FBDeviceModeliPhone15Pro = @"iPhone 15 Pro";
+FBDeviceModel const FBDeviceModeliPhone15ProMax = @"iPhone 15 Pro Max";
 FBDeviceModel const FBDeviceModeliPodTouch_7thGeneration = @"iPod touch (7th generation)";
 FBDeviceModel const FBDeviceModeliPad2 = @"iPad 2";
 FBDeviceModel const FBDeviceModeliPadRetina = @"iPad Retina";
@@ -217,10 +229,10 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 + (instancetype)genericWithName:(NSString *)name
 {
-  return [[self alloc] initWithModel:name productTypes:NSSet.set deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64 family:FBControlCoreProductFamilyUnknown];
+  return [[self alloc] initWithModel:name productTypes:NSSet.set deviceArchitecture:FBArchitectureArm64 family:FBControlCoreProductFamilyUnknown];
 }
 
-- (instancetype)initWithModel:(FBDeviceModel)model productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture family:(FBControlCoreProductFamily)family
+- (instancetype)initWithModel:(FBDeviceModel)model productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture family:(FBControlCoreProductFamily)family
 {
   self = [super init];
   if (!self) {
@@ -230,7 +242,6 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   _model = model;
   _productTypes = productTypes;
   _deviceArchitecture = deviceArchitecture;
-  _simulatorArchitecture = simulatorArchitecture;
   _family = family;
 
   return self;
@@ -265,34 +276,34 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
 #pragma mark Helpers
 
-+ (instancetype)iPhoneWithModel:(FBDeviceModel)model productType:(NSString *)productType deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
++ (instancetype)iPhoneWithModel:(FBDeviceModel)model productType:(NSString *)productType deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
-  return [self iPhoneWithModel:model productTypes:@[productType] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture];
+  return [self iPhoneWithModel:model productTypes:@[productType] deviceArchitecture:deviceArchitecture];
 }
 
-+ (instancetype)iPhoneWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
++ (instancetype)iPhoneWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
-  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyiPhone];
+  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyiPhone];
 }
 
-+ (instancetype)iPadWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
++ (instancetype)iPadWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
-  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyiPad];
+  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyiPad];
 }
 
-+ (instancetype)tvWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
++ (instancetype)tvWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
-  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyAppleTV];
+  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyAppleTV];
 }
 
-+ (instancetype)watchWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
++ (instancetype)watchWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
-  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyAppleWatch];
+  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyAppleWatch];
 }
 
 + (instancetype)genericWithModel:(NSString *)model
 {
-  return [[self alloc] initWithModel:model productTypes:[NSSet set] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64 family:FBControlCoreProductFamilyUnknown];
+  return [[self alloc] initWithModel:model productTypes:[NSSet set] deviceArchitecture:FBArchitectureArm64 family:FBControlCoreProductFamilyUnknown];
 }
 
 @end
@@ -434,77 +445,89 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   static NSArray<FBDeviceType *> *deviceConfigurations;
   dispatch_once(&onceToken, ^{
     deviceConfigurations = @[
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone4s productType:@"iPhone4,1" deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5 productTypes:@[@"iPhone5,1", @"iPhone5,2"] deviceArchitecture:FBArchitectureArmv7s simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5c productTypes:@[@"iPhone5,3"] deviceArchitecture:FBArchitectureArmv7s simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5s productTypes:@[@"iPhone6,1", @"iPhone6,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6 productType:@"iPhone7,2" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6Plus productType:@"iPhone7,1" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6S productType:@"iPhone8,1" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6SPlus productType:@"iPhone8,2" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_1stGeneration productType:@"iPhone8,4" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_2ndGeneration productType:@"iPhone12,8" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7Plus productTypes:@[@"iPhone9,2", @"iPhone9,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8 productTypes:@[@"iPhone10,1", @"iPhone10,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8Plus productTypes:@[@"iPhone10,2", @"iPhone10,5"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneX productTypes:@[@"iPhone10,3", @"iPhone10,6"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXs productTypes:@[@"iPhone11,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXsMax productTypes:@[@"iPhone11,6"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXr productTypes:@[@"iPhone11,8"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11 productTypes:@[@"iPhone12,1"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11Pro productTypes:@[@"iPhone12,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11ProMax productTypes:@[@"iPhone12,5"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12mini productTypes:@[@"iPhone13,1"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12 productTypes:@[@"iPhone13,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12Pro productTypes:@[@"iPhone13,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12ProMax productTypes:@[@"iPhone13,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithModel:FBDeviceModeliPodTouch_7thGeneration productTypes:@[@"iPod9,1"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir productTypes:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir2 productTypes:@[@"iPad5,3", @"iPad5,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir_3rdGeneration productTypes:@[@"iPad11,3", @"iPad11,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir_4thGeneration productTypes:@[@"iPad13,1", @"iPad13,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro productTypes:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_9_7_Inch productTypes:@[@"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch productTypes:@[@"iPad6,7", @"iPad6,8"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPad_5thGeneration productTypes:@[@"iPad6,11", @"iPad6,12"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_2ndGeneration productTypes:@[@"iPad7,1", @"iPad7,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_10_5_Inch productTypes:@[@"iPad7,3", @"iPad7,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPad_6thGeneration productTypes:@[@"iPad7,5", @"iPad7,6"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPad_7thGeneration productTypes:@[@"iPad7,11", @"iPad7,12"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPad_8thGeneration productTypes:@[@"iPad11,6", @"iPad11,7"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_3rdGeneration productTypes:@[@"iPad8,5", @"iPad8,6", @"iPad8,7", @"iPad8,8"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_4thGeneration productTypes:@[@"iPad8,11", @"iPad8,12"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_1stGeneration productTypes:@[@"iPad8,1", @"iPad8,2", @"iPad8,3", @"iPad8,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9nch_1stGeneration productTypes:@[@"iPad8,11", @"iPad8,12"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9nch_5thGeneration productTypes:@[@"iPad13,8", @"iPad13,9", @"iPad13,10", @"iPad13,11"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_2ndGeneration productTypes:@[@"iPad8,9", @"iPad8,10"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_3ndGeneration productTypes:@[@"iPad13,4", @"iPad13,5", @"iPad13,6", @"iPad13,7"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_2 productTypes:@[@"iPad4,4", @"iPad4,5", @"iPad4,6",] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_3 productTypes:@[@"iPad4,7", @"iPad4,8", @"iPad4,9"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_4 productTypes:@[@"iPad5,1", @"iPad5,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_5 productTypes:@[@"iPad11,1", @"iPad11,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType tvWithModel:FBDeviceModelAppleTV productTypes:@[@"AppleTV5,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4K productTypes:@[@"AppleTV6,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4KAt1080p productTypes:@[@"AppleTV6,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4K_2ndGeneration productTypes:@[@"AppleTV11,1"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4KAt1080p_2ndGeneration productTypes:@[@"AppleTV11,1"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatch38mm productTypes:@[@"Watch1,1"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatch42mm productTypes:@[@"Watch1,2"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSE_40mm productTypes:@[@"Watch1,1"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSE_44mm productTypes:@[@"Watch1,2"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries2_38mm productTypes:@[@"Watch2,1"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries2_42mm productTypes:@[@"Watch2,2"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries3_38mm productTypes:@[@"Watch3,1"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries3_42mm productTypes:@[@"Watch3,2"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries4_40mm productTypes:@[@"Watch4,1", @"Watch4,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries4_44mm productTypes:@[@"Watch4,2", @"Watch4,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries5_40mm productTypes:@[@"Watch5,1", @"Watch5,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries5_44mm productTypes:@[@"Watch5,2", @"Watch5,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_40mm productTypes:@[@"Watch6,1", @"Watch6,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_44mm productTypes:@[@"Watch6,2", @"Watch6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureI386],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone4s productType:@"iPhone4,1" deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5 productTypes:@[@"iPhone5,1", @"iPhone5,2"] deviceArchitecture:FBArchitectureArmv7s],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5c productTypes:@[@"iPhone5,3"] deviceArchitecture:FBArchitectureArmv7s],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone5s productTypes:@[@"iPhone6,1", @"iPhone6,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6 productType:@"iPhone7,2" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6Plus productType:@"iPhone7,1" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6S productType:@"iPhone8,1" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone6SPlus productType:@"iPhone8,2" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_1stGeneration productType:@"iPhone8,4" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneSE_2ndGeneration productType:@"iPhone12,8" deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2", @"iPhone9,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone7Plus productTypes:@[@"iPhone9,2", @"iPhone9,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8 productTypes:@[@"iPhone10,1", @"iPhone10,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone8Plus productTypes:@[@"iPhone10,2", @"iPhone10,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneX productTypes:@[@"iPhone10,3", @"iPhone10,6"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXs productTypes:@[@"iPhone11,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXsMax productTypes:@[@"iPhone11,6"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhoneXr productTypes:@[@"iPhone11,8"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11 productTypes:@[@"iPhone12,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11Pro productTypes:@[@"iPhone12,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone11ProMax productTypes:@[@"iPhone12,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12mini productTypes:@[@"iPhone13,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12 productTypes:@[@"iPhone13,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12Pro productTypes:@[@"iPhone13,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone12ProMax productTypes:@[@"iPhone13,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13mini productTypes:@[@"iPhone14,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13 productTypes:@[@"iPhone14,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13Pro productTypes:@[@"iPhone14,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone13ProMax productTypes:@[@"iPhone14,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14 productTypes:@[@"iPhone14,7"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14Plus productTypes:@[@"iPhone14,8"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14Pro productTypes:@[@"iPhone15,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone14ProMax productTypes:@[@"iPhone15,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15 productTypes:@[@"iPhone15,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15Plus productTypes:@[@"iPhone15,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15Pro productTypes:@[@"iPhone16,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone15ProMax productTypes:@[@"iPhone16,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPodTouch_7thGeneration productTypes:@[@"iPod9,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir productTypes:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir2 productTypes:@[@"iPad5,3", @"iPad5,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir_3rdGeneration productTypes:@[@"iPad11,3", @"iPad11,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadAir_4thGeneration productTypes:@[@"iPad13,1", @"iPad13,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro productTypes:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_9_7_Inch productTypes:@[@"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch productTypes:@[@"iPad6,7", @"iPad6,8"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPad_5thGeneration productTypes:@[@"iPad6,11", @"iPad6,12"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_2ndGeneration productTypes:@[@"iPad7,1", @"iPad7,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_10_5_Inch productTypes:@[@"iPad7,3", @"iPad7,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPad_6thGeneration productTypes:@[@"iPad7,5", @"iPad7,6"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPad_7thGeneration productTypes:@[@"iPad7,11", @"iPad7,12"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPad_8thGeneration productTypes:@[@"iPad11,6", @"iPad11,7"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_3rdGeneration productTypes:@[@"iPad8,5", @"iPad8,6", @"iPad8,7", @"iPad8,8"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9_Inch_4thGeneration productTypes:@[@"iPad8,11", @"iPad8,12"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_1stGeneration productTypes:@[@"iPad8,1", @"iPad8,2", @"iPad8,3", @"iPad8,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9nch_1stGeneration productTypes:@[@"iPad8,11", @"iPad8,12"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9nch_5thGeneration productTypes:@[@"iPad13,8", @"iPad13,9", @"iPad13,10", @"iPad13,11"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_2ndGeneration productTypes:@[@"iPad8,9", @"iPad8,10"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_3ndGeneration productTypes:@[@"iPad13,4", @"iPad13,5", @"iPad13,6", @"iPad13,7"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_2 productTypes:@[@"iPad4,4", @"iPad4,5", @"iPad4,6",] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_3 productTypes:@[@"iPad4,7", @"iPad4,8", @"iPad4,9"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_4 productTypes:@[@"iPad5,1", @"iPad5,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_5 productTypes:@[@"iPad11,1", @"iPad11,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType tvWithModel:FBDeviceModelAppleTV productTypes:@[@"AppleTV5,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4K productTypes:@[@"AppleTV6,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4KAt1080p productTypes:@[@"AppleTV6,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4K_2ndGeneration productTypes:@[@"AppleTV11,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType tvWithModel:FBDeviceModelAppleTV4KAt1080p_2ndGeneration productTypes:@[@"AppleTV11,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatch38mm productTypes:@[@"Watch1,1"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatch42mm productTypes:@[@"Watch1,2"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSE_40mm productTypes:@[@"Watch1,1"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSE_44mm productTypes:@[@"Watch1,2"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries2_38mm productTypes:@[@"Watch2,1"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries2_42mm productTypes:@[@"Watch2,2"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries3_38mm productTypes:@[@"Watch3,1"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries3_42mm productTypes:@[@"Watch3,2"] deviceArchitecture:FBArchitectureArmv7],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries4_40mm productTypes:@[@"Watch4,1", @"Watch4,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries4_44mm productTypes:@[@"Watch4,2", @"Watch4,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries5_40mm productTypes:@[@"Watch5,1", @"Watch5,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries5_44mm productTypes:@[@"Watch5,2", @"Watch5,4"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_40mm productTypes:@[@"Watch6,1", @"Watch6,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_44mm productTypes:@[@"Watch6,2", @"Watch6,4"] deviceArchitecture:FBArchitectureArm64],
 
     ];
   });
@@ -656,15 +679,23 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   return mapping;
 }
 
-+ (NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *)baseArchToCompatibleArch
++ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures
 {
-  return @{
+
+  NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *mapping = @{
+    FBArchitectureArm64e : [NSSet setWithArray:@[FBArchitectureArm64e, FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7s : [NSSet setWithArray:@[FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArmv7 : [NSSet setWithArray:@[FBArchitectureArmv7]],
     FBArchitectureI386 : [NSSet setWithObject:FBArchitectureI386],
     FBArchitectureX86_64 : [NSSet setWithArray:@[FBArchitectureX86_64, FBArchitectureI386]],
   };
+
+  NSMutableSet<FBArchitecture> *result = [NSMutableSet new];
+  for (FBArchitecture arch in architectures) {
+    [result unionSet:mapping[arch]];
+  }
+  return result;
 }
 
 @end

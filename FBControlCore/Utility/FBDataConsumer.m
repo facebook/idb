@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,6 +11,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
+#import <stdatomic.h>
 
 @interface FBDataConsumerAdaptor ()
 
@@ -162,7 +163,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, strong, nullable, readwrite) dispatch_group_t group;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
-@property (atomic, readonly) int64_t numPendingTasks;
+@property _Atomic int64_t numPendingTasks;
 
 @end
 
@@ -178,20 +179,17 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   _queue = queue;
   _group = dispatch_group_create();
   _consumer = consumer;
-  _numPendingTasks = 0;
+atomic_init(&_numPendingTasks, 0);
 
   return self;
 }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
 
 - (void)consumeData:(NSData *)data
 {
   void (^consumer)(NSData *) = nil;
   dispatch_queue_t queue;
   dispatch_group_t group;
-  OSAtomicIncrement64(&_numPendingTasks);
+  atomic_fetch_add(&_numPendingTasks, 1);
   @synchronized (self)
   {
     consumer = self.consumer;
@@ -203,11 +201,11 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
     if (queue) {
       dispatch_group_async(group, queue, ^{
         consumer(data);
-        OSAtomicDecrement64(&self->_numPendingTasks);
+        atomic_fetch_sub(&self->_numPendingTasks, 1);
       });
     } else {
       consumer(data);
-      OSAtomicDecrement64(&_numPendingTasks);
+        atomic_fetch_sub(&_numPendingTasks, 1);
     }
   }
 }
@@ -224,8 +222,6 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
     self.queue = nil;
   }
 }
-
-#pragma clang diagnostic pop
 
 @end
 

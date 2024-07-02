@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-ignore-all-errors
 
 import asyncio
 import functools
@@ -11,7 +13,7 @@ import logging
 import unittest
 import unittest.mock as _mock
 import warnings
-from typing import Awaitable, Callable, TypeVar, cast
+from typing import Awaitable, Callable, cast, TypeVar
 
 # pyre-ignore
 from unittest.case import _Outcome
@@ -265,7 +267,7 @@ class AsyncContextManagerMock:
                     return_value=AsyncContextManagerMock(return_value=m)
                 ):
                     r = await target()
-                    self.assertEquals(r, 'fff')
+                    self.assertEqual(r, 'fff')
     """
 
     def __init__(self, *args, **kwargs):

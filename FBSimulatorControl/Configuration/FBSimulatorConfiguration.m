@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -87,16 +87,15 @@
 
   return [self.deviceModel isEqualToString:object.deviceModel] &&
          [self.osVersionString isEqualToString:object.osVersionString];
-  
+
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@' | Architecture '%@'",
+    @"Device '%@' | OS Version '%@'",
     self.deviceModel,
-    self.osVersionString,
-    self.architecture
+    self.osVersionString
   ];
 }
 
@@ -129,9 +128,11 @@
 - (instancetype)withDevice:(FBDeviceType *)device
 {
   NSParameterAssert(device);
-  // Use the current os if compatible
+  // Use the current os if compatible.
+  // If os.families is empty, it was probably created via [FBOSVersion +genericWithName:]
+  // which has no information about families; in that case we assume it is compatible.
   FBOSVersion *os = self.os;
-  if ([FBSimulatorConfiguration device:device andOSPairSupported:os]) {
+  if (!os.families.count || [os.families containsObject:@(device.family)]) {
     return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
   }
   // Attempt to find the newest OS for this device, otherwise use what we had before.
@@ -141,11 +142,6 @@
 
 #pragma mark Private
 
-+ (BOOL)device:(FBDeviceType *)device andOSPairSupported:(FBOSVersion *)os
-{
-  return [os.families containsObject:@(device.family)];
-}
-
 - (FBDeviceModel)deviceModel
 {
   return self.device.model;
@@ -154,11 +150,6 @@
 - (FBOSVersionName)osVersionString
 {
   return self.os.name;
-}
-
-- (FBArchitecture)architecture
-{
-  return self.device.simulatorArchitecture;
 }
 
 @end

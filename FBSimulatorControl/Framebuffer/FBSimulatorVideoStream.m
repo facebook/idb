@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,8 +12,20 @@
 #import <FBControlCore/FBControlCore.h>
 #import <IOSurface/IOSurface.h>
 #import <VideoToolbox/VideoToolbox.h>
+#import <Accelerate/Accelerate.h>
 
 #import "FBSimulatorError.h"
+
+@interface FBVideoCompressorCallbackSourceFrame : NSObject
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber;
+- (void)dealloc;
+
+@property (nonatomic, readonly) NSUInteger frameNumber;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
+
+@end
+
 
 @protocol FBSimulatorVideoStreamFramePusher <NSObject>
 
@@ -25,9 +37,14 @@
 
 @interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer;
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer scaleFactor:(NSNumber *)scaleFactor;
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+/**
+ The scale factor between 0-1. nil for no scaling.
+ */
+@property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
 
 @end
 
@@ -37,6 +54,7 @@
 
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -45,14 +63,91 @@
 
 @end
 
+static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceBuffer, NSNumber *scaleFactor) {
+  size_t sourceWidth = CVPixelBufferGetWidth(sourceBuffer);
+  size_t sourceHeight = CVPixelBufferGetHeight(sourceBuffer);
+  
+  size_t destinationWidth = (size_t) floor(scaleFactor.doubleValue * (double)sourceWidth);
+  size_t destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double) sourceHeight);
+  
+  NSDictionary<NSString *, id> *pixelBufferAttributes = @{
+    (NSString *) kCVPixelBufferWidthKey: @(destinationWidth),
+    (NSString *) kCVPixelBufferHeightKey: @(destinationHeight),
+    (NSString *) kCVPixelBufferPixelFormatTypeKey: @(CVPixelBufferGetPixelFormatType(sourceBuffer)),
+  };
+  
+  NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
+    (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(100), // we will have at least 100 pixel buffers in the pool
+    (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(250), // to guard from OOM only 250 pixel buffers are allowed
+  };
+  
+  
+  CVPixelBufferPoolRef scaledPixelBufferPool;
+  CVPixelBufferPoolCreate(nil, (__bridge CFDictionaryRef) pixelBufferPoolAttributes, (__bridge CFDictionaryRef) pixelBufferAttributes, &scaledPixelBufferPool);
+  
+  return scaledPixelBufferPool;
+}
+
+static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
+{
+  size_t width = CVPixelBufferGetWidth(pixelBuffer);
+  size_t height = CVPixelBufferGetHeight(pixelBuffer);
+  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
+  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
+  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
+  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
+  
+  size_t columnLeft;
+  size_t columnRight;
+  size_t rowsTop;
+  size_t rowsBottom;
+  
+  CVPixelBufferGetExtendedPixels(pixelBuffer, &columnLeft, &columnRight, &rowsTop, &rowsBottom);
+  return @{
+    @"width" : @(width),
+    @"height" : @(height),
+    @"row_size" : @(rowSize),
+    @"frame_size" : @(frameSize),
+    @"padding_column_left" : @(columnLeft),
+    @"padding_column_right" : @(columnRight),
+    @"padding_row_top" : @(rowsTop),
+    @"padding_row_bottom" : @(rowsBottom),
+    @"format" : pixelFormatString,
+  };
+}
+
+static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CVPixelBufferRef destinationBuffer) {
+    CVPixelBufferLockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
+    CVPixelBufferLockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
+ 
+    vImage_Buffer scaleInput;
+    scaleInput.width =  CVPixelBufferGetWidth(sourceBuffer);
+    scaleInput.height = CVPixelBufferGetHeight(sourceBuffer);
+    scaleInput.rowBytes = CVPixelBufferGetBytesPerRow(sourceBuffer);
+    scaleInput.data = CVPixelBufferGetBaseAddress(sourceBuffer);
+  
+    vImage_Buffer scaleOutput;
+    scaleOutput.width =  CVPixelBufferGetWidth(destinationBuffer);
+    scaleOutput.height = CVPixelBufferGetHeight((destinationBuffer));
+    scaleOutput.rowBytes = CVPixelBufferGetBytesPerRow(destinationBuffer);
+    scaleOutput.data = CVPixelBufferGetBaseAddress(destinationBuffer);
+    
+    vImageScale_ARGB8888(&scaleInput, &scaleOutput, NULL, 0); // implicitly assumes a 4-channel image, like BGRA/RGBA
+  
+    CVPixelBufferUnlockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
+    CVPixelBufferUnlockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
+}
+
 static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
+  (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, nil);
 }
 
 static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
+  (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
@@ -60,7 +155,8 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
 
 static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
-  NSUInteger frameNumber = (NSUInteger) sourceFrameRefCon;
+  FBVideoCompressorCallbackSourceFrame *sourceFrame = (__bridge_transfer FBVideoCompressorCallbackSourceFrame*) sourceFrameRefCon;
+  NSUInteger frameNumber = sourceFrame.frameNumber;
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   if (frameNumber == 0) {
     CMFormatDescriptionRef formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
@@ -71,9 +167,32 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, nil);
 }
 
+@implementation FBVideoCompressorCallbackSourceFrame
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _pixelBuffer = pixelBuffer;
+  _frameNumber = frameNumber;
+  
+  return self;
+}
+
+- (void) dealloc
+{
+  CVPixelBufferRelease(_pixelBuffer);
+}
+
+@end
+
+
 @implementation FBSimulatorVideoStreamFramePusher_Bitmap
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer scaleFactor:(NSNumber *)scaleFactor
 {
   self = [super init];
   if (!self) {
@@ -81,26 +200,44 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   _consumer = consumer;
-
+  _scaleFactor = scaleFactor;
+  
   return self;
 }
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
 {
+  if (self.scaleFactor && [self.scaleFactor isGreaterThan:@0] && [self.scaleFactor isLessThan:@1]) {
+    self.scaledPixelBufferPoolRef = createScaledPixelBufferPool(pixelBuffer, self.scaleFactor);
+  }
   return YES;
 }
 
 - (BOOL)tearDown:(NSError **)error
 {
+  CVPixelBufferPoolRelease(self.scaledPixelBufferPoolRef);
   return YES;
 }
 
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
 {
-  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+  CVPixelBufferRef bufferToWrite = pixelBuffer;
+  CVPixelBufferRef toFree = nil;
+  CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
+  if (bufferPool != nil) {
+    CVPixelBufferRef resizedBuffer;
+    if (kCVReturnSuccess == CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer)) {
+      scaleFromSourceToDestinationBuffer(pixelBuffer, resizedBuffer);
+      bufferToWrite = resizedBuffer;
+      toFree = resizedBuffer;
+    }
+  }
 
-  void *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-  size_t size = CVPixelBufferGetDataSize(pixelBuffer);
+  CVPixelBufferLockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
+  
+  void *baseAddress = CVPixelBufferGetBaseAddress(bufferToWrite);
+  size_t size = CVPixelBufferGetDataSize(bufferToWrite);
+  
   if ([self.consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
     NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
     [self.consumer consumeData:data];
@@ -109,7 +246,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     [self.consumer consumeData:data];
   }
 
-  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+  CVPixelBufferUnlockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
+  CVPixelBufferRelease(toFree);
 
   return YES;
 }
@@ -140,29 +278,37 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   NSDictionary<NSString *, id> * encoderSpecification = @{
     (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
+  
+  if (@available(macOS 12.1, *)) {
+    encoderSpecification = @{
+      (NSString *) kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: @YES,
+      (NSString *) kVTVideoEncoderSpecification_EnableLowLatencyRateControl: @YES,
+    };
+  }
   size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(pixelBuffer);
-  int32_t destinationWidth = (int32_t) sourceWidth;
-  int32_t destinationHeight = (int32_t) sourceHeight;
-  NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
-    (NSString *) kCVPixelBufferWidthKey: @(sourceWidth),
-    (NSString *) kCVPixelBufferHeightKey: @(sourceHeight),
-  };
+  size_t destinationWidth = sourceWidth;
+  size_t destinationHeight = sourceHeight;
   NSNumber *scaleFactor = self.configuration.scaleFactor;
   if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
-    destinationWidth = (int32_t) floor(scaleFactor.doubleValue * sourceWidth);
-    destinationHeight = (int32_t) floor(scaleFactor.doubleValue * sourceHeight);
-    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%d/h=%d", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
+    CVPixelBufferPoolRef scaledPixelBufferPool = createScaledPixelBufferPool(pixelBuffer, scaleFactor);
+    CFDictionaryRef bufferPoolPixelAttributes = CVPixelBufferPoolGetPixelBufferAttributes(scaledPixelBufferPool);
+    NSNumber *scaledBufferWidth = (NSNumber *) CFDictionaryGetValue(bufferPoolPixelAttributes, kCVPixelBufferWidthKey);
+    NSNumber *scaledBufferHeight = (NSNumber *) CFDictionaryGetValue(bufferPoolPixelAttributes, kCVPixelBufferHeightKey);
+    destinationWidth = (size_t)scaledBufferWidth.intValue;
+    destinationHeight = (size_t)scaledBufferHeight.intValue;
+    self.scaledPixelBufferPoolRef = scaledPixelBufferPool;
+    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
   }
 
   VTCompressionSessionRef compressionSession = NULL;
   OSStatus status = VTCompressionSessionCreate(
     nil, // Allocator
-    destinationWidth,
-    destinationHeight,
+    (int32_t) destinationWidth,
+    (int32_t) destinationHeight,
     self.videoCodec,
     (__bridge CFDictionaryRef) encoderSpecification,
-    (__bridge CFDictionaryRef) sourceImageBufferAttributes,
+    nil,
     nil, // Compressed Data Allocator
     self.compressorCallback,
     (__bridge void * _Nullable)(self), // Callback Ref.
@@ -173,6 +319,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       describeFormat:@"Failed to start Compression Session %d", status]
       failBool:error];
   }
+  
   status = VTSessionSetProperties(
     compressionSession,
     (__bridge CFDictionaryRef) self.compressionSessionProperties
@@ -194,11 +341,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 - (BOOL)tearDown:(NSError **)error
 {
-  if (self.compressionSession) {
-    VTCompressionSessionCompleteFrames(self.compressionSession, kCMTimeInvalid);
-    VTCompressionSessionInvalidate(self.compressionSession);
+  VTCompressionSessionRef compression = self.compressionSession;
+  if (compression) {
+    VTCompressionSessionCompleteFrames(compression, kCMTimeInvalid);
+    VTCompressionSessionInvalidate(compression);
     self.compressionSession = nil;
   }
+  CVPixelBufferPoolRelease(self.scaledPixelBufferPoolRef);
   return YES;
 }
 
@@ -210,16 +359,31 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       describeFormat:@"No compression session"]
       failBool:error];
   }
-
+  
+  CVPixelBufferRef bufferToWrite = pixelBuffer;
+  FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
+  CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
+  if (bufferPool != nil) {
+    CVPixelBufferRef resizedBuffer;
+    CVReturn returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer);
+    if (returnStatus == kCVReturnSuccess) {
+      scaleFromSourceToDestinationBuffer(pixelBuffer, resizedBuffer);
+      bufferToWrite = resizedBuffer;
+      sourceFrameRef.pixelBuffer = resizedBuffer;
+    } else {
+      [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
+    }
+  }
+  
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
   OSStatus status = VTCompressionSessionEncodeFrame(
     compressionSession,
-    pixelBuffer,
+    bufferToWrite,
     time,
     kCMTimeInvalid,  // Frame duration
     NULL,  // Frame properties
-    (void *) frameNumber,  // Source Frame Reference for callback.
+    (__bridge_retained void * _Nullable)(sourceFrameRef),
     &flags
   );
   if (status != 0) {
@@ -247,7 +411,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @interface FBSimulatorVideoStream ()
 
-@property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -265,23 +429,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @end
 
-static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
-{
-  size_t width = CVPixelBufferGetWidth(pixelBuffer);
-  size_t height = CVPixelBufferGetHeight(pixelBuffer);
-  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
-  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
-  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
-
-  return @{
-    @"width" : @(width),
-    @"height" : @(height),
-    @"row_size" : @(rowSize),
-    @"frame_size" : @(frameSize),
-    @"format" : pixelFormatString,
-  };
-}
 
 @implementation FBSimulatorVideoStream
 
@@ -413,7 +560,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (oldBuffer) {
     CVPixelBufferRelease(oldBuffer);
   }
-
   // Make a Buffer from the Surface
   CVPixelBufferRef buffer = NULL;
   CVReturn status = CVPixelBufferCreateWithIOSurface(
@@ -434,11 +580,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       describe:@"Cannot mount surface when there is no consumer"]
       failBool:error];
   }
-
+  
   // Get the Attributes
   NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
   [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
-
+  
   // Swap the pixel buffers.
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
@@ -476,7 +622,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
   }
   CFTimeInterval timeAtFirstFrame = self.timeAtFirstFrame;
-
+  
   // Push the Frame
   [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame error:nil];
 
@@ -486,15 +632,29 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 + (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  NSNumber *avgBitrate = @(800 * 1024);
+  if (configuration.avgBitrate != nil) {
+    avgBitrate = configuration.avgBitrate;
+  }
+  NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
   // Get the base compression session properties, and add the class-cluster properties to them.
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+    (NSString *) kVTCompressionPropertyKey_AverageBitRate: avgBitrate,
+    (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[maxBitrate, @1],
   }];
+
   [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
+  derivedCompressionSessionProperties[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration] = configuration.keyFrameRate;
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *) kVTProfileLevel_H264_High_AutoLevel;
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel; // ref: http://blog.mediacoderhq.com/h264-profiles-and-levels/
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CAVLC;
+    if (@available(macOS 12.1, *)) {
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_High_AutoLevel;
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CABAC;
+    }
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
       initWithConfiguration:configuration
       compressionSessionProperties:[derivedCompressionSessionProperties copy]
@@ -524,7 +684,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
         logger:logger];
   }
   if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
-    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer];
+    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];
   }
   return [[FBControlCoreError
     describeFormat:@"%@ is not supported for Simulators", encoding]
@@ -593,8 +753,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
   return @{
-    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
-    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @2,
+    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(2 * self.framesPerSecond),
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @360,
+    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration: @10, // key frame at least every 10 seconds
+    (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   };
 }
 

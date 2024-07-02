@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -47,10 +47,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param name preference name
  @param value preference value
+ @param type preference value type. If null defaults to `string`.
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain;
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
 
@@ -74,6 +75,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return a future that resolves when completed.
  */
 - (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
+
+/**
+ Revokes Location Services for Applications.
+
+ @param bundleIDs an NSArray<NSString> of bundle IDs to to revoke location settings for.
+ @return a future that resolves when completed.
+ */
+- (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
 
 @end
 

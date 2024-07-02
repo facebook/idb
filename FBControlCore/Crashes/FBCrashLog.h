@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBCrashLog;
 
 @protocol FBControlCoreLogger;
+@protocol FBCrashLogParser;
 
 /**
  An emuration representing the kind of process that has crashed.
@@ -80,12 +81,23 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 @property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
 
+/**
+ The description of the exception
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *exceptionDescription;
+
+/**
+ List of symbols on the crashed thread
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *crashedThreadDescription;
+
 #pragma mark Helpers
 
 /**
  The Diagnostics Report Paths for the User.
  */
 @property (nonatomic, class, copy, readonly) NSArray<NSString *> *diagnosticReportsPaths;
+
 
 #pragma mark Initializers
 
@@ -98,6 +110,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return a Crash Log Info on success, nil otherwise.
  */
 + (nullable instancetype)fromCrashLogAtPath:(NSString *)path error:(NSError **)error;
+
 
 #pragma mark Public Methods
 
@@ -128,6 +141,11 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return the crash log if one could be read.
  */
 - (nullable FBCrashLog *)obtainCrashLogWithError:(NSError **)error;
+
+/**
+ Reads the contents of the crash log on disk, as a string.
+ */
+ - (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
 
 #pragma mark Predicates
 
@@ -197,6 +215,10 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  Crash contents.
  */
 @property (nonatomic, copy, readonly) NSString *contents;
+
+
+/// Provides date formatted to parse date strings from Apple crash logs
++ (NSDateFormatter *)dateFormatter;
 
 @end
 

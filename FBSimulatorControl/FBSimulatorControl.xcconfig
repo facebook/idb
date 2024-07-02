@@ -2,9 +2,6 @@
 #include "../Configuration/Shared.xcconfig"
 #include "../Configuration/Framework.xcconfig"
 
-// Weak-Link Xcode Private Frameworks
-OTHER_LDFLAGS = $(inherited) -weak_framework CoreSimulator -weak_framework SimulatorKit
-
 // Target-Specific Settings
 INFOPLIST_FILE = $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist;
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControl

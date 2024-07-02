@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -76,13 +76,14 @@
   return [[self performDefaultsCommandWithArguments:arguments] mapReplace:NSNull.null];
 }
 
-- (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value
+- (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value type:(NSString *)type
 {
   return [[self
     performDefaultsCommandWithArguments:@[
       @"write",
       domain,
       key,
+      [NSString stringWithFormat:@"-%@", type ? type : @"string"],
       value,
     ]]
     mapReplace:NSNull.null];
@@ -152,12 +153,12 @@
 
 static NSString *const AppleGlobalDomain = @"Apple Global Domain";
 
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value domain:(nullable NSString *)domain
+- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain
 {
   if (domain == nil) {
     domain = AppleGlobalDomain;
   }
-  return [self setDefaultInDomain:domain key:name value:value];
+  return [self setDefaultInDomain:domain key:name value:value type:type];
 }
 
 - (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain
@@ -193,6 +194,50 @@ static NSString *const AppleGlobalDomain = @"Apple Global Domain";
     amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
     defaults:[defaults copy]
     managingService:@"locationd"];
+}
+
+- (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs
+{
+  NSParameterAssert(bundleIDs);
+
+    FBSimulator *simulator = self.simulator;
+    FBiOSTargetState state = simulator.state;
+    if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
+      return [[FBSimulatorError
+        describeFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+        failFuture];
+    }
+
+    NSString *serviceName = @"locationd";
+
+    // Stop the service, if booted.
+    FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
+      ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
+      : FBFuture.empty;
+
+    NSString *path = [self.simulator.dataDirectory
+                      stringByAppendingPathComponent:@"Library/Caches/locationd/clients.plist"];
+    NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+    for (NSString *bundleID in bundleIDs) {
+      [futures addObject:
+       [self
+        performDefaultsCommandWithArguments:@[
+          @"delete",
+          path,
+          bundleID,
+        ]]];
+    }
+
+    return [[stopFuture
+      onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *_) {
+        return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+      }]
+      onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
+        // Re-start the Service if booted.
+        return state == FBiOSTargetStateBooted
+          ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
+          : FBFuture.empty;
+      }];
 }
 
 @end

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import os
 import plistlib
@@ -12,13 +14,13 @@ from typing import Any, Dict, List, Optional, Set
 
 from idb.common.tar import untar
 from idb.common.types import (
+    CodeCoverageFormat,
     TestActivity,
     TestAttachment,
     TestRunFailureInfo,
     TestRunInfo,
-    CodeCoverageFormat,
 )
-from idb.grpc.idb_pb2 import XctestRunRequest, XctestRunResponse, Payload
+from idb.grpc.idb_pb2 import Payload, XctestRunRequest, XctestRunResponse
 from idb.grpc.xctest_log_parser import XCTestLogParser
 
 
@@ -111,9 +113,11 @@ def make_request(
     report_activities: bool,
     report_attachments: bool,
     collect_coverage: bool,
+    enable_continuous_coverage_collection: bool,
     coverage_format: CodeCoverageFormat,
     collect_logs: bool,
     wait_for_debugger: bool,
+    collect_result_bundle: bool,
 ) -> XctestRunRequest:
     if is_logic_test:
         mode = Mode(logic=Logic())
@@ -121,6 +125,7 @@ def make_request(
         mode = Mode(
             ui=UI(
                 app_bundle_id=app_bundle_id,
+                # pyre-ignore
                 test_host_app_bundle_id=test_host_app_bundle_id,
             )
         )
@@ -132,6 +137,7 @@ def make_request(
 
         coverage_object = XctestRunRequest.CodeCoverage(
             collect=True,
+            enable_continuous_coverage_collection=enable_continuous_coverage_collection,
             format=CODE_COVERAGE_FORMAT_MAP[coverage_format],
         )
 
@@ -149,6 +155,7 @@ def make_request(
         collect_logs=collect_logs,
         wait_for_debugger=wait_for_debugger,
         code_coverage=coverage_object,
+        collect_result_bundle=collect_result_bundle,
     )
 
 
@@ -179,15 +186,7 @@ def make_results(
             ),
             duration=result.duration,
             passed=result.status == XctestRunResponse.TestRunInfo.PASSED,
-            failure_info=(
-                TestRunFailureInfo(
-                    message=result.failure_info.failure_message,
-                    file=result.failure_info.file,
-                    line=result.failure_info.line,
-                )
-                if result.failure_info
-                else None
-            ),
+            failure_info=(make_failure_info(result) if result.failure_info else None),
             activityLogs=[
                 translate_activity(activity) for activity in result.activityLogs or []
             ],
@@ -195,6 +194,35 @@ def make_results(
         )
         for result in response.results or []
     ]
+
+
+def make_failure_info(result: XctestRunResponse.TestRunInfo) -> TestRunFailureInfo:
+    if result.other_failures is None or len(result.other_failures) == 0:
+        return TestRunFailureInfo(
+            message=result.failure_info.failure_message,
+            file=result.failure_info.file,
+            line=result.failure_info.line,
+        )
+    else:
+        message = (
+            "line:"
+            + str(result.failure_info.line)
+            + " "
+            + result.failure_info.failure_message
+        )
+        for other_failure in result.other_failures:
+            message = (
+                message
+                + ", line:"
+                + str(other_failure.line)
+                + " "
+                + other_failure.failure_message
+            )
+        return TestRunFailureInfo(
+            message=message,
+            file=result.failure_info.file,
+            line=result.failure_info.line,
+        )
 
 
 def translate_activity(
@@ -214,6 +242,7 @@ def translate_activity(
                 timestamp=attachment.timestamp,
                 name=attachment.name,
                 uniform_type_identifier=attachment.uniform_type_identifier,
+                user_info_json=attachment.user_info_json,
             )
             for attachment in activity.attachments or []
         ],

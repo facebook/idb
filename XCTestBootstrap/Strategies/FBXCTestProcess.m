@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,7 +16,6 @@
 
 static NSTimeInterval const CrashLogStartDateFuzz = -20;
 static NSTimeInterval const CrashLogWaitTime = 180; // In case resources are pegged, just wait
-static NSTimeInterval const SampleDuration = 1;
 static NSTimeInterval const KillBackoffTimeout = 1;
 
 @implementation FBXCTestProcess
@@ -73,32 +72,17 @@ static NSTimeInterval const KillBackoffTimeout = 1;
   }
 }
 
-+ (FBFuture<id> *)performSampleStackshotOnProcessIdentifier:(pid_t)processIdentifier forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
-{
-  [logger logFormat:@"Performing stackshot on process %d as it has not exited after %f seconds", processIdentifier, timeout];
-  return [[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
-    runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:queue handleError:^(NSError *error) {
-      return [[[FBXCTestError
-        describeFormat:@"Failed to obtain a stack sample of stalled xctest process %d", processIdentifier]
-        causedBy:error]
-        failFuture];
-    }]
-    onQueue:queue fmap:^(FBProcess<NSNull *, NSData *, NSData *> *task) {
-      [logger logFormat:@"Stackshot completed of process %d", processIdentifier];
-      return [[FBXCTestError
-        describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, processIdentifier, task.stdOut]
-        failFuture];
-    }];
-}
-
 #pragma mark Private
 
 + (FBFuture<id> *)performSampleStackshotOnProcess:(FBProcess *)process forTimeout:(NSTimeInterval)timeout queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self
-    performSampleStackshotOnProcessIdentifier:process.processIdentifier forTimeout:timeout queue:queue logger:logger]
+  return [[[FBProcessFetcher
+    performSampleStackshotForProcessIdentifier:process.processIdentifier  queue:queue]
+    onQueue:queue fmap:^FBFuture<id> *(NSString *stackshot) {
+      return [[FBXCTestError
+        describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, process.processIdentifier, stackshot]
+        failFuture];
+    }]
     onQueue:queue notifyOfCompletion:^(FBFuture *_) {
       [logger logFormat:@"Terminating stalled xctest process %@", process];
       [[process
@@ -116,9 +100,8 @@ static NSTimeInterval const KillBackoffTimeout = 1;
     crashLogsForTerminationOfProcess:process since:startDate crashLogCommands:crashLogCommands crashLogWaitTime:crashLogWaitTime queue:queue]
     rephraseFailure:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", process.processIdentifier]
     onQueue:queue fmap:^(FBCrashLogInfo *crashInfo) {
-      NSString *crashString = [NSString stringWithContentsOfFile:crashInfo.crashPath encoding:NSUTF8StringEncoding error:nil];
       return [[FBXCTestError
-        describeFormat:@"xctest process crashed\n %@", crashString]
+        describeFormat:@"xctest process crashed\n%@\n\nRaw Crash File Contents\n%@", crashInfo, [crashInfo loadRawCrashLogStringWithError:nil]]
         failFuture];
     }];
 }

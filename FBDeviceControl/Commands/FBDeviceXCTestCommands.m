@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -94,9 +94,16 @@
     return [FBDeviceControlError failFutureWithError:error];
   }
 
+  // This is to walk around a bug in xcodebuild. The UDID inside xcodebuild does not match
+  // UDID reported by device properties (the difference is missing hyphen in xcodebuild).
+  // This results in xcodebuild returning an error, since it cannot find a device with requested
+  // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
+  // 00008101001D296A2EE8001E).
+  NSString *udid = (__bridge NSString *)self.device.calls.CopyDeviceIdentifier(self.device.amDeviceRef);
+
   // Create the Task, wrap it and store it.
   return [FBXcodeBuildOperation
-    operationWithUDID:self.device.udid
+    operationWithUDID:udid
     configuration:configuration
     xcodeBuildPath:xcodeBuildPath
     testRunFilePath:filePath

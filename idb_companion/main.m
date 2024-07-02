@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,16 +12,15 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBIDBCompanionServer.h"
-#import "FBIDBConfiguration.h"
-#import "FBIDBError.h"
-#import "FBIDBLogger.h"
-#import "FBIDBPortsConfiguration.h"
-#import "FBiOSTargetProvider.h"
+#import <CompanionLib/FBIDBError.h>
+#import <CompanionLib/FBIDBLogger.h>
+#import <CompanionLib/FBiOSTargetProvider.h>
 #import "FBiOSTargetStateChangeNotifier.h"
 #import "FBiOSTargetDescription.h"
-#import "FBIDBStorageManager.h"
-#import "FBIDBCommandExecutor.h"
+#import <CompanionLib/FBIDBStorageManager.h>
+#import <CompanionLib/FBIDBCommandExecutor.h>
+
+#import "idb-Swift.h"
 
 const char *kUsageHelpMessage = "\
 Usage: \n \
@@ -189,14 +188,11 @@ static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *
 
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
 {
-  return [FBFuture
-    onQueue:target.workQueue resolveWhen:^ BOOL {
-      if (target.state != FBiOSTargetStateBooted) {
-        [logger.error logFormat:@"Target with udid %@ is no longer booted, it is in state %@", target.udid, FBiOSTargetStateStringFromState(target.state)];
-        return YES;
-      }
-      return NO;
-  }];
+  return [[target
+    resolveLeavesState:FBiOSTargetStateBooted]
+    onQueue:target.workQueue doOnResolved:^(id _){
+      [target.logger log:@"Target is no longer booted, companion going offline"];
+    }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -300,7 +296,7 @@ static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *use
           describeFormat:@"Could not find a simulator with udid %@", udidOrAll]
           failFuture];
       }
-      return [set deleteSimulator:simulator];
+      return [set delete:simulator];
     }]
     mapReplace:NSNull.null];
 }
@@ -386,55 +382,86 @@ static FBFuture<NSNull *> *ActivateFuture(NSString *ecid, id<FBControlCoreLogger
 static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
-      NSError *error = nil;
-      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
-      if (!storageManager) {
-        return [FBFuture futureWithError:error];
-      }
-      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-        commandExecutorForTarget:target
-        storageManager:storageManager
-        temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
-        ports:[FBIDBPortsConfiguration portsWithArguments:userDefaults]
-        logger:logger];
-      return [commandExecutor clean];
-    }];
+          onQueue:dispatch_get_main_queue() fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+    NSError *error = nil;
+    FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+    if (!storageManager) {
+      return [FBFuture futureWithError:error];
+    }
+    FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                             commandExecutorForTarget:target
+                                             storageManager:storageManager
+                                             temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
+                                             debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults].debugserverPort
+                                             logger:logger];
+    return [commandExecutor clean];
+  }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
+
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
     onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
-      [reporter addMetadata:@{@"udid": udid}];
+      [reporter addMetadata:@{
+        @"udid": udid,
+        @"target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercaseString,
+      }];
       [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
-      // Start up the companion
-      FBIDBPortsConfiguration *ports = [FBIDBPortsConfiguration portsWithArguments:userDefaults];
+
       FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
       NSError *error = nil;
-      FBIDBCompanionServer *server = [FBIDBCompanionServer companionForTarget:target temporaryDirectory:temporaryDirectory ports:ports eventReporter:reporter logger:logger error:&error];
-      if (!server) {
+
+      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+      if (!storageManager) {
         return [FBFuture futureWithError:error];
       }
-      return [[server
-        start]
-        onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
-          WriteJSONToStdOut(serverDescription);
-          FBFuture<NSNull *> *completed = server.completed;
-          if (terminateOffline) {
-            [logger.info logFormat:@"Companion will terminate when target goes offline"];
-            completed = [FBFuture race:@[completed, TargetOfflineFuture(target, logger)]];
-          } else {
-            [logger.info logFormat:@"Companion will stay alive if target goes offline"];
-          }
-          return [completed
-            onQueue:target.workQueue chain:^(FBFuture *future) {
-              [temporaryDirectory cleanOnExit];
-              return future;
-            }];
+      NSError *err = nil;
+
+      // Start up the companion
+      IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
+
+      // Command Executor
+      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                               commandExecutorForTarget:target
+                                               storageManager:storageManager
+                                               temporaryDirectory:temporaryDirectory
+                                               debugserverPort:ports.debugserverPort
+                                               logger:logger];
+
+      FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
+
+      GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
+                                      initWithTarget:target
+                                      commandExecutor:loggingCommandExecutor
+                                      reporter:IDBConfiguration.swiftEventReporter
+                                      logger:logger
+                                      ports:ports
+                                      error:&err];
+      if (!swiftServer) {
+        return [FBFuture futureWithError:err];
+      }
+
+      return [[swiftServer start] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
+        WriteJSONToStdOut(serverDescription);
+        NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[swiftServer.completed]];
+
+        if (terminateOffline) {
+          [logger.info logFormat:@"Companion will terminate when target goes offline"];
+          [futures addObject:TargetOfflineFuture(target, logger)];
+        } else {
+          [logger.info logFormat:@"Companion will stay alive if target goes offline"];
+        }
+
+        FBFuture<NSNull *> *completed = [FBFuture race: futures];
+        return [completed
+                onQueue:target.workQueue chain:^(FBFuture *future) {
+          [temporaryDirectory cleanOnExit];
+          return future;
         }];
-    }];
+      }];
+  }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -500,7 +527,7 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefault
   NSString *clean = [userDefaults stringForKey:@"-clean"];
   NSString *forward = [userDefaults stringForKey:@"-forward"];
 
-  id<FBEventReporter> reporter = FBIDBConfiguration.eventReporter;
+  id<FBEventReporter> reporter = IDBConfiguration.eventReporter;
   if (udid) {
     return CompanionServerFuture(udid, userDefaults, xcodeAvailable, logger, reporter);
   } else if (list) {
@@ -570,9 +597,27 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
     }];
 }
 
-static NSString *EnvDescription()
+static NSString *EnvDescription(void)
 {
   return [FBCollectionInformation oneLineDescriptionFromDictionary:FBControlCoreGlobalConfiguration.safeSubprocessEnvironment];
+}
+
+static NSString *ArchName(void)
+{
+#if TARGET_CPU_ARM64
+  return @"arm64";
+#elif TARGET_CPU_X86_64
+  return @"x86_64";
+#else
+  return @"not supported");
+#endif
+}
+
+static void logStartupInfo(FBIDBLogger *logger)
+{
+    [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
+    [logger.info logFormat:@"IDB Companion architecture %@", ArchName()];
+    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
 }
 
 int main(int argc, const char *argv[]) {
@@ -590,8 +635,8 @@ int main(int argc, const char *argv[]) {
 
     NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
     FBIDBLogger *logger = [FBIDBLogger loggerWithUserDefaults:userDefaults];
-    [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
-    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
+    logStartupInfo(logger);
+
     NSError *error = nil;
 
     // Check that xcode-select returns a valid path, throw a big

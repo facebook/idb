@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -49,12 +49,12 @@ NS_ASSUME_NONNULL_BEGIN
  Copies an item at the provided url into an application container.
  The source file can represent a file or a directory.
 
- @param source the source file on the host.
+ @param hostPath the source file on the host.
  @param containerPath the file path relative to the application container.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)copyFromHost:(NSURL *)source toContainerPath:(NSString *)containerPath error:(NSError **)error;
+- (BOOL)copyFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error;
 
 /**
  Creates a Directory.

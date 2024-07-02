@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import base64
 import json
@@ -11,18 +13,18 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from idb.common.types import (
-    IdbException,
     AppProcessState,
     CompanionInfo,
     DebuggerInfo,
     DomainSocketAddress,
+    IdbException,
     InstalledAppInfo,
     InstalledTestInfo,
     TargetDescription,
+    TargetType,
     TCPAddress,
     TestActivity,
     TestRunInfo,
-    TargetType,
 )
 from treelib import Tree
 
@@ -33,6 +35,8 @@ def target_type_from_string(output: str) -> TargetType:
         return TargetType.SIMULATOR
     if "dev" in normalized:
         return TargetType.DEVICE
+    if "mac" in normalized:
+        return TargetType.MAC
     raise IdbException(f"Could not interpret target type from {output}")
 
 
@@ -72,9 +76,8 @@ def human_format_test_info(test: TestRunInfo) -> str:
 
 def human_format_activities(activities: List[TestActivity]) -> str:
     tree: Tree = Tree()
-    start = activities[0].start
+    start: float = activities[0].start
 
-    # pyre-fixme[53]: Captured variable `start` is not annotated.
     def process_activity(activity: TestActivity, parent: Optional[str] = None) -> None:
         tree.create_node(
             f"{activity.name} ({activity.finish - start:.2f}s)",
@@ -140,6 +143,11 @@ def json_format_activity(activity: TestActivity) -> Dict[str, Any]:
                 "timestap": attachment.timestamp,
                 "name": attachment.name,
                 "uniform_type_identifier": attachment.uniform_type_identifier,
+                "user_info": (
+                    json.loads(attachment.user_info_json.decode("utf-8"))
+                    if len(attachment.user_info_json)
+                    else {}
+                ),
             }
             for attachment in activity.attachments
         ],

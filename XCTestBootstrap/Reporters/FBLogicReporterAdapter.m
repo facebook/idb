@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -71,8 +71,15 @@
   id<FBXCTestReporter> reporter = self.reporter;
   if ([eventName isEqualToString:kReporter_Events_BeginTestSuite]) {
     NSString *suiteName = JSONEvent[kReporter_BeginTestSuite_SuiteKey];
-    NSString *startTime = JSONEvent[kReporter_TimestampKey];
-    [reporter testSuite:suiteName didStartAt:startTime];
+    id startTime = JSONEvent[kReporter_TimestampKey];
+    if ([startTime isKindOfClass:NSNumber.class]) {
+      [reporter testSuite:suiteName didStartAt:((NSNumber *)startTime).stringValue];
+    } else if ([startTime isKindOfClass:NSString.class]) {
+      [reporter testSuite:suiteName didStartAt:((NSString *)startTime)];
+    } else {
+      NSAssert(NO, @"Unknown type of obj. This will likely cause crash in runtime because of swift signature mismatch");
+    }
+
   } else if ([eventName isEqualToString:kReporter_Events_BeginTest]) {
     NSString *className = JSONEvent[kReporter_BeginTest_ClassNameKey];
     NSString *methodName = JSONEvent[kReporter_BeginTest_MethodNameKey];
@@ -121,11 +128,18 @@
 
 - (void)reportTestFailureForTestClass:(NSString *)testClass testName:(NSString *)testName endTestEvent:(NSDictionary *)JSONEvent
 {
-  NSDictionary *exception = [JSONEvent[kReporter_EndTest_ExceptionsKey] lastObject];
-  NSString *message = exception[kReporter_EndTest_Exception_ReasonKey];
-  NSString *file = exception[kReporter_EndTest_Exception_FilePathInProjectKey];
-  NSUInteger line = [exception[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
-  [self.reporter testCaseDidFailForTestClass:testClass method:testName withMessage:message file:file line:line];
+  NSArray<NSDictionary *> *exceptionDicts = JSONEvent[kReporter_EndTest_ExceptionsKey];
+    NSMutableArray<FBExceptionInfo *> *parsedExceptions = [NSMutableArray new];
+
+    for (NSDictionary *exceptionDict in exceptionDicts) {
+        NSString *message = exceptionDict[kReporter_EndTest_Exception_ReasonKey];
+        NSString *file = exceptionDict[kReporter_EndTest_Exception_FilePathInProjectKey];
+        NSUInteger line = [exceptionDict[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
+        FBExceptionInfo *exception = [[FBExceptionInfo alloc]initWithMessage:message file:file line:line];
+        [parsedExceptions addObject:exception];
+    }
+
+  [self.reporter testCaseDidFailForTestClass:testClass method:testName exceptions:[parsedExceptions copy]];
 }
 
 - (void)didCrashDuringTest:(NSError *)error
@@ -133,6 +147,7 @@
   if ([self.reporter respondsToSelector:@selector(didCrashDuringTest:)]) {
     [self.reporter didCrashDuringTest:error];
   }
+  [self.reporter processUnderTestDidExit];
 }
 
 @end

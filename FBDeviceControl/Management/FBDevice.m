@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,6 +21,7 @@
 #import "FBDeviceEraseCommands.h"
 #import "FBDeviceFileCommands.h"
 #import "FBDeviceFileCommands.h"
+#import "FBDeviceLifecycleCommands.h"
 #import "FBDeviceLocationCommands.h"
 #import "FBDeviceLogCommands.h"
 #import "FBDevicePowerCommands.h"
@@ -37,7 +38,7 @@
 @synthesize activationState = _activationState;
 @synthesize allValues = _allValues;
 @synthesize amDevice = _amDevice;
-@synthesize architecture = _architecture;
+@synthesize architectures = _architectures;
 @synthesize buildVersion = _buildVersion;
 @synthesize calls = _calls;
 @synthesize deviceType = _deviceType;
@@ -195,8 +196,8 @@
   if (!_allValues || overwrite) {
     _allValues = targetInfo.allValues;
   }
-  if (!_architecture || overwrite) {
-    _architecture = targetInfo.architecture;
+  if (!_architectures || overwrite) {
+    _architectures = targetInfo.architectures;
   }
   if (!_buildVersion || overwrite) {
     _buildVersion = targetInfo.buildVersion;
@@ -323,10 +324,12 @@
       FBDeviceApplicationCommands.class,
       FBDeviceCrashLogCommands.class,
       FBDeviceDebuggerCommands.class,
+      FBDeviceDebugSymbolsCommands.class,
       FBDeviceDeveloperDiskImageCommands.class,
       FBDeviceDiagnosticInformationCommands.class,
       FBDeviceEraseCommands.class,
       FBDeviceFileCommands.class,
+      FBDeviceLifecycleCommands.class,
       FBDeviceLocationCommands.class,
       FBDeviceLogCommands.class,
       FBDevicePowerCommands.class,
@@ -335,8 +338,8 @@
       FBDeviceSocketForwardingCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
-      FBXCTraceRecordCommands.class,
       FBInstrumentsCommands.class,
+      FBXCTraceRecordCommands.class,
     ];
   });
   return commandClasses;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -27,7 +27,6 @@
 #import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorNotificationUpdateStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
 
@@ -116,9 +115,8 @@
 
       // This step ensures that the Simulator is in a known-shutdown state after creation.
       // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-      return [[[[FBSimulatorShutdownStrategy
-        strategyWithSimulator:simulator]
-        shutdown]
+      return [[[FBSimulatorShutdownStrategy
+        shutdown:simulator]
         rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
         mapReplace:simulator];
     }];
@@ -144,65 +142,43 @@
 
 #pragma mark Destructive Methods
 
-- (FBFuture<FBSimulator *> *)killSimulator:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.simulatorTerminationStrategy
-    killSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
-      return [result firstObject];
-    }];
+  return [FBSimulatorShutdownStrategy shutdown:simulator];
 }
 
-- (FBFuture<FBSimulator *> *)eraseSimulator:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.eraseStrategy
-    eraseSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<FBSimulator *> *result) {
-      return [result firstObject];
-    }];
+  return [FBSimulatorEraseStrategy erase:simulator];
 }
 
-- (FBFuture<NSString *> *)deleteSimulator:(FBSimulator *)simulator
+- (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator
 {
   NSParameterAssert(simulator);
-  return [[self.deletionStrategy
-    deleteSimulators:@[simulator]]
-    onQueue:self.workQueue map:^(NSArray<NSString *> *result) {
-      return [result firstObject];
-    }];
+  return [FBSimulatorDeletionStrategy delete:simulator];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll:(NSArray<FBSimulator *> *)simulators
+- (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
 {
   NSParameterAssert(simulators);
-  return [self.simulatorTerminationStrategy killSimulators:simulators];
+  return [FBSimulatorShutdownStrategy shutdownAll:simulators];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll:(NSArray<FBSimulator *> *)simulators
+- (FBFuture<NSNull *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
 {
   NSParameterAssert(simulators);
-  return [self.eraseStrategy eraseSimulators:simulators];
+  return [FBSimulatorDeletionStrategy deleteAll:simulators];
 }
 
-- (FBFuture<NSArray<NSString *> *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
+- (FBFuture<NSNull *> *)shutdownAll
 {
-  NSParameterAssert(simulators);
-  return [self.deletionStrategy deleteSimulators:simulators];
+  NSArray<FBSimulator *> *simulators = self.allSimulators;
+  return [FBSimulatorShutdownStrategy shutdownAll:simulators];
 }
 
-- (FBFuture<NSArray<FBSimulator *> *> *)killAll
-{
-  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators];
-}
-
-- (FBFuture<NSArray<FBSimulator *> *> *)eraseAll
-{
-  return [self.eraseStrategy eraseSimulators:self.allSimulators];
-}
-
-- (FBFuture<NSArray<NSString *> *> *)deleteAll
+- (FBFuture<NSNull *> *)deleteAll
 {
   return [self deleteAll:self.allSimulators];
 }
@@ -255,21 +231,6 @@
 }
 
 #pragma mark Private Properties
-
-- (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
-{
-  return [FBSimulatorTerminationStrategy strategyForSet:self];
-}
-
-- (FBSimulatorEraseStrategy *)eraseStrategy
-{
-  return [FBSimulatorEraseStrategy strategyForSet:self];
-}
-
-- (FBSimulatorDeletionStrategy *)deletionStrategy
-{
-  return [FBSimulatorDeletionStrategy strategyForSet:self];
-}
 
 + (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name queue:(dispatch_queue_t)queue
 {

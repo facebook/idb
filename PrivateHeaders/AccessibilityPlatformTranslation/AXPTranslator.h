@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,6 +10,8 @@
 @class AXPTranslationObject;
 @class AXPTranslatorResponse;
 @class AXPTranslatorRequest;
+@class AXPTranslator_iOS;
+@class AXPTranslator_macOS;
 
 /**
  The return type of the translation callbacks, this will synchronously provide a response by calling out to CoreSimulator.
@@ -73,8 +75,8 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
     NSMutableDictionary *_fakeElementCache;
 }
 
-+ (id)sharedmacOSInstance;
-+ (id)sharediOSInstance;
++ (AXPTranslator_macOS *)sharedmacOSInstance;
++ (AXPTranslator_iOS *)sharediOSInstance;
 + (id)sharedInstance;
 @property(nonatomic) BOOL supportsDelegateTokens; // @synthesize supportsDelegateTokens=_supportsDelegateTokens;
 @property(retain, nonatomic) NSMutableDictionary *fakeElementCache; // @synthesize fakeElementCache=_fakeElementCache;
@@ -107,7 +109,7 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
 - (void)_resetBridgeTokensForResponse:(id)arg1 bridgeDelegateToken:(id)arg2;
 - (void)handleNotification:(unsigned long long)arg1 data:(id)arg2 associatedObject:(id)arg3;
 - (AXPTranslationObject *)frontmostApplicationWithDisplayId:(unsigned int)arg1 bridgeDelegateToken:(NSString *)arg2;
-- (id)_translationApplicationObjectForPidNumber:(id)arg1;
+- (id)_translationApplicationObjectForPidNumber:(NSNumber *)arg1;
 - (id)translationApplicationObjectForPid:(int)arg1;
 - (id)translationApplicationObject;
 - (id)init;

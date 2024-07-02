@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import json
 from argparse import ArgumentParser, Namespace
@@ -13,7 +15,7 @@ from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import Client, InstalledArtifact, Compression
+from idb.common.types import Client, Compression, InstalledArtifact
 from idb.utils.typing import none_throws
 
 
@@ -35,6 +37,13 @@ class AppInstallCommand(ClientCommand):
             required=False,
         )
         parser.add_argument(
+            "--override-mtime",
+            help="If set, idb will disregard the mtime of files contained in an .ipa file. Current timestamp will be used as modification time. Use this flag to ensure app updates work properly when your build system normalises the timestamps of contents of archives.",
+            action="store_true",
+            default=None,
+            required=False,
+        )
+        parser.add_argument(
             "bundle_path",
             help="Path to the .app/.ipa to install. Note that .app bundles will usually be faster to install than .ipa files.",
             type=str,
@@ -50,6 +59,7 @@ class AppInstallCommand(ClientCommand):
             bundle=args.bundle_path,
             make_debuggable=args.make_debuggable,
             compression=compression,
+            override_modification_time=args.override_mtime,
         ):
             artifact = info
             progress = info.progress

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -101,9 +101,14 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @interface FBListTestConfiguration : FBXCTestConfiguration
 
 /**
+ The supported architectures of the test bundle.
+ */
+@property (nonatomic, strong, readonly, nonnull) NSSet<NSString *> *architectures;
+
+/**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
 
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;
 
@@ -196,9 +201,14 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 @property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
 
 /**
+ The supported architectures of the test bundle.
+ */
+@property (nonatomic, strong, readonly) NSSet<NSString *> *architectures;
+
+/**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath;
++ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures;
 
 @end
 

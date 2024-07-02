@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -120,7 +120,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
         FBDeveloperDiskImage *image = imagesBySignature[signature];
         if (!image) {
           [logger logFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage];
-          continue;
+          image = [FBDeveloperDiskImage unknownDiskImageWithSignature:signature];
         }
         mountEntryToDiskImage[mountEntry] = image;
       }
@@ -152,14 +152,41 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
     }];
 }
 
+- (FBFuture<NSDictionary<NSData *, FBDeveloperDiskImage *> *> *)signatureToDiskImageOfMountedDisks
+{
+  return [[self
+    mountInfoToDiskImage]
+    onQueue:self.device.asyncQueue map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
+      NSMutableDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage = NSMutableDictionary.dictionary;
+      for (FBDeveloperDiskImage *image in mountInfoToDiskImage.allValues) {
+        signatureToDiskImage[image.signature] = image;
+      }
+      return signatureToDiskImage;
+    }];
+}
+
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
+{
+  id<FBControlCoreLogger> logger = self.device.logger;
+  return [[self
+    signatureToDiskImageOfMountedDisks]
+    onQueue:self.device.asyncQueue fmap:^ FBFuture<FBDeveloperDiskImage *> * (NSDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage) {
+      if (signatureToDiskImage[diskImage.signature]) {
+        [logger logFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage];
+        return [FBFuture futureWithResult:diskImage];
+      }
+      return [self performDiskImageMount:diskImage imageType:imageType];
+    }];
+}
+
+- (FBFuture<FBDeveloperDiskImage *> *)performDiskImageMount:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
 {
   return [[self.device
     connectToDeviceWithPurpose:@"mount_disk_image"]
     onQueue:self.device.asyncQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
       NSDictionary<NSString *, id> *options = @{
-        @"ImageSignature": diskImage.signature,
-        @"ImageType": imageType,
+        ImageSignatureKey: diskImage.signature,
+        ImageTypeKey: imageType,
       };
       int status = device.calls.MountImage(
         device.amDeviceRef,

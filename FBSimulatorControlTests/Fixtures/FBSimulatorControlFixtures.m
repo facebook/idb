@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -71,7 +71,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 }
 
 - (FBTestLaunchConfiguration *)testLaunchSafari
@@ -90,7 +92,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 }
 
 - (FBBundleDescriptor *)tableSearchApplication
@@ -154,7 +158,7 @@ static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
   NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
   FBBundleDescriptor * bundle = [FBBundleDescriptor bundleFromPath:bundlePath error:&error];
   XCTAssert(bundle, @"Failed to load bundle at %@: %@", bundlePath, error);
-  
+
   FBCodesignProvider *codesign = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:nil];
   if ([[codesign cdHashForBundleAtPath:bundlePath] await:nil]) {
     return bundle;

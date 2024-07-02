@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import asyncio
 import os
@@ -11,6 +13,7 @@ from argparse import Namespace
 from typing import Any, Optional, Tuple, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
+from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main
 from idb.common.types import (
     Compression,
@@ -91,6 +94,25 @@ class TestParser(TestCase):
             foreground_if_running=False,
             wait_for_debugger=False,
             stop=None,
+            pid_file=None,
+        )
+
+    async def test_launch_with_pid_file(self) -> None:
+        bundle_id = "com.foo.app"
+        udid = "my udid"
+        pid_file = "/tmp/fifo-file"
+        self.client_mock.launch = AsyncMock(return_value=bundle_id)
+        await cli_main(
+            cmd_input=["launch", "--pid-file", pid_file, "--udid", udid, bundle_id]
+        )
+        self.client_mock.launch.assert_called_once_with(
+            bundle_id=bundle_id,
+            env={},
+            args=[],
+            foreground_if_running=False,
+            wait_for_debugger=False,
+            stop=None,
+            pid_file=pid_file,
         )
 
     async def test_create(self) -> None:
@@ -151,7 +173,22 @@ class TestParser(TestCase):
         compression = None
         await cli_main(cmd_input=["install", app_path])
         self.client_mock.install.assert_called_once_with(
-            bundle=app_path, make_debuggable=None, compression=compression
+            bundle=app_path,
+            make_debuggable=None,
+            compression=compression,
+            override_modification_time=None,
+        )
+
+    async def test_install_with_mtime_override(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        app_path = "testApp.ipa"
+        compression = None
+        await cli_main(cmd_input=["install", "--override-mtime", app_path])
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path,
+            make_debuggable=None,
+            compression=compression,
+            override_modification_time=True,
         )
 
     async def test_install_with_bad_compression(self) -> None:
@@ -168,7 +205,10 @@ class TestParser(TestCase):
         app_path = "testApp.app"
         await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
         self.client_mock.install.assert_called_once_with(
-            bundle=app_path, make_debuggable=None, compression=Compression.ZSTD
+            bundle=app_path,
+            make_debuggable=None,
+            compression=Compression.ZSTD,
+            override_modification_time=None,
         )
 
     async def test_uninstall(self) -> None:
@@ -423,7 +463,7 @@ class TestParser(TestCase):
         self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
         test_bundle_path = "testBundle.xctest"
         await cli_main(cmd_input=["xctest", "install", test_bundle_path])
-        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path)
+        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, None)
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
@@ -451,11 +491,14 @@ class TestParser(TestCase):
         namespace.report_attachments = False
         namespace.activities_output_path = None
         namespace.coverage_output_path = None
+        namespace.enable_continuous_coverage_collection = False
         namespace.coverage_format = "EXPORTED"
         namespace.log_directory_path = None
         namespace.wait_for_debugger = False
         namespace.install = False
         namespace.companion_tls = False
+        namespace.install_dsym_test_bundle = None
+        namespace.skip_signing_bundles = None
         return namespace
 
     async def test_xctest_run_app(self) -> None:
@@ -523,6 +566,69 @@ class TestParser(TestCase):
         self.client_mock.list_test_bundle.assert_called_once_with(
             test_bundle_id=bundle_id, app_path=None
         )
+
+    async def test_xctest_run_logic_with_install(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_path = "/bundle/path"
+            await cli_main(
+                cmd_input=["xctest", "run", "logic", "--install", test_bundle_path]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install = True
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
+
+    async def test_xctest_run_logic_with_install_dsym_test_bundle(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_path = "/bundle/path"
+            test_dsym_path = "/dsym/path"
+            await cli_main(
+                cmd_input=[
+                    "xctest",
+                    "run",
+                    "logic",
+                    "--install-dsym",
+                    test_dsym_path,
+                    "--install",
+                    test_bundle_path,
+                ]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install_dsym_test_bundle = test_dsym_path
+            namespace.install = True
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
+
+    async def test_xctest_run_logic_with_install_dsym_no_path(self) -> None:
+        mock = AsyncMock()
+        mock.return_value = []
+        with patch(
+            "idb.cli.commands.xctest.CommonRunXcTestCommand.run", new=mock, create=True
+        ):
+            test_bundle_path = "/bundle/path"
+            await cli_main(
+                cmd_input=[
+                    "xctest",
+                    "run",
+                    "logic",
+                    "--install-dsym",
+                    "--install",
+                    test_bundle_path,
+                ]
+            )
+            namespace = self.xctest_run_namespace("logic", test_bundle_path)
+            namespace.install_dsym_test_bundle = NO_SPECIFIED_PATH
+            namespace.install = True
+            namespace.timeout = None
+            mock.assert_called_once_with(namespace)
 
     async def test_daemon(self) -> None:
         mock = AsyncMock()
@@ -623,6 +729,22 @@ class TestParser(TestCase):
         bundle_id = "com.fb.myApp"
         await cli_main(cmd_input=["approve", bundle_id, "url", "--scheme", "fb"])
         self.client_mock.approve.assert_called_once_with(
+            bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
+        )
+
+    async def test_revoke(self) -> None:
+        self.client_mock.revoke = AsyncMock(return_value=[])
+        bundle_id = "com.fb.myApp"
+        await cli_main(cmd_input=["revoke", bundle_id, "photos"])
+        self.client_mock.revoke.assert_called_once_with(
+            bundle_id=bundle_id, permissions={Permission.PHOTOS}, scheme=None
+        )
+
+    async def test_revoke_url(self) -> None:
+        self.client_mock.revoke = AsyncMock(return_value=[])
+        bundle_id = "com.fb.myApp"
+        await cli_main(cmd_input=["revoke", bundle_id, "url", "--scheme", "fb"])
+        self.client_mock.revoke.assert_called_once_with(
             bundle_id=bundle_id, permissions={Permission.URL}, scheme="fb"
         )
 
@@ -753,7 +875,7 @@ class TestParser(TestCase):
             point=(10, 20), nested=False
         )
 
-    async def test_accessibility_info_at_point(self) -> None:
+    async def test_accessibility_info_at_point_nested(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-point", "--nested", "10", "20"])
         self.client_mock.accessibility_info.assert_called_once_with(

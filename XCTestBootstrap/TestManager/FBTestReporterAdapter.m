@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,8 +7,8 @@
 
 #import "FBTestReporterAdapter.h"
 
-#import <XCTest/XCTestManager_IDEInterface-Protocol.h>
-#import <XCTest/XCActivityRecord.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
+#import <XCTestPrivate/XCActivityRecord.h>
 
 #import "FBActivityRecord.h"
 #import "FBTestManagerAPIMediator.h"
@@ -67,7 +67,9 @@
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.reporter testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line.unsignedIntegerValue];
+    [self.reporter testCaseDidFailForTestClass:testClass method:method exceptions:@[
+        [[FBExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
+        ]]];
   return nil;
 }
 

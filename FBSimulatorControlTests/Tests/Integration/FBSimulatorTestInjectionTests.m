@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -106,7 +106,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -142,7 +144,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
@@ -166,7 +170,9 @@
     resultBundlePath:nil
     reportActivities:NO
     coverageDirectoryPath:nil
-    logDirectoryPath:nil];
+    enableContinuousCoverageCollection:NO
+    logDirectoryPath:nil
+    reportResultBundle:NO];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
@@ -196,11 +202,6 @@
     case FBTestReportStatusUnknown:
       break;
   }
-}
-
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
-{
-
 }
 
 - (void)testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
@@ -255,5 +256,11 @@
 {
 
 }
+
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
+{
+
+}
+
 
 @end

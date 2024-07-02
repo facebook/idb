@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,6 +15,7 @@
 #import "XCTestBootstrapError.h"
 #import "FBListTestStrategy.h"
 #import "FBXCTestConfiguration.h"
+#import "FBMacLaunchedApplication.h"
 
 @protocol XCTestManager_XPCControl <NSObject>
 - (void)_XCT_requestConnectedSocketForTransport:(void (^)(NSFileHandle *, NSError *))arg1;
@@ -38,7 +39,9 @@
   static dispatch_once_t onceToken;
   static NSString *_value;
   dispatch_once(&onceToken, ^{
-    _value = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    NSString *uuid = [[NSUUID UUID] UUIDString];
+    NSString *parentDir = NSSearchPathForDirectoriesInDomains(NSApplicationDirectory, NSUserDomainMask, YES).lastObject;
+    _value = [parentDir stringByAppendingPathComponent:uuid];
   });
   return _value;
 }
@@ -65,9 +68,15 @@
 {
   self = [super init];
   if (self) {
-    _architecture = FBArchitectureX86_64;
+
+    _architectures = [[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] allObjects];
     _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-    _auxillaryDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    NSString *explicitTmpDirectory = NSProcessInfo.processInfo.environment[@"IDB_MAC_AUXILLIARY_DIR"];
+    if (explicitTmpDirectory) {
+      _auxillaryDirectory = [[explicitTmpDirectory stringByAppendingPathComponent:@"idb-mac-aux"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    } else {
+      _auxillaryDirectory = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"idb-mac-cwd"] stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+    }
     _bundleIDToProductMap = [FBMacDevice fetchInstalledApplications];
     _bundleIDToRunningTask = @{}.mutableCopy;
     _udid = [FBMacDevice resolveDeviceUDID];
@@ -78,6 +87,7 @@
     _workingDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
     _screenInfo = nil;
     _osVersion = [FBOSVersion genericWithName:FBOSVersionNamemac];
+    _name = [[NSHost currentHost] localizedName];
   }
   return self;
 }
@@ -226,7 +236,7 @@
 
 #pragma mark - FBiOSTarget
 
-@synthesize architecture = _architecture;
+@synthesize architectures = _architectures;
 @synthesize asyncQueue = _asyncQueue;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize name = _name;
@@ -253,25 +263,9 @@
 - (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path
 {
   NSError *error;
-  NSFileManager *fm = [NSFileManager defaultManager];
-  if (![fm fileExistsAtPath:FBMacDevice.applicationInstallDirectory]) {
-    if (![fm createDirectoryAtPath:FBMacDevice.applicationInstallDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-      return [FBFuture futureWithResult:error];
-    }
-  }
-
-  NSString *dest = [FBMacDevice.applicationInstallDirectory stringByAppendingPathComponent:path.lastPathComponent];
-  if ([fm fileExistsAtPath:dest]) {
-    if (![fm removeItemAtPath:dest error:&error]) {
-      return [FBFuture futureWithResult:error];
-    }
-  }
-  if (![fm copyItemAtPath:path toPath:dest error:&error]) {
-    return [FBFuture futureWithResult:error];
-  }
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:dest error:&error];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:&error];
   if (error) {
-    return [FBFuture futureWithResult:error];
+    return [FBFuture futureWithError:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;
   return [FBFuture futureWithResult:[FBInstalledApplication installedApplicationWithBundle:bundle installType:FBApplicationInstallTypeUnknown dataContainer:nil]];
@@ -285,9 +279,14 @@
       describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
       failFuture];
   }
+
+  if (![[NSFileManager defaultManager] fileExistsAtPath:bundle.path]) {
+    return [FBFuture futureWithResult:[NSNull null]];
+  }
+
   NSError *error;
   if (![[NSFileManager defaultManager] removeItemAtPath:bundle.path error:&error]) {
-    return [FBFuture futureWithResult:error];
+    return [FBFuture futureWithError:error];
   }
   [self.bundleIDToProductMap removeObjectForKey:bundleID];
   return [FBFuture futureWithResult:[NSNull null]];
@@ -332,7 +331,7 @@
   return [FBFuture futureWithResult:[NSNull null]];
 }
 
-- (FBFuture<FBProcess *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
+- (FBFuture<FBMacLaunchedApplication *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
@@ -345,10 +344,14 @@
     withArguments:configuration.arguments]
     withEnvironment:configuration.environment]
     start]
-    onQueue:self.workQueue map:^ FBProcess * (FBProcess *task) {
+    onQueue:self.workQueue map:^ FBMacLaunchedApplication* (FBProcess *task) {
       self.bundleIDToRunningTask[bundle.identifier] = task;
-      return task;
-    }];
+      return [[FBMacLaunchedApplication alloc]
+       initWithBundleID:bundle.identifier
+       processIdentifier:task.processIdentifier
+       device:self
+       queue:self.workQueue];
+  }];
 }
 
 - (nonnull FBFuture<NSDictionary<NSString *,FBProcessInfo *> *> *)runningApplications
@@ -393,6 +396,16 @@
   return nil;
 }
 
+- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state
+{
+  return FBiOSTargetResolveState(self, state);
+}
+
+- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state
+{
+  return FBiOSTargetResolveLeavesState(self, state);
+}
+
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   return NSDictionary.dictionary;
@@ -423,13 +436,20 @@
 
 - (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(NSString *)appPath
 {
+  NSError *error = nil;
+  FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:bundlePath error:&error];
+  if (!bundleDescriptor) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBListTestConfiguration *configuration = [FBListTestConfiguration
     configurationWithEnvironment:@{}
     workingDirectory:self.auxillaryDirectory
     testBundlePath:bundlePath
     runnerAppPath:appPath
     waitForDebugger:NO
-    timeout:timeout];
+    timeout:timeout
+    architectures:bundleDescriptor.binary.architectures];
 
   return [[[FBListTestStrategy alloc]
     initWithTarget:self

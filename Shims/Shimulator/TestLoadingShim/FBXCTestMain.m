@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,12 +8,15 @@
 #import "FBXCTestMain.h"
 
 #import <dlfcn.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 #import "FBDebugLog.h"
 #import "FBRuntimeTools.h"
 #import "FBXCTestConstants.h"
+#import "XCTestCaseHelpers.h"
 #import "XCTestPrivate.h"
+#import "XTSwizzle.h"
 
 #include "TargetConditionals.h"
 
@@ -66,7 +69,7 @@ BOOL FBLoadXCTestIfNeeded()
 
   for(NSString *frameworkDir in fallbackFrameworkDirs) {
     NSString *possibleLocation = [frameworkDir stringByAppendingPathComponent:@"XCTest.framework/XCTest"];
-    if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:NO]) {
+    if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:nil]) {
       if (dlopen([possibleLocation cStringUsingEncoding:NSUTF8StringEncoding], RTLD_LAZY)) {
         FBDebugLog(@"[XCTestMainEntryPoint] Found and loaded XCTest from %@", possibleLocation);
         return YES;
@@ -96,11 +99,32 @@ void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
    }];
 }
 
+/// Construct an XCTTestIdentifier using the same logic used to list the tests.
+/// The identifier will contain the swift module prefix for tests written in swift,
+/// as they used to in Xcode versions prior to 15.0
+static id XCTestCase__xctTestIdentifier(id self, SEL sel)
+{
+  NSString *classNameOut = nil;
+  NSString *methodNameOut = nil;
+  NSString *testKeyOut = nil;
+  parseXCTestCase(self, &classNameOut, &methodNameOut, &testKeyOut);
+
+  Class XCTTestIdentifier_class = objc_lookUpClass("XCTTestIdentifier");
+  return [[XCTTestIdentifier_class alloc] initWithStringRepresentation:[NSString stringWithFormat:@"%@/%@", classNameOut, methodNameOut] preserveModulePrefix:YES];
+}
+
 BOOL FBXCTestMain()
 {
   if (!FBLoadXCTestIfNeeded()) {
     exit(TestShimExitCodeXCTestFailedLoading);
   }
+
+  XTSwizzleSelectorForFunction(
+    objc_getClass("XCTestCase"),
+    @selector(_xctTestIdentifier),
+    (IMP)XCTestCase__xctTestIdentifier
+  );
+
   NSString *configurationPath = NSProcessInfo.processInfo.environment[@"XCTestConfigurationFilePath"];
   if (!configurationPath) {
     NSLog(@"Failed to load XCTest as XCTestConfigurationFilePath environment variable is empty");
@@ -116,7 +140,7 @@ BOOL FBXCTestMain()
   if([NSKeyedUnarchiver respondsToSelector:@selector(xct_unarchivedObjectOfClass:fromData:)]){
     configuration = (XCTestConfiguration *)[NSKeyedUnarchiver xct_unarchivedObjectOfClass:NSClassFromString(@"XCTestConfiguration") fromData:data];
   } else {
-    configuration = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+    configuration = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSString class] fromData:data error:&error];
   }
   if (!configuration) {
     NSLog(@"Loaded XCTestConfiguration is nil");

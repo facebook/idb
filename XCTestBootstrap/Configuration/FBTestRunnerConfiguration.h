@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param hostApplication the application bundle.
  @param hostApplicationAdditionalEnvironment additional environment variables that are passed into the runner app.
  @param testBundle the test bundle.
- @param testConfigurationPath the path on disk of the test configuration used.
+ @param testConfigurationPath FBTestConfiguration object.
  @param frameworkSearchPaths the list of search paths to add in the launch.
  @return a new environment dictionary.
  */
@@ -75,6 +75,8 @@ NS_ASSUME_NONNULL_BEGIN
  Launch environment variables added to test target application
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+
+@property (nonatomic, strong, readonly) FBTestConfiguration *testConfiguration;
 
 @end
 

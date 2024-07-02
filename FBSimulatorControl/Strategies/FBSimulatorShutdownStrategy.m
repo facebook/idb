@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -44,10 +44,9 @@
 
 #pragma mark Public Methdos
 
-- (FBFuture<NSNull *> *)shutdown
++ (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator
 {
-  FBSimulator *simulator = self.simulator;
-  id<FBControlCoreLogger> logger = self.simulator.logger;
+  id<FBControlCoreLogger> logger = simulator.logger;
   [logger.debug logFormat:@"Starting Safe Shutdown of %@", simulator.udid];
 
   // If the device is in a strange state, we should bail now
@@ -73,6 +72,17 @@
   // can be safely ignored since these codes confirm that the simulator is already shutdown.
   return [FBSimulatorShutdownStrategy shutdownSimulator:simulator];
 }
+
++ (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators
+{
+  NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
+  for (FBSimulator *simulator in simulators) {
+    [futures addObject:[self shutdown:simulator]];
+  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+}
+
+#pragma mark Private
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {

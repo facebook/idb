@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 
 import tempfile
 from pathlib import Path
@@ -10,12 +12,8 @@ from typing import AsyncGenerator
 from unittest import mock
 
 from idb.common.companion_set import CompanionSet
-from idb.common.types import (
-    CompanionInfo,
-    DomainSocketAddress,
-    TCPAddress,
-)
-from idb.utils.testing import TestCase, ignoreTaskLeaks
+from idb.common.types import CompanionInfo, DomainSocketAddress, TCPAddress
+from idb.utils.testing import ignoreTaskLeaks, TestCase
 
 
 @ignoreTaskLeaks

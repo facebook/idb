@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import os
 from logging import Logger
-from typing import IO, AsyncIterator, List, Union, Optional
+from typing import AsyncIterator, IO, List, Optional, Union
 
 import aiofiles
 import idb.common.gzip as gzip
@@ -65,10 +67,10 @@ async def _generate_dylib_chunks(
 
 
 async def _generate_dsym_chunks(
-    path: str, logger: Logger
+    path: str, compression: Compression, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating chunks for {path}")
-    async for chunk in tar.generate_tar([path]):
+    async for chunk in tar.generate_tar([path], compression):
         yield InstallRequest(payload=Payload(data=chunk))
     logger.debug(f"Finished generating chunks {path}")
 
@@ -122,7 +124,9 @@ def generate_binary_chunks(
     elif destination == InstallRequest.DYLIB:
         return _generate_dylib_chunks(path=path, logger=logger)
     elif destination == InstallRequest.DSYM:
-        return _generate_dsym_chunks(path=path, logger=logger)
+        return _generate_dsym_chunks(
+            path=path, compression=compression or Compression.GZIP, logger=logger
+        )
     elif destination == InstallRequest.FRAMEWORK:
         return _generate_framework_chunks(path=path, logger=logger)
     raise GRPCError(

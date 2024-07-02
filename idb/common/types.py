@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
-from asyncio import StreamWriter, StreamReader
+from asyncio import StreamReader, StreamWriter
+from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
 from typing import (
-    IO,
-    AsyncContextManager,
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Dict,
+    IO,
     List,
     Mapping,
     Optional,
@@ -39,11 +41,6 @@ class IdbConnectionException(Exception):
     pass
 
 
-@dataclass(frozen=True)
-class ExitWithCodeException(Exception):
-    exit_code: int
-
-
 class Permission(Enum):
     PHOTOS = 0
     CAMERA = 1
@@ -51,6 +48,7 @@ class Permission(Enum):
     URL = 3
     LOCATION = 4
     NOTIFICATION = 5
+    MICROPHONE = 6
 
 
 class TargetType(str, Enum):
@@ -65,6 +63,12 @@ class ECIDFilter:
 
 
 OnlyFilter = Union[TargetType, ECIDFilter]
+
+
+class Architecture(Enum):
+    ANY = "any"
+    X86 = "x86_64"
+    ARM64 = "arm64"
 
 
 class VideoFormat(Enum):
@@ -220,6 +224,7 @@ class TestAttachment:
     timestamp: float
     name: str
     uniform_type_identifier: str
+    user_info_json: bytes
 
 
 @dataclass(frozen=True)
@@ -327,13 +332,18 @@ class FileContainerType(Enum):
     AUXILLARY = "auxillary"
     CRASHES = "crashes"
     DISK_IMAGES = "disk_images"
+    DSYM = "dsym"
+    DYLIB = "dylib"
+    FRAMEWORK = "framework"
     GROUP = "group"
     MDM_PROFILES = "mdm_profiles"
     MEDIA = "media"
     PROVISIONING_PROFILES = "provisioning_profiles"
     ROOT = "root"
     SPRINGBOARD_ICONS = "springboard_icons"
+    SYMBOLS = "symbols"
     WALLPAPER = "wallpaper"
+    XCTEST = "xctest"
 
 
 FileContainer = Optional[Union[str, FileContainerType]]
@@ -363,9 +373,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def boot_headless(  # pyre-fixme
+    @asynccontextmanager
+    async def boot_headless(
         self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
-    ) -> AsyncContextManager[None]:
+    ) -> AsyncGenerator[None, None]:
         yield
 
     @abstractmethod
@@ -417,9 +428,10 @@ class Companion(ABC):
         pass
 
     @abstractmethod
-    async def unix_domain_server(  # pyre-fixme
+    @asynccontextmanager
+    async def unix_domain_server(
         self, udid: str, path: str, only: Optional[OnlyFilter] = None
-    ) -> AsyncContextManager[str]:
+    ) -> AsyncGenerator[str, None]:
         yield
 
 
@@ -440,6 +452,7 @@ class Client(ABC):
         foreground_if_running: bool = False,
         wait_for_debugger: bool = False,
         stop: Optional[asyncio.Event] = None,
+        pid_file: Optional[str] = None,
     ) -> None:
         pass
 
@@ -463,6 +476,7 @@ class Client(ABC):
         report_attachments: bool = False,
         activities_output_path: Optional[str] = None,
         coverage_output_path: Optional[str] = None,
+        enable_continuous_coverage_collection: bool = False,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
         log_directory_path: Optional[str] = None,
         wait_for_debugger: bool = False,
@@ -475,6 +489,7 @@ class Client(ABC):
         bundle: Union[str, IO[bytes]],
         compression: Optional[Compression] = None,
         make_debuggable: Optional[bool] = None,
+        override_modification_time: Optional[bool] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -489,12 +504,14 @@ class Client(ABC):
         self,
         dsym: Union[str, IO[bytes]],
         bundle_id: Optional[str],
+        compression: Optional[Compression],
+        bundle_type: Optional[FileContainerType] = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
     @abstractmethod
     async def install_xctest(
-        self, xctest: Union[str, IO[bytes]]
+        self, xctest: Union[str, IO[bytes]], skip_signing_bundles: Optional[bool] = None
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -544,7 +561,7 @@ class Client(ABC):
 
     @abstractmethod
     async def set_preference(
-        self, name: str, value: str, domain: Optional[str]
+        self, name: str, value: str, value_type: str, domain: Optional[str]
     ) -> None:
         pass
 
@@ -578,6 +595,12 @@ class Client(ABC):
 
     @abstractmethod
     async def approve(
+        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def revoke(
         self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
     ) -> None:
         pass

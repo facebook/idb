@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -36,6 +36,7 @@ service CompanionService {
       returns (SimulateMemoryWarningResponse) {}
   // Settings
   rpc approve(ApproveRequest) returns (ApproveResponse) {}
+  rpc revoke(RevokeRequest) returns (RevokeResponse) {}
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
   rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
@@ -116,6 +117,22 @@ message SettingRequest {
     string value = 2;
     string name = 3; // iff setting == ANY
     string domain = 4; // assumed "Apple Global Domain" if empty
+    /*
+     * Currently supported value_types and corresponding values are:
+     *  string <string_value>
+     *  data <hex_digits>
+     *  int[eger] <integer_value>
+     *  float  <floating-point_value>
+     *  bool[ean] (true | false | yes | no)
+     *  date <date_rep>
+     *  array <value1> <value2> ...
+     *  array-add <value1> <value2> ...
+     *  dict <key1> <value1> <key2> <value2> ...
+     *  dict-add <key1> <value1> ...
+     *
+     * Check defaults set help for more details.
+     */
+    string value_type = 5;
   }
   oneof setting {
     HardwareKeyboard hardwareKeyboard = 1;
@@ -174,12 +191,24 @@ message InstallRequest {
     DSYM = 3;
     FRAMEWORK = 4;
   }
+  message LinkDsymToBundle {
+    enum BundleType {
+      APP = 0;
+      XCTEST = 1;
+    }
+    BundleType bundle_type = 1;
+    string bundle_id = 2;
+  }
   oneof value {
     Destination destination = 1;
     Payload payload = 2;
     string name_hint = 3;
     bool make_debuggable = 4;
-    string bundle_id = 5; // dSYM for app
+    string bundle_id = 5; //(2022-03-02) REMOVE, For back compatibility only.
+                          // Link dSYM to app bundle_id
+    LinkDsymToBundle link_dsym_to_bundle = 6;
+    bool override_modification_time = 7;
+    bool skip_signing_bundles = 8;
   }
 }
 
@@ -226,6 +255,7 @@ message ApproveRequest {
     URL = 3;
     LOCATION = 4;
     NOTIFICATION = 5;
+    MICROPHONE = 6;
   }
   string bundle_id = 1;
   repeated Permission permissions = 2;
@@ -233,6 +263,23 @@ message ApproveRequest {
 }
 
 message ApproveResponse {}
+
+message RevokeRequest {
+  enum Permission {
+    PHOTOS = 0;
+    CAMERA = 1;
+    CONTACTS = 2;
+    URL = 3;
+    LOCATION = 4;
+    NOTIFICATION = 5;
+    MICROPHONE = 6;
+  }
+  string bundle_id = 1;
+  repeated Permission permissions = 2;
+  string scheme = 3;
+}
+
+message RevokeResponse {}
 
 message ClearKeychainRequest {}
 
@@ -407,6 +454,7 @@ message VideoStreamRequest {
     RBGA = 1;
     MJPEG = 2;
     MINICAP = 3;
+    I420 = 4;
   }
   message Start {
     string file_path = 1;
@@ -414,6 +462,8 @@ message VideoStreamRequest {
     Format format = 3;
     double compression_quality = 4;
     double scale_factor = 5;
+    double avg_bitrate = 6;
+    double key_frame_rate = 7;
   }
   message Stop {}
   oneof control {
@@ -644,6 +694,7 @@ message XctestRunRequest {
     }
     bool collect = 1;
     Format format = 2;
+    bool enable_continuous_coverage_collection = 3;
   }
   Mode mode = 1;
   string test_bundle_id = 2;
@@ -658,6 +709,7 @@ message XctestRunRequest {
   bool collect_logs = 11;
   bool wait_for_debugger = 12;
   CodeCoverage code_coverage = 13;
+  bool collect_result_bundle = 14;
 }
 
 message XctestRunResponse {
@@ -672,6 +724,7 @@ message XctestRunResponse {
       double timestamp = 2;
       string name = 3;
       string uniform_type_identifier = 4;
+      bytes user_info_json = 5;
     }
     message TestActivity {
       string title = 1;
@@ -697,6 +750,7 @@ message XctestRunResponse {
     TestRunFailureInfo failure_info = 6;
     repeated string logs = 7;
     repeated TestActivity activityLogs = 8;
+    repeated TestRunFailureInfo other_failures = 9;
   }
   enum Status {
     RUNNING = 0;
@@ -730,6 +784,11 @@ message FileContainer {
     GROUP_CONTAINER = 10;
     APPLICATION_CONTAINER = 11;
     AUXILLARY = 12;
+    XCTEST = 13;
+    DYLIB = 14;
+    DSYM = 15;
+    FRAMEWORK = 16;
+    SYMBOLS = 17;
   }
   Kind kind = 1;
   string bundle_id = 2;

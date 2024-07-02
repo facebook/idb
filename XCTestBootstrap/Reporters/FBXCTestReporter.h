@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,6 +10,8 @@
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
+#import <XCTestBootstrap/FBExceptionInfo.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -66,11 +68,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param testClass the test class that has failed.
  @param method the test method that has failed.
- @param message the failure message.
- @param file the failing file.
- @param line the failing line number.
+ @param exceptions an array of the exceptions that caused the failure.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method exceptions:(NSArray<FBExceptionInfo *> *)exceptions;
 
 /**
  Called when a test case has started
@@ -102,7 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)handleExternalEvent:(NSString *)event;
 
 /**
- Called when the results of the test should be written to the output.
+ Called when the results of the test should be written to the output. Warning! This method is bridged to swift incorrectly and loses bool return type. Adapt and use with extra care
 
  @param error an error for an error that occurs.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,8 @@
 #import "FBDeveloperDiskImage.h"
 
 #import <FBControlCore/FBControlCore.h>
+
+static NSString *const ExtraDeviceSupportDirEnv = @"IDB_EXTRA_DEVICE_SUPPORT_DIR";
 
 static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSystemVersion target)
 {
@@ -34,7 +36,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     }
     [images addObject:image];
   }
-  return images;
+  return [images sortedArrayUsingSelector:@selector(compare:)];
 }
 
 + (nullable FBDeveloperDiskImage *)diskImageAtPath:(NSString *)path xcodeVersion:(NSOperatingSystemVersion)xcodeVersion error:(NSError **)error
@@ -70,8 +72,22 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   static NSArray<FBDeveloperDiskImage *> *images = nil;
   dispatch_once(&onceToken, ^{
     images = [self allDiskImagesFromSearchPath:[platformRootDirectory stringByAppendingPathComponent:@"DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:ExtraDeviceSupportDirEnv]) {
+      NSArray<FBDeveloperDiskImage *> *extraImages = [self allDiskImagesFromSearchPath:NSProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+      images = [images arrayByAddingObjectsFromArray:extraImages];
+    }
   });
   return images;
+}
+
++ (FBDeveloperDiskImage *) unknownDiskImageWithSignature:(NSData *)signature
+{
+  NSOperatingSystemVersion unknownVersion = {
+    .majorVersion = 0,
+    .minorVersion = 0,
+    .patchVersion = 0,
+  };
+  return [[self alloc] initWithDiskImagePath:@"unknown.dmg" signature:signature version:unknownVersion xcodeVersion:unknownVersion];
 }
 
 - (instancetype)initWithDiskImagePath:(NSString *)diskImagePath signature:(NSData *)signature version:(NSOperatingSystemVersion)version xcodeVersion:(NSOperatingSystemVersion)xcodeVersion
@@ -99,16 +115,40 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
   ];
   [logger logFormat:@"Attempting to find Symbols directory by build version %@", buildVersion];
+  NSMutableArray<NSString *> *paths = NSMutableArray.array;
   for (NSString *searchPath in searchPaths) {
-    for (NSString *fileName in [NSFileManager.defaultManager enumeratorAtPath:searchPath]) {
-      NSString *path = [searchPath stringByAppendingPathComponent:fileName];
-      if ([path containsString:buildVersion]) {
-        return [path stringByAppendingPathComponent:@"Symbols"];
+    NSError *innerError = nil;
+    NSArray<NSString *> *supportPaths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:&innerError];
+    if (!supportPaths) {
+      continue;
+    }
+    for (NSString *supportName in supportPaths) {
+      NSString *supportPath = [searchPath stringByAppendingPathComponent:supportName];
+      BOOL isDirectory = NO;
+      if (![NSFileManager.defaultManager fileExistsAtPath:supportPath isDirectory:&isDirectory]) {
+        continue;
       }
+      if (isDirectory == NO) {
+        continue;
+      }
+      NSString *symbolsPath = [supportPath stringByAppendingPathComponent:@"Symbols"];
+      if (![NSFileManager.defaultManager fileExistsAtPath:symbolsPath isDirectory:&isDirectory]) {
+        continue;
+      }
+      if (isDirectory == NO) {
+        continue;
+      }
+      [paths addObject:symbolsPath];
     }
   }
+  for (NSString *path in paths) {
+    if (![path containsString:buildVersion]) {
+      continue;
+    }
+    return path;
+  }
   return [[FBControlCoreError
-    describeFormat:@"Could not find the Symbols for %@", self]
+    describeFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]
     fail:error];
 }
 
@@ -153,6 +193,19 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"%@: %lu.%lu", self.diskImagePath, self.version.majorVersion, self.version.minorVersion];
+}
+
+- (NSComparisonResult)compare:(FBDeveloperDiskImage *)other
+{
+  NSComparisonResult comparison = [@(self.version.majorVersion) compare:@(other.version.majorVersion)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [@(self.version.minorVersion) compare:@(other.version.minorVersion)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  return [@(self.version.patchVersion) compare:@(other.version.patchVersion)];
 }
 
 @end
