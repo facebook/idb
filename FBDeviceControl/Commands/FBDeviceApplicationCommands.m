@@ -395,24 +395,56 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
     }];
 }
 
+- (FBFuture<NSNull *> *)secureInstallApplicationBundle:(NSURL *)hostAppURL options:(NSDictionary<NSString *, id> *)options
+{
+  return [[self.device
+    connectToDeviceWithPurpose:@"install"]
+    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
+      [self.device.logger logFormat:@"Installing Application %@", hostAppURL];
+      int status = device.calls.SecureInstallApplicationBundle(
+        device.amDeviceRef,
+        (__bridge CFURLRef _Nonnull)(hostAppURL),
+        (__bridge CFDictionaryRef _Nonnull)(options),
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
+      );
+      if (status != 0) {
+        NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+          return [[FBDeviceControlError
+                    describeFormat:@"Failed to install application %@ 0x%x (%@). %@", [hostAppURL lastPathComponent], status, errorMessage, statistics.summaryOfRecentEvents]
+                    failFuture];
+        //return [[FBDeviceControlError
+        //  describeFormat:@"Failed to install application %@ 0x%x (%@)", [hostAppURL lastPathComponent], status, errorMessage]
+        //  failFuture];
+      }
+      [self.device.logger logFormat:@"Installed Application %@", hostAppURL];
+      return FBFuture.empty;
+    }];
+}
+
 - (FBFuture<NSNull *> *)secureDeltaInstallApplication:(NSURL *)appURL options:(NSDictionary *)options
 {
   return [[self.device
     connectToDeviceWithPurpose:@"install"]
     onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
+      FBDeviceWorkflowStatistics *statistics = [[FBDeviceWorkflowStatistics alloc] initWithWorkflowType:@"Install" logger:device.logger];
       [self.device.logger logFormat:@"Installing Application %@", appURL];
       int status = device.calls.SecureInstallApplicationBundle(
         device.amDeviceRef,
         (__bridge CFURLRef _Nonnull)(appURL),
         (__bridge CFDictionaryRef _Nonnull)(options),
-        (AMDeviceProgressCallback) InstallCallback,
-        (__bridge void *) (device)
+        (AMDeviceProgressCallback) WorkflowCallback,
+        (__bridge void *) (statistics)
       );
       if (status != 0) {
         NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
-          failFuture];
+          return [[FBDeviceControlError
+                    describeFormat:@"Failed to install application %@ 0x%x (%@). %@", [appURL lastPathComponent], status, errorMessage, statistics.summaryOfRecentEvents]
+                    failFuture];
+        //return [[FBDeviceControlError
+        //  describeFormat:@"Failed to install application %@ 0x%x (%@)", [appURL lastPathComponent], status, errorMessage]
+        //  failFuture];
       }
       [self.device.logger logFormat:@"Installed Application %@", appURL];
       return FBFuture.empty;
