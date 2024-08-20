@@ -139,17 +139,17 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   NSSet<FBArchitecture> *binaryArchitectures = bundle.binary.architectures;
   NSArray<FBArchitecture> *targetArchs = self.target.architectures;
   NSSet<FBArchitecture> *supportedArchitectures = [FBiOSTargetConfiguration baseArchsToCompatibleArch:targetArchs];
-  
+
   const BOOL containsExactArch = [binaryArchitectures intersectsSet:supportedArchitectures];
-  // arm64 binaries are acceptable on arm64e devices, but arm64e is not yet available
+  // arm64 binaries are acceptable on arm64e devices
   const BOOL arm64eEquivalent = [targetArchs containsObject:@"arm64e"] && [binaryArchitectures containsObject:@"arm64"];
-  
+
   if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
              describeFormat:@"The supported architectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]
             failBool:error];
   }
-  
+
   return YES;
 }
 
