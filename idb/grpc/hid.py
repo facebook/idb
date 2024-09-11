@@ -102,7 +102,9 @@ def swipe_to_grpc(swipe: HIDSwipe) -> GrpcHIDSwipe:
     return GrpcHIDSwipe(
         start=point_to_grpc(swipe.start),
         end=point_to_grpc(swipe.end),
+        # pyre-ignore
         delta=swipe.delta,
+        # pyre-ignore
         duration=swipe.duration,
     )
 

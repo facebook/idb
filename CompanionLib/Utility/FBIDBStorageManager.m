@@ -139,26 +139,26 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   NSSet<FBArchitecture> *binaryArchitectures = bundle.binary.architectures;
   NSArray<FBArchitecture> *targetArchs = self.target.architectures;
   NSSet<FBArchitecture> *supportedArchitectures = [FBiOSTargetConfiguration baseArchsToCompatibleArch:targetArchs];
-  
+
   const BOOL containsExactArch = [binaryArchitectures intersectsSet:supportedArchitectures];
-  // arm64 binaries are acceptable on arm64e devices, but arm64e is not yet available
+  // arm64 binaries are acceptable on arm64e devices
   const BOOL arm64eEquivalent = [targetArchs containsObject:@"arm64e"] && [binaryArchitectures containsObject:@"arm64"];
-  
+
   if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
              describeFormat:@"The supported architectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]
             failBool:error];
   }
-  
+
   return YES;
 }
 
 - (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle
 {
-    return [self saveBundle:bundle skipSigningBundles:NO];
+  return [self saveBundle:bundle usingSymlink:YES skipSigningBundles:NO];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle skipSigningBundles:(BOOL)skipSigningBundles
+- (FBFuture<FBInstalledArtifact *> *)saveBundle:(FBBundleDescriptor *)bundle usingSymlink:(BOOL)useSymlink skipSigningBundles:(BOOL)skipSigningBundles
 {
   // Check that the bundle matches the architecture of the target.
   NSError *error = nil;
@@ -172,12 +172,21 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
     return [FBFuture futureWithError:error];
   }
 
-  // Copy over bundle
   NSURL *sourceBundlePath = [NSURL fileURLWithPath:bundle.path];
   NSURL *destinationBundlePath = [storageDirectory URLByAppendingPathComponent:sourceBundlePath.lastPathComponent];
-  [self.logger logFormat:@"Symlink %@ to %@", bundle.identifier, destinationBundlePath];
-  if (![NSFileManager.defaultManager createSymbolicLinkAtURL:destinationBundlePath withDestinationURL:sourceBundlePath error:&error]) {
-    return [FBFuture futureWithError:error];
+  if (useSymlink) {
+    // Symlink the bundle
+    [self.logger logFormat:@"Symlink %@ to %@", bundle.identifier, destinationBundlePath];
+    if (![NSFileManager.defaultManager createSymbolicLinkAtURL:destinationBundlePath withDestinationURL:sourceBundlePath error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+  } else {
+    // Move the bundle
+    [self.logger logFormat:@"Moving %@ to %@", bundle.identifier, destinationBundlePath];
+    if (![NSFileManager.defaultManager moveItemAtURL:sourceBundlePath toURL:destinationBundlePath error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+    [self.logger logFormat:@"Moved %@", bundle.identifier];
   }
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid path:destinationBundlePath];
@@ -291,7 +300,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
 
   if (xctestBundleURL) {
-    return [self saveTestBundle:xctestBundleURL skipSigningBundles:skipSigningBundles];
+    return [self saveTestBundle:xctestBundleURL usingSymlink:NO skipSigningBundles:skipSigningBundles];
   }
   if (xctestrunURL) {
     return [self saveTestRun:xctestrunURL];
@@ -305,7 +314,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   // save .xctest or .xctestrun
   if ([filePath.pathExtension isEqualToString:XctestExtension]) {
-    return [self saveTestBundle:filePath skipSigningBundles:skipSigningBundles];
+    return [self saveTestBundle:filePath usingSymlink:YES skipSigningBundles:skipSigningBundles];
   }
   if ([filePath.pathExtension isEqualToString:XctestRunExtension]) {
     return [self saveTestRun:filePath];
@@ -509,7 +518,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[FBXCodebuildTestRunDescriptor alloc] initWithURL:xctestrunURL name:testTarget testBundle:testBundle testHostBundle:testHostBundle];
 }
 
-- (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL skipSigningBundles:(BOOL)skipSigningBundles
+- (FBFuture<FBInstalledArtifact *> *)saveTestBundle:(NSURL *)testBundleURL usingSymlink:(BOOL)useSymlink skipSigningBundles:(BOOL)skipSigningBundles
 {
   // Test Bundles don't always have a bundle id, so fallback to another name if it's not there.
   NSError *error = nil;
@@ -517,7 +526,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   if (!bundle) {
     return [FBFuture futureWithError:error];
   }
-  return [self saveBundle:bundle skipSigningBundles:skipSigningBundles];
+  return [self saveBundle:bundle usingSymlink:useSymlink skipSigningBundles:skipSigningBundles];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)saveTestRun:(NSURL *)XCTestRunURL

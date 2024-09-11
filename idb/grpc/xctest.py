@@ -125,6 +125,7 @@ def make_request(
         mode = Mode(
             ui=UI(
                 app_bundle_id=app_bundle_id,
+                # pyre-ignore
                 test_host_app_bundle_id=test_host_app_bundle_id,
             )
         )
@@ -191,9 +192,6 @@ def make_results(
             ],
             crashed=result.status == XctestRunResponse.TestRunInfo.CRASHED,
         )
-        # pyre-fixme[16]: Item `RepeatedCompositeFieldContainer` of
-        #  `Union[RepeatedCompositeFieldContainer[], List[typing.Any]]` has no
-        #  attribute `__iter__`.
         for result in response.results or []
     ]
 
@@ -212,7 +210,6 @@ def make_failure_info(result: XctestRunResponse.TestRunInfo) -> TestRunFailureIn
             + " "
             + result.failure_info.failure_message
         )
-        # pyre-fixme[16]: `RepeatedCompositeFieldContainer` has no attribute `__iter__`.
         for other_failure in result.other_failures:
             message = (
                 message
@@ -247,16 +244,10 @@ def translate_activity(
                 uniform_type_identifier=attachment.uniform_type_identifier,
                 user_info_json=attachment.user_info_json,
             )
-            # pyre-fixme[16]: Item `RepeatedCompositeFieldContainer` of
-            #  `Union[RepeatedCompositeFieldContainer[], List[typing.Any]]` has no
-            #  attribute `__iter__`.
             for attachment in activity.attachments or []
         ],
         sub_activities=[
             translate_activity(sub_activity)
-            # pyre-fixme[16]: Item `RepeatedCompositeFieldContainer` of
-            #  `Union[RepeatedCompositeFieldContainer[], List[typing.Any]]` has no
-            #  attribute `__iter__`.
             for sub_activity in activity.sub_activities or []
         ],
     )
