@@ -131,4 +131,11 @@
   return manager;
 }
 
+- (void)invalidateHouseArrestAFCConnectionForBundleID:(NSString *)bundleID
+{
+  [self.houseArrestManagers removeObjectForKey:bundleID];
+  [self.houseArrestDelegates removeObjectForKey:bundleID];
+}
+
+
 @end

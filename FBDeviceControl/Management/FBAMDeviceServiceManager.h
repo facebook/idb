@@ -43,6 +43,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFutureContextManager<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
+
+/**
+ Invalidates house arrest connection for a given bundle id.
+ Does nothing if no connection exists already.
+ This can be used whenever a cached connection returns previously encountered errors on subsequent operations
+ */
+- (void)invalidateHouseArrestAFCConnectionForBundleID:(NSString *)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END

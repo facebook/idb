@@ -224,6 +224,11 @@
     }];
 }
 
+- (void)invalidateHouseArrestAFCConnectionForBundleID:(NSString *)bundleID
+{
+  [self.serviceManager invalidateHouseArrestAFCConnectionForBundleID:bundleID];
+}
+
 #pragma mark FBFutureContextManager Implementation
 
 - (FBFuture<FBAMDevice *> *)prepare:(id<FBControlCoreLogger>)logger
