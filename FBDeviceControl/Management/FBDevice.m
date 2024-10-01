@@ -311,6 +311,14 @@
     failFutureContext];
 }
 
+- (void)invalidateHouseArrestAFCConnectionForBundleID:(NSString *)bundleID
+{
+  FBAMDevice *amDevice = self.amDevice;
+  if (amDevice) {
+    [amDevice invalidateHouseArrestAFCConnectionForBundleID:bundleID];
+  }
+}
+
 #pragma mark Forwarding
 
 + (NSArray<Class> *)commandResponders
