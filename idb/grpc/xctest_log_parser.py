@@ -21,10 +21,10 @@ class Event(NamedTuple):
     methodName: str
 
 
-XCTestLogParserData = Dict[XCTestLogParserKey, List[str]]
+XCTestLogParserData = dict[XCTestLogParserKey, list[str]]
 
 
-def _try_parse_event(log_line: str) -> Optional[Event]:
+def _try_parse_event(log_line: str) -> Event | None:
     event = None
     parsed_json = None
     if len(log_line) < 10_000:  # For performance reasons, don't parse long lines
@@ -49,7 +49,7 @@ def _try_parse_event(log_line: str) -> Optional[Event]:
 
 class XCTestLogParser:
     _logs: XCTestLogParserData
-    _current_test: Optional[XCTestLogParserKey]
+    _current_test: XCTestLogParserKey | None
 
     def __init__(self) -> None:
         self._logs = defaultdict(list)
@@ -67,7 +67,7 @@ class XCTestLogParser:
         elif event.event == "end-test":
             self._current_test = None
 
-    def get_logs_for_test(self, class_name: str, method_name: str) -> List[str]:
+    def get_logs_for_test(self, class_name: str, method_name: str) -> list[str]:
         key = XCTestLogParserKey(className=class_name, methodName=method_name)
         return self._logs[key]
 

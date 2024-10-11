@@ -7,8 +7,9 @@
 # pyre-strict
 
 import os
+from collections.abc import AsyncIterator
 from logging import Logger
-from typing import AsyncIterator, IO, List, Optional, Union
+from typing import IO, List, Optional, Union
 
 import aiofiles
 import idb.common.gzip as gzip
@@ -85,7 +86,7 @@ async def _generate_framework_chunks(
 
 
 async def generate_requests(
-    requests: List[InstallRequest],
+    requests: list[InstallRequest],
 ) -> AsyncIterator[InstallRequest]:
     for request in requests:
         yield request
@@ -107,7 +108,7 @@ async def generate_io_chunks(
 def generate_binary_chunks(
     path: str,
     destination: Destination,
-    compression: Optional[Compression],
+    compression: Compression | None,
     logger: Logger,
 ) -> AsyncIterator[InstallRequest]:
     if destination == InstallRequest.APP:

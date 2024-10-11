@@ -9,7 +9,8 @@
 import asyncio
 import logging
 from asyncio import StreamReader, StreamWriter
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional
 
 from idb.common.types import IdbException
 from idb.grpc.idb_grpc import CompanionServiceStub
@@ -73,8 +74,8 @@ class RemoteDapServer:
         """
         Pipe stdin and stdout to remote dap server
         """
-        read_future: Optional[asyncio.Future[StreamReader]] = None
-        write_future: Optional[asyncio.Future[StreamWriter]] = None
+        read_future: asyncio.Future[StreamReader] | None = None
+        write_future: asyncio.Future[StreamWriter] | None = None
         stop_future = asyncio.ensure_future(stop.wait())
         while True:
             if read_future is None:

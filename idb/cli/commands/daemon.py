@@ -89,7 +89,7 @@ class DaemonCommand(BaseCommand):
             self.logger.info("Exiting")
 
     def _reply_with_port(
-        self, reply_fd: Optional[int], prefer_ipv6: bool, ports: Dict[str, int]
+        self, reply_fd: int | None, prefer_ipv6: bool, ports: dict[str, int]
     ) -> None:
         if not reply_fd:
             return

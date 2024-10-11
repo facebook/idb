@@ -29,7 +29,7 @@ Logic = XctestRunRequest.Logic
 Application = XctestRunRequest.Application
 UI = XctestRunRequest.UI
 
-CODE_COVERAGE_FORMAT_MAP: Dict[
+CODE_COVERAGE_FORMAT_MAP: dict[
     CodeCoverageFormat, "XctestRunRequest.CodeCoverage.Format"
 ] = {
     CodeCoverageFormat.EXPORTED: XctestRunRequest.CodeCoverage.EXPORTED,
@@ -54,9 +54,7 @@ def _get_xctest_type(path: str) -> _XCTestType:
     raise XCTestException(f"{path} is not a valid xctest target")
 
 
-def extract_paths_from_xctestrun(
-    path: str, logger: Optional[Logger] = None
-) -> List[str]:
+def extract_paths_from_xctestrun(path: str, logger: Logger | None = None) -> list[str]:
     """
     When using xctestrun we need to copy:
     - the xctestrun file
@@ -67,7 +65,7 @@ def extract_paths_from_xctestrun(
     result = [path]
     test_root = os.path.dirname(path)
     with open(path, "rb") as f:
-        xctestrun_dict: Dict[str, Any] = plistlib.load(f)
+        xctestrun_dict: dict[str, Any] = plistlib.load(f)
         for _test_id, test_dict in xctestrun_dict.items():
             if _test_id == "__xctestrun_metadata__":
                 continue
@@ -82,12 +80,12 @@ def extract_paths_from_xctestrun(
     return result
 
 
-def xctest_paths_to_tar(bundle_path: str, logger: Optional[Logger] = None) -> List[str]:
+def xctest_paths_to_tar(bundle_path: str, logger: Logger | None = None) -> list[str]:
     test_type = _get_xctest_type(bundle_path)
     if test_type is _XCTestType.XCTest:
         return [bundle_path]
     with open(bundle_path, "rb") as f:
-        plist: Dict[str, Any] = plistlib.load(f)
+        plist: dict[str, Any] = plistlib.load(f)
         use_artifacts = (
             v.get("UseDestinationArtifacts", False) is True for v in plist.values()
         )
@@ -101,15 +99,15 @@ def xctest_paths_to_tar(bundle_path: str, logger: Optional[Logger] = None) -> Li
 def make_request(
     test_bundle_id: str,
     app_bundle_id: str,
-    test_host_app_bundle_id: Optional[str],
+    test_host_app_bundle_id: str | None,
     is_ui_test: bool,
     is_logic_test: bool,
-    tests_to_run: Optional[Set[str]],
-    tests_to_skip: Optional[Set[str]],
-    env: Optional[Dict[str, str]],
-    args: Optional[List[str]],
-    result_bundle_path: Optional[str],
-    timeout: Optional[int],
+    tests_to_run: set[str] | None,
+    tests_to_skip: set[str] | None,
+    env: dict[str, str] | None,
+    args: list[str] | None,
+    result_bundle_path: str | None,
+    timeout: int | None,
     report_activities: bool,
     report_attachments: bool,
     collect_coverage: bool,
@@ -174,7 +172,7 @@ async def untar_into_path(
 
 def make_results(
     response: XctestRunResponse, log_parser: XCTestLogParser
-) -> List[TestRunInfo]:
+) -> list[TestRunInfo]:
     return [
         TestRunInfo(
             bundle_name=result.bundle_name,

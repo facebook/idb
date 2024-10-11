@@ -297,7 +297,7 @@ class CommonRunXcTestCommand(ClientCommand):
 
     async def install_dsym_test_bundle(
         self, args: Namespace, client: Client, test_bundle_location: str
-    ) -> Optional[str]:
+    ) -> str | None:
         dsym_name = None
         dsym_path_location = args.install_dsym_test_bundle
         if args.install_dsym_test_bundle == NO_SPECIFIED_PATH:
@@ -320,10 +320,10 @@ class CommonRunXcTestCommand(ClientCommand):
                 dsym_name = install_response.name
         return dsym_name
 
-    def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
+    def get_tests_to_run(self, args: Namespace) -> set[str] | None:
         return None
 
-    def get_tests_to_skip(self, args: Namespace) -> Optional[Set[str]]:
+    def get_tests_to_skip(self, args: Namespace) -> set[str] | None:
         return None
 
 
@@ -366,10 +366,10 @@ class XctestRunAppCommand(CommonRunXcTestCommand):
         async for app in client.install(args.app_bundle_id):
             args.app_bundle_id = app.name
 
-    def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
+    def get_tests_to_run(self, args: Namespace) -> set[str] | None:
         return set(args.tests_to_run) if args.tests_to_run else None
 
-    def get_tests_to_skip(self, args: Namespace) -> Optional[Set[str]]:
+    def get_tests_to_skip(self, args: Namespace) -> set[str] | None:
         return set(args.tests_to_skip) if args.tests_to_skip else None
 
 
@@ -414,7 +414,7 @@ class XctestRunLogicCommand(CommonRunXcTestCommand):
             Format: className/methodName",
         )
 
-    def get_tests_to_run(self, args: Namespace) -> Optional[Set[str]]:
+    def get_tests_to_run(self, args: Namespace) -> set[str] | None:
         if args.test_to_run:
             return set(args.test_to_run)
         if args.tests_to_run:

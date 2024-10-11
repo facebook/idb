@@ -22,7 +22,7 @@ START_INSTRUMENTS_TIMEOUT: float = timedelta(minutes=6).total_seconds()
 STOP_INSTRUMENTS_TIMEOUT: float = timedelta(minutes=10).total_seconds()
 CRASH_LIST_TIMEOUT: float = timedelta(minutes=5).total_seconds()
 
-JSONDict = Dict[str, Any]
+JSONDict = dict[str, Any]
 
 BASE_IDB_FILE_PATH: str = "/tmp/idb"
 IDB_PID_PATH: str = f"{BASE_IDB_FILE_PATH}/pid"

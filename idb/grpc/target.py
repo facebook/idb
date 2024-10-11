@@ -7,7 +7,8 @@
 # pyre-strict
 
 import json
-from typing import List, Sequence
+from collections.abc import Sequence
+from typing import List
 
 from idb.common.format import target_type_from_string
 from idb.common.types import Address, CompanionInfo, ScreenDimensions, TargetDescription
@@ -79,7 +80,7 @@ def screen_dimensions_to_py(dimensions: GrpcScreenDimensions) -> ScreenDimension
 def merge_connected_targets(
     local_targets: Sequence[TargetDescription],
     connected_targets: Sequence[TargetDescription],
-) -> List[TargetDescription]:
+) -> list[TargetDescription]:
     connected_mapping = {target.udid: target for target in connected_targets}
     targets = {}
     # First, add all local targets, updating companion info where available

@@ -51,7 +51,7 @@ class AppInstallCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        artifact: Optional[InstalledArtifact] = None
+        artifact: InstalledArtifact | None = None
         compression = (
             Compression[args.compression] if args.compression is not None else None
         )

@@ -57,8 +57,8 @@ log stream --predicate examples:
         print("")
 
     def normalise_log_arguments(
-        self, log_arguments: Optional[List[str]]
-    ) -> Optional[List[str]]:
+        self, log_arguments: list[str] | None
+    ) -> list[str] | None:
         if log_arguments is None:
             return None
 

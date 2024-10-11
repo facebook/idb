@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 class Command(metaclass=ABCMeta):
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return []
 
     @property
@@ -40,16 +40,16 @@ class Command(metaclass=ABCMeta):
 
 class CompositeCommand(Command, metaclass=ABCMeta):
     def __init__(self) -> None:
-        self.parser: Optional[ArgumentParser] = None
-        self._subcommands_by_name: Dict[str, Command] = {}
+        self.parser: ArgumentParser | None = None
+        self._subcommands_by_name: dict[str, Command] = {}
 
     @property
     @abstractmethod
-    def subcommands(self) -> List[Command]:
+    def subcommands(self) -> list[Command]:
         pass
 
     @property
-    def subcommands_by_name(self) -> Dict[str, Command]:
+    def subcommands_by_name(self) -> dict[str, Command]:
         def add_unique_cmd(key: str, value: Command) -> None:
             assert (
                 key not in self._subcommands_by_name
@@ -89,7 +89,7 @@ class CompositeCommand(Command, metaclass=ABCMeta):
 
 
 class CommandGroup(CompositeCommand):
-    def __init__(self, name: str, description: str, commands: List[Command]) -> None:
+    def __init__(self, name: str, description: str, commands: list[Command]) -> None:
         super().__init__()
         self.commands = commands
         self._name = name
@@ -104,5 +104,5 @@ class CommandGroup(CompositeCommand):
         return self._description
 
     @property
-    def subcommands(self) -> List[Command]:
+    def subcommands(self) -> list[Command]:
         return self.commands
