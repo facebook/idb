@@ -121,7 +121,7 @@ This is an C++ class that [implements the gRPC interface](https://github.com/fac
 
 Requests are forwarded to the handler on a thread pool that is internal to the gRPC C++ library. The overwhelming majority of calls made to the companion will call out to APIs that are backed by an `FBFuture`. This means that the handler thread is then responsible for awaiting the resolution of that `FBFuture`. Each handler call is wrapped in an autorelease pool to prevent memory leakage. The calls to the underlying Frameworks will serialize work appropriately, due to their usage of Futures.
 
-### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/idb_companion/Server/FBIDBCommandExecutor.h)
+### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/FBIDBCommandExecutor.h)
 
 This is a pure Objective-C class that provides a facade over the many APIs in the underlying Framework, so that the service handler does not need to be aware of how they operate. This also means that C++ only needs to be used where it is necessary, so that if the gRPC handler is ever migrated to Swift there will be minimal implementation in the handler.
 
