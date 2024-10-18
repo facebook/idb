@@ -38,10 +38,10 @@
     if (!self) {
         return nil;
     }
-    
+
     _strategy = strategy;
     _reporter = reporter;
-    
+
     return self;
 }
 
@@ -111,14 +111,14 @@
     stdErrBuffer,
     [FBLoggingDataConsumer consumerWithLogger:self.logger],
   ]];
-    
+
   return [[[FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger] withTemporaryDirectory]
           onQueue:self.target.workQueue pop:^FBFuture *(NSURL *temporaryDirectory) {
     return [[FBOToolDynamicLibs
              findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
             onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
       NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
-      
+
       return [[FBListTestStrategy
                listTestProcessWithTarget:self.target
                configuration:self.configuration
@@ -171,6 +171,7 @@
       NSError *error = nil;
       NSArray<NSDictionary<NSString *, NSString *> *> *tests = [NSJSONSerialization JSONObjectWithData:shimBuffer.data options:0 error:&error];
       if (!tests) {
+        NSLog(@"Shimulator buffer data (should contain test information): %@", shimBuffer.data);
         return [FBFuture futureWithError:error];
       }
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
@@ -211,7 +212,7 @@
   NSString *launchPath = xctestPath;
   NSTimeInterval timeout = configuration.testTimeout;
 
-    
+
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:stdErrConsumer]];
   // List test for app test bundle, so we use app binary instead of xctest to load test bundle.
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
@@ -240,11 +241,11 @@
     launchPath = appBundle.binary.path;
     FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
     return [FBListTestStrategy listTestProcessWithSpawnConfiguration:spawnConfiguration onTarget:target timeout:timeout logger:logger];
-    
+
   } else {
     FBProcessSpawnConfiguration *spawnConfiguration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:@[] environment:environment io:io mode:FBProcessSpawnModeDefault];
     FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
-    
+
     // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
     // For more information look at `FBArchitectureProcessAdapter` docs.
     return [[adapter adaptProcessConfiguration:spawnConfiguration toAnyArchitectureIn:configuration.architectures queue:target.workQueue temporaryDirectory:temporaryDirectory]

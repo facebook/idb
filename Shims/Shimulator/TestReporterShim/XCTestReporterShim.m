@@ -614,6 +614,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
     NSString *testKey = nil;
     parseXCTestCase(testCase, &className, &methodName, &testKey);
     NSString *legacyTestName = [NSString stringWithFormat:@"%@/%@", className, methodName];
+    NSLog(@"Found test: %@", legacyTestName);
     [testsToReport addObject:@{
       kReporter_ListTest_LegacyTestNameKey: legacyTestName,
       kReporter_ListTest_ClassNameKey: className,
