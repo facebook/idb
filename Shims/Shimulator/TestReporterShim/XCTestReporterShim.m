@@ -629,11 +629,13 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
   }];
   NSError *error = nil;
   NSData *output = [NSJSONSerialization dataWithJSONObject:testsToReport options:0 error:&error];
-  NSCAssert(output, @"Failed to generate list test JSON", error);
-  [fileHandle writeData:output];
+  NSCAssert(output, @"Failed to generate test list JSON", error);
+  bool fileWrittenSuccessfully = [fileHandle writeData:output error:&error];
+  NSCAssert(fileWrittenSuccessfully, @"Failed to write test list to file", error);
 
   // Close the file so the other end knows this is the end of the input.
-  [fileHandle closeFile];
+  bool fileClosedSuccessfully = [fileHandle closeAndReturnError:&error];
+  NSCAssert(fileClosedSuccessfully, @"Failed to close file with test list", error);
   exit(TestShimExitCodeSuccess);
 }
 
