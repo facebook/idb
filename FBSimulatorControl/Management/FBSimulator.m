@@ -209,6 +209,8 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       return FBControlCoreProductFamilyAppleTV;
     case 4:
       return FBControlCoreProductFamilyAppleWatch;
+    case 7:
+      return FBControlCoreProductFamilyVision;
     default:
       return FBControlCoreProductFamilyUnknown;
   }
