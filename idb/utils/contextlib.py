@@ -9,8 +9,9 @@
 
 import abc
 import sys
+from collections.abc import AsyncIterator, Callable
 from functools import wraps
-from typing import AsyncContextManager, AsyncIterator, Callable, TypeVar
+from typing import AsyncContextManager, TypeVar
 
 
 # @asynccontextmanager is available in Python 3.7
@@ -257,8 +258,5 @@ def _asynccontextmanager(
     return helper
 
 
-if sys.version_info >= (3, 7):
-    # Use the offical python one if available
-    from contextlib import asynccontextmanager
-else:
-    asynccontextmanager = _asynccontextmanager
+# Use the offical python one if available
+from contextlib import asynccontextmanager

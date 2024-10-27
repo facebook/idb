@@ -44,7 +44,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
         environment:environment ?: @{}
         waitForDebugger:waitForDebugger
         io:io
-        launchMode:FBApplicationLaunchModeFailIfRunning];
+        launchMode:FBApplicationLaunchModeRelaunchIfRunning];
   }];
 }
 

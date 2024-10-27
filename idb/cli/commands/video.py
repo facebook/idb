@@ -15,7 +15,7 @@ from idb.common.signal import signal_handler_event, signal_handler_generator
 from idb.common.types import Client, VideoFormat
 
 
-_FORMAT_CHOICE_MAP: Dict[str, VideoFormat] = {
+_FORMAT_CHOICE_MAP: dict[str, VideoFormat] = {
     str(format.value.lower()): format for format in VideoFormat
 }
 
@@ -30,7 +30,7 @@ class VideoRecordCommand(ClientCommand):
         return "video"
 
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return ["record-video"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:

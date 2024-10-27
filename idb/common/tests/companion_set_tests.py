@@ -7,8 +7,8 @@
 # pyre-strict
 
 import tempfile
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import AsyncGenerator
 from unittest import mock
 
 from idb.common.companion_set import CompanionSet

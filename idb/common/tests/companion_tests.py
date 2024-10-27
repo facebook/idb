@@ -8,8 +8,8 @@
 
 import json
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 from unittest import mock
 
 from idb.common.companion import (

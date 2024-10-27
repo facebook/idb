@@ -8,8 +8,9 @@
 
 import sys
 from argparse import ArgumentParser, Namespace
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import IO, Iterator
+from typing import IO
 
 from idb.cli import ClientCommand
 from idb.common.types import Client

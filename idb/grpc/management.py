@@ -10,7 +10,8 @@ import asyncio
 import logging
 import os
 import signal
-from typing import AsyncGenerator, Dict, List, Optional
+from collections.abc import AsyncGenerator
+from typing import Dict, List, Optional
 
 from idb.common.companion import Companion, CompanionServerConfig
 from idb.common.companion_set import CompanionSet
@@ -50,12 +51,12 @@ async def _realize_companions(
     companion_set: CompanionSet,
     prune_dead_companion: bool,
     logger: logging.Logger,
-) -> List[TargetDescription]:
-    to_prune: List[Companion]
+) -> list[TargetDescription]:
+    to_prune: list[Companion]
 
     async def _companion_to_target(
         companion: CompanionInfo,
-    ) -> Optional[TargetDescription]:
+    ) -> TargetDescription | None:
         try:
             async with Client.build(address=companion.address, logger=logger) as client:
                 return await client.describe()
@@ -94,17 +95,17 @@ async def _check_domain_socket_is_bound(path: str) -> bool:
 class ClientManager(ClientManagerBase):
     def __init__(
         self,
-        companion_path: Optional[str] = None,
-        device_set_path: Optional[str] = None,
+        companion_path: str | None = None,
+        device_set_path: str | None = None,
         prune_dead_companion: bool = True,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         os.makedirs(BASE_IDB_FILE_PATH, exist_ok=True)
         self._logger: logging.Logger = (
             logger if logger else logging.getLogger("idb_grpc_client")
         )
         self._companion_set = CompanionSet(logger=self._logger)
-        self._companion: Optional[Companion] = (
+        self._companion: Companion | None = (
             Companion(
                 companion_path=companion_path,
                 device_set_path=device_set_path,
@@ -155,7 +156,7 @@ class ClientManager(ClientManagerBase):
         return companion_info
 
     @asynccontextmanager
-    async def from_udid(self, udid: Optional[str]) -> AsyncGenerator[Client, None]:
+    async def from_udid(self, udid: str | None) -> AsyncGenerator[Client, None]:
         companions = {
             companion.udid: companion
             for companion in await self._companion_set.get_companions()
@@ -188,9 +189,9 @@ class ClientManager(ClientManagerBase):
 
     @log_call()
     async def list_targets(
-        self, only: Optional[OnlyFilter] = None
-    ) -> List[TargetDescription]:
-        async def _list_local_targets() -> List[TargetDescription]:
+        self, only: OnlyFilter | None = None
+    ) -> list[TargetDescription]:
+        async def _list_local_targets() -> list[TargetDescription]:
             companion = self._companion
             if companion is None:
                 return []
@@ -212,7 +213,7 @@ class ClientManager(ClientManagerBase):
     async def connect(
         self,
         destination: ConnectionDestination,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: dict[str, str] | None = None,
     ) -> CompanionInfo:
         self._logger.debug(f"Connecting directly to {destination} with meta {metadata}")
         if isinstance(destination, TCPAddress) or isinstance(

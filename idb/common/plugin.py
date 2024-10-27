@@ -14,10 +14,11 @@ import logging
 import os
 import ssl
 from argparse import ArgumentParser
+from collections.abc import Awaitable, Callable
 from functools import wraps
 from logging import Logger
 from types import ModuleType
-from typing import Any, Awaitable, Callable, Dict, List, Optional, overload, TypeVar
+from typing import Any, Dict, List, Optional, overload, TypeVar
 
 from idb.common.command import Command
 from idb.common.types import LoggingMetadata
@@ -32,7 +33,7 @@ def package_exists(package_name: str) -> bool:
 
 
 PLUGIN_PACKAGE_NAMES = ["idb.fb.plugin"]
-PLUGINS: List[ModuleType] = [
+PLUGINS: list[ModuleType] = [
     importlib.import_module(package.name)
     for package in [
         importlib.util.find_spec(package_name)
@@ -163,7 +164,7 @@ def resolve_metadata(logger: Logger) -> LoggingMetadata:
 
 
 def append_companion_metadata(
-    logger: Logger, metadata: Dict[str, str]
+    logger: Logger, metadata: dict[str, str]
 ) -> LoggingMetadata:
     for plugin in PLUGINS:
         method = getattr(plugin, "append_companion_metadata", None)
@@ -173,7 +174,7 @@ def append_companion_metadata(
     return metadata
 
 
-def get_commands() -> List[Command]:
+def get_commands() -> list[Command]:
     commands = []
 
     for plugin in PLUGINS:
@@ -185,7 +186,7 @@ def get_commands() -> List[Command]:
     return commands
 
 
-def channel_ssl_context() -> Optional[ssl.SSLContext]:
+def channel_ssl_context() -> ssl.SSLContext | None:
     for plugin in PLUGINS:
         method = getattr(plugin, "channel_ssl_context", None)
         if not method:

@@ -132,7 +132,7 @@ static NSString *const AXPrefix = @"AX";
   };
 }
 
-// This replicates the non-heirarchical system that was previously present in SimulatorBridge.
+// This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
 + (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
 {
@@ -225,7 +225,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
   _token = NSUUID.UUID.UUIDString;
   _nestedFormat = nestedFormat;
-  
+
   return self;
 }
 
@@ -288,7 +288,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   }
 
   _point = point;
-  
+
   return self;
 }
 

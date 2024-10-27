@@ -28,7 +28,7 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 
 T = TypeVar("T")
-COMPANION_PATH: Optional[str] = (
+COMPANION_PATH: str | None = (
     "/usr/local/bin/idb_companion" if sys.platform == "darwin" else None
 )
 
@@ -37,7 +37,7 @@ class AsyncGeneratorMock(AsyncMock):
     def __call__(self) -> None:
         super()
 
-    def __init__(self, iter_list: Tuple[T, ...] = ()) -> None:
+    def __init__(self, iter_list: tuple[T, ...] = ()) -> None:
         super().__init__()
         self.iter_list = iter_list
         self.iter_pos: int = -1

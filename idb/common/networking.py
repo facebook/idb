@@ -29,9 +29,9 @@ def is_port_open(host: str, port: int) -> bool:
 async def gen_listening_ports_from_fd(
     process: asyncio.subprocess.Process,
     read_fd: int,
-    timeout: Optional[int] = None,
-    logger: Optional[logging.Logger] = None,
-) -> Tuple[int, Optional[int]]:
+    timeout: int | None = None,
+    logger: logging.Logger | None = None,
+) -> tuple[int, int | None]:
     if logger is None:
         logger = logging.getLogger("reply-fd")
     wait = asyncio.ensure_future(process.wait())
@@ -50,9 +50,7 @@ async def gen_listening_ports_from_fd(
     return await ports
 
 
-async def _read_from_fd(
-    read_fd: int, logger: logging.Logger
-) -> Tuple[int, Optional[int]]:
+async def _read_from_fd(read_fd: int, logger: logging.Logger) -> tuple[int, int | None]:
     async with aiofiles.open(read_fd, "r") as f:
         logger.info(f"Opened read_fd: {read_fd}")
         data = await f.readline()
@@ -60,6 +58,6 @@ async def _read_from_fd(
         return _get_ports(data)
 
 
-def _get_ports(data: str) -> Tuple[int, Optional[int]]:
+def _get_ports(data: str) -> tuple[int, int | None]:
     all_ports = json.loads(data)
     return all_ports["grpc_port"]

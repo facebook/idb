@@ -21,7 +21,7 @@ class ShellCommand(ClientCommand):
     def __init__(self, parser: ArgumentParser) -> None:
         super().__init__()
         self.parser = parser
-        self.root_command: Optional[CommandGroup] = None
+        self.root_command: CommandGroup | None = None
 
     @property
     def description(self) -> str:

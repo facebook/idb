@@ -21,7 +21,7 @@ from idb.common.types import Client, Compression, FileContainer, FileContainerTy
 
 
 def _add_container_types_to_group(
-    group: _MutuallyExclusiveGroup, containers: List[Tuple[FileContainerType, str]]
+    group: _MutuallyExclusiveGroup, containers: list[tuple[FileContainerType, str]]
 ) -> None:
     for container_type, help_text in containers:
         argument_name = container_type.value.replace("_", "-")
@@ -121,7 +121,7 @@ class FSListCommand(FSCommand):
         return "list"
 
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return ["ls"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
@@ -200,7 +200,7 @@ class FSMoveCommand(FSCommand):
         return "move"
 
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return ["mv"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
@@ -233,7 +233,7 @@ class FSRemoveCommand(FSCommand):
         return "remove"
 
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return ["rm"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
@@ -324,7 +324,7 @@ class FBSReadCommand(FSCommand):
         return "read"
 
     @property
-    def aliases(self) -> List[str]:
+    def aliases(self) -> list[str]:
         return ["show"]
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:

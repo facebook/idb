@@ -8,8 +8,9 @@
 
 
 import asyncio
+from collections.abc import AsyncIterator
 from logging import Logger
-from typing import AsyncIterator, Optional
+from typing import Optional
 
 from idb.common.types import InstrumentsTimings
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse
@@ -67,13 +68,17 @@ async def instruments_drain_until_stop(
 
 
 def translate_instruments_timings(
-    timings: Optional[InstrumentsTimings],
-) -> Optional[InstrumentsRunRequest.InstrumentsTimings]:
+    timings: InstrumentsTimings | None,
+) -> InstrumentsRunRequest.InstrumentsTimings | None:
     return (
         InstrumentsRunRequest.InstrumentsTimings(
+            # pyre-ignore
             terminate_timeout=timings.terminate_timeout,
+            # pyre-ignore
             launch_retry_timeout=timings.launch_retry_timeout,
+            # pyre-ignore
             launch_error_timeout=timings.launch_error_timeout,
+            # pyre-ignore
             operation_duration=timings.operation_duration,
         )
         if timings

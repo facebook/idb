@@ -51,7 +51,7 @@ DIRECTION_PAIRS: "List[Tuple[HIDDirection, GrpcHIDDirection]]" = [
 ]
 
 
-def _tanslation_from_pairs(pairs: List[Tuple[_A, _B]], item: _A) -> _B:
+def _tanslation_from_pairs(pairs: list[tuple[_A, _B]], item: _A) -> _B:
     pair_map = {py: grpc for (py, grpc) in pairs}
     return pair_map[item]
 
@@ -102,7 +102,9 @@ def swipe_to_grpc(swipe: HIDSwipe) -> GrpcHIDSwipe:
     return GrpcHIDSwipe(
         start=point_to_grpc(swipe.start),
         end=point_to_grpc(swipe.end),
+        # pyre-ignore
         delta=swipe.delta,
+        # pyre-ignore
         duration=swipe.duration,
     )
 

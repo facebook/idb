@@ -7,8 +7,9 @@
 # pyre-strict
 
 import asyncio
+from collections.abc import AsyncIterator
 from logging import Logger
-from typing import AsyncIterator, Dict, Generic, Optional, TypeVar
+from typing import Dict, Generic, Optional, TypeVar
 
 from idb.utils.typing import none_throws
 
@@ -18,9 +19,9 @@ _TRecv = TypeVar("_TRecv")
 
 
 class Stream(Generic[_TSend, _TRecv], AsyncIterator[_TRecv]):
-    metadata: Dict[str, str] = {}
+    metadata: dict[str, str] = {}
 
-    async def recv_message(self) -> Optional[_TRecv]: ...
+    async def recv_message(self) -> _TRecv | None: ...
 
     async def send_message(self, message: _TSend) -> None: ...
 
@@ -43,7 +44,7 @@ async def drain_to_stream(
 
 
 async def generate_bytes(
-    stream: AsyncIterator[object], logger: Optional[Logger] = None
+    stream: AsyncIterator[object], logger: Logger | None = None
 ) -> AsyncIterator[bytes]:
     async for item in stream:
         log_output = getattr(item, "log_output", None)

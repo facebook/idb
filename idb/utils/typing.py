@@ -12,6 +12,6 @@ from typing import Optional, TypeVar
 T = TypeVar("T")
 
 
-def none_throws(optional: Optional[T]) -> T:
+def none_throws(optional: T | None) -> T:
     assert optional is not None, "Unexpected None"
     return optional
