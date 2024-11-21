@@ -37,9 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
  Starts listening for crash logs.
 
  @param onlyNew YES if you only want to ingest crash logs from now, NO to ingest from the beginning of time.
- @return the receiver, for chaining.
+ @return success.
  */
-- (instancetype)startListening:(BOOL)onlyNew;
+- (BOOL)startListening:(BOOL)onlyNew;
 
 /**
  Obtains the next crash log, for a given predicate.

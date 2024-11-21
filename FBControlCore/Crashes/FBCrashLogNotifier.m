@@ -88,10 +88,10 @@ static void EventStreamCallback(
   return self;
 }
 
-- (void)startListening:(BOOL)onlyNew
+- (BOOL)startListening:(BOOL)onlyNew
 {
   if (self.eventStream) {
-    return;
+    return YES;
   }
 
   FSEventStreamContext context = {
@@ -120,8 +120,13 @@ static void EventStreamCallback(
   );
   FSEventStreamSetDispatchQueue(eventStream, self.queue);
   Boolean started = FSEventStreamStart(eventStream);
-  NSAssert(started, @"Event Stream could not be started");
+  if (!started) {
+    NSLog(@"FS Event Stream could not be started");
+    return NO;
+  }
+
   self.eventStream = eventStream;
+  return YES;
 }
 
 @end
@@ -172,19 +177,23 @@ static void EventStreamCallback(
 
 #pragma mark Public Methods
 
-- (instancetype)startListening:(BOOL)onlyNew
+- (BOOL)startListening:(BOOL)onlyNew
 {
 #if defined(__apple_build_version__)
-  [self.fsEvents startListening:onlyNew];
+  return [self.fsEvents startListening:onlyNew];
 #else
   self.sinceDate = NSDate.date;
+  return YES;
 #endif
-  return self;
 }
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
 {
-  [self startListening:YES];
+  if (![self startListening:YES]) {
+    return [[FBControlCoreError
+      describeFormat:@"Crash Log Info could not be obtained"]
+      failFuture];
+  }
 
 #if defined(__apple_build_version__)
   return [FBCrashLogNotifier.sharedInstance.fsEvents.store nextCrashLogForMatchingPredicate:predicate];
