@@ -171,7 +171,7 @@
       NSError *error = nil;
       NSArray<NSDictionary<NSString *, NSString *> *> *tests = [NSJSONSerialization JSONObjectWithData:shimBuffer.data options:0 error:&error];
       if (!tests) {
-        NSLog(@"Shimulator buffer data (should contain test information): %@", shimBuffer.data);
+        NSLog(@"Shimulator buffer data (should contain test information): %@", [[NSString alloc] initWithData:shimBuffer.data encoding:NSUTF8StringEncoding]);
         return [FBFuture futureWithError:error];
       }
       NSMutableArray<NSString *> *testNames = [NSMutableArray array];
