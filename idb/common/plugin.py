@@ -52,7 +52,7 @@ T = TypeVar("T")
 
 @overload
 def swallow_exceptions(
-    f: Callable[P, Awaitable[T]]
+    f: Callable[P, Awaitable[T]],
 ) -> Callable[P, Awaitable[T | None]]: ...
 
 
@@ -61,7 +61,7 @@ def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]: ...
 
 
 def swallow_exceptions(
-    f: Callable[P, T] | Callable[P, Awaitable[T]]
+    f: Callable[P, T] | Callable[P, Awaitable[T]],
 ) -> Callable[P, T | None] | Callable[P, Awaitable[T | None]]:
     if asyncio.iscoroutinefunction(f):
 

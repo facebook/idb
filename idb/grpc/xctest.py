@@ -132,7 +132,6 @@ def make_request(
 
     coverage_object = None
     if collect_coverage:
-
         coverage_object = XctestRunRequest.CodeCoverage(
             collect=True,
             enable_continuous_coverage_collection=enable_continuous_coverage_collection,
