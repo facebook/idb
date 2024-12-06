@@ -164,6 +164,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSDictionary<NSString *, NSString *> *)replacementMapping;
 
+/**
+  Env var additions
+ 
+  @return a dictionary with additional env vars to add
+ */
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
 @end
 

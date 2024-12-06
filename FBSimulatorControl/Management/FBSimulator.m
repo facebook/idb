@@ -191,6 +191,11 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   };
 }
 
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions
+{
+  return @{};
+}
+
 - (BOOL)requiresBundlesToBeSigned {
   return YES;
 }

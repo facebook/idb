@@ -18,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
 
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger catalyst:(BOOL)catalyst;
+
 /*
  Restores primary device state by:
  - Killling all launched process/apps
