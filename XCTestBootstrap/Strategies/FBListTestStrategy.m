@@ -117,7 +117,7 @@
     return [[FBOToolDynamicLibs
              findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
             onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries){
-      NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath];
+      NSDictionary<NSString *, NSString *> *environment = [FBListTestStrategy setupEnvironmentWithDylibs:libraries shimPath:shimPath shimOutputFilePath:shimOutput.filePath bundlePath:self.configuration.testBundlePath target:self.target];
 
       return [[FBListTestStrategy
                listTestProcessWithTarget:self.target
@@ -141,17 +141,20 @@
   }];
 }
 
-+ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimPath:(NSString *)shimPath shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSArray *)libraries shimPath:(NSString *)shimPath shimOutputFilePath:(NSString *)shimOutputFilePath bundlePath:(NSString *)bundlePath target:(id<FBiOSTarget>)target
 {
   NSMutableArray *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
-  NSDictionary<NSString *, NSString *> *environment = @{
+
+  NSMutableDictionary<NSString *, NSString *> *environment = [@{
     @"DYLD_INSERT_LIBRARIES": [librariesWithShim componentsJoinedByString:@":"],
     @"TEST_SHIM_OUTPUT_PATH": shimOutputFilePath,
     @"TEST_SHIM_BUNDLE_PATH": bundlePath,
-  };
+  } mutableCopy];
 
-  return environment;
+  [environment addEntriesFromDictionary:target.environmentAdditions];
+
+  return [environment copy];
 }
 
 + (FBFuture<NSArray<NSString *> *> *)launchedProcessWithExitCode:(FBFuture<NSNumber *> *)exitCode shimOutput:(id<FBProcessFileOutput>)shimOutput shimBuffer:(id<FBConsumableBuffer>)shimBuffer stdOutBuffer:(id<FBConsumableBuffer>)stdOutBuffer stdErrBuffer:(id<FBConsumableBuffer>)stdErrBuffer queue:(dispatch_queue_t)queue

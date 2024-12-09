@@ -382,6 +382,23 @@ static NSString *const XctestRunExtension = @"xctestrun";
   return [[FBIDBError describeFormat:@"Couldn't find test with id: %@", bundleId] fail:error];
 }
 
+- (nullable NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL error:(NSError **)error
+{
+  NSDictionary<NSString *, id> *contentDict = [FBXCTestRunFileReader readContentsOf:xctestrunURL expandPlaceholderWithPath:self.target.auxillaryDirectory error:error];
+  if (!contentDict) {
+    return nil;
+  }
+  NSDictionary<NSString *, NSNumber *> *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
+  // The legacy format of xctestrun file does not contain __xctestrun_metadata__
+  if (xctestrunMetadata) {
+    [self.logger.info logFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]];
+    return [self getDescriptorsFrom:contentDict with:xctestrunURL];
+  } else {
+    [self.logger.info log:@"Using the legacy xctestrun file format"];
+    return [self legacyGetDescriptorsFrom:contentDict with:xctestrunURL];
+  }
+}
+
 #pragma mark Private
 
 - (NSSet<NSURL *> *)listTestBundlesWithError:(NSError **)error
@@ -432,23 +449,6 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
 
   return [[FBIDBError describeFormat:@"Couldn't find test with url: %@", url] fail:error];
-}
-
-- (nullable NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL error:(NSError **)error
-{
-  NSDictionary<NSString *, id> *contentDict = [FBXCTestRunFileReader readContentsOf:xctestrunURL expandPlaceholderWithPath:self.target.auxillaryDirectory error:error];
-  if (!contentDict) {
-    return nil;
-  }
-  NSDictionary<NSString *, NSNumber *> *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
-  // The legacy format of xctestrun file does not contain __xctestrun_metadata__
-  if (xctestrunMetadata) {
-    [self.logger.info logFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]];
-    return [self getDescriptorsFrom:contentDict with:xctestrunURL];
-  } else {
-    [self.logger.info log:@"Using the legacy xctestrun file format"];
-    return [self legacyGetDescriptorsFrom:contentDict with:xctestrunURL];
-  }
 }
 
 // xctestrun for Xcode 11+

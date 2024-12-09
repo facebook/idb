@@ -228,7 +228,7 @@ _T = TypeVar("_T")
 
 
 def _asynccontextmanager(
-    func: Callable[..., AsyncIterator[_T]]
+    func: Callable[..., AsyncIterator[_T]],
 ) -> Callable[..., AsyncContextManager[_T]]:
     """@asynccontextmanager decorator.
     Typical usage:
