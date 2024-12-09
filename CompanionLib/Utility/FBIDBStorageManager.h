@@ -214,6 +214,14 @@ extern NSString *const IdbFrameworksFolder;
  */
 - (nullable id<FBXCTestDescriptor>)testDescriptorWithID:(NSString *)bundleId error:(NSError **)error;
 
+/**
+ Get test run descriptors from xctestrun file.
+
+ @param xctestrunURL URL of xctestrun file
+ @return test descriptor of the test
+ */
+- (nullable NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL error:(NSError **)error;
+
 @end
 
 /**

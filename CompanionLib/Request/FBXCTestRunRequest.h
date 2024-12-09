@@ -40,6 +40,22 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)logicTestWithTestBundleID:(NSString *)testBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
 
 /**
+ Initializer for Logic Tests from a test path.
+
+ @param testPath the path of the .xctest or .xctestrun file.
+ @param environment environment for the logic test process.
+ @param arguments arguments for the logic test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @param reportActivities if set activities and their data will be reported
+ @param coverageRequest information about llvm code coverage collection
+ @param waitForDebugger a boolean describing whether the tests should stop after Run and wait for a debugger to be attached.
+ @return an FBXCTestRunRequest instance.
+ */
++ (instancetype)logicTestWithTestPath:(NSURL *)testPath environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
+
+/**
 The Initializer for App Tests.
 
  @param testBundleID the bundle id of the test to run.
@@ -87,6 +103,11 @@ The Initializer for UI Tests.
  The Bundle ID of the Test bundle.
  */
 @property (nonatomic, copy, readonly) NSString *testBundleID;
+
+/**
+ The path of the .xctest or .xctestrun file.
+ */
+ @property (nonatomic, copy, readonly) NSURL *testPath;
 
 /**
  The Bundle ID of the Test Host, if relevant.
