@@ -71,6 +71,23 @@ The Initializer for App Tests.
 */
 + (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
 
+
+/**
+The Initializer for App Tests from a test path.
+
+ @param testPath the path of the .xctest or .xctestrun file.
+ @param testHostAppBundleID the bundle id of the application to inject the test bundle into.
+ @param environment environment for the application test process.
+ @param arguments arguments for the application test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @param reportActivities if set activities and their data will be reported
+ @param coverageRequest information about llvm code coverage collection
+ @return an FBXCTestRunRequest instance.
+*/
++ (instancetype)applicationTestWithTestPath:(NSURL *)testPath testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
+
 /**
 The Initializer for UI Tests.
 
@@ -86,6 +103,23 @@ The Initializer for UI Tests.
  @return an FBXCTestRunRequest instance.
 */
 + (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID testTargetAppBundleID:(NSString *)testTargetAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
+
+
+/**
+The Initializer for UI Tests.
+
+ @param testPath the bundle id of the test to run.
+ @param testHostAppBundleID the bundle id of the application hosting the test bundle.
+ @param environment environment for the logic test process.
+ @param arguments arguments for the logic test process.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip
+ @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
+ @param reportActivities if set activities and their data will be reported
+ @param coverageRequest information about llvm code coverage collection
+ @return an FBXCTestRunRequest instance.
+*/
++ (instancetype)uiTestWithTestPath:(NSURL *)testPath testHostAppBundleID:(NSString *)testHostAppBundleID testTargetAppBundleID:(NSString *)testTargetAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
 
 #pragma mark Properties
 
