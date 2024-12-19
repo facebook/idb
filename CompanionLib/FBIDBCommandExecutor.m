@@ -319,6 +319,48 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
     }];
 }
 
+- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle_file_path:(nonnull NSURL *)bundlePath {
+  NSError *error = nil;
+  id<FBXCTestDescriptor> testDescriptor = nil;
+
+  if ([bundlePath.pathExtension isEqualToString:@"xctest"]) {
+    FBBundleDescriptor *bundle = [FBBundleDescriptor bundleWithFallbackIdentifierFromPath:bundlePath.path error:&error];
+
+    if (!bundle) {
+      return [FBFuture futureWithError:error];
+    }
+
+    testDescriptor = [[FBXCTestBootstrapDescriptor alloc] initWithURL:bundlePath name:bundle.name testBundle:bundle];
+  }
+  if ([bundlePath.pathExtension isEqualToString:@"xctestrun"]) {
+    NSArray<id<FBXCTestDescriptor>> *descriptors = [self.storageManager.xctest getXCTestRunDescriptorsFromURL:bundlePath error:&error];
+
+    if (!descriptors) {
+      return [FBFuture futureWithError:error];
+    }
+    if (descriptors.count != 1) {
+      return [[FBIDBError
+        describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
+        failFuture];
+    }
+
+    testDescriptor = descriptors[0];
+  }
+
+  if (!testDescriptor) {
+    return [FBFuture futureWithError:error];
+  }
+
+  id<FBXCTestExtendedCommands> commands = (id<FBXCTestExtendedCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBXCTestExtendedCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not conform to FBXCTestExtendedCommands", commands]
+      failFuture];
+  }
+
+  return [commands listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:nil];
+}
+
 - (FBFuture<NSNull *> *)uninstall_application:(NSString *)bundleID
 {
   return [self.target uninstallApplicationWithBundleID:bundleID];
