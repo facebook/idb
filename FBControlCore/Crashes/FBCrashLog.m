@@ -279,7 +279,7 @@
   for (NSString *basePath in self.diagnosticReportsPaths) {
     NSArray<FBCrashLogInfo *> *crashInfos = [[FBConcurrentCollectionOperations
       filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-      predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+      predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtensions:@[@"crash", @"ips"]]
       map:^ FBCrashLogInfo * (NSString *fileName) {
         NSString *path = [basePath stringByAppendingPathComponent:fileName];
         NSError *error = nil;
@@ -377,7 +377,7 @@
   return FBCrashLogInfoProcessTypeCustom;
 }
 
-+ (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
++ (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtensions:(NSArray<NSString *> *)extensions
 {
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
@@ -389,7 +389,7 @@
     }];
   }
   return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    [NSPredicate predicateWithFormat:@"pathExtension == %@", extension],
+    [NSPredicate predicateWithFormat:@"pathExtension in %@", extensions],
     datePredicate
   ]];
 }
