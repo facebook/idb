@@ -636,6 +636,7 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
   // Close the file so the other end knows this is the end of the input.
   bool fileClosedSuccessfully = [fileHandle closeAndReturnError:&error];
   NSCAssert(fileClosedSuccessfully, @"Failed to close file with test list", error);
+  NSLog(@"Completed writing test list to %@", outputFile);
   exit(TestShimExitCodeSuccess);
 }
 
