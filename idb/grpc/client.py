@@ -16,20 +16,10 @@ import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamReader, StreamWriter
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Iterable
 from io import StringIO
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import idb.common.plugin as plugin
 from grpclib.client import Channel
@@ -170,7 +160,7 @@ from idb.grpc.xctrace import xctrace_drain_until_running, xctrace_generate_bytes
 from idb.utils.contextlib import asynccontextmanager
 
 
-APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
+APPROVE_MAP: dict[Permission, "ApproveRequest.Permission"] = {
     Permission.PHOTOS: ApproveRequest.PHOTOS,
     Permission.CAMERA: ApproveRequest.CAMERA,
     Permission.CONTACTS: ApproveRequest.CONTACTS,
@@ -180,7 +170,7 @@ APPROVE_MAP: Dict[Permission, "ApproveRequest.Permission"] = {
     Permission.MICROPHONE: ApproveRequest.MICROPHONE,
 }
 
-REVOKE_MAP: Dict[Permission, "RevokeRequest.Permission"] = {
+REVOKE_MAP: dict[Permission, "RevokeRequest.Permission"] = {
     Permission.PHOTOS: RevokeRequest.PHOTOS,
     Permission.CAMERA: RevokeRequest.CAMERA,
     Permission.CONTACTS: RevokeRequest.CONTACTS,
@@ -190,14 +180,14 @@ REVOKE_MAP: Dict[Permission, "RevokeRequest.Permission"] = {
     Permission.MICROPHONE: RevokeRequest.MICROPHONE,
 }
 
-VIDEO_FORMAT_MAP: Dict[VideoFormat, "VideoStreamRequest.Format"] = {
+VIDEO_FORMAT_MAP: dict[VideoFormat, "VideoStreamRequest.Format"] = {
     VideoFormat.H264: VideoStreamRequest.H264,
     VideoFormat.RBGA: VideoStreamRequest.RBGA,
     VideoFormat.MJPEG: VideoStreamRequest.MJPEG,
     VideoFormat.MINICAP: VideoStreamRequest.MINICAP,
 }
 
-COMPRESSION_MAP: Dict[Compression, "Payload.Compression"] = {
+COMPRESSION_MAP: dict[Compression, "Payload.Compression"] = {
     Compression.GZIP: Payload.GZIP,
     Compression.ZSTD: Payload.ZSTD,
 }
@@ -268,7 +258,7 @@ class Client(ClientBase):
         address: Address,
         logger: logging.Logger,
         exchange_metadata: bool = True,
-        extra_metadata: Optional[Dict[str, str]] = None,
+        extra_metadata: dict[str, str] | None = None,
         use_tls: bool = False,
     ) -> AsyncGenerator["Client", None]:
         metadata_to_companion = (
@@ -330,7 +320,7 @@ class Client(ClientBase):
         companion: Companion,
         udid: str,
         logger: logging.Logger,
-        only: Optional[OnlyFilter] = None,
+        only: OnlyFilter | None = None,
     ) -> AsyncGenerator["Client", None]:
         with tempfile.NamedTemporaryFile() as temp:
             # Remove the tempfile so we can bind to it first.
@@ -347,7 +337,7 @@ class Client(ClientBase):
         self,
         source: LogRequest.Source,
         stop: asyncio.Event,
-        arguments: Optional[List[str]],
+        arguments: list[str] | None,
     ) -> AsyncIterator[str]:
         async with self.stub.log.open() as stream:
             await stream.send_message(
@@ -360,12 +350,12 @@ class Client(ClientBase):
         self,
         bundle: Bundle,
         destination: Destination,
-        compression: Optional[Compression],
-        make_debuggable: Optional[bool],
-        bundle_id: Optional[str],
-        bundle_type: Optional[FileContainerType],
-        override_modification_time: Optional[bool] = None,
-        skip_signing_bundles: Optional[bool] = None,
+        compression: Compression | None,
+        make_debuggable: bool | None,
+        bundle_id: str | None,
+        bundle_type: FileContainerType | None,
+        override_modification_time: bool | None = None,
+        skip_signing_bundles: bool | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
@@ -458,7 +448,7 @@ class Client(ClientBase):
     @log_and_handle_exceptions("list_apps")
     async def list_apps(
         self, fetch_process_state: bool = True
-    ) -> List[InstalledAppInfo]:
+    ) -> list[InstalledAppInfo]:
         response = await self.stub.list_apps(
             ListAppsRequest(suppress_process_state=fetch_process_state is False)
         )
@@ -477,7 +467,7 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("accessibility_info")
     async def accessibility_info(
-        self, point: Optional[Tuple[int, int]], nested: bool
+        self, point: tuple[int, int] | None, nested: bool
     ) -> AccessibilityInfo:
         grpc_point = Point(x=point[0], y=point[1]) if point is not None else None
         response = await self.stub.accessibility_info(
@@ -493,7 +483,7 @@ class Client(ClientBase):
         return AccessibilityInfo(json=response.json)
 
     @log_and_handle_exceptions("add_media")
-    async def add_media(self, file_paths: List[str]) -> None:
+    async def add_media(self, file_paths: list[str]) -> None:
         async with self.stub.add_media.open() as stream:
             if self.is_local:
                 for file_path in file_paths:
@@ -520,8 +510,8 @@ class Client(ClientBase):
     async def approve(
         self,
         bundle_id: str,
-        permissions: Set[Permission],
-        scheme: Optional[str] = None,
+        permissions: set[Permission],
+        scheme: str | None = None,
     ) -> None:
         await self.stub.approve(
             ApproveRequest(
@@ -536,8 +526,8 @@ class Client(ClientBase):
     async def revoke(
         self,
         bundle_id: str,
-        permissions: Set[Permission],
-        scheme: Optional[str] = None,
+        permissions: set[Permission],
+        scheme: str | None = None,
     ) -> None:
         await self.stub.revoke(
             RevokeRequest(
@@ -621,14 +611,14 @@ class Client(ClientBase):
         await self.stub.uninstall(UninstallRequest(bundle_id=bundle_id))
 
     @log_and_handle_exceptions("rm")
-    async def rm(self, container: FileContainer, paths: List[str]) -> None:
+    async def rm(self, container: FileContainer, paths: list[str]) -> None:
         await self.stub.rm(
             RmRequest(paths=paths, container=file_container_to_grpc(container))
         )
 
     @log_and_handle_exceptions("mv")
     async def mv(
-        self, container: FileContainer, src_paths: List[str], dest_path: str
+        self, container: FileContainer, src_paths: list[str], dest_path: str
     ) -> None:
         await self.stub.mv(
             MvRequest(
@@ -641,14 +631,14 @@ class Client(ClientBase):
     @log_and_handle_exceptions("ls")
     async def ls_single(
         self, container: FileContainer, path: str
-    ) -> List[FileEntryInfo]:
+    ) -> list[FileEntryInfo]:
         response = await self.stub.ls(
             LsRequest(path=path, container=file_container_to_grpc(container))
         )
         return [FileEntryInfo(path=file.path) for file in response.files]
 
     @log_and_handle_exceptions("ls")
-    async def ls(self, container: FileContainer, paths: List[str]) -> List[FileListing]:
+    async def ls(self, container: FileContainer, paths: list[str]) -> list[FileListing]:
         response = await self.stub.ls(
             LsRequest(paths=paths, container=file_container_to_grpc(container))
         )
@@ -667,12 +657,12 @@ class Client(ClientBase):
         )
 
     @log_and_handle_exceptions("crash_delete")
-    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+    async def crash_delete(self, query: CrashLogQuery) -> list[CrashLogInfo]:
         response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
         return _to_crash_log_info_list(response)
 
     @log_and_handle_exceptions("crash_list")
-    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+    async def crash_list(self, query: CrashLogQuery) -> list[CrashLogInfo]:
         response = await self.stub.crash_list(_to_crash_log_query_proto(query))
         return _to_crash_log_info_list(response)
 
@@ -685,9 +675,9 @@ class Client(ClientBase):
     async def install(
         self,
         bundle: Bundle,
-        compression: Optional[Compression] = None,
-        make_debuggable: Optional[bool] = None,
-        override_modification_time: Optional[bool] = None,
+        compression: Compression | None = None,
+        make_debuggable: bool | None = None,
+        override_modification_time: bool | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=bundle,
@@ -704,7 +694,7 @@ class Client(ClientBase):
     async def install_xctest(
         self,
         xctest: Bundle,
-        skip_signing_bundles: Optional[bool] = None,
+        skip_signing_bundles: bool | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=xctest,
@@ -733,9 +723,9 @@ class Client(ClientBase):
     async def install_dsym(
         self,
         dsym: Bundle,
-        bundle_id: Optional[str],
-        compression: Optional[Compression],
-        bundle_type: Optional[FileContainerType] = None,
+        bundle_id: str | None,
+        compression: Compression | None,
+        bundle_type: FileContainerType | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
@@ -764,10 +754,10 @@ class Client(ClientBase):
     @log_and_handle_exceptions("push")
     async def push(
         self,
-        src_paths: List[str],
+        src_paths: list[str],
         container: FileContainer,
         dest_path: str,
-        compression: Optional[Compression],
+        compression: Compression | None,
     ) -> None:
         async with self.stub.push.open() as stream:
             await stream.send_message(
@@ -843,14 +833,14 @@ class Client(ClientBase):
             await stream.send_message(TailRequest(stop=TailRequest.Stop()))
 
     @log_and_handle_exceptions("xctest_list_tests")
-    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
+    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> list[str]:
         response = await self.stub.xctest_list_tests(
             XctestListTestsRequest(bundle_name=test_bundle_id, app_path=app_path)
         )
         return list(response.names)
 
     @log_and_handle_exceptions("xctest_list_bundles")
-    async def list_xctests(self) -> List[InstalledTestInfo]:
+    async def list_xctests(self) -> list[InstalledTestInfo]:
         response = await self.stub.xctest_list_bundles(XctestListBundlesRequest())
         return [
             InstalledTestInfo(
@@ -866,17 +856,17 @@ class Client(ClientBase):
         await self.hid(iterator_to_async_iterator(events))
 
     @log_and_handle_exceptions("hid")
-    async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:
+    async def tap(self, x: float, y: float, duration: float | None = None) -> None:
         await self.send_events(tap_to_events(x, y, duration))
 
     @log_and_handle_exceptions("hid")
     async def button(
-        self, button_type: HIDButtonType, duration: Optional[float] = None
+        self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
         await self.send_events(button_press_to_events(button_type, duration))
 
     @log_and_handle_exceptions("hid")
-    async def key(self, keycode: int, duration: Optional[float] = None) -> None:
+    async def key(self, keycode: int, duration: float | None = None) -> None:
         await self.send_events(key_press_to_events(keycode, duration))
 
     @log_and_handle_exceptions("hid")
@@ -886,16 +876,16 @@ class Client(ClientBase):
     @log_and_handle_exceptions("hid")
     async def swipe(
         self,
-        p_start: Tuple[int, int],
-        p_end: Tuple[int, int],
-        duration: Optional[float] = None,
-        delta: Optional[int] = None,
+        p_start: tuple[int, int],
+        p_end: tuple[int, int],
+        duration: float | None = None,
+        delta: int | None = None,
     ) -> None:
         await self.send_events(swipe_to_events(p_start, p_end, duration, delta))
 
     @log_and_handle_exceptions("hid")
-    async def key_sequence(self, key_sequence: List[int]) -> None:
-        events: List[HIDEvent] = []
+    async def key_sequence(self, key_sequence: list[int]) -> None:
+        events: list[HIDEvent] = []
         for key in key_sequence:
             events.extend(key_press_to_events(key))
         await self.send_events(events)
@@ -921,7 +911,7 @@ class Client(ClientBase):
             return await stream.recv_message()
 
     @log_and_handle_exceptions("debugserver")
-    async def debugserver_start(self, bundle_id: str) -> List[str]:
+    async def debugserver_start(self, bundle_id: str) -> list[str]:
         response = await self.debug_server(
             request=DebugServerRequest(
                 start=DebugServerRequest.Start(bundle_id=bundle_id)
@@ -936,7 +926,7 @@ class Client(ClientBase):
         )
 
     @log_and_handle_exceptions("debugserver")
-    async def debugserver_status(self) -> Optional[List[str]]:
+    async def debugserver_status(self) -> list[str] | None:
         response = await self.debug_server(
             request=DebugServerRequest(status=DebugServerRequest.Status())
         )
@@ -950,13 +940,13 @@ class Client(ClientBase):
         trace_basename: str,
         template_name: str,
         app_bundle_id: str,
-        app_environment: Optional[Dict[str, str]] = None,
-        app_arguments: Optional[List[str]] = None,
-        tool_arguments: Optional[List[str]] = None,
-        started: Optional[asyncio.Event] = None,
-        timings: Optional[InstrumentsTimings] = None,
-        post_process_arguments: Optional[List[str]] = None,
-    ) -> List[str]:
+        app_environment: dict[str, str] | None = None,
+        app_arguments: list[str] | None = None,
+        tool_arguments: list[str] | None = None,
+        started: asyncio.Event | None = None,
+        timings: InstrumentsTimings | None = None,
+        post_process_arguments: list[str] | None = None,
+    ) -> list[str]:
         self.logger.info("Starting instruments connection")
         async with self.stub.instruments_run.open() as stream:
             self.logger.info("Sending instruments request")
@@ -1028,12 +1018,12 @@ class Client(ClientBase):
     async def launch(
         self,
         bundle_id: str,
-        args: Optional[List[str]] = None,
-        env: Optional[Dict[str, str]] = None,
+        args: list[str] | None = None,
+        env: dict[str, str] | None = None,
         foreground_if_running: bool = False,
         wait_for_debugger: bool = False,
-        stop: Optional[asyncio.Event] = None,
-        pid_file: Optional[str] = None,
+        stop: asyncio.Event | None = None,
+        pid_file: str | None = None,
     ) -> None:
         async with self.stub.launch.open() as stream:
             request = LaunchRequest(
@@ -1090,8 +1080,8 @@ class Client(ClientBase):
     @log_and_handle_exceptions("video_stream")
     async def stream_video(
         self,
-        output_file: Optional[str],
-        fps: Optional[int],
+        output_file: str | None,
+        fps: int | None,
         format: VideoFormat,
         compression_quality: float,
         scale_factor: float = 1,
@@ -1147,7 +1137,7 @@ class Client(ClientBase):
     async def _handle_code_coverage_in_response(
         self,
         response: XctestRunResponse,
-        coverage_output_path: Optional[str],
+        coverage_output_path: str | None,
         coverage_format: CodeCoverageFormat,
     ) -> None:
         if (
@@ -1181,24 +1171,24 @@ class Client(ClientBase):
         self,
         test_bundle_id: str,
         app_bundle_id: str,
-        test_host_app_bundle_id: Optional[str] = None,
+        test_host_app_bundle_id: str | None = None,
         is_ui_test: bool = False,
         is_logic_test: bool = False,
-        tests_to_run: Optional[Set[str]] = None,
-        tests_to_skip: Optional[Set[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        args: Optional[List[str]] = None,
-        result_bundle_path: Optional[str] = None,
-        idb_log_buffer: Optional[StringIO] = None,
-        timeout: Optional[int] = None,
+        tests_to_run: set[str] | None = None,
+        tests_to_skip: set[str] | None = None,
+        env: dict[str, str] | None = None,
+        args: list[str] | None = None,
+        result_bundle_path: str | None = None,
+        idb_log_buffer: StringIO | None = None,
+        timeout: int | None = None,
         poll_interval_sec: float = TESTS_POLL_INTERVAL,
         report_activities: bool = False,
         report_attachments: bool = False,
-        activities_output_path: Optional[str] = None,
-        coverage_output_path: Optional[str] = None,
+        activities_output_path: str | None = None,
+        coverage_output_path: str | None = None,
         enable_continuous_coverage_collection: bool = False,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
-        log_directory_path: Optional[str] = None,
+        log_directory_path: str | None = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         async with self.stub.xctest_run.open() as stream:
@@ -1279,7 +1269,7 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("log")
     async def tail_logs(
-        self, stop: asyncio.Event, arguments: Optional[List[str]] = None
+        self, stop: asyncio.Event, arguments: list[str] | None = None
     ) -> AsyncIterator[str]:
         async for message in self._tail_specific_logs(
             source=LogRequest.TARGET, stop=stop, arguments=arguments
@@ -1313,7 +1303,7 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("setting")
     async def set_preference(
-        self, name: str, value: str, value_type: str, domain: Optional[str]
+        self, name: str, value: str, value_type: str, domain: str | None
     ) -> None:
         await self.stub.setting(
             SettingRequest(
@@ -1334,7 +1324,7 @@ class Client(ClientBase):
         return response.value
 
     @log_and_handle_exceptions("get_setting")
-    async def get_preference(self, name: str, domain: Optional[str]) -> str:
+    async def get_preference(self, name: str, domain: str | None) -> str:
         response = await self.stub.get_setting(
             # pyre-ignore
             GetSettingRequest(setting=AnySetting, name=name, domain=domain)
@@ -1342,7 +1332,7 @@ class Client(ClientBase):
         return response.value
 
     @log_and_handle_exceptions("list_settings")
-    async def list_locale_identifiers(self) -> List[str]:
+    async def list_locale_identifiers(self) -> list[str]:
         response = await self.stub.list_settings(
             ListSettingRequest(
                 setting=LocaleSetting,
@@ -1358,20 +1348,20 @@ class Client(ClientBase):
         output: str,
         template_name: str,
         all_processes: bool = False,
-        time_limit: Optional[float] = None,
-        package: Optional[str] = None,
-        process_to_attach: Optional[str] = None,
-        process_to_launch: Optional[str] = None,
-        process_env: Optional[Dict[str, str]] = None,
-        launch_args: Optional[List[str]] = None,
-        target_stdin: Optional[str] = None,
-        target_stdout: Optional[str] = None,
+        time_limit: float | None = None,
+        package: str | None = None,
+        process_to_attach: str | None = None,
+        process_to_launch: str | None = None,
+        process_env: dict[str, str] | None = None,
+        launch_args: list[str] | None = None,
+        target_stdin: str | None = None,
+        target_stdout: str | None = None,
         # FB options
-        post_args: Optional[List[str]] = None,
-        stop_timeout: Optional[float] = None,
+        post_args: list[str] | None = None,
+        stop_timeout: float | None = None,
         # control events
-        started: Optional[asyncio.Event] = None,
-    ) -> List[str]:
+        started: asyncio.Event | None = None,
+    ) -> list[str]:
         self.logger.info("Starting xctrace connection")
         async with self.stub.xctrace_record.open() as stream:
             self.logger.info("Sending xctrace record request")
@@ -1464,7 +1454,7 @@ class Client(ClientBase):
         input_stream: StreamReader,
         output_stream: StreamWriter,
         stop: asyncio.Event,
-        compression: Optional[Compression],
+        compression: Compression | None,
     ) -> None:
         path = Path(dap_path)
         pkg_id = path.stem

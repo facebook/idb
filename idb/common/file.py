@@ -6,13 +6,13 @@
 
 # pyre-strict
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import aiofiles
 
 
 def get_last_n_lines(file_path: str, n: int) -> str:
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         return "\n".join(f.readlines()[-n:])
 
 

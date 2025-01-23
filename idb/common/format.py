@@ -74,11 +74,11 @@ def human_format_test_info(test: TestRunInfo) -> str:
     return output
 
 
-def human_format_activities(activities: List[TestActivity]) -> str:
+def human_format_activities(activities: list[TestActivity]) -> str:
     tree: Tree = Tree()
     start: float = activities[0].start
 
-    def process_activity(activity: TestActivity, parent: Optional[str] = None) -> None:
+    def process_activity(activity: TestActivity, parent: str | None = None) -> None:
         tree.create_node(
             f"{activity.name} ({activity.finish - start:.2f}s)",
             activity.uuid,
@@ -103,7 +103,7 @@ def human_format_activities(activities: List[TestActivity]) -> str:
 
 
 def json_format_test_info(test: TestRunInfo) -> str:
-    data: Dict[str, Any] = {
+    data: dict[str, Any] = {
         "bundleName": test.bundle_name,
         "className": test.class_name,
         "methodName": test.method_name,
@@ -128,7 +128,7 @@ def json_format_test_info(test: TestRunInfo) -> str:
     return json.dumps(data)
 
 
-def json_format_activity(activity: TestActivity) -> Dict[str, Any]:
+def json_format_activity(activity: TestActivity) -> dict[str, Any]:
     return {
         "title": activity.title,
         "duration": activity.duration,
@@ -175,13 +175,13 @@ def human_format_installed_app_info(app: InstalledAppInfo) -> str:
 def app_process_id_based_on_state(
     pid: int,
     state: AppProcessState,
-) -> Optional[str]:
+) -> str | None:
     if state is AppProcessState.RUNNING:
         return str(pid)
     return None
 
 
-def app_process_state_to_string(state: Optional[AppProcessState]) -> str:
+def app_process_state_to_string(state: AppProcessState | None) -> str:
     if state is AppProcessState.RUNNING:
         return "Running"
     elif state is AppProcessState.NOT_RUNNING:
@@ -227,8 +227,8 @@ def human_format_target_info(target: TargetDescription) -> str:
         return target_info + f"{address.path}"
 
 
-def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
-    data: Dict[str, Any] = {
+def json_data_target_info(target: TargetDescription) -> dict[str, Any]:
+    data: dict[str, Any] = {
         "name": target.name,
         "udid": target.udid,
         "state": target.state,
@@ -254,11 +254,11 @@ def json_data_target_info(target: TargetDescription) -> Dict[str, Any]:
 
 
 def json_data_companions(
-    companions: List[CompanionInfo],
-) -> List[Dict[str, Union[str, Optional[int]]]]:
-    data: List[Dict[str, Union[str, Optional[int]]]] = []
+    companions: list[CompanionInfo],
+) -> list[dict[str, str | int | None]]:
+    data: list[dict[str, str | int | None]] = []
     for companion in companions:
-        item: Dict[str, Union[str, Optional[int]]] = {
+        item: dict[str, str | int | None] = {
             "udid": companion.udid,
             "is_local": companion.is_local,
             "pid": companion.pid,
@@ -273,7 +273,7 @@ def json_data_companions(
     return data
 
 
-def json_to_companion_info(data: List[Dict[str, Any]]) -> List[CompanionInfo]:
+def json_to_companion_info(data: list[dict[str, Any]]) -> list[CompanionInfo]:
     return [
         CompanionInfo(
             udid=item["udid"],
@@ -293,13 +293,13 @@ def target_description_from_json(data: str) -> TargetDescription:
     return target_description_from_dictionary(parsed=json.loads(data))
 
 
-def target_descriptions_from_json(data: str) -> List[TargetDescription]:
+def target_descriptions_from_json(data: str) -> list[TargetDescription]:
     return [
         target_description_from_dictionary(parsed=target) for target in json.loads(data)
     ]
 
 
-def target_description_from_dictionary(parsed: Dict[str, Any]) -> TargetDescription:
+def target_description_from_dictionary(parsed: dict[str, Any]) -> TargetDescription:
     return TargetDescription(
         udid=parsed["udid"],
         name=parsed["name"],

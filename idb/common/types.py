@@ -10,27 +10,16 @@ import asyncio
 import json
 from abc import ABC, abstractmethod, abstractproperty
 from asyncio import StreamReader, StreamWriter
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
-from typing import (
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Dict,
-    IO,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Dict, IO, List, Optional, Set, Tuple, Union
 
 
-LoggingMetadata = Dict[str, Optional[Union[str, List[str], int, float]]]
+LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
 
 
 class IdbException(Exception):
@@ -102,7 +91,7 @@ class AppProcessState(Enum):
 class InstalledAppInfo:
     bundle_id: str
     name: str
-    architectures: Set[str]
+    architectures: set[str]
     install_type: str
     process_state: AppProcessState
     debuggable: bool
@@ -111,10 +100,10 @@ class InstalledAppInfo:
 
 @dataclass(frozen=True)
 class InstrumentsTimings:
-    launch_error_timeout: Optional[float] = None
-    launch_retry_timeout: Optional[float] = None
-    terminate_timeout: Optional[float] = None
-    operation_duration: Optional[float] = None
+    launch_error_timeout: float | None = None
+    launch_retry_timeout: float | None = None
+    terminate_timeout: float | None = None
+    operation_duration: float | None = None
 
 
 class HIDButtonType(Enum):
@@ -132,7 +121,7 @@ ConnectionDestination = Union[str, Address]
 class CompanionInfo:
     udid: str
     is_local: bool
-    pid: Optional[int]
+    pid: int | None
     address: Address
     metadata: LoggingMetadata = field(default_factory=dict)
 
@@ -141,9 +130,9 @@ class CompanionInfo:
 class ScreenDimensions:
     width: int
     height: int
-    density: Optional[float]
-    width_points: Optional[int]
-    height_points: Optional[int]
+    density: float | None
+    width_points: int | None
+    height_points: int | None
 
 
 DeviceDetails = Mapping[str, Union[int, str]]
@@ -154,15 +143,15 @@ class TargetDescription:
     udid: str
     name: str
     target_type: TargetType
-    state: Optional[str]
-    os_version: Optional[str]
-    architecture: Optional[str]
-    companion_info: Optional[CompanionInfo]
-    screen_dimensions: Optional[ScreenDimensions]
-    model: Optional[str] = None
-    device: Optional[DeviceDetails] = None
-    extended: Optional[DeviceDetails] = None
-    diagnostics: Optional[DeviceDetails] = None
+    state: str | None
+    os_version: str | None
+    architecture: str | None
+    companion_info: CompanionInfo | None
+    screen_dimensions: ScreenDimensions | None
+    model: str | None = None
+    device: DeviceDetails | None = None
+    extended: DeviceDetails | None = None
+    diagnostics: DeviceDetails | None = None
     metadata: LoggingMetadata = field(default_factory=dict)
 
     @property
@@ -178,7 +167,7 @@ class FileEntryInfo:
 @dataclass(frozen=True)
 class FileListing:
     parent: str
-    entries: List[FileEntryInfo]
+    entries: list[FileEntryInfo]
 
 
 @dataclass(frozen=True)
@@ -188,27 +177,27 @@ class AccessibilityInfo:
 
 @dataclass(frozen=True)
 class CrashLogInfo:
-    name: Optional[str]
-    bundle_id: Optional[str]
-    process_name: Optional[str]
-    parent_process_name: Optional[str]
-    process_identifier: Optional[int]
-    parent_process_identifier: Optional[int]
-    timestamp: Optional[int]
+    name: str | None
+    bundle_id: str | None
+    process_name: str | None
+    parent_process_name: str | None
+    process_identifier: int | None
+    parent_process_identifier: int | None
+    timestamp: int | None
 
 
 @dataclass(frozen=True)
 class CrashLog:
-    info: Optional[CrashLogInfo]
-    contents: Optional[str]
+    info: CrashLogInfo | None
+    contents: str | None
 
 
 @dataclass(frozen=True)
 class CrashLogQuery:
-    since: Optional[int] = None
-    before: Optional[int] = None
-    bundle_id: Optional[str] = None
-    name: Optional[str] = None
+    since: int | None = None
+    before: int | None = None
+    bundle_id: str | None = None
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -236,8 +225,8 @@ class TestActivity:
     start: float
     finish: float
     name: str
-    attachments: List[TestAttachment]
-    sub_activities: List["TestActivity"]
+    attachments: list[TestAttachment]
+    sub_activities: list["TestActivity"]
 
 
 @dataclass(frozen=True)
@@ -245,11 +234,11 @@ class TestRunInfo:
     bundle_name: str
     class_name: str
     method_name: str
-    logs: List[str]
+    logs: list[str]
     duration: float
     passed: bool
-    failure_info: Optional[TestRunFailureInfo]
-    activityLogs: Optional[List[TestActivity]]
+    failure_info: TestRunFailureInfo | None
+    activityLogs: list[TestActivity] | None
     crashed: bool
 
     @property
@@ -260,8 +249,8 @@ class TestRunInfo:
 @dataclass(frozen=True)
 class InstalledTestInfo:
     bundle_id: str
-    name: Optional[str]
-    architectures: Optional[Set[str]]
+    name: str | None
+    architectures: set[str] | None
 
 
 @dataclass(frozen=True)
@@ -308,8 +297,8 @@ class HIDPress:
 class HIDSwipe:
     start: Point
     end: Point
-    delta: Optional[float]
-    duration: Optional[float]
+    delta: float | None
+    duration: float | None
 
 
 @dataclass(frozen=True)
@@ -323,8 +312,8 @@ HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 @dataclass(frozen=True)
 class InstalledArtifact:
     name: str
-    uuid: Optional[str]
-    progress: Optional[float]
+    uuid: str | None
+    progress: float | None
 
 
 class FileContainerType(Enum):
@@ -362,75 +351,73 @@ class CodeCoverageFormat(Enum):
 class Companion(ABC):
     @abstractmethod
     async def create(
-        self, device_type: str, os_version: str, timeout: Optional[timedelta] = None
+        self, device_type: str, os_version: str, timeout: timedelta | None = None
     ) -> TargetDescription:
         pass
 
     @abstractmethod
     async def boot(
-        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
+        self, udid: str, verify: bool = True, timeout: timedelta | None = None
     ) -> None:
         pass
 
     @abstractmethod
     @asynccontextmanager
     async def boot_headless(
-        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
+        self, udid: str, verify: bool = True, timeout: timedelta | None = None
     ) -> AsyncGenerator[None, None]:
         yield
 
     @abstractmethod
-    async def shutdown(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def shutdown(self, udid: str, timeout: timedelta | None = None) -> None:
         pass
 
     @abstractmethod
-    async def erase(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def erase(self, udid: str, timeout: timedelta | None = None) -> None:
         pass
 
     @abstractmethod
     async def clone(
         self,
         udid: str,
-        destination_device_set: Optional[str] = None,
-        timeout: Optional[timedelta] = None,
+        destination_device_set: str | None = None,
+        timeout: timedelta | None = None,
     ) -> TargetDescription:
         pass
 
     @abstractmethod
-    async def delete(
-        self, udid: Optional[str], timeout: Optional[timedelta] = None
-    ) -> None:
+    async def delete(self, udid: str | None, timeout: timedelta | None = None) -> None:
         pass
 
     @abstractmethod
-    async def clean(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def clean(self, udid: str, timeout: timedelta | None = None) -> None:
         pass
 
     @abstractmethod
     async def list_targets(
-        self, only: Optional[OnlyFilter] = None, timeout: Optional[timedelta] = None
-    ) -> List[TargetDescription]:
+        self, only: OnlyFilter | None = None, timeout: timedelta | None = None
+    ) -> list[TargetDescription]:
         pass
 
     @abstractmethod
     async def tail_targets(
-        self, only: Optional[OnlyFilter] = None
-    ) -> AsyncGenerator[List[TargetDescription], None]:
+        self, only: OnlyFilter | None = None
+    ) -> AsyncGenerator[list[TargetDescription], None]:
         yield
 
     @abstractmethod
     async def target_description(
         self,
-        udid: Optional[str] = None,
-        only: Optional[OnlyFilter] = None,
-        timeout: Optional[timedelta] = None,
+        udid: str | None = None,
+        only: OnlyFilter | None = None,
+        timeout: timedelta | None = None,
     ) -> TargetDescription:
         pass
 
     @abstractmethod
     @asynccontextmanager
     async def unix_domain_server(
-        self, udid: str, path: str, only: Optional[OnlyFilter] = None
+        self, udid: str, path: str, only: OnlyFilter | None = None
     ) -> AsyncGenerator[str, None]:
         yield
 
@@ -440,19 +427,19 @@ class Client(ABC):
     @abstractmethod
     async def list_apps(
         self, fetch_process_state: bool = True
-    ) -> List[InstalledAppInfo]:
+    ) -> list[InstalledAppInfo]:
         pass
 
     @abstractmethod
     async def launch(
         self,
         bundle_id: str,
-        env: Optional[Dict[str, str]] = None,
-        args: Optional[List[str]] = None,
+        env: dict[str, str] | None = None,
+        args: list[str] | None = None,
         foreground_if_running: bool = False,
         wait_for_debugger: bool = False,
-        stop: Optional[asyncio.Event] = None,
-        pid_file: Optional[str] = None,
+        stop: asyncio.Event | None = None,
+        pid_file: str | None = None,
     ) -> None:
         pass
 
@@ -461,24 +448,24 @@ class Client(ABC):
         self,
         test_bundle_id: str,
         app_bundle_id: str,
-        test_host_app_bundle_id: Optional[str] = None,
+        test_host_app_bundle_id: str | None = None,
         is_ui_test: bool = False,
         is_logic_test: bool = False,
-        tests_to_run: Optional[Set[str]] = None,
-        tests_to_skip: Optional[Set[str]] = None,
-        env: Optional[Dict[str, str]] = None,
-        args: Optional[List[str]] = None,
-        result_bundle_path: Optional[str] = None,
-        idb_log_buffer: Optional[StringIO] = None,
-        timeout: Optional[int] = None,
+        tests_to_run: set[str] | None = None,
+        tests_to_skip: set[str] | None = None,
+        env: dict[str, str] | None = None,
+        args: list[str] | None = None,
+        result_bundle_path: str | None = None,
+        idb_log_buffer: StringIO | None = None,
+        timeout: int | None = None,
         poll_interval_sec: float = 0.5,
         report_activities: bool = False,
         report_attachments: bool = False,
-        activities_output_path: Optional[str] = None,
-        coverage_output_path: Optional[str] = None,
+        activities_output_path: str | None = None,
+        coverage_output_path: str | None = None,
         enable_continuous_coverage_collection: bool = False,
         coverage_format: CodeCoverageFormat = CodeCoverageFormat.EXPORTED,
-        log_directory_path: Optional[str] = None,
+        log_directory_path: str | None = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
         yield
@@ -486,38 +473,38 @@ class Client(ABC):
     @abstractmethod
     async def install(
         self,
-        bundle: Union[str, IO[bytes]],
-        compression: Optional[Compression] = None,
-        make_debuggable: Optional[bool] = None,
-        override_modification_time: Optional[bool] = None,
+        bundle: str | IO[bytes],
+        compression: Compression | None = None,
+        make_debuggable: bool | None = None,
+        override_modification_time: bool | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
     @abstractmethod
     async def install_dylib(
-        self, dylib: Union[str, IO[bytes]]
+        self, dylib: str | IO[bytes]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
     @abstractmethod
     async def install_dsym(
         self,
-        dsym: Union[str, IO[bytes]],
-        bundle_id: Optional[str],
-        compression: Optional[Compression],
-        bundle_type: Optional[FileContainerType] = None,
+        dsym: str | IO[bytes],
+        bundle_id: str | None,
+        compression: Compression | None,
+        bundle_type: FileContainerType | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
     @abstractmethod
     async def install_xctest(
-        self, xctest: Union[str, IO[bytes]], skip_signing_bundles: Optional[bool] = None
+        self, xctest: str | IO[bytes], skip_signing_bundles: bool | None = None
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
     @abstractmethod
     async def install_framework(
-        self, framework_path: Union[str, IO[bytes]]
+        self, framework_path: str | IO[bytes]
     ) -> AsyncIterator[InstalledArtifact]:
         yield
 
@@ -526,7 +513,7 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def list_xctests(self) -> List[InstalledTestInfo]:
+    async def list_xctests(self) -> list[InstalledTestInfo]:
         pass
 
     @abstractmethod
@@ -534,12 +521,12 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> List[str]:
+    async def list_test_bundle(self, test_bundle_id: str, app_path: str) -> list[str]:
         pass
 
     @abstractmethod
     async def tail_logs(
-        self, stop: asyncio.Event, arguments: Optional[List[str]] = None
+        self, stop: asyncio.Event, arguments: list[str] | None = None
     ) -> AsyncIterator[str]:
         yield
 
@@ -561,7 +548,7 @@ class Client(ABC):
 
     @abstractmethod
     async def set_preference(
-        self, name: str, value: str, value_type: str, domain: Optional[str]
+        self, name: str, value: str, value_type: str, domain: str | None
     ) -> None:
         pass
 
@@ -570,11 +557,11 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def get_preference(self, name: str, domain: Optional[str]) -> str:
+    async def get_preference(self, name: str, domain: str | None) -> str:
         pass
 
     @abstractmethod
-    async def list_locale_identifiers(self) -> List[str]:
+    async def list_locale_identifiers(self) -> list[str]:
         pass
 
     @abstractmethod
@@ -595,13 +582,13 @@ class Client(ABC):
 
     @abstractmethod
     async def approve(
-        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
+        self, bundle_id: str, permissions: set[Permission], scheme: str | None = None
     ) -> None:
         pass
 
     @abstractmethod
     async def revoke(
-        self, bundle_id: str, permissions: Set[Permission], scheme: Optional[str] = None
+        self, bundle_id: str, permissions: set[Permission], scheme: str | None = None
     ) -> None:
         pass
 
@@ -612,8 +599,8 @@ class Client(ABC):
     @abstractmethod
     async def stream_video(
         self,
-        output_file: Optional[str],
-        fps: Optional[int],
+        output_file: str | None,
+        fps: int | None,
         format: VideoFormat,
         compression_quality: float,
         scale_factor: float = 1,
@@ -625,30 +612,30 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def tap(self, x: float, y: float, duration: Optional[float] = None) -> None:
+    async def tap(self, x: float, y: float, duration: float | None = None) -> None:
         pass
 
     @abstractmethod
     async def button(
-        self, button_type: HIDButtonType, duration: Optional[float] = None
+        self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
         pass
 
     @abstractmethod
-    async def key(self, keycode: int, duration: Optional[float] = None) -> None:
+    async def key(self, keycode: int, duration: float | None = None) -> None:
         return
 
     @abstractmethod
-    async def key_sequence(self, key_sequence: List[int]) -> None:
+    async def key_sequence(self, key_sequence: list[int]) -> None:
         pass
 
     @abstractmethod
     async def swipe(
         self,
-        p_start: Tuple[int, int],
-        p_end: Tuple[int, int],
-        duration: Optional[float] = None,
-        delta: Optional[int] = None,
+        p_start: tuple[int, int],
+        p_end: tuple[int, int],
+        duration: float | None = None,
+        delta: int | None = None,
     ) -> None:
         pass
 
@@ -666,7 +653,7 @@ class Client(ABC):
 
     @abstractmethod
     async def accessibility_info(
-        self, point: Optional[Tuple[int, int]], nested: bool
+        self, point: tuple[int, int] | None, nested: bool
     ) -> AccessibilityInfo:
         pass
 
@@ -677,13 +664,13 @@ class Client(ABC):
         trace_basename: str,
         template_name: str,
         app_bundle_id: str,
-        app_environment: Optional[Dict[str, str]] = None,
-        app_arguments: Optional[List[str]] = None,
-        tool_arguments: Optional[List[str]] = None,
-        started: Optional[asyncio.Event] = None,
-        timings: Optional[InstrumentsTimings] = None,
-        post_process_arguments: Optional[List[str]] = None,
-    ) -> List[str]:
+        app_environment: dict[str, str] | None = None,
+        app_arguments: list[str] | None = None,
+        tool_arguments: list[str] | None = None,
+        started: asyncio.Event | None = None,
+        timings: InstrumentsTimings | None = None,
+        post_process_arguments: list[str] | None = None,
+    ) -> list[str]:
         pass
 
     @abstractmethod
@@ -693,30 +680,30 @@ class Client(ABC):
         output: str,
         template_name: str,
         all_processes: bool = False,
-        time_limit: Optional[float] = None,
-        package: Optional[str] = None,
-        process_to_attach: Optional[str] = None,
-        process_to_launch: Optional[str] = None,
-        process_env: Optional[Dict[str, str]] = None,
-        launch_args: Optional[List[str]] = None,
-        target_stdin: Optional[str] = None,
-        target_stdout: Optional[str] = None,
-        post_args: Optional[List[str]] = None,
-        stop_timeout: Optional[float] = None,
-        started: Optional[asyncio.Event] = None,
-    ) -> List[str]:
+        time_limit: float | None = None,
+        package: str | None = None,
+        process_to_attach: str | None = None,
+        process_to_launch: str | None = None,
+        process_env: dict[str, str] | None = None,
+        launch_args: list[str] | None = None,
+        target_stdin: str | None = None,
+        target_stdout: str | None = None,
+        post_args: list[str] | None = None,
+        stop_timeout: float | None = None,
+        started: asyncio.Event | None = None,
+    ) -> list[str]:
         pass
 
     @abstractmethod
-    async def crash_list(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+    async def crash_list(self, query: CrashLogQuery) -> list[CrashLogInfo]:
         pass
 
     @abstractmethod
-    async def crash_delete(self, query: CrashLogQuery) -> List[CrashLogInfo]:
+    async def crash_delete(self, query: CrashLogQuery) -> list[CrashLogInfo]:
         pass
 
     @abstractmethod
-    async def add_media(self, file_paths: List[str]) -> None:
+    async def add_media(self, file_paths: list[str]) -> None:
         pass
 
     @abstractmethod
@@ -729,12 +716,12 @@ class Client(ABC):
         input_stream: StreamReader,
         output_stream: StreamWriter,
         stop: asyncio.Event,
-        compression: Optional[Compression],
+        compression: Compression | None,
     ) -> None:
         raise NotImplementedError("Dap command not implemented")
 
     @abstractmethod
-    async def debugserver_start(self, bundle_id: str) -> List[str]:
+    async def debugserver_start(self, bundle_id: str) -> list[str]:
         pass
 
     @abstractmethod
@@ -742,7 +729,7 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def debugserver_status(self) -> Optional[List[str]]:
+    async def debugserver_status(self) -> list[str] | None:
         pass
 
     @abstractmethod
@@ -756,21 +743,21 @@ class Client(ABC):
     @abstractmethod
     async def ls_single(
         self, container: FileContainer, path: str
-    ) -> List[FileEntryInfo]:
+    ) -> list[FileEntryInfo]:
         pass
 
     @abstractmethod
-    async def ls(self, container: FileContainer, paths: List[str]) -> List[FileListing]:
+    async def ls(self, container: FileContainer, paths: list[str]) -> list[FileListing]:
         pass
 
     @abstractmethod
     async def mv(
-        self, container: FileContainer, src_paths: List[str], dest_path: str
+        self, container: FileContainer, src_paths: list[str], dest_path: str
     ) -> None:
         pass
 
     @abstractmethod
-    async def rm(self, container: FileContainer, paths: List[str]) -> None:
+    async def rm(self, container: FileContainer, paths: list[str]) -> None:
         pass
 
     @abstractmethod
@@ -786,10 +773,10 @@ class Client(ABC):
     @abstractmethod
     async def push(
         self,
-        src_paths: List[str],
+        src_paths: list[str],
         container: FileContainer,
         dest_path: str,
-        compression: Optional[Compression],
+        compression: Compression | None,
     ) -> None:
         pass
 
@@ -805,18 +792,18 @@ class ClientManager:
     async def connect(
         self,
         destination: ConnectionDestination,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: dict[str, str] | None = None,
     ) -> CompanionInfo:
         pass
 
     @abstractmethod
-    async def disconnect(self, destination: Union[Address, str]) -> None:
+    async def disconnect(self, destination: Address | str) -> None:
         pass
 
     @abstractmethod
     async def list_targets(
-        self, only: Optional[OnlyFilter] = None
-    ) -> List[TargetDescription]:
+        self, only: OnlyFilter | None = None
+    ) -> list[TargetDescription]:
         pass
 
     @abstractmethod
@@ -834,5 +821,5 @@ class Server(ABC):
         pass
 
     @abstractproperty
-    def ports(self) -> Dict[str, str]:
+    def ports(self) -> dict[str, str]:
         pass

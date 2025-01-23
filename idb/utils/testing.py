@@ -13,7 +13,8 @@ import logging
 import unittest
 import unittest.mock as _mock
 import warnings
-from typing import Awaitable, Callable, cast, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import cast, TypeVar
 
 # pyre-ignore
 from unittest.case import _Outcome
@@ -230,7 +231,7 @@ class AsyncMock(_mock.Mock):
     """
 
     def __call__(self, *args, **kwargs):
-        sup = super(AsyncMock, self)
+        sup = super()
 
         async def coro():
             return sup.__call__(*args, **kwargs)

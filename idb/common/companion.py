@@ -11,10 +11,11 @@ import json
 import logging
 import os
 import subprocess
+from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 from logging import DEBUG as LOG_LEVEL_DEBUG, Logger
-from typing import AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from idb.common.constants import IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
@@ -41,7 +42,7 @@ DEFAULT_COMPANION_COMMAND_TIMEOUT = timedelta(seconds=120)
 DEFAULT_COMPANION_TEARDOWN_TIMEOUT = timedelta(seconds=30)
 
 
-CompanionReport = Dict[str, Union[int, str]]
+CompanionReport = dict[str, Union[int, str]]
 
 
 class IdbJsonException(Exception):
@@ -71,7 +72,7 @@ async def _terminate_process(
         process.kill()
 
 
-def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
+def _only_arg_from_filter(only: OnlyFilter | None) -> list[str]:
     if isinstance(only, TargetType):
         if only == TargetType.MAC:
             return []
@@ -81,7 +82,7 @@ def _only_arg_from_filter(only: Optional[OnlyFilter]) -> List[str]:
     return []
 
 
-def parse_json_line(line: bytes) -> Dict[str, Union[int, str]]:
+def parse_json_line(line: bytes) -> dict[str, int | str]:
     decoded_line = line.decode()
     try:
         return json.loads(decoded_line)
@@ -111,7 +112,7 @@ async def _verify_port_from_spawned_companion(
     report: CompanionReport,
     port_name: str,
     log_file_path: str,
-    expected_port: Optional[int],
+    expected_port: int | None,
 ) -> int:
     try:
         extracted_port = int(report[port_name])
@@ -151,9 +152,9 @@ async def _extract_domain_sock_from_spawned_companion(
 class CompanionServerConfig:
     udid: str
     only: OnlyFilter
-    log_file_path: Optional[str]
-    cwd: Optional[str]
-    tmp_path: Optional[str]
+    log_file_path: str | None
+    cwd: str | None
+    tmp_path: str | None
     reparent: bool
 
 
@@ -161,10 +162,10 @@ class Companion(CompanionBase):
     def __init__(
         self,
         companion_path: str,
-        device_set_path: Optional[str],
+        device_set_path: str | None,
         logger: Logger,
         architecture: Architecture = Architecture.ANY,
-        only: Optional[OnlyFilter] = None,
+        only: OnlyFilter | None = None,
     ) -> None:
         self._companion_path = companion_path
         self._device_set_path = device_set_path
@@ -174,9 +175,9 @@ class Companion(CompanionBase):
 
     @asynccontextmanager
     async def _start_companion_command(
-        self, arguments: List[str]
+        self, arguments: list[str]
     ) -> AsyncGenerator[asyncio.subprocess.Process, None]:
-        cmd: List[str] = []
+        cmd: list[str] = []
         if self._architecture != Architecture.ANY:
             cmd = ["arch", "-" + self._architecture.value]
         cmd += [self._companion_path]
@@ -207,7 +208,7 @@ class Companion(CompanionBase):
             )
 
     async def _run_companion_command(
-        self, arguments: List[str], timeout: Optional[timedelta]
+        self, arguments: list[str], timeout: timedelta | None
     ) -> str:
         timeout = timeout if timeout is not None else DEFAULT_COMPANION_COMMAND_TIMEOUT
         async with self._start_companion_command(arguments=arguments) as process:
@@ -230,8 +231,8 @@ class Companion(CompanionBase):
         self,
         udid: str,
         command: str,
-        timeout: Optional[timedelta],
-        extra_arguments: Optional[Sequence[str]] = None,
+        timeout: timedelta | None,
+        extra_arguments: Sequence[str] | None = None,
     ) -> str:
         arguments = [f"--{command}", udid]
         if extra_arguments is not None:
@@ -247,16 +248,16 @@ class Companion(CompanionBase):
     async def _spawn_server(
         self,
         config: CompanionServerConfig,
-        port_env_variables: Dict[str, str],
-        bind_arguments: List[str],
-    ) -> Tuple[asyncio.subprocess.Process, str]:
+        port_env_variables: dict[str, str],
+        bind_arguments: list[str],
+    ) -> tuple[asyncio.subprocess.Process, str]:
         if os.getuid() == 0:
             logging.warning(
                 "idb should not be run as root. "
                 "Listing available targets on this host and spawning "
                 "companions will not work"
             )
-        arguments: List[str] = []
+        arguments: list[str] = []
         if self._architecture != Architecture.ANY:
             arguments = ["arch", "-" + self._architecture.value]
         arguments += (
@@ -297,11 +298,11 @@ class Companion(CompanionBase):
     async def spawn_tcp_server(
         self,
         config: CompanionServerConfig,
-        port: Optional[int],
-        swift_port: Optional[int] = None,
-        tls_cert_path: Optional[str] = None,
-    ) -> Tuple[asyncio.subprocess.Process, int, Optional[int]]:
-        port_env_variables: Dict[str, str] = {}
+        port: int | None,
+        swift_port: int | None = None,
+        tls_cert_path: str | None = None,
+    ) -> tuple[asyncio.subprocess.Process, int, int | None]:
+        port_env_variables: dict[str, str] = {}
         if swift_port is not None:
             port_env_variables["IDB_SWIFT_COMPANION_PORT"] = str(swift_port)
 
@@ -321,7 +322,7 @@ class Companion(CompanionBase):
             companion_report, "grpc_port", log_file_path, port
         )
 
-        extracted_swift_port: Optional[int] = None
+        extracted_swift_port: int | None = None
         if swift_port:
             try:
                 extracted_swift_port = await _verify_port_from_spawned_companion(
@@ -370,7 +371,7 @@ class Companion(CompanionBase):
 
     @log_call()
     async def create(
-        self, device_type: str, os_version: str, timeout: Optional[timedelta] = None
+        self, device_type: str, os_version: str, timeout: timedelta | None = None
     ) -> TargetDescription:
         output = await self._run_companion_command(
             arguments=["--create", f"{device_type},{os_version}"], timeout=timeout
@@ -379,7 +380,7 @@ class Companion(CompanionBase):
 
     @log_call()
     async def boot(
-        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
+        self, udid: str, verify: bool = True, timeout: timedelta | None = None
     ) -> None:
         await self._run_udid_command(
             udid=udid,
@@ -390,7 +391,7 @@ class Companion(CompanionBase):
 
     @asynccontextmanager
     async def boot_headless(
-        self, udid: str, verify: bool = True, timeout: Optional[timedelta] = None
+        self, udid: str, verify: bool = True, timeout: timedelta | None = None
     ) -> AsyncGenerator[None, None]:
         async with self._start_companion_command(
             [
@@ -414,7 +415,7 @@ class Companion(CompanionBase):
             self._logger.info(f"Done with {target}. Shutting down.")
 
     @log_call()
-    async def shutdown(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def shutdown(self, udid: str, timeout: timedelta | None = None) -> None:
         await self._run_udid_command(udid=udid, command="shutdown", timeout=timeout)
 
     @log_call()
@@ -427,8 +428,8 @@ class Companion(CompanionBase):
     async def clone(
         self,
         udid: str,
-        destination_device_set: Optional[str] = None,
-        timeout: Optional[timedelta] = None,
+        destination_device_set: str | None = None,
+        timeout: timedelta | None = None,
     ) -> TargetDescription:
         arguments = ["--clone", udid]
         if destination_device_set is not None:
@@ -437,21 +438,19 @@ class Companion(CompanionBase):
         return target_description_from_json(output.splitlines()[-1])
 
     @log_call()
-    async def delete(
-        self, udid: Optional[str], timeout: Optional[timedelta] = None
-    ) -> None:
+    async def delete(self, udid: str | None, timeout: timedelta | None = None) -> None:
         await self._run_udid_command(
             udid=udid if udid is not None else "all", command="delete", timeout=timeout
         )
 
     @log_call()
-    async def clean(self, udid: str, timeout: Optional[timedelta] = None) -> None:
+    async def clean(self, udid: str, timeout: timedelta | None = None) -> None:
         await self._run_udid_command(udid=udid, command="clean", timeout=timeout)
 
     @log_call()
     async def list_targets(
-        self, only: Optional[OnlyFilter] = None, timeout: Optional[timedelta] = None
-    ) -> List[TargetDescription]:
+        self, only: OnlyFilter | None = None, timeout: timedelta | None = None
+    ) -> list[TargetDescription]:
         arguments = ["--list", "1"] + _only_arg_from_filter(only=only)
         output = await self._run_companion_command(arguments=arguments, timeout=timeout)
         return [
@@ -461,8 +460,8 @@ class Companion(CompanionBase):
         ]
 
     async def tail_targets(
-        self, only: Optional[OnlyFilter] = None
-    ) -> AsyncGenerator[List[TargetDescription], None]:
+        self, only: OnlyFilter | None = None
+    ) -> AsyncGenerator[list[TargetDescription], None]:
         arguments = ["--notify", "stdout"] + _only_arg_from_filter(only=only)
         async with self._start_companion_command(arguments=arguments) as process:
             async for line in none_throws(process.stdout):
@@ -471,9 +470,9 @@ class Companion(CompanionBase):
     @log_call()
     async def target_description(
         self,
-        udid: Optional[str] = None,
-        only: Optional[OnlyFilter] = None,
-        timeout: Optional[timedelta] = None,
+        udid: str | None = None,
+        only: OnlyFilter | None = None,
+        timeout: timedelta | None = None,
     ) -> TargetDescription:
         all_details = await self.list_targets(only=only, timeout=timeout)
         details = all_details
@@ -487,7 +486,7 @@ class Companion(CompanionBase):
 
     @asynccontextmanager
     async def unix_domain_server(
-        self, udid: str, path: str, only: Optional[OnlyFilter] = None
+        self, udid: str, path: str, only: OnlyFilter | None = None
     ) -> AsyncGenerator[str, None]:
         async with self._start_companion_command(
             ["--udid", udid, "--grpc-domain-sock", path]

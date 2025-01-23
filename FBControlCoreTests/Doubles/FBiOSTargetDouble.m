@@ -48,6 +48,11 @@
   return @{};
 }
 
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions
+{
+  return @{};
+}
+
 - (FBFuture<NSNull *> *)installApplicationWithPath:(NSString *)path
 {
   return [FBFuture futureWithError:[[FBControlCoreError describe:@"Unimplemented"] build]];

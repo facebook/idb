@@ -8,9 +8,10 @@
 
 import asyncio
 import signal
+from collections.abc import AsyncGenerator, Sequence
 from logging import Logger
 from sys import stderr
-from typing import AsyncGenerator, Sequence, TypeVar
+from typing import TypeVar
 
 
 _SIGNALS: Sequence[signal.Signals] = [signal.SIGTERM, signal.SIGINT]

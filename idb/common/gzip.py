@@ -9,7 +9,7 @@
 
 import asyncio
 import sys
-from typing import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 
 from idb.utils.contextlib import asynccontextmanager
 from idb.utils.typing import none_throws

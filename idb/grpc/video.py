@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from idb.grpc.idb_pb2 import RecordResponse
 

@@ -8,7 +8,8 @@
 
 import json
 from argparse import ArgumentParser, Namespace, SUPPRESS
-from typing import Mapping, Union
+from collections.abc import Mapping
+from typing import Union
 
 import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
@@ -37,7 +38,7 @@ class DisconnectCommandException(Exception):
     pass
 
 
-def get_destination(args: Namespace) -> Union[TCPAddress, str]:
+def get_destination(args: Namespace) -> TCPAddress | str:
     if is_udid(args.companion):
         return args.companion
     elif args.port and args.companion:

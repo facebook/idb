@@ -6,7 +6,8 @@
 
 # pyre-strict
 
-from typing import AsyncIterator, Callable, TypeVar
+from collections.abc import AsyncIterator, Callable
+from typing import TypeVar
 
 
 _A = TypeVar("_A")

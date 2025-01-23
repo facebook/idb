@@ -125,7 +125,8 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
                                                            bundlePath:self.configuration.testBundlePath
                                                            coverageConfiguration:self.configuration.coverageConfiguration
                                                            logDirectoryPath:self.configuration.logDirectoryPath
-                                                           waitForDebugger:self.configuration.waitForDebugger];
+                                                           waitForDebugger:self.configuration.waitForDebugger
+                                                           target:self.target];
       return [[self
                startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs temporaryDirectory:temporaryDirectory]
               onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
@@ -135,7 +136,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   }];
 }
 
-+ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger
++ (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger target:(id<FBiOSTarget>)target
 {
   NSMutableArray<NSString *> *librariesWithShim = [NSMutableArray arrayWithObject:shimPath];
   [librariesWithShim addObjectsFromArray:libraries];
@@ -146,18 +147,21 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     @"TEST_SHIM_BUNDLE_PATH": bundlePath,
     kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
   }];
+
   if (coverageConfiguration) {
     NSString *continuousCoverageCollectionMode = coverageConfiguration.shouldEnableContinuousCoverageCollection ? @"%c" : @"";
     NSString *coverageFile = [NSString stringWithFormat:@"coverage_%@%@.profraw", [bundlePath lastPathComponent], continuousCoverageCollectionMode];
     NSString *coveragePath = [coverageConfiguration.coverageDirectory stringByAppendingPathComponent:coverageFile];
     environmentAdditions[kEnv_LLVMProfileFile] = coveragePath;
   }
+
   if (logDirectoryPath) {
     environmentAdditions[kEnv_LogDirectoryPath] = logDirectoryPath;
   }
 
   NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [environment mutableCopy];
   [updatedEnvironment addEntriesFromDictionary:environmentAdditions];
+  [updatedEnvironment addEntriesFromDictionary:target.environmentAdditions];
 
   return [updatedEnvironment copy];
 }
@@ -230,7 +234,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   }
   // Report from the current queue, but wait in a special queue.
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
-  
+
   return [[FBProcessFetcher waitStopSignalForProcess:processIdentifier] onQueue:waitQueue chain:^FBFuture *(FBFuture *future) {
     if (future.error){
       return [[XCTestBootstrapError
@@ -319,7 +323,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:outputs.stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:outputs.stdErrConsumer]];
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModePosixSpawn];
   FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];
-  
+
   // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
   // For more information look at `FBArchitectureProcessAdapter` docs.
   return [[[adapter adaptProcessConfiguration:configuration toAnyArchitectureIn:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]

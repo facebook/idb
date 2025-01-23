@@ -17,7 +17,7 @@ from idb.grpc.idb_pb2 import (
 )
 
 
-def _to_crash_log_info_list(response: CrashLogResponse) -> List[CrashLogInfo]:
+def _to_crash_log_info_list(response: CrashLogResponse) -> list[CrashLogInfo]:
     return [_to_crash_log_info(proto) for proto in response.list]
 
 

@@ -21,8 +21,8 @@ class KeyValueDictAppendAction(argparse.Action):
         self,
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
-        values: List[str],
-        option_string: Optional[str] = None,
+        values: list[str],
+        option_string: str | None = None,
     ) -> None:
         assert len(values) == 1
         try:
@@ -36,13 +36,11 @@ class KeyValueDictAppendAction(argparse.Action):
         setattr(namespace, self.dest, d)
 
 
-def have_file_with_extension(file_prefix: str, extensions: List[str]) -> bool:
-    return any(
-        (os.path.exists(f"{file_prefix}.{extension}") for extension in extensions)
-    )
+def have_file_with_extension(file_prefix: str, extensions: list[str]) -> bool:
+    return any(os.path.exists(f"{file_prefix}.{extension}") for extension in extensions)
 
 
-def find_next_file_prefix(basename: str, extensions: Optional[List[str]] = None) -> str:
+def find_next_file_prefix(basename: str, extensions: list[str] | None = None) -> str:
     extensions = extensions or []
     number = 1
     while True:

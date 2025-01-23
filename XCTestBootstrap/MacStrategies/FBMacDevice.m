@@ -27,6 +27,7 @@
 @property (nonatomic, strong) NSMutableDictionary<NSString *, FBProcess *> *bundleIDToRunningTask;
 @property (nonatomic, strong) NSXPCConnection *connection;
 @property (nonatomic, copy) NSString *workingDirectory;
+@property (nonatomic, assign, readonly) BOOL catalyst;
 
 @end
 
@@ -92,11 +93,17 @@
   return self;
 }
 
-- (instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger;
+{
+  return [self initWithLogger:logger catalyst:NO];
+}
+
+- (instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger catalyst:(BOOL)catalyst;
 {
   self = [self init];
   if (self) {
     _logger = logger;
+    _catalyst = catalyst;
   }
   return self;
 }
@@ -410,6 +417,17 @@
 {
   return NSDictionary.dictionary;
 }
+
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions
+{
+  if (self.catalyst) {
+    return @{@"DYLD_FORCE_PLATFORM" : @"6"};
+  }
+  else {
+    return NSDictionary.dictionary;
+  }
+}
+
 
 #pragma mark Not supported
 

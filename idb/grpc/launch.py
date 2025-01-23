@@ -17,7 +17,7 @@ from idb.grpc.stream import Stream
 
 
 async def drain_launch_stream(
-    stream: Stream[LaunchRequest, LaunchResponse], pid_file: Optional[str]
+    stream: Stream[LaunchRequest, LaunchResponse], pid_file: str | None
 ) -> None:
     async for message in stream:
         output = message.output

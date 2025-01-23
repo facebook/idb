@@ -10,9 +10,10 @@ import functools
 import inspect
 import logging
 import time
+from collections.abc import Sequence
 from concurrent.futures import CancelledError
 from types import TracebackType
-from typing import Any, AsyncContextManager, Optional, Sequence, Tuple, Type
+from typing import Any, AsyncContextManager, Optional, Tuple, Type
 from uuid import uuid4
 
 import idb.common.plugin as plugin
@@ -24,11 +25,11 @@ logger: logging.Logger = logging.getLogger("idb")
 
 
 def _initial_info(
-    args: Sequence[object], metadata: Optional[LoggingMetadata]
-) -> Tuple[LoggingMetadata, int]:
+    args: Sequence[object], metadata: LoggingMetadata | None
+) -> tuple[LoggingMetadata, int]:
     _metadata: LoggingMetadata = metadata or {}
     if len(args):
-        self_meta: Optional[LoggingMetadata] = getattr(args[0], "metadata", None)
+        self_meta: LoggingMetadata | None = getattr(args[0], "metadata", None)
         if self_meta:
             _metadata.update(self_meta)
     _metadata["event_uuid"] = str(uuid4())
@@ -38,11 +39,11 @@ def _initial_info(
 
 class log_call(AsyncContextManager[None]):
     def __init__(
-        self, name: Optional[str] = None, metadata: Optional[LoggingMetadata] = None
+        self, name: str | None = None, metadata: LoggingMetadata | None = None
     ) -> None:
         self.name = name
         self.metadata: LoggingMetadata = metadata or {}
-        self.start: Optional[int] = None
+        self.start: int | None = None
 
     async def __aenter__(self) -> None:
         name = none_throws(self.name)
@@ -52,9 +53,9 @@ class log_call(AsyncContextManager[None]):
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exception: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exception: BaseException | None,
+        traceback: TracebackType | None,
     ) -> bool:
         name = none_throws(self.name)
         duration = int((time.time() - none_throws(self.start)) * 1000)

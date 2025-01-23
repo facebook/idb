@@ -11,7 +11,8 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional
 
 from idb.common import plugin
 from idb.common.command import Command
@@ -123,7 +124,7 @@ class ClientCommand(BaseCommand):
         super().add_parser_arguments(parser)
 
     async def _run_impl(self, args: Namespace) -> None:
-        address: Optional[Address] = None
+        address: Address | None = None
         try:
             async with _get_client(args=args, logger=self.logger) as client:
                 address = client.address

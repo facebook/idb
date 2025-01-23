@@ -131,6 +131,11 @@
   return NSDictionary.dictionary;
 }
 
+- (NSDictionary<NSString *, NSString *> *)environmentAdditions
+{
+  return @{};
+}
+
 - (BOOL) requiresBundlesToBeSigned {
   return YES;
 }
