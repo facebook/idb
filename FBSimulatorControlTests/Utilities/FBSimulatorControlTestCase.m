@@ -105,7 +105,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 - (void)setUp
 {
   self.continueAfterFailure = NO;
-  self.simulatorConfiguration = [FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModeliPhone8];
+  self.simulatorConfiguration = [FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModeliPhone16];
   self.bootConfiguration = [[FBSimulatorBootConfiguration alloc] initWithOptions:FBSimulatorControlTestCase.bootOptions environment:@{}];
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
 }

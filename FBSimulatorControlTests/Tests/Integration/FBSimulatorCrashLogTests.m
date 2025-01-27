@@ -51,7 +51,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(crashLog);
   XCTAssertEqualObjects(crashLog.identifier, @"TableSearch");
-  XCTAssertTrue([[NSString stringWithContentsOfFile:crashLog.crashPath encoding:NSUTF8StringEncoding error:nil] containsString:@"NSFileManager stringWithFormat"]);
+  XCTAssertTrue([[NSString stringWithContentsOfFile:crashLog.crashPath encoding:NSUTF8StringEncoding error:&error] containsString:@"\"app_name\":\"TableSearch\""]);
 }
 
 @end
