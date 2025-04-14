@@ -27,6 +27,8 @@
     "minimist": ">=1.2.6",
     "async": ">=2.6.4",
     "got": ">=11.8.5",
-    "semver": ">=7.5.2"
+    "semver": ">=7.5.2",
+    "estree-util-value-to-estree": ">=3.3.3",
+    "image-size": ">=1.2.1"
   }
 }
