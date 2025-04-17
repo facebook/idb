@@ -22,11 +22,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
   private let logger: FBIDBLogger
   private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
 
-  init(target: FBiOSTarget,
-       commandExecutor: FBIDBCommandExecutor,
-       reporter: FBEventReporter,
-       logger: FBIDBLogger,
-       interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol) {
+  init(
+    target: FBiOSTarget,
+    commandExecutor: FBIDBCommandExecutor,
+    reporter: FBEventReporter,
+    logger: FBIDBLogger,
+    interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol
+  ) {
     self.target = target
     self.commandExecutor = commandExecutor
     self.reporter = reporter

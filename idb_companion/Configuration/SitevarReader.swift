@@ -16,14 +16,17 @@ public final class SitevarReader {
   ///   - token: Generated token
   ///   - cacheInvalidationInterval: Sets cache lifetime
   ///   - sessionConfiguration: Controls setup for network calls. Default one sets request timeout to 15 seconds
-  public init(appID: String, token: String,
-              baseURL: String = DefaultConfiguration.baseURL,
-              cacheInvalidationInterval: TimeInterval = DefaultConfiguration.cacheInvalidationInterval,
-              sessionConfiguration: URLSessionConfiguration = DefaultConfiguration.urlSessionConfiguration) {
+  public init(
+    appID: String, token: String,
+    baseURL: String = DefaultConfiguration.baseURL,
+    cacheInvalidationInterval: TimeInterval = DefaultConfiguration.cacheInvalidationInterval,
+    sessionConfiguration: URLSessionConfiguration = DefaultConfiguration.urlSessionConfiguration
+  ) {
 
     let session = URLSession(configuration: sessionConfiguration)
-    self.reader = .init(cacheInvalidationInterval: cacheInvalidationInterval,
-                        internGraphRequestor: FBApplicationBasedSitevarRequestor(appID: appID, token: token, baseURL: baseURL, urlSession: session))
+    self.reader = .init(
+      cacheInvalidationInterval: cacheInvalidationInterval,
+      internGraphRequestor: FBApplicationBasedSitevarRequestor(appID: appID, token: token, baseURL: baseURL, urlSession: session))
   }
 
   /// Reads and caches sitevar value.

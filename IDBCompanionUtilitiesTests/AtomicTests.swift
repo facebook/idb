@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import IDBCompanionUtilities
 import XCTest
+
+@testable import IDBCompanionUtilities
 
 class AtomicTests: XCTestCase {
 

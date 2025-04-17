@@ -64,12 +64,13 @@ struct HidMethodHandler {
       }
 
     case let .swipe(swipe):
-      return .swipe(swipe.start.x,
-                    yStart: swipe.start.y,
-                    xEnd: swipe.end.x,
-                    yEnd: swipe.end.y,
-                    delta: swipe.delta,
-                    duration: swipe.duration)
+      return .swipe(
+        swipe.start.x,
+        yStart: swipe.start.y,
+        xEnd: swipe.end.x,
+        yEnd: swipe.end.y,
+        delta: swipe.delta,
+        duration: swipe.duration)
 
     case let .delay(delay):
       return .delay(delay.duration)

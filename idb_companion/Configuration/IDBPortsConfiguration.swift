@@ -37,8 +37,10 @@ enum GRPCConnectionTarget: CustomStringConvertible {
       guard let port = socketAddress.port else {
         throw ExtractionError.failedToExtractAssociatedInfo
       }
-      return ["grpc_swift_port": port,
-              "grpc_port": port]
+      return [
+        "grpc_swift_port": port,
+        "grpc_port": port,
+      ]
 
     case .unixDomainSocket:
       guard let path = socketAddress.pathname else {

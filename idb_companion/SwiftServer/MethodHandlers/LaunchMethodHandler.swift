@@ -36,13 +36,14 @@ struct LaunchMethodHandler {
       stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
     }
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-    let config = FBApplicationLaunchConfiguration(bundleID: start.bundleID,
-                                                  bundleName: nil,
-                                                  arguments: start.appArgs,
-                                                  environment: start.env,
-                                                  waitForDebugger: start.waitForDebugger,
-                                                  io: io,
-                                                  launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
+    let config = FBApplicationLaunchConfiguration(
+      bundleID: start.bundleID,
+      bundleName: nil,
+      arguments: start.appArgs,
+      environment: start.env,
+      waitForDebugger: start.waitForDebugger,
+      io: io,
+      launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
     let launchedApp = try await BridgeFuture.value(commandExecutor.launch_app(config))
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)

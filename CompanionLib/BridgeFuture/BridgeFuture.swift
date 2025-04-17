@@ -62,16 +62,18 @@ public enum BridgeFuture {
   public static func value<T: AnyObject>(_ future: FBFuture<T>) async throws -> T {
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
-        future.onQueue(BridgeQueues.futureSerialFullfillmentQueue, notifyOfCompletion: { resultFuture in
-          if let error = resultFuture.error {
-            continuation.resume(throwing: error)
-          } else if let value = resultFuture.result {
-            // swiftlint:disable force_cast
-            continuation.resume(returning: value as! T)
-          } else {
-            continuation.resume(throwing: FBFutureError.continuationFullfilledWithoutValues)
-          }
-        })
+        future.onQueue(
+          BridgeQueues.futureSerialFullfillmentQueue,
+          notifyOfCompletion: { resultFuture in
+            if let error = resultFuture.error {
+              continuation.resume(throwing: error)
+            } else if let value = resultFuture.result {
+              // swiftlint:disable force_cast
+              continuation.resume(returning: value as! T)
+            } else {
+              continuation.resume(throwing: FBFutureError.continuationFullfilledWithoutValues)
+            }
+          })
       }
     } onCancel: {
       future.cancel()

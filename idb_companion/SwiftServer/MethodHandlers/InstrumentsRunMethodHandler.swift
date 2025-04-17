@@ -48,10 +48,11 @@ struct InstrumentsRunMethodHandler {
         finishedWriting.set(true)
       }
     }
-    let logger = FBControlCoreLoggerFactory.compositeLogger(with: [
-      FBControlCoreLoggerFactory.logger(to: consumer),
-      targetLogger,
-    ].compactMap { $0 })
+    let logger = FBControlCoreLoggerFactory.compositeLogger(
+      with: [
+        FBControlCoreLoggerFactory.logger(to: consumer),
+        targetLogger,
+      ].compactMap { $0 })
 
     let operation = try await BridgeFuture.value(target.startInstruments(configuration, logger: logger))
 
@@ -71,10 +72,12 @@ struct InstrumentsRunMethodHandler {
     try await responseStream.send(response)
 
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
-    let processed = try await BridgeFuture.value(FBInstrumentsOperation.postProcess(postProcessArguments,
-                                                                                    traceDir: operation.traceDir,
-                                                                                    queue: BridgeQueues.futureSerialFullfillmentQueue,
-                                                                                    logger: logger))
+    let processed = try await BridgeFuture.value(
+      FBInstrumentsOperation.postProcess(
+        postProcessArguments,
+        traceDir: operation.traceDir,
+        queue: BridgeQueues.futureSerialFullfillmentQueue,
+        logger: logger))
     guard let processedPath = processed.path else {
       throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
     }
@@ -96,14 +99,16 @@ struct InstrumentsRunMethodHandler {
     func withDefaultTimeout(_ initial: Double, _ default: Double) -> Double {
       initial != 0 ? initial : `default`
     }
-    return .init(templateName: request.templateName,
-                 targetApplication: request.appBundleID,
-                 appEnvironment: request.environment,
-                 appArguments: request.arguments,
-                 toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments) ?? [],
-                 timings: .init(terminateTimeout: withDefaultTimeout(request.timings.terminateTimeout, DefaultInstrumentsTerminateTimeout),
-                                launchRetryTimeout: withDefaultTimeout(request.timings.launchRetryTimeout, DefaultInstrumentsLaunchRetryTimeout),
-                                launchErrorTimeout: withDefaultTimeout(request.timings.launchErrorTimeout, DefaultInstrumentsLaunchErrorTimeout),
-                                operationDuration: withDefaultTimeout(request.timings.operationDuration, DefaultInstrumentsOperationDuration)))
+    return .init(
+      templateName: request.templateName,
+      targetApplication: request.appBundleID,
+      appEnvironment: request.environment,
+      appArguments: request.arguments,
+      toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments) ?? [],
+      timings: .init(
+        terminateTimeout: withDefaultTimeout(request.timings.terminateTimeout, DefaultInstrumentsTerminateTimeout),
+        launchRetryTimeout: withDefaultTimeout(request.timings.launchRetryTimeout, DefaultInstrumentsLaunchRetryTimeout),
+        launchErrorTimeout: withDefaultTimeout(request.timings.launchErrorTimeout, DefaultInstrumentsLaunchErrorTimeout),
+        operationDuration: withDefaultTimeout(request.timings.operationDuration, DefaultInstrumentsOperationDuration)))
   }
 }

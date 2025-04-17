@@ -352,9 +352,10 @@ extension IDBXCTestReporter {
   }
 
   private func gzipFolder(at path: String) async throws -> Data {
-    let task = FBArchiveOperations.createGzippedTarData(forPath: path,
-                                                        queue: queue,
-                                                        logger: logger)
+    let task = FBArchiveOperations.createGzippedTarData(
+      forPath: path,
+      queue: queue,
+      logger: logger)
     return try await BridgeFuture.value(task) as Data
   }
 
@@ -386,7 +387,8 @@ extension IDBXCTestReporter {
       .contentsOfDirectory(at: coverageDirectory, includingPropertiesForKeys: nil, options: [])
       .filter { $0.pathExtension == "profraw" }
 
-    let mergeArgs: [String] = ["llvm-profdata", "merge", "-o", profdataPath.path]
+    let mergeArgs: [String] =
+      ["llvm-profdata", "merge", "-o", profdataPath.path]
       + profraws.map(\.path)
 
     let mergeProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
@@ -403,7 +405,8 @@ extension IDBXCTestReporter {
   }
 
   private func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
-    let exportArgs: [String] = ["llvm-cov", "export", "-instr-profile", profdataPath.path]
+    let exportArgs: [String] =
+      ["llvm-cov", "export", "-instr-profile", profdataPath.path]
       + binariesPath.reduce(into: []) {
         $0 += ["-object", $1]
       }
@@ -495,9 +498,10 @@ extension IDBXCTestReporter {
       let log = logOutput as NSString
       if let result = regexp.firstMatch(in: logOutput, options: [], range: .init(location: 0, length: log.length)) {
         _currentInfo.sync {
-          $0.failureInfo = failureInfoWith(message: log.substring(with: result.range(at: 1)),
-                                           file: log.substring(with: result.range(at: 3)),
-                                           line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
+          $0.failureInfo = failureInfoWith(
+            message: log.substring(with: result.range(at: 1)),
+            file: log.substring(with: result.range(at: 3)),
+            line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
         }
       }
     } catch {

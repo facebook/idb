@@ -26,9 +26,10 @@ struct XCTestRunMethodHandler {
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
 
-    let operationFuture = commandExecutor.xctest_run(request,
-                                                     reporter: reporter,
-                                                     logger: FBControlCoreLoggerFactory.logger(to: reporter))
+    let operationFuture = commandExecutor.xctest_run(
+      request,
+      reporter: reporter,
+      logger: FBControlCoreLoggerFactory.logger(to: reporter))
     let operation = try await BridgeFuture.value(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
@@ -48,46 +49,49 @@ struct XCTestRunMethodHandler {
     let testsToRun = request.testsToRun.isEmpty ? nil : Set(request.testsToRun)
     switch request.mode.mode {
     case .logic:
-      return FBXCTestRunRequest.logicTest(withTestBundleID: request.testBundleID,
-                                          environment: request.environment,
-                                          arguments: request.arguments,
-                                          testsToRun: testsToRun,
-                                          testsToSkip: Set(request.testsToSkip),
-                                          testTimeout: request.timeout as NSNumber,
-                                          reportActivities: request.reportActivities,
-                                          reportAttachments: request.reportAttachments,
-                                          coverageRequest: extractCodeCoverage(from: request),
-                                          collectLogs: request.collectLogs,
-                                          waitForDebugger: request.waitForDebugger,
-                                          collectResultBundle: request.collectResultBundle)
+      return FBXCTestRunRequest.logicTest(
+        withTestBundleID: request.testBundleID,
+        environment: request.environment,
+        arguments: request.arguments,
+        testsToRun: testsToRun,
+        testsToSkip: Set(request.testsToSkip),
+        testTimeout: request.timeout as NSNumber,
+        reportActivities: request.reportActivities,
+        reportAttachments: request.reportAttachments,
+        coverageRequest: extractCodeCoverage(from: request),
+        collectLogs: request.collectLogs,
+        waitForDebugger: request.waitForDebugger,
+        collectResultBundle: request.collectResultBundle)
     case let .application(app):
-      return FBXCTestRunRequest.applicationTest(withTestBundleID: request.testBundleID,
-                                                testHostAppBundleID: app.appBundleID,
-                                                environment: request.environment,
-                                                arguments: request.arguments,
-                                                testsToRun: testsToRun,
-                                                testsToSkip: Set(request.testsToSkip),
-                                                testTimeout: request.timeout as NSNumber,
-                                                reportActivities: request.reportActivities,
-                                                reportAttachments: request.reportAttachments,
-                                                coverageRequest: extractCodeCoverage(from: request),
-                                                collectLogs: request.collectLogs,
-                                                waitForDebugger: request.waitForDebugger,
-                                                collectResultBundle: request.collectResultBundle)
+      return FBXCTestRunRequest.applicationTest(
+        withTestBundleID: request.testBundleID,
+        testHostAppBundleID: app.appBundleID,
+        environment: request.environment,
+        arguments: request.arguments,
+        testsToRun: testsToRun,
+        testsToSkip: Set(request.testsToSkip),
+        testTimeout: request.timeout as NSNumber,
+        reportActivities: request.reportActivities,
+        reportAttachments: request.reportAttachments,
+        coverageRequest: extractCodeCoverage(from: request),
+        collectLogs: request.collectLogs,
+        waitForDebugger: request.waitForDebugger,
+        collectResultBundle: request.collectResultBundle)
     case let .ui(ui):
-      return FBXCTestRunRequest.uiTest(withTestBundleID: request.testBundleID,
-                                       testHostAppBundleID: ui.testHostAppBundleID,
-                                       testTargetAppBundleID: ui.appBundleID,
-                                       environment: request.environment,
-                                       arguments: request.arguments,
-                                       testsToRun: testsToRun,
-                                       testsToSkip: Set(request.testsToSkip),
-                                       testTimeout: request.timeout as NSNumber,
-                                       reportActivities: request.reportActivities,
-                                       reportAttachments: request.reportAttachments,
-                                       coverageRequest: extractCodeCoverage(from: request),
-                                       collectLogs: request.collectLogs,
-                                       collectResultBundle: request.collectResultBundle)
+      return FBXCTestRunRequest.uiTest(
+        withTestBundleID: request.testBundleID,
+        testHostAppBundleID: ui.testHostAppBundleID,
+        testTargetAppBundleID: ui.appBundleID,
+        environment: request.environment,
+        arguments: request.arguments,
+        testsToRun: testsToRun,
+        testsToSkip: Set(request.testsToSkip),
+        testTimeout: request.timeout as NSNumber,
+        reportActivities: request.reportActivities,
+        reportAttachments: request.reportAttachments,
+        coverageRequest: extractCodeCoverage(from: request),
+        collectLogs: request.collectLogs,
+        collectResultBundle: request.collectResultBundle)
     case .none:
       return nil
     }

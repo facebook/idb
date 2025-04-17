@@ -56,18 +56,21 @@ final class FBApplicationBasedGatekeeperRequestor: InternGraphRequestor {
       return
     }
 
-    URLSession.shared.dataTask(with: .init(url: sitevarURL), completionHandler: { data, response, error in
-      if let error {
-        handler(.failure(error))
-      } else if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
-        let output = data.flatMap { String(data: $0, encoding: .utf8) } ?? "Empty"
-        handler(.failure(FBInternGraphInternalError.inacceptableStatusCode(output)))
-      } else if let data {
-        handler(.success(data))
-      } else {
-        handler(.failure(FBInternGraphInternalError.notReceiveErrorOrData))
+    URLSession.shared.dataTask(
+      with: .init(url: sitevarURL),
+      completionHandler: { data, response, error in
+        if let error {
+          handler(.failure(error))
+        } else if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
+          let output = data.flatMap { String(data: $0, encoding: .utf8) } ?? "Empty"
+          handler(.failure(FBInternGraphInternalError.inacceptableStatusCode(output)))
+        } else if let data {
+          handler(.success(data))
+        } else {
+          handler(.failure(FBInternGraphInternalError.notReceiveErrorOrData))
+        }
       }
-    })
+    )
     .resume()
   }
 }

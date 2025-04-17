@@ -24,12 +24,13 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
       .withStdErrToDevNull()
       .runUntilCompletion(withAcceptableExitCodes: [0])
       .onQueue(targetQueue, map: { p in p.stdOut ?? "" })
-      .await(withTimeout: 2) as! String // swiftlint:disable:this force_cast
+      .await(withTimeout: 2) as! String  // swiftlint:disable:this force_cast
   }
 
   func adaptedProcess(requested: Set<FBArchitecture>, host: Set<FBArchitecture>) throws -> FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject> {
     let tmpdir = tmpDir.temporaryDirectory()
-    return try adapter
+    return
+      try adapter
       .adaptProcessConfiguration(processConfiguration, toAnyArchitectureIn: requested, hostArchitectures: host, queue: targetQueue, temporaryDirectory: tmpdir)
       .await(withTimeout: 10)
   }
@@ -51,7 +52,7 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
   }
 
   func testBinaryIsThinnedDownTox86_64Onx86_64Host() throws {
-    let newConf = try  adaptedProcess(requested: [.X86_64, .arm64], host: [.X86_64])
+    let newConf = try adaptedProcess(requested: [.X86_64, .arm64], host: [.X86_64])
     XCTAssertNotEqual(newConf.launchPath, processConfiguration.launchPath)
     XCTAssertEqual(try getArchsInBinary(binary: newConf.launchPath), "x86_64")
   }

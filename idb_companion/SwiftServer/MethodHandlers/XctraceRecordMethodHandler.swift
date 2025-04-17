@@ -49,10 +49,11 @@ struct XctraceRecordMethodHandler {
       }
     }
 
-    let logger = FBControlCoreLoggerFactory.compositeLogger(with: [
-      FBControlCoreLoggerFactory.logger(to: consumer),
-      targetLogger,
-    ].compactMap({ $0 }))
+    let logger = FBControlCoreLoggerFactory.compositeLogger(
+      with: [
+        FBControlCoreLoggerFactory.logger(to: consumer),
+        targetLogger,
+      ].compactMap({ $0 }))
 
     let operation = try await BridgeFuture.value(target.startXctraceRecord(config, logger: logger))
     let response = Idb_XctraceRecordResponse.with {
@@ -72,10 +73,11 @@ struct XctraceRecordMethodHandler {
     try await responseStream.send(response)
 
     let processed = try await BridgeFuture.value(
-      FBInstrumentsOperation.postProcess(stop.args,
-                                         traceDir: operation.traceDir,
-                                         queue: BridgeQueues.miscEventReaderQueue,
-                                         logger: logger)
+      FBInstrumentsOperation.postProcess(
+        stop.args,
+        traceDir: operation.traceDir,
+        queue: BridgeQueues.miscEventReaderQueue,
+        logger: logger)
     )
     finishedWriting.set(true)
 
@@ -101,16 +103,17 @@ struct XctraceRecordMethodHandler {
   private func xcTraceRecordConfiguration(from request: Idb_XctraceRecordRequest.Start) -> FBXCTraceRecordConfiguration {
     let timeLimit = request.timeLimit != 0 ? request.timeLimit : DefaultXCTraceRecordOperationTimeLimit
 
-    return .init(templateName: request.templateName,
-                 timeLimit: timeLimit,
-                 package: request.package,
-                 allProcesses: request.target.allProcesses,
-                 processToAttach: request.target.processToAttach,
-                 processToLaunch: request.target.launchProcess.processToLaunch,
-                 launchArgs: request.target.launchProcess.launchArgs,
-                 targetStdin: request.target.launchProcess.targetStdin,
-                 targetStdout: request.target.launchProcess.targetStdout,
-                 processEnv: request.target.launchProcess.processEnv,
-                 shim: nil)
+    return .init(
+      templateName: request.templateName,
+      timeLimit: timeLimit,
+      package: request.package,
+      allProcesses: request.target.allProcesses,
+      processToAttach: request.target.processToAttach,
+      processToLaunch: request.target.launchProcess.processToLaunch,
+      launchArgs: request.target.launchProcess.launchArgs,
+      targetStdin: request.target.launchProcess.targetStdin,
+      targetStdout: request.target.launchProcess.targetStdout,
+      processEnv: request.target.launchProcess.processEnv,
+      shim: nil)
   }
 }

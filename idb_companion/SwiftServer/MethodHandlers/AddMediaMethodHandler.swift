@@ -14,7 +14,8 @@ struct AddMediaMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
-    let extractedFileURLs = try await MultisourceFileReader
+    let extractedFileURLs =
+      try await MultisourceFileReader
       .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true)
 
     try await BridgeFuture.await(commandExecutor.add_media(extractedFileURLs))

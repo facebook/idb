@@ -23,9 +23,10 @@ struct VideoStreamMethodHandler {
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
-    let videoStream = try await startVideoStream(request: start,
-                                                 responseStream: responseStream,
-                                                 finished: _finished)
+    let videoStream = try await startVideoStream(
+      request: start,
+      responseStream: responseStream,
+      finished: _finished)
 
     let observeClientCancelStreaming = Task<Void, Error> {
       for try await request in requestStream {
@@ -74,12 +75,13 @@ struct VideoStreamMethodHandler {
     let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil
     let avgBitrate = start.avgBitrate > 0 ? NSNumber(value: start.avgBitrate) : nil
     let encoding = try streamEncoding(from: start.format)
-    let config = FBVideoStreamConfiguration(encoding: encoding,
-                                            framesPerSecond: framesPerSecond,
-                                            compressionQuality: .init(value: start.compressionQuality),
-                                            scaleFactor: .init(value: start.scaleFactor),
-                                            avgBitrate: avgBitrate,
-                                            keyFrameRate: .init(value: start.keyFrameRate))
+    let config = FBVideoStreamConfiguration(
+      encoding: encoding,
+      framesPerSecond: framesPerSecond,
+      compressionQuality: .init(value: start.compressionQuality),
+      scaleFactor: .init(value: start.scaleFactor),
+      avgBitrate: avgBitrate,
+      keyFrameRate: .init(value: start.keyFrameRate))
 
     let videoStream = try await BridgeFuture.value(target.createStream(with: config))
 

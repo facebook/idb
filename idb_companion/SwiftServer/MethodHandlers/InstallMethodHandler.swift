@@ -88,26 +88,29 @@ struct InstallMethodHandler {
       payload = try extractPayloadFromRequest()
     }
 
-    return try await installData(from: payload.source,
-                                 to: destination,
-                                 requestStream: requestStream,
-                                 name: name,
-                                 makeDebuggable: makeDebuggable,
-                                 linkToBundle: linkToBundle,
-                                 compression: compression,
-                                 overrideModificationTime: overrideModificationTime,
-                                 skipSigningBundles: skipSigningBundles)
+    return try await installData(
+      from: payload.source,
+      to: destination,
+      requestStream: requestStream,
+      name: name,
+      makeDebuggable: makeDebuggable,
+      linkToBundle: linkToBundle,
+      compression: compression,
+      overrideModificationTime: overrideModificationTime,
+      skipSigningBundles: skipSigningBundles)
   }
 
-  private func installData(from source: Idb_Payload.OneOf_Source?,
-                           to destination: Idb_InstallRequest.Destination,
-                           requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
-                           name: String,
-                           makeDebuggable: Bool,
-                           linkToBundle: FBDsymInstallLinkToBundle?,
-                           compression: FBCompressionFormat,
-                           overrideModificationTime: Bool,
-                           skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  private func installData(
+    from source: Idb_Payload.OneOf_Source?,
+    to destination: Idb_InstallRequest.Destination,
+    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    name: String,
+    makeDebuggable: Bool,
+    linkToBundle: FBDsymInstallLinkToBundle?,
+    compression: FBCompressionFormat,
+    overrideModificationTime: Bool,
+    skipSigningBundles: Bool
+  ) async throws -> FBInstalledArtifact {
 
     func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
       switch destination {
@@ -205,8 +208,9 @@ struct InstallMethodHandler {
   }
 
   private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> FBDsymInstallLinkToBundle {
-    return .init(link.bundleID,
-                 bundle_type: readDsymBundleType(from: link.bundleType))
+    return .init(
+      link.bundleID,
+      bundle_type: readDsymBundleType(from: link.bundleType))
   }
 
   private func readDsymBundleType(from bundleType: Idb_InstallRequest.LinkDsymToBundle.BundleType) -> FBDsymBundleType {

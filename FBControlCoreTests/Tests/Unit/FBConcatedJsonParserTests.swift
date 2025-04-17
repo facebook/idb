@@ -5,50 +5,51 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import FBControlCore
 import XCTest
+
+@testable import FBControlCore
 
 class FBConcatedJsonParserTests: XCTestCase {
 
   func testPlainSmallJsonParse() throws {
     let json = """
-    {"hello": "world"}
-    """
+      {"hello": "world"}
+      """
 
     try XCTAssertEqual(parse(string: json), ["hello": "world"])
   }
 
   func testPlainDoubleJsonParse() throws {
     let json = """
-    {"hello": "world"}
-    {"second": "value"}
-    """
+      {"hello": "world"}
+      {"second": "value"}
+      """
 
     try XCTAssertEqual(parse(string: json), ["hello": "world", "second": "value"])
   }
 
   func testWithCurlyBracketsInString() throws {
     let json = """
-    {"hello": "wor{ld"}
-    {"second": "value"}
-    """
+      {"hello": "wor{ld"}
+      {"second": "value"}
+      """
 
     try XCTAssertEqual(parse(string: json), ["hello": "wor{ld", "second": "value"])
   }
 
   func testWithEscapedCharatersInString() throws {
     let json = """
-    {"hello": "worl\\"d"}
-    {"second": "value"}
-    """
+      {"hello": "worl\\"d"}
+      {"second": "value"}
+      """
 
     try XCTAssertEqual(parse(string: json), ["hello": "worl\"d", "second": "value"])
   }
 
   func testThrowsIncorrectJson() throws {
     let json = """
-    {"hello": 1"world"1}
-    """
+      {"hello": 1"world"1}
+      """
     XCTAssertThrowsError(try parse(string: json))
   }
 

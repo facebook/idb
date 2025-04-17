@@ -24,8 +24,10 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
   }
 
   private func commonInterceptors<Request, Response>() -> [ServerInterceptor<Request, Response>] {
-    [MethodInfoSetterInterceptor(),
-     LoggingInterceptor(logger: logger, reporter: reporter)]
+    [
+      MethodInfoSetterInterceptor(),
+      LoggingInterceptor(logger: logger, reporter: reporter),
+    ]
   }
 
   func makeconnectInterceptors() -> [ServerInterceptor<Idb_ConnectRequest, Idb_ConnectResponse>] {
