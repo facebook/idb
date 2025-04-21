@@ -49,8 +49,9 @@ public extension FBAppleDevicectlCommandExecutor {
       ]
       if !configuration.environment.isEmpty {
         if let envstr = String(
-            data: try JSONSerialization.data(withJSONObject: configuration.environment),
-            encoding: .utf8) {
+          data: try JSONSerialization.data(withJSONObject: configuration.environment),
+          encoding: .utf8)
+        {
           arguments += ["--environment-variables", envstr]
         }
       }

@@ -174,7 +174,7 @@ final class GRPCSwiftServer: NSObject {
 
   private static func loadCertificates(tlsCertPath: String?, logger: FBIDBLogger) -> TLSCertificates? {
     guard let tlsPath = tlsCertPath,
-          !tlsPath.isEmpty
+      !tlsPath.isEmpty
     else { return nil }
 
     let tlsURL = URL(fileURLWithPath: tlsPath)

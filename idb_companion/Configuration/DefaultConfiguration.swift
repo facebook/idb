@@ -4,7 +4,7 @@ import Foundation
 
 public enum DefaultConfiguration {
 
-  public static let cacheInvalidationInterval: TimeInterval = 120  // 2 mins
+  public static let cacheInvalidationInterval: TimeInterval = 120 // 2 mins
 
   public static let baseURL = "https://interngraph.intern.facebook.com/"
 

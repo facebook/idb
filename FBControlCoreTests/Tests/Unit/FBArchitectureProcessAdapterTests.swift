@@ -24,7 +24,7 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
       .withStdErrToDevNull()
       .runUntilCompletion(withAcceptableExitCodes: [0])
       .onQueue(targetQueue, map: { p in p.stdOut ?? "" })
-      .await(withTimeout: 2) as! String  // swiftlint:disable:this force_cast
+      .await(withTimeout: 2) as! String // swiftlint:disable:this force_cast
   }
 
   func adaptedProcess(requested: Set<FBArchitecture>, host: Set<FBArchitecture>) throws -> FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject> {
