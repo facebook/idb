@@ -60,7 +60,7 @@
     return NO;
   }
 
-  return (self.testBundle == configuration.testBundle || [self.testBundle isEqualTo:configuration.testBundle]) &&
+  return (self.testBundle == configuration.testBundle || [self.testBundle isEqual:configuration.testBundle]) &&
          (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration  || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration]) &&
          (self.testHostBundle == configuration.testHostBundle || [self.testHostBundle isEqual:configuration.testHostBundle]) &&
          (self.targetApplicationBundle == configuration.targetApplicationBundle || [self.targetApplicationBundle isEqual:configuration.targetApplicationBundle]) &&
