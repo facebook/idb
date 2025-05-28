@@ -173,56 +173,50 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-#if defined __cplusplus
-extern "C" {
-#endif
 /**
  The canonical string representation of the state enum.
  */
-extern FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState state);
+FOUNDATION_EXTERN FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState state);
 
 /**
  The canonical enum representation of the state string.
  */
-extern FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
+FOUNDATION_EXTERN FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
 
 /**
  The canonical string representations of the FBiOSTargetType Enum.
  */
-extern NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
+FOUNDATION_EXTERN NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
 
 /**
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.
  */
-extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
+FOUNDATION_EXTERN NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
 
 /**
  Constructs a string description of the provided target.
  */
-extern NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
+FOUNDATION_EXTERN NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
 
 /**
  Constructs an NSPredicate matching the specified UDID.
  */
-extern NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
+FOUNDATION_EXTERN NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
 
 /**
  Constructs an NSPredicate matching the specified UDIDs.
  */
-extern NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
+FOUNDATION_EXTERN NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
 
 /**
  Constructs a future that resolves when the target resolves to a provided state.
  */
-extern FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state);
+FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state);
 
 /**
  Constructs a future that resolves when the target leaves a provided state.
  */
-extern FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state);
+FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state);
 
-#if defined __cplusplus
-};
-#endif
 
 NS_ASSUME_NONNULL_END
