@@ -7,19 +7,19 @@
 
 #import <Foundation/Foundation.h>
 
-#import "CDStructures.h"
+#import <DTXConnectionServices/CDStructures.h>
 
-@class DTXChannel, DTXProxyChannel, DTXMessageParser, DTXMessageTransmitter, DTXResourceTracker, DTXTransport, NSArray, NSDictionary, NSMutableDictionary, NSString, DTXMessage;
+@class DTXChannel, DTXProxyChannel, DTXMessageParser, DTXMessageTransmitter, DTXResourceTracker, DTXTransport, DTXMessage;
 @protocol DTXRateLimiter,  DTXBlockCompressor;
 
 @interface DTXConnection : NSObject
 {
-    NSObject<OS_dispatch_queue> *_outgoing_message_queue;
-    NSObject<OS_dispatch_queue> *_outgoing_control_queue;
+    dispatch_queue_t _outgoing_message_queue;
+    dispatch_queue_t _outgoing_control_queue;
     DTXTransport *_controlTransport;
     NSArray *_permittedBlockCompressors;
-    NSObject<OS_dispatch_queue> *_receive_queue;
-    NSObject<OS_dispatch_queue> *_handler_queue;
+    dispatch_queue_t _receive_queue;
+    dispatch_queue_t _handler_queue;
     unsigned int _nextChannelCode;
     NSMutableDictionary *_channelsByCode;
     NSMutableDictionary *_unconfiguredChannelsByCode;
@@ -31,7 +31,7 @@
     NSDictionary *_remoteCapabilityVersions;
     DTXResourceTracker *_resourceTracker;
     DTXResourceTracker *_incomingResourceTracker;
-    NSObject<OS_dispatch_semaphore> *_firstMessageSem;
+    dispatch_semaphore_t _firstMessageSem;
     DTXMessageParser *_incomingParser;
     DTXMessageTransmitter *_outgoingTransmitter;
     DTXChannel *_defaultChannel;
@@ -87,7 +87,7 @@
 - (id)localCapabilities;
 - (void)publishCapability:(id)arg1 withVersion:(long long)arg2 forClass:(Class)arg3;
 @property(nonatomic) unsigned long long maximumEnqueueSize;
-@property(readonly, copy) NSString *description;
+
 - (id)publishedAddresses;
 - (void)dealloc;
 - (id)initWithTransport:(id)arg1;
@@ -105,8 +105,8 @@
 
 // Remaining properties
 @property(readonly, copy) NSString *debugDescription;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+
+
 
 @end
 

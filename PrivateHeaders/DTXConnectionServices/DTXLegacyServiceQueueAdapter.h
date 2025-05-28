@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
-
-#import "NSCoding.h"
+#import <Foundation/Foundation.h>
 
 @interface DTXLegacyServiceQueueAdapter : NSObject <NSCoding>
 {

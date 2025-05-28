@@ -11,7 +11,7 @@
 
 @interface DTXRemoteInvocationReceipt : NSObject
 {
-    NSObject<OS_dispatch_queue> *_guard;
+    dispatch_queue_t _guard;
     CDUnknownBlockType _completionHandler;
     id _returnValue;
     unsigned int _returnType;

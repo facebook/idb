@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, XCAccessibilityElement, XCTCapabilities, XCTElementQuery, XCTSerializedTransportWrapper2;
+#import <Foundation/Foundation.h>
+
+@class XCAccessibilityElement, XCTCapabilities, XCTElementQuery, XCTElementQueryResults, XCTSerializedTransportWrapper2;
 
 @protocol XCTMessagingRole_UIAutomationProcess <NSObject>
 - (void)listenForRemoteConnectionViaSerializedTransportWrapper:(XCTSerializedTransportWrapper2 *)arg1 completion:(void (^)(void))arg2;

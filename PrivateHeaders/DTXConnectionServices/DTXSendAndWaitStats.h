@@ -5,16 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
-
-@class NSMutableSet, NSObject<OS_dispatch_queue>;
+#import <Foundation/Foundation.h>
 
 @interface DTXSendAndWaitStats : NSObject
 {
     unsigned long long _totalSendBytes;
     unsigned long long _previousSendBytes;
     unsigned long long _lastStatTime;
-    NSObject<OS_dispatch_queue> *_statsQueue;
+    dispatch_queue_t _statsQueue;
     struct mach_timebase_info _timeBaseInfo;
     double _microsecondsPerUnit;
     unsigned long long _compressionTotalDataCompressed;

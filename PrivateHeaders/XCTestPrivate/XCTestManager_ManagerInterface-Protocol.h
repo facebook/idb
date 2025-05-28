@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSUUID;
+#import <Foundation/Foundation.h>
 
 @protocol XCTestManager_ManagerInterface
 - (void)_XCT_loadAccessibilityWithTimeout:(double)arg1 reply:(void (^)(_Bool, NSError *))arg2;

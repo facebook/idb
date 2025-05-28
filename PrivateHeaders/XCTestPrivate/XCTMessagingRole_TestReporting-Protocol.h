@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSError, NSNumber, NSString, XCTCapabilities, XCTExpectedFailure, XCTIssue, XCTSourceCodeContext, XCTTestIdentifier, XCTestCaseRunConfiguration;
+#import <Foundation/Foundation.h>
+
+@class XCTCapabilities, XCTExpectedFailure, XCTIssue, XCTSourceCodeContext, XCTTestIdentifier, XCTestCaseRunConfiguration;
 
 @protocol XCTMessagingRole_TestReporting
 - (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didStallOnMainThreadInFile:(NSString *)arg2 line:(NSNumber *)arg3;

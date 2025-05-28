@@ -7,7 +7,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString, XCDeviceEvent, XCSynthesizedEventRecord;
+#import <Foundation/Foundation.h>
+
+@class XCDeviceEvent, XCSynthesizedEventRecord;
 
 @protocol XCTMessagingRole_EventSynthesis
 - (void)_XCT_enableFauxCollectionViewCells:(void (^)(_Bool, NSError *))arg1;

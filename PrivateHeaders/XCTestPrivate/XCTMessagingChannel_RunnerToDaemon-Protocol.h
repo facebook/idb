@@ -5,14 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTMessagingRole_BundleRequesting-Protocol.h>
-#import <XCTest/XCTMessagingRole_CapabilityExchange-Protocol.h>
-#import <XCTest/XCTMessagingRole_EventSynthesis-Protocol.h>
-#import <XCTest/XCTMessagingRole_ForcePressureSupportQuerying-Protocol.h>
-#import <XCTest/XCTMessagingRole_MemoryTesting-Protocol.h>
-#import <XCTest/XCTMessagingRole_ProtectedResourceAuthorization-Protocol.h>
-#import <XCTest/XCTMessagingRole_SiriAutomation-Protocol.h>
-#import <XCTest/_XCTMessaging_VoidProtocol-Protocol.h>
+#import <Foundation/Foundation.h>
+
+@protocol XCTMessagingRole_ProtectedResourceAuthorization, XCTMessagingRole_CapabilityExchange, XCTMessagingRole_EventSynthesis, XCTMessagingRole_SiriAutomation, XCTMessagingRole_MemoryTesting, XCTMessagingRole_BundleRequesting, XCTMessagingRole_ForcePressureSupportQuerying, _XCTMessaging_VoidProtocol;
 
 @protocol XCTMessagingChannel_RunnerToDaemon <XCTMessagingRole_ProtectedResourceAuthorization, XCTMessagingRole_CapabilityExchange, XCTMessagingRole_EventSynthesis, XCTMessagingRole_SiriAutomation, XCTMessagingRole_MemoryTesting, XCTMessagingRole_BundleRequesting, XCTMessagingRole_ForcePressureSupportQuerying, _XCTMessaging_VoidProtocol>
 

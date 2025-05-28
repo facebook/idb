@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTestManager_TestsInterface
 - (void)_XCT_applicationWithBundleID:(NSString *)arg1 didUpdatePID:(int)arg2 andState:(unsigned long long)arg3;

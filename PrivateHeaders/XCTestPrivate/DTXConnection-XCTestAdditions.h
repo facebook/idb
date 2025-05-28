@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "DTXConnectionServices/DTXConnection.h"
+#import <DTXConnectionServices/DTXConnection.h>
 
 @interface DTXConnection (XCTestAdditions)
+
 - (id)xct_makeProxyChannelWithRemoteInterface:(id)arg1 exportedInterface:(id)arg2;
 - (void)xct_handleProxyRequestForInterface:(id)arg1 peerInterface:(id)arg2 handler:(id)arg3;
+
 @end

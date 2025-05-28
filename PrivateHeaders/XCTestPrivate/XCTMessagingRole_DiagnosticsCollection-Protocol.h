@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDate, XCTSpindumpRequestSpecification;
+#import <Foundation/Foundation.h>
+
+@class XCTSpindumpRequestSpecification;
 
 @protocol XCTMessagingRole_DiagnosticsCollection
 - (id)_IDE_requestSpindumpWithSpecification:(XCTSpindumpRequestSpecification *)arg1;

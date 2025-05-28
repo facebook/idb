@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSNumber, XCTTestIdentifierSet;
+#import <Foundation/Foundation.h>
+
+@class XCTTestIdentifierSet;
 
 @protocol XCTMessagingRole_TestExecution
 - (id)_IDE_shutdown;

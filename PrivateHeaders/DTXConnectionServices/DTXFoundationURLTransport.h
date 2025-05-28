@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <DTXConnectionServices/DTXTransport.h>
-
-#import "NSURLSessionDelegate.h"
-
-@class NSString, NSURLSession, NSURLSessionDataTask;
 
 @interface DTXFoundationURLTransport : DTXTransport <NSURLSessionDelegate>
 {
@@ -29,9 +27,9 @@
 
 // Remaining properties
 @property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+
+
+
 
 @end
 

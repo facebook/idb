@@ -9,7 +9,6 @@
 
 @class XCTCapabilities;
 
-
 @interface XCTCapabilitiesBuilder : NSObject
 {
     NSMutableDictionary *_capabilitiesDictionary;

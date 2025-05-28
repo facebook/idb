@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTMessagingChannel_DaemonRecorderToIDE-Protocol.h>
-#import <XCTest/XCTMessagingChannel_DaemonToIDE-Protocol.h>
-#import <XCTest/_XCTMessaging_VoidProtocol-Protocol.h>
+#import <Foundation/Foundation.h>
+
+@protocol XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_DaemonRecorderToIDE, _XCTMessaging_VoidProtocol;
 
 @protocol XCTMessagingChannel_DaemonToIDE_All <XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_DaemonRecorderToIDE, _XCTMessaging_VoidProtocol>
 

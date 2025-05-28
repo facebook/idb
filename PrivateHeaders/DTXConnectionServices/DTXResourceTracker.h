@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
-
-@class NSObject<OS_dispatch_queue>, NSObject<OS_dispatch_semaphore>;
+#import <Foundation/Foundation.h>
 
 @interface DTXResourceTracker : NSObject
 {
@@ -17,8 +15,8 @@
     unsigned int _waiting;
     unsigned int _acquireNum;
     int _suspendCount;
-    NSObject<OS_dispatch_queue> *_queue;
-    NSObject<OS_dispatch_semaphore> *_acqSem;
+    dispatch_queue_t _queue;
+    dispatch_semaphore_t _acqSem;
     DTXResourceTracker *_parentTracker;
     BOOL _log;
 }

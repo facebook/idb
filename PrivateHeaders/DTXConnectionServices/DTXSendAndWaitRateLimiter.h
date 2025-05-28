@@ -5,20 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
+#import <Foundation/Foundation.h>
 
-#import "DTXRateLimiter.h"
+@class DTXSendAndWaitStats;
 
-@class DTXSendAndWaitStats, NSObject<OS_dispatch_queue>, NSObject<OS_dispatch_source>, NSString;
+@protocol DTXRateLimiter;
 
 @interface DTXSendAndWaitRateLimiter : NSObject <DTXRateLimiter>
 {
-    NSObject<OS_dispatch_queue> *_actionQueue;
+    dispatch_queue_t _actionQueue;
     double _microsecondsPerUnit;
     struct mach_timebase_info _timeBaseInfo;
     _Bool _logSends;
-    NSObject<OS_dispatch_queue> *_statsQueue;
-    NSObject<OS_dispatch_source> *_timer;
+    dispatch_queue_t statsQueue;
+    dispatch_source_t _timer;
     DTXSendAndWaitStats *_stats;
 }
 
@@ -29,9 +29,9 @@
 
 // Remaining properties
 @property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+
+
+
 
 @end
 

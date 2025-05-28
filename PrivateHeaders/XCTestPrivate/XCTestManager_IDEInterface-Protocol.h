@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber, NSString, XCAccessibilityElement, XCActivityRecord, XCElementSnapshot, XCTCapabilities;
+#import <Foundation/Foundation.h>
+
+@class XCAccessibilityElement, XCActivityRecord, XCElementSnapshot, XCTCapabilities;
 
 @protocol XCTestManager_IDEInterface
 

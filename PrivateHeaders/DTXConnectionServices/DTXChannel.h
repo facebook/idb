@@ -7,14 +7,14 @@
 
 #import <Foundation/Foundation.h>
 
-@class DTXConnection, NSString, DTXMessage;
+@class DTXConnection, DTXMessage;
 @protocol DTXAllowedRPC;
 
 @interface DTXChannel : NSObject// <DTXMessenger>
 {
     DTXConnection *_connection;
-    NSObject<OS_dispatch_queue> *_serialQueue;
-    NSObject<OS_dispatch_queue> *_atomicHandlers;
+    dispatch_queue_t _serialQueue;
+    dispatch_queue_t _atomicHandlers;
     id <DTXAllowedRPC> _dispatchTarget;
     CDUnknownBlockType _messageHandler;
     CDUnknownBlockType _dispatchValidator;
@@ -47,9 +47,9 @@
 
 // Remaining properties
 @property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+
+
+
 
 @end
 

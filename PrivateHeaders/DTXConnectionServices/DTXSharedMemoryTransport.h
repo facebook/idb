@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <DTXConnectionServices/DTXTransport.h>
+#import <Foundation/Foundation.h>
 
-@class NSObject<OS_dispatch_queue>;
+#import <DTXConnectionServices/DTXTransport.h>
 
 @interface DTXSharedMemoryTransport : DTXTransport
 {
     struct DTXSharedMemory *_shm;
-    NSObject<OS_dispatch_queue> *_listenQueue;
+    dispatch_queue_t _listenQueue;
     BOOL _creator;
 }
 

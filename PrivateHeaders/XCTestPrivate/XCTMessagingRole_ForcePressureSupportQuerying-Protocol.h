@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSData, XCSynthesizedEventRecord;
+#import <Foundation/Foundation.h>
+
+@class XCSynthesizedEventRecord;
 
 @protocol XCTMessagingRole_ForcePressureSupportQuerying
 - (void)_XCT_synthesizeEvent:(XCSynthesizedEventRecord *)arg1 implicitConfirmationInterval:(double)arg2 completion:(void (^)(NSError *))arg3;

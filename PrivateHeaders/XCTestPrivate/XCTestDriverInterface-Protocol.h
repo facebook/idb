@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSNumber;
+#import <Foundation/Foundation.h>
 
 @protocol XCTestDriverInterface
 - (id)_IDE_startExecutingTestPlanWithProtocolVersion:(NSNumber *)arg1;

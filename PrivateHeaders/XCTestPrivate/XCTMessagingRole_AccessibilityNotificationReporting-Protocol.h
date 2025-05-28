@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSData, XCAccessibilityElement;
+#import <Foundation/Foundation.h>
+
+@class XCAccessibilityElement;
 
 @protocol XCTMessagingRole_AccessibilityNotificationReporting
 - (void)_XCT_receivedAccessibilityNotification:(int)arg1 fromElement:(XCAccessibilityElement *)arg2 payload:(NSData *)arg3;

@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber, NSString, NSUUID, DTXRemoteInvocationReceipt;
+#import <Foundation/Foundation.h>
+
+@class DTXRemoteInvocationReceipt;
 
 @protocol XCTestManager_DaemonConnectionInterface
 - (DTXRemoteInvocationReceipt *)_IDE_stopRecording;

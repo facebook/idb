@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
+#import <Foundation/Foundation.h>
 
-#import "DTXAllowedRPC.h"
+@protocol DTXAllowedRPC;
 
 @class DTXChannel, NSString;
 
@@ -26,9 +26,9 @@
 
 // Remaining properties
 @property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) unsigned long long hash;
-@property(readonly) Class superclass;
+
+
+
 
 @end
 

@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTMessagingRole_UIAutomationProcess-Protocol.h>
-#import <XCTest/_XCTMessaging_VoidProtocol-Protocol.h>
+#import <Foundation/Foundation.h>
+
+@protocol XCTMessagingRole_UIAutomationProcess, _XCTMessaging_VoidProtocol;
 
 @protocol XCTMessagingChannel_RunnerToUIProcess <XCTMessagingRole_UIAutomationProcess, _XCTMessaging_VoidProtocol>
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "DTXConnectionServices/DTXProxyChannel.h"
+#import <DTXConnectionServices/DTXProxyChannel.h>
 
 @interface DTXProxyChannel (XCTestAdditions)
 - (void)xct_setAllowedClassesForTestingProtocols;

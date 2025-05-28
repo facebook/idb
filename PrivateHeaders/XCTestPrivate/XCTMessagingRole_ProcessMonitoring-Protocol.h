@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSNumber, NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_ProcessMonitoring
 - (id)_IDE_processWithToken:(NSNumber *)arg1 exitedWithStatus:(NSNumber *)arg2;

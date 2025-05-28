@@ -7,16 +7,16 @@
 
 #import <Foundation/Foundation.h>
 
-@class DTXResourceTracker, NSArray;
+@class DTXResourceTracker;
 
 @interface DTXTransport : NSObject
 {
-    NSObject<OS_dispatch_queue> *_serializer;
-    NSObject<OS_dispatch_queue> *_handlerGuard;
+    dispatch_queue_t _serializer;
+    dispatch_queue_t _handlerGuard;
     DTXResourceTracker *_tracker;
     CDUnknownBlockType _dataReceivedHandler;
     int _status;
-    NSObject<OS_dispatch_semaphore> *_waitForResume;
+    dispatch_semaphore_t _waitForResume;
     BOOL _resumed;
 }
 

@@ -5,19 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
-
-@class NSMutableDictionary, NSObject<OS_dispatch_queue>, NSObject<OS_dispatch_semaphore>;
+#import <Foundation/Foundation.h>
 
 @interface DTXMessageParser : NSObject
 {
     const char *_parsingBuffer;
     unsigned long long _parsingBufferUsed;
     unsigned long long _parsingBufferSize;
-    NSObject<OS_dispatch_queue> *_parsingQueue;
+    dispatch_queue_t _parsingQueue;
     NSMutableDictionary *_fragmentedBuffersByIdentifier;
-    NSObject<OS_dispatch_semaphore> *_hasMoreDataSem;
-    NSObject<OS_dispatch_semaphore> *_wantsMoreDataSem;
+    dispatch_semaphore_t _hasMoreDataSem;
+    dispatch_semaphore_t _wantsMoreDataSem;
     unsigned long long _desiredSize;
     BOOL _eof;
     id <DTXBlockCompressor> _compressor;

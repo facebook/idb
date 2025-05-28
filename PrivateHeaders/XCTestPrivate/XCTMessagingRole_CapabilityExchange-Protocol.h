@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber, NSString, NSUUID, XCAccessibilityElement, XCTCapabilities, XCTScreenshotRequest, XCTSpindumpRequestSpecification;
+#import <Foundation/Foundation.h>
+
+@class XCAccessibilityElement, XCTCapabilities, XCTScreenshotRequest, XCTSpindumpRequestSpecification, XCTSerializedTransportWrapper, XCTImage, XCElementSnapshot, XCUIElementSnapshotRequestResult;
 
 @protocol XCTMessagingRole_CapabilityExchange
 - (void)_XCT_requestElementAtPoint:(struct CGPoint)arg1 reply:(void (^)(XCAccessibilityElement *, NSError *))arg2;

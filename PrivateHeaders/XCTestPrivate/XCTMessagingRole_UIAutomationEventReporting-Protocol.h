@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber, NSString, XCElementSnapshot;
+#import <Foundation/Foundation.h>
+
+@class XCElementSnapshot;
 
 @protocol XCTMessagingRole_UIAutomationEventReporting
 - (id)_XCT_nativeFocusItemDidChangeAtTime:(NSNumber *)arg1 parameterSnapshot:(XCElementSnapshot *)arg2 applicationSnapshot:(XCElementSnapshot *)arg3;

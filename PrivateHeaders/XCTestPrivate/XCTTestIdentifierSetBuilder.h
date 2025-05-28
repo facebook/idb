@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSMutableSet, XCTTestIdentifierSet;
+@class XCTTestIdentifierSet;
 
 @interface XCTTestIdentifierSetBuilder : NSObject <NSCopying>
 {

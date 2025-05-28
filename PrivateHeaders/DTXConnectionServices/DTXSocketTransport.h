@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <DTXConnectionServices/DTXFileDescriptorTransport.h>
 
 @interface DTXSocketTransport : DTXFileDescriptorTransport
 {
-    NSObject<OS_dispatch_semaphore> *_socketAcceptedSem;
-    NSObject<OS_dispatch_source> *_acceptSource;
+    dispatch_semaphore_t _socketAcceptedSem;
+    dispatch_source_t _acceptSource;
     NSArray *_addresses;
     int _port;
 }

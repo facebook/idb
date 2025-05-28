@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSError, NSString;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_UIAutomation
 - (id)_XCT_getProgressForLaunch:(id)arg1;

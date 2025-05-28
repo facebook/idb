@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSArray, NSDictionary, NSNumber, NSString, NSURL, NSUUID, XCTAggregateSuiteRunStatistics, XCTCapabilities;
+@class XCTAggregateSuiteRunStatistics, XCTCapabilities;
 
 @interface XCTestConfiguration : NSObject <NSSecureCoding, NSCopying>
 {

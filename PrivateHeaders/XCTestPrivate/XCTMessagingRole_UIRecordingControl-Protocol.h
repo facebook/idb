@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@class NSArray, NSDictionary, NSNumber;
+#import <Foundation/Foundation.h>
 
 @protocol XCTMessagingRole_UIRecordingControl
 - (id)_IDE_stopRecording;

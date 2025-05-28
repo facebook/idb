@@ -5,18 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <DTXConnectionServices/DTXTransport.h>
+#import <Foundation/Foundation.h>
 
-@class NSObject<OS_dispatch_queue>, NSObject<OS_dispatch_source>, NSURL;
+#import <DTXConnectionServices/DTXTransport.h>
 
 @interface DTXMachTransport : DTXTransport
 {
     unsigned int _receivePort;
     unsigned int _sendPort;
     NSURL *_connectableAddress;
-    NSObject<OS_dispatch_source> *_listenSource;
-    NSObject<OS_dispatch_source> *_deadPortSource;
-    NSObject<OS_dispatch_queue> *_inputQueue;
+    dispatch_queue_t _listenSource;
+    dispatch_queue_t _deadPortSource;
+    dispatch_queue_t _inputQueue;
     struct DTXMachMessage *_sendBuffer;
     unsigned int _bufferedLength;
 }
