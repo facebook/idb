@@ -7,8 +7,6 @@
 
 #import "FBXcodeConfiguration.h"
 
-#import <Cocoa/Cocoa.h>
-
 #import "FBBundleDescriptor.h"
 #import "FBFuture+Sync.h"
 #import "FBiOSTargetConfiguration.h"
