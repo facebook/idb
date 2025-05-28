@@ -89,6 +89,6 @@ extern BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBD
  @param logger the logger to use.
  @param error an error out for any error that occurs.
 */
-extern BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+extern BOOL WriteMinicapHeaderToStream(uint32_t width, uint32_t height, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 NS_ASSUME_NONNULL_END
