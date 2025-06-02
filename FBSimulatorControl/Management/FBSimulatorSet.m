@@ -57,8 +57,8 @@
   _delegate = delegate;
   _logger = logger;
   _reporter = reporter;
-  _workQueue = dispatch_get_main_queue();
-  _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+  _workQueue = configuration.workQueue ? configuration.workQueue : dispatch_get_main_queue();
+  _asyncQueue = configuration.asyncQueue ? configuration.asyncQueue : dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
   _allSimulators = @[];
   _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
