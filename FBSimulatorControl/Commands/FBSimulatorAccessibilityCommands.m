@@ -101,8 +101,8 @@ static NSString *const AXPrefix = @"AX";
   if ([role hasPrefix:AXPrefix]) {
     role = [role substringFromIndex:2];
   }
-  NSMutableArray *customActions = [[NSMutableArray alloc] init];
-  for(NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
+  NSMutableArray<NSString *> *customActions = [[NSMutableArray alloc] init];
+  for (NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
     [customActions addObject:ensureJSONSerializable(name)];
   }
   return @{
