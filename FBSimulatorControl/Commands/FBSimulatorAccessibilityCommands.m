@@ -163,7 +163,7 @@ static NSString *const AXPrefix = @"AX";
 
 static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
 
-@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations>
+@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
 
 @property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
 
@@ -203,6 +203,13 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       failFuture];
   }
   return [self.bridge accessibilityElementAtPoint:point];
+}
+
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+{
+  return [[FBControlCoreError
+    describeFormat:@"%@ is not supported for SimulatorBridge based accessibility", NSStringFromSelector(_cmd)]
+    failFuture];
 }
 
 @end
@@ -275,12 +282,13 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 @interface FBSimulator_TranslationRequest_Point : FBSimulator_TranslationRequest
 
 @property (nonatomic, assign, readonly) CGPoint point;
+@property (nonatomic, assign, readonly) BOOL performTap;
 
 @end
 
 @implementation FBSimulator_TranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point performTap:(BOOL)performTap
 {
   self = [super initWithNestedFormat:nestedFormat];
   if (!self) {
@@ -288,6 +296,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   }
 
   _point = point;
+  _performTap = performTap;
 
   return self;
 }
@@ -297,14 +306,18 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [translator objectAtPoint:self.point displayId:0 bridgeDelegateToken:self.token];
 }
 
-- (id)serialize:(AXPMacPlatformElement *)element
+- (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element
 {
-  return [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
+  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
+  if (self.performTap) {
+    [element accessibilityPerformPress];
+  }
+  return result;
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point];
+  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point performTap:self.performTap];
 }
 
 @end
@@ -438,7 +451,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations>
+@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
@@ -472,8 +485,14 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point performTap:NO];
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
+}
+
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+{
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point performTap:YES];
+  return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 #pragma mark Private
@@ -605,9 +624,18 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+{
+  return [[self
+    implementationWithNestedFormat:YES]
+    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations> implementation) {
+      return [implementation accessibilityPerformTapOnElementAtPoint:point];
+    }];
+}
+
 #pragma mark Private
 
-- (FBFuture<id<FBAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
 {
   // Post Xcode 12, FBSimulatorBridge will not work with accessibility.
   // Additionally, CoreSimulator **should** be upgraded, but if it hasn't then this will fail.

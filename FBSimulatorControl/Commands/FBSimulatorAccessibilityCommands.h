@@ -12,9 +12,25 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Used for internal and external implementation.
+ */
+@protocol FBSimulatorAccessibilityOperations <NSObject>
+
+/**
+ Performs an "Accessibility Tap" on the element at the specified point
+
+ @param point the point to tap
+ @return the accessibility element at the point, prior to the tap
+ */
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point;
+
+@end
+
+
+/**
  An Implementation of FBSimulatorAccessibilityCommands.
  */
-@interface FBSimulatorAccessibilityCommands : NSObject <FBAccessibilityCommands>
+@interface FBSimulatorAccessibilityCommands : NSObject <FBAccessibilityCommands, FBSimulatorAccessibilityOperations>
 
 @end
 
