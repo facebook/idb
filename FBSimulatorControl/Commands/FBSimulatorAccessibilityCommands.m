@@ -242,7 +242,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return nil;
 }
 
-- (id)serialize:(AXPMacPlatformElement *)element
+- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -267,7 +267,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:self.token];
 }
 
-- (id)serialize:(AXPMacPlatformElement *)element
+- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat];
 }
@@ -306,10 +306,16 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [translator objectAtPoint:self.point displayId:0 bridgeDelegateToken:self.token];
 }
 
-- (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element
+- (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
   if (self.performTap) {
+    NSArray<NSString *> *actionNames = element.accessibilityActionNames;
+    if ([actionNames containsObject:@"AXPress"] == NO) {
+      return [[FBSimulatorError
+        describeFormat:@"The element %@ does not supoort pressing. Supported actions %@", element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
+        fail:error];
+    }
     [element accessibilityPerformPress];
   }
   return result;
@@ -526,7 +532,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       }
       // Otherwise serialize now, when the context has popped the token is then deregistered.
       AXPMacPlatformElement *element = tuple[1];
-      return [FBFuture futureWithResult:[request serialize:element]];
+      NSError *error = nil;
+      id serialized = [request serialize:element error:&error];
+      if (serialized == nil) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:serialized];
     }]
     onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id result) {
       // At this point we will either have an empty result, or the result.

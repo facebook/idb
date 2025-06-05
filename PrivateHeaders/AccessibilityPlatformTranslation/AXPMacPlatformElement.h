@@ -80,7 +80,7 @@
 - (id)accessibilityHitTest:(struct CGPoint)arg1 withDisplayId:(unsigned int)arg2;
 - (id)accessibilityHitTest:(struct CGPoint)arg1;
 - (int)pid;
-- (id)accessibilityActionNames;
+- (NSArray<NSString *> *)accessibilityActionNames;
 - (id)accessibilityCustomActions;
 - (id)accessibilityCustomRotors;
 - (id)_customRotorData:(id)arg1;
