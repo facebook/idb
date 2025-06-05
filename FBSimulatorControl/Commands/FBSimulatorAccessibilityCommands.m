@@ -321,7 +321,11 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
         describeFormat:@"The element at point %@ with label %@ does not support pressing. Supported actions %@", NSStringFromPoint(self.point), element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
         failBool:error];
     }
-    [element accessibilityPerformPress];
+    if ([element accessibilityPerformPress] == NO) {
+      return [[FBSimulatorError
+        describeFormat:@"Performing accessibilityPerformPress on element at point %@ with label %@ did not succeed", NSStringFromPoint(self.point), element.accessibilityIdentifier]
+        failBool:error];
+    }
   }
   return YES;
 }
