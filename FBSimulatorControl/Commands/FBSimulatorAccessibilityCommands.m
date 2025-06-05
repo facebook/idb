@@ -205,7 +205,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [self.bridge accessibilityElementAtPoint:point];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
   return [[FBControlCoreError
     describeFormat:@"%@ is not supported for SimulatorBridge based accessibility", NSStringFromSelector(_cmd)]
@@ -282,12 +282,14 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 @interface FBSimulator_TranslationAction : NSObject
 
 @property (nonatomic, assign, readonly) BOOL performTap;
+@property (nonatomic, assign, readonly) CGPoint point;
+@property (nonatomic, copy, nullable, readonly) NSString *expectedLabel;
 
 @end
 
 @implementation FBSimulator_TranslationAction
 
-- (instancetype)initWithPerformTap:(BOOL)performTap;
+- (instancetype)initWithPerformTap:(BOOL)performTap expectedLabel:(nullable NSString *)expectedLabel point:(CGPoint)point;
 {
   self = [super init];
   if (!self) {
@@ -295,17 +297,28 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   }
   
   _performTap = performTap;
+  _point = point;
+  _expectedLabel = expectedLabel;
 
   return self;
 }
 
 - (BOOL)performActionOnElement:(AXPMacPlatformElement *)element error:(NSError **)error
 {
+  NSString *expectedLabel = self.expectedLabel;
+  if (expectedLabel) {
+    NSString *actualLabel = element.accessibilityLabel;
+    if (![expectedLabel isEqualToString:actualLabel]) {
+      return [[FBSimulatorError
+        describeFormat:@"The element at point %@ does not have the expected label %@. Actual label %@", NSStringFromPoint(self.point), expectedLabel, actualLabel]
+        failBool:error];
+    }
+  }
   if (self.performTap) {
     NSArray<NSString *> *actionNames = element.accessibilityActionNames;
     if ([actionNames containsObject:@"AXPress"] == NO) {
       return [[FBSimulatorError
-        describeFormat:@"The element %@ does not supoort pressing. Supported actions %@", element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
+        describeFormat:@"The element at point %@ with label %@ does not support pressing. Supported actions %@", NSStringFromPoint(self.point), element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
         failBool:error];
     }
     [element accessibilityPerformPress];
@@ -526,9 +539,9 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
-  FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES];
+  FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
   FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action];
   return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
@@ -667,12 +680,12 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
   return [[self
     implementationWithNestedFormat:YES]
     onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations> implementation) {
-      return [implementation accessibilityPerformTapOnElementAtPoint:point];
+      return [implementation accessibilityPerformTapOnElementAtPoint:point expectedLabel:expectedLabel];
     }];
 }
 
