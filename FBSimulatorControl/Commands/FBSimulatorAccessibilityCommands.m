@@ -279,16 +279,52 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
+@interface FBSimulator_TranslationAction : NSObject
+
+@property (nonatomic, assign, readonly) BOOL performTap;
+
+@end
+
+@implementation FBSimulator_TranslationAction
+
+- (instancetype)initWithPerformTap:(BOOL)performTap;
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  
+  _performTap = performTap;
+
+  return self;
+}
+
+- (BOOL)performActionOnElement:(AXPMacPlatformElement *)element error:(NSError **)error
+{
+  if (self.performTap) {
+    NSArray<NSString *> *actionNames = element.accessibilityActionNames;
+    if ([actionNames containsObject:@"AXPress"] == NO) {
+      return [[FBSimulatorError
+        describeFormat:@"The element %@ does not supoort pressing. Supported actions %@", element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
+        failBool:error];
+    }
+    [element accessibilityPerformPress];
+  }
+  return YES;
+}
+
+@end
+
 @interface FBSimulator_TranslationRequest_Point : FBSimulator_TranslationRequest
 
 @property (nonatomic, assign, readonly) CGPoint point;
-@property (nonatomic, assign, readonly) BOOL performTap;
+@property (nonatomic, strong, nullable, readonly) FBSimulator_TranslationAction *action;
 
 @end
 
 @implementation FBSimulator_TranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point performTap:(BOOL)performTap
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBSimulator_TranslationAction *)action
 {
   self = [super initWithNestedFormat:nestedFormat];
   if (!self) {
@@ -296,7 +332,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   }
 
   _point = point;
-  _performTap = performTap;
+  _action = action;
 
   return self;
 }
@@ -309,21 +345,16 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
-  if (self.performTap) {
-    NSArray<NSString *> *actionNames = element.accessibilityActionNames;
-    if ([actionNames containsObject:@"AXPress"] == NO) {
-      return [[FBSimulatorError
-        describeFormat:@"The element %@ does not supoort pressing. Supported actions %@", element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
-        fail:error];
-    }
-    [element accessibilityPerformPress];
+  FBSimulator_TranslationAction *action = self.action;
+  if (action && [action performActionOnElement:element error:error] == NO) {
+    return nil;
   }
   return result;
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point performTap:self.performTap];
+  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action];
 }
 
 @end
@@ -491,13 +522,14 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point performTap:NO];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil];
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point performTap:YES];
+  FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action];
   return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
