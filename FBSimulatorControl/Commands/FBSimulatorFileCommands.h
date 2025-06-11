@@ -13,10 +13,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
 
+@protocol FBSimulatorFileCommands <NSObject>
+
+/**
+ Returns the File Container for the given container application
+ 
+ @param bundleID the bundle ID to obtain the container for.
+ @param error an error out for any error that occurs
+ @return a container if the application exists, nil on error.
+ */
+- (nullable id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error;
+
+@end
+
 /**
  An implementation of FBFileCommands for Simulators
  */
-@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBiOSTargetCommand>
+@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBSimulatorFileCommands, FBiOSTargetCommand>
 
 @end
 

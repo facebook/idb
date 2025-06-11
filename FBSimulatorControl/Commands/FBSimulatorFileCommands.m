@@ -42,10 +42,10 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID
 {
-  return [[[self
-    dataContainerForBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue map:^(NSString *containerPath) {
-      return [FBFileContainer fileContainerForBasePath:containerPath];
+  return [[FBFuture
+    onQueue:self.simulator.asyncQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
+      id<FBContainedFile> containedFile = [self containedFileForApplication:bundleID error:error];
+      return [FBFileContainer fileContainerForContainedFile:containedFile];
     }]
     onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
       // Do nothing.
@@ -145,21 +145,21 @@
     failFutureContext];
 }
 
-#pragma mark Private
+#pragma mark FBSimulatorFileCommands Implementation
 
-- (FBFuture<NSString *> *)dataContainerForBundleID:(NSString *)bundleID
+- (id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error
 {
-  return [[self.simulator
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.simulator.asyncQueue fmap:^ FBFuture<NSString *> * (FBInstalledApplication *installedApplication) {
-      NSString *container = installedApplication.dataContainer;
-      if (!container) {
-        return [[FBSimulatorError
-          describeFormat:@"No data container present for application %@", installedApplication]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:container];
-    }];
+  FBInstalledApplication *installedApplication = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  if (!installedApplication) {
+    return nil;
+  }
+  NSString *container = installedApplication.dataContainer;
+  if (!container) {
+    return [[FBSimulatorError
+      describeFormat:@"No data container present for application %@", installedApplication]
+      fail:error];
+  }
+  return [FBFileContainer containedFileForBasePath:container];
 }
 
 @end
