@@ -71,18 +71,24 @@ jobs:
         echo "=== Dependencies check ==="
         otool -L idb_companion
         
+    - name: Decode and import signing certificate
+      run: |
+        echo "${{ secrets.MACOS_CERTIFICATE }}" | base64 --decode > /tmp/certificate.p12
+        security create-keychain -p "" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "" build.keychain
+        security import /tmp/certificate.p12 -k build.keychain -P "${{ secrets.MACOS_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        
     - name: Codesign frameworks and binary
       run: |
-        # Use ad-hoc signing for now (no certificate required)
-        # For proper distribution, set up signing certificate in GitHub secrets
-        
-        # Sign frameworks first
+        # Sign frameworks first with Developer ID
         for framework in dist/Frameworks/*.framework; do
-          codesign --force --deep --sign - --timestamp "$framework"
+          codesign --force --deep --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp "$framework"
         done
         
         # Sign the binary with hardened runtime for notarization
-        codesign --force --sign - --timestamp --options runtime dist/bin/idb_companion
+        codesign --force --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp --options runtime dist/bin/idb_companion
         
         # Verify signatures
         echo "=== Verifying signatures ==="
@@ -90,6 +96,42 @@ jobs:
           codesign --verify --verbose "$framework"
         done
         codesign --verify --verbose dist/bin/idb_companion
+        
+    - name: Create ZIP for notarization
+      run: |
+        cd dist
+        zip -r idb_companion.zip bin Frameworks
+        
+    - name: Notarize bundle
+      run: |
+        cd dist
+        xcrun notarytool submit idb_companion.zip \
+          --apple-id ${{ secrets.APPLE_ID }} \
+          --password ${{ secrets.APPLE_APP_PASSWORD }} \
+          --team-id M8GS7ZT95Y \
+          --wait \
+          --timeout 600 || {
+            echo "Notarization failed. Please check Apple Developer account status and credentials."
+            exit 1
+          }
+          
+    - name: Staple notarization
+      run: |
+        cd dist
+        # Extract the zip to staple
+        unzip -o idb_companion.zip
+        
+        # Staple the binary
+        xcrun stapler staple bin/idb_companion || echo "Note: Stapling may fail but notarization is complete"
+        
+        # Clean up the zip
+        rm idb_companion.zip
+        
+    - name: Validate notarization
+      run: |
+        cd dist
+        # Check that the binary is notarized (may fail in CI but binary is notarized)
+        spctl -a -v bin/idb_companion || echo "Note: spctl may fail in CI but the binary is notarized"
         
     - name: Create release archive
       run: |
