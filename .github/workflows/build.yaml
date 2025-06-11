@@ -95,7 +95,7 @@ jobs:
         lipo -info dist/bin/idb_companion
         
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: idb_companion-${{ github.sha }}
         path: dist/
