@@ -28,6 +28,10 @@ jobs:
 
     - name: Build frameworks
       run: |
+        # Build for ARM64 only
+        export ARCHS=arm64
+        export ONLY_ACTIVE_ARCH=NO
+        export VALID_ARCHS=arm64
         ./build.sh framework build
         
     - name: Test frameworks
@@ -56,6 +60,10 @@ jobs:
     - name: Build idb_companion
       run: |
         mkdir -p dist
+        # Build for ARM64 only
+        export ARCHS=arm64
+        export ONLY_ACTIVE_ARCH=NO
+        export VALID_ARCHS=arm64
         ./idb_build.sh idb_companion build ./dist
         
     - name: Verify build

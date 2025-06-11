@@ -30,6 +30,8 @@ function framework_build() {
     -project FBSimulatorControl.xcodeproj \
     -scheme $name \
     -sdk macosx \
+    ARCHS="${ARCHS:-arm64}" \
+    VALID_ARCHS="${VALID_ARCHS:-arm64}" \
     -derivedDataPath $BUILD_DIRECTORY \
     build
 

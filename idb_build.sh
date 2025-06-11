@@ -94,6 +94,8 @@ function cli_build() {
 
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
+    ARCHS="${ARCHS:-arm64}" \
+    VALID_ARCHS="${VALID_ARCHS:-arm64}" \
     -workspace $name.xcworkspace \
     -scheme $name \
     -sdk macosx \

@@ -166,6 +166,7 @@ dist/
 - rpath modifications for loading frameworks from relative paths
 - Static linking where possible to reduce dependencies
 - Automatic codesigning in CI/CD pipeline
+- ARM64-only builds (no x86_64 support)
 
 ## Common Issues
 

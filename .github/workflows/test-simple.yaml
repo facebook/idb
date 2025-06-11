@@ -1,0 +1,31 @@
+name: Test Simple
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test echo
+      run: |
+        echo "GitHub Actions is working!"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        
+    - name: Check Xcode
+      run: |
+        xcodebuild -version
+        which xcodebuild
+        
+    - name: Check environment
+      run: |
+        brew --version
+        which protoc || echo "protoc not found"
+        ls -la

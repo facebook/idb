@@ -35,6 +35,10 @@ jobs:
 
     - name: Build idb_companion with frameworks
       run: |
+        # Build for ARM64 only
+        export ARCHS=arm64
+        export ONLY_ACTIVE_ARCH=NO
+        export VALID_ARCHS=arm64
         ./idb_build.sh idb_companion build ./dist
         
     - name: Verify build output
@@ -65,13 +69,23 @@ jobs:
         
     - name: Codesign frameworks and binary
       run: |
+        # Use ad-hoc signing for now (no certificate required)
+        # For proper distribution, set up signing certificate in GitHub secrets
+        
         # Sign frameworks first
         for framework in dist/Frameworks/*.framework; do
-          codesign --force --deep --sign - "$framework"
+          codesign --force --deep --sign - --timestamp "$framework"
         done
         
-        # Sign the binary
-        codesign --force --sign - dist/bin/idb_companion
+        # Sign the binary with hardened runtime for notarization
+        codesign --force --sign - --timestamp --options runtime dist/bin/idb_companion
+        
+        # Verify signatures
+        echo "=== Verifying signatures ==="
+        for framework in dist/Frameworks/*.framework; do
+          codesign --verify --verbose "$framework"
+        done
+        codesign --verify --verbose dist/bin/idb_companion
         
     - name: Create release archive
       run: |
