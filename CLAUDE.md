@@ -119,14 +119,34 @@ python -m pytest idb/grpc/tests/hid_tests.py
 
 ## Release Workflow for arkavo-edge
 
-### Creating a Release Build
+### GitHub Actions Workflows
+
+#### Automatic Release (on tag push)
+```bash
+# Create and push a tag to trigger release
+git tag 1.1.7-arkavo.1
+git push origin 1.1.7-arkavo.1
+```
+
+#### Manual Release (via GitHub UI)
+1. Go to Actions → Manual Release
+2. Click "Run workflow"
+3. Enter version (e.g., "1.1.7-arkavo.1")
+4. Choose if pre-release
+
+#### Build and Test (on every push)
+- Automatically runs on push to main
+- Builds all frameworks and companion
+- Runs tests and uploads artifacts
+
+### Local Build
 ```bash
 # Build with bundled frameworks
 ./idb_build.sh idb_companion build ./dist
 
 # Package for release (frameworks are in dist/Frameworks, binary in dist/bin)
 cd dist
-tar -czf idb_companion-v1.1.7-arkavo.1.tar.gz bin Frameworks
+tar -czf idb_companion-1.1.7-arkavo.1.tar.gz bin Frameworks
 ```
 
 ### Release Structure
@@ -145,6 +165,7 @@ dist/
 - Frameworks bundled with binary (no system install required)
 - rpath modifications for loading frameworks from relative paths
 - Static linking where possible to reduce dependencies
+- Automatic codesigning in CI/CD pipeline
 
 ## Common Issues
 

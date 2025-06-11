@@ -1,0 +1,145 @@
+name: Release idb_companion
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (e.g., 1.1.7-arkavo.1)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Install dependencies
+      run: |
+        brew install protobuf
+        
+    - name: Create build directory
+      run: mkdir -p dist
+
+    - name: Build idb_companion with frameworks
+      run: |
+        ./idb_build.sh idb_companion build ./dist
+        
+    - name: Verify build output
+      run: |
+        echo "=== Build output structure ==="
+        ls -la dist/
+        ls -la dist/bin/ || true
+        ls -la dist/Frameworks/ || true
+        
+    - name: Fix framework rpaths
+      run: |
+        # Fix rpaths to load frameworks from relative path
+        cd dist/bin
+        for framework in ../Frameworks/*.framework; do
+          framework_name=$(basename "$framework" .framework)
+          install_name_tool -change \
+            "@rpath/${framework_name}.framework/Versions/A/${framework_name}" \
+            "@loader_path/../Frameworks/${framework_name}.framework/Versions/A/${framework_name}" \
+            idb_companion || true
+        done
+        
+        # Add rpath for frameworks directory
+        install_name_tool -add_rpath "@loader_path/../Frameworks" idb_companion || true
+        
+        # Verify dependencies
+        echo "=== Dependencies check ==="
+        otool -L idb_companion
+        
+    - name: Codesign frameworks and binary
+      run: |
+        # Sign frameworks first
+        for framework in dist/Frameworks/*.framework; do
+          codesign --force --deep --sign - "$framework"
+        done
+        
+        # Sign the binary
+        codesign --force --sign - dist/bin/idb_companion
+        
+    - name: Create release archive
+      run: |
+        cd dist
+        # Get version from tag or input
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag_name }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        
+        ARCHIVE_NAME="idb_companion-${VERSION}-macos-$(uname -m).tar.gz"
+        tar -czf "../${ARCHIVE_NAME}" bin Frameworks
+        
+        # Create checksum
+        cd ..
+        shasum -a 256 "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
+        
+        echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+        release_name: idb_companion ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+        body: |
+          ## idb_companion Release for arkavo-edge
+          
+          This release includes:
+          - `idb_companion` binary
+          - All required frameworks bundled
+          - Self-contained deployment (no system installation required)
+          
+          ### Installation
+          
+          ```bash
+          # Download and extract
+          tar -xzf ${{ env.ARCHIVE_NAME }}
+          
+          # The binary is in dist/bin/idb_companion
+          # Frameworks are in dist/Frameworks/
+          ```
+          
+          ### Checksums
+          
+          See `${{ env.ARCHIVE_NAME }}.sha256` for verification.
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') || contains(github.event.inputs.tag_name, '-') }}
+        
+    - name: Upload Release Archive
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ env.ARCHIVE_NAME }}
+        asset_name: ${{ env.ARCHIVE_NAME }}
+        asset_content_type: application/gzip
+        
+    - name: Upload Checksum
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ env.ARCHIVE_NAME }}.sha256
+        asset_name: ${{ env.ARCHIVE_NAME }}.sha256
+        asset_content_type: text/plain

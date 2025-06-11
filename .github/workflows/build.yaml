@@ -1,0 +1,80 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-frameworks:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Install dependencies
+      run: |
+        brew install protobuf
+        gem install xcpretty
+
+    - name: Build frameworks
+      run: |
+        ./build.sh framework build
+        
+    - name: Test frameworks
+      run: |
+        ./build.sh framework test
+        
+  build-companion:
+    runs-on: macos-latest
+    needs: build-frameworks
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Install dependencies
+      run: |
+        brew install protobuf
+
+    - name: Build idb_companion
+      run: |
+        mkdir -p dist
+        ./idb_build.sh idb_companion build ./dist
+        
+    - name: Verify build
+      run: |
+        # Check that binary exists
+        test -f dist/bin/idb_companion
+        
+        # Check that frameworks exist
+        test -d dist/Frameworks/FBControlCore.framework
+        test -d dist/Frameworks/FBSimulatorControl.framework
+        test -d dist/Frameworks/FBDeviceControl.framework
+        test -d dist/Frameworks/XCTestBootstrap.framework
+        
+        # Check binary architecture
+        file dist/bin/idb_companion
+        lipo -info dist/bin/idb_companion
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: idb_companion-${{ github.sha }}
+        path: dist/
