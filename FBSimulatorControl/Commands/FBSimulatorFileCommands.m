@@ -94,7 +94,9 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
-  return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.simulator.dataDirectory]];
+  id<FBContainedFile> containedFile = [self containedFileForRootFilesystem];
+  id<FBFileContainer> fileContainer = [FBFileContainer fileContainerForContainedFile:containedFile];
+  return [FBFutureContext futureContextWithResult:fileContainer];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
@@ -160,6 +162,11 @@
       fail:error];
   }
   return [FBFileContainer containedFileForBasePath:container];
+}
+
+- (id<FBContainedFile>)containedFileForRootFilesystem
+{
+  return [FBFileContainer containedFileForBasePath:self.simulator.dataDirectory];
 }
 
 @end

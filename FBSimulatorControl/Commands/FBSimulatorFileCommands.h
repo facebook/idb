@@ -24,6 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error;
 
+/**
+ Returns the File Container for the root of the simulator
+ 
+ @return a file container
+ */
+- (id<FBContainedFile>)containedFileForRootFilesystem;
+
 @end
 
 /**
