@@ -14,6 +14,8 @@ on:
 jobs:
   build-and-release:
     runs-on: macos-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
@@ -107,13 +109,10 @@ jobs:
         echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> $GITHUB_ENV
         
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
-        release_name: idb_companion ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+        name: idb_companion ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
         body: |
           ## idb_companion Release for arkavo-edge
           
@@ -128,32 +127,19 @@ jobs:
           # Download and extract
           tar -xzf ${{ env.ARCHIVE_NAME }}
           
-          # The binary is in dist/bin/idb_companion
-          # Frameworks are in dist/Frameworks/
+          # The binary is in bin/idb_companion
+          # Frameworks are in Frameworks/
           ```
+          
+          ### Usage with arkavo-edge
+          
+          This build is optimized for use with [arkavo-edge](https://github.com/arkavo-org/arkavo-edge).
           
           ### Checksums
           
           See `${{ env.ARCHIVE_NAME }}.sha256` for verification.
         draft: false
         prerelease: ${{ contains(github.ref_name, '-') || contains(github.event.inputs.tag_name, '-') }}
-        
-    - name: Upload Release Archive
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ env.ARCHIVE_NAME }}
-        asset_name: ${{ env.ARCHIVE_NAME }}
-        asset_content_type: application/gzip
-        
-    - name: Upload Checksum
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ env.ARCHIVE_NAME }}.sha256
-        asset_name: ${{ env.ARCHIVE_NAME }}.sha256
-        asset_content_type: text/plain
+        files: |
+          ${{ env.ARCHIVE_NAME }}
+          ${{ env.ARCHIVE_NAME }}.sha256
