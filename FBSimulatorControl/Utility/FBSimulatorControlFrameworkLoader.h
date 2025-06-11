@@ -22,6 +22,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *essentialFrameworks;
 
 /**
+ The frameworks needed for Accessibility operations.
+ */
+@property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *accessibilityFrameworks;
+
+/**
  All of the Frameworks for operations involving the HID and Framebuffer.
  */
 @property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *xcodeFrameworks;

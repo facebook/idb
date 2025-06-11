@@ -36,6 +36,17 @@ static void FBSimulatorControl_SimLogHandler(int level, const char *function, in
   dispatch_once(&onceToken, ^{
     loader = [FBSimulatorControlFrameworkLoader_Essential loaderWithName:@"FBSimulatorControl" frameworks:@[
       FBWeakFramework.CoreSimulator,
+    ]];
+  });
+  return loader;
+}
+
++ (FBSimulatorControlFrameworkLoader *)accessibilityFrameworks
+{
+  static dispatch_once_t onceToken;
+  static FBSimulatorControlFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [FBSimulatorControlFrameworkLoader loaderWithName:@"FBSimulatorControl" frameworks:@[
       FBWeakFramework.AccessibilityPlatformTranslation,
     ]];
   });

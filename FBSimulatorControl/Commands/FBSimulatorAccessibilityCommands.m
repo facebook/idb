@@ -18,6 +18,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
+#import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"
 
 //
@@ -713,6 +714,10 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
       return [[FBControlCoreError
         describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
         failFuture];
+    }
+    NSError *error = nil;
+    if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
+      return [FBFuture futureWithError:error];
     }
     return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
   }
