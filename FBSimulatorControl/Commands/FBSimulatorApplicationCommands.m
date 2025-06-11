@@ -162,31 +162,9 @@
 
 - (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID
 {
-  SimDevice *device = self.simulator.device;
-
   return [FBFuture
     onQueue:self.simulator.workQueue resolveValue:^ FBInstalledApplication * (NSError **error) {
-      // -[SimDevice propertiesOfApplication:error:] will return in success if the app could not be found.
-      // The dictionary only contains one element, which is the bundle id of the non-existant app.
-      // This internal helper method understands this, so we can just re-use it here.
-      NSString *applicationType = nil;
-      BOOL applicationIsInstalled = [device applicationIsInstalled:bundleID type:&applicationType error:error];
-      if (!applicationIsInstalled) {
-        return [[FBSimulatorError
-          describeFormat:@"Cannot get app information for '%@', it is not installed", bundleID]
-          fail:error];
-      }
-      // appInfo is usually always returned, even if there is no app installed.
-      NSDictionary<NSString *, id> *appInfo = [device propertiesOfApplication:bundleID error:error];
-      if (!appInfo) {
-        return nil;
-      }
-      // Therefore we have to parse the app info to see that it is actually a real app.
-      FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
-      if (!application) {
-        return nil;
-      }
-      return application;
+      return [self installedApplicationWithBundleID:bundleID error:error];
     }];
 }
 
@@ -233,6 +211,34 @@
     onQueue:self.simulator.workQueue map:^(NSArray<id> *result) {
       return result[1];
     }];
+}
+
+#pragma mark - FBSimulatorApplicationCommands
+
+- (FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+{
+  // -[SimDevice propertiesOfApplication:error:] will return in success if the app could not be found.
+  // The dictionary only contains one element, which is the bundle id of the non-existant app.
+  // This internal helper method understands this, so we can just re-use it here.
+  SimDevice *device = self.simulator.device;
+  NSString *applicationType = nil;
+  BOOL applicationIsInstalled = [device applicationIsInstalled:bundleID type:&applicationType error:error];
+  if (!applicationIsInstalled) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot get app information for '%@', it is not installed", bundleID]
+      fail:error];
+  }
+  // appInfo is usually always returned, even if there is no app installed.
+  NSDictionary<NSString *, id> *appInfo = [device propertiesOfApplication:bundleID error:error];
+  if (!appInfo) {
+    return nil;
+  }
+  // Therefore we have to parse the app info to see that it is actually a real app.
+  FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
+  if (!application) {
+    return nil;
+  }
+  return application;
 }
 
 #pragma mark Public
