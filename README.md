@@ -2,6 +2,8 @@
 
 [![Discord](https://img.shields.io/discord/770978552698896394?style=flat-square)](https://discord.gg/SF26Yqw)
 
+> **Note**: This is a fork of [Facebook's idb](https://github.com/facebook/idb) maintained for the [arkavo-edge](https://github.com/arkavo-org/arkavo-edge) project. This fork provides controlled builds with bundled frameworks for self-contained deployment, versioned releases for reproducible builds, and custom packaging modifications. For the upstream project, please visit the [original repository](https://github.com/facebook/idb).
+
 The "iOS Development Bridge" or `idb`, is a command line interface for automating iOS Simulators and Devices. It has three main principles:
 
 * *Remote Automation*: `idb` is composed of a "companion" that runs on macOS and a python client that can run anywhere. This enables scenarios such as a "Device Lab" within a Data Center or fanning out shards of test executions to a large pool of iOS Simulators.
