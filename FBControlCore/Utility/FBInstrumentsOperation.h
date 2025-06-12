@@ -39,11 +39,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
-- (instancetype)initWithTask:(FBProcess *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithTask:(FBIDBProcess *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
-@property (nonatomic, strong, readonly) FBProcess *task;
+@property (nonatomic, strong, readonly) FBIDBProcess *task;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 /**

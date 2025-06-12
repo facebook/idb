@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBProcess;
+@class FBIDBProcess;
 
 @protocol FBDataConsumer;
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The wrapped launched process.
  */
-@property (nonatomic, strong, readonly) FBProcess *process;
+@property (nonatomic, strong, readonly) FBIDBProcess *process;
 
 /**
  The Designated Initializer
@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to perform work on.
  @return an initialized FBProcessLogOperation instance.
  */
-- (instancetype)initWithProcess:(FBProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue;
+- (instancetype)initWithProcess:(FBIDBProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue;
 
 /**
  Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.

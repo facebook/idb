@@ -48,7 +48,7 @@
     withTaskLifecycleLoggingTo:FBControlCoreGlobalConfiguration.defaultLogger]
     runUntilCompletionWithAcceptableExitCodes:nil];
 
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqualObjects(process.exitCode.result, @0);
 }
@@ -59,7 +59,7 @@
     withLaunchPath:@"/bin/sh" arguments:@[@"-c", @"false"]]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@1]];
 
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
   XCTAssertEqualObjects(process.exitCode.result, @1);
 }
 
@@ -89,7 +89,7 @@
     withEnvironment:environment]
     runUntilCompletionWithAcceptableExitCodes:nil];
 
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
   XCTAssertEqualObjects(process.exitCode.result, @0);
   for (NSString *key in environment.allKeys) {
     NSString *expected = [NSString stringWithFormat:@"%@=%@", key, environment[key]];
@@ -105,7 +105,7 @@
   FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/usr/bin/base64" arguments:@[@"-i", filePath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateDone);
@@ -123,7 +123,7 @@
   FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/usr/bin/strings" arguments:@[binaryPath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
@@ -141,7 +141,7 @@
   FBFuture *futureProcess = [[FBProcessBuilder
     withLaunchPath:@"/bin/ls" arguments:@[@"-1", resourcesPath]]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateDone);
@@ -168,7 +168,7 @@
       [lines addObject:line];
     }]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateDone);
@@ -190,7 +190,7 @@
     withStdErrToLogger:[FBControlCoreLoggerDouble new]]
     withStdOutToLogger:[FBControlCoreLoggerDouble new]]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateDone);
@@ -208,7 +208,7 @@
     withStdOutToDevNull]
     withStdErrToDevNull]
     runUntilCompletionWithAcceptableExitCodes:nil];
-  FBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
+  FBIDBProcess *process = [self runAndWaitForTaskFuture:futureProcess];
 
   XCTAssertEqual(process.statLoc.state, FBFutureStateDone);
   XCTAssertEqual(process.exitCode.state, FBFutureStateDone);

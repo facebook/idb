@@ -68,7 +68,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
       self.isRunningXcodeBuildOperation = YES;
       return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
     }]
-    onQueue:self.simulator.workQueue fmap:^(FBProcess *task) {
+    onQueue:self.simulator.workQueue fmap:^(FBIDBProcess *task) {
       return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.simulator logger:logger];
     }]
     onQueue:self.simulator.workQueue chain:^(FBFuture *future) {
@@ -198,7 +198,7 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
     timeout:TestmanagerdSimSockTimeout waitingFor:@"%@ to become available in the simulator environment", SimSockEnvKey];
 }
 
-- (FBFuture<FBProcess *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<FBIDBProcess *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
   NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.simulator.auxillaryDirectory fromConfiguration:configuration error:&error];

@@ -11,7 +11,7 @@
 
 @interface FBSimulatorDebugServer : NSObject <FBDebugServer>
 
-@property (nonatomic, strong, readonly) FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task;
+@property (nonatomic, strong, readonly) FBIDBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task;
 
 @end
 
@@ -20,7 +20,7 @@
 @synthesize lldbBootstrapCommands = _lldbBootstrapCommands;
 @synthesize completed = _completed;
 
-- (instancetype)initWithDebugServerTask:(FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)task lldbBootstrapCommands:(NSArray<NSString *> *)lldbBootstrapCommands
+- (instancetype)initWithDebugServerTask:(FBIDBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)task lldbBootstrapCommands:(NSArray<NSString *> *)lldbBootstrapCommands
 {
   self = [super init];
   if (!self) {
@@ -40,7 +40,7 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  FBProcess *task = self.task;
+  FBIDBProcess *task = self.task;
   return [[[task
     statLoc]
     mapReplace:NSNull.null]
@@ -106,7 +106,7 @@
     onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedApplication> process) {
       return [self debugServerTaskForPort:port processIdentifier:process.processIdentifier];
     }]
-    onQueue:self.simulator.workQueue map:^(FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {
+    onQueue:self.simulator.workQueue map:^(FBIDBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {
       NSArray<NSString *> *lldbBootstrapCommands = @[
         [NSString stringWithFormat:@"process connect connect://localhost:%d", port]
       ];
@@ -116,9 +116,9 @@
 
 #pragma mark Private
 
-- (FBFuture<FBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *)debugServerTaskForPort:(in_port_t)port processIdentifier:(pid_t)processIdentifier
+- (FBFuture<FBIDBProcess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *)debugServerTaskForPort:(in_port_t)port processIdentifier:(pid_t)processIdentifier
 {
-  return [[[[[FBProcessBuilder
+  return [[[[[FBIDBProcessBuilder
     withLaunchPath:self.debugServerPath]
     withArguments:@[[NSString stringWithFormat:@"localhost:%d", port], @"--attach", [NSString stringWithFormat:@"%d", processIdentifier]]]
     withStdOutToLogger:self.simulator.logger]

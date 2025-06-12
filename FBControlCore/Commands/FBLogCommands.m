@@ -19,7 +19,7 @@
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithProcess:(FBProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+- (instancetype)initWithProcess:(FBIDBProcess *)process consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [self init];
   if (!self) {
@@ -35,7 +35,7 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  FBProcess *process = self.process;
+  FBIDBProcess *process = self.process;
   return [[[process
     exitedWithCodes:[NSSet setWithObject:@0]]
     mapReplace:NSNull.null]

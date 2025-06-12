@@ -59,9 +59,9 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     mapReplace:extractPath];
 }
 
-+ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBProcess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *) [[[[[[FBProcessBuilder
+  return (FBFuture<FBIDBProcess<NSNull *, NSInputStream *, id> *> *) [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"--to-stdout", path]]
     withStdErrToLoggerAndErrorMessage:logger]
@@ -71,9 +71,9 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 }
 
 
-+ (FBFuture<FBProcess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(FBProcessInput *)input logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBProcess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(FBProcessInput *)input logger:(id<FBControlCoreLogger>)logger
 {
-  return (FBFuture<FBProcess<id, NSData *, id> *> *) [[[[[[[FBProcessBuilder
+  return (FBFuture<FBIDBProcess<id, NSData *, id> *> *) [[[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/gzip"]
     withArguments:@[@"-", @"--to-stdout"]]
     withStdIn:input]
@@ -85,7 +85,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 }
 
 
-+ (FBFuture<FBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBIDBProcess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger
 {
   NSError *error = nil;
   FBProcessBuilder<NSNull *, NSData *, id> *builder = [self createGzippedTarTaskBuilderForPath:path logger:logger error:&error];
@@ -106,7 +106,7 @@ static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   }
   return [[builder
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(FBProcess<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
+    onQueue:queue map:^(FBIDBProcess<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
       return [result stdOut];
     }];
 }
