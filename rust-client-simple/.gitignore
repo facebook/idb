@@ -1,0 +1,16 @@
+# Build artifacts
+/target/
+Cargo.lock
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Calibration screenshots (optional - remove if you want to track them)
+# calibration_*.png

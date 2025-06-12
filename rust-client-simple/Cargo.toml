@@ -1,0 +1,13 @@
+[package]
+name = "idb-tap-simple"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tonic = "0.10"
+prost = "0.12"
+futures = "0.3"
+http = "0.2"
+image = "0.25.6"
+imageproc = "0.25.0"
