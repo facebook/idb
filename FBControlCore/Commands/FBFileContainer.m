@@ -359,7 +359,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
           describeFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]
           failFuture];
       }
-      return [[[[FBProcessBuilder
+      return [[[[FBIDBProcessBuilder
         withLaunchPath:@"/usr/bin/tail"]
         withArguments:@[@"-c+1", @"-f", pathOnHostFileSystem]]
         withStdOutConsumer:consumer]

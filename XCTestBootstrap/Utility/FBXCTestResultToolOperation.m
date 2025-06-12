@@ -21,7 +21,7 @@ NSString *const JPEG = @"public.jpeg";
 + (FBFuture<FBIDBProcess *> *)internalOperationWithArguments:(NSArray<NSString *> *)arguments queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSArray<NSString *> *xcrunArguments = [@[@"xcresulttool"] arrayByAddingObjectsFromArray:arguments];
-  return [[[[[[FBProcessBuilder
+  return [[[[[[FBIDBProcessBuilder
     withLaunchPath:XcrunPath]
     withArguments:xcrunArguments]
     withStdErrToLogger:logger]
@@ -72,7 +72,7 @@ NSString *const JPEG = @"public.jpeg";
    onQueue:queue fmap:^ FBFuture * (FBIDBProcess *task) {
      if ([encodeType isEqualToString:HEIC]) {
        NSArray<NSString *> *arguments = @[@"-s", @"format", @"jpeg", destination, @"--out", destination];
-       return [[[[[FBProcessBuilder
+       return [[[[[FBIDBProcessBuilder
          withLaunchPath:SipsPath]
          withArguments:arguments]
          withStdErrToLogger:logger]

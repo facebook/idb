@@ -143,7 +143,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
           describeFormat:@"Cannot start reading, already reading"]
           failFuture];
       }
-      return [[[[FBProcessBuilder
+      return [[[[FBIDBProcessBuilder
         withLaunchPath:@"/bin/cat" arguments:@[self.filePath]]
         withStdOutConsumer:self.consumer]
         withStdErrToDevNull]

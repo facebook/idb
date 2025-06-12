@@ -131,7 +131,7 @@
       }
       [arguments addObject:self.binary.path];
       [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
-      return [[[[FBProcessBuilder
+      return [[[[FBIDBProcessBuilder
         withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
         withStdErrToLogger:logger]
         runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]

@@ -121,7 +121,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> instrumentsLogger = [FBControlCoreLoggerFactory loggerToConsumer:instrumentsConsumer];
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
-  return [[[[[[[[FBProcessBuilder
+  return [[[[[[[[FBIDBProcessBuilder
     withLaunchPath:@"/usr/bin/instruments"]
     withArguments:arguments]
     withStdOutToLogger:compositeLogger]
@@ -199,7 +199,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBProcessBuilder
+  return [[[[[[[[FBIDBProcessBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]

@@ -52,7 +52,7 @@
 
 #pragma mark Public Methods
 
-- (FBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments
+- (FBIDBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments
 {
   NSMutableArray<NSString *> *derived = [NSMutableArray arrayWithArray:@[
     @"simctl",
@@ -65,7 +65,7 @@
   }
   [derived addObjectsFromArray:arguments];
 
-  return [[[FBProcessBuilder
+  return [[[FBIDBProcessBuilder
     withLaunchPath:@"/usr/bin/xcrun"
     arguments:derived]
     withStdOutToLogger:self.logger]

@@ -77,7 +77,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     environment[@"DYLD_INSERT_LIBRARIES"] = configuration.shim.macOSTestShimPath;
   }
 
-  return [[[[[[[[FBProcessBuilder
+  return [[[[[[[[FBIDBProcessBuilder
     withLaunchPath:xctracePath]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
@@ -138,7 +138,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
-  return [[[[[[[[FBProcessBuilder
+  return [[[[[[[[FBIDBProcessBuilder
     withLaunchPath:arguments[0]]
     withArguments:launchArguments]
     withStdInConnected]

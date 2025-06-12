@@ -367,7 +367,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
 
 + (FBFuture<NSString *> *)performSampleStackshotForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue
 {
-  return [[[[[FBProcessBuilder
+  return [[[[[FBIDBProcessBuilder
     withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @(SampleDuration).stringValue]]
     withStdOutInMemoryAsString]
     runUntilCompletionWithAcceptableExitCodes:nil]
