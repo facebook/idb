@@ -11,7 +11,7 @@ import GRPC
 
 struct FileDrainWriter {
 
-  static func performDrain(taskFuture: FBFuture<FBProcess<NSNull, InputStream, AnyObject>>, sendResponse: (Data) async throws -> Void) async throws {
+  static func performDrain(taskFuture: FBFuture<FBIDBProcess<NSNull, InputStream, AnyObject>>, sendResponse: (Data) async throws -> Void) async throws {
     let task = try await BridgeFuture.value(taskFuture)
     guard let inputStream = task.stdOut else {
       throw GRPCStatus(code: .internalError, message: "Unable to get stdOut to write")

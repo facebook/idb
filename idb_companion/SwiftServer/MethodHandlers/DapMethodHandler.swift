@@ -37,7 +37,7 @@ struct DapMethodHandler {
     try await responseStream.send(stoppedResponse)
   }
 
-  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBProcess<AnyObject, FBDataConsumer, NSString> {
+  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBIDBProcess<AnyObject, FBDataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
@@ -58,7 +58,7 @@ struct DapMethodHandler {
     return process
   }
 
-  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBProcess<AnyObject, FBDataConsumer, NSString>) async throws {
+  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBIDBProcess<AnyObject, FBDataConsumer, NSString>) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:
