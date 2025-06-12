@@ -13,10 +13,10 @@
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
-#import "FBProcess.h"
+#import "FBIDBProcess.h"
 #import "FBProcessSpawnConfiguration.h"
 
-@interface FBProcessBuilder ()
+@interface FBIDBProcessBuilder ()
 
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
@@ -28,7 +28,7 @@
 
 @end
 
-@implementation FBProcessBuilder
+@implementation FBIDBProcessBuilder
 
 #pragma mark Initializers
 

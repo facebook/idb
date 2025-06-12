@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBProcess.h>
+#import <FBControlCore/FBIDBProcess.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An interface to building FBProcess instances.
  */
-@interface FBProcessBuilder <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
+@interface FBIDBProcessBuilder <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Initializers
 
