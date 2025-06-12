@@ -7,7 +7,7 @@
 
 #import "FBLogCommands.h"
 
-#import "FBProcess.h"
+#import "FBIDBProcess.h"
 
 @interface FBProcessLogOperation ()
 

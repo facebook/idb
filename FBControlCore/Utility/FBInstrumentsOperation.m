@@ -14,7 +14,7 @@
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
 #import "FBiOSTarget.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
 const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;

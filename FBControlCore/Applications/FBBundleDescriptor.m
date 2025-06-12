@@ -12,7 +12,7 @@
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBXCodeConfiguration.h"
 
 @implementation FBBundleDescriptor

@@ -15,7 +15,7 @@
 #include <sys/sysctl.h>
 
 #import "FBProcessInfo.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 
 #define PID_MAX 99999
 

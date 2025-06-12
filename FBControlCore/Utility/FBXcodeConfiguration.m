@@ -10,7 +10,7 @@
 #import "FBBundleDescriptor.h"
 #import "FBFuture+Sync.h"
 #import "FBiOSTargetConfiguration.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBXcodeDirectory.h"
 
 @implementation FBXcodeConfiguration

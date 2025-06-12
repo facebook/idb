@@ -9,7 +9,7 @@
 
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBProvisioningProfileCommands.h"
 
 FBFileContainerKind const FBFileContainerKindApplication = @"application";

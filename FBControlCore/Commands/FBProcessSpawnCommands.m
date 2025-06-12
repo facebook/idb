@@ -10,7 +10,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
-#import "FBProcess.h"
+#import "FBIDBProcess.h"
 #import "FBProcessIO.h"
 #import "FBProcessSpawnConfiguration.h"
 

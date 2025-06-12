@@ -60,8 +60,8 @@
 #import <FBControlCore/FBMemoryCommands.h>
 #import <FBControlCore/FBNotificationCommands.h>
 #import <FBControlCore/FBPowerCommands.h>
-#import <FBControlCore/FBProcess.h>
-#import <FBControlCore/FBProcessBuilder.h>
+#import <FBControlCore/FBIDBProcess.h>
+#import <FBControlCore/FBIDBProcessBuilder.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessIO.h>

@@ -9,8 +9,8 @@
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBProcess.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcess.h"
+#import "FBIDBProcessBuilder.h"
 
 static NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 

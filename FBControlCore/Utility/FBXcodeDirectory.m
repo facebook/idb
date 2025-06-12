@@ -7,8 +7,8 @@
 
 #import "FBXcodeDirectory.h"
 
-#import "FBProcess.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcess.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 

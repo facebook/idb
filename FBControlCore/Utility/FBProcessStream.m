@@ -14,8 +14,8 @@
 #import "FBDataBuffer.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
-#import "FBProcess.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcess.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBFuture+Sync.h"
 
 static NSTimeInterval ProcessDetachDrainTimeout = 4;

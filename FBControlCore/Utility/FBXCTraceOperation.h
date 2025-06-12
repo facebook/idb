@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBProcess.h>
+#import <FBControlCore/FBIDBProcess.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
 
 extern const NSTimeInterval DefaultXCTraceRecordOperationTimeLimit;

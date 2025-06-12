@@ -10,7 +10,7 @@
 #import "FBProcessSpawnConfiguration.h"
 #import "FBCollectionInformation.h"
 #import "FBArchitecture.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBFuture.h"
 #import "FBControlCoreError.h"
 #import <mach-o/arch.h>

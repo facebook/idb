@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBProcess.h"
+#import "FBIDBProcess.h"
 
 #include <spawn.h>
 
@@ -15,7 +15,7 @@
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
-#import "FBProcess.h"
+#import "FBIDBProcess.h"
 #import "FBProcessIO.h"
 #import "FBProcessSpawnCommands.h"
 #import "FBProcessSpawnConfiguration.h"

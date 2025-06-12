@@ -13,7 +13,7 @@
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
 #import "FBiOSTarget.h"
-#import "FBProcessBuilder.h"
+#import "FBIDBProcessBuilder.h"
 #import "FBXcodeConfiguration.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTraceConfiguration.h"
