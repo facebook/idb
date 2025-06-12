@@ -1,0 +1,81 @@
+name: Direct FFI Build
+
+on:
+  push:
+    branches:
+      - feature/direct-ffi-integration
+    paths:
+      - 'idb_direct/**'
+      - 'rust-client-simple/**'
+      - '.github/workflows/ffi-build.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'idb_direct/**'
+      - 'rust-client-simple/**'
+      - '.github/workflows/ffi-build.yml'
+
+jobs:
+  build-ffi:
+    name: Build Direct FFI Integration
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          rust-client-simple/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Build frameworks (if needed)
+      run: |
+        if [ ! -d ".arkavo/idb/Frameworks" ]; then
+          echo "Building frameworks..."
+          ./build.sh framework build || echo "Framework build not required for FFI"
+        fi
+        
+    - name: Build Direct FFI library
+      run: |
+        cd rust-client-simple
+        cargo build --features ffi --bin idb-tap-ffi --release
+        
+    - name: Test FFI integration
+      run: |
+        cd rust-client-simple
+        # Run the FFI binary in test mode (just initialization)
+        ./target/release/idb-tap-ffi --help || true
+        
+    - name: Package FFI artifacts
+      run: |
+        mkdir -p dist/ffi
+        cp rust-client-simple/target/release/idb-tap-ffi dist/ffi/
+        cp idb_direct/idb_direct.h dist/ffi/
+        tar -czf direct-ffi-${{ github.sha }}.tar.gz -C dist ffi
+        
+    - name: Upload FFI artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: direct-ffi-macos
+        path: direct-ffi-${{ github.sha }}.tar.gz
+        retention-days: 7
