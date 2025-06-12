@@ -26,6 +26,11 @@ jobs:
         brew install protobuf
         gem install xcpretty
 
+    - name: Clean build directory
+      run: |
+        rm -rf build/
+        rm -rf ~/Library/Developer/Xcode/DerivedData/FBSimulatorControl-*
+        
     - name: Build frameworks
       run: |
         # Build for ARM64 only
@@ -70,6 +75,12 @@ jobs:
       run: |
         brew install protobuf
 
+    - name: Clean build directory
+      run: |
+        rm -rf build/
+        rm -rf ~/Library/Developer/Xcode/DerivedData/FBSimulatorControl-*
+        rm -rf ~/Library/Developer/Xcode/DerivedData/idb_companion-*
+        
     - name: Build idb_companion
       run: |
         mkdir -p dist
