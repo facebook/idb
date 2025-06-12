@@ -82,13 +82,13 @@ jobs:
         
     - name: Codesign frameworks and binary
       run: |
-        # Sign frameworks first with Developer ID
+        # Sign frameworks first with Developer ID and hardened runtime
         for framework in dist/Frameworks/*.framework; do
-          codesign --force --deep --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp "$framework"
+          codesign --force --deep --options runtime --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp "$framework"
         done
         
         # Sign the binary with hardened runtime for notarization
-        codesign --force --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp --options runtime dist/bin/idb_companion
+        codesign --force --options runtime --sign "Developer ID Application: Arkavo LLC (M8GS7ZT95Y)" --timestamp dist/bin/idb_companion
         
         # Verify signatures
         echo "=== Verifying signatures ==="
@@ -123,6 +123,11 @@ jobs:
         
         # Staple the binary
         xcrun stapler staple bin/idb_companion || echo "Note: Stapling may fail but notarization is complete"
+        
+        # Staple each framework individually
+        for fw in Frameworks/*.framework; do
+          xcrun stapler staple "$fw" || echo "Note: Stapling $fw may fail but notarization is complete"
+        done
         
         # Clean up the zip
         rm idb_companion.zip
