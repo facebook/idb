@@ -149,7 +149,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
         withStdErrToDevNull]
         start];
     }]
-    onQueue:self.queue map:^(FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
+    onQueue:self.queue map:^(FBIDBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
       self.task = task;
       return NSNull.null;
     }];
@@ -159,7 +159,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 {
   return [[FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNumber *> *{
-      FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
+      FBIDBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
       self.task = nil;
       if (!task) {
         return [[FBControlCoreError
