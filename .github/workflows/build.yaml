@@ -42,6 +42,11 @@ jobs:
         export ARCHS=arm64
         export ONLY_ACTIVE_ARCH=NO
         export VALID_ARCHS=arm64
+        
+        # Build without xcpretty to see actual errors
+        xcodebuild -project FBSimulatorControl.xcodeproj -scheme FBControlCore -sdk macosx -derivedDataPath build build || true
+        
+        # Now run the full build
         ./build.sh framework build
         
     - name: Verify frameworks built
