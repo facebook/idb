@@ -18,11 +18,11 @@
 
 @implementation FBProcessBuilder (FBProcessTests)
 
-- (FBProcess *)startSynchronously
+- (FBIDBProcess *)startSynchronously
 {
-  FBFuture<FBProcess *> *future = [self start];
+  FBFuture<FBIDBProcess *> *future = [self start];
   NSError *error = nil;
-  FBProcess *process = [future await:&error];
+  FBIDBProcess *process = [future await:&error];
   NSAssert(process, @"Task Could not be started %@", error);
   return process;
 }
@@ -35,7 +35,7 @@
 
 @implementation FBProcessTests
 
-- (FBProcess *)runAndWaitForTaskFuture:(FBFuture *)future
+- (FBIDBProcess *)runAndWaitForTaskFuture:(FBFuture *)future
 {
   [[future timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"FBTask to complete"] await:NULL];
   return future.result;

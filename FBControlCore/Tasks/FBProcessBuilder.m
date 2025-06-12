@@ -230,17 +230,17 @@
 
 #pragma mark Building
 
-- (FBFuture<FBProcess *> *)start
+- (FBFuture<FBIDBProcess *> *)start
 {
-  return [FBProcess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
+  return [FBIDBProcess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
-- (FBFuture<FBProcess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
+- (FBFuture<FBIDBProcess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:queue fmap:^(FBProcess *process) {
+    onQueue:queue fmap:^(FBIDBProcess *process) {
       return [[process exitedWithCodes:exitCodes] mapReplace:process];
     }];
 }

@@ -44,7 +44,7 @@
 
 #pragma mark FBSimulatorProcessSpawnCommands Implementation
 
-- (FBFuture<FBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+- (FBFuture<FBIDBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   FBSimulator *simulator = self.simulator;
 

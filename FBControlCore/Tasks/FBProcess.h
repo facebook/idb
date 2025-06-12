@@ -19,7 +19,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  A representation of a process that has been launched.
  */
-@interface FBProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
+@interface FBIDBProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Properties
 
@@ -98,7 +98,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (FBFuture<FBProcess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBIDBProcess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 

@@ -260,7 +260,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves with the started process..
  */
-- (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)start;
+- (FBFuture<FBIDBProcess<StdInType, StdOutType, StdErrType> *> *)start;
 
 /**
  Builds and starts the process, then waits for it to complete with the provided exit codes.
@@ -269,7 +269,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the process on completion.
  */
-- (FBFuture<FBProcess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
+- (FBFuture<FBIDBProcess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 
 @end
 
