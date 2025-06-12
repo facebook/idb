@@ -18,9 +18,9 @@ public class FBAppleDevicectlCommandExecutor: NSObject {
     super.init()
   }
 
-  @objc public func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
+  @objc public func taskBuilder(arguments: [String]) -> FBIDBProcessBuilder<NSNull, NSString, NSString> {
     let derivedArgs = ["devicectl"] + arguments
-    return FBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
+    return FBIDBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
       .withStdOutInMemoryAsString()
       .withStdErrInMemoryAsString()
       .withTaskLifecycleLogging(to: logger)

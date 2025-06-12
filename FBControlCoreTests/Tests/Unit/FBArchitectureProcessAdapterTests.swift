@@ -18,7 +18,7 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
   var tmpDir: FBTemporaryDirectory!
 
   func getArchsInBinary(binary: String) throws -> String {
-    try FBProcessBuilder<AnyObject, NSString, AnyObject>
+    try FBIDBProcessBuilder<AnyObject, NSString, AnyObject>
       .withLaunchPath("/usr/bin/lipo", arguments: ["-archs", binary])
       .withStdOutInMemoryAsString()
       .withStdErrToDevNull()

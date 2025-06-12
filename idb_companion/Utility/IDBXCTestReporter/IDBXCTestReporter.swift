@@ -391,7 +391,7 @@ extension IDBXCTestReporter {
       ["llvm-profdata", "merge", "-o", profdataPath.path]
       + profraws.map(\.path)
 
-    let mergeProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
+    let mergeProcessFuture = FBIDBProcessBuilder<NSNull, NSData, NSString>
       .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
       .withStdOutInMemoryAsData()
       .withStdErrInMemoryAsString()
@@ -411,7 +411,7 @@ extension IDBXCTestReporter {
         $0 += ["-object", $1]
       }
     let exportProcess = try await BridgeFuture.value(
-      FBProcessBuilder<NSNull, NSData, NSString>
+      FBIDBProcessBuilder<NSNull, NSData, NSString>
         .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
         .withStdOutToInputStream()
         .withStdErrInMemoryAsString()
