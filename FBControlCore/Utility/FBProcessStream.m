@@ -55,7 +55,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @interface FBProcessFileOutput_Consumer : NSObject <FBProcessFileOutput>
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, nullable, readwrite) FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task;
+@property (nonatomic, strong, nullable, readwrite) FBIDBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -137,7 +137,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 - (FBFuture<NSNull *> *)startReading
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
+    onQueue:self.queue resolve:^ FBFuture<FBIDBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
       if (self.task) {
         return [[FBControlCoreError
           describeFormat:@"Cannot start reading, already reading"]
