@@ -41,7 +41,7 @@
 
   _launchPath = launchPath;
   _arguments = @[];
-  _environment = FBProcessBuilder.defaultEnvironmentForSubprocess;
+  _environment = FBIDBProcessBuilder.defaultEnvironmentForSubprocess;
   _stdOut = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdErr = [FBProcessOutput outputToStringBackedByMutableData:NSMutableData.data];
   _stdIn = nil;
