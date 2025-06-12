@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBIDBProcessBuilder;
 @protocol FBAccumulatingBuffer;
 @protocol FBControlCoreLogger;
 @protocol FBDataConsumer;

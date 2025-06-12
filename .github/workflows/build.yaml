@@ -30,9 +30,14 @@ jobs:
       run: |
         rm -rf build/
         rm -rf ~/Library/Developer/Xcode/DerivedData/FBSimulatorControl-*
+        rm -rf ~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+        rm -rf ~/Library/Caches/com.apple.dt.Xcode
         
     - name: Build frameworks
       run: |
+        # Clean first
+        xcodebuild -project FBSimulatorControl.xcodeproj -alltargets clean
+        
         # Build for ARM64 only
         export ARCHS=arm64
         export ONLY_ACTIVE_ARCH=NO
@@ -80,6 +85,8 @@ jobs:
         rm -rf build/
         rm -rf ~/Library/Developer/Xcode/DerivedData/FBSimulatorControl-*
         rm -rf ~/Library/Developer/Xcode/DerivedData/idb_companion-*
+        rm -rf ~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+        rm -rf ~/Library/Caches/com.apple.dt.Xcode
         
     - name: Build idb_companion
       run: |
