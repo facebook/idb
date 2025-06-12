@@ -20,7 +20,7 @@
 
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
-@property (nonatomic, strong, readonly) FBIDBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, assign, readwrite) BOOL runningXcodeBuildOperation;
 
 @end
@@ -43,7 +43,7 @@
 
   _device = device;
   _workingDirectory = workingDirectory;
-  _processFetcher = [FBIDBProcessFetcher new];
+  _processFetcher = [FBProcessFetcher new];
 
   return self;
 }
