@@ -180,7 +180,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out if the path is invalid.
  @return the new contained file.
  */
-- (id<FBContainedFile>)fileByAppendingPathComponent:(NSString *)component error:(NSError **)error;
+- (nullable id<FBContainedFile>)fileByAppendingPathComponent:(NSString *)component error:(NSError **)error;
 
 /**
  The host path corresponding to this file, if any.
