@@ -20,7 +20,9 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
