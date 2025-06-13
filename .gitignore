@@ -79,3 +79,18 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Rust
+target/
+Cargo.lock
+
+# Direct FFI build artifacts
+.arkavo/
+*.framework
+*.o
+*.bin
+idb_direct/error_mapping_test
+idb_direct/memory_leak_test
+idb_direct/idb_direct_test
+idb_direct/test_shm
+idb_direct/shm_stress_test

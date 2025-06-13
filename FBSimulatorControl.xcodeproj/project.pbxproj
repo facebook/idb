@@ -3957,7 +3957,7 @@
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.arkavo.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3967,7 +3967,7 @@
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.arkavo.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
@@ -3977,7 +3977,7 @@
 			baseConfigurationReference = AAA42D452796B0D900DED1D6 /* XCTestBootstrapTests.xcconfig */;
 			buildSettings = {
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PrivateHeaders";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.arkavo.XCTestBootstrapTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -1,0 +1,40 @@
+// Configuration settings for idb_direct static library
+
+// Product Settings
+PRODUCT_NAME = idb_direct
+MACH_O_TYPE = staticlib
+EXECUTABLE_PREFIX = lib
+EXECUTABLE_EXTENSION = a
+
+// Build Settings
+BUILD_LIBRARY_FOR_DISTRIBUTION = YES
+ENABLE_BITCODE = NO
+SKIP_INSTALL = NO
+INSTALL_PATH = /usr/local/lib
+
+// Architecture Settings
+ARCHS = arm64
+VALID_ARCHS = arm64
+
+// Deployment Target
+MACOSX_DEPLOYMENT_TARGET = 13.0
+
+// Framework Search Paths
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/build/Frameworks
+
+// Header Search Paths  
+HEADER_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/CompanionLib $(PROJECT_DIR)/IDBCompanionUtilities $(PROJECT_DIR)/PrivateHeaders
+
+// Public Headers
+PUBLIC_HEADERS_FOLDER_PATH = include
+
+// Other Linker Flags
+OTHER_LDFLAGS = -ObjC
+
+// Module Settings
+DEFINES_MODULE = NO
+MODULEMAP_FILE = 
+
+// Swift/Objective-C Settings
+CLANG_ENABLE_OBJC_ARC = YES
+GCC_C_LANGUAGE_STANDARD = gnu11

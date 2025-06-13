@@ -219,7 +219,7 @@
 
 - (void)testUpdatesStateWithAsynchronousTermination
 {
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     startSynchronously];
 
@@ -231,7 +231,7 @@
 
 - (void)testAwaitingTerminationOfShortLivedProcess
 {
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
     startSynchronously];
 
@@ -258,7 +258,7 @@
 {
   XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   expectation.inverted = YES;
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     startSynchronously];
 
@@ -281,7 +281,7 @@
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBProcess *process = [[[[[FBProcessBuilder
+  FBIDBProcess *process = [[[[[FBIDBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdInConnected]
     withStdOutInMemoryAsData]
@@ -307,7 +307,7 @@
   FBProcessInput<NSOutputStream *> *input = FBProcessInput.inputFromStream;
   NSOutputStream *stream = input.contents;
 
-  FBProcess *process = [[[[[FBProcessBuilder
+  FBIDBProcess *process = [[[[[FBIDBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdIn:input]
     withStdOutInMemoryAsString]
@@ -335,7 +335,7 @@
   FBProcessInput<NSOutputStream *> *input = FBProcessInput.inputFromStream;
   NSOutputStream *stream = input.contents;
 
-  FBProcess *process = [[[[[FBProcessBuilder
+  FBIDBProcess *process = [[[[[FBIDBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdIn:input]
     withStdOutInMemoryAsString]
@@ -363,7 +363,7 @@
 {
   NSString *expected = @"FOO BAR BAZ";
 
-  FBProcess *process = [[[[FBProcessBuilder
+  FBIDBProcess *process = [[[[FBIDBProcessBuilder
     withLaunchPath:@"/bin/echo" arguments:@[@"FOO BAR BAZ"]]
     withStdErrToDevNull]
     withStdOutToInputStream]
@@ -395,7 +395,7 @@
 {
   NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBProcess *process = [[[[[FBProcessBuilder
+  FBIDBProcess *process = [[[[[FBIDBProcessBuilder
     withLaunchPath:@"/bin/cat" arguments:@[]]
     withStdInFromData:expected]
     withStdOutInMemoryAsData]
@@ -412,7 +412,7 @@
 
 - (void)testSendingSIGINT
 {
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
@@ -432,7 +432,7 @@
 
 - (void)testSendingSIGKILL
 {
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000000"]]
     startSynchronously];
 
@@ -452,7 +452,7 @@
 
 - (void)testHUPBackoffToKILL
 {
-  FBProcess *process = [[FBProcessBuilder
+  FBIDBProcess *process = [[FBIDBProcessBuilder
     withLaunchPath:@"/usr/bin/nohup" arguments:@[@"/bin/sleep", @"10000000"]]
     startSynchronously];
 
