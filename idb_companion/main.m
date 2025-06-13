@@ -625,8 +625,8 @@ int main(int argc, const char *argv[]) {
   {
     NSArray<NSString *> *arguments = NSProcessInfo.processInfo.arguments;
     if ([arguments containsObject:@"--help"]) {
-      fprintf(stderr, "%s", kUsageHelpMessage);
-      return 1;
+      fprintf(stdout, "%s", kUsageHelpMessage);
+      return 0;
     }
     if ([arguments containsObject:@"--version"]) {
       WriteJSONToStdOut(@{@"build_time": @(__TIME__), @"build_date": @(__DATE__)});

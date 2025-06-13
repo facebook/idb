@@ -181,17 +181,25 @@ jobs:
         echo "=== Running smoke test ==="
         cd dist
         
-        # Test that binary runs
-        ./bin/idb_companion --help || {
-          echo "Failed to run idb_companion --help"
+        # Test that binary runs and show exit code
+        echo "=== Testing --help flag ==="
+        ./bin/idb_companion --help
+        HELP_EXIT=$?
+        echo "Exit code from --help: $HELP_EXIT"
+        if [ $HELP_EXIT -ne 0 ]; then
+          echo "Failed: --help should exit with code 0, got $HELP_EXIT"
           exit 1
-        }
+        fi
         
         # Test version output
-        ./bin/idb_companion --version || {
-          echo "Failed to run idb_companion --version"
+        echo "=== Testing --version flag ==="
+        ./bin/idb_companion --version
+        VERSION_EXIT=$?
+        echo "Exit code from --version: $VERSION_EXIT"
+        if [ $VERSION_EXIT -ne 0 ]; then
+          echo "Failed: --version should exit with code 0, got $VERSION_EXIT"
           exit 1
-        }
+        fi
         
         # Test that frameworks are loadable
         echo "=== Testing framework loading ==="
