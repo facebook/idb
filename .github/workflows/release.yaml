@@ -1,4 +1,4 @@
-name: Release idb_companion
+name: Release
 
 on:
   push:
@@ -34,6 +34,46 @@ jobs:
         
     - name: Create build directory
       run: mkdir -p dist
+
+    - name: Build frameworks first
+      run: |
+        # Build all required frameworks
+        ./build.sh framework build
+        
+    - name: Build static library
+      run: |
+        # Build the static library for Direct FFI
+        ./build_idb_direct.sh
+        
+    - name: Package static library
+      run: |
+        # Get version from tag or input
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag_name }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        
+        # Create static library package
+        STATIC_LIB_NAME="libidb_direct-${VERSION}-macos-$(uname -m)"
+        mkdir -p "dist/${STATIC_LIB_NAME}"
+        
+        # Copy static library and headers
+        cp build/lib/libidb_direct.a "dist/${STATIC_LIB_NAME}/"
+        cp -r build/lib/include "dist/${STATIC_LIB_NAME}/"
+        
+        # Create tar.gz
+        cd dist
+        tar -czf "${STATIC_LIB_NAME}.tar.gz" "${STATIC_LIB_NAME}/"
+        
+        # Create checksum
+        shasum -a 256 "${STATIC_LIB_NAME}.tar.gz" > "${STATIC_LIB_NAME}.tar.gz.sha256"
+        
+        # Store for later use
+        echo "STATIC_LIB_NAME=${STATIC_LIB_NAME}" >> $GITHUB_ENV
+        echo "STATIC_LIB_ARCHIVE=${STATIC_LIB_NAME}.tar.gz" >> $GITHUB_ENV
+        
+        cd ..
 
     - name: Build idb_companion with frameworks
       run: |
@@ -159,17 +199,26 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
-        name: idb_companion ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+        name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
         body: |
-          ## idb_companion Release for arkavo-edge
+          ## Release for arkavo-edge
           
           This release includes:
-          - `idb_companion` binary
-          - All required frameworks bundled
+          
+          ### idb_companion Binary
+          - `idb_companion` binary with all required frameworks bundled
           - Self-contained deployment (no system installation required)
+          - Codesigned and notarized for macOS
+          
+          ### Direct FFI Static Library
+          - `libidb_direct.a` static library for high-performance FFI integration
+          - C headers for direct function calls from Rust
+          - Zero-copy shared memory screenshot support
+          - Thread-safe global state management
           
           ### Installation
           
+          **For idb_companion:**
           ```bash
           # Download and extract
           tar -xzf ${{ env.ARCHIVE_NAME }}
@@ -178,15 +227,33 @@ jobs:
           # Frameworks are in Frameworks/
           ```
           
+          **For Direct FFI static library:**
+          ```bash
+          # Download and extract
+          tar -xzf ${{ env.STATIC_LIB_ARCHIVE }}
+          
+          # Static library: libidb_direct.a
+          # Headers: include/idb_direct.h, include/idb_direct_shm.h
+          ```
+          
           ### Usage with arkavo-edge
           
           This build is optimized for use with [arkavo-edge](https://github.com/arkavo-org/arkavo-edge).
           
           ### Checksums
           
-          See `${{ env.ARCHIVE_NAME }}.sha256` for verification.
+          SHA-256 checksums are provided for both artifacts:
+          - **idb_companion:** See `${{ env.ARCHIVE_NAME }}.sha256`
+          - **Static library:** See `${{ env.STATIC_LIB_ARCHIVE }}.sha256`
+          
+          Verify downloads with:
+          ```bash
+          shasum -c *.sha256
+          ```
         draft: false
         prerelease: ${{ contains(github.ref_name, '-') || contains(github.event.inputs.tag_name, '-') }}
         files: |
           ${{ env.ARCHIVE_NAME }}
           ${{ env.ARCHIVE_NAME }}.sha256
+          dist/${{ env.STATIC_LIB_ARCHIVE }}
+          dist/${{ env.STATIC_LIB_ARCHIVE }}.sha256
