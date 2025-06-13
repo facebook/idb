@@ -42,6 +42,31 @@ static const char* g_error_strings[] = {
     [8] = "Not supported"
 };
 
+// Default timeout for FBFuture operations (15 seconds)
+static const NSTimeInterval kDefaultTimeout = 15.0;
+
+// Helper function to await future with timeout
+static id FBIDBWaitWithTimeout(FBFuture* future, NSTimeInterval timeout, NSError** error) {
+    if (!future) {
+        if (error) {
+            *error = [NSError errorWithDomain:@"com.arkavo.idb" code:-1 
+                userInfo:@{NSLocalizedDescriptionKey: @"Future is nil"}];
+        }
+        return nil;
+    }
+    
+    // Log the operation being waited on
+    NSLog(@"[IDB] Waiting for future with timeout: %.1fs", timeout);
+    
+    id result = [future awaitWithTimeout:timeout error:error];
+    
+    if (!result && error && *error) {
+        NSLog(@"[IDB] Future timed out or failed: %@", (*error).localizedDescription);
+    }
+    
+    return result;
+}
+
 // Custom logger that forwards to callback
 @interface IDBEmbeddedLogger : NSObject <FBControlCoreLogger>
 @property (nonatomic, assign) idb_log_callback callback;
@@ -183,6 +208,15 @@ idb_error_t idb_companion_connect(idb_companion_handle_t* handle,
                 }
                 
                 targetSets = @[control.set];
+                
+                // Pre-flight check: Ensure simulators exist
+                NSArray *allDevices = [control.set query:[FBiOSTargetQuery queryWithState:FBiOSTargetStateUnknown]];
+                if (allDevices.count == 0) {
+                    NSLog(@"[IDB] No simulators found. CoreSimulator may need initialization.");
+                    NSLog(@"[IDB] Try running 'xcrun simctl list' to initialize CoreSimulator.");
+                    result = IDB_ERROR_DEVICE_NOT_FOUND;
+                    return;
+                }
             } else if (type == IDB_TARGET_DEVICE) {
                 // Load device frameworks
                 if (![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:handle->logger error:&error]) {
@@ -206,9 +240,15 @@ idb_error_t idb_companion_connect(idb_companion_handle_t* handle,
                 warmUp:YES 
                 logger:handle->logger];
                 
-            id<FBiOSTarget> target = [FBIDBWait awaitFuture:targetFuture error:&error];
+            id<FBiOSTarget> target = FBIDBWaitWithTimeout(targetFuture, kDefaultTimeout, &error);
             if (!target) {
-                result = IDB_ERROR_DEVICE_NOT_FOUND;
+                if (error && error.code == NSURLErrorTimedOut) {
+                    NSLog(@"[IDB] Timeout while searching for target %@", udidString);
+                    result = IDB_ERROR_TIMEOUT;
+                } else {
+                    NSLog(@"[IDB] Target not found: %@ (error: %@)", udidString, error);
+                    result = IDB_ERROR_DEVICE_NOT_FOUND;
+                }
                 return;
             }
             
@@ -264,7 +304,7 @@ idb_error_t idb_companion_tap(idb_companion_handle_t* handle, double x, double y
             FBFuture* future = [[handle->commandExecutor hid] 
                 tapAtX:x y:y];
             
-            [FBIDBWait awaitFuture:future error:&error];
+            FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (error) {
                 result = IDB_ERROR_OPERATION_FAILED;
             }
@@ -295,7 +335,7 @@ idb_error_t idb_companion_swipe(idb_companion_handle_t* handle,
                 toY:to_y 
                 duration:duration_seconds];
             
-            [FBIDBWait awaitFuture:future error:&error];
+            FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (error) {
                 result = IDB_ERROR_OPERATION_FAILED;
             }
@@ -325,7 +365,7 @@ idb_error_t idb_companion_screenshot(idb_companion_handle_t* handle,
             FBFuture<NSData*>* future = [[handle->commandExecutor screenshot] 
                 takeInFormat:FBScreenshotFormatPNG];
             
-            NSData* imageData = [FBIDBWait awaitFuture:future error:&error];
+            NSData* imageData = FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (!imageData || error) {
                 result = IDB_ERROR_OPERATION_FAILED;
                 return;
@@ -382,7 +422,7 @@ idb_error_t idb_companion_launch_app(idb_companion_handle_t* handle, const char*
             FBFuture* future = [[handle->commandExecutor applicationCommands] 
                 launchApplication:config];
             
-            [FBIDBWait awaitFuture:future error:&error];
+            FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (error) {
                 result = IDB_ERROR_OPERATION_FAILED;
             }
@@ -410,7 +450,7 @@ idb_error_t idb_companion_terminate_app(idb_companion_handle_t* handle, const ch
             FBFuture* future = [[handle->commandExecutor applicationCommands] 
                 terminateApplicationWithBundleID:bundleIdString];
             
-            [FBIDBWait awaitFuture:future error:&error];
+            FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (error) {
                 result = IDB_ERROR_OPERATION_FAILED;
             }
@@ -438,7 +478,7 @@ idb_error_t idb_companion_list_apps(idb_companion_handle_t* handle,
             FBFuture<NSArray<FBInstalledApplication*>*>* future = [[handle->commandExecutor applicationCommands] 
                 installedApplications];
             
-            NSArray<FBInstalledApplication*>* apps = [FBIDBWait awaitFuture:future error:&error];
+            NSArray<FBInstalledApplication*>* apps = FBIDBWaitWithTimeout(future, kDefaultTimeout, &error);
             if (!apps || error) {
                 result = IDB_ERROR_OPERATION_FAILED;
                 return;
