@@ -19,11 +19,14 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBSimulator.h"
+#import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorEraseStrategy.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorNotificationUpdateStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
