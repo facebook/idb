@@ -129,7 +129,10 @@ idb_error_t idb_connect_target(const char* udid, idb_target_type_t type) {
             // For Xcode 16+, use SimServiceContext
             Class SimServiceContextClass = NSClassFromString(@"SimServiceContext");
             if (SimServiceContextClass) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
                 SEL sharedContextSelector = @selector(sharedServiceContextForDeveloperDir:error:);
+#pragma clang diagnostic pop
                 if ([SimServiceContextClass respondsToSelector:sharedContextSelector]) {
                     NSError *error = nil;
                     NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
@@ -141,7 +144,10 @@ idb_error_t idb_connect_target(const char* udid, idb_target_type_t type) {
                     id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(SimServiceContextClass, sharedContextSelector, developerDir, &error);
                     
                     if (sharedContext) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
                         SEL defaultSetSelector = @selector(defaultDeviceSetWithError:);
+#pragma clang diagnostic pop
                         if ([sharedContext respondsToSelector:defaultSetSelector]) {
                             error = nil;
                             deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);

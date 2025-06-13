@@ -64,7 +64,10 @@ static id FBIDBGetActiveDeviceSet(void) {
         
         // For Xcode 16+, use SimServiceContext
         if (SimServiceContextClass) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
             SEL sharedContextSelector = @selector(sharedServiceContextForDeveloperDir:error:);
+#pragma clang diagnostic pop
             if ([SimServiceContextClass respondsToSelector:sharedContextSelector]) {
                 NSError *error = nil;
                 NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
@@ -76,7 +79,10 @@ static id FBIDBGetActiveDeviceSet(void) {
                 id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(SimServiceContextClass, sharedContextSelector, developerDir, &error);
                 
                 if (sharedContext) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
                     SEL defaultSetSelector = @selector(defaultDeviceSetWithError:);
+#pragma clang diagnostic pop
                     if ([sharedContext respondsToSelector:defaultSetSelector]) {
                         error = nil;
                         id deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);
