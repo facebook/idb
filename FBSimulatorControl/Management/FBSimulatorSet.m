@@ -19,11 +19,16 @@
 #import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBSimulatorControl.h"
+#import "FBSimulator.h"
+#import "FBSimulator+Private.h"
+#import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorEraseStrategy.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorNotificationUpdateStrategy.h"
 #import "FBSimulatorShutdownStrategy.h"
@@ -43,6 +48,24 @@
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter error:(NSError **)error
 {
   return [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet delegate:delegate logger:logger reporter:reporter];
+}
+
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  // Create configuration with default device set path
+  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration 
+    configurationWithDeviceSetPath:nil 
+    logger:logger 
+    reporter:nil];
+  
+  // Create FBSimulatorControl instance
+  FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:error];
+  if (!control) {
+    return nil;
+  }
+  
+  // Return the simulator set
+  return control.set;
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter

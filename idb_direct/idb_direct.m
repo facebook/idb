@@ -56,12 +56,15 @@ idb_error_t idb_initialize(void) {
         IDB_SYNCHRONIZED({
             NSError* error = nil;
             
-            // Get default configuration
-            FBSimulatorControlConfiguration* config = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil 
-                                                                                                                options:FBSimulatorManagementOptionsDeleteAllOnFirstStart];
+            // Create default configuration with logger
+            id<FBControlCoreLogger> logger = [FBControlCoreGlobalConfiguration.defaultLogger withName:@"idb_direct"];
+            FBSimulatorControlConfiguration* config = [FBSimulatorControlConfiguration 
+                configurationWithDeviceSetPath:nil 
+                logger:logger
+                reporter:nil];
             
             // Initialize simulator control
-            g_idb_state.simulator_control = [config startWithError:&error];
+            g_idb_state.simulator_control = [FBSimulatorControl withConfiguration:config error:&error];
             if (error) {
                 result = IDB_ERROR_OPERATION_FAILED;
                 g_idb_state.error_messages[@(result)] = error.localizedDescription;
@@ -110,6 +113,11 @@ idb_error_t idb_connect_target(const char* udid, idb_target_type_t type) {
         NSError* error = nil;
         
         if (type == IDB_TARGET_SIMULATOR) {
+            if (!g_idb_state.simulator_control) {
+                result = IDB_ERROR_NOT_INITIALIZED;
+                return;
+            }
+            
             // Find simulator
             FBSimulator* simulator = [g_idb_state.simulator_control.set simulatorWithUDID:udidString];
             if (!simulator) {

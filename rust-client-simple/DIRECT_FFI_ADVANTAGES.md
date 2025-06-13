@@ -200,6 +200,27 @@ impl Drop for Companion {
 }
 ```
 
+## Xcode Compatibility
+
+### Runtime API Detection
+The Direct FFI implementation now includes runtime detection for CoreSimulator API changes:
+
+```c
+// Xcode 15 and earlier
+if ([SimDeviceSetClass respondsToSelector:@selector(defaultSet)]) {
+    deviceSet = [SimDeviceSetClass performSelector:@selector(defaultSet)];
+}
+
+// Xcode 16+ uses SimServiceContext
+else if (SimServiceContextClass) {
+    id sharedContext = [SimServiceContextClass 
+        sharedServiceContextForDeveloperDir:developerDir error:&error];
+    deviceSet = [sharedContext defaultDeviceSetWithError:&error];
+}
+```
+
+This ensures the Direct FFI path works across all Xcode versions without requiring recompilation.
+
 ## Summary
 
 **Choose Direct FFI when you need:**
@@ -209,6 +230,7 @@ impl Drop for Companion {
 - Direct hardware access
 - Predictable latency
 - Zero dependencies
+- Cross-Xcode version compatibility
 
 **The only real advantage of keeping gRPC would be:**
 - If you might need to split back into separate processes later
