@@ -176,6 +176,32 @@ jobs:
         # Check that the binary is notarized (may fail in CI but binary is notarized)
         spctl -a -v bin/idb_companion || echo "Note: spctl may fail in CI but the binary is notarized"
         
+    - name: Run smoke test
+      run: |
+        echo "=== Running smoke test ==="
+        cd dist
+        
+        # Test that binary runs
+        ./bin/idb_companion --help || {
+          echo "Failed to run idb_companion --help"
+          exit 1
+        }
+        
+        # Test version output
+        ./bin/idb_companion --version || {
+          echo "Failed to run idb_companion --version"
+          exit 1
+        }
+        
+        # Test that frameworks are loadable
+        echo "=== Testing framework loading ==="
+        otool -L bin/idb_companion | grep -E "(FBControlCore|FBSimulatorControl|FBDeviceControl|XCTestBootstrap)" || {
+          echo "Frameworks not properly linked"
+          exit 1
+        }
+        
+        echo "=== Smoke test passed ==="
+        
     - name: Create release archive
       run: |
         cd dist
@@ -251,7 +277,8 @@ jobs:
           shasum -c *.sha256
           ```
         draft: false
-        prerelease: ${{ contains(github.ref_name, '-') || contains(github.event.inputs.tag_name, '-') }}
+        prerelease: false
+        make_latest: true
         files: |
           ${{ env.ARCHIVE_NAME }}
           ${{ env.ARCHIVE_NAME }}.sha256
