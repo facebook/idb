@@ -14,6 +14,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -88,9 +89,66 @@
 
 + (NSString *)defaultDeviceSetPath
 {
-  Class deviceSetClass = objc_lookUpClass("SimDeviceSet");
-  NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");
-  return [deviceSetClass defaultSetPath] ?: [[deviceSetClass defaultSet] setPath];
+  static dispatch_once_t onceToken;
+  static NSString *deviceSetPath = nil;
+  
+  dispatch_once(&onceToken, ^{
+    @autoreleasepool {
+      Class deviceSetClass = objc_lookUpClass("SimDeviceSet");
+      NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");
+      
+      // Try Xcode <= 15 API first
+      if ([deviceSetClass respondsToSelector:@selector(defaultSetPath)]) {
+        deviceSetPath = [deviceSetClass defaultSetPath];
+        return;
+      }
+      
+      // For Xcode 16+, we need to use SimServiceContext
+      Class serviceContextClass = objc_lookUpClass("SimServiceContext");
+      if (serviceContextClass) {
+        // Try to get shared context using sharedServiceContextForDeveloperDir:error:
+        SEL sharedContextSelector = @selector(sharedServiceContextForDeveloperDir:error:);
+        if ([serviceContextClass respondsToSelector:sharedContextSelector]) {
+          NSError *error = nil;
+          NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
+          // Fallback to default Xcode location if DEVELOPER_DIR not set
+          if (!developerDir) {
+            developerDir = @"/Applications/Xcode.app/Contents/Developer";
+          }
+          
+          id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(serviceContextClass, sharedContextSelector, developerDir, &error);
+          
+          if (sharedContext) {
+            // Use defaultDeviceSetWithError: method
+            SEL defaultSetSelector = @selector(defaultDeviceSetWithError:);
+            if ([sharedContext respondsToSelector:defaultSetSelector]) {
+              error = nil;
+              id deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);
+              if (deviceSet && [deviceSet respondsToSelector:@selector(setPath)]) {
+                deviceSetPath = [deviceSet performSelector:@selector(setPath)];
+                return;
+              }
+            }
+          }
+        }
+      }
+      
+      // Fallback: Try the old defaultSet method (though it won't work on Xcode 16+)
+      if ([deviceSetClass respondsToSelector:@selector(defaultSet)]) {
+        id defaultSet = [deviceSetClass performSelector:@selector(defaultSet)];
+        if (defaultSet && [defaultSet respondsToSelector:@selector(setPath)]) {
+          deviceSetPath = [defaultSet performSelector:@selector(setPath)];
+          return;
+        }
+      }
+      
+      // Log failure for diagnostics
+      id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+      [logger logFormat:@"CoreSimulator API changed - unable to determine default device set path. Tried both SimDeviceSet.defaultSet and SimServiceContext.defaultDeviceSetWithError:"];
+    }
+  });
+  
+  return deviceSetPath;
 }
 
 @end

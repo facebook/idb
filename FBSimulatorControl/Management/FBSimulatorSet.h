@@ -44,6 +44,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(nullable id<FBiOSTargetSetDelegate>)delegate logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter error:(NSError **)error;
 
+/**
+ Creates and returns the default FBSimulatorSet with the default device set.
+
+ @param logger the logger to use to verbosely describe what is going on. May be nil.
+ @param error any error that occurred during the creation of the pool.
+ @return a new FBSimulatorSet for the default device set.
+ */
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
 #pragma mark Querying
 
 /**

@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import <dlfcn.h>
 #import <stdatomic.h>
 #import "idb_direct.h"
@@ -115,12 +116,40 @@ idb_error_t idb_connect_target(const char* udid, idb_target_type_t type) {
         @autoreleasepool {
             NSString* targetUdid = [NSString stringWithUTF8String:udid];
             
-            // Get default device set
-            SEL defaultSetSelector = NSSelectorFromString(@"defaultSet");
-            id deviceSet = [SimDeviceSetClass performSelector:defaultSetSelector];
+            // Get default device set with Xcode 16+ compatibility
+            id deviceSet = nil;
+            
+            // Try Xcode <= 15 API first
+            if ([SimDeviceSetClass respondsToSelector:@selector(defaultSet)]) {
+                deviceSet = [SimDeviceSetClass performSelector:@selector(defaultSet)];
+            } else {
+                // For Xcode 16+, use SimServiceContext
+                Class SimServiceContextClass = NSClassFromString(@"SimServiceContext");
+                if (SimServiceContextClass) {
+                    SEL sharedContextSelector = @selector(sharedServiceContextForDeveloperDir:error:);
+                    if ([SimServiceContextClass respondsToSelector:sharedContextSelector]) {
+                        NSError *error = nil;
+                        NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
+                        // Fallback to default Xcode location if DEVELOPER_DIR not set
+                        if (!developerDir) {
+                            developerDir = @"/Applications/Xcode.app/Contents/Developer";
+                        }
+                        
+                        id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(SimServiceContextClass, sharedContextSelector, developerDir, &error);
+                        
+                        if (sharedContext) {
+                            SEL defaultSetSelector = @selector(defaultDeviceSetWithError:);
+                            if ([sharedContext respondsToSelector:defaultSetSelector]) {
+                                error = nil;
+                                deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);
+                            }
+                        }
+                    }
+                }
+            }
             
             if (!deviceSet) {
-                NSLog(@"Failed to get default device set");
+                NSLog(@"[idb] CoreSimulator API changed - could not obtain device set. Tried both SimDeviceSet.defaultSet and SimServiceContext.defaultDeviceSetWithError:");
                 result = IDB_ERROR_OPERATION_FAILED;
                 return;
             }

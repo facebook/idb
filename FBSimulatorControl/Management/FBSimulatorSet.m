@@ -45,6 +45,24 @@
   return [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet delegate:delegate logger:logger reporter:reporter];
 }
 
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  // Create configuration with default device set path
+  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration 
+    configurationWithDeviceSetPath:nil 
+    logger:logger 
+    reporter:nil];
+  
+  // Create FBSimulatorControl instance
+  FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:error];
+  if (!control) {
+    return nil;
+  }
+  
+  // Return the simulator set
+  return control.set;
+}
+
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
   self = [super init];
