@@ -107,7 +107,10 @@
       Class serviceContextClass = objc_lookUpClass("SimServiceContext");
       if (serviceContextClass) {
         // Try to get shared context using sharedServiceContextForDeveloperDir:error:
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
         SEL sharedContextSelector = @selector(sharedServiceContextForDeveloperDir:error:);
+#pragma clang diagnostic pop
         if ([serviceContextClass respondsToSelector:sharedContextSelector]) {
           NSError *error = nil;
           NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
@@ -120,7 +123,10 @@
           
           if (sharedContext) {
             // Use defaultDeviceSetWithError: method
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
             SEL defaultSetSelector = @selector(defaultDeviceSetWithError:);
+#pragma clang diagnostic pop
             if ([sharedContext respondsToSelector:defaultSetSelector]) {
               error = nil;
               id deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);
