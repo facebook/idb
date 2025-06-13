@@ -226,9 +226,12 @@ idb_error_t idb_tap(double x, double y) {
         return IDB_ERROR_NOT_INITIALIZED;
     }
     
+    __block idb_error_t result = IDB_ERROR_OPERATION_FAILED;
+    
     IDB_SYNCHRONIZED({
         if (!g_idb_state.current_device) {
-            return IDB_ERROR_DEVICE_NOT_FOUND;
+            result = IDB_ERROR_DEVICE_NOT_FOUND;
+            return;
         }
         
         // HID operations would go here
@@ -236,7 +239,7 @@ idb_error_t idb_tap(double x, double y) {
         NSLog(@"Tap at (%.1f, %.1f) - not implemented in adaptive version", x, y);
     });
     
-    return IDB_ERROR_OPERATION_FAILED;
+    return result;
 }
 
 idb_error_t idb_take_screenshot(idb_screenshot_t* screenshot) {
