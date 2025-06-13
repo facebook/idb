@@ -100,6 +100,8 @@
       // Try Xcode <= 15 API first
       if ([deviceSetClass respondsToSelector:@selector(defaultSetPath)]) {
         deviceSetPath = [deviceSetClass defaultSetPath];
+        id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+        [logger logFormat:@"Using SimDeviceSet.defaultSetPath (Xcode ≤15 API): %@", deviceSetPath];
         return;
       }
       
@@ -116,7 +118,14 @@
           NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
           // Fallback to default Xcode location if DEVELOPER_DIR not set
           if (!developerDir) {
-            developerDir = @"/Applications/Xcode.app/Contents/Developer";
+            NSString *defaultPath = @"/Applications/Xcode.app/Contents/Developer";
+            if ([[NSFileManager defaultManager] fileExistsAtPath:defaultPath]) {
+              developerDir = defaultPath;
+            } else {
+              id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+              [logger logFormat:@"Default Xcode path not found at %@, DEVELOPER_DIR not set", defaultPath];
+              return;
+            }
           }
           
           id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(serviceContextClass, sharedContextSelector, developerDir, &error);
@@ -132,6 +141,8 @@
               id deviceSet = ((id (*)(id, SEL, NSError **))objc_msgSend)(sharedContext, defaultSetSelector, &error);
               if (deviceSet && [deviceSet respondsToSelector:@selector(setPath)]) {
                 deviceSetPath = [deviceSet performSelector:@selector(setPath)];
+                id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+                [logger logFormat:@"Using SimServiceContext API (Xcode 16+) with developerDir: %@, deviceSetPath: %@", developerDir, deviceSetPath];
                 return;
               }
             }

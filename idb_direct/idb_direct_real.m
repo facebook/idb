@@ -140,7 +140,13 @@ idb_error_t idb_connect_target(const char* udid, idb_target_type_t type) {
                     NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
                     // Fallback to default Xcode location if DEVELOPER_DIR not set
                     if (!developerDir) {
-                        developerDir = @"/Applications/Xcode.app/Contents/Developer";
+                        NSString *defaultPath = @"/Applications/Xcode.app/Contents/Developer";
+                        if ([[NSFileManager defaultManager] fileExistsAtPath:defaultPath]) {
+                            developerDir = defaultPath;
+                        } else {
+                            NSLog(@"[idb] Default Xcode path not found at %@, DEVELOPER_DIR not set", defaultPath);
+                            return IDB_ERROR_OPERATION_FAILED;
+                        }
                     }
                     
                     id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(SimServiceContextClass, sharedContextSelector, developerDir, &error);

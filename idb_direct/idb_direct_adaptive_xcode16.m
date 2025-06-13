@@ -73,7 +73,13 @@ static id FBIDBGetActiveDeviceSet(void) {
                 NSString *developerDir = [NSProcessInfo.processInfo.environment objectForKey:@"DEVELOPER_DIR"];
                 // Fallback to default Xcode location if DEVELOPER_DIR not set
                 if (!developerDir) {
-                    developerDir = @"/Applications/Xcode.app/Contents/Developer";
+                    NSString *defaultPath = @"/Applications/Xcode.app/Contents/Developer";
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:defaultPath]) {
+                        developerDir = defaultPath;
+                    } else {
+                        NSLog(@"[idb] Default Xcode path not found at %@, DEVELOPER_DIR not set", defaultPath);
+                        return nil;
+                    }
                 }
                 
                 id sharedContext = ((id (*)(id, SEL, id, NSError **))objc_msgSend)(SimServiceContextClass, sharedContextSelector, developerDir, &error);
