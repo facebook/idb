@@ -71,7 +71,7 @@
     withTemporaryFileNamed:name]
     onQueue:self.queue pend:^(NSURL *result) {
       return [[FBArchiveOperations
-        extractGzipFromStream:input toPath:result.path queue:self.queue logger:self.logger]
+        extractGzipFromStream:input toPath:result.path logger:self.logger]
         mapReplace:result];
     }];
 }
@@ -91,7 +91,7 @@
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:overrideMTime queue:self.queue logger:self.logger compression:compression] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger compression:compression] mapReplace:tempDir];
     }];
 }
 
@@ -105,7 +105,7 @@
   return [[self
     withTemporaryDirectory]
     onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:overrideMTime queue:self.queue logger:self.logger] mapReplace:tempDir];
+      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger] mapReplace:tempDir];
     }];
 }
 

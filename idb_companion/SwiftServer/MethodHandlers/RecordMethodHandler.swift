@@ -33,7 +33,6 @@ struct RecordMethodHandler {
     if start.filePath.isEmpty {
       let gzipTask = FBArchiveOperations.createGzip(
         forPath: filePath,
-        queue: BridgeQueues.miscEventReaderQueue,
         logger: targetLogger)
 
       try await FileDrainWriter.performDrain(taskFuture: gzipTask) { data in
