@@ -12,10 +12,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBControlCoreLogger;
-
-@class FBProcessInput;
-
 /**
  Operations on FBBundleDescriptor, for applications.
  */
