@@ -21,8 +21,7 @@
 
 #pragma mark Public
 
-
-+ (FBFuture<FBBundleDescriptor *> *)findAppPathFromDirectory:(NSURL *)directory
++ (FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory error:(NSError **)error
 {
   NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
     enumeratorAtURL:directory
@@ -39,9 +38,13 @@
   if (applicationURLs.count != 1) {
     return [[FBControlCoreError
       describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationURLs.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationURLs.allObjects valueForKey:@"lastPathComponent"]]]
-      failFuture];
+      fail:error];
   }
-  return [self extractedApplicationAtPath:[applicationURLs.allObjects.firstObject path]];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationURLs.allObjects.firstObject.path error:error];
+  if (!bundle) {
+    return nil;
+  }
+  return bundle;
 }
 
 + (BOOL)isApplicationAtPath:(NSString *)path
@@ -51,16 +54,6 @@
     && [path hasSuffix:@".app"]
     && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
     && isDirectory;
-}
-
-+ (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath
-{
-  NSError *error = nil;
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:appPath error:&error];
-  if (!bundle) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:bundle];
 }
 
 @end

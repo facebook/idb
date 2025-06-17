@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param directory the directory to search.
  @return a future wrapping the application bundle.
  */
-+ (FBFuture<FBBundleDescriptor *> *)findAppPathFromDirectory:(NSURL *)directory;
++ (nullable FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory error:(NSError **)error;
 
 /**
  Check if given path is an application path.
@@ -35,14 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return if the path is an application path.
  */
 + (BOOL)isApplicationAtPath:(NSString *)path;
-
-/**
- Returns a FBBundleDescriptor for a given .app path
-
- @param appPath path to an .app
- @return future wrapping a FBBundleDescriptor for this app
- */
-+ (FBFuture<FBBundleDescriptor *> *)extractedApplicationAtPath:(NSString *)appPath;
 
 @end
 

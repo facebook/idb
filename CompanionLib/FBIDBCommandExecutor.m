@@ -80,7 +80,12 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 {
   // Use .app directly, or extract an .ipa
   if ([FBBundleDescriptor isApplicationAtPath:filePath]) {
-    return [self installAppBundle:[FBFutureContext futureContextWithFuture:[FBBundleDescriptor extractedApplicationAtPath:filePath]] makeDebuggable:makeDebuggable];
+    NSError *error = nil;
+    FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor bundleFromPath:filePath error:&error];
+    if (!bundleDescriptor) {
+      return [FBFuture futureWithError:error];
+    }
+    return [self installAppBundle:[FBFutureContext futureContextWithResult:bundleDescriptor] makeDebuggable:makeDebuggable];
   } else {
     return [self installExtractedApp:[self.temporaryDirectory withArchiveExtractedFromFile:filePath overrideModificationTime:overrideModificationTime] makeDebuggable:makeDebuggable];
   }
@@ -844,7 +849,12 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
 {
   FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext
     onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
-      return [FBBundleDescriptor findAppPathFromDirectory:extractPath];
+      NSError *error = nil;
+      FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor findAppPathFromDirectory:extractPath error:&error];
+      if (!bundleDescriptor) {
+        return [FBFuture futureWithError:error];
+      }
+      return [FBFuture futureWithResult:bundleDescriptor];
     }];
   return [self installAppBundle:bundleContext makeDebuggable:makeDebuggable];
 }
