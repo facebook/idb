@@ -212,6 +212,11 @@
   if ([type isEqualToString:@"v"]) {
     return @"void";
   }
+  if ([type isEqualToString:@"B"]) {
+    BOOL argument = 0;
+    [invocation getArgument:&argument atIndex:index];
+    return argument ? @"YES" : @"NO";
+  }
   if ([type isEqualToString:@"@"]) {
     __unsafe_unretained id argument = nil;
     [invocation getArgument:&argument atIndex:index];
