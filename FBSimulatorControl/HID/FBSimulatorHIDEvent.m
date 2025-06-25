@@ -382,6 +382,15 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
++ (instancetype)tapAtX:(double)x y:(double)y duration:(double)duration
+{
+  return [self eventWithEvents:@[
+    [self touchDownAtX:x y:y],
+    [self delay:duration],
+    [self touchUpAtX:x y:y],
+  ]];
+}
+
 + (instancetype)shortButtonPress:(FBSimulatorHIDButton)button
 {
   return [self eventWithEvents:@[

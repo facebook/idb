@@ -32,6 +32,16 @@ extern double const DEFAULT_SWIPE_DELTA;
 + (instancetype)tapAtX:(double)x y:(double)y;
 
 /**
+ A HID Event that is a touch-down with a touch up after some delay.
+
+ @param x the x-coordinate from the top left.
+ @param y the y-coordinate from the top left.
+ @param duration the duration of the touch down.
+ @return a new HID event.
+ **/
++ (instancetype)tapAtX:(double)x y:(double)y duration:(double)duration;
+
+/**
  A HID Event that is a down followed by an immediate up.
 
  @param button the button to use.
