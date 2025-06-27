@@ -29,6 +29,7 @@ service CompanionService {
   rpc focus(FocusRequest) returns (FocusResponse) {}
   rpc hid(stream HIDEvent) returns (HIDResponse) {}
   rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
+  rpc set_device_orientation(SetDeviceOrientationRequest) returns (SetDeviceOrientationResponse) {};
   rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
   rpc send_notification(SendNotificationRequest)
       returns (SendNotificationResponse) {}
@@ -313,6 +314,18 @@ message OpenUrlRequest {
 }
 
 message OpenUrlResponse {}
+
+message SetDeviceOrientationRequest {
+  enum DeviceOrientation {
+      PORTRAIT = 0;
+      PORTRAIT_UPSIDE_DOWN = 1;
+      LANDSCAPE_RIGHT = 2;
+      LANDSCAPE_LEFT = 3;
+  }
+  DeviceOrientation device_orientation = 1;
+}
+
+message SetDeviceOrientationResponse {}
 
 message ContactsUpdateRequest {
   Payload payload = 1;

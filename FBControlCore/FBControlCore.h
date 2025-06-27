@@ -95,3 +95,4 @@
 #import <FBControlCore/FBConcatedJsonParser.h>
 #import <FBControlCore/FBCrashLogParser.h>
 #import <FBControlCore/FBArchitectureProcessAdapter.h>
+#import <FBControlCore/FBDeviceOrientationCommands.h>

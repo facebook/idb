@@ -40,6 +40,7 @@
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
 #import "FBSimulatorXCTestCommands.h"
+#import "FBSimulatorDeviceOrientationCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -311,6 +312,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
       FBXCTraceRecordCommands.class,
       FBSimulatorNotificationCommands.class,
       FBSimulatorMemoryCommands.class,
+      FBSimulatorDeviceOrientationCommands.class
     ];
   });
   return commandClasses;

@@ -131,6 +131,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     }
   }
 
+  func set_device_orientation(request: Idb_SetDeviceOrientationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetDeviceOrientationResponse {
+    return try await FBTeardownContext.withAutocleanup {
+      try await SetDeviceOrientationMethodHandler(commandExecutor: commandExecutor).handle(request: request, context: context)
+    }
+  }
+
   func set_location(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
     return try await FBTeardownContext.withAutocleanup {
       try await SetLocationMethodHandler(commandExecutor: commandExecutor)

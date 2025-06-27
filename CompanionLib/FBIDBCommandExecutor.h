@@ -199,6 +199,13 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
 - (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event;
 
 /**
+ Set the device orientation
+ 
+ @return null future
+ */
+- (FBFuture<NSNull *> *)set_device_orientation:(FBSimulatorDeviceOrientation)deviceOrientation;
+
+/**
  Sets latitude and longitude of the Simulator.
  The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
  Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.

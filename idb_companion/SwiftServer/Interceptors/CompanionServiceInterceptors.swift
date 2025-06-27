@@ -78,6 +78,10 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
     commonInterceptors()
   }
 
+    func makeset_device_orientationInterceptors() -> [ServerInterceptor<Idb_SetDeviceOrientationRequest, Idb_SetDeviceOrientationResponse>] {
+    commonInterceptors()
+  }
+
   func makeset_locationInterceptors() -> [ServerInterceptor<Idb_SetLocationRequest, Idb_SetLocationResponse>] {
     commonInterceptors()
   }

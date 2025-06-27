@@ -163,6 +163,17 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
+- (FBFuture<NSNull *> *)set_device_orientation:(FBSimulatorDeviceOrientation)deviceOrientation
+{
+  id<FBDeviceOrientationCommands> commands = (id<FBDeviceOrientationCommands>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBDeviceOrientationCommands)]) {
+    return [[FBIDBError
+      describeFormat:@"%@ does not conform to FBDeviceOrientationCommands", commands]
+      failFuture];
+  }
+  return [commands setDeviceOrientation:deviceOrientation];
+}
+
 - (FBFuture<NSNull *> *)set_location:(double)latitude longitude:(double)longitude
 {
   id<FBLocationCommands> commands = (id<FBLocationCommands>) self.target;
