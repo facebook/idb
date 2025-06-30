@@ -86,10 +86,7 @@
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {
-  if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return 164;
-  }
-  return 163;
+  return 164;
 }
 
 + (FBFuture<NSNull *> *)shutdownSimulator:(FBSimulator *)simulator

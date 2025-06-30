@@ -105,9 +105,6 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
 + (NSString *)portNameForSimulator:(FBSimulator *)simulator
 {
   NSString *portName = @"com.apple.iphonesimulator.bridge";
-  if (!FBXcodeConfiguration.isXcode9OrGreater) {
-    return portName;
-  }
   return [portName stringByAppendingFormat:@".%@", SimulatorBridgePortSuffix];
 }
 

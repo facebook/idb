@@ -14,10 +14,7 @@
 
 + (instancetype)CoreSimulator
 {
-  if (FBXcodeConfiguration.isXcode9OrGreater) {
-    return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] rootPermitted:NO];
-  }
-  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
+  return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"] rootPermitted:NO];
 }
 
 + (instancetype)SimulatorKit
