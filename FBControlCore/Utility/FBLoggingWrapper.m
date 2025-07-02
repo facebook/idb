@@ -148,81 +148,91 @@
 
 + (NSString *)descriptionForAgumentAtIndex:(int)index inInvoation:(NSInvocation *)invocation
 {
-  NSString *type = [NSString stringWithUTF8String:[invocation.methodSignature getArgumentTypeAtIndex:(NSUInteger)index]];
-  if ([type isEqualToString:@"c"]) {
-    char argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%c", argument];
+  const char *typeString = [invocation.methodSignature getArgumentTypeAtIndex:(NSUInteger)index];
+  if (typeString == NULL) {
+    return @"NULL Argument Type";
   }
-  if ([type isEqualToString:@"i"]) {
-    int argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%d", argument];
+  if (strlen(typeString) != 1) {
+    return @"Unknown Multichar Type";
   }
-  if ([type isEqualToString:@"s"]) {
-    short argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%d", argument];
+  const char typeChar = *typeString;
+  switch (typeChar) {
+      case 'c': {
+          char argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%c", argument];
+      }
+      case 'i': {
+          int argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%d", argument];
+      }
+      case 's': {
+          short argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%d", argument];
+      }
+      case 'l': {
+          long argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%ld", argument];
+      }
+      case 'q': {
+          long long argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%lld", argument];
+      }
+      case 'C': {
+          unsigned char argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%c", argument];
+      }
+      case 'I': {
+          unsigned int argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%d", argument];
+      }
+      case 'S': {
+          unsigned short argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%d", argument];
+      }
+      case 'L': {
+          unsigned long argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%ld", argument];
+      }
+      case 'Q': {
+          unsigned long long argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%lld", argument];
+      }
+      case 'f': {
+          float argument = 0.0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%f", argument];
+      }
+      case 'd': {
+          double argument = 0.0;
+          [invocation getArgument:&argument atIndex:index];
+          return [NSString stringWithFormat:@"%f", argument];
+      }
+      case 'v':
+          return @"void";
+      case 'B': {
+          BOOL argument = 0;
+          [invocation getArgument:&argument atIndex:index];
+          return argument ? @"YES" : @"NO";
+      }
+      case '@': {
+          __unsafe_unretained id argument = nil;
+          [invocation getArgument:&argument atIndex:index];
+          return [self descriptionForObject:argument];
+      }
+      default:
+          // Handle unknown type
+          return @"Unrecognised type";
   }
-  if ([type isEqualToString:@"l"]) {
-    long argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%ld", argument];
-  }
-  if ([type isEqualToString:@"q"]) {
-    long long argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%lld", argument];
-  }
-  if ([type isEqualToString:@"C"]) {
-    unsigned char argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%c", argument];
-  }
-  if ([type isEqualToString:@"I"]) {
-    unsigned int argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%d", argument];
-  }
-  if ([type isEqualToString:@"S"]) {
-    unsigned short argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%d", argument];
-  }
-  if ([type isEqualToString:@"L"]) {
-    unsigned long argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%ld", argument];
-  }
-  if ([type isEqualToString:@"Q"]) {
-    unsigned long long argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%lld", argument];
-  }
-  if ([type isEqualToString:@"f"]) {
-    float argument = 0.0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%f", argument];
-  }
-  if ([type isEqualToString:@"d"]) {
-    double argument = 0.0;
-    [invocation getArgument:&argument atIndex:index];
-    return [NSString stringWithFormat:@"%f", argument];
-  }
-  if ([type isEqualToString:@"v"]) {
-    return @"void";
-  }
-  if ([type isEqualToString:@"B"]) {
-    BOOL argument = 0;
-    [invocation getArgument:&argument atIndex:index];
-    return argument ? @"YES" : @"NO";
-  }
-  if ([type isEqualToString:@"@"]) {
-    __unsafe_unretained id argument = nil;
-    [invocation getArgument:&argument atIndex:index];
-    return [self descriptionForObject:argument];
-  }
-  return @"Unrecognised type";
 }
 
 + (NSString *)descriptionForObject:(NSObject *)object
