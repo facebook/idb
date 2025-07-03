@@ -552,6 +552,11 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return  [[FBContainedFile_Host alloc] initWithFileManager:NSFileManager.defaultManager path:basePath];
 }
 
++ (id<FBContainedFile>)containedFileForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
+{
+  return [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
+}
+
 + (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [self containedFileForBasePath:basePath];
@@ -560,7 +565,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 + (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
 {
-  id<FBContainedFile> rootFile = [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
+  id<FBContainedFile> rootFile = [self containedFileForPathMapping:pathMapping];
   return [self fileContainerForContainedFile:rootFile];
 }
 

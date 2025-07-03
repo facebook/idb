@@ -243,12 +243,6 @@
 
 #pragma mark Public
 
-+ (FBFuture<NSDictionary<NSString *, NSURL *> *> *)groupContainerToPathMappingForSimulator:(FBSimulator *)simulator
-{
-  FBSimulatorApplicationCommands *commands = [[FBSimulatorApplicationCommands alloc] initWithSimulator:simulator];
-  return [commands groupContainerToPathMapping];
-}
-
 + (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMappingForSimulator:(FBSimulator *)simulator
 {
   FBSimulatorApplicationCommands *commands = [[FBSimulatorApplicationCommands alloc] initWithSimulator:simulator];
@@ -256,26 +250,6 @@
 }
 
 #pragma mark Private
-
-- (FBFuture<NSDictionary<NSString *, NSURL *> *> *)groupContainerToPathMapping
-{
-  return [[FBFuture
-    onQueue:self.simulator.workQueue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
-      return [self.simulator.device installedAppsWithError:error];
-    }]
-    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, id> *installedApps) {
-      NSMutableDictionary<NSString *, NSURL *> *mapping = NSMutableDictionary.dictionary;
-      for (NSString *key in installedApps.allKeys) {
-        NSDictionary<NSString *, id> *app = installedApps[key];
-        NSDictionary<NSString *, id> *appContainers = app[@"GroupContainers"];
-        if (!appContainers) {
-          continue;
-        }
-        [mapping addEntriesFromDictionary:appContainers];
-      }
-      return [mapping copy];
-    }];
-}
 
 - (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMapping
 {

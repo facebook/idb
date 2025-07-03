@@ -213,6 +213,13 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 + (id<FBContainedFile>)containedFileForBasePath:(NSString *)basePath;
 
 /**
+ A contained file using the provided path mapping
+ @param pathMapping the mapped base paths.
+ @return a Contained File implementation
+ */
++ (id<FBContainedFile>)containedFileForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
+
+/**
  A file container that relative to a path on the host.
  
  @param basePath the base path to use.

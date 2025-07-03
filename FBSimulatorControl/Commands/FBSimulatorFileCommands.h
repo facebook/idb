@@ -25,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error;
 
 /**
+ Returns a Contained File instance for group containers.
+
+ @param error an error out for any error that occurs
+ @return a FBContainedFile Instance
+ */
+- (nullable id<FBContainedFile>)containedFileForGroupContainersWithError:(NSError **)error;
+
+/**
  Returns the File Container for the root of the simulator
  
  @return a file container

@@ -7,6 +7,8 @@
 
 #import "FBSimulatorFileCommands.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorError.h"
@@ -77,14 +79,13 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
 {
-  return [[[FBSimulatorApplicationCommands
-    groupContainerToPathMappingForSimulator:self.simulator]
-    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSURL *> *pathMappingURLs) {
-      NSMutableDictionary<NSString *, NSString *> *pathMapping = NSMutableDictionary.dictionary;
-      for (NSString *identifier in pathMappingURLs.allKeys) {
-        pathMapping[identifier] = pathMappingURLs[identifier].path;
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
+      id<FBContainedFile> containedFile = [self containedFileForGroupContainersWithError:error];
+      if (!containedFile) {
+        return nil;
       }
-      return [FBFileContainer fileContainerForPathMapping:pathMapping];
+      return [FBFileContainer fileContainerForContainedFile:containedFile];
     }]
     onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
       // Do nothing.
@@ -162,6 +163,28 @@
       fail:error];
   }
   return [FBFileContainer containedFileForBasePath:container];
+}
+
+- (nullable id<FBContainedFile>)containedFileForGroupContainersWithError:(NSError **)error
+{
+  NSDictionary<NSString *, id> *installedApps = [self.simulator.device installedAppsWithError:error];
+  if (!installedApps) {
+    return nil;
+  }
+  NSMutableDictionary<NSString *, NSURL *> *bundleIDToURL = NSMutableDictionary.dictionary;
+  for (NSString *key in installedApps.allKeys) {
+    NSDictionary<NSString *, id> *app = installedApps[key];
+    NSDictionary<NSString *, id> *appContainers = app[@"GroupContainers"];
+    if (!appContainers) {
+      continue;
+    }
+    [bundleIDToURL addEntriesFromDictionary:appContainers];
+  }
+  NSMutableDictionary<NSString *, NSString *> *pathMapping = NSMutableDictionary.dictionary;
+  for (NSString *identifier in bundleIDToURL.allKeys) {
+    pathMapping[identifier] = bundleIDToURL[identifier].path;
+  }
+  return [FBFileContainer containedFileForPathMapping:pathMapping];
 }
 
 - (id<FBContainedFile>)containedFileForRootFilesystem
