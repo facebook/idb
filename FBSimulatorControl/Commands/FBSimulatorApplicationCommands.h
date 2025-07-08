@@ -31,14 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands, FBSimulatorApplicationCommands, FBiOSTargetCommand>
 
-/**
- Returns the mapping of application container to absolute path for a given simulator.
-
- @param simulator the simulator to obtain the path mapping for.
- @return a future wrapping the path mapping.
- */
-+ (FBFuture<NSDictionary<NSString *, NSURL *> *> *)applicationContainerToPathMappingForSimulator:(FBSimulator *)simulator;
-
 @end
 
 NS_ASSUME_NONNULL_END

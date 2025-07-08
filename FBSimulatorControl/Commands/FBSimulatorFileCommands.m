@@ -62,14 +62,13 @@
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
 {
-  return [[[FBSimulatorApplicationCommands
-    applicationContainerToPathMappingForSimulator:self.simulator]
-    onQueue:self.simulator.asyncQueue map:^(NSDictionary<NSString *, NSURL *> *pathMappingURLs) {
-      NSMutableDictionary<NSString *, NSString *> *pathMapping = NSMutableDictionary.dictionary;
-      for (NSString *identifier in pathMappingURLs.allKeys) {
-        pathMapping[identifier] = pathMappingURLs[identifier].path;
+  return [[FBFuture
+    onQueue:self.simulator.workQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
+      id<FBContainedFile> containedFile = [self containedFileForApplicationContainersWithError:error];
+      if (!containedFile) {
+        return nil;
       }
-      return [FBFileContainer fileContainerForPathMapping:pathMapping];
+      return [FBFileContainer fileContainerForContainedFile:containedFile];
     }]
     onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
       // Do nothing.
@@ -163,6 +162,24 @@
       fail:error];
   }
   return [FBFileContainer containedFileForBasePath:container];
+}
+
+- (nullable id<FBContainedFile>)containedFileForApplicationContainersWithError:(NSError **)error
+{
+  NSDictionary<NSString *, id> *installedApps = [self.simulator.device installedAppsWithError:error];
+  if (!installedApps) {
+    return nil;
+  }
+  NSMutableDictionary<NSString *, NSString *> *mapping = NSMutableDictionary.dictionary;
+  for (NSString *bundleID in installedApps.allKeys) {
+    NSDictionary<NSString *, id> *app = installedApps[bundleID];
+    NSURL *dataContainer = app[@"DataContainer"];
+    if (!dataContainer) {
+      continue;
+    }
+    mapping[bundleID] = dataContainer.path;
+  }
+  return [FBFileContainer containedFileForPathMapping:mapping];
 }
 
 - (nullable id<FBContainedFile>)containedFileForGroupContainersWithError:(NSError **)error
