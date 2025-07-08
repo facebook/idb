@@ -107,6 +107,11 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return self.path;
 }
 
+- (NSDictionary<NSString *, NSString *> *)pathMapping
+{
+  return nil;
+}
+
 #pragma mark NSObject
 
 - (NSString *)description
@@ -214,6 +219,11 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (NSString *)pathOnHostFileSystem
 {
   return nil;
+}
+
+- (NSDictionary<NSString *, NSString *> *)pathMapping
+{
+  return self.mappingPaths;
 }
 
 #pragma mark NSObject

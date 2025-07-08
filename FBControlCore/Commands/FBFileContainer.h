@@ -188,6 +188,12 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  */
 @property (nonatomic, copy, nullable, readonly) NSString *pathOnHostFileSystem;
 
+/**
+ The host path corresponding to this file, if any.
+ If the file is remote, this will be nil
+ */
+@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *pathMapping;
+
 @end
 
 /**
