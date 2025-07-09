@@ -78,11 +78,6 @@ typedef struct {
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
 }
 
-- (NSData *)touchScreenSize:(CGSize)screenSize direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y
-{
-  return [self touchScreenSize:screenSize screenScale:1.0 direction:direction x:x y:y];
-}
-
 - (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y
 {
   // Convert Screen Offset to Ratio for Indigo.
