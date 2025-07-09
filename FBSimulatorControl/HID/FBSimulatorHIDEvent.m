@@ -39,7 +39,7 @@ static NSString * directionStringFromDirection(FBSimulatorHIDDirection direction
   }
 }
 
-@interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent>
+@interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventComposite>
 
 @property (nonatomic, copy, readonly) NSArray<id<FBSimulatorHIDEvent>> *events;
 
@@ -341,23 +341,25 @@ static NSString *const KeyKeycode = @"keycode";
 
 @end
 
-@interface FBSimulatorHIDEvent_Delay : NSObject <FBSimulatorHIDEvent>
-
-@property (nonatomic, assign, readonly) double duration;
+@interface FBSimulatorHIDEvent_Delay : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventDelay>
 
 @end
 
 @implementation FBSimulatorHIDEvent_Delay
 
+@synthesize duration = _duration;
+
 static NSString *const KeyDuration = @"duration";
 
-- (instancetype)initWithDuration:(double)duration
+- (instancetype)initWithDuration:(NSTimeInterval)duration
 {
   self = [super init];
   if (!self) {
     return nil;
   }
+  
   _duration = duration;
+  
   return self;
 }
 
@@ -430,12 +432,12 @@ static NSString *const KeyDuration = @"duration";
 
 #pragma mark Multiple Payload Events
 
-+ (id<FBSimulatorHIDEvent>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
++ (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
 {
   return [[FBSimulatorHIDEvent_Composite alloc] initWithEvents:events];
 }
 
-+ (id<FBSimulatorHIDEvent>)tapAtX:(double)x y:(double)y
++ (id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y
 {
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
@@ -443,7 +445,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (id<FBSimulatorHIDEvent>)tapAtX:(double)x y:(double)y duration:(double)duration
++ (id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y duration:(double)duration
 {
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
@@ -452,7 +454,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (id<FBSimulatorHIDEvent>)shortButtonPress:(FBSimulatorHIDButton)button
++ (id<FBSimulatorHIDEventComposite>)shortButtonPress:(FBSimulatorHIDButton)button
 {
   return [self eventWithEvents:@[
     [self buttonDown:button],
@@ -460,7 +462,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (id<FBSimulatorHIDEvent>)shortKeyPress:(unsigned int)keyCode
++ (id<FBSimulatorHIDEventComposite>)shortKeyPress:(unsigned int)keyCode
 {
   return [self eventWithEvents:@[
     [self keyDown:keyCode],
@@ -470,7 +472,7 @@ static NSString *const KeyDuration = @"duration";
 
 + (id<FBSimulatorHIDEvent>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
 {
-  NSMutableArray<id<FBSimulatorHIDEvent>> *events = [NSMutableArray array];
+  NSMutableArray<id<FBSimulatorHIDEventPayload>> *events = [NSMutableArray array];
 
   for (NSNumber *keyCode in sequence) {
     [events addObject:[self keyDown:[keyCode unsignedIntValue]]];
@@ -507,9 +509,10 @@ static NSString *const KeyDuration = @"duration";
   return [self eventWithEvents:events];
 }
 
-+ (id<FBSimulatorHIDEvent>)delay:(double)duration
++ (id<FBSimulatorHIDEventDelay>)delay:(double)duration
 {
   return [[FBSimulatorHIDEvent_Delay alloc] initWithDuration:duration];
 }
+
 
 @end
