@@ -497,7 +497,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [commands fetchDiagnosticInformation];
 }
 
-- (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event
+- (FBFuture<NSNull *> *)hid:(id<FBSimulatorHIDEvent>)event
 {
   return [self.connectToHID
     onQueue:self.target.workQueue fmap:^FBFuture *(FBSimulatorHID *hid) {

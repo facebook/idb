@@ -24,16 +24,24 @@ static NSString *const EventClassStringDelay = @"delay";
 
 const double DEFAULT_SWIPE_DELTA = 10.0;
 
-@interface FBSimulatorHIDEvent ()
+static NSString *const DirectionDown = @"down";
+static NSString *const DirectionUp = @"up";
 
-+ (FBSimulatorHIDDirection)directionFromDirectionString:(NSString *)DirectionString;
-+ (NSString *)directionStringFromDirection:(FBSimulatorHIDDirection)Direction;
+static NSString * directionStringFromDirection(FBSimulatorHIDDirection direction)
+{
+  switch (direction) {
+    case FBSimulatorHIDDirectionDown:
+      return DirectionDown;
+    case FBSimulatorHIDDirectionUp:
+      return DirectionUp;
+    default:
+      return nil;
+  }
+}
 
-@end
+@interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent>
 
-@interface FBSimulatorHIDEvent_Composite : FBSimulatorHIDEvent
-
-@property (nonatomic, copy, readonly) NSArray<FBSimulatorHIDEvent *> *events;
+@property (nonatomic, copy, readonly) NSArray<id<FBSimulatorHIDEvent>> *events;
 
 @end
 
@@ -41,7 +49,7 @@ const double DEFAULT_SWIPE_DELTA = 10.0;
 
 static NSString *const KeyEvents = @"events";
 
-- (instancetype)initWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events
+- (instancetype)initWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
 {
   self = [super init];
   if (!self) {
@@ -49,6 +57,7 @@ static NSString *const KeyEvents = @"events";
   }
 
   _events = events;
+  
   return self;
 }
 
@@ -57,13 +66,13 @@ static NSString *const KeyEvents = @"events";
   return [self performEvents:self.events onHid:hid];
 }
 
-- (FBFuture<NSNull *> *)performEvents:(NSArray<FBSimulatorHIDEvent *> *)events onHid:(FBSimulatorHID *)hid
+- (FBFuture<NSNull *> *)performEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events onHid:(FBSimulatorHID *)hid
 {
   if (events.count == 0) {
     return FBFuture.empty;
   }
-  FBSimulatorHIDEvent *event = events.firstObject;
-  NSArray<FBSimulatorHIDEvent *> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
+  id<FBSimulatorHIDEvent> event = events.firstObject;
+  NSArray<id<FBSimulatorHIDEvent>> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
   return [[event
     performOnHID:hid]
     onQueue:dispatch_get_main_queue() fmap:^(id _){
@@ -74,6 +83,12 @@ static NSString *const KeyEvents = @"events";
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"Composite %@", [FBCollectionInformation oneLineDescriptionFromArray:self.events]];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  // All values are immutable.
+  return self;
 }
 
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Composite *)event
@@ -91,7 +106,7 @@ static NSString *const KeyEvents = @"events";
 
 @end
 
-@interface FBSimulatorHIDEvent_Touch : FBSimulatorHIDEvent
+@interface FBSimulatorHIDEvent_Touch : NSObject <FBSimulatorHIDEventPayload>
 
 @property (nonatomic, assign, readonly) FBSimulatorHIDDirection direction;
 @property (nonatomic, assign, readonly) double x;
@@ -110,23 +125,36 @@ static NSString *const KeyY = @"y";
   if (!self) {
     return nil;
   }
+
   _direction = direction;
   _x = x;
   _y = y;
+
   return self;
 }
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendTouchWithType:self.direction x:self.x y:self.y];
+  return [hid sendEvent:[self payloadForHID:hid]];
+}
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return [hid.indigo touchScreenSize:hid.mainScreenSize screenScale:hid.mainScreenScale direction:self.direction x:self.x y:self.y];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
     @"Touch %@ at <hidden>",
-    [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
+    directionStringFromDirection(self.direction)
   ];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  // All values are immutable.
+  return self;
 }
 
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Touch *)event
@@ -151,7 +179,7 @@ static NSString *const ButtonLock = @"lock";
 static NSString *const ButtonSideButton = @"side";
 static NSString *const ButtonSiri = @"siri";
 
-@interface FBSimulatorHIDEvent_Button : FBSimulatorHIDEvent
+@interface FBSimulatorHIDEvent_Button : NSObject <FBSimulatorHIDEventPayload>
 
 @property (nonatomic, assign, readonly) FBSimulatorHIDDirection type;
 @property (nonatomic, assign, readonly) FBSimulatorHIDButton button;
@@ -174,7 +202,12 @@ static NSString *const ButtonSiri = @"siri";
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendButtonEventWithDirection:self.type button:self.button];
+  return [hid sendEvent:[self payloadForHID:hid]];
+}
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return [hid.indigo buttonWithDirection:self.type button:self.button];
 }
 
 - (NSString *)description
@@ -182,8 +215,14 @@ static NSString *const ButtonSiri = @"siri";
   return [NSString stringWithFormat:
     @"Button %@ %@",
     [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
-    [FBSimulatorHIDEvent directionStringFromDirection:self.type]
+    directionStringFromDirection(self.type)
   ];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  // All values are immutable.
+  return self;
 }
 
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Button *)event
@@ -241,7 +280,7 @@ static NSString *const ButtonSiri = @"siri";
 
 static NSString *const KeyKeycode = @"keycode";
 
-@interface FBSimulatorHIDEvent_Keyboard : FBSimulatorHIDEvent
+@interface FBSimulatorHIDEvent_Keyboard : NSObject <FBSimulatorHIDEventPayload>
 
 @property (nonatomic, assign, readonly) FBSimulatorHIDDirection direction;
 @property (nonatomic, assign, readonly) unsigned int keyCode;
@@ -259,20 +298,32 @@ static NSString *const KeyKeycode = @"keycode";
 
   _direction = direction;
   _keyCode = keyCode;
+
   return self;
 }
 
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
-  return [hid sendKeyboardEventWithDirection:self.direction keyCode:self.keyCode];
+  return [hid sendEvent:[self payloadForHID:hid]];
+}
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return [hid.indigo keyboardWithDirection:self.direction keyCode:self.keyCode];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
     @"Keyboard Code=<hidden> %@",
-    [FBSimulatorHIDEvent directionStringFromDirection:self.direction]
+    directionStringFromDirection(self.direction)
   ];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  // All values are immutable.
+  return self;
 }
 
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Keyboard *)event
@@ -290,7 +341,7 @@ static NSString *const KeyKeycode = @"keycode";
 
 @end
 
-@interface FBSimulatorHIDEvent_Delay : FBSimulatorHIDEvent
+@interface FBSimulatorHIDEvent_Delay : NSObject <FBSimulatorHIDEvent>
 
 @property (nonatomic, assign, readonly) double duration;
 
@@ -320,6 +371,12 @@ static NSString *const KeyDuration = @"duration";
   return [NSString stringWithFormat:@"Delay for %f", self.duration];
 }
 
+- (id)copyWithZone:(NSZone *)zone
+{
+  // All values are immutable.
+  return self;
+}
+
 - (BOOL)isEqual:(FBSimulatorHIDEvent_Delay *)event
 {
   if (![event isKindOfClass:self.class]) {
@@ -337,44 +394,48 @@ static NSString *const KeyDuration = @"duration";
 
 @implementation FBSimulatorHIDEvent
 
-#pragma mark Initializers
+#pragma mark - Initializers
 
-+ (instancetype)eventWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events
-{
-  return [[FBSimulatorHIDEvent_Composite alloc] initWithEvents:events];
-}
+#pragma mark Single Payload Events
 
-+ (instancetype)touchDownAtX:(double)x y:(double)y
++ (id<FBSimulatorHIDEventPayload>)touchDownAtX:(double)x y:(double)y
 {
   return [[FBSimulatorHIDEvent_Touch alloc] initWithDirection:FBSimulatorHIDDirectionDown x:x y:y];
 }
 
-+ (instancetype)touchUpAtX:(double)x y:(double)y
++ (id<FBSimulatorHIDEventPayload>)touchUpAtX:(double)x y:(double)y
 {
   return [[FBSimulatorHIDEvent_Touch alloc] initWithDirection:FBSimulatorHIDDirectionUp x:x y:y];
 }
 
-+ (instancetype)buttonDown:(FBSimulatorHIDButton)button
++ (id<FBSimulatorHIDEventPayload>)buttonDown:(FBSimulatorHIDButton)button
 {
   return [[FBSimulatorHIDEvent_Button alloc] initWithDirection:FBSimulatorHIDDirectionDown button:button];
 }
 
-+ (instancetype)buttonUp:(FBSimulatorHIDButton)button
++ (id<FBSimulatorHIDEventPayload>)buttonUp:(FBSimulatorHIDButton)button
 {
   return [[FBSimulatorHIDEvent_Button alloc] initWithDirection:FBSimulatorHIDDirectionUp button:button];
 }
 
-+ (instancetype)keyDown:(unsigned int)keyCode
++ (id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode
 {
   return [[FBSimulatorHIDEvent_Keyboard alloc] initWithDirection:FBSimulatorHIDDirectionDown keyCode:keyCode];
 }
 
-+ (instancetype)keyUp:(unsigned int)keyCode
++ (id<FBSimulatorHIDEventPayload>)keyUp:(unsigned int)keyCode
 {
   return [[FBSimulatorHIDEvent_Keyboard alloc] initWithDirection:FBSimulatorHIDDirectionUp keyCode:keyCode];
 }
 
-+ (instancetype)tapAtX:(double)x y:(double)y
+#pragma mark Multiple Payload Events
+
++ (id<FBSimulatorHIDEvent>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
+{
+  return [[FBSimulatorHIDEvent_Composite alloc] initWithEvents:events];
+}
+
++ (id<FBSimulatorHIDEvent>)tapAtX:(double)x y:(double)y
 {
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
@@ -382,7 +443,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (instancetype)tapAtX:(double)x y:(double)y duration:(double)duration
++ (id<FBSimulatorHIDEvent>)tapAtX:(double)x y:(double)y duration:(double)duration
 {
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
@@ -391,7 +452,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (instancetype)shortButtonPress:(FBSimulatorHIDButton)button
++ (id<FBSimulatorHIDEvent>)shortButtonPress:(FBSimulatorHIDButton)button
 {
   return [self eventWithEvents:@[
     [self buttonDown:button],
@@ -399,7 +460,7 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (instancetype)shortKeyPress:(unsigned int)keyCode
++ (id<FBSimulatorHIDEvent>)shortKeyPress:(unsigned int)keyCode
 {
   return [self eventWithEvents:@[
     [self keyDown:keyCode],
@@ -407,11 +468,11 @@ static NSString *const KeyDuration = @"duration";
   ]];
 }
 
-+ (instancetype)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
++ (id<FBSimulatorHIDEvent>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
 {
-  NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
+  NSMutableArray<id<FBSimulatorHIDEvent>> *events = [NSMutableArray array];
 
-  for (id keyCode in sequence) {
+  for (NSNumber *keyCode in sequence) {
     [events addObject:[self keyDown:[keyCode unsignedIntValue]]];
     [events addObject:[self keyUp:[keyCode unsignedIntValue]]];
   }
@@ -419,9 +480,9 @@ static NSString *const KeyDuration = @"duration";
   return [self eventWithEvents:events];
 }
 
-+ (instancetype)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration
++ (id<FBSimulatorHIDEvent>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration
 {
-  NSMutableArray<FBSimulatorHIDEvent *> *events = [NSMutableArray array];
+  NSMutableArray<id<FBSimulatorHIDEvent>> *events = [NSMutableArray array];
   double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
   if (delta <= 0.0) {
     delta = DEFAULT_SWIPE_DELTA;
@@ -446,53 +507,9 @@ static NSString *const KeyDuration = @"duration";
   return [self eventWithEvents:events];
 }
 
-+ (instancetype)delay:(double)duration
++ (id<FBSimulatorHIDEvent>)delay:(double)duration
 {
   return [[FBSimulatorHIDEvent_Delay alloc] initWithDuration:duration];
-}
-
-#pragma mark NSCopying
-
-- (id)copyWithZone:(NSZone *)zone
-{
-  // All values are immutable.
-  return self;
-}
-
-#pragma mark Public Methods
-
-- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-#pragma mark Private Methods
-
-static NSString *const DirectionDown = @"down";
-static NSString *const DirectionUp = @"up";
-
-+ (FBSimulatorHIDDirection)directionFromDirectionString:(NSString *)directionString
-{
-  if ([directionString isEqualToString:DirectionDown]) {
-    return FBSimulatorHIDDirectionDown;
-  }
-  if ([directionString isEqualToString:DirectionUp]) {
-    return FBSimulatorHIDDirectionUp;
-  }
-  return 0;
-}
-
-+ (NSString *)directionStringFromDirection:(FBSimulatorHIDDirection)direction
-{
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      return DirectionDown;
-    case FBSimulatorHIDDirectionUp:
-      return DirectionUp;
-    default:
-      return nil;
-  }
 }
 
 @end

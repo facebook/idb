@@ -22,16 +22,16 @@ struct HidMethodHandler {
     return .init()
   }
 
-  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> FBSimulatorHIDEvent {
+  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> FBSimulatorHIDEventProtocol {
     switch request.event {
     case let .press(press):
       switch press.action.action {
       case let .key(key):
         switch press.direction {
         case .up:
-          return .keyUp(UInt32(key.keycode))
+          return FBSimulatorHIDEvent.keyUp(UInt32(key.keycode))
         case .down:
-          return .keyDown(UInt32(key.keycode))
+          return FBSimulatorHIDEvent.keyDown(UInt32(key.keycode))
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }
@@ -42,9 +42,9 @@ struct HidMethodHandler {
         }
         switch press.direction {
         case .up:
-          return .buttonUp(hidButton)
+          return FBSimulatorHIDEvent.buttonUp(hidButton)
         case .down:
-          return .buttonDown(hidButton)
+          return FBSimulatorHIDEvent.buttonDown(hidButton)
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }
@@ -52,9 +52,9 @@ struct HidMethodHandler {
       case let .touch(touch):
         switch press.direction {
         case .up:
-          return .touchUpAt(x: touch.point.x, y: touch.point.y)
+          return FBSimulatorHIDEvent.touchUpAt(x: touch.point.x, y: touch.point.y)
         case .down:
-          return .touchDownAt(x: touch.point.x, y: touch.point.y)
+          return FBSimulatorHIDEvent.touchDownAt(x: touch.point.x, y: touch.point.y)
         case .UNRECOGNIZED:
           throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
         }
@@ -64,7 +64,7 @@ struct HidMethodHandler {
       }
 
     case let .swipe(swipe):
-      return .swipe(
+      return FBSimulatorHIDEvent.swipe(
         swipe.start.x,
         yStart: swipe.start.y,
         xEnd: swipe.end.x,
@@ -73,7 +73,7 @@ struct HidMethodHandler {
         duration: swipe.duration)
 
     case let .delay(delay):
-      return .delay(delay.duration)
+      return FBSimulatorHIDEvent.delay(delay.duration)
 
     case .none:
       throw GRPCStatus(code: .invalidArgument, message: "Unrecognized request.event")

@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestRunRequest;
 
 @protocol FBXCTestReporter;
+@protocol FBSimulatorHIDEvent;
 
 extern FBFileContainerKind const FBFileContainerKindXctest;
 extern FBFileContainerKind const FBFileContainerKindDylib;
@@ -196,7 +197,7 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
  @param event hid event to perform
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)hid:(FBSimulatorHIDEvent *)event;
+- (FBFuture<NSNull *> *)hid:(id<FBSimulatorHIDEvent>)event;
 
 /**
  Sets latitude and longitude of the Simulator.

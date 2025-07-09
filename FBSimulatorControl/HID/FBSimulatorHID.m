@@ -27,9 +27,6 @@
 @interface FBSimulatorHID ()
 
 @property (nonatomic, strong, readonly) SimDeviceLegacyClient *client;
-@property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
-@property (nonatomic, assign, readonly) CGSize mainScreenSize;
-@property (nonatomic, assign, readonly) float mainScreenScale;
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo client:(SimDeviceLegacyClient *)client mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue;
 
@@ -86,19 +83,11 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark HID Manipulation
 
-- (FBFuture<NSNull *> *)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode
+- (FBFuture<NSNull *> *)sendEvent:(NSData *)data
 {
-  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo keyboardWithDirection:direction keyCode:keycode]];
-}
-
-- (FBFuture<NSNull *> *)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button
-{
-  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo buttonWithDirection:direction button:button]];
-}
-
-- (FBFuture<NSNull *> *)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y
-{
-  return [self sendIndigoMessageDataOnWorkQueue:[self.indigo touchScreenSize:self.mainScreenSize screenScale:self.mainScreenScale direction:type x:x y:y]];
+  return [FBFuture onQueue:self.queue resolve:^{
+    return [self sendIndigoMessageData:data];
+  }];
 }
 
 #pragma mark NSObject
@@ -127,13 +116,6 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 }
 
 #pragma mark Private
-
-- (FBFuture<NSNull *> *)sendIndigoMessageDataOnWorkQueue:(NSData *)data
-{
-  return [FBFuture onQueue:self.queue resolve:^{
-    return [self sendIndigoMessageData:data];
-  }];
-}
 
 - (FBFuture<NSNull *> *)sendIndigoMessageData:(NSData *)data
 {
