@@ -39,6 +39,11 @@ static NSString * directionStringFromDirection(FBSimulatorHIDDirection direction
   }
 }
 
+static BOOL shouldLogHIDEventDetails(void)
+{
+  return NSProcessInfo.processInfo.environment[@"FBSIMULATORCONTROL_LOG_HID_DETAILS"].boolValue;
+}
+
 @interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventComposite>
 
 @property (nonatomic, copy, readonly) NSArray<id<FBSimulatorHIDEvent>> *events;
@@ -145,10 +150,15 @@ static NSString *const KeyY = @"y";
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Touch %@ at <hidden>",
-    directionStringFromDirection(self.direction)
-  ];
+  if (shouldLogHIDEventDetails()) {
+    return [NSString stringWithFormat:
+      @"Touch %@ at (%lu,%lu)",
+      directionStringFromDirection(self.direction),
+      (unsigned long)self.x,
+      (unsigned long)self.y
+    ];
+  }
+  return @"Touch <hidden>";
 }
 
 - (id)copyWithZone:(NSZone *)zone
@@ -212,11 +222,14 @@ static NSString *const ButtonSiri = @"siri";
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Button %@ %@",
-    [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
-    directionStringFromDirection(self.type)
-  ];
+  if (shouldLogHIDEventDetails()) {
+    return [NSString stringWithFormat:
+      @"Button %@ %@",
+      [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
+      directionStringFromDirection(self.type)
+    ];
+  }
+  return @"Button <hidden>";
 }
 
 - (id)copyWithZone:(NSZone *)zone
@@ -314,10 +327,14 @@ static NSString *const KeyKeycode = @"keycode";
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Keyboard Code=<hidden> %@",
-    directionStringFromDirection(self.direction)
-  ];
+  if (shouldLogHIDEventDetails()) {
+    return [NSString stringWithFormat:
+      @"Keyboard Code=%d %@",
+      self.keyCode,
+      directionStringFromDirection(self.direction)
+    ];
+  }
+  return @"Key <hidden>";
 }
 
 - (id)copyWithZone:(NSZone *)zone
