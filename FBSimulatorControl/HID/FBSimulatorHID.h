@@ -61,6 +61,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)sendEvent:(NSData *)data;
 
+/**
+ Sends the event payload, synchronously.
+ This should only be used when the caller can guarantee that all calls to this API are performed from the same queue.
+ 
+ @param data the payload data
+ @param completionQueue the queue to call back on
+ @param completion the completion block to invoke
+ */
+- (void)sendIndigoMessageData:(NSData *)data completionQueue:(dispatch_queue_t)completionQueue completion:(void (^)(NSError * _Nullable))completion;
+
 #pragma mark Properties
 
 /**

@@ -86,8 +86,27 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 - (FBFuture<NSNull *> *)sendEvent:(NSData *)data
 {
   return [FBFuture onQueue:self.queue resolve:^{
-    return [self sendIndigoMessageData:data];
+    FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+    [self sendIndigoMessageData:data completionQueue:self.queue completion:^(NSError *error) {
+      if (error) {
+        [future resolveWithError:error];
+      } else {
+        [future resolveWithResult:NSNull.null];
+      }
+    }];
+    return future;
   }];
+}
+
+- (void)sendIndigoMessageData:(NSData *)data completionQueue:(dispatch_queue_t)completionQueue completion:(void (^)(NSError *))completion
+{
+  // The event is delivered asynchronously.
+  // Therefore copy the message and let the client manage the lifecycle of it.
+  // The free of the buffer is performed by the client and the NSData will free when it falls out of scope.
+  size_t size = (mach_msg_size_t) data.length;
+  IndigoMessage *message = malloc(size);
+  memcpy(message, data.bytes, size);
+  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:completionQueue completion:completion];
 }
 
 #pragma mark NSObject
@@ -115,27 +134,5 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   return FBFuture.empty;
 }
 
-#pragma mark Private
-
-- (FBFuture<NSNull *> *)sendIndigoMessageData:(NSData *)data
-{
-  // The event is delivered asynchronously.
-  // Therefore copy the message and let the client manage the lifecycle of it.
-  // The free of the buffer is performed by the client and the NSData will free when it falls out of scope.
-  size_t size = (mach_msg_size_t) data.length;
-  IndigoMessage *message = malloc(size);
-  memcpy(message, data.bytes, size);
-
-  // Resolve the future when done and pass this back to the caller.
-  FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:self.queue completion:^(NSError *error){
-    if (error) {
-      [future resolveWithError:error];
-    } else {
-      [future resolveWithResult:NSNull.null];
-    }
-  }];
-  return future;
-}
 
 @end
