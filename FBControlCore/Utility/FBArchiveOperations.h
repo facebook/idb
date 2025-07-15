@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+extern NSString *const BSDTarPath;
+
 /**
  An enum representing the compression types available.
  */
@@ -41,6 +43,15 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @return a Future wrapping the extracted tar destination.
  */
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ The command to extract via stdin
+
+ @param extractPath the extraction path
+ @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
+ @param compression compression format used by client
+ */
++ (NSArray<NSString *> *)commandToExtractFromStdInWithExtractPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime compression:(FBCompressionFormat)compression;
 
 /**
  Extracts a tar, or zip stream archive to a directory.
