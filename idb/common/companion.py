@@ -15,7 +15,7 @@ from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 from logging import DEBUG as LOG_LEVEL_DEBUG, Logger
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Union
 
 from idb.common.constants import IDB_LOGS_PATH
 from idb.common.file import get_last_n_lines
