@@ -56,6 +56,10 @@ from idb.cli.commands.file import (
 from idb.cli.commands.focus import FocusCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
 from idb.cli.commands.hid import (
+    ArrowDownCommand,
+    ArrowLeftCommand,
+    ArrowRightCommand,
+    ArrowUpCommand,
     ButtonCommand,
     KeyCommand,
     KeySequenceCommand,
@@ -256,6 +260,10 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 KeyCommand(),
                 KeySequenceCommand(),
                 SwipeCommand(),
+                ArrowUpCommand(),
+                ArrowDownCommand(),
+                ArrowLeftCommand(),
+                ArrowRightCommand(),
             ],
         ),
         CommandGroup(

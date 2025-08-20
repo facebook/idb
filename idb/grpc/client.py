@@ -29,6 +29,10 @@ from idb.common.file import drain_to_file
 from idb.common.format import json_format_debugger_info
 from idb.common.gzip import drain_gzip_decompress, gunzip
 from idb.common.hid import (
+    arrow_down_to_events,
+    arrow_left_to_events,
+    arrow_right_to_events,
+    arrow_up_to_events,
     button_press_to_events,
     iterator_to_async_iterator,
     key_press_to_events,
@@ -872,6 +876,22 @@ class Client(ClientBase):
     @log_and_handle_exceptions("hid")
     async def text(self, text: str) -> None:
         await self.send_events(text_to_events(text))
+
+    @log_and_handle_exceptions("hid")
+    async def arrow_up(self, duration: float | None = None) -> None:
+        await self.send_events(arrow_up_to_events(duration))
+
+    @log_and_handle_exceptions("hid")
+    async def arrow_down(self, duration: float | None = None) -> None:
+        await self.send_events(arrow_down_to_events(duration))
+
+    @log_and_handle_exceptions("hid")
+    async def arrow_left(self, duration: float | None = None) -> None:
+        await self.send_events(arrow_left_to_events(duration))
+
+    @log_and_handle_exceptions("hid")
+    async def arrow_right(self, duration: float | None = None) -> None:
+        await self.send_events(arrow_right_to_events(duration))
 
     @log_and_handle_exceptions("hid")
     async def swipe(
