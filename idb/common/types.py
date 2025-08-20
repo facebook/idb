@@ -739,6 +739,22 @@ class Client(ABC):
         return
 
     @abstractmethod
+    async def arrow_up(self, duration: float | None = None) -> None:
+        return
+
+    @abstractmethod
+    async def arrow_down(self, duration: float | None = None) -> None:
+        return
+
+    @abstractmethod
+    async def arrow_left(self, duration: float | None = None) -> None:
+        return
+
+    @abstractmethod
+    async def arrow_right(self, duration: float | None = None) -> None:
+        return
+
+    @abstractmethod
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         pass
 
