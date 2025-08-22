@@ -97,7 +97,6 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  To confirm that the stream has been correctly written, the caller should check the exit code of the returned task upon completion.
 
  @param path the path to archive.
- @param queue the queue to do work on
  @param logger the logger to log to.
  @return a Future containing a task with an NSInputStream attached to stdout.
  */
