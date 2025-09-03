@@ -26,7 +26,7 @@
 #import <AppKit/AppKit.h>
 #endif
 
-__attribute__((constructor)) static void XCTestMainEntryPoint()
+__attribute__((constructor)) static void XCTestMainEntryPoint(void)
 {
   FBDebugLog(@"[XCTestMainEntryPoint] Running inside: %@", [[NSBundle mainBundle] bundleIdentifier]);
   if (!NSProcessInfo.processInfo.environment[kEnv_ShimStartXCTest]) {
@@ -45,7 +45,7 @@ __attribute__((constructor)) static void XCTestMainEntryPoint()
   FBDebugLog(@"[XCTestMainEntryPoint] End of XCTestMainEntryPoint");
 }
 
-BOOL FBLoadXCTestIfNeeded()
+BOOL FBLoadXCTestIfNeeded(void)
 {
   FBDebugLog(@"Env: %@", [NSProcessInfo processInfo].environment);
 
@@ -84,7 +84,7 @@ BOOL FBLoadXCTestIfNeeded()
   return NO;
 }
 
-void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
+void FBDeployBlockWhenAppLoads(void(^mainBlock)(void)) {
 #if TARGET_OS_IPHONE
   NSString *notification = UIApplicationDidFinishLaunchingNotification;
 #elif TARGET_OS_MAC
@@ -113,7 +113,7 @@ static id XCTestCase__xctTestIdentifier(id self, SEL sel)
   return [[XCTTestIdentifier_class alloc] initWithStringRepresentation:[NSString stringWithFormat:@"%@/%@", classNameOut, methodNameOut] preserveModulePrefix:YES];
 }
 
-BOOL FBXCTestMain()
+BOOL FBXCTestMain(void)
 {
   if (!FBLoadXCTestIfNeeded()) {
     exit(TestShimExitCodeXCTestFailedLoading);

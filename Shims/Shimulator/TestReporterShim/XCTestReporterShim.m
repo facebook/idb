@@ -21,7 +21,6 @@
 
 static NSString *const XCTestFilterArg = @"XCTest";
 static NSString *const XCTestFrameworkName = @"XCTest";
-static NSString *const XCTestProbeClassName = @"XCTestProbe";
 static NSString *const XCTestSuiteClassName = @"XCTestSuite";
 
 static FILE *__stdout;
@@ -64,16 +63,6 @@ NSArray<XCTestCase *> *TestsFromSuite(id testSuite)
   return tests;
 }
 
-// Key used by objc_setAssociatedObject
-static int TestDescriptionKey;
-
-static NSString *TestCase_nameOrDescription(id self, SEL cmd)
-{
-  id description = objc_getAssociatedObject(self, &TestDescriptionKey);
-  NSCAssert(description != nil, @"Value for `TestNameKey` wasn't set.");
-  return description;
-}
-
 static char *const kEventQueueLabel = "xctool.events";
 
 @interface XCToolAssertionHandler : NSAssertionHandler
@@ -98,7 +87,7 @@ static char *const kEventQueueLabel = "xctool.events";
 
 @end
 
-static dispatch_queue_t EventQueue()
+static dispatch_queue_t EventQueue(void)
 {
   static dispatch_queue_t eventQueue = {0};
   static dispatch_once_t onceToken;
@@ -355,7 +344,7 @@ static void XCPerformTestWithSuppressedExpectedAssertionFailures(id self, SEL or
   [currentThreadDict removeObjectForKey:NSAssertionHandlerKey];
 }
 
-static void XCWaitForDebuggerIfNeeded()
+static void XCWaitForDebuggerIfNeeded(void)
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -428,7 +417,7 @@ static BOOL XCTestCase__enableSymbolication(id self, SEL sel)
  *  to the pipe reader. Printing "\n" should be safe because reader is skipping
  *  empty lines.
  */
-static void PrintNewlineAndCloseFDs()
+static void PrintNewlineAndCloseFDs(void)
 {
   if (__stdout == NULL) {
     return;
@@ -440,7 +429,7 @@ static void PrintNewlineAndCloseFDs()
 
 #pragma mark - Entry
 
-static void SwizzleXCTestMethodsIfAvailable()
+static void SwizzleXCTestMethodsIfAvailable(void)
 {
   if ([[[NSBundle mainBundle] bundleIdentifier] hasPrefix:@"com.apple.dt.xctest"]) {
     // Start from Xcode 11.1, XCTest will try to connect to testmanagerd service
@@ -685,7 +674,7 @@ static id SimServiceContext_deviceSetWithPath_error(id cls, SEL sel, NSString *p
   return msgsend(cls, originalSelector, simDeviceSetPath, error);
 }
 
-static void SwizzleXcodebuildMethods()
+static void SwizzleXcodebuildMethods(void)
 {
   static dispatch_once_t token;
   dispatch_once(&token, ^{
@@ -706,7 +695,7 @@ static void SwizzleXcodebuildMethods()
   });
 }
 
-__attribute__((constructor)) static void EntryPoint()
+__attribute__((constructor)) static void EntryPoint(void)
 {
   // Unset so we don't cascade into any other process that might be spawned.
   unsetenv("DYLD_INSERT_LIBRARIES");
@@ -753,7 +742,7 @@ __attribute__((constructor)) static void EntryPoint()
   }
 }
 
-__attribute__((destructor)) static void ExitPoint()
+__attribute__((destructor)) static void ExitPoint(void)
 {
   PrintNewlineAndCloseFDs();
 }
