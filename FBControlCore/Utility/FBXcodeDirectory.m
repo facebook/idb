@@ -12,6 +12,11 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 
+static NSString * const HelpText = @".\n\n============================\n"
+  "Please make sure xcode is installed and then run:\n"
+  "sudo xcode-select -s $(ls -td /Applications/Xcode* | head -1)/Contents/Developer\n"
+  "============================\n\n.";
+
 @implementation FBXcodeDirectory
 
 + (FBFuture<NSString *> *)xcodeSelectDeveloperDirectory
@@ -28,42 +33,45 @@
       if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {
         directory = NSProcessInfo.processInfo.environment[@"FBXCTEST_XCODE_PATH_OVERRIDE"];
       }
-      if (!directory) {
+      if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
         return [[FBControlCoreError
-          describeFormat:@"Xcode Path could not be determined from `xcode-select`: %@", directory]
+          describeFormat:@"Empty output for xcode directory returned from `xcode-select -p`: %@%@", task.stdErr, HelpText]
           failFuture];
       }
       directory = [directory stringByResolvingSymlinksInPath];
-
-      NSString *helpText = @".\n\n============================\n"
-        "%@\n"
-        "Please make sure xcode is installed and then run:\n"
-        "sudo xcode-select -s $(ls -td /Applications/Xcode* | head -1)/Contents/Developer\n"
-        "============================\n\n.";
-
-      if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
-        return [[FBControlCoreError
-          describeFormat:helpText, @"Empty output for xcode directory returned from `xcode-select -p`: %@", task.stdErr]
-          failFuture];
-      }
-      if ([directory isEqual:@"/Library/Developer/CommandLineTools"]) {
-        return [[FBControlCoreError
-          describeFormat:helpText, @"`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install."]
-          failFuture];
-      }
-      if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-        return [[FBControlCoreError
-          describeFormat:helpText, [NSString stringWithFormat:@"`xcode-select -p` returned %@ which doesn't exist", directory]]
-          failFuture];
-      }
-      if ([directory isEqualToString:@"/"] ) {
-        return [[FBControlCoreError
-          describeFormat:helpText, @"`xcode-select -p` returned / which isn't valid."]
-          failFuture];
+    
+      NSError *error = nil;
+      if (![self isValidXcodeDirectory:directory error:&error]) {
+        return [FBFuture futureWithError:error];
       }
       return [FBFuture futureWithResult:directory];
     }]
     timeout:10 waitingFor:@"xcode-select to complete"];
+}
+
++ (BOOL)isValidXcodeDirectory:(NSString *)directory error:(NSError **)error
+{
+  if (!directory) {
+    return [[FBControlCoreError
+      describe:@"Xcode Path is nil"]
+      failBool:error];
+  }
+  if ([directory isEqual:@"/Library/Developer/CommandLineTools"]) {
+    return [[FBControlCoreError
+      describeFormat:@"`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install.%@", HelpText]
+      failBool:error];
+  }
+  if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
+    return [[FBControlCoreError
+      describeFormat:@"`xcode-select -p` returned %@ which doesn't exist%@", directory, HelpText]
+      failBool:error];
+  }
+  if ([directory isEqualToString:@"/"] ) {
+    return [[FBControlCoreError
+      describeFormat:@"`xcode-select -p` returned / which isn't valid.%@", HelpText]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end
