@@ -46,6 +46,15 @@ static NSString * const HelpText = @".\n\n============================\n"
     timeout:10 waitingFor:@"xcode-select to complete"];
 }
 
++ (nullable NSString *)symlinkedDeveloperDirectoryWithError:(NSError **)error
+{
+  NSString *directory = [@"/var/db/xcode_select_link" stringByResolvingSymlinksInPath];
+  if (![self isValidXcodeDirectory:directory error:error]) {
+    return nil;
+  }
+  return directory;
+}
+
 + (BOOL)isValidXcodeDirectory:(NSString *)directory error:(NSError **)error
 {
   if (!directory) {

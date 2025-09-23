@@ -15,13 +15,29 @@
 
 @implementation FBXcodeDirectoryTests
 
-- (void)testDirectoryExists
+- (void)testXcodeSelect
 {
   NSError *error = nil;
   NSString *directory = [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(directory);
   
+  [self assertDirectory:directory];
+}
+
+- (void)testFromSymlink
+{
+  NSError *error = nil;
+  NSString *directory = [FBXcodeDirectory symlinkedDeveloperDirectoryWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(directory);
+  
+  [self assertDirectory:directory];
+}
+  
+- (void)assertDirectory:(NSString *)directory
+{
+  NSError *error = nil;
   BOOL isDirectory = NO;
   BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:directory isDirectory:&isDirectory];
   XCTAssertTrue(exists);
