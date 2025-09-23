@@ -30,9 +30,6 @@ static NSString * const HelpText = @".\n\n============================\n"
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
     onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
       NSString *directory = task.stdOut;
-      if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:@"FBXCTEST_XCODE_PATH_OVERRIDE"]) {
-        directory = NSProcessInfo.processInfo.environment[@"FBXCTEST_XCODE_PATH_OVERRIDE"];
-      }
       if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
         return [[FBControlCoreError
           describeFormat:@"Empty output for xcode directory returned from `xcode-select -p`: %@%@", task.stdErr, HelpText]
