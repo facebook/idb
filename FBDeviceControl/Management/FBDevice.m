@@ -204,7 +204,7 @@
   if (!_osVersion || overwrite) {
     _osVersion = targetInfo.osVersion;
   }
-  if (_productVersion || overwrite) {
+  if (!_productVersion || overwrite) {
     _productVersion = targetInfo.productVersion;
   }
   if (!_targetType || overwrite) {
