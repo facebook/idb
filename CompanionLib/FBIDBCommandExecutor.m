@@ -850,7 +850,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   FBFutureContext<FBBundleDescriptor *> *bundleContext = [extractedAppContext
     onQueue:self.target.asyncQueue pend:^(NSURL *extractPath) {
       NSError *error = nil;
-      FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor findAppPathFromDirectory:extractPath error:&error];
+      FBBundleDescriptor *bundleDescriptor = [FBBundleDescriptor findAppPathFromDirectory:extractPath logger:self.target.logger error:&error];
       if (!bundleDescriptor) {
         return [FBFuture futureWithError:error];
       }

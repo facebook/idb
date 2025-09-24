@@ -21,7 +21,7 @@
 
 #pragma mark Public
 
-+ (FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory error:(NSError **)error
++ (FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
     enumeratorAtURL:directory
@@ -30,12 +30,15 @@
     errorHandler:nil];
   NSMutableArray<NSString *> *applicationPaths = NSMutableArray.array;
   NSMutableArray<NSString *> *nonApplicationPaths = NSMutableArray.array;
+  [logger logFormat:@"Finding Application Path from root directory %@", directory];
   for (NSURL *fileURL in directoryEnumerator) {
     NSString *path = fileURL.path;
     if ([FBBundleDescriptor isApplicationAtPath:path]) {
+      [logger logFormat:@"Found application at path %@", path];
       [applicationPaths addObject:path];
       [directoryEnumerator skipDescendants];
     } else {
+      [logger logFormat:@"Non-application path at %@", path];
       [nonApplicationPaths addObject:path];
     }
   }
@@ -49,7 +52,10 @@
       describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]
       fail:error];
   }
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationPaths.firstObject error:error];
+  NSString *applicationPath = applicationPaths.firstObject;
+  [logger logFormat:@"Using Application at path %@", applicationPath];
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationPath error:error];
+  [logger logFormat:@"Bundle in IPA is %@", bundle];
   if (!bundle) {
     return nil;
   }
