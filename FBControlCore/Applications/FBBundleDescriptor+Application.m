@@ -28,19 +28,28 @@
     includingPropertiesForKeys:@[NSURLIsDirectoryKey]
     options:0
     errorHandler:nil];
-  NSSet<NSURL*> *applicationURLs = [NSSet set];
+  NSMutableArray<NSString *> *applicationPaths = NSMutableArray.array;
+  NSMutableArray<NSString *> *nonApplicationPaths = NSMutableArray.array;
   for (NSURL *fileURL in directoryEnumerator) {
-    if ([FBBundleDescriptor isApplicationAtPath:fileURL.path]) {
-      applicationURLs = [applicationURLs setByAddingObject:fileURL];
+    NSString *path = fileURL.path;
+    if ([FBBundleDescriptor isApplicationAtPath:path]) {
+      [applicationPaths addObject:path];
       [directoryEnumerator skipDescendants];
+    } else {
+      [nonApplicationPaths addObject:path];
     }
   }
-  if (applicationURLs.count != 1) {
+  if (applicationPaths.count == 0) {
     return [[FBControlCoreError
-      describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationURLs.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationURLs.allObjects valueForKey:@"lastPathComponent"]]]
+      describeFormat:@"Could not find an Application in IPA, present files %@", [FBCollectionInformation oneLineDescriptionFromArray:[nonApplicationPaths valueForKey:@"lastPathComponent"]]]
       fail:error];
   }
-  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationURLs.allObjects.firstObject.path error:error];
+  if (applicationPaths.count > 1) {
+    return [[FBControlCoreError
+      describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]
+      fail:error];
+  }
+  FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationPaths.firstObject error:error];
   if (!bundle) {
     return nil;
   }
