@@ -53,11 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, class) NSString *iosSDKVersion;
 
 /**
- YES if Xcode 10 or greater, NO Otherwise.
- */
-@property (nonatomic, assign, readonly, class) BOOL isXcode10OrGreater;
-
-/**
  YES if Xcode 12 or greater, NO Otherwise.
  */
 @property (nonatomic, assign, readonly, class) BOOL isXcode12OrGreater;
