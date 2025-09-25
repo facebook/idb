@@ -30,6 +30,16 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
 @interface FBArchiveOperations : NSObject
 
 /**
+ Builds a command to extract from a file on disk
+ 
+ @param path the path to the archive.
+ @param extractPath the extraction path.
+ @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
+ @return an array of strings for the command to invoke.
+ */
++ (NSArray<NSString *> *)commandToExtractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime debugLogging:(BOOL)debugLogging;
+
+/**
  Extracts a tar, or zip file archive to a directory.
  The file can be a:
  - An uncompressed tar.
