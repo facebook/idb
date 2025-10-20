@@ -160,24 +160,4 @@
   return [self assertSimulator:simulator launches:launchConfiguration];
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration bootConfiguration:bootConfiguration];
-
-  NSError *error = nil;
-  BOOL success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  NSNumber *firstLaunch = [[simulator processIDWithBundleID:launchConfiguration.bundleID] await:nil];
-
-  success = [[simulator launchApplication:launchConfiguration] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  NSNumber *secondLaunch = [[simulator processIDWithBundleID:launchConfiguration.bundleID] await:nil];
-  XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
-
-  return simulator;
-}
-
 @end

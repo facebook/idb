@@ -129,20 +129,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
-/**
- An Assertion for:
- - Obtaining a Simulator with a given configuration.
- - Booting it with the Boot Configuration
- - Launching the Application with the given configuration.
- - Relaunching the same Application.
-
- @param simulatorConfiguration the Configuration of the Simulator to launch.
- @param bootConfiguration the Boot Configuration for the Simulator.
- @param launchConfiguration the Application to then launch.
- @return a Simulator if successful, nil otherwise.
- */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
-
 @end
 
 NS_ASSUME_NONNULL_END

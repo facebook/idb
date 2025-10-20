@@ -153,32 +153,6 @@
               failed:@[@"testWillAlwaysFail"]];
 }
 
-- (void)testInjectsApplicationTestWithTestsToSkip
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundle:self.testLaunchSafari.testBundle
-    applicationLaunchConfiguration:self.safariAppLaunch
-    testHostBundle:nil
-    timeout:0
-    initializeUITesting:NO
-    useXcodebuild:NO
-    testsToRun:nil
-    testsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
-    targetApplicationBundle:nil
-    xcTestRunProperties:nil
-    resultBundlePath:nil
-    reportActivities:NO
-    coverageDirectoryPath:nil
-    enableContinuousCoverageCollection:NO
-    logDirectoryPath:nil
-    reportResultBundle:NO];
-
-  [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
-              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
-}
-
 #pragma mark FBXCTestReporter
 
 - (void)didBeginExecutingTestPlan

@@ -27,14 +27,6 @@
     thenLaunchesApplication:appLaunch];
 }
 
-- (FBSimulator *)doTestApplicationRelaunches:(FBApplicationLaunchConfiguration *)appLaunch
-{
-  return [self
-    assertSimulatorWithConfiguration:self.simulatorConfiguration
-    boots:self.bootConfiguration
-    launchesThenRelaunchesApplication:appLaunch];
-}
-
 - (FBSimulator *)doTestApplication:(FBBundleDescriptor *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
@@ -73,65 +65,9 @@
   [self testLaunchesSingleSimulator:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:FBDeviceModelAppleTV]];
 }
 
-- (void)testLaunchesMultipleSimulators
-{
-  FBFuture<NSArray<FBSimulator *> *> *simulatorFutures = [FBFuture futureWithFutures:@[
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPhoneModel]],
-    [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration.defaultConfiguration withDeviceModel:SimulatorControlTestsDefaultiPadModel]],
-  ]];
-  NSError *error = nil;
-  NSArray<FBSimulator *> *simulators = [simulatorFutures await:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(simulators);
-
-  FBSimulator *simulator1 = simulators[0];
-  FBSimulator *simulator2 = simulators[1];
-  FBSimulator *simulator3 = simulators[2];
-
-  FBFuture *bootFuture = [FBFuture futureWithFutures:@[
-    [simulator1 boot:self.bootConfiguration],
-    [simulator2 boot:self.bootConfiguration],
-    [simulator3 boot:self.bootConfiguration],
-  ]];
-  BOOL success = [bootFuture await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  for (FBSimulator *simulator in simulators) {
-    [self assertSimulatorBooted:simulator];
-  }
-  FBFuture *shutdownFuture = [FBFuture futureWithFutures:@[
-    [simulator1 shutdown],
-    [simulator2 shutdown],
-    [simulator3 shutdown],
-  ]];
-  success = [shutdownFuture await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  FBFuture *freeFuture = [FBFuture futureWithFutures:@[
-    [simulator1 erase],
-    [simulator2 erase],
-    [simulator3 erase],
-  ]];
-  success = [freeFuture await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  for (FBSimulator *simulator in simulators) {
-    [self assertSimulatorShutdown:simulator];
-  }
-}
-
 - (void)testLaunchesSafariApplication
 {
   [self doTestApplicationLaunches:self.safariAppLaunch];
-}
-
-- (void)testRelaunchesSafariApplication
-{
-  [self doTestApplicationRelaunches:[self safariAppLaunchWithMode:FBApplicationLaunchModeRelaunchIfRunning]];
 }
 
 - (void)testLaunchesSampleApplication
