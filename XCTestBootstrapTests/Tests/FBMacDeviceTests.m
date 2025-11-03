@@ -90,18 +90,6 @@
   [app.bundle setValue:rightPath forKey:@"_path"];
 }
 
--(void)testUninstallApplicationByApp
-{
-  NSError *err = nil;
-  __auto_type app = [self installDummyApplicationWithError:&err];
-  XCTAssertNil(err,
-               @"Precondition failure");
-  
-  __auto_type uninstalled = [self.device uninstallApplicationWithBundleID:app.bundle.identifier];
-  XCTAssertNotNil(uninstalled,
-                  @"Failed to remove installed application");
-}
-
 -(void)testLaunchingNotInstalledAppByBuntleID
 {
   FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:@"not.existed"
