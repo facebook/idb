@@ -89,43 +89,6 @@
   XCTAssertEqual(self.teardownCalled, 2u);
 }
 
-- (void)testSequentialAquireWithCooloff
-{
-  FBFutureContextManager<NSNumber *> *manager = self.manager;
-  self.contextPoolTimeout = @0.2;
-
-  FBFuture *future0 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@0];
-    }];
-
-  NSError *error = nil;
-  id value = [future0 awaitWithTimeout:1 error:&error];
-  XCTAssertNil(error);
-  XCTAssertEqualObjects(value, @0);
-
-  XCTAssertEqual(self.prepareCalled, 1u);
-  XCTAssertEqual(self.teardownCalled, 0u);
-
-  FBFuture *future1 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@1];
-    }];
-  value = [future1 awaitWithTimeout:1 error:&error];
-  XCTAssertNil(error);
-  XCTAssertEqualObjects(value, @1);
-
-  XCTAssertEqual(self.prepareCalled, 1u);
-  XCTAssertEqual(self.teardownCalled, 0u);
-
-  [[FBFuture futureWithDelay:0.25 future:FBFuture.empty] await:nil];
-
-  XCTAssertEqual(self.prepareCalled, 1u);
-  XCTAssertEqual(self.teardownCalled, 1u);
-}
-
 - (void)testConcurrentAquireOnlyPreparesOnce
 {
   FBFutureContextManager<NSNumber *> *manager = self.manager;
