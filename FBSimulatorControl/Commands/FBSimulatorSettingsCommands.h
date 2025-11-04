@@ -90,6 +90,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory;
 
+/**
+ Clears all contacts from the simulator using the CNContacts framework.
+ This spawns a helper binary inside the simulator that uses native Contacts APIs to delete all contacts.
+
+ @return A future that resolves when all contacts have been deleted.
+ */
+- (FBFuture<NSNull *> *)clearContacts;
+
 @end
 
 /**

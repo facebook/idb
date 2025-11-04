@@ -11,6 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBAppleSimctlCommandExecutor.h"
 #import "FBDefaultsModificationStrategy.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
@@ -354,6 +355,32 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   return FBFuture.empty;
 }
 
+- (FBFuture<NSNull *> *)clearContacts
+{
+  return [FBFuture onQueue:self.simulator.asyncQueue resolve:^{
+    NSString *helperPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"SimulatorFrameworkBridge" ofType:nil];
+    if (!helperPath) {
+      return [[FBSimulatorError
+        describe:@"SimulatorFrameworkBridge binary not found in bundle resources. Ensure FBSimulatorControl was built correctly."]
+        failFuture];
+    }
+
+    if (![NSFileManager.defaultManager fileExistsAtPath:helperPath]) {
+      return [[FBSimulatorError
+        describeFormat:@"SimulatorFrameworkBridge binary found in bundle but does not exist at path: %@", helperPath]
+        failFuture];
+    }
+
+    return [[[self.simulator.simctlExecutor
+      taskBuilderWithCommand:@"spawn" arguments:@[helperPath, @"contacts", @"clear"]]
+      runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+      onQueue:self.simulator.asyncQueue fmap:^(FBProcess *task) {
+        [self.simulator.logger log:@"SimulatorFrameworkBridge contacts delete completed successfully"];
+        return [FBFuture futureWithResult:NSNull.null];
+      }];
+  }];
+}
+
 #pragma mark Private
 
 - (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
@@ -450,7 +477,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       describeFormat:@"Database file at path %@ is not writable", databasePath]
       failFuture];
   }
-  
+
   id<FBControlCoreLogger> logger = [self.simulator.logger withName:@"sqlite_auth"];
   dispatch_queue_t queue = self.simulator.asyncQueue;
 

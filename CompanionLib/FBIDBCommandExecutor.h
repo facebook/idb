@@ -279,6 +279,13 @@ This enables the permission popup the first time we open a deeplink
 - (FBFuture<NSNull *> *)update_contacts:(NSData *)dbTarData;
 
 /**
+ Clears all contacts from the simulator using the CNContacts framework.
+
+ @return a Future that resolves when complete.
+ */
+- (FBFuture<NSNull *> *)clear_contacts;
+
+/**
  List the xctests installed
 
  @return a Future that resolves with an array of tests.

@@ -281,6 +281,13 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
+- (FBFuture<NSNull *> *)clear_contacts
+{
+  return [self.settingsCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+    return [commands clearContacts];
+  }];
+}
+
 - (FBFuture<NSArray<id<FBXCTestDescriptor>> *> *)list_test_bundles
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^{

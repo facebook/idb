@@ -180,6 +180,13 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     }
   }
 
+  func contacts_clear(request: Idb_ContactsClearRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsClearResponse {
+    return try await FBTeardownContext.withAutocleanup {
+      _ = try await BridgeFuture.await(commandExecutor.clear_contacts())
+      return Idb_ContactsClearResponse()
+    }
+  }
+
   func setting(request: Idb_SettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SettingResponse {
     return try await FBTeardownContext.withAutocleanup {
       try await SettingMethodHandler(commandExecutor: commandExecutor)
