@@ -39,7 +39,7 @@
   }
   id<FBSimulatorLifecycleCommands> lifecycle = (id<FBSimulatorLifecycleCommands>) target;
   if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [FBFuture futureWithResult:target];;
+    return [FBFuture futureWithResult:target];
   }
 
   if (FBXcodeConfiguration.isXcode12_5OrGreater) {
