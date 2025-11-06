@@ -97,22 +97,22 @@ static NSString *const AXPrefix = @"AX";
   return [customActionsTemp copy];
 }
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token]];
+    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys]];
   }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token];
+  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys];
 }
 
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token];
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys];
   }
-  return [self.class accessibilityDictionaryForElement:element token:token keys:nil];
+  return [self.class accessibilityDictionaryForElement:element token:token keys:keys];
 }
 
 // The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
@@ -212,25 +212,25 @@ static NSString *const AXPrefix = @"AX";
 
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:nil]];
+  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys]];
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token];
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys
 {
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:nil] mutableCopy];
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token];
+    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys];
     [childrenValues addObject:childValues];
   }
   values[@"children"] = childrenValues;
@@ -263,7 +263,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark FBSimulatorAccessibilityCommands Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   if (nestedFormat) {
     return [[FBControlCoreError
@@ -273,7 +273,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [self.bridge accessibilityElements];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   if (nestedFormat) {
     return [[FBControlCoreError
@@ -296,12 +296,13 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @property (nonatomic, assign, readonly) BOOL nestedFormat;
 @property (nonatomic, copy, readonly) NSString *token;
+@property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *keys;
 
 @end
 
 @implementation FBSimulator_TranslationRequest
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   self = [super init];
   if (!self) {
@@ -310,6 +311,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
   _token = NSUUID.UUID.UUIDString;
   _nestedFormat = nestedFormat;
+  _keys = [keys copy];
 
   return self;
 }
@@ -347,12 +349,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat];
+  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys];
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat];
+  return [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys];
 }
 
 @end
@@ -419,9 +421,9 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @implementation FBSimulator_TranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBSimulator_TranslationAction *)action
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBSimulator_TranslationAction *)action keys:(nullable NSSet<NSString *> *)keys
 {
-  self = [super initWithNestedFormat:nestedFormat];
+  self = [super initWithNestedFormat:nestedFormat keys:keys];
   if (!self) {
     return nil;
   }
@@ -439,7 +441,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
+  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys];
   FBSimulator_TranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
@@ -449,7 +451,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action];
+  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys];
 }
 
 @end
@@ -609,22 +611,22 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark FBSimulatorAccessibilityCommands Implementation
 
-- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
 }
 
-- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
   FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action];
+  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:nil];
   return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
@@ -744,21 +746,21 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 #pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
     onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementsWithNestedFormat:nestedFormat];
+      return [implementation accessibilityElementsWithNestedFormat:nestedFormat keys:keys];
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
     onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat];
+      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat keys:keys];
     }];
 }
 

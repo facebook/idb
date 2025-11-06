@@ -153,9 +153,9 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     accessibilityCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBAccessibilityCommands> commands) {
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat];
+        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat keys:nil];
       } else {
-        return [commands accessibilityElementsWithNestedFormat:nestedFormat];
+        return [commands accessibilityElementsWithNestedFormat:nestedFormat keys:nil];
       }
     }];
 }

@@ -23,9 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
  The returned value is fully JSON serializable.
 
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
+ @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
  @return the accessibility elements for the main screen, wrapped in a Future.
  */
-- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat;
+- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys;
 
 /**
  Obtain the acessibility element for the main screen at the given point.
@@ -33,9 +34,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param point the coordinate at which to obtain the accessibility element.
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
+ @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
  @return the accessibility element at the provided point, wrapped in a Future.
  */
-- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat;
+- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys;
 
 @end
 
