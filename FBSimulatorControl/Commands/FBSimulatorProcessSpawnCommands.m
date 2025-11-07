@@ -117,7 +117,7 @@
       // This would not be an issue if using simctl directly, as the stdout/stderr of the simctl process would close when the simctl process terminates.
       // However, using the simctl approach, we don't get the pid of the spawned process, this is merely logged internally.
       // Failing to close this end of the file descriptor would lead to the write-end of any pipe to not be closed and therefore it would leak.
-      
+
       [attachment.stdOut close];
       [attachment.stdErr close];
     }
@@ -162,6 +162,7 @@
       return NO;
     case FBProcessSpawnModePosixSpawn:
       return YES;
+    case FBProcessSpawnModeDefault:
     default:
       // Default behaviour is to use launchd if booted, otherwise use standalone.
       return simulator.state != FBiOSTargetStateBooted;
