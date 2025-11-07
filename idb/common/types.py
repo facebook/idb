@@ -650,6 +650,10 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def contacts_clear(self) -> None:
+        pass
+
+    @abstractmethod
     async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
         pass
 

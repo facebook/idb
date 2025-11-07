@@ -88,6 +88,7 @@ from idb.grpc.idb_pb2 import (
     ApproveRequest,
     ClearKeychainRequest,
     ConnectRequest,
+    ContactsClearRequest,
     ContactsUpdateRequest,
     CrashShowRequest,
     DebugServerRequest,
@@ -548,6 +549,10 @@ class Client(ClientBase):
         await self.stub.contacts_update(
             ContactsUpdateRequest(payload=Payload(data=data))
         )
+
+    @log_and_handle_exceptions("contacts_clear")
+    async def contacts_clear(self) -> None:
+        await self.stub.contacts_clear(ContactsClearRequest())
 
     @log_and_handle_exceptions("screenshot")
     async def screenshot(self) -> bytes:

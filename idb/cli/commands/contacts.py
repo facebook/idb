@@ -9,7 +9,7 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import Client
+from idb.common.types import Client, IdbException, TargetType
 
 
 class ContactsUpdateCommand(ClientCommand):
@@ -31,3 +31,22 @@ class ContactsUpdateCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.contacts_update(contacts_path=args.contacts_path)
+
+
+class ContactsClearCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Clears all contacts"
+
+    @property
+    def name(self) -> str:
+        return "clear"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        target = await client.describe()
+        if target.target_type == TargetType.MAC:
+            raise IdbException("contacts clear does not work on mac targets")
+        await client.contacts_clear()

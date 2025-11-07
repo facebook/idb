@@ -27,7 +27,7 @@ from idb.cli.commands.app import (
     AppUninstallCommand,
 )
 from idb.cli.commands.approve import ApproveCommand
-from idb.cli.commands.contacts import ContactsUpdateCommand
+from idb.cli.commands.contacts import ContactsClearCommand, ContactsUpdateCommand
 from idb.cli.commands.crash import (
     CrashDeleteCommand,
     CrashListCommand,
@@ -214,7 +214,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         CommandGroup(
             name="contacts",
             description="Contacts database operations on target",
-            commands=[ContactsUpdateCommand()],
+            commands=[ContactsUpdateCommand(), ContactsClearCommand()],
         ),
         LogCommand(),
         CommandGroup(

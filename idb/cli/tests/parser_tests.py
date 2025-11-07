@@ -854,6 +854,14 @@ class TestParser(TestCase):
             contacts_path="/dev/null"
         )
 
+    async def test_contacts_clear(self) -> None:
+        target_description = MagicMock()
+        target_description.target_type = 0
+        self.client_mock.describe = AsyncMock(return_value=target_description)
+        self.client_mock.contacts_clear = AsyncMock(return_value=None)
+        await cli_main(cmd_input=["contacts", "clear"])
+        self.client_mock.contacts_clear.assert_called_once()
+
     async def test_accessibility_info_all(self) -> None:
         self.client_mock.accessibility_info = AsyncMock()
         await cli_main(cmd_input=["ui", "describe-all"])
