@@ -8,7 +8,6 @@
 #import "FBiOSTarget.h"
 
 #import "FBiOSTargetConfiguration.h"
-
 NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
 {
   switch (state) {
@@ -28,6 +27,7 @@ NSString *FBiOSTargetStateStringFromState(FBiOSTargetState state)
       return FBiOSTargetStateStringRecovery;
     case FBiOSTargetStateRestoreOS:
       return FBiOSTargetStateStringRestoreOS;
+    case FBiOSTargetStateUnknown:
     default:
       return FBiOSTargetStateStringUnknown;
   }

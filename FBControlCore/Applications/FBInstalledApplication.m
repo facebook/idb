@@ -106,6 +106,7 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
       return FBApplicationInstallTypeStringSystem;
     case FBApplicationInstallTypeMac:
       return FBApplicationInstallTypeStringMac;
+    case FBApplicationInstallTypeUnknown:
     default:
       return FBApplicationInstallTypeStringUnknown;
   }

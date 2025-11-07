@@ -117,6 +117,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
         case FBFutureStateFailed:
           final_resolveUntil(final, queue, resolveUntil);
           return;
+        case FBFutureStateRunning:
         default:
           return;
       }
@@ -470,8 +471,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 
     dispatch_source_set_timer(timer, FBCreateDispatchTimeFromDuration(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
     dispatch_source_set_event_handler(timer, ^{
-      
-      
+
+
       if (future.state != FBFutureStateRunning) {
         dispatch_cancel(timer);
       } else {
@@ -579,6 +580,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       case FBFutureStateCancelled:
         [compositeFuture cancel];
         return;
+      case FBFutureStateRunning:
       default:
         NSCAssert(NO, @"Unexpected state in callback %@", FBFutureStateStringFromState(state));
         return;
@@ -777,6 +779,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
         case FBFutureStateCancelled:
           [chained cancel];
           break;
+        case FBFutureStateRunning:
         default:
           NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
       }
@@ -1022,6 +1025,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       case FBFutureStateCancelled:
         [self cancel];
         return;
+      case FBFutureStateRunning:
       default:
         NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
     }
