@@ -63,6 +63,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }
@@ -139,6 +141,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }
