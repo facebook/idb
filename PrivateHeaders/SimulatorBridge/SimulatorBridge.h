@@ -7,8 +7,8 @@
 
 #import <objc/NSObject.h>
 
-#import "AXPTranslationRuntimeHelper-Protocol.h"
-#import "SimulatorBridge-Protocol.h"
+#import <SimulatorBridge/AXPTranslationRuntimeHelper-Protocol.h>
+#import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

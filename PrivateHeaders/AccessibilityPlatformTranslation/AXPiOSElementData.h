@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
+#import <AccessibilityPlatformTranslation/NSObject.h>
 
-#import "NSCopying.h"
+#import <AccessibilityPlatformTranslation/NSCopying.h>
 
 @interface AXPiOSElementData : NSObject <NSCopying>
 {
