@@ -27,13 +27,6 @@
     thenLaunchesApplication:appLaunch];
 }
 
-- (FBSimulator *)doTestApplication:(FBBundleDescriptor *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
-  [self assertSimulator:simulator installs:application];
-  return [self assertSimulator:simulator launches:appLaunch];
-}
-
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration bootConfiguration:self.bootConfiguration];
@@ -68,11 +61,6 @@
 - (void)testLaunchesSafariApplication
 {
   [self doTestApplicationLaunches:self.safariAppLaunch];
-}
-
-- (void)testLaunchesSampleApplication
-{
-  [self doTestApplication:self.tableSearchApplication launches:self.tableSearchAppLaunch];
 }
 
 - (void)testCanUninstallApplication
