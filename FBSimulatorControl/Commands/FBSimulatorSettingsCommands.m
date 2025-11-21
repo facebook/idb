@@ -357,6 +357,18 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 - (FBFuture<NSNull *> *)clearContacts
 {
+  return [self runSimulatorFrameworkBridgeWithService:@"contacts" action:@"clear"];
+}
+
+- (FBFuture<NSNull *> *)clearPhotos
+{
+  return [self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
+{
   return [FBFuture onQueue:self.simulator.asyncQueue resolve:^{
     NSString *helperPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"SimulatorFrameworkBridge" ofType:nil];
     if (!helperPath) {
@@ -372,16 +384,14 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     }
 
     return [[[self.simulator.simctlExecutor
-      taskBuilderWithCommand:@"spawn" arguments:@[helperPath, @"contacts", @"clear"]]
+      taskBuilderWithCommand:@"spawn" arguments:@[helperPath, service, action]]
       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
       onQueue:self.simulator.asyncQueue fmap:^(FBProcess *task) {
-        [self.simulator.logger log:@"SimulatorFrameworkBridge contacts delete completed successfully"];
+        [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
         return [FBFuture futureWithResult:NSNull.null];
       }];
   }];
 }
-
-#pragma mark Private
 
 - (FBFuture<NSNull *> *)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
 {

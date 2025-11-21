@@ -98,6 +98,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBFuture<NSNull *> *)clearContacts;
 
+/**
+ Clears all photos from the simulator using the Photos framework.
+ This spawns a helper binary inside the simulator that uses native Photos APIs to delete all photos.
+
+ @return A future that resolves when all photos have been deleted.
+ */
+- (FBFuture<NSNull *> *)clearPhotos;
+
 @end
 
 /**

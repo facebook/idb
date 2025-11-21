@@ -40,6 +40,7 @@ service CompanionService {
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
   rpc contacts_clear(ContactsClearRequest) returns (ContactsClearResponse) {}
+  rpc photos_clear(PhotosClearRequest) returns (PhotosClearResponse) {}
   rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
   rpc get_setting(GetSettingRequest) returns (GetSettingResponse) {
   } // Gets current setting
@@ -324,6 +325,10 @@ message ContactsUpdateResponse {}
 message ContactsClearRequest {}
 
 message ContactsClearResponse {}
+
+message PhotosClearRequest {}
+
+message PhotosClearResponse {}
 
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;

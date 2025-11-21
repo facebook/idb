@@ -7,12 +7,13 @@
 
 #import <Foundation/Foundation.h>
 #import "ContactsService.h"
+#import "PhotoLibraryService.h"
 
 int main(int argc, const char * argv[]) {
   @autoreleasepool {
     if (argc < 3) {
       NSLog(@"Usage: %s <service> <action>", argv[0]);
-      NSLog(@"Services: contacts");
+      NSLog(@"Services: contacts, photos");
       NSLog(@"Actions: clear");
       return 1;
     }
@@ -22,9 +23,11 @@ int main(int argc, const char * argv[]) {
 
     if ([service isEqualToString:@"contacts"]) {
       return handleContactsAction(action);
+    } else if ([service isEqualToString:@"photos"]) {
+      return handlePhotoLibraryAction(action);
     } else {
       NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts");
+      NSLog(@"Available services: contacts, photos");
       return 1;
     }
     return 0;

@@ -288,6 +288,13 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   }];
 }
 
+- (FBFuture<NSNull *> *)clear_photos
+{
+  return [self.settingsCommands onQueue:self.target.workQueue fmap:^FBFuture *(id<FBSimulatorSettingsCommands> commands) {
+    return [commands clearPhotos];
+  }];
+}
+
 - (FBFuture<NSArray<id<FBXCTestDescriptor>> *> *)list_test_bundles
 {
   return [FBFuture onQueue:self.target.workQueue resolve:^{

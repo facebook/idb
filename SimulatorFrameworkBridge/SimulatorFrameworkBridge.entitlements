@@ -5,6 +5,7 @@
     <key>com.apple.private.tcc.allow</key>
     <array>
         <string>kTCCServiceAddressBook</string>
+        <string>kTCCServicePhotos</string>
     </array>
 </dict>
 </plist>

@@ -286,6 +286,13 @@ This enables the permission popup the first time we open a deeplink
 - (FBFuture<NSNull *> *)clear_contacts;
 
 /**
+ Clears all photos from the simulator using the Photos framework.
+
+ @return a Future that resolves when complete.
+ */
+- (FBFuture<NSNull *> *)clear_photos;
+
+/**
  List the xctests installed
 
  @return a Future that resolves with an array of tests.
