@@ -50,6 +50,10 @@ FBDeviceModel const FBDeviceModeliPhone16 = @"iPhone 16";
 FBDeviceModel const FBDeviceModeliPhone16Plus = @"iPhone 16 Plus";
 FBDeviceModel const FBDeviceModeliPhone16Pro = @"iPhone 16 Pro";
 FBDeviceModel const FBDeviceModeliPhone16ProMax = @"iPhone 16 Pro Max";
+FBDeviceModel const FBDeviceModeliPhone16e = @"iPhone 16e";
+FBDeviceModel const FBDeviceModeliPhone17 = @"iPhone 17";
+FBDeviceModel const FBDeviceModeliPhone17Pro = @"iPhone 17 Pro";
+FBDeviceModel const FBDeviceModeliPhone17ProMax = @"iPhone 17 Pro Max";
 FBDeviceModel const FBDeviceModeliPodTouch_7thGeneration = @"iPod touch (7th generation)";
 FBDeviceModel const FBDeviceModeliPad2 = @"iPad 2";
 FBDeviceModel const FBDeviceModeliPadRetina = @"iPad Retina";
@@ -493,6 +497,10 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone16Plus productTypes:@[@"iPhone17,4"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone16Pro productTypes:@[@"iPhone17,1"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone16ProMax productTypes:@[@"iPhone17,2"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone16e productTypes:@[@"iPhone17,5"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone17 productTypes:@[@"iPhone18,3"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone17Pro productTypes:@[@"iPhone18,1"] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPhoneWithModel:FBDeviceModeliPhone17ProMax productTypes:@[@"iPhone18,2"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPhoneWithModel:FBDeviceModeliPodTouch_7thGeneration productTypes:@[@"iPod9,1"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7],
