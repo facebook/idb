@@ -307,6 +307,13 @@ This enables the permission popup the first time we open a deeplink
 - (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle:(NSString *)bundleID with_app:(nullable NSString *)appPath;
 
 /**
+ List the tests in an installed bundle using the file path of the bundle.
+
+ @return a Future that resolves with names of tests in the bundle.
+ */
+- (FBFuture<NSArray<NSString *> *> *)list_tests_in_bundle_file_path:(NSURL *)bundlePath;
+
+/**
  Uninstall an application
 
  @param bundleID bundle id of the application to uninstall
