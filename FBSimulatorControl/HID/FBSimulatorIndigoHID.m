@@ -128,8 +128,10 @@ typedef struct {
       return ButtonEventSourceSideButton;
     case FBSimulatorHIDButtonSiri:
       return ButtonEventSourceSiri;
+    default:
+      NSAssert(NO, @"Button Code %lul is not known", (unsigned long)button);
+      abort();
   }
-  NSAssert(NO, @"Button Code %lul is not known", (unsigned long)button);
 }
 
 + (unsigned int)eventTypeForDirection:(FBSimulatorHIDDirection)direction
@@ -139,8 +141,10 @@ typedef struct {
       return ButtonEventTypeDown;
     case FBSimulatorHIDDirectionUp:
       return  ButtonEventTypeUp;
+    default:
+      NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
+      abort();
   }
-  NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
 }
 
 + (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize screenScale:(float)screenScale
@@ -196,4 +200,3 @@ typedef struct {
 
 
 @end
-
