@@ -477,7 +477,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
         dispatch_cancel(timer);
       } else {
         NSError *error = nil;
-        switch(resolveOrFailWhen(&error)){
+        FBFutureLoopState resolveOrFailWhenResult = resolveOrFailWhen(&error);
+        switch (resolveOrFailWhenResult) {
            case FBFutureLoopContinue:
             //Continue running
             break;
@@ -490,6 +491,9 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
             dispatch_cancel(timer);
             NSCAssert(error == nil, @"Error must be set on nil when return FBFutureLoopFinished");
             [future resolveWithResult:NSNull.null];
+            break;
+          default:
+            NSCAssert(NO, @"Unexpected loop state: %ld", (long)resolveOrFailWhenResult);
             break;
         }
       }
@@ -782,6 +786,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
         case FBFutureStateRunning:
         default:
           NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
+          break;
       }
     }];
   }];
@@ -1028,6 +1033,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
       case FBFutureStateRunning:
       default:
         NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
+        break;
     }
   };
   if (future.hasCompleted) {
