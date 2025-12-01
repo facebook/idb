@@ -689,7 +689,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 {
   // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
   if (CGRectEqualToRect(macPlatformElement.accessibilityFrame, CGRectZero) == NO) {
-    return [FBFuture futureWithResult:@(NO)];
+    return [FBFuture futureWithResult:@NO];
   }
   // Then confirm whether the pid of the translation object represents a real pid within the simulator.
   // If it does not, then it likely means that we got the pid of the crashed SpringBoard.
@@ -700,7 +700,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   pid_t processIdentifier = translationObject.pid;
   return [[[simulator
     serviceNameForProcessIdentifier:processIdentifier]
-    mapReplace:@(NO)]
+    mapReplace:@NO]
     onQueue:simulator.workQueue handleError:^(NSError *error) {
       [simulator.logger logFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName];
       return [FBFuture futureWithResult:@YES];
