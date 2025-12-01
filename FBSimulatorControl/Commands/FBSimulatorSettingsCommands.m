@@ -441,7 +441,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
           return [FBSimulatorError failFutureWithError:readError];
         }
         properties[@"$objects"][2] = bundleID;
-        properties[@"$objects"][3][@"allowsNotifications"] = @(YES);
+        properties[@"$objects"][3][@"allowsNotifications"] = @YES;
 
         NSError *writeError = nil;
         NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];

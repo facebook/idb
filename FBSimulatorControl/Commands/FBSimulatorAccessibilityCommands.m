@@ -703,7 +703,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     mapReplace:@(NO)]
     onQueue:simulator.workQueue handleError:^(NSError *error) {
       [simulator.logger logFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName];
-      return [FBFuture futureWithResult:@(YES)];
+      return [FBFuture futureWithResult:@YES];
     }];
 }
 
