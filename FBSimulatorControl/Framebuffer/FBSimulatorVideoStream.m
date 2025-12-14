@@ -66,25 +66,25 @@
 static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceBuffer, NSNumber *scaleFactor) {
   size_t sourceWidth = CVPixelBufferGetWidth(sourceBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(sourceBuffer);
-  
+
   size_t destinationWidth = (size_t) floor(scaleFactor.doubleValue * (double)sourceWidth);
   size_t destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double) sourceHeight);
-  
+
   NSDictionary<NSString *, id> *pixelBufferAttributes = @{
     (NSString *) kCVPixelBufferWidthKey: @(destinationWidth),
     (NSString *) kCVPixelBufferHeightKey: @(destinationHeight),
     (NSString *) kCVPixelBufferPixelFormatTypeKey: @(CVPixelBufferGetPixelFormatType(sourceBuffer)),
   };
-  
+
   NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
     (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(100), // we will have at least 100 pixel buffers in the pool
     (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(250), // to guard from OOM only 250 pixel buffers are allowed
   };
-  
-  
+
+
   CVPixelBufferPoolRef scaledPixelBufferPool;
   CVPixelBufferPoolCreate(nil, (__bridge CFDictionaryRef) pixelBufferPoolAttributes, (__bridge CFDictionaryRef) pixelBufferAttributes, &scaledPixelBufferPool);
-  
+
   return scaledPixelBufferPool;
 }
 
@@ -96,12 +96,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
   OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
   NSString *pixelFormatString = (__bridge_transfer NSString *) UTCreateStringForOSType(pixelFormat);
-  
+
   size_t columnLeft;
   size_t columnRight;
   size_t rowsTop;
   size_t rowsBottom;
-  
+
   CVPixelBufferGetExtendedPixels(pixelBuffer, &columnLeft, &columnRight, &rowsTop, &rowsBottom);
   return @{
     @"width" : @(width),
@@ -119,21 +119,21 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CVPixelBufferRef destinationBuffer) {
     CVPixelBufferLockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
     CVPixelBufferLockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
- 
+
     vImage_Buffer scaleInput;
     scaleInput.width =  CVPixelBufferGetWidth(sourceBuffer);
     scaleInput.height = CVPixelBufferGetHeight(sourceBuffer);
     scaleInput.rowBytes = CVPixelBufferGetBytesPerRow(sourceBuffer);
     scaleInput.data = CVPixelBufferGetBaseAddress(sourceBuffer);
-  
+
     vImage_Buffer scaleOutput;
     scaleOutput.width =  CVPixelBufferGetWidth(destinationBuffer);
     scaleOutput.height = CVPixelBufferGetHeight((destinationBuffer));
     scaleOutput.rowBytes = CVPixelBufferGetBytesPerRow(destinationBuffer);
     scaleOutput.data = CVPixelBufferGetBaseAddress(destinationBuffer);
-    
+
     vImageScale_ARGB8888(&scaleInput, &scaleOutput, NULL, 0); // implicitly assumes a 4-channel image, like BGRA/RGBA
-  
+
     CVPixelBufferUnlockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
     CVPixelBufferUnlockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
 }
@@ -149,8 +149,20 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
 {
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
+  [pusher.logger logFormat:@"MJPEGCompressorCallback: encodeStats=%d infoFlags=%u sampleBuffer=%p", (int)encodeStats, (unsigned int)infoFlags, sampleBuffer];
+  if (!sampleBuffer) {
+    [pusher.logger log:@"MJPEGCompressorCallback: sampleBuffer is NULL!"];
+    return;
+  }
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-  WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
+  if (!blockBufffer) {
+    [pusher.logger log:@"MJPEGCompressorCallback: blockBuffer is NULL!"];
+    return;
+  }
+  size_t dataLen = CMBlockBufferGetDataLength(blockBufffer);
+  [pusher.logger logFormat:@"MJPEGCompressorCallback: writing %zu bytes to consumer", dataLen];
+  BOOL success = WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
+  [pusher.logger logFormat:@"MJPEGCompressorCallback: write success=%d", success];
 }
 
 static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
@@ -178,7 +190,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
   _pixelBuffer = pixelBuffer;
   _frameNumber = frameNumber;
-  
+
   return self;
 }
 
@@ -201,7 +213,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
   _consumer = consumer;
   _scaleFactor = scaleFactor;
-  
+
   return self;
 }
 
@@ -234,10 +246,10 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   CVPixelBufferLockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
-  
+
   void *baseAddress = CVPixelBufferGetBaseAddress(bufferToWrite);
   size_t size = CVPixelBufferGetDataSize(bufferToWrite);
-  
+
   if ([self.consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
     NSData *data = [NSData dataWithBytesNoCopy:baseAddress length:size freeWhenDone:NO];
     [self.consumer consumeData:data];
@@ -275,15 +287,27 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
 {
+  // Only require hardware acceleration for H.264, not JPEG
+  // JPEG may not have hardware encoder support on all systems
+  BOOL isH264 = (self.videoCodec == kCMVideoCodecType_H264);
+
   NSDictionary<NSString *, id> * encoderSpecification = @{
     (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
-  
+
   if (@available(macOS 12.1, *)) {
-    encoderSpecification = @{
-      (NSString *) kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: @YES,
-      (NSString *) kVTVideoEncoderSpecification_EnableLowLatencyRateControl: @YES,
-    };
+    if (isH264) {
+      // H.264 has good hardware encoder support, require it for best performance
+      encoderSpecification = @{
+        (NSString *) kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: @YES,
+        (NSString *) kVTVideoEncoderSpecification_EnableLowLatencyRateControl: @YES,
+      };
+    } else {
+      // For other codecs like JPEG, prefer hardware but don't require it
+      encoderSpecification = @{
+        (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
+      };
+    }
   }
   size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(pixelBuffer);
@@ -319,7 +343,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       describeFormat:@"Failed to start Compression Session %d", status]
       failBool:error];
   }
-  
+
   status = VTSessionSetProperties(
     compressionSession,
     (__bridge CFDictionaryRef) self.compressionSessionProperties
@@ -359,7 +383,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       describeFormat:@"No compression session"]
       failBool:error];
   }
-  
+
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
   CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
@@ -374,7 +398,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
     }
   }
-  
+
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
   OSStatus status = VTCompressionSessionEncodeFrame(
@@ -580,22 +604,28 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       describe:@"Cannot mount surface when there is no consumer"]
       failBool:error];
   }
-  
+
   // Get the Attributes
   NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
   [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
-  
+
   // Swap the pixel buffers.
   self.pixelBuffer = buffer;
   self.pixelBufferAttributes = attributes;
 
-  id<FBSimulatorVideoStreamFramePusher> framePusher = [self.class framePusherForConfiguration:self.configuration compressionSessionProperties:self.compressionSessionProperties consumer:consumer logger:self.logger error:nil];
+  NSError *framePusherError = nil;
+  id<FBSimulatorVideoStreamFramePusher> framePusher = [self.class framePusherForConfiguration:self.configuration compressionSessionProperties:self.compressionSessionProperties consumer:consumer logger:self.logger error:&framePusherError];
+  [self.logger logFormat:@"framePusherForConfiguration returned: %@ error: %@", framePusher, framePusherError];
   if (!framePusher) {
+    [self.logger logFormat:@"Failed to create frame pusher: %@", framePusherError];
     return NO;
   }
-  if (![framePusher setupWithPixelBuffer:buffer error:error]) {
+  NSError *setupError = nil;
+  if (![framePusher setupWithPixelBuffer:buffer error:&setupError]) {
+    [self.logger logFormat:@"Failed to setup frame pusher: %@", setupError];
     return NO;
   }
+  [self.logger log:@"Frame pusher setup succeeded"];
   self.framePusher = framePusher;
 
   // Signal that we've started
@@ -611,20 +641,27 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   id<FBDataConsumer> consumer = self.consumer;
   id<FBSimulatorVideoStreamFramePusher> framePusher = self.framePusher;
   if (!pixelBufer || !consumer || !framePusher) {
+    [self.logger logFormat:@"pushFrame: missing preconditions - pixelBuffer=%p consumer=%p framePusher=%p", pixelBufer, consumer, framePusher];
     return;
   }
   if (!checkConsumerBufferLimit(consumer, self.logger)) {
+    [self.logger log:@"pushFrame: consumer buffer limit exceeded, dropping frame"];
     return;
   }
-  
+
   NSUInteger frameNumber = self.frameNumber;
   if (frameNumber == 0) {
     self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
+    [self.logger log:@"pushFrame: first frame!"];
   }
   CFTimeInterval timeAtFirstFrame = self.timeAtFirstFrame;
-  
+
   // Push the Frame
-  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame error:nil];
+  NSError *error = nil;
+  BOOL success = [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame error:&error];
+  if (frameNumber % 30 == 0) {
+    [self.logger logFormat:@"pushFrame: frame %lu success=%d error=%@", (unsigned long)frameNumber, success, error];
+  }
 
   // Increment frame counter
   self.frameNumber = frameNumber + 1;
