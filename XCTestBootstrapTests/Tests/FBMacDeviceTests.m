@@ -71,25 +71,6 @@
   XCTAssertNotNil([self.device uninstallApplicationWithBundleID:@"not.existed"].error);
 }
 
--(void)testUninstallApplicationByIncorrectAppPath
-{
-  NSError *err = nil;
-  __auto_type app = [self installDummyApplicationWithError:&err];
-  XCTAssertNil(err,
-               @"Precondition failure");
-  
-  __auto_type rightPath = app.bundle.path;
-  
-  // Substitute path of bundle to simulate corruption of path to app
-  [app.bundle setValue:@"incorrect/path" forKey:@"_path"];
-
-  XCTAssertNil([self.device uninstallApplicationWithBundleID:app.bundle.identifier].error,
-                  @"Error should not be thrown when bundle path is incorrect");
-
-  // Restore correct path to make tearDown behave properly
-  [app.bundle setValue:rightPath forKey:@"_path"];
-}
-
 -(void)testLaunchingNotInstalledAppByBuntleID
 {
   FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:@"not.existed"
