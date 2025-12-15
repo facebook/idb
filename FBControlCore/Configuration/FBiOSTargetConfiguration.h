@@ -22,6 +22,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
   FBControlCoreProductFamilyAppleTV = 3,
   FBControlCoreProductFamilyAppleWatch = 4,
   FBControlCoreProductFamilyMac = 5,
+  FBControlCoreProductFamilyVision = 7,
 };
 
 /**
@@ -119,6 +120,7 @@ extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_40mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_44mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_40mm;
 extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_44mm;
+extern FBDeviceModel const FBDeviceModelAppleVisionPro;
 
 /**
  OS Versions Name Enumeration.
@@ -199,6 +201,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_6_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_6_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_7_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_7_1;
+extern FBOSVersionName const FBOSVersionNamexrOS_1_0;
 extern FBOSVersionName const FBOSVersionNamemac;
 
 #pragma mark Screen
