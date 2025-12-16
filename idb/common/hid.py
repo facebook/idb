@@ -187,6 +187,22 @@ def text_to_events(text: str) -> list[HIDEvent]:
     return events
 
 
+def arrow_up_to_events(duration: float | None = None) -> list[HIDEvent]:
+    return key_press_to_events(keycode=82, duration=duration)
+
+
+def arrow_down_to_events(duration: float | None = None) -> list[HIDEvent]:
+    return key_press_to_events(keycode=81, duration=duration)
+
+
+def arrow_left_to_events(duration: float | None = None) -> list[HIDEvent]:
+    return key_press_to_events(keycode=80, duration=duration)
+
+
+def arrow_right_to_events(duration: float | None = None) -> list[HIDEvent]:
+    return key_press_to_events(keycode=79, duration=duration)
+
+
 async def iterator_to_async_iterator(
     events: Iterable[HIDEvent],
 ) -> AsyncIterator[HIDEvent]:

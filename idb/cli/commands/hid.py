@@ -154,3 +154,71 @@ class SwipeCommand(ClientCommand):
             duration=args.duration,
             delta=args.delta,
         )
+
+
+class ArrowUpCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press arrow up key for navigation"
+
+    @property
+    def name(self) -> str:
+        return "arrow-up"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("--duration", help="Press duration", type=float)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.key(keycode=82, duration=args.duration)
+
+
+class ArrowDownCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press arrow down key for navigation"
+
+    @property
+    def name(self) -> str:
+        return "arrow-down"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("--duration", help="Press duration", type=float)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.key(keycode=81, duration=args.duration)
+
+
+class ArrowLeftCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press arrow left key for navigation"
+
+    @property
+    def name(self) -> str:
+        return "arrow-left"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("--duration", help="Press duration", type=float)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.key(keycode=80, duration=args.duration)
+
+
+class ArrowRightCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Press arrow right key for navigation"
+
+    @property
+    def name(self) -> str:
+        return "arrow-right"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("--duration", help="Press duration", type=float)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.key(keycode=79, duration=args.duration)
