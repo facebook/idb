@@ -155,7 +155,13 @@
   static NSError *savedError;
   dispatch_once(&onceToken, ^{
     NSError *innerError = nil;
+    // First try the symlink (older macOS)
     directory = [FBXcodeDirectory symlinkedDeveloperDirectoryWithError:&innerError];
+    // If that fails, fall back to running xcode-select -p
+    if (!directory) {
+      FBFuture<NSString *> *future = [FBXcodeDirectory xcodeSelectDeveloperDirectory];
+      directory = [future block:&innerError];
+    }
     savedError = innerError;
   });
   if (error) {
