@@ -42,7 +42,7 @@ static void PrintProcessInfo(void)
   FBDebugLog(@"Environment %@", processInfo.environment);
 }
 
-__attribute__((constructor)) static void EntryPoint()
+__attribute__((constructor)) static void EntryPoint(void)
 {
   NSLog(@"Start of Shimulator");
 
