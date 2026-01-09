@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <CompanionLib/FBIDBAppHostedTestConfiguration.h>
 #import <CompanionLib/FBIDBCommandExecutor.h>
 #import <CompanionLib/FBXCTestDescriptor.h>
 #import <CompanionLib/FBIDBLogger.h>
