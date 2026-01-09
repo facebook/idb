@@ -12,6 +12,7 @@
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
+#import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBBundleDescriptor+Application.h>
 #import <FBControlCore/FBCodesignProvider.h>
 #import <FBControlCore/FBCollectionInformation.h>
@@ -83,6 +84,7 @@
 #import <FBControlCore/FBVideoStream.h>
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
+#import <FBControlCore/FBWeakFramework.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBXcodeConfiguration.h>
 #import <FBControlCore/FBXcodeDirectory.h>
@@ -95,3 +97,4 @@
 #import <FBControlCore/FBConcatedJsonParser.h>
 #import <FBControlCore/FBCrashLogParser.h>
 #import <FBControlCore/FBArchitectureProcessAdapter.h>
+#import <FBControlCore/FBControlCoreLogger+OSLog.h>
