@@ -51,9 +51,9 @@ class CompositeCommand(Command, metaclass=ABCMeta):
     @property
     def subcommands_by_name(self) -> dict[str, Command]:
         def add_unique_cmd(key: str, value: Command) -> None:
-            assert (
-                key not in self._subcommands_by_name
-            ), f'Subcommand by name "{key}" already exists'
+            assert key not in self._subcommands_by_name, (
+                f'Subcommand by name "{key}" already exists'
+            )
             self._subcommands_by_name[key] = value
 
         if len(self._subcommands_by_name) == 0:

@@ -327,12 +327,15 @@ class Client(ClientBase):
         with tempfile.NamedTemporaryFile() as temp:
             # Remove the tempfile so we can bind to it first.
             os.remove(temp.name)
-            async with companion.unix_domain_server(
-                udid=udid, path=temp.name, only=only
-            ) as resolved_path, Client.build(
-                address=DomainSocketAddress(path=resolved_path),
-                logger=logger,
-            ) as client:
+            async with (
+                companion.unix_domain_server(
+                    udid=udid, path=temp.name, only=only
+                ) as resolved_path,
+                Client.build(
+                    address=DomainSocketAddress(path=resolved_path),
+                    logger=logger,
+                ) as client,
+            ):
                 yield client
 
     async def _tail_specific_logs(
