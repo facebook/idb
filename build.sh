@@ -146,6 +146,8 @@ function regenerate_projects() {
 
   echo "Generating FBSimulatorControl project from project.yml..."
   generate_xcodeproj "." "FBSimulatorControl"
+  echo "Generating Shimulator project..."
+  generate_xcodeproj "Shims/Shimulator" "Shimulator"
 }
 
 # =============================================================================
@@ -186,21 +188,50 @@ function build_all_frameworks() {
   build_target FBDeviceControl
 }
 
+function build_shim() {
+  local name=$1
+  local sdk=$2
+
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project Shims/Shimulator/Shimulator.xcodeproj \
+    -scheme $name \
+    -sdk $sdk \
+    -derivedDataPath $BUILD_DIRECTORY \
+    -configuration Release \
+    build
+}
+
+function build_shims() {
+  build_shim Shimulator iphonesimulator
+  build_shim Maculator macosx
+}
+
 function build() {
   local target=$1
 
   if [[ -z $target ]]; then
     echo "Building all targets..."
     build_all_frameworks
+    build_shims
   else
     case $target in
-      all|frameworks)
+      all)
+        build_all_frameworks
+        build_shims;;
+      frameworks)
         build_all_frameworks;;
+      shims)
+        build_shims;;
+      Shimulator)
+        build_shim Shimulator iphonesimulator;;
+      Maculator)
+        build_shim Maculator macosx;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
+        echo "Valid targets: all, frameworks, shims, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator, Maculator"
         exit 1;;
     esac
   fi
@@ -271,10 +302,13 @@ Commands:
       (none)          Build all targets
       all             Build all targets
       frameworks      Build all frameworks only
+      shims           Build Shimulator and Maculator dylibs
       FBControlCore   Build FBControlCore framework
       XCTestBootstrap Build XCTestBootstrap framework
       FBSimulatorControl Build FBSimulatorControl framework
       FBDeviceControl Build FBDeviceControl framework
+      Shimulator      Build Shimulator dylib (iOS simulator)
+      Maculator       Build Maculator dylib (macOS)
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -289,6 +323,8 @@ Commands:
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
   ./build.sh build                    # Build everything
+  ./build.sh build frameworks         # Build all frameworks
+  ./build.sh build shims              # Build Shimulator and Maculator
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
   ./build.sh test FBDeviceControl     # Test specific framework
