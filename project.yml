@@ -222,3 +222,37 @@ targets:
       - target: XCTestBootstrap
       - target: FBDeviceControl
       - sdk: XCTest.framework
+
+  IDBCompanionUtilities:
+    type: framework
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: IDBCompanionUtilities
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
+        PRODUCT_NAME: IDBCompanionUtilities
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - sdk: Foundation.framework
+
+  IDBCompanionUtilitiesTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: IDBCompanionUtilitiesTests
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
+        PRODUCT_NAME: IDBCompanionUtilitiesTests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: IDBCompanionUtilities
+      - sdk: XCTest.framework
