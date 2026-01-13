@@ -168,3 +168,57 @@ targets:
       - target: FBSimulatorControl
       - sdk: XCTest.framework
       - sdk: Metal.framework
+
+  FBDeviceControl:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControl/FBDeviceControl.xcconfig
+      Release: FBDeviceControl/FBDeviceControl.xcconfig
+    sources:
+      - path: FBDeviceControl
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControl
+        PRODUCT_NAME: FBDeviceControl
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.0"
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreMediaIO.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+
+  FBDeviceControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+      Release: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+    sources:
+      - path: FBDeviceControlTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControlTests
+        PRODUCT_NAME: FBDeviceControlTests
+    dependencies:
+      - target: FBControlCore
+      - target: XCTestBootstrap
+      - target: FBDeviceControl
+      - sdk: XCTest.framework

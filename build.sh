@@ -183,6 +183,7 @@ function build_all_frameworks() {
   build_target FBControlCore
   build_target XCTestBootstrap
   build_target FBSimulatorControl
+  build_target FBDeviceControl
 }
 
 function build() {
@@ -195,11 +196,11 @@ function build() {
     case $target in
       all|frameworks)
         build_all_frameworks;;
-      FBControlCore|XCTestBootstrap|FBSimulatorControl)
+      FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, FBControlCore, XCTestBootstrap, FBSimulatorControl"
+        echo "Valid targets: all, frameworks, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
         exit 1;;
     esac
   fi
@@ -223,6 +224,7 @@ function test_all() {
   test_target FBControlCore
   test_target XCTestBootstrap
   test_target FBSimulatorControl
+  test_target FBDeviceControl
 }
 
 function run_tests() {
@@ -235,11 +237,11 @@ function run_tests() {
     case $target in
       all)
         test_all;;
-      FBControlCore|XCTestBootstrap|FBSimulatorControl)
+      FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         test_target $target;;
       *)
         echo "Unknown test target: $target"
-        echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl"
+        echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
         exit 1;;
     esac
   fi
@@ -272,6 +274,7 @@ Commands:
       FBControlCore   Build FBControlCore framework
       XCTestBootstrap Build XCTestBootstrap framework
       FBSimulatorControl Build FBSimulatorControl framework
+      FBDeviceControl Build FBDeviceControl framework
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -281,13 +284,14 @@ Commands:
       FBControlCore   Test FBControlCore
       XCTestBootstrap Test XCTestBootstrap
       FBSimulatorControl Test FBSimulatorControl
+      FBDeviceControl Test FBDeviceControl
 
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
   ./build.sh build                    # Build everything
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
-  ./build.sh test FBSimulatorControl  # Test specific framework
+  ./build.sh test FBDeviceControl     # Test specific framework
 
 Prerequisites:
   - Xcode 14.0+
