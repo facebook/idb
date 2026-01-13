@@ -6,3 +6,6 @@
 INFOPLIST_FILE = $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist;
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControl
 PRODUCT_NAME = FBSimulatorControl
+
+// Suppress incomplete umbrella warning when importing XCTestBootstrap module
+OTHER_CFLAGS = $(inherited) -Wno-incomplete-umbrella
