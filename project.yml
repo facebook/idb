@@ -60,3 +60,53 @@ targets:
     dependencies:
       - target: FBControlCore
       - sdk: XCTest.framework
+
+  XCTestBootstrap:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrap/XCTestBootstrap.xcconfig
+      Release: XCTestBootstrap/XCTestBootstrap.xcconfig
+    sources:
+      - path: XCTestBootstrap
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+          - "**/*.modulemap"
+      - path: Shims/Shimulator/Tools/FBXCTestConstants.h
+        headerVisibility: project
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrap/XCTestBootstrap-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrap
+        PRODUCT_NAME: XCTestBootstrap
+        DEFINES_MODULE: YES
+        MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - sdk: Cocoa.framework
+      - sdk: Foundation.framework
+      - sdk: IOKit.framework
+
+  XCTestBootstrapTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+      Release: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+    sources:
+      - path: XCTestBootstrapTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrapTests
+        PRODUCT_NAME: XCTestBootstrapTests
+    dependencies:
+      - target: XCTestBootstrap
+      - sdk: XCTest.framework

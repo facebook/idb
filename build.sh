@@ -181,6 +181,7 @@ function build_target() {
 
 function build_all_frameworks() {
   build_target FBControlCore
+  build_target XCTestBootstrap
 }
 
 function build() {
@@ -193,11 +194,11 @@ function build() {
     case $target in
       all|frameworks)
         build_all_frameworks;;
-      FBControlCore)
+      FBControlCore|XCTestBootstrap)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, FBControlCore"
+        echo "Valid targets: all, frameworks, FBControlCore, XCTestBootstrap"
         exit 1;;
     esac
   fi
@@ -219,6 +220,7 @@ function test_target() {
 
 function test_all() {
   test_target FBControlCore
+  test_target XCTestBootstrap
 }
 
 function run_tests() {
@@ -231,11 +233,11 @@ function run_tests() {
     case $target in
       all)
         test_all;;
-      FBControlCore)
+      FBControlCore|XCTestBootstrap)
         test_target $target;;
       *)
         echo "Unknown test target: $target"
-        echo "Valid targets: all, FBControlCore"
+        echo "Valid targets: all, FBControlCore, XCTestBootstrap"
         exit 1;;
     esac
   fi
@@ -266,6 +268,7 @@ Commands:
       all             Build all targets
       frameworks      Build all frameworks only
       FBControlCore   Build FBControlCore framework
+      XCTestBootstrap Build XCTestBootstrap framework
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -273,13 +276,14 @@ Commands:
       (none)          Run all tests
       all             Run all tests
       FBControlCore   Test FBControlCore
+      XCTestBootstrap Test XCTestBootstrap
 
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
   ./build.sh build                    # Build everything
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
-  ./build.sh test FBControlCore       # Test specific framework
+  ./build.sh test XCTestBootstrap     # Test specific framework
 
 Prerequisites:
   - Xcode 14.0+
