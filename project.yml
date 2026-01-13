@@ -256,3 +256,32 @@ targets:
     dependencies:
       - target: IDBCompanionUtilities
       - sdk: XCTest.framework
+
+  CompanionLib:
+    type: framework
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: CompanionLib
+        excludes:
+          - "**/*-Info.plist"
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
+        PRODUCT_NAME: CompanionLib
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - target: FBSimulatorControl
+        embed: true
+      - target: FBDeviceControl
+        embed: true
+      - target: IDBCompanionUtilities
+        embed: true
+      - sdk: Foundation.framework
