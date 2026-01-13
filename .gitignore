@@ -2,11 +2,12 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
-# XcodeGen generated projects
+## Generated Xcode Projects (use xcodegen generate)
 *.xcodeproj/
 *.xcworkspace/
-# Keep Fixtures project (not XcodeGen generated)
-!Fixtures/Source/Fixtures.xcodeproj/
+
+## Generated gRPC Swift code (generated from proto/idb.proto)
+IDBGRPCSwift/*.swift
 
 ## Build & Test Generated
 build/

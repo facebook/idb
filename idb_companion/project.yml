@@ -1,0 +1,149 @@
+name: idb_companion
+
+options:
+  deploymentTarget:
+    macOS: "10.15"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: com.facebook
+
+configFiles:
+  Debug: ../Configuration/Shared.xcconfig
+  Release: ../Configuration/Shared.xcconfig
+
+settings:
+  base:
+    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+
+packages:
+  grpc-swift:
+    url: https://github.com/grpc/grpc-swift.git
+    from: 1.19.1
+  swift-protobuf:
+    url: https://github.com/apple/swift-protobuf.git
+    from: 1.28.0
+  swift-log:
+    url: https://github.com/apple/swift-log.git
+    from: 1.5.0
+  swift-nio:
+    url: https://github.com/apple/swift-nio.git
+    from: 2.50.0
+  swift-nio-http2:
+    url: https://github.com/apple/swift-nio-http2.git
+    from: 1.28.0
+  swift-nio-ssl:
+    url: https://github.com/apple/swift-nio-ssl.git
+    from: 2.25.0
+  swift-collections:
+    url: https://github.com/apple/swift-collections.git
+    from: 1.0.0
+
+targets:
+  IDBGRPCSwift:
+    type: framework
+    platform: macOS
+    deploymentTarget: "10.15"
+    preBuildScripts:
+      - name: Check gRPC Swift files exist
+        script: |
+          set -e
+          OUTPUT_DIR="${SRCROOT}/../IDBGRPCSwift"
+
+          if [ -f "$OUTPUT_DIR/idb.pb.swift" ] && [ -f "$OUTPUT_DIR/idb.grpc.swift" ]; then
+            echo "gRPC Swift files exist"
+            exit 0
+          fi
+
+          echo "error: gRPC Swift files not found. Run: ./build.sh generate-proto"
+          exit 1
+        inputFiles:
+          - $(SRCROOT)/../proto/idb.proto
+        outputFiles:
+          - $(SRCROOT)/../IDBGRPCSwift/idb.pb.swift
+          - $(SRCROOT)/../IDBGRPCSwift/idb.grpc.swift
+    sources:
+      - path: ../IDBGRPCSwift
+        optional: true
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBGRPCSwift
+        PRODUCT_NAME: IDBGRPCSwift
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: grpc-swift
+        product: GRPC
+      - package: swift-protobuf
+        product: SwiftProtobuf
+      - package: swift-log
+        product: Logging
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio-http2
+        product: NIOHTTP2
+      - package: swift-nio-ssl
+        product: NIOSSL
+      - package: swift-collections
+        product: DequeModule
+      - sdk: Foundation.framework
+
+  idb_companion:
+    type: tool
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: .
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "project.yml"
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_NAME: idb_companion
+        SWIFT_VERSION: "5.0"
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/Bridging/idb_companion-Bridging-Header.h
+        SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
+        INFOPLIST_FILE: $(SRCROOT)/Info.plist
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../build/Build/Products/Release
+        # Suppress warnings for existing code patterns that trigger errors with strict settings
+        OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
+        # Use ad-hoc code signing for local development
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        # Add rpath to find frameworks in same directory and PackageFrameworks
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path @executable_path/../Frameworks @executable_path/PackageFrameworks
+    dependencies:
+      - framework: ../build/Build/Products/Release/FBControlCore.framework
+        embed: true
+      - framework: ../build/Build/Products/Release/XCTestBootstrap.framework
+        embed: true
+      - framework: ../build/Build/Products/Release/FBSimulatorControl.framework
+        embed: true
+      - framework: ../build/Build/Products/Release/FBDeviceControl.framework
+        embed: true
+      - framework: ../build/Build/Products/Release/CompanionLib.framework
+        embed: true
+      - framework: ../build/Build/Products/Release/IDBCompanionUtilities.framework
+        embed: true
+      - target: IDBGRPCSwift
+        embed: true
+      - package: grpc-swift
+        product: GRPC
+      - package: swift-protobuf
+        product: SwiftProtobuf
+      - package: swift-log
+        product: Logging
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio-http2
+        product: NIOHTTP2
+      - package: swift-nio-ssl
+        product: NIOSSL
+      - package: swift-collections
+        product: DequeModule
+      - sdk: Foundation.framework

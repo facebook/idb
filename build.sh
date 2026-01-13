@@ -36,6 +36,9 @@ fi
 # XcodeGen Project Generation
 # =============================================================================
 
+GRPC_SWIFT_VERSION="1.23.1"
+GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
+
 function check_xcodegen() {
   if ! command -v xcodegen &> /dev/null; then
     echo "error: XcodeGen not found. Install with: brew install xcodegen"
@@ -141,6 +144,75 @@ function generate_xcodeproj() {
   fi
 }
 
+function check_protobuf() {
+  local missing=()
+
+  if ! command -v protoc &> /dev/null; then
+    missing+=("protoc")
+  fi
+  if ! command -v protoc-gen-swift &> /dev/null; then
+    missing+=("protoc-gen-swift")
+  fi
+
+  if [ ${#missing[@]} -ne 0 ]; then
+    echo "error: Missing protobuf tools: ${missing[*]}"
+    echo "Install with: brew install protobuf swift-protobuf"
+    exit 1
+  fi
+}
+
+function build_grpc_swift_plugin() {
+  # Build protoc-gen-grpc-swift from grpc-swift 1.x source
+  local plugin_path="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
+
+  if [ -x "$plugin_path" ]; then
+    echo "protoc-gen-grpc-swift already built at $plugin_path"
+    return 0
+  fi
+
+  echo "Building protoc-gen-grpc-swift from grpc-swift $GRPC_SWIFT_VERSION..."
+
+  if [ ! -d "$GRPC_SWIFT_DIR" ]; then
+    echo "Cloning grpc-swift $GRPC_SWIFT_VERSION..."
+    git clone --depth 1 --branch "$GRPC_SWIFT_VERSION" \
+      https://github.com/grpc/grpc-swift.git "$GRPC_SWIFT_DIR"
+  fi
+
+  echo "Building protoc-gen-grpc-swift (this may take a few minutes)..."
+  (cd "$GRPC_SWIFT_DIR" && swift build -c release --product protoc-gen-grpc-swift)
+
+  if [ ! -x "$plugin_path" ]; then
+    echo "error: Failed to build protoc-gen-grpc-swift"
+    exit 1
+  fi
+
+  echo "Successfully built protoc-gen-grpc-swift"
+}
+
+function generate_proto() {
+  check_protobuf
+  build_grpc_swift_plugin
+
+  local proto_dir="proto"
+  local output_dir="IDBGRPCSwift"
+  local protoc=$(which protoc)
+  local swift_plugin=$(which protoc-gen-swift)
+  local grpc_plugin="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
+
+  echo "Generating gRPC Swift from proto..."
+  mkdir -p "$output_dir"
+
+  $protoc \
+    --proto_path="$proto_dir" \
+    --swift_out=Visibility=Public:"$output_dir" \
+    --grpc-swift_out=Visibility=Public:"$output_dir" \
+    --plugin=protoc-gen-grpc-swift="$grpc_plugin" \
+    --plugin=protoc-gen-swift="$swift_plugin" \
+    "$proto_dir/idb.proto"
+
+  echo "Generated gRPC Swift files in $output_dir"
+}
+
 function regenerate_projects() {
   check_xcodegen
 
@@ -148,6 +220,8 @@ function regenerate_projects() {
   generate_xcodeproj "." "FBSimulatorControl"
   echo "Generating Shimulator project..."
   generate_xcodeproj "Shims/Shimulator" "Shimulator"
+  echo "Generating idb_companion project..."
+  generate_xcodeproj "idb_companion" "idb_companion"
 }
 
 # =============================================================================
@@ -156,11 +230,35 @@ function regenerate_projects() {
 
 function invoke_xcodebuild() {
   local arguments=$@
+  # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
+  # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild -skipMacroValidation $arguments | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments | xcpretty -c
   else
-    xcodebuild -skipMacroValidation $arguments
+    xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments
   fi
+}
+
+function build_idb_deps() {
+  if [ -n "$CUSTOM_idb_DEPS_SCRIPT" ]; then
+    "$CUSTOM_idb_DEPS_SCRIPT"
+  fi
+}
+
+function strip_framework() {
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Release/$1"
+  if [ -d "$FRAMEWORK_PATH" ]; then
+    echo "Stripping Framework $FRAMEWORK_PATH"
+    rm -r "$FRAMEWORK_PATH"
+  fi
+}
+
+function strip_embedded_frameworks() {
+  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
+  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
+  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
+  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
+  strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
 }
 
 # =============================================================================
@@ -207,18 +305,49 @@ function build_shims() {
   build_shim Maculator macosx
 }
 
+function build_idb_companion() {
+  check_protobuf
+  build_idb_deps
+  # Ensure proto files are generated
+  if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
+    echo "Proto files not found, generating..."
+    generate_proto
+  fi
+  # Build frameworks first in Release (idb_companion depends on them and is built in Release)
+  build_target FBControlCore Release
+  build_target XCTestBootstrap Release
+  build_target FBSimulatorControl Release
+  build_target FBDeviceControl Release
+  build_target CompanionLib Release
+  build_target IDBCompanionUtilities Release
+  # Build idb_companion from its own project
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project idb_companion/idb_companion.xcodeproj \
+    -scheme idb_companion \
+    -sdk macosx \
+    -derivedDataPath $BUILD_DIRECTORY \
+    -configuration Release \
+    build
+  strip_embedded_frameworks
+}
+
+function build_all() {
+  # build_idb_companion already builds frameworks first
+  build_shims
+  build_idb_companion
+}
+
 function build() {
   local target=$1
 
   if [[ -z $target ]]; then
     echo "Building all targets..."
-    build_all_frameworks
-    build_shims
+    build_all
   else
     case $target in
       all)
-        build_all_frameworks
-        build_shims;;
+        build_all;;
       frameworks)
         build_all_frameworks;;
       shims)
@@ -227,11 +356,13 @@ function build() {
         build_shim Shimulator iphonesimulator;;
       Maculator)
         build_shim Maculator macosx;;
+      idb_companion)
+        build_idb_companion;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         build_target $target;;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator, Maculator"
+        echo "Valid targets: all, frameworks, shims, idb_companion, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator, Maculator"
         exit 1;;
     esac
   fi
@@ -296,6 +427,10 @@ Commands:
   generate
     Regenerate Xcode projects from project.yml using XcodeGen.
 
+  generate-proto
+    Regenerate gRPC Swift files from proto/idb.proto.
+    This builds protoc-gen-grpc-swift from grpc-swift 1.x source if needed.
+
   build [<target>]
     Build targets. If no target specified, builds everything.
     Targets:
@@ -303,6 +438,7 @@ Commands:
       all             Build all targets
       frameworks      Build all frameworks only
       shims           Build Shimulator and Maculator dylibs
+      idb_companion   Build idb_companion only
       FBControlCore   Build FBControlCore framework
       XCTestBootstrap Build XCTestBootstrap framework
       FBSimulatorControl Build FBSimulatorControl framework
@@ -322,16 +458,19 @@ Commands:
 
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
+  ./build.sh generate-proto           # Regenerate gRPC Swift from proto
   ./build.sh build                    # Build everything
   ./build.sh build frameworks         # Build all frameworks
   ./build.sh build shims              # Build Shimulator and Maculator
+  ./build.sh build idb_companion      # Build idb_companion
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
-  ./build.sh test FBDeviceControl     # Test specific framework
+  ./build.sh test FBSimulatorControl  # Test specific framework
 
 Prerequisites:
   - Xcode 14.0+
   - XcodeGen: brew install xcodegen
+  - For idb_companion: brew install protobuf swift-protobuf
 EOF
 }
 
@@ -358,6 +497,8 @@ case $COMMAND in
     print_usage;;
   generate)
     regenerate_projects;;
+  generate-proto)
+    generate_proto;;
   build)
     regenerate_projects
     build $TARGET_ARG;;
