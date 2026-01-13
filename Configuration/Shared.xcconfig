@@ -58,6 +58,9 @@ SDKROOT = macosx
 CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x"
 CLANG_CXX_LIBRARY = "libc++"
 CLANG_ENABLE_MODULES = YES
+// Disable explicit precompiled modules - use implicit modules for better compatibility
+// with umbrella headers that don't include all headers (e.g., private framework deps)
+CLANG_ENABLE_EXPLICIT_MODULES = NO
 CLANG_ENABLE_OBJC_ARC = YES
 GCC_C_LANGUAGE_STANDARD = gnu99
 GCC_DYNAMIC_NO_PIC = NO
@@ -68,7 +71,13 @@ GCC_SYMBOLS_PRIVATE_EXTERN = NO
 ENABLE_NS_ASSERTIONS = YES
 ENABLE_STRICT_OBJC_MSGSEND = YES
 ENABLE_TESTABILITY = YES
+ENABLE_USER_SCRIPT_SANDBOXING = NO
 
 // Deployment
 COPY_PHASE_STRIP = NO
 SKIP_INSTALL = YES
+
+// Code Signing - use ad-hoc signing for local development
+CODE_SIGN_IDENTITY = -
+CODE_SIGNING_REQUIRED = NO
+CODE_SIGNING_ALLOWED = YES

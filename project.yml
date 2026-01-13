@@ -1,0 +1,62 @@
+name: FBSimulatorControl
+
+options:
+  deploymentTarget:
+    macOS: "10.14"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: com.facebook
+
+configFiles:
+  Debug: Configuration/Shared.xcconfig
+  Release: Configuration/Shared.xcconfig
+
+settings:
+  base:
+    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders
+
+targets:
+  FBControlCore:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBControlCore/FBControlCore.xcconfig
+      Release: FBControlCore/FBControlCore.xcconfig
+    sources:
+      - path: FBControlCore
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCore/FBControlCore-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
+        PRODUCT_NAME: FBControlCore
+        DEFINES_MODULE: YES
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: Foundation.framework
+      - sdk: ServiceManagement.framework
+
+  FBControlCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBControlCoreTests/FBControlCoreTests.xcconfig
+      Release: FBControlCoreTests/FBControlCoreTests.xcconfig
+    sources:
+      - path: FBControlCoreTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCoreTests/FBControlCoreTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCoreTests
+        PRODUCT_NAME: FBControlCoreTests
+    dependencies:
+      - target: FBControlCore
+      - sdk: XCTest.framework
