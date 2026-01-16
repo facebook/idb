@@ -1,0 +1,426 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#import "AccessibilityDoubles.h"
+
+#import <objc/runtime.h>
+#import <objc/message.h>
+
+@implementation FBSimulatorControlTests_AXPTranslationObject_Double
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  // Default pid for testing - matches the value set in FBAccessibilityTestFixture
+  _pid = 12345;
+  return self;
+}
+
+@end
+
+@implementation FBSimulatorControlTests_AXPMacPlatformElement_Double
+
+- (instancetype)initWithLabel:(NSString *)label
+                   identifier:(NSString *)identifier
+                         role:(NSString *)role
+                        frame:(NSRect)frame
+                      enabled:(BOOL)enabled
+                  actionNames:(NSArray<NSString *> *)actionNames
+                     children:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _accessibilityLabel = [label copy];
+  _accessibilityIdentifier = [identifier copy];
+  _accessibilityRole = [role copy];
+  _accessibilityFrame = frame;
+  _accessibilityEnabled = enabled;
+  _accessibilityActionNames = [actionNames copy] ?: @[];
+  _accessibilityChildren = [children copy] ?: @[];
+  _accessibilityRequired = NO;
+  _translation = [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+
+  return self;
+}
+
+// Alias for isAccessibilityEnabled (used by NSAccessibility)
+- (BOOL)isAccessibilityEnabled
+{
+  return _accessibilityEnabled;
+}
+
+// Alias for isAccessibilityRequired (used by NSAccessibility)
+- (BOOL)isAccessibilityRequired
+{
+  return _accessibilityRequired;
+}
+
+- (BOOL)accessibilityPerformPress
+{
+  return YES;
+}
+
+@end
+
+@implementation FBSimulatorControlTests_AXPTranslator_Double
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _methodCalls = [NSMutableArray array];
+
+  return self;
+}
+
+- (FBSimulatorControlTests_AXPTranslationObject_Double *)frontmostApplicationWithDisplayId:(int)displayId bridgeDelegateToken:(NSString *)token
+{
+  [_methodCalls addObject:[NSString stringWithFormat:@"frontmostApplicationWithDisplayId:%d token:%@", displayId, token]];
+  FBSimulatorControlTests_AXPTranslationObject_Double *result = self.frontmostApplicationResult;
+  result.bridgeDelegateToken = token;
+  return result;
+}
+
+- (FBSimulatorControlTests_AXPTranslationObject_Double *)objectAtPoint:(CGPoint)point displayId:(int)displayId bridgeDelegateToken:(NSString *)token
+{
+  [_methodCalls addObject:[NSString stringWithFormat:@"objectAtPoint:{%.1f,%.1f} displayId:%d token:%@", point.x, point.y, displayId, token]];
+  FBSimulatorControlTests_AXPTranslationObject_Double *result = self.objectAtPointResult;
+  result.bridgeDelegateToken = token;
+  return result;
+}
+
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)macPlatformElementFromTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation
+{
+  [_methodCalls addObject:@"macPlatformElementFromTranslation"];
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *result = self.macPlatformElementResult;
+  result.translation = translation;
+  return result;
+}
+
+- (void)resetTracking
+{
+  [_methodCalls removeAllObjects];
+}
+
+@end
+
+@implementation FBSimulatorControlTests_SimDevice_Accessibility_Double
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _UDID = [NSUUID UUID];
+  _accessibilityRequests = [NSMutableArray array];
+
+  return self;
+}
+
+- (void)sendAccessibilityRequestAsync:(id)request
+                      completionQueue:(dispatch_queue_t)queue
+                    completionHandler:(void (^)(id))handler
+{
+  [_accessibilityRequests addObject:request];
+
+  if (self.accessibilityResponseHandler) {
+    self.accessibilityResponseHandler(request, ^(id response) {
+      dispatch_async(queue, ^{
+        handler(response);
+      });
+    });
+  } else {
+    // Default: return empty response
+    dispatch_async(queue, ^{
+      handler(nil);
+    });
+  }
+}
+
+- (void)resetAccessibilityTracking
+{
+  [_accessibilityRequests removeAllObjects];
+}
+
+- (NSString *)stateString
+{
+  // Required for FBSimulator compatibility
+  return @"Booted";
+}
+
+@end
+
+@implementation FBAccessibilityTestElementBuilder
+
++ (FBSimulatorControlTests_AXPMacPlatformElement_Double *)elementWithLabel:(NSString *)label
+                                                                     frame:(NSRect)frame
+                                                                  children:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
+{
+  return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
+    initWithLabel:label
+       identifier:nil
+             role:@"AXButton"
+            frame:frame
+          enabled:YES
+      actionNames:@[@"AXPress"]
+         children:children];
+}
+
++ (FBSimulatorControlTests_AXPMacPlatformElement_Double *)rootElementWithChildren:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
+{
+  return [self applicationWithLabel:@"Root" frame:NSMakeRect(0, 0, 390, 844) children:children];
+}
+
++ (FBSimulatorControlTests_AXPMacPlatformElement_Double *)applicationWithLabel:(NSString *)label
+                                                                         frame:(NSRect)frame
+                                                                      children:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
+{
+  return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
+    initWithLabel:label
+       identifier:nil
+             role:@"AXApplication"
+            frame:frame
+          enabled:YES
+      actionNames:nil
+         children:children];
+}
+
++ (FBSimulatorControlTests_AXPMacPlatformElement_Double *)buttonWithLabel:(NSString *)label
+                                                               identifier:(NSString *)identifier
+                                                                    frame:(NSRect)frame
+{
+  return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
+    initWithLabel:label
+       identifier:identifier
+             role:@"AXButton"
+            frame:frame
+          enabled:YES
+      actionNames:@[@"AXPress"]
+         children:nil];
+}
+
++ (FBSimulatorControlTests_AXPMacPlatformElement_Double *)staticTextWithLabel:(NSString *)label
+                                                                        frame:(NSRect)frame
+{
+  return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
+    initWithLabel:label
+       identifier:nil
+             role:@"AXStaticText"
+            frame:frame
+          enabled:YES
+      actionNames:nil
+         children:nil];
+}
+
+@end
+
+#pragma mark - AXPTranslator Swizzling
+
+static FBSimulatorControlTests_AXPTranslator_Double *sInstalledMockTranslator = nil;
+static IMP sOriginalSharedInstanceIMP = NULL;
+static BOOL sSwizzleInstalled = NO;
+
+// Replacement implementation for +[AXPTranslator sharedInstance]
+static id FBMockTranslatorSharedInstance(id self, SEL _cmd) {
+  return sInstalledMockTranslator;
+}
+
+@implementation FBAccessibilityTranslatorSwizzler
+
++ (void)installMockTranslator:(FBSimulatorControlTests_AXPTranslator_Double *)mockTranslator
+{
+  NSParameterAssert(mockTranslator != nil);
+  NSAssert(!sSwizzleInstalled, @"Mock translator already installed. Call uninstall first.");
+
+  sInstalledMockTranslator = mockTranslator;
+
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  Class axpTranslatorClass = objc_getClass("AXPTranslator");
+  NSAssert(axpTranslatorClass != nil, @"AXPTranslator class not found. Ensure AccessibilityPlatformTranslation framework is loaded.");
+
+  Method originalMethod = class_getClassMethod(axpTranslatorClass, @selector(sharedInstance));
+  NSAssert(originalMethod != NULL, @"+[AXPTranslator sharedInstance] method not found");
+
+  // Save original implementation
+  sOriginalSharedInstanceIMP = method_getImplementation(originalMethod);
+
+  // Replace with our mock implementation
+  method_setImplementation(originalMethod, (IMP)FBMockTranslatorSharedInstance);
+
+  sSwizzleInstalled = YES;
+}
+
++ (void)uninstallMockTranslator
+{
+  if (!sSwizzleInstalled) {
+    return;
+  }
+
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  Class axpTranslatorClass = objc_getClass("AXPTranslator");
+  Method originalMethod = class_getClassMethod(axpTranslatorClass, @selector(sharedInstance));
+
+  // Restore original implementation
+  method_setImplementation(originalMethod, sOriginalSharedInstanceIMP);
+
+  sInstalledMockTranslator = nil;
+  sOriginalSharedInstanceIMP = NULL;
+  sSwizzleInstalled = NO;
+}
+
+@end
+
+#pragma mark - Translation Dispatcher Test Helper
+
+static id sInstalledMockDispatcher = nil;
+static IMP sOriginalDispatcherSharedInstanceIMP = NULL;
+static BOOL sDispatcherSwizzleInstalled = NO;
+
+// Replacement implementation for +[FBSimulator_TranslationDispatcher sharedInstance]
+static id FBMockDispatcherSharedInstance(id self, SEL _cmd) {
+  return sInstalledMockDispatcher;
+}
+
+@implementation FBTranslationDispatcherTestHelper
+
++ (void)installWithMockTranslator:(FBSimulatorControlTests_AXPTranslator_Double *)mockTranslator
+{
+  NSParameterAssert(mockTranslator != nil);
+  NSAssert(!sDispatcherSwizzleInstalled, @"Mock dispatcher already installed. Call uninstall first.");
+
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION patternlint-disable-next-line fb-link-class-from-string
+  Class dispatcherClass = objc_getClass("FBSimulator_TranslationDispatcher");
+  NSAssert(dispatcherClass != nil, @"FBSimulator_TranslationDispatcher class not found.");
+
+  // Create a real dispatcher instance, but initialized with our mock translator
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
+  SEL initSelector = NSSelectorFromString(@"initWithTranslator:logger:");
+  NSAssert([dispatcherClass instancesRespondToSelector:initSelector], @"Dispatcher doesn't respond to initWithTranslator:logger:");
+
+  id dispatcher = [dispatcherClass alloc];
+  sInstalledMockDispatcher = ((id (*)(id, SEL, id, id))objc_msgSend)(dispatcher, initSelector, (id)mockTranslator, nil);
+
+  // Set the bridgeTokenDelegate on the mock translator to the dispatcher
+  mockTranslator.bridgeTokenDelegate = sInstalledMockDispatcher;
+
+  // Swizzle +sharedInstance to return our mock dispatcher
+  Method originalMethod = class_getClassMethod(dispatcherClass, @selector(sharedInstance));
+  NSAssert(originalMethod != NULL, @"+[FBSimulator_TranslationDispatcher sharedInstance] method not found");
+
+  sOriginalDispatcherSharedInstanceIMP = method_getImplementation(originalMethod);
+  method_setImplementation(originalMethod, (IMP)FBMockDispatcherSharedInstance);
+
+  sDispatcherSwizzleInstalled = YES;
+}
+
++ (void)uninstall
+{
+  if (!sDispatcherSwizzleInstalled) {
+    return;
+  }
+
+  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION patternlint-disable-next-line fb-link-class-from-string
+  Class dispatcherClass = objc_getClass("FBSimulator_TranslationDispatcher");
+  Method originalMethod = class_getClassMethod(dispatcherClass, @selector(sharedInstance));
+  method_setImplementation(originalMethod, sOriginalDispatcherSharedInstanceIMP);
+
+  sInstalledMockDispatcher = nil;
+  sOriginalDispatcherSharedInstanceIMP = NULL;
+  sDispatcherSwizzleInstalled = NO;
+}
+
+@end
+
+#pragma mark - FBSimulator Double
+
+// FBiOSTargetStateBooted = 3
+static const unsigned long long FBiOSTargetStateBooted_Value = 3;
+
+@implementation FBSimulatorControlTests_FBSimulator_Double
+
+- (instancetype)initWithDevice:(FBSimulatorControlTests_SimDevice_Accessibility_Double *)device
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _device = device;
+  _workQueue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.tests.workqueue", DISPATCH_QUEUE_SERIAL);
+  _asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  _state = FBiOSTargetStateBooted_Value;
+
+  return self;
+}
+
+@end
+
+#pragma mark - Test Fixture
+
+@implementation FBAccessibilityTestFixture
+
++ (instancetype)bootedSimulatorFixture
+{
+  FBAccessibilityTestFixture *fixture = [[FBAccessibilityTestFixture alloc] init];
+
+  // Create device double
+  FBSimulatorControlTests_SimDevice_Accessibility_Double *device =
+    [[FBSimulatorControlTests_SimDevice_Accessibility_Double alloc] init];
+
+  // Create simulator double wrapping device
+  fixture->_simulator = [[FBSimulatorControlTests_FBSimulator_Double alloc] initWithDevice:device];
+  fixture->_simulator.state = FBiOSTargetStateBooted_Value;
+
+  // Create translator double
+  fixture->_translator = [[FBSimulatorControlTests_AXPTranslator_Double alloc] init];
+
+  return fixture;
+}
+
+- (void)setUp
+{
+  // Configure the translator with default results
+  FBSimulatorControlTests_AXPTranslationObject_Double *translation =
+    [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+  translation.pid = 12345;
+
+  self.translator.frontmostApplicationResult = translation;
+  self.translator.objectAtPointResult = translation;
+
+  if (self.rootElement) {
+    self.translator.macPlatformElementResult = self.rootElement;
+  } else {
+    // Create a default root element
+    self.translator.macPlatformElementResult =
+      [FBAccessibilityTestElementBuilder rootElementWithChildren:@[]];
+  }
+
+  // Install the translator swizzle
+  [FBAccessibilityTranslatorSwizzler installMockTranslator:self.translator];
+
+  // Install the dispatcher test helper - this creates a real dispatcher with our mock translator
+  [FBTranslationDispatcherTestHelper installWithMockTranslator:self.translator];
+}
+
+- (void)tearDown
+{
+  [FBTranslationDispatcherTestHelper uninstall];
+  [FBAccessibilityTranslatorSwizzler uninstallMockTranslator];
+}
+
+@end
