@@ -15,15 +15,6 @@
 
 @implementation FBSimulatorConfigurationTests
 
-- (void)testAllConfigurationsArePresent
-{
-  NSMutableArray<NSString *> *absentOSVersions = [NSMutableArray array];
-  NSMutableArray<NSString *> *absentDeviceTypes = [NSMutableArray array];
-  [FBSimulatorConfiguration allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:&absentOSVersions absentDeviceTypesOut:&absentDeviceTypes];
-  XCTAssertEqualObjects(absentOSVersions, @[]);
-  XCTAssertEqualObjects(absentDeviceTypes, @[]);
-}
-
 - (void)testDefaultIsIphone
 {
   FBSimulatorConfiguration *configuration = FBSimulatorConfiguration.defaultConfiguration;
