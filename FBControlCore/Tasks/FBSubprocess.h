@@ -19,7 +19,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  A representation of a process that has been launched.
  */
-@interface FBProcess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
+@interface FBSubprocess <StdInType : id, StdOutType : id, StdErrType : id> : NSObject
 
 #pragma mark Properties
 
@@ -83,11 +83,11 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 
  @param processIdentifier the process identifier of the launched process
  @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
- @param exitCode a future that will fire when the process exits. See -[FBProcess exitCode]
- @param signal a future that will fire when the process is signalled. See -[FBProcess signal]
+ @param exitCode a future that will fire when the process exits. See -[FBSubprocess exitCode]
+ @param signal a future that will fire when the process is signalled. See -[FBSubprocess signal]
  @param configuration the configuration the process was launched with.
  @param queue the queue to perform actions on.
- @return an implementation of FBProcess.
+ @return an implementation of FBSubprocess.
  */
 - (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue;
 
@@ -98,7 +98,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (FBFuture<FBProcess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(FBProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 
@@ -107,7 +107,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  Cancelling this future will have no effect.
  
  @param acceptableExitCodes the exit codes to check for, must not be nil.
- @return a Future with the same base behaviour as -[FBProcess exitCode] with additional checking of codes.
+ @return a Future with the same base behaviour as -[FBSubprocess exitCode] with additional checking of codes.
  */
 - (FBFuture<NSNumber *> *)exitedWithCodes:(NSSet<NSNumber *> *)acceptableExitCodes;
 

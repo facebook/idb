@@ -386,7 +386,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     return [[[self.simulator.simctlExecutor
       taskBuilderWithCommand:@"spawn" arguments:@[helperPath, service, action]]
       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-      onQueue:self.simulator.asyncQueue fmap:^(FBProcess *task) {
+      onQueue:self.simulator.asyncQueue fmap:^(FBSubprocess *task) {
         [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
         return [FBFuture futureWithResult:NSNull.null];
       }];
@@ -751,7 +751,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     withStdErrInMemoryAsString]
     withTaskLifecycleLoggingTo:logger]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithArray:@[@0, @1]]]
-    onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
+    onQueue:queue fmap:^(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
       if (![task.exitCode.result isEqualToNumber:@0]) {
           return [[FBSimulatorError
             describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]

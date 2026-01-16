@@ -10,7 +10,7 @@
 #import "FBMacDevice.h"
 
 @interface FBMacLaunchedApplication()
-@property (nonatomic, strong) FBProcess *process;
+@property (nonatomic, strong) FBSubprocess *process;
 @property (nonatomic, weak) FBMacDevice *device;
 @property (nonatomic, assign) dispatch_queue_t queue;
 @end

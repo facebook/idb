@@ -28,7 +28,7 @@
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^ NSArray<NSString * > *(FBProcess<id, NSString *, NSString *> *task) {
+    onQueue:queue map:^ NSArray<NSString * > *(FBSubprocess<id, NSString *, NSString *> *task) {
       return [FBOToolOperation extractSanitiserDylibsfromOtoolOutput:task.stdOut];
     }];
 }

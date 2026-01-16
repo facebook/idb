@@ -44,7 +44,7 @@
 
 #pragma mark FBSimulatorProcessSpawnCommands Implementation
 
-- (FBFuture<FBProcess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
+- (FBFuture<FBSubprocess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration
 {
   FBSimulator *simulator = self.simulator;
 
@@ -73,7 +73,7 @@
 
 #pragma mark Private
 
-+ (FBFuture<FBProcess *> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
++ (FBFuture<FBSubprocess *> *)launchProcessWithSimulator:(FBSimulator *)simulator configuration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment
 {
   // Prepare captured futures
   id<FBControlCoreLogger> logger = simulator.logger;
@@ -130,12 +130,12 @@
       }
   }];
 
-  // Map to the FBProcess implementation.
+  // Map to the FBSubprocess implementation.
   return [launchFuture
     onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
       // Wrap in the container object
       pid_t processIdentifier = processIdentifierNumber.intValue;
-      return [[FBProcess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:simulator.workQueue];
+      return [[FBSubprocess alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:simulator.workQueue];
     }];
 }
 

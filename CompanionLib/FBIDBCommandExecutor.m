@@ -699,7 +699,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
     }];
 }
 
-- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut
+- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut
 {
   id<FBDapServerCommand> commands = (id<FBDapServerCommand>) self.target;
   if (![commands conformsToProtocol:@protocol(FBDapServerCommand)]) {

@@ -14,7 +14,7 @@
 #import "FBDataBuffer.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
-#import "FBProcess.h"
+#import "FBSubprocess.h"
 #import "FBProcessBuilder.h"
 #import "FBFuture+Sync.h"
 
@@ -55,7 +55,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 @interface FBProcessFileOutput_Consumer : NSObject <FBProcessFileOutput>
 
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, nullable, readwrite) FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task;
+@property (nonatomic, strong, nullable, readwrite) FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @end
@@ -137,7 +137,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 - (FBFuture<NSNull *> *)startReading
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
+    onQueue:self.queue resolve:^ FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
       if (self.task) {
         return [[FBControlCoreError
           describeFormat:@"Cannot start reading, already reading"]
@@ -149,7 +149,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
         withStdErrToDevNull]
         start];
     }]
-    onQueue:self.queue map:^(FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
+    onQueue:self.queue map:^(FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
       self.task = task;
       return NSNull.null;
     }];
@@ -159,7 +159,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 {
   return [[FBFuture
     onQueue:self.queue resolve:^ FBFuture<NSNumber *> *{
-      FBProcess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
+      FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
       self.task = nil;
       if (!task) {
         return [[FBControlCoreError

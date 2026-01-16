@@ -260,7 +260,7 @@
 
 +(FBFuture<FBFuture<NSNumber *> *> *)listTestProcessWithSpawnConfiguration:(FBProcessSpawnConfiguration *)spawnConfiguration onTarget:(id<FBiOSTarget, FBProcessSpawnCommands>)target timeout:(NSTimeInterval )timeout logger:(id<FBControlCoreLogger>)logger
 {
-  return [[target launchProcess:spawnConfiguration] onQueue:target.workQueue map:^id _Nonnull(FBProcess * _Nonnull process) {
+  return [[target launchProcess:spawnConfiguration] onQueue:target.workQueue map:^id _Nonnull(FBSubprocess * _Nonnull process) {
     return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:nil queue:target.workQueue logger:logger];
   }];
 }

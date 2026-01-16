@@ -7,7 +7,7 @@
 
 #import "FBXcodeDirectory.h"
 
-#import "FBProcess.h"
+#import "FBSubprocess.h"
 #import "FBProcessBuilder.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
@@ -28,7 +28,7 @@ static NSString * const HelpText = @".\n\n============================\n"
     withStdOutInMemoryAsString]
     withStdErrInMemoryAsString]
     runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue fmap:^(FBProcess<NSNull *, NSString *, NSString *> *task) {
+    onQueue:queue fmap:^(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
       NSString *directory = task.stdOut;
       if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
         return [[FBControlCoreError

@@ -34,7 +34,7 @@
   return self;
 }
 
-- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) launchDapServer:dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut{
+- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *) launchDapServer:dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut{
   NSString *dap_log_dir = [self.simulator.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"dap"];
   
   NSError *error = nil;

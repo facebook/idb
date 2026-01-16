@@ -13,7 +13,7 @@
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
-#import "FBProcess.h"
+#import "FBSubprocess.h"
 #import "FBProcessSpawnConfiguration.h"
 
 @interface FBProcessBuilder ()
@@ -230,17 +230,17 @@
 
 #pragma mark Building
 
-- (FBFuture<FBProcess *> *)start
+- (FBFuture<FBSubprocess *> *)start
 {
-  return [FBProcess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
+  return [FBSubprocess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
 }
 
-- (FBFuture<FBProcess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
+- (FBFuture<FBSubprocess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
     start]
-    onQueue:queue fmap:^(FBProcess *process) {
+    onQueue:queue fmap:^(FBSubprocess *process) {
       return [[process exitedWithCodes:exitCodes] mapReplace:process];
     }];
 }

@@ -565,7 +565,7 @@ This enables the permission popup the first time we open a deeplink
  @param stdOut where the dap process writes
  @return A Future that resolves when the dap server is spawned. Returns the dap server process.
  */
-- (FBFuture<FBProcess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
+- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
 
 /**
  Simulates a memory warning
