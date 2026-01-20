@@ -21,6 +21,10 @@
 @interface FBSimulatorAccessibilityCommandsTests : XCTestCase
 
 @property (nonatomic, strong) FBAccessibilityTestFixture *fixture;
+// Child element references for property access assertions
+@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel;
+@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *okButton;
+@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton;
 
 @end
 
@@ -33,6 +37,91 @@
   return [FBSimulatorAccessibilityCommands commandsWithTarget:(FBSimulator *)self.fixture.simulator];
 }
 
+/// All properties accessed during full serialization (no key filtering)
+- (NSSet<NSString *> *)allSerializationProperties
+{
+  return [NSSet setWithArray:@[
+    @"accessibilityLabel",
+    @"accessibilityIdentifier",
+    @"accessibilityValue",
+    @"accessibilityTitle",
+    @"accessibilityHelp",
+    @"accessibilityRole",
+    @"accessibilityRoleDescription",
+    @"accessibilitySubrole",
+    @"accessibilityFrame",
+    @"accessibilityEnabled",
+    @"accessibilityRequired",
+    @"accessibilityCustomActions",
+    @"accessibilityChildren",
+    @"translation",
+  ]];
+}
+
+/// Properties accessed for single-element serialization (no children recursion)
+- (NSSet<NSString *> *)singleElementSerializationProperties
+{
+  return [NSSet setWithArray:@[
+    @"accessibilityLabel",
+    @"accessibilityIdentifier",
+    @"accessibilityValue",
+    @"accessibilityTitle",
+    @"accessibilityHelp",
+    @"accessibilityRole",
+    @"accessibilityRoleDescription",
+    @"accessibilitySubrole",
+    @"accessibilityFrame",
+    @"accessibilityEnabled",
+    @"accessibilityRequired",
+    @"accessibilityCustomActions",
+    @"translation",
+  ]];
+}
+
+/// Properties accessed for AXLabel and frame key filtering
+- (NSSet<NSString *> *)labelAndFrameFilteredProperties
+{
+  return [NSSet setWithArray:@[
+    @"accessibilityLabel",
+    @"accessibilityFrame",
+    @"accessibilityChildren",  // Always accessed for recursion
+    @"translation",  // Always accessed for pid
+  ]];
+}
+
+/// Properties accessed for AXLabel, type, and frame key filtering
+- (NSSet<NSString *> *)labelTypeFrameFilteredProperties
+{
+  return [NSSet setWithArray:@[
+    @"accessibilityLabel",
+    @"accessibilityRole",  // Needed for "type" derivation
+    @"accessibilityFrame",
+    @"translation",  // Always accessed for pid
+  ]];
+}
+
+/// Properties accessed during tap operation (includes action validation)
+- (NSSet<NSString *> *)tapOperationProperties
+{
+  return [NSSet setWithArray:@[
+    @"accessibilityLabel",
+    @"accessibilityIdentifier",
+    @"accessibilityValue",
+    @"accessibilityTitle",
+    @"accessibilityHelp",
+    @"accessibilityRole",
+    @"accessibilityRoleDescription",
+    @"accessibilitySubrole",
+    @"accessibilityFrame",
+    @"accessibilityEnabled",
+    @"accessibilityRequired",
+    @"accessibilityCustomActions",
+    @"accessibilityChildren",
+    @"accessibilityActionNames",  // Accessed for action validation
+    @"translation",
+  ]];
+}
+
 #pragma mark - Setup/Teardown
 
 - (void)setUp
@@ -40,24 +129,24 @@
   [super setUp];
 
   // Create a mock element hierarchy representing a typical UI
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *okButton =
+  self.okButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
                                             identifier:@"ok_button"
                                                  frame:NSMakeRect(20, 750, 150, 44)];
 
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
+  self.cancelButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
                                             identifier:@"cancel_button"
                                                  frame:NSMakeRect(200, 750, 150, 44)];
 
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel =
+  self.titleLabel =
     [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
                                                      frame:NSMakeRect(20, 100, 350, 30)];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
     [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
                                                       frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[titleLabel, okButton, cancelButton]];
+                                                   children:@[self.titleLabel, self.okButton, self.cancelButton]];
 
   // Create fixture with the element tree
   self.fixture = [FBAccessibilityTestFixture bootedSimulatorFixture];
@@ -69,6 +158,9 @@
 {
   [self.fixture tearDown];
   self.fixture = nil;
+  self.titleLabel = nil;
+  self.okButton = nil;
+  self.cancelButton = nil;
   [super tearDown];
 }
 
@@ -158,6 +250,16 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - all serialization properties should be accessed
+  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for root element");
+  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for title label");
+  XCTAssertEqualObjects(self.okButton.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for OK button");
+  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for Cancel button");
 }
 
 - (void)testAccessibilityCommandsProducesCorrectNestedOutput
@@ -250,6 +352,16 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - all serialization properties should be accessed
+  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for root element");
+  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for title label");
+  XCTAssertEqualObjects(self.okButton.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for OK button");
+  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
+    @"All serialization properties should be accessed for Cancel button");
 }
 
 - (void)testAccessibilityCommandsRespectsKeyFiltering
@@ -286,6 +398,16 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - only filtered properties should be accessed
+  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self labelAndFrameFilteredProperties],
+    @"Only label, frame, children, and translation properties should be accessed for root element");
+  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self labelAndFrameFilteredProperties],
+    @"Only label, frame, children, and translation properties should be accessed for title label");
+  XCTAssertEqualObjects(self.okButton.accessedProperties, [self labelAndFrameFilteredProperties],
+    @"Only label, frame, children, and translation properties should be accessed for OK button");
+  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self labelAndFrameFilteredProperties],
+    @"Only label, frame, children, and translation properties should be accessed for Cancel button");
 }
 
 - (void)testAccessibilityPerformTapOnButtonSucceeds
@@ -329,6 +451,10 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - tap operation accesses all properties including action names
+  XCTAssertEqualObjects(okButton.accessedProperties, [self tapOperationProperties],
+    @"Tap operation should access all serialization properties including action names");
 }
 
 - (void)testAccessibilityElementAtPointReturnsElement
@@ -368,6 +494,10 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - single element doesn't recurse children
+  XCTAssertEqualObjects(cancelButton.accessedProperties, [self singleElementSerializationProperties],
+    @"Single element at point should access all properties except children");
 }
 
 - (void)testAccessibilityElementAtPointRespectsKeyFiltering
@@ -395,6 +525,10 @@
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - only filtered properties should be accessed
+  XCTAssertEqualObjects(titleLabel.accessedProperties, [self labelTypeFrameFilteredProperties],
+    @"Only label, role (for type), and frame properties should be accessed with key filtering");
 }
 
 @end

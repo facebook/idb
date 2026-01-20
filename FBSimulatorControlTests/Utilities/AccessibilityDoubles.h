@@ -22,6 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A mock platform element that returns configurable accessibility properties.
  Immutable - all values are set at construction time.
+ Tracks property accesses for test assertions.
  */
 @interface FBSimulatorControlTests_AXPMacPlatformElement_Double : NSObject
 
@@ -36,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 // The translation object for this element (readwrite for test infrastructure use)
 @property (nonatomic, readwrite, strong) FBSimulatorControlTests_AXPTranslationObject_Double *translation;
+
+// Property access tracking for test assertions
+@property (nonatomic, readonly) NSMutableSet<NSString *> *accessedProperties;
 
 // Accessibility properties - all readonly
 @property (nonatomic, readonly, copy, nullable) NSString *accessibilityLabel;

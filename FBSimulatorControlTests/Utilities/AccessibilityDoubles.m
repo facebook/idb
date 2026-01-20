@@ -27,6 +27,19 @@
 @end
 
 @implementation FBSimulatorControlTests_AXPMacPlatformElement_Double
+{
+  // Backing ivars for tracking
+  NSString *_label;
+  NSString *_identifier;
+  NSString *_role;
+  NSRect _frame;
+  BOOL _enabled;
+  BOOL _required;
+  NSArray<NSString *> *_actionNames;
+  NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *_children;
+  FBSimulatorControlTests_AXPTranslationObject_Double *_translation;
+  NSMutableSet<NSString *> *_accessedProperties;
+}
 
 - (instancetype)initWithLabel:(NSString *)label
                    identifier:(NSString *)identifier
@@ -41,29 +54,129 @@
     return nil;
   }
 
-  _accessibilityLabel = [label copy];
-  _accessibilityIdentifier = [identifier copy];
-  _accessibilityRole = [role copy];
-  _accessibilityFrame = frame;
-  _accessibilityEnabled = enabled;
-  _accessibilityActionNames = [actionNames copy] ?: @[];
-  _accessibilityChildren = [children copy] ?: @[];
-  _accessibilityRequired = NO;
+  _label = [label copy];
+  _identifier = [identifier copy];
+  _role = [role copy];
+  _frame = frame;
+  _enabled = enabled;
+  _actionNames = [actionNames copy] ?: @[];
+  _children = [children copy] ?: @[];
+  _required = NO;
   _translation = [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+  _accessedProperties = [NSMutableSet set];
 
   return self;
 }
 
+#pragma mark - Tracked Accessibility Properties
+
+- (NSString *)accessibilityLabel
+{
+  [_accessedProperties addObject:@"accessibilityLabel"];
+  return _label;
+}
+
+- (NSString *)accessibilityIdentifier
+{
+  [_accessedProperties addObject:@"accessibilityIdentifier"];
+  return _identifier;
+}
+
+- (id)accessibilityValue
+{
+  [_accessedProperties addObject:@"accessibilityValue"];
+  return nil; // Not set in initializer
+}
+
+- (NSString *)accessibilityTitle
+{
+  [_accessedProperties addObject:@"accessibilityTitle"];
+  return nil; // Not set in initializer
+}
+
+- (NSString *)accessibilityHelp
+{
+  [_accessedProperties addObject:@"accessibilityHelp"];
+  return nil; // Not set in initializer
+}
+
+- (NSString *)accessibilityRole
+{
+  [_accessedProperties addObject:@"accessibilityRole"];
+  return _role;
+}
+
+- (NSString *)accessibilityRoleDescription
+{
+  [_accessedProperties addObject:@"accessibilityRoleDescription"];
+  return nil; // Not set in initializer
+}
+
+- (NSString *)accessibilitySubrole
+{
+  [_accessedProperties addObject:@"accessibilitySubrole"];
+  return nil; // Not set in initializer
+}
+
+- (NSRect)accessibilityFrame
+{
+  [_accessedProperties addObject:@"accessibilityFrame"];
+  return _frame;
+}
+
+- (BOOL)accessibilityEnabled
+{
+  [_accessedProperties addObject:@"accessibilityEnabled"];
+  return _enabled;
+}
+
+- (BOOL)accessibilityRequired
+{
+  [_accessedProperties addObject:@"accessibilityRequired"];
+  return _required;
+}
+
+- (NSArray<id> *)accessibilityCustomActions
+{
+  [_accessedProperties addObject:@"accessibilityCustomActions"];
+  return nil; // Not set in initializer
+}
+
+- (NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)accessibilityChildren
+{
+  [_accessedProperties addObject:@"accessibilityChildren"];
+  return _children;
+}
+
+- (NSArray<NSString *> *)accessibilityActionNames
+{
+  [_accessedProperties addObject:@"accessibilityActionNames"];
+  return _actionNames;
+}
+
+- (FBSimulatorControlTests_AXPTranslationObject_Double *)translation
+{
+  [_accessedProperties addObject:@"translation"];
+  return _translation;
+}
+
+- (void)setTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation
+{
+  _translation = translation;
+}
+
+#pragma mark - NSAccessibility Aliases
+
 // Alias for isAccessibilityEnabled (used by NSAccessibility)
 - (BOOL)isAccessibilityEnabled
 {
-  return _accessibilityEnabled;
+  return [self accessibilityEnabled];
 }
 
 // Alias for isAccessibilityRequired (used by NSAccessibility)
 - (BOOL)isAccessibilityRequired
 {
-  return _accessibilityRequired;
+  return [self accessibilityRequired];
 }
 
 - (BOOL)accessibilityPerformPress
