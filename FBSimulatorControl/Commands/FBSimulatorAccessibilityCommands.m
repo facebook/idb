@@ -563,7 +563,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 @property (nonatomic, weak, readonly) AXPTranslator *translator;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t callbackQueue;
-@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBAXTranslationRequest *> *tokenToRequest;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBAXTranslationRequest *> *tokenToRequest;
 
 @end
 
@@ -581,9 +581,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   _translator = translator;
   _logger = logger;
   _callbackQueue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.accessibility_translator.callback", DISPATCH_QUEUE_SERIAL);
-  _tokenToRequest = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsCopyIn
-    valueOptions:NSPointerFunctionsStrongMemory];
+  _tokenToRequest = [NSMutableDictionary dictionary];
 
   return self;
 }
