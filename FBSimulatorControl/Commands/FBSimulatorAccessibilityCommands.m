@@ -21,6 +21,105 @@
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"
 
+#import <stdatomic.h>
+
+/**
+ Mutable collector for profiling data during an accessibility request.
+ This is a per-request object that accumulates timing and count data.
+ Thread-safe via atomic operations for counters that may be incremented from callbacks.
+ */
+@interface FBAccessibilityProfilingCollector : NSObject
+
+@property (nonatomic, assign) CFAbsoluteTime translationDuration;
+@property (nonatomic, assign) CFAbsoluteTime elementConversionDuration;
+@property (nonatomic, assign) CFAbsoluteTime serializationDuration;
+
+- (void)incrementElementCount;
+- (void)incrementAttributeFetchCount;
+- (void)addXPCCallDuration:(CFAbsoluteTime)duration;
+- (int64_t)elementCount;
+- (int64_t)attributeFetchCount;
+- (int64_t)xpcCallCount;
+- (CFAbsoluteTime)totalXPCDuration;
+- (FBAccessibilityProfilingData *)finalizeWithSerializationDuration:(CFAbsoluteTime)serializationDuration;
+
+@end
+
+@implementation FBAccessibilityProfilingCollector {
+  _Atomic int64_t _elementCount;
+  _Atomic int64_t _attributeFetchCount;
+  _Atomic int64_t _xpcCallCount;
+  _Atomic double _totalXPCDuration;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  atomic_store(&_elementCount, 0);
+  atomic_store(&_attributeFetchCount, 0);
+  atomic_store(&_xpcCallCount, 0);
+  atomic_store(&_totalXPCDuration, 0.0);
+  return self;
+}
+
+- (void)incrementElementCount
+{
+  atomic_fetch_add(&_elementCount, 1);
+}
+
+- (void)incrementAttributeFetchCount
+{
+  atomic_fetch_add(&_attributeFetchCount, 1);
+}
+
+- (void)addXPCCallDuration:(CFAbsoluteTime)duration
+{
+  atomic_fetch_add(&_xpcCallCount, 1);
+  // For atomic double addition, we use compare-and-swap loop
+  double oldValue, newValue;
+  do {
+    oldValue = atomic_load(&_totalXPCDuration);
+    newValue = oldValue + duration;
+  } while (!atomic_compare_exchange_weak(&_totalXPCDuration, &oldValue, newValue));
+}
+
+- (int64_t)elementCount
+{
+  return atomic_load(&_elementCount);
+}
+
+- (int64_t)attributeFetchCount
+{
+  return atomic_load(&_attributeFetchCount);
+}
+
+- (int64_t)xpcCallCount
+{
+  return atomic_load(&_xpcCallCount);
+}
+
+- (CFAbsoluteTime)totalXPCDuration
+{
+  return atomic_load(&_totalXPCDuration);
+}
+
+- (FBAccessibilityProfilingData *)finalizeWithSerializationDuration:(CFAbsoluteTime)serializationDuration
+{
+  return [[FBAccessibilityProfilingData alloc]
+    initWithElementCount:self.elementCount
+     attributeFetchCount:self.attributeFetchCount
+            xpcCallCount:self.xpcCallCount
+     translationDuration:self.translationDuration
+   elementConversionDuration:self.elementConversionDuration
+      serializationDuration:serializationDuration
+            totalXPCDuration:self.totalXPCDuration];
+}
+
+@end
+
 // Accessibility dictionary keys
 FBAXKeys const FBAXKeysLabel = @"AXLabel";
 FBAXKeys const FBAXKeysFrame = @"AXFrame";
