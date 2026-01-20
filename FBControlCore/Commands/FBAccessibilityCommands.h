@@ -13,6 +13,18 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Options for accessibility operations.
+ */
+typedef NS_OPTIONS(NSUInteger, FBAccessibilityOptions) {
+  /** No logging or profiling. */
+  FBAccessibilityOptionsNone = 0,
+  /** Log accessibility requests and responses to the simulator's logger. */
+  FBAccessibilityOptionsLog = 1 << 0,
+  /** Collect profiling data (element counts, timing metrics). */
+  FBAccessibilityOptionsProfile = 1 << 1,
+};
+
+/**
  Profiling data collected during accessibility operations.
  This provides visibility into the performance characteristics of the AX subsystem.
  */
