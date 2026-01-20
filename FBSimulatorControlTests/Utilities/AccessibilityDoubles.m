@@ -8,7 +8,8 @@
 #import "AccessibilityDoubles.h"
 
 #import <objc/runtime.h>
-#import <objc/message.h>
+
+#import "FBSimulator.h"
 
 @implementation FBSimulatorControlTests_AXPTranslationObject_Double
 
@@ -285,67 +286,6 @@ static id FBMockTranslatorSharedInstance(id self, SEL _cmd) {
 
 @end
 
-#pragma mark - Translation Dispatcher Test Helper
-
-static id sInstalledMockDispatcher = nil;
-static IMP sOriginalDispatcherSharedInstanceIMP = NULL;
-static BOOL sDispatcherSwizzleInstalled = NO;
-
-// Replacement implementation for +[FBSimulator_TranslationDispatcher sharedInstance]
-static id FBMockDispatcherSharedInstance(id self, SEL _cmd) {
-  return sInstalledMockDispatcher;
-}
-
-@implementation FBTranslationDispatcherTestHelper
-
-+ (void)installWithMockTranslator:(FBSimulatorControlTests_AXPTranslator_Double *)mockTranslator
-{
-  NSParameterAssert(mockTranslator != nil);
-  NSAssert(!sDispatcherSwizzleInstalled, @"Mock dispatcher already installed. Call uninstall first.");
-
-  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION patternlint-disable-next-line fb-link-class-from-string
-  Class dispatcherClass = objc_getClass("FBSimulator_TranslationDispatcher");
-  NSAssert(dispatcherClass != nil, @"FBSimulator_TranslationDispatcher class not found.");
-
-  // Create a real dispatcher instance, but initialized with our mock translator
-  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION
-  SEL initSelector = NSSelectorFromString(@"initWithTranslator:logger:");
-  NSAssert([dispatcherClass instancesRespondToSelector:initSelector], @"Dispatcher doesn't respond to initWithTranslator:logger:");
-
-  id dispatcher = [dispatcherClass alloc];
-  sInstalledMockDispatcher = ((id (*)(id, SEL, id, id))objc_msgSend)(dispatcher, initSelector, (id)mockTranslator, nil);
-
-  // Set the bridgeTokenDelegate on the mock translator to the dispatcher
-  mockTranslator.bridgeTokenDelegate = sInstalledMockDispatcher;
-
-  // Swizzle +sharedInstance to return our mock dispatcher
-  Method originalMethod = class_getClassMethod(dispatcherClass, @selector(sharedInstance));
-  NSAssert(originalMethod != NULL, @"+[FBSimulator_TranslationDispatcher sharedInstance] method not found");
-
-  sOriginalDispatcherSharedInstanceIMP = method_getImplementation(originalMethod);
-  method_setImplementation(originalMethod, (IMP)FBMockDispatcherSharedInstance);
-
-  sDispatcherSwizzleInstalled = YES;
-}
-
-+ (void)uninstall
-{
-  if (!sDispatcherSwizzleInstalled) {
-    return;
-  }
-
-  // @lint-ignore FBOBJCDISCOURAGEDFUNCTION patternlint-disable-next-line fb-link-class-from-string
-  Class dispatcherClass = objc_getClass("FBSimulator_TranslationDispatcher");
-  Method originalMethod = class_getClassMethod(dispatcherClass, @selector(sharedInstance));
-  method_setImplementation(originalMethod, sOriginalDispatcherSharedInstanceIMP);
-
-  sInstalledMockDispatcher = nil;
-  sOriginalDispatcherSharedInstanceIMP = NULL;
-  sDispatcherSwizzleInstalled = NO;
-}
-
-@end
-
 #pragma mark - FBSimulator Double
 
 // FBiOSTargetStateBooted = 3
@@ -366,6 +306,11 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
   _state = FBiOSTargetStateBooted_Value;
 
   return self;
+}
+
+- (id)accessibilityTranslationDispatcher
+{
+  return self.mockTranslationDispatcher;
 }
 
 @end
@@ -413,13 +358,17 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
   // Install the translator swizzle
   [FBAccessibilityTranslatorSwizzler installMockTranslator:self.translator];
 
-  // Install the dispatcher test helper - this creates a real dispatcher with our mock translator
-  [FBTranslationDispatcherTestHelper installWithMockTranslator:self.translator];
+  // Create dispatcher using the factory method - no runtime hackery needed
+  id dispatcher = [FBSimulator createAccessibilityTranslationDispatcherWithTranslator:(id)self.translator];
+
+  // Set the dispatcher on the simulator double (for instance method injection)
+  self.simulator.mockTranslationDispatcher = dispatcher;
 }
 
 - (void)tearDown
 {
-  [FBTranslationDispatcherTestHelper uninstall];
+  // Clear the dispatcher on the simulator double
+  self.simulator.mockTranslationDispatcher = nil;
   [FBAccessibilityTranslatorSwizzler uninstallMockTranslator];
 }
 

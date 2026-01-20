@@ -487,19 +487,6 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return self;
 }
 
-+ (instancetype)sharedInstance
-{
-  static dispatch_once_t onceToken;
-  static FBSimulator_TranslationDispatcher *dispatcher;
-  dispatch_once(&onceToken, ^{
-    AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
-    // bridgeTokenDelegate is preferred by AXPTranslator.
-    dispatcher = [[FBSimulator_TranslationDispatcher alloc] initWithTranslator:translator logger:nil];
-    translator.bridgeTokenDelegate = dispatcher;
-  });
-  return dispatcher;
-}
-
 #pragma mark Public
 
 - (FBFutureContext<NSArray<id> *> *)translationObjectAndMacPlatformElementForSimulator:(FBSimulator *)simulator request:(FBSimulator_TranslationRequest *)request
@@ -585,6 +572,31 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
+#pragma mark - FBSimulator Instance Method for Translation Dispatcher
+
+@implementation FBSimulator (FBAccessibilityDispatcher)
+
++ (id)createAccessibilityTranslationDispatcherWithTranslator:(id)translator
+{
+  FBSimulator_TranslationDispatcher *dispatcher =
+    [[FBSimulator_TranslationDispatcher alloc] initWithTranslator:translator logger:nil];
+  ((AXPTranslator *)translator).bridgeTokenDelegate = dispatcher;
+  return dispatcher;
+}
+
+- (id)accessibilityTranslationDispatcher
+{
+  static dispatch_once_t onceToken;
+  static FBSimulator_TranslationDispatcher *dispatcher;
+  dispatch_once(&onceToken, ^{
+    AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
+    dispatcher = [FBSimulator createAccessibilityTranslationDispatcherWithTranslator:translator];
+  });
+  return dispatcher;
+}
+
+@end
+
 @interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -634,7 +646,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 + (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
 {
-  return [[[[FBSimulator_TranslationDispatcher.sharedInstance
+  return [[[[simulator.accessibilityTranslationDispatcher
     translationObjectAndMacPlatformElementForSimulator:simulator request:request]
     // This next steps appends remediation information (if required).
     // The remediation detection has a short circuit so that the common case (no remediation required) is fast.

@@ -161,30 +161,6 @@ typedef void (^FBAccessibilityResponseHandler)(id request, void (^completion)(id
 
 @end
 
-#pragma mark - Translation Dispatcher Test Helper
-
-/**
- Manages test overrides for FBSimulator_TranslationDispatcher.
- Creates a real dispatcher instance initialized with the mock translator and
- installs it via setSharedInstanceForTesting.
- */
-@interface FBTranslationDispatcherTestHelper : NSObject
-
-/**
- Install a fresh dispatcher instance (initialized with mockTranslator) as the
- shared instance for testing.
- Must be balanced with a call to uninstall.
- @param mockTranslator The translator double to initialize the dispatcher with.
- */
-+ (void)installWithMockTranslator:(FBSimulatorControlTests_AXPTranslator_Double *)mockTranslator;
-
-/**
- Remove the test dispatcher and restore default behavior.
- */
-+ (void)uninstall;
-
-@end
-
 #pragma mark - FBSimulator Double
 
 @protocol FBControlCoreLogger;
@@ -209,6 +185,9 @@ typedef void (^FBAccessibilityResponseHandler)(id request, void (^completion)(id
 
 /// Logger for debugging (optional)
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
+
+/// Mock translation dispatcher for accessibility operations (set by test fixture)
+@property (nonatomic, strong, nullable) id mockTranslationDispatcher;
 
 /// Designated initializer
 - (instancetype)initWithDevice:(FBSimulatorControlTests_SimDevice_Accessibility_Double *)device;

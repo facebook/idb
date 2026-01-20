@@ -81,4 +81,29 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#pragma mark - Accessibility Dispatcher
+
+/**
+ Category for accessibility translation dispatcher access.
+ */
+@interface FBSimulator (FBAccessibilityDispatcher)
+
+/**
+ Creates a translation dispatcher with the given translator.
+ Used by tests to create a dispatcher with a mock translator.
+ @param translator The AXPTranslator (or mock) to use for the dispatcher.
+ @return A new dispatcher instance.
+ */
++ (id)createAccessibilityTranslationDispatcherWithTranslator:(id)translator;
+
+/**
+ Returns the translation dispatcher for accessibility operations.
+ In production, creates/returns the shared instance using the real translator.
+ Test doubles can override this to return a mock dispatcher.
+ @return The translation dispatcher.
+ */
+- (id)accessibilityTranslationDispatcher;
+
+@end
+
 NS_ASSUME_NONNULL_END
