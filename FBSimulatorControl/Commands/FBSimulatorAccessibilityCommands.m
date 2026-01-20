@@ -223,6 +223,13 @@ static NSString *const AXPrefix = @"AX";
   // Helper macro to check if a key should be included
   #define SHOULD_INCLUDE_KEY(key) (keys == nil || [keys containsObject:key])
 
+  // Helper macro to include key with JSON serialization if needed
+  #define INCLUDE_IF_KEY(key, expr) do { \
+    if (keys == nil || [keys containsObject:key]) { \
+      values[key] = ensureJSONSerializable(expr); \
+    } \
+  } while (0)
+
   NSMutableDictionary<NSString *, id> *values = [NSMutableDictionary dictionary];
 
   // Frame is always computed since access is cheap
@@ -252,18 +259,12 @@ static NSString *const AXPrefix = @"AX";
 
   // Build dictionary with only requested values
   // Legacy values that mirror SimulatorBridge
-  if (SHOULD_INCLUDE_KEY(FBAXKeysLabel)) {
-    values[FBAXKeysLabel] = ensureJSONSerializable(element.accessibilityLabel);
-  }
+  INCLUDE_IF_KEY(FBAXKeysLabel, element.accessibilityLabel);
   if (SHOULD_INCLUDE_KEY(FBAXKeysFrame)) {
     values[FBAXKeysFrame] = NSStringFromRect(frame);
   }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysValue)) {
-    values[FBAXKeysValue] = ensureJSONSerializable(element.accessibilityValue);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysUniqueID)) {
-    values[FBAXKeysUniqueID] = ensureJSONSerializable(element.accessibilityIdentifier);
-  }
+  INCLUDE_IF_KEY(FBAXKeysValue, element.accessibilityValue);
+  INCLUDE_IF_KEY(FBAXKeysUniqueID, element.accessibilityIdentifier);
 
   // Synthetic values
   if (SHOULD_INCLUDE_KEY(FBAXKeysType)) {
@@ -271,9 +272,7 @@ static NSString *const AXPrefix = @"AX";
   }
 
   // New values
-  if (SHOULD_INCLUDE_KEY(FBAXKeysTitle)) {
-    values[FBAXKeysTitle] = ensureJSONSerializable(element.accessibilityTitle);
-  }
+  INCLUDE_IF_KEY(FBAXKeysTitle, element.accessibilityTitle);
   if (SHOULD_INCLUDE_KEY(FBAXKeysFrameDict)) {
     values[FBAXKeysFrameDict] = @{
       @"x": @(frame.origin.x),
@@ -282,29 +281,16 @@ static NSString *const AXPrefix = @"AX";
       @"height": @(frame.size.height),
     };
   }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysHelp)) {
-    values[FBAXKeysHelp] = ensureJSONSerializable(element.accessibilityHelp);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysEnabled)) {
-    values[FBAXKeysEnabled] = @(element.accessibilityEnabled);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysCustomActions)) {
-    values[FBAXKeysCustomActions] = [self.class customActionsFromElement:element];
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysRoleDescription)) {
-    values[FBAXKeysRoleDescription] = ensureJSONSerializable(element.accessibilityRoleDescription);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysSubrole)) {
-    values[FBAXKeysSubrole] = ensureJSONSerializable(element.accessibilitySubrole);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysContentRequired)) {
-    values[FBAXKeysContentRequired] = @(element.accessibilityRequired);
-  }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysPID)) {
-    values[FBAXKeysPID] = @(element.translation.pid);
-  }
+  INCLUDE_IF_KEY(FBAXKeysHelp, element.accessibilityHelp);
+  INCLUDE_IF_KEY(FBAXKeysEnabled, @(element.accessibilityEnabled));
+  INCLUDE_IF_KEY(FBAXKeysCustomActions, [self.class customActionsFromElement:element]);
+  INCLUDE_IF_KEY(FBAXKeysRoleDescription, element.accessibilityRoleDescription);
+  INCLUDE_IF_KEY(FBAXKeysSubrole, element.accessibilitySubrole);
+  INCLUDE_IF_KEY(FBAXKeysContentRequired, @(element.accessibilityRequired));
+  INCLUDE_IF_KEY(FBAXKeysPID, @(element.translation.pid));
 
   #undef SHOULD_INCLUDE_KEY
+  #undef INCLUDE_IF_KEY
 
   return [values copy];
 }
