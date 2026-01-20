@@ -391,15 +391,17 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulator_TranslationRequest : NSObject
+@interface FBAXTranslationRequest : NSObject
 
 @property (nonatomic, assign, readonly) BOOL nestedFormat;
 @property (nonatomic, copy, readonly) NSString *token;
 @property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *keys;
+@property (nonatomic, strong, nullable) SimDevice *device;
+@property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
 
 @end
 
-@implementation FBSimulator_TranslationRequest
+@implementation FBAXTranslationRequest
 
 - (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
@@ -435,11 +437,11 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulator_TranslationRequest_FrontmostApplication : FBSimulator_TranslationRequest
+@interface FBAXTranslationRequest_FrontmostApplication : FBAXTranslationRequest
 
 @end
 
-@implementation FBSimulator_TranslationRequest_FrontmostApplication
+@implementation FBAXTranslationRequest_FrontmostApplication
 
 - (AXPTranslationObject *)performWithTranslator:(AXPTranslator *)translator
 {
@@ -453,12 +455,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys];
+  return [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys];
 }
 
 @end
 
-@interface FBSimulator_TranslationAction : NSObject
+@interface FBAXTranslationAction : NSObject
 
 @property (nonatomic, assign, readonly) BOOL performTap;
 @property (nonatomic, assign, readonly) CGPoint point;
@@ -466,7 +468,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@implementation FBSimulator_TranslationAction
+@implementation FBAXTranslationAction
 
 - (instancetype)initWithPerformTap:(BOOL)performTap expectedLabel:(nullable NSString *)expectedLabel point:(CGPoint)point;
 {
@@ -511,16 +513,16 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulator_TranslationRequest_Point : FBSimulator_TranslationRequest
+@interface FBAXTranslationRequest_Point : FBAXTranslationRequest
 
 @property (nonatomic, assign, readonly) CGPoint point;
-@property (nonatomic, strong, nullable, readonly) FBSimulator_TranslationAction *action;
+@property (nonatomic, strong, nullable, readonly) FBAXTranslationAction *action;
 
 @end
 
-@implementation FBSimulator_TranslationRequest_Point
+@implementation FBAXTranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBSimulator_TranslationAction *)action keys:(nullable NSSet<NSString *> *)keys
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(nullable NSSet<NSString *> *)keys
 {
   self = [super initWithNestedFormat:nestedFormat keys:keys];
   if (!self) {
@@ -541,7 +543,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys];
-  FBSimulator_TranslationAction *action = self.action;
+  FBAXTranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
   }
@@ -550,22 +552,22 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys];
+  return [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys];
 }
 
 @end
 
 
-@interface FBSimulator_TranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
+@interface FBAXTranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
 
 @property (nonatomic, weak, readonly) AXPTranslator *translator;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) dispatch_queue_t callbackQueue;
-@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBSimulator *> *tokenToSimulator;
+@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBAXTranslationRequest *> *tokenToRequest;
 
 @end
 
-@implementation FBSimulator_TranslationDispatcher
+@implementation FBAXTranslationDispatcher
 
 #pragma mark Initializers
 
@@ -579,20 +581,21 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   _translator = translator;
   _logger = logger;
   _callbackQueue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.accessibility_translator.callback", DISPATCH_QUEUE_SERIAL);
-  _tokenToSimulator = [NSMapTable
+  _tokenToRequest = [NSMapTable
     mapTableWithKeyOptions:NSPointerFunctionsCopyIn
-    valueOptions:NSPointerFunctionsWeakMemory];
+    valueOptions:NSPointerFunctionsStrongMemory];
 
   return self;
 }
 
 #pragma mark Public
 
-- (FBFutureContext<NSArray<id> *> *)translationObjectAndMacPlatformElementForSimulator:(FBSimulator *)simulator request:(FBSimulator_TranslationRequest *)request
+- (FBFutureContext<NSArray<id> *> *)translationObjectAndMacPlatformElementForSimulator:(FBSimulator *)simulator request:(FBAXTranslationRequest *)request
 {
   return [[FBFuture
     onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
-      [self pushSimulator:simulator token:request.token];
+      request.device = simulator.device;
+      [self pushRequest:request];
       AXPTranslationObject *translation = [request performWithTranslator:self.translator];
       if (translation == nil) {
         return [[FBSimulatorError
@@ -605,28 +608,25 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       return @[translation, element];
     }]
     onQueue:simulator.workQueue contextualTeardown:^ FBFuture<NSNull *> * (id _, FBFutureState __){
-      [self popSimulator:request.token];
+      [self popRequest:request];
       return FBFuture.empty;
     }];
 }
 
 #pragma mark Private
 
-- (NSString *)pushSimulator:(FBSimulator *)simulator token:(NSString *)token
+- (void)pushRequest:(FBAXTranslationRequest *)request
 {
-  NSParameterAssert([self.tokenToSimulator objectForKey:token] == nil);
-  [self.tokenToSimulator setObject:simulator forKey:token];
-  [self.logger logFormat:@"Simulator %@ backed by token %@", simulator, token];
-  return token;
+  NSParameterAssert([self.tokenToRequest objectForKey:request.token] == nil);
+  [self.tokenToRequest setObject:request forKey:request.token];
+  [self.logger logFormat:@"Registered request with token %@", request.token];
 }
 
-- (FBSimulator *)popSimulator:(NSString *)token
+- (void)popRequest:(FBAXTranslationRequest *)request
 {
-  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
-  NSParameterAssert(simulator);
-  [self.tokenToSimulator removeObjectForKey:token];
-  [self.logger logFormat:@"Removing token %@", token];
-  return simulator;
+  NSParameterAssert([self.tokenToRequest objectForKey:request.token] != nil);
+  [self.tokenToRequest removeObjectForKey:request.token];
+  [self.logger logFormat:@"Removed request with token %@", request.token];
 }
 
 #pragma mark AXPTranslationTokenDelegateHelper
@@ -636,24 +636,26 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 // This also means that the queue that this happens on should **never be the main queue**. An async global queue will suffice here.
 - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token
 {
-  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
-  if (!simulator) {
-    return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request) {
-      [self.logger logFormat:@"Simlator with token %@ is gone for request %@. Returning empty response", token, request];
+  FBAXTranslationRequest *request = [self.tokenToRequest objectForKey:token];
+  if (!request) {
+    return ^ AXPTranslatorResponse * (AXPTranslatorRequest *axRequest) {
+      [self.logger logFormat:@"Request with token %@ is gone. Returning empty response", token];
       return [objc_getClass("AXPTranslatorResponse") emptyResponse];
     };
   }
-  return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request){
-    [simulator.logger logFormat:@"Sending Accessibility Request %@", request];
+  SimDevice *device = request.device;
+  id<FBControlCoreLogger> logger = request.logger;
+  return ^ AXPTranslatorResponse * (AXPTranslatorRequest *axRequest){
+    [logger logFormat:@"Sending Accessibility Request %@", axRequest];
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
     __block AXPTranslatorResponse *response = nil;
-    [simulator.device sendAccessibilityRequestAsync:request completionQueue:self.callbackQueue completionHandler:^(AXPTranslatorResponse *innerResponse) {
+    [device sendAccessibilityRequestAsync:axRequest completionQueue:self.callbackQueue completionHandler:^(AXPTranslatorResponse *innerResponse) {
       response = innerResponse;
       dispatch_group_leave(group);
     }];
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-    [simulator.logger logFormat:@"Got Accessibility Response %@", response];
+    [logger logFormat:@"Got Accessibility Response %@", response];
     return response;
   };
 }
@@ -677,8 +679,8 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 + (id)createAccessibilityTranslationDispatcherWithTranslator:(id)translator
 {
-  FBSimulator_TranslationDispatcher *dispatcher =
-    [[FBSimulator_TranslationDispatcher alloc] initWithTranslator:translator logger:nil];
+  FBAXTranslationDispatcher *dispatcher =
+    [[FBAXTranslationDispatcher alloc] initWithTranslator:translator logger:nil];
   ((AXPTranslator *)translator).bridgeTokenDelegate = dispatcher;
   return dispatcher;
 }
@@ -686,7 +688,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (id)accessibilityTranslationDispatcher
 {
   static dispatch_once_t onceToken;
-  static FBSimulator_TranslationDispatcher *dispatcher;
+  static FBAXTranslationDispatcher *dispatcher;
   dispatch_once(&onceToken, ^{
     AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
     dispatcher = [FBSimulator createAccessibilityTranslationDispatcherWithTranslator:translator];
@@ -724,26 +726,28 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
+  translationRequest.logger = self.simulator.logger;
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
 }
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
+  translationRequest.logger = self.simulator.logger;
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
-  FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:nil];
+  FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:nil];
   return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
 #pragma mark Private
 
-+ (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
++ (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBAXTranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
 {
   return [[[[simulator.accessibilityTranslationDispatcher
     translationObjectAndMacPlatformElementForSimulator:simulator request:request]
@@ -783,7 +787,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       // At this point we will either have an empty result, or the result.
       // In the empty (remediation) state, then we should recurse, but not allow further remediation.
       if ([result isEqual:NSNull.null]) {
-        FBSimulator_TranslationRequest *nextRequest = [request cloneWithNewToken];
+        FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
         return [[self
           remediateSpringBoardForSimulator:simulator]
           onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id _) {
