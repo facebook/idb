@@ -630,7 +630,9 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   SimDevice *device = request.device;
   id<FBControlCoreLogger> logger = request.logger;
   return ^ AXPTranslatorResponse * (AXPTranslatorRequest *axRequest){
-    [logger logFormat:@"Sending Accessibility Request %@", axRequest];
+    if (logger) {
+      [logger logFormat:@"Sending Accessibility Request %@", axRequest];
+    }
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
     __block AXPTranslatorResponse *response = nil;
@@ -639,7 +641,9 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       dispatch_group_leave(group);
     }];
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-    [logger logFormat:@"Got Accessibility Response %@", response];
+    if (logger) {
+      [logger logFormat:@"Got Accessibility Response %@", response];
+    }
     return response;
   };
 }
@@ -710,15 +714,23 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
+  // Fixed defaults: log=YES (no behavior change)
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
-  translationRequest.logger = self.simulator.logger;
+  if (options & FBAccessibilityOptionsLog) {
+    translationRequest.logger = self.simulator.logger;
+  }
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
 }
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
+  // Fixed defaults: log=YES (no behavior change)
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
-  translationRequest.logger = self.simulator.logger;
+  if (options & FBAccessibilityOptionsLog) {
+    translationRequest.logger = self.simulator.logger;
+  }
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
 }
 
