@@ -196,43 +196,50 @@ static NSString *const AXPrefix = @"AX";
   return [customActionsTemp copy];
 }
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys]];
+    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector]];
   }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys];
+  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector];
 }
 
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys];
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector];
   }
-  return [self.class accessibilityDictionaryForElement:element token:token keys:keys];
+  return [self.class accessibilityDictionaryForElement:element token:token keys:keys collector:collector];
 }
 
 // The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<FBAXKeys> *)keys
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   // The token must always be set so that the right callback is called
   element.translation.bridgeDelegateToken = token;
 
+  // Increment element count if collector is present
+  if (collector) {
+    [collector incrementElementCount];
+  }
+
   // Helper macro to check if a key should be included
   #define SHOULD_INCLUDE_KEY(key) (keys == nil || [keys containsObject:key])
 
-  // Helper macro to include key with JSON serialization if needed
+  // Helper macro to include key with JSON serialization if needed (also increments profiling counter)
   #define INCLUDE_IF_KEY(key, expr) do { \
     if (keys == nil || [keys containsObject:key]) { \
+      if (collector) { [collector incrementAttributeFetchCount]; } \
       values[key] = ensureJSONSerializable(expr); \
     } \
   } while (0)
 
   NSMutableDictionary<NSString *, id> *values = [NSMutableDictionary dictionary];
 
-  // Frame is always computed since access is cheap
+  // Frame is always computed since it's used by multiple keys
+  if (collector) { [collector incrementAttributeFetchCount]; }
   NSRect frame = element.accessibilityFrame;
 
   // Role is used by multiple keys and needs processing
@@ -240,12 +247,14 @@ static NSString *const AXPrefix = @"AX";
   NSString *role = nil;
   NSString *rawRole = nil;
   if (SHOULD_INCLUDE_KEY(FBAXKeysRole)) {
+    if (collector) { [collector incrementAttributeFetchCount]; }
     rawRole = element.accessibilityRole;
     values[FBAXKeysRole] = ensureJSONSerializable(rawRole);
   }
   if (SHOULD_INCLUDE_KEY(FBAXKeysType)) {
     // Fetch rawRole if not already present
     if (rawRole == nil) {
+      if (collector) { [collector incrementAttributeFetchCount]; }
       rawRole = element.accessibilityRole;
     }
     // The value returned in accessibilityRole may be prefixed with "AX".
@@ -297,25 +306,25 @@ static NSString *const AXPrefix = @"AX";
 
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys]];
+  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector]];
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys];
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys] mutableCopy];
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys];
+    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector];
     [childrenValues addObject:childValues];
   }
   values[@"children"] = childrenValues;
@@ -383,6 +392,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 @property (nonatomic, copy, readonly) NSString *token;
 @property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *keys;
 @property (nonatomic, strong, nullable) SimDevice *device;
+@property (nonatomic, strong, nullable) FBAccessibilityProfilingCollector *collector;
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
 
 @end
@@ -436,7 +446,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys];
+  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
 }
 
 - (instancetype)cloneWithNewToken
@@ -528,7 +538,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys];
+  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
   FBAXTranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
@@ -580,14 +590,29 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
     onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
       request.device = simulator.device;
       [self pushRequest:request];
+      FBAccessibilityProfilingCollector *collector = request.collector;
+
+      // Record translation timing
+      CFAbsoluteTime translationStart = CFAbsoluteTimeGetCurrent();
       AXPTranslationObject *translation = [request performWithTranslator:self.translator];
+      if (collector) {
+        collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart;
+      }
+
       if (translation == nil) {
         return [[FBSimulatorError
           describeFormat:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
           fail:error];
       }
       translation.bridgeDelegateToken = request.token;
+
+      // Record element conversion timing
+      CFAbsoluteTime conversionStart = CFAbsoluteTimeGetCurrent();
       AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
+      if (collector) {
+        collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart;
+      }
+
       element.translation.bridgeDelegateToken = request.token;
       return @[translation, element];
     }]
@@ -628,6 +653,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
     };
   }
   SimDevice *device = request.device;
+  FBAccessibilityProfilingCollector *collector = request.collector;
   id<FBControlCoreLogger> logger = request.logger;
   return ^ AXPTranslatorResponse * (AXPTranslatorRequest *axRequest){
     if (logger) {
@@ -636,11 +662,17 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
     __block AXPTranslatorResponse *response = nil;
+
+    CFAbsoluteTime xpcStart = CFAbsoluteTimeGetCurrent();
     [device sendAccessibilityRequestAsync:axRequest completionQueue:self.callbackQueue completionHandler:^(AXPTranslatorResponse *innerResponse) {
       response = innerResponse;
       dispatch_group_leave(group);
     }];
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    if (collector) {
+      [collector addXPCCallDuration:CFAbsoluteTimeGetCurrent() - xpcStart];
+    }
+
     if (logger) {
       [logger logFormat:@"Got Accessibility Response %@", response];
     }
@@ -714,9 +746,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  // Fixed defaults: log=YES (no behavior change)
+  // Fixed defaults: log=YES, profile=NO (no behavior change)
   FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
+  if (options & FBAccessibilityOptionsProfile) {
+    translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
+  }
   if (options & FBAccessibilityOptionsLog) {
     translationRequest.logger = self.simulator.logger;
   }
@@ -725,9 +760,12 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
 {
-  // Fixed defaults: log=YES (no behavior change)
+  // Fixed defaults: log=YES, profile=NO (no behavior change)
   FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
+  if (options & FBAccessibilityOptionsProfile) {
+    translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
+  }
   if (options & FBAccessibilityOptionsLog) {
     translationRequest.logger = self.simulator.logger;
   }
@@ -772,10 +810,20 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       }
       // Otherwise serialize now, when the context has popped the token is then deregistered.
       AXPMacPlatformElement *element = tuple[1];
+      FBAccessibilityProfilingCollector *collector = request.collector;
+
+      // Track serialization timing if profiling
+      CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
       NSError *error = nil;
       id serialized = [request serialize:element error:&error];
       if (serialized == nil) {
         return [FBFuture futureWithError:error];
+      }
+      CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
+
+      // Finalize profiling data if collector is present
+      if (collector) {
+        [collector finalizeWithSerializationDuration:serializationDuration];
       }
       return [FBFuture futureWithResult:serialized];
     }]
