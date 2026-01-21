@@ -179,9 +179,9 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
 
  @param point location on the screen (NSValue<NSPoint> *), returns info for the whole screen if nil
  @param nestedFormat YES if the legacy format should be used, NO otherwise.
- @return A Future that resolves with the accessibility info
+ @return A Future that resolves with the accessibility info response
  */
-- (FBFuture<id> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibility_info_at_point:(nullable NSValue *)point nestedFormat:(BOOL)nestedFormat;
 
 /**
  Adds media files (photos, videos, ...) to the target

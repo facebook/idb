@@ -122,58 +122,40 @@
   ]];
 }
 
-#pragma mark - Setup/Teardown
-
-- (void)setUp
+/// Asserts profiling data metrics with expected counts
+- (void)assertProfilingData:(FBAccessibilityProfilingData *)profilingData
+           expectedElements:(NSUInteger)expectedElementCount
+     expectedAttributeFetches:(NSUInteger)expectedAttributeFetchCount
 {
-  [super setUp];
-
-  // Create a mock element hierarchy representing a typical UI
-  self.okButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
-                                            identifier:@"ok_button"
-                                                 frame:NSMakeRect(20, 750, 150, 44)];
-
-  self.cancelButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
-                                            identifier:@"cancel_button"
-                                                 frame:NSMakeRect(200, 750, 150, 44)];
-
-  self.titleLabel =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
-                                                     frame:NSMakeRect(20, 100, 350, 30)];
-
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
-    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
-                                                      frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[self.titleLabel, self.okButton, self.cancelButton]];
-
-  // Create fixture with the element tree
-  self.fixture = [FBAccessibilityTestFixture bootedSimulatorFixture];
-  self.fixture.rootElement = root;
-  [self.fixture setUp];
+  XCTAssertNotNil(profilingData, @"Profiling data should be present");
+  XCTAssertEqual(profilingData.elementCount, expectedElementCount, @"Element count mismatch");
+  XCTAssertEqual(profilingData.attributeFetchCount, expectedAttributeFetchCount, @"Attribute fetch count mismatch");
+  XCTAssertGreaterThanOrEqual(profilingData.xpcCallCount, 0, @"XPC call count should be non-negative");
+  XCTAssertGreaterThanOrEqual(profilingData.translationDuration, 0, @"Translation duration should be non-negative");
+  XCTAssertGreaterThanOrEqual(profilingData.elementConversionDuration, 0, @"Element conversion duration should be non-negative");
+  XCTAssertGreaterThanOrEqual(profilingData.serializationDuration, 0, @"Serialization duration should be non-negative");
 }
 
-- (void)tearDown
-{
-  [self.fixture tearDown];
-  self.fixture = nil;
-  self.titleLabel = nil;
-  self.okButton = nil;
-  self.cancelButton = nil;
-  [super tearDown];
-}
+#pragma mark - Core Test Helpers
 
-- (void)testAccessibilityCommandsProducesCorrectFlatOutput
+/// Core test for flat output - returns response for optional profiling assertions
+- (FBAccessibilityElementsResponse *)assertFlatOutputWithProfiling:(BOOL)enableProfiling
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
   XCTAssertNotNil(commands);
 
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
+  if (enableProfiling) {
+    options |= FBAccessibilityOptionsProfile;
+  }
+
   NSError *error = nil;
-  NSArray *result = [[commands accessibilityElementsWithNestedFormat:NO keys:nil] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:NO keys:nil options:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
+  XCTAssertNotNil(response);
+
+  NSArray *result = (NSArray *)response.elements;
   XCTAssertEqual(result.count, 4, @"Flat format should have 4 elements (root + 3 children)");
 
   // Expected full output for all 4 elements
@@ -260,17 +242,59 @@
     @"All serialization properties should be accessed for OK button");
   XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
     @"All serialization properties should be accessed for Cancel button");
+
+  return response;
 }
 
-- (void)testAccessibilityCommandsProducesCorrectNestedOutput
+/// Core test for element at point - returns response for optional profiling assertions
+- (FBAccessibilityElementsResponse *)assertElementAtPointWithProfiling:(BOOL)enableProfiling
+                                                                  point:(CGPoint)point
+                                                                element:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)element
+                                                               expected:(NSDictionary *)expected
+{
+  self.fixture.translator.macPlatformElementResult = element;
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
+  if (enableProfiling) {
+    options |= FBAccessibilityOptionsProfile;
+  }
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:point nestedFormat:NO keys:nil options:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+
+  NSDictionary *result = (NSDictionary *)response.elements;
+  XCTAssertEqualObjects(result, expected);
+  XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - single element doesn't recurse children
+  XCTAssertEqualObjects(element.accessedProperties, [self singleElementSerializationProperties],
+    @"Single element at point should access all properties except children");
+
+  return response;
+}
+
+/// Core test for nested output - returns response for optional profiling assertions
+- (FBAccessibilityElementsResponse *)assertNestedOutputWithProfiling:(BOOL)enableProfiling
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
+  if (enableProfiling) {
+    options |= FBAccessibilityOptionsProfile;
+  }
+
   NSError *error = nil;
-  NSArray *result = [[commands accessibilityElementsWithNestedFormat:YES keys:nil] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:YES keys:nil options:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
+  XCTAssertNotNil(response);
+
+  NSArray *result = (NSArray *)response.elements;
   XCTAssertEqual(result.count, 1, @"Nested format should have 1 root element");
 
   // Expected full nested output
@@ -362,18 +386,28 @@
     @"All serialization properties should be accessed for OK button");
   XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
     @"All serialization properties should be accessed for Cancel button");
+
+  return response;
 }
 
-- (void)testAccessibilityCommandsRespectsKeyFiltering
+/// Core test for key filtering - returns response for optional profiling assertions
+- (FBAccessibilityElementsResponse *)assertKeyFilteringWithProfiling:(BOOL)enableProfiling
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
+  if (enableProfiling) {
+    options |= FBAccessibilityOptionsProfile;
+  }
+
   NSSet *keys = [NSSet setWithArray:@[@"AXLabel", @"frame"]];
   NSError *error = nil;
-  NSArray *result = [[commands accessibilityElementsWithNestedFormat:NO keys:keys] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:NO keys:keys options:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
+  XCTAssertNotNil(response);
+
+  NSArray *result = (NSArray *)response.elements;
   XCTAssertEqual(result.count, 4, @"Should have 4 elements");
 
   // Expected output with only the requested keys
@@ -408,6 +442,127 @@
     @"Only label, frame, children, and translation properties should be accessed for OK button");
   XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self labelAndFrameFilteredProperties],
     @"Only label, frame, children, and translation properties should be accessed for Cancel button");
+
+  return response;
+}
+
+/// Core test for element at point with key filtering - returns response for optional profiling assertions
+- (FBAccessibilityElementsResponse *)assertElementAtPointKeyFilteringWithProfiling:(BOOL)enableProfiling
+{
+  // Configure objectAtPointResult to return the title label element
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
+                                                     frame:NSMakeRect(20, 100, 350, 30)];
+  self.fixture.translator.macPlatformElementResult = titleLabel;
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+
+  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
+  if (enableProfiling) {
+    options |= FBAccessibilityOptionsProfile;
+  }
+
+  NSSet *keys = [NSSet setWithArray:@[@"AXLabel", @"type", @"frame"]];
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:CGPointMake(100, 115) nestedFormat:NO keys:keys options:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+
+  NSDictionary *result = (NSDictionary *)response.elements;
+
+  NSDictionary *expected = @{
+    @"AXLabel": @"Confirm Action",
+    @"type": @"StaticText",
+    @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
+  };
+
+  XCTAssertEqualObjects(result, expected);
+  XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+
+  // Verify property access tracking - only filtered properties should be accessed
+  XCTAssertEqualObjects(titleLabel.accessedProperties, [self labelTypeFrameFilteredProperties],
+    @"Only label, role (for type), and frame properties should be accessed with key filtering");
+
+  return response;
+}
+
+#pragma mark - Setup/Teardown
+
+- (void)setUp
+{
+  [super setUp];
+
+  // Create a mock element hierarchy representing a typical UI
+  self.okButton =
+    [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
+                                            identifier:@"ok_button"
+                                                 frame:NSMakeRect(20, 750, 150, 44)];
+
+  self.cancelButton =
+    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
+                                            identifier:@"cancel_button"
+                                                 frame:NSMakeRect(200, 750, 150, 44)];
+
+  self.titleLabel =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
+                                                     frame:NSMakeRect(20, 100, 350, 30)];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[self.titleLabel, self.okButton, self.cancelButton]];
+
+  // Create fixture with the element tree
+  self.fixture = [FBAccessibilityTestFixture bootedSimulatorFixture];
+  self.fixture.rootElement = root;
+  [self.fixture setUp];
+}
+
+- (void)tearDown
+{
+  [self.fixture tearDown];
+  self.fixture = nil;
+  self.titleLabel = nil;
+  self.okButton = nil;
+  self.cancelButton = nil;
+  [super tearDown];
+}
+
+- (void)testAccessibilityCommandsProducesCorrectFlatOutput
+{
+  [self assertFlatOutputWithProfiling:NO];
+}
+
+- (void)testAccessibilityCommandsProducesCorrectFlatOutputWithProfiling
+{
+  FBAccessibilityElementsResponse *response = [self assertFlatOutputWithProfiling:YES];
+  // 4 elements × 13 properties (all except actionNames) = 52 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:52];
+}
+
+- (void)testAccessibilityCommandsProducesCorrectNestedOutput
+{
+  [self assertNestedOutputWithProfiling:NO];
+}
+
+- (void)testAccessibilityCommandsProducesCorrectNestedOutputWithProfiling
+{
+  FBAccessibilityElementsResponse *response = [self assertNestedOutputWithProfiling:YES];
+  // 4 elements × 13 properties (all except actionNames) = 52 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:52];
+}
+
+- (void)testAccessibilityCommandsRespectsKeyFiltering
+{
+  [self assertKeyFilteringWithProfiling:NO];
+}
+
+- (void)testAccessibilityCommandsRespectsKeyFilteringWithProfiling
+{
+  FBAccessibilityElementsResponse *response = [self assertKeyFilteringWithProfiling:YES];
+  // 4 elements × 2 properties (label, frame) = 8 attribute fetches (children/translation not tracked for leaf elements)
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:8];
 }
 
 - (void)testAccessibilityPerformTapOnButtonSucceeds
@@ -459,20 +614,10 @@
 
 - (void)testAccessibilityElementAtPointReturnsElement
 {
-  // Configure objectAtPointResult to return the Cancel button element
   FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
                                             identifier:@"cancel_button"
                                                  frame:NSMakeRect(200, 750, 150, 44)];
-  self.fixture.translator.macPlatformElementResult = cancelButton;
-
-  FBSimulatorAccessibilityCommands *commands = [self commands];
-
-  NSError *error = nil;
-  NSDictionary *result = [[commands accessibilityElementAtPoint:CGPointMake(275, 772) nestedFormat:NO keys:nil] awaitWithTimeout:5.0 error:&error];
-
-  XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
 
   NSDictionary *expected = @{
     @"AXLabel": @"Cancel",
@@ -492,43 +637,49 @@
     @"pid": @12345,
   };
 
-  XCTAssertEqualObjects(result, expected);
-  XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
+  [self assertElementAtPointWithProfiling:NO point:CGPointMake(275, 772) element:cancelButton expected:expected];
+}
 
-  // Verify property access tracking - single element doesn't recurse children
-  XCTAssertEqualObjects(cancelButton.accessedProperties, [self singleElementSerializationProperties],
-    @"Single element at point should access all properties except children");
+- (void)testAccessibilityElementAtPointReturnsElementWithProfiling
+{
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
+    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
+                                            identifier:@"cancel_button"
+                                                 frame:NSMakeRect(200, 750, 150, 44)];
+
+  NSDictionary *expected = @{
+    @"AXLabel": @"Cancel",
+    @"AXFrame": @"{{200, 750}, {150, 44}}",
+    @"AXValue": [NSNull null],
+    @"AXUniqueId": @"cancel_button",
+    @"type": @"Button",
+    @"title": [NSNull null],
+    @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
+    @"help": [NSNull null],
+    @"enabled": @YES,
+    @"custom_actions": @[],
+    @"role": @"AXButton",
+    @"role_description": [NSNull null],
+    @"subrole": [NSNull null],
+    @"content_required": @NO,
+    @"pid": @12345,
+  };
+
+  FBAccessibilityElementsResponse *response = [self assertElementAtPointWithProfiling:YES point:CGPointMake(275, 772) element:cancelButton expected:expected];
+  // 1 element × 13 properties (no children) = 13 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:13];
 }
 
 - (void)testAccessibilityElementAtPointRespectsKeyFiltering
 {
-  // Configure objectAtPointResult to return the title label element
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
-                                                     frame:NSMakeRect(20, 100, 350, 30)];
-  self.fixture.translator.macPlatformElementResult = titleLabel;
+  [self assertElementAtPointKeyFilteringWithProfiling:NO];
+}
 
-  FBSimulatorAccessibilityCommands *commands = [self commands];
-
-  NSSet *keys = [NSSet setWithArray:@[@"AXLabel", @"type", @"frame"]];
-  NSError *error = nil;
-  NSDictionary *result = [[commands accessibilityElementAtPoint:CGPointMake(100, 115) nestedFormat:NO keys:keys] awaitWithTimeout:5.0 error:&error];
-
-  XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
-
-  NSDictionary *expected = @{
-    @"AXLabel": @"Confirm Action",
-    @"type": @"StaticText",
-    @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
-  };
-
-  XCTAssertEqualObjects(result, expected);
-  XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
-
-  // Verify property access tracking - only filtered properties should be accessed
-  XCTAssertEqualObjects(titleLabel.accessedProperties, [self labelTypeFrameFilteredProperties],
-    @"Only label, role (for type), and frame properties should be accessed with key filtering");
+- (void)testAccessibilityElementAtPointRespectsKeyFilteringWithProfiling
+{
+  FBAccessibilityElementsResponse *response = [self assertElementAtPointKeyFilteringWithProfiling:YES];
+  // 1 element × 3 properties (label, role, frame) = 3 attribute fetches (translation not tracked)
+  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:3];
 }
 
 @end

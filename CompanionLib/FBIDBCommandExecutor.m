@@ -147,15 +147,15 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
     }];
 }
 
-- (FBFuture<id> *)accessibility_info_at_point:(nullable NSValue *)value nestedFormat:(BOOL)nestedFormat
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibility_info_at_point:(nullable NSValue *)value nestedFormat:(BOOL)nestedFormat
 {
   return [[self
     accessibilityCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBAccessibilityCommands> commands) {
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat keys:nil];
+        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat keys:nil options:FBAccessibilityOptionsLog];
       } else {
-        return [commands accessibilityElementsWithNestedFormat:nestedFormat keys:nil];
+        return [commands accessibilityElementsWithNestedFormat:nestedFormat keys:nil options:FBAccessibilityOptionsLog];
       }
     }];
 }

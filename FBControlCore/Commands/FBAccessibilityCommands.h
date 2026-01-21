@@ -119,9 +119,10 @@ typedef NS_OPTIONS(NSUInteger, FBAccessibilityOptions) {
 
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
- @return the accessibility elements for the main screen, wrapped in a Future.
+ @param options bitmask controlling logging and profiling behavior.
+ @return FBAccessibilityElementsResponse containing the elements and optional profiling data.
  */
-- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys;
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options;
 
 /**
  Obtain the acessibility element for the main screen at the given point.
@@ -130,9 +131,10 @@ typedef NS_OPTIONS(NSUInteger, FBAccessibilityOptions) {
  @param point the coordinate at which to obtain the accessibility element.
  @param nestedFormat if YES then data is returned in the nested format, NO for flat format
  @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
- @return the accessibility element at the provided point, wrapped in a Future.
+ @param options bitmask controlling logging and profiling behavior.
+ @return FBAccessibilityElementsResponse containing the element and optional profiling data.
  */
-- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys;
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options;
 
 @end
 

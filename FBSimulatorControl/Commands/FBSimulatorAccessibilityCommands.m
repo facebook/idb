@@ -357,24 +357,34 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark FBSimulatorAccessibilityCommands Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
   if (nestedFormat) {
     return [[FBControlCoreError
       describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
       failFuture];
   }
-  return [self.bridge accessibilityElements];
+  // Note: options is ignored for legacy SimulatorBridge implementation
+  // Always wrap result in FBAccessibilityElementsResponse with nil profiling data
+  return [[self.bridge accessibilityElements]
+    onQueue:dispatch_get_main_queue() map:^FBAccessibilityElementsResponse *(NSArray *elements) {
+      return [[FBAccessibilityElementsResponse alloc] initWithElements:elements profilingData:nil];
+    }];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
   if (nestedFormat) {
     return [[FBControlCoreError
       describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
       failFuture];
   }
-  return [self.bridge accessibilityElementAtPoint:point];
+  // Note: options is ignored for legacy SimulatorBridge implementation
+  // Always wrap result in FBAccessibilityElementsResponse with nil profiling data
+  return [[self.bridge accessibilityElementAtPoint:point]
+    onQueue:dispatch_get_main_queue() map:^FBAccessibilityElementsResponse *(NSDictionary *element) {
+      return [[FBAccessibilityElementsResponse alloc] initWithElements:element profilingData:nil];
+    }];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
@@ -744,10 +754,8 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 #pragma mark FBSimulatorAccessibilityCommands Implementation
 
-- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
-  // Fixed defaults: log=YES, profile=NO (no behavior change)
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
@@ -758,10 +766,8 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
 }
 
-- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
-  // Fixed defaults: log=YES, profile=NO (no behavior change)
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
@@ -776,12 +782,16 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 {
   FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:nil];
-  return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
+  // Extract .elements from the response since this method returns raw dictionary
+  return [[FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO]
+    onQueue:self.simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {
+      return response.elements;
+    }];
 }
 
 #pragma mark Private
 
-+ (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBAXTranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
++ (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementWithTranslationRequest:(FBAXTranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
 {
   return [[[[simulator.accessibilityTranslationDispatcher
     translationObjectAndMacPlatformElementForSimulator:simulator request:request]
@@ -821,20 +831,25 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
       }
       CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
 
-      // Finalize profiling data if collector is present
+      // Always wrap result in FBAccessibilityElementsResponse
+      // profilingData is nil when profile=NO
+      FBAccessibilityProfilingData *profilingData = nil;
       if (collector) {
-        [collector finalizeWithSerializationDuration:serializationDuration];
+        profilingData = [collector finalizeWithSerializationDuration:serializationDuration];
       }
-      return [FBFuture futureWithResult:serialized];
+      FBAccessibilityElementsResponse *response = [[FBAccessibilityElementsResponse alloc]
+        initWithElements:serialized
+           profilingData:profilingData];
+      return [FBFuture futureWithResult:response];
     }]
-    onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id result) {
+    onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElementsResponse *> * (FBAccessibilityElementsResponse *result) {
       // At this point we will either have an empty result, or the result.
       // In the empty (remediation) state, then we should recurse, but not allow further remediation.
       if ([result isEqual:NSNull.null]) {
         FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
         return [[self
           remediateSpringBoardForSimulator:simulator]
-          onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id _) {
+          onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElementsResponse *> * (id _) {
             return [self accessibilityElementWithTranslationRequest:nextRequest simulator:simulator remediationPermitted:NO];
           }];
       }
@@ -905,21 +920,21 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 #pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
     onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementsWithNestedFormat:nestedFormat keys:keys];
+      return [implementation accessibilityElementsWithNestedFormat:nestedFormat keys:keys options:options];
     }];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
   return [[self
     implementationWithNestedFormat:nestedFormat]
     onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat keys:keys];
+      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat keys:keys options:options];
     }];
 }
 
