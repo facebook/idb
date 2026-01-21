@@ -21,6 +21,8 @@
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"
 
+#import <FBControlCore/FBAccessibilityTraits.h>
+
 #import <stdatomic.h>
 
 /**
@@ -136,6 +138,7 @@ FBAXKeys const FBAXKeysRoleDescription = @"role_description";
 FBAXKeys const FBAXKeysSubrole = @"subrole";
 FBAXKeys const FBAXKeysContentRequired = @"content_required";
 FBAXKeys const FBAXKeysPID = @"pid";
+FBAXKeys const FBAXKeysTraits = @"traits";
 
 //
 // # About the implementation of Accessibility within CoreSimulator
@@ -194,6 +197,22 @@ static NSString *const AXPrefix = @"AX";
     [customActionsTemp addObject:ensureJSONSerializable(name)];
   }
   return [customActionsTemp copy];
+}
+
+// AXTraits is an iOS-specific bitmask that was available in the old SimulatorBridge implementation.
+// Returns nil if traits are not supported (e.g., the element doesn't support the attribute).
+// The caller should convert nil to NSNull to indicate traits are unavailable for this element.
++ (nullable NSArray<NSString *> *)traitsFromElement:(AXPMacPlatformElement *)element
+{
+  if (![element respondsToSelector:@selector(accessibilityAttributeValue:)]) {
+    return nil;
+  }
+  id traitsValue = [element accessibilityAttributeValue:@"AXTraits"];
+  if (![traitsValue isKindOfClass:NSNumber.class]) {
+    return nil;
+  }
+  uint64_t bitmask = [(NSNumber *)traitsValue unsignedLongLongValue];
+  return AXExtractTraits(bitmask).allObjects;
 }
 
 + (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
@@ -297,6 +316,11 @@ static NSString *const AXPrefix = @"AX";
   INCLUDE_IF_KEY(FBAXKeysSubrole, element.accessibilitySubrole);
   INCLUDE_IF_KEY(FBAXKeysContentRequired, @(element.accessibilityRequired));
   INCLUDE_IF_KEY(FBAXKeysPID, @(element.translation.pid));
+  if (SHOULD_INCLUDE_KEY(FBAXKeysTraits)) {
+    if (collector) { [collector incrementAttributeFetchCount]; }
+    NSArray<NSString *> *traits = [self.class traitsFromElement:element];
+    values[FBAXKeysTraits] = traits ?: (id)NSNull.null;
+  }
 
   #undef SHOULD_INCLUDE_KEY
   #undef INCLUDE_IF_KEY

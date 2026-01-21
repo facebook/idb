@@ -31,6 +31,7 @@ extern FBAXKeys const FBAXKeysRoleDescription;
 extern FBAXKeys const FBAXKeysSubrole;
 extern FBAXKeys const FBAXKeysContentRequired;
 extern FBAXKeys const FBAXKeysPID;
+extern FBAXKeys const FBAXKeysTraits;
 
 /**
  Used for internal and external implementation.
