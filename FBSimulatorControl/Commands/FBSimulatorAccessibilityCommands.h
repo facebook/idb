@@ -34,6 +34,12 @@ extern FBAXKeys const FBAXKeysPID;
 extern FBAXKeys const FBAXKeysTraits;
 
 /**
+ Default set of keys returned when no specific keys are requested.
+ This represents the stable API - new keys should be opt-in.
+ */
+extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
+
+/**
  Used for internal and external implementation.
  */
 @protocol FBSimulatorAccessibilityOperations <NSObject>

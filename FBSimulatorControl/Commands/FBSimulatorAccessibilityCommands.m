@@ -140,6 +140,21 @@ FBAXKeys const FBAXKeysContentRequired = @"content_required";
 FBAXKeys const FBAXKeysPID = @"pid";
 FBAXKeys const FBAXKeysTraits = @"traits";
 
+NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
+  static NSSet<FBAXKeys> *defaultSet;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    defaultSet = [NSSet setWithArray:@[
+      FBAXKeysLabel, FBAXKeysFrame, FBAXKeysValue, FBAXKeysUniqueID,
+      FBAXKeysType, FBAXKeysTitle, FBAXKeysFrameDict, FBAXKeysHelp,
+      FBAXKeysEnabled, FBAXKeysCustomActions, FBAXKeysRole,
+      FBAXKeysRoleDescription, FBAXKeysSubrole, FBAXKeysContentRequired,
+      FBAXKeysPID, FBAXKeysTraits,
+    ]];
+  });
+  return defaultSet;
+}
+
 //
 // # About the implementation of Accessibility within CoreSimulator
 //
@@ -215,7 +230,7 @@ static NSString *const AXPrefix = @"AX";
   return AXExtractTraits(bitmask).allObjects;
 }
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
@@ -224,7 +239,7 @@ static NSString *const AXPrefix = @"AX";
   return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector];
 }
 
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   element.translation.bridgeDelegateToken = token;
   if (nestedFormat) {
@@ -234,7 +249,7 @@ static NSString *const AXPrefix = @"AX";
 }
 
 // The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   // The token must always be set so that the right callback is called
   element.translation.bridgeDelegateToken = token;
@@ -244,12 +259,9 @@ static NSString *const AXPrefix = @"AX";
     [collector incrementElementCount];
   }
 
-  // Helper macro to check if a key should be included
-  #define SHOULD_INCLUDE_KEY(key) (keys == nil || [keys containsObject:key])
-
   // Helper macro to include key with JSON serialization if needed (also increments profiling counter)
   #define INCLUDE_IF_KEY(key, expr) do { \
-    if (keys == nil || [keys containsObject:key]) { \
+    if ([keys containsObject:key]) { \
       if (collector) { [collector incrementAttributeFetchCount]; } \
       values[key] = ensureJSONSerializable(expr); \
     } \
@@ -265,12 +277,12 @@ static NSString *const AXPrefix = @"AX";
   // Check FBAXKeysRole first to assign rawRole, then FBAXKeysType can derive from it
   NSString *role = nil;
   NSString *rawRole = nil;
-  if (SHOULD_INCLUDE_KEY(FBAXKeysRole)) {
+  if ([keys containsObject:FBAXKeysRole]) {
     if (collector) { [collector incrementAttributeFetchCount]; }
     rawRole = element.accessibilityRole;
     values[FBAXKeysRole] = ensureJSONSerializable(rawRole);
   }
-  if (SHOULD_INCLUDE_KEY(FBAXKeysType)) {
+  if ([keys containsObject:FBAXKeysType]) {
     // Fetch rawRole if not already present
     if (rawRole == nil) {
       if (collector) { [collector incrementAttributeFetchCount]; }
@@ -288,20 +300,20 @@ static NSString *const AXPrefix = @"AX";
   // Build dictionary with only requested values
   // Legacy values that mirror SimulatorBridge
   INCLUDE_IF_KEY(FBAXKeysLabel, element.accessibilityLabel);
-  if (SHOULD_INCLUDE_KEY(FBAXKeysFrame)) {
+  if ([keys containsObject:FBAXKeysFrame]) {
     values[FBAXKeysFrame] = NSStringFromRect(frame);
   }
   INCLUDE_IF_KEY(FBAXKeysValue, element.accessibilityValue);
   INCLUDE_IF_KEY(FBAXKeysUniqueID, element.accessibilityIdentifier);
 
   // Synthetic values
-  if (SHOULD_INCLUDE_KEY(FBAXKeysType)) {
+  if ([keys containsObject:FBAXKeysType]) {
     values[FBAXKeysType] = ensureJSONSerializable(role);
   }
 
   // New values
   INCLUDE_IF_KEY(FBAXKeysTitle, element.accessibilityTitle);
-  if (SHOULD_INCLUDE_KEY(FBAXKeysFrameDict)) {
+  if ([keys containsObject:FBAXKeysFrameDict]) {
     values[FBAXKeysFrameDict] = @{
       @"x": @(frame.origin.x),
       @"y": @(frame.origin.y),
@@ -316,13 +328,12 @@ static NSString *const AXPrefix = @"AX";
   INCLUDE_IF_KEY(FBAXKeysSubrole, element.accessibilitySubrole);
   INCLUDE_IF_KEY(FBAXKeysContentRequired, @(element.accessibilityRequired));
   INCLUDE_IF_KEY(FBAXKeysPID, @(element.translation.pid));
-  if (SHOULD_INCLUDE_KEY(FBAXKeysTraits)) {
+  if ([keys containsObject:FBAXKeysTraits]) {
     if (collector) { [collector incrementAttributeFetchCount]; }
     NSArray<NSString *> *traits = [self.class traitsFromElement:element];
     values[FBAXKeysTraits] = traits ?: (id)NSNull.null;
   }
 
-  #undef SHOULD_INCLUDE_KEY
   #undef INCLUDE_IF_KEY
 
   return [values copy];
@@ -330,7 +341,7 @@ static NSString *const AXPrefix = @"AX";
 
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
   [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector]];
@@ -342,7 +353,7 @@ static NSString *const AXPrefix = @"AX";
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(nullable NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
++ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector
 {
   NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
@@ -424,7 +435,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @property (nonatomic, assign, readonly) BOOL nestedFormat;
 @property (nonatomic, copy, readonly) NSString *token;
-@property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *keys;
+@property (nonatomic, copy, readonly) NSSet<NSString *> *keys;
 @property (nonatomic, strong, nullable) SimDevice *device;
 @property (nonatomic, strong, nullable) FBAccessibilityProfilingCollector *collector;
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
@@ -433,7 +444,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @implementation FBAXTranslationRequest
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys
 {
   self = [super init];
   if (!self) {
@@ -552,7 +563,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @implementation FBAXTranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(nullable NSSet<NSString *> *)keys
+- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(NSSet<NSString *> *)keys
 {
   self = [super initWithNestedFormat:nestedFormat keys:keys];
   if (!self) {
@@ -780,7 +791,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys ?: FBAXKeysDefaultSet()];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
@@ -792,7 +803,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys ?: FBAXKeysDefaultSet()];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
@@ -805,7 +816,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
   FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:nil];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:FBAXKeysDefaultSet()];
   // Extract .elements from the response since this method returns raw dictionary
   return [[FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO]
     onQueue:self.simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {

@@ -176,6 +176,7 @@
       @"subrole": [NSNull null],
       @"content_required": @NO,
       @"pid": @12345,
+      @"traits": [NSNull null],
     },
     @{
       @"AXLabel": @"Confirm Action",
@@ -193,6 +194,7 @@
       @"subrole": [NSNull null],
       @"content_required": @NO,
       @"pid": @12345,
+      @"traits": [NSNull null],
     },
     @{
       @"AXLabel": @"OK",
@@ -210,6 +212,7 @@
       @"subrole": [NSNull null],
       @"content_required": @NO,
       @"pid": @12345,
+      @"traits": [NSNull null],
     },
     @{
       @"AXLabel": @"Cancel",
@@ -227,6 +230,7 @@
       @"subrole": [NSNull null],
       @"content_required": @NO,
       @"pid": @12345,
+      @"traits": [NSNull null],
     },
   ];
 
@@ -315,6 +319,7 @@
       @"subrole": [NSNull null],
       @"content_required": @NO,
       @"pid": @12345,
+      @"traits": [NSNull null],
       @"children": @[
         @{
           @"AXLabel": @"Confirm Action",
@@ -332,6 +337,7 @@
           @"subrole": [NSNull null],
           @"content_required": @NO,
           @"pid": @12345,
+          @"traits": [NSNull null],
           @"children": @[],
         },
         @{
@@ -350,6 +356,7 @@
           @"subrole": [NSNull null],
           @"content_required": @NO,
           @"pid": @12345,
+          @"traits": [NSNull null],
           @"children": @[],
         },
         @{
@@ -368,6 +375,7 @@
           @"subrole": [NSNull null],
           @"content_required": @NO,
           @"pid": @12345,
+          @"traits": [NSNull null],
           @"children": @[],
         },
       ],
@@ -537,8 +545,8 @@
 - (void)testAccessibilityCommandsProducesCorrectFlatOutputWithProfiling
 {
   FBAccessibilityElementsResponse *response = [self assertFlatOutputWithProfiling:YES];
-  // 4 elements × 13 properties (all except actionNames) = 52 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:52];
+  // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectNestedOutput
@@ -549,8 +557,8 @@
 - (void)testAccessibilityCommandsProducesCorrectNestedOutputWithProfiling
 {
   FBAccessibilityElementsResponse *response = [self assertNestedOutputWithProfiling:YES];
-  // 4 elements × 13 properties (all except actionNames) = 52 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:52];
+  // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
 }
 
 - (void)testAccessibilityCommandsRespectsKeyFiltering
@@ -601,6 +609,7 @@
     @"subrole": [NSNull null],
     @"content_required": @NO,
     @"pid": @12345,
+    @"traits": [NSNull null],
     @"children": @[],
   };
 
@@ -635,6 +644,7 @@
     @"subrole": [NSNull null],
     @"content_required": @NO,
     @"pid": @12345,
+    @"traits": [NSNull null],
   };
 
   [self assertElementAtPointWithProfiling:NO point:CGPointMake(275, 772) element:cancelButton expected:expected];
@@ -663,11 +673,12 @@
     @"subrole": [NSNull null],
     @"content_required": @NO,
     @"pid": @12345,
+    @"traits": [NSNull null],
   };
 
   FBAccessibilityElementsResponse *response = [self assertElementAtPointWithProfiling:YES point:CGPointMake(275, 772) element:cancelButton expected:expected];
-  // 1 element × 13 properties (no children) = 13 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:13];
+  // 1 element × 14 properties (no children) = 14 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:14];
 }
 
 - (void)testAccessibilityElementAtPointRespectsKeyFiltering
