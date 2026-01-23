@@ -17,7 +17,6 @@
 #import <AccessibilityPlatformTranslation/AXPMacPlatformElement.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"
 
@@ -162,10 +161,8 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 //
 // # About the implementation of Accessibility within CoreSimulator
 //
-// In Xcode 12, using the SimulatorBridge for accessibility is now gone.
-// Instead, this functionality is bridged via CoreSimulator. However, there are more mechanisms in play than just calling a function.
-// The Private Framework AccessibilityPlatformTranslation, is used by Simulator.app via SimulatorKit.
-// In Simulator.app, it uses NSView semantics for obtaining information about a Simulator, in the case of FBSimulatorControl we aren't necessarily view-backed.
+// Accessibility is bridged via CoreSimulator and the Private Framework AccessibilityPlatformTranslation.
+// In Simulator.app, SimulatorKit uses NSView semantics for obtaining information about a Simulator; in FBSimulatorControl we aren't necessarily view-backed.
 // As a result we are using a reverse-engineered implementation of how SimulatorKit functions, based on inputs to this API.
 //
 // For this to work the process is as follows:
@@ -178,9 +175,9 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 // - The reason for non-async APIs here is that AXMacPlatformElement has lazy property access; over time each of the values that are referenced will be filled out with this delegation.
 // - The lazy property access can be seen in the logging here, where the AXPTranslatorRequest has a nice description of the object.
 // - Additional methods are required in the delegation, depending on whether there needs to be additional transformation, as is in the case with translating co-ordinate systems.
-// - We smooth over the differences in the values returned in the legacy API by replicating the values returned by the SimulatorBridge, calling the appropriate methods on AXMacPlatformElement.
-// - To get an idea of what methods are usable, take a look as NSAccessibilityElement which is a supertype of AXMacPlatformElement.
-// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be received from all delegate callbacks.s
+// - We smooth over the differences in the values returned by calling the appropriate methods on AXMacPlatformElement.
+// - To get an idea of what methods are usable, take a look at NSAccessibilityElement which is a supertype of AXMacPlatformElement.
+// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be received from all delegate callbacks.
 //
 // All of the above could be implemented without the delegation system. However, this requires dumping large enums and going much lower in the protocol level.
 // Instead having the higher level object, liberated from SimulatorKit (and therefore views) is the best compromise and the lightest touch.
@@ -373,69 +370,6 @@ static NSString *const AXPrefix = @"AX";
   }
   values[@"children"] = childrenValues;
   return values;
-}
-
-@end
-
-static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
-
-@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
-
-@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
-
-@end
-
-@implementation FBSimulatorAccessibilityCommands_SimulatorBridge
-
-- (instancetype)initWithBridge:(FBSimulatorBridge *)bridge
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _bridge = bridge;
-
-  return self;
-}
-
-#pragma mark FBSimulatorAccessibilityCommands Implementation
-
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
-{
-  if (nestedFormat) {
-    return [[FBControlCoreError
-      describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
-      failFuture];
-  }
-  // Note: options is ignored for legacy SimulatorBridge implementation
-  // Always wrap result in FBAccessibilityElementsResponse with nil profiling data
-  return [[self.bridge accessibilityElements]
-    onQueue:dispatch_get_main_queue() map:^FBAccessibilityElementsResponse *(NSArray *elements) {
-      return [[FBAccessibilityElementsResponse alloc] initWithElements:elements profilingData:nil];
-    }];
-}
-
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
-{
-  if (nestedFormat) {
-    return [[FBControlCoreError
-      describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
-      failFuture];
-  }
-  // Note: options is ignored for legacy SimulatorBridge implementation
-  // Always wrap result in FBAccessibilityElementsResponse with nil profiling data
-  return [[self.bridge accessibilityElementAtPoint:point]
-    onQueue:dispatch_get_main_queue() map:^FBAccessibilityElementsResponse *(NSDictionary *element) {
-      return [[FBAccessibilityElementsResponse alloc] initWithElements:element profilingData:nil];
-    }];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
-{
-  return [[FBControlCoreError
-    describeFormat:@"%@ is not supported for SimulatorBridge based accessibility", NSStringFromSelector(_cmd)]
-    failFuture];
 }
 
 @end
@@ -995,10 +929,8 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 - (FBFuture<id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
 {
-  // Post Xcode 12, FBSimulatorBridge will not work with accessibility.
-  // Additionally, CoreSimulator **should** be upgraded, but if it hasn't then this will fail.
-  // The CoreSimulator API **is** backwards compatible, since it updates CoreSimulator.framework at the system level.
-  // However, this API is only usable from CoreSimulator if Xcode 12 has been *installed at some point in the past on the host*.
+  // Uses the CoreSimulator accessibility API via -[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]
+  // This API requires Xcode 12+ to have been installed on the host at some point.
   FBSimulator *simulator = self.simulator;
   if (simulator.state != FBiOSTargetStateBooted) {
     return [[FBControlCoreError
@@ -1006,23 +938,16 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
       failFuture];
   }
   SimDevice *device = simulator.device;
-  if (nestedFormat || FBXcodeConfiguration.isXcode12OrGreater) {
-    if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
-      return [[FBControlCoreError
-        describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
-        failFuture];
-    }
-    NSError *error = nil;
-    if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
+  if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
+    return [[FBControlCoreError
+      describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
+      failFuture];
   }
-  return [[self.simulator
-    connectToBridge]
-    onQueue:self.simulator.asyncQueue map:^(FBSimulatorBridge *bridge) {
-      return [[FBSimulatorAccessibilityCommands_SimulatorBridge alloc] initWithBridge:bridge];
-    }];
+  NSError *error = nil;
+  if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
 }
 
 @end
