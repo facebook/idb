@@ -32,10 +32,13 @@ extern FBAXKeys const FBAXKeysSubrole;
 extern FBAXKeys const FBAXKeysContentRequired;
 extern FBAXKeys const FBAXKeysPID;
 extern FBAXKeys const FBAXKeysTraits;
+extern FBAXKeys const FBAXKeysExpanded;
+extern FBAXKeys const FBAXKeysPlaceholder;
+extern FBAXKeys const FBAXKeysHidden;
+extern FBAXKeys const FBAXKeysFocused;
 
 /**
  Default set of keys returned when no specific keys are requested.
- This represents the stable API - new keys should be opt-in.
  */
 extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 

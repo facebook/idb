@@ -139,6 +139,10 @@ FBAXKeys const FBAXKeysSubrole = @"subrole";
 FBAXKeys const FBAXKeysContentRequired = @"content_required";
 FBAXKeys const FBAXKeysPID = @"pid";
 FBAXKeys const FBAXKeysTraits = @"traits";
+FBAXKeys const FBAXKeysExpanded = @"expanded";
+FBAXKeys const FBAXKeysPlaceholder = @"placeholder";
+FBAXKeys const FBAXKeysHidden = @"hidden";
+FBAXKeys const FBAXKeysFocused = @"focused";
 
 NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   static NSSet<FBAXKeys> *defaultSet;
@@ -333,6 +337,11 @@ static NSString *const AXPrefix = @"AX";
     NSArray<NSString *> *traits = [self.class traitsFromElement:element];
     values[FBAXKeysTraits] = traits ?: (id)NSNull.null;
   }
+
+  INCLUDE_IF_KEY(FBAXKeysExpanded, @(element.isAccessibilityExpanded));
+  INCLUDE_IF_KEY(FBAXKeysPlaceholder, element.accessibilityPlaceholderValue);
+  INCLUDE_IF_KEY(FBAXKeysHidden, @(element.isAccessibilityHidden));
+  INCLUDE_IF_KEY(FBAXKeysFocused, @(element.isAccessibilityFocused));
 
   #undef INCLUDE_IF_KEY
 
