@@ -706,17 +706,24 @@ static NSString *const AXPrefix = @"AX";
 
 @end
 
-@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
+@interface FBSimulatorAccessibilityCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
-@implementation FBSimulatorAccessibilityCommands_CoreSimulator
+static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+@implementation FBSimulatorAccessibilityCommands
+
+#pragma mark Initializers
+
++ (instancetype)commandsWithTarget:(FBSimulator *)targets
+{
+  return [[self alloc] initWithSimulator:targets];
+}
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
   self = [super init];
   if (!self) {
@@ -724,50 +731,88 @@ static NSString *const AXPrefix = @"AX";
   }
 
   _simulator = simulator;
-  _queue = queue;
-  _logger = logger;
 
   return self;
 }
 
-#pragma mark FBSimulatorAccessibilityCommands Implementation
+#pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
 - (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys ?: FBAXKeysDefaultSet()];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
   if (options & FBAccessibilityOptionsLog) {
-    translationRequest.logger = self.simulator.logger;
+    translationRequest.logger = simulator.logger;
   }
-  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
+  return [FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:YES];
 }
 
 - (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
 {
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys ?: FBAXKeysDefaultSet()];
   if (options & FBAccessibilityOptionsProfile) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
   if (options & FBAccessibilityOptionsLog) {
-    translationRequest.logger = self.simulator.logger;
+    translationRequest.logger = simulator.logger;
   }
-  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
+  return [FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:NO];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
 {
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+
   FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
   FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:FBAXKeysDefaultSet()];
   // Extract .elements from the response since this method returns raw dictionary
-  return [[FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO]
-    onQueue:self.simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {
+  return [[FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:NO]
+    onQueue:simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {
       return response.elements;
     }];
 }
 
 #pragma mark Private
+
+// Uses the CoreSimulator accessibility API via -[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]
+// This API requires Xcode 12+ to have been installed on the host at some point.
+- (BOOL)validateAccessibilityWithError:(NSError **)error
+{
+  FBSimulator *simulator = self.simulator;
+  if (simulator.state != FBiOSTargetStateBooted) {
+    return [[FBControlCoreError
+      describeFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]
+      failBool:error];
+  }
+  SimDevice *device = simulator.device;
+  if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
+    return [[FBControlCoreError
+      describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use accessibility.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
+      failBool:error];
+  }
+  if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:error]) {
+    return NO;
+  }
+  return YES;
+}
 
 + (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementWithTranslationRequest:(FBAXTranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
 {
@@ -780,7 +825,7 @@ static NSString *const AXPrefix = @"AX";
       AXPMacPlatformElement *macPlatformElement = tuple[1];
       // Only see if remediation is needed if requested. This also ensures that the attempt *after* remediation will not infinitely recurse.
       if (remediationPermitted) {
-        return [[FBSimulatorAccessibilityCommands_CoreSimulator
+        return [[FBSimulatorAccessibilityCommands
           remediationRequiredForSimulator:simulator
           translationObject:translationObject
           macPlatformElement:macPlatformElement]
@@ -835,8 +880,6 @@ static NSString *const AXPrefix = @"AX";
     }];
 }
 
-static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
-
 + (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator translationObject:(AXPTranslationObject *)translationObject macPlatformElement:(AXPMacPlatformElement *)macPlatformElement
 {
   // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
@@ -865,89 +908,6 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     stopServiceWithName:CoreSimulatorBridgeServiceName]
     mapReplace:NSNull.null]
     rephraseFailure:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName];
-}
-
-@end
-
-@interface FBSimulatorAccessibilityCommands ()
-
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-
-@end
-
-@implementation FBSimulatorAccessibilityCommands
-
-#pragma mark Initializers
-
-+ (instancetype)commandsWithTarget:(FBSimulator *)targets
-{
-  return [[self alloc] initWithSimulator:targets];
-}
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _simulator = simulator;
-
-  return self;
-}
-
-#pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
-
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
-{
-  return [[self
-    implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementsWithNestedFormat:nestedFormat keys:keys options:options];
-    }];
-}
-
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
-{
-  return [[self
-    implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat keys:keys options:options];
-    }];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
-{
-  return [[self
-    implementationWithNestedFormat:YES]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations> implementation) {
-      return [implementation accessibilityPerformTapOnElementAtPoint:point expectedLabel:expectedLabel];
-    }];
-}
-
-#pragma mark Private
-
-- (FBFuture<id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
-{
-  // Uses the CoreSimulator accessibility API via -[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]
-  // This API requires Xcode 12+ to have been installed on the host at some point.
-  FBSimulator *simulator = self.simulator;
-  if (simulator.state != FBiOSTargetStateBooted) {
-    return [[FBControlCoreError
-      describeFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]
-      failFuture];
-  }
-  SimDevice *device = simulator.device;
-  if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
-    return [[FBControlCoreError
-      describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
-      failFuture];
-  }
-  NSError *error = nil;
-  if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
 }
 
 @end
