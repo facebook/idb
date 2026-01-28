@@ -273,7 +273,7 @@
       }
       if (launchMode == FBApplicationLaunchModeFailIfRunning) {
         return [[FBSimulatorError
-          describeFormat:@"App %@ can't be launched as is running (PID=%@)", bundleID, processID]
+          describeFormat:@"App '%@' can't be launched as it is already running (PID=%@)", bundleID, processID]
           failFuture];
       } else if (launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
         return [self killApplicationWithBundleID:bundleID];
