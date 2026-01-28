@@ -277,6 +277,7 @@
   NSDictionary<NSString *, NSString *> *deviceClassOSPrefixMapping = @{
     @"iPhone" : @"iOS",
     @"iPad" : @"iOS",
+    @"RealityDevice" : @"xrOS",
   };
   NSString *osPrefix = deviceClassOSPrefixMapping[deviceClass];
   if (!osPrefix) {
