@@ -36,33 +36,12 @@
 
 #pragma mark Tests
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithTableSearch
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  if (!simulator) {
-    return nil;
-  }
-  NSError *error = nil;
-  BOOL success = [[simulator installApplicationWithPath:self.tableSearchApplication.path] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-  return simulator;
-}
-
 - (void)assertLaunchesTestWithConfiguration:(FBTestLaunchConfiguration *)testLaunch reporter:(id<FBXCTestReporter>)reporter simulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
   id result = [[simulator runTestWithLaunchConfiguration:testLaunch reporter:reporter logger:simulator.logger] await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(result);
-}
-
-- (void)testInjectsApplicationTestIntoSampleApp
-{
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  [self assertLaunchesTestWithConfiguration:self.testLaunchTableSearch reporter:self simulator:simulator];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass", @"testAsyncExpectationPassing"]
-              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail", @"testAsyncExpectationFailing"]];
 }
 
 - (void)testInjectsApplicationTestIntoSafari

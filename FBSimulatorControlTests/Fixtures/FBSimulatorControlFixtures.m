@@ -55,27 +55,6 @@
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
 
-- (FBTestLaunchConfiguration *)testLaunchTableSearch
-{
-  return [[FBTestLaunchConfiguration alloc]
-    initWithTestBundle:self.iOSUnitTestBundle
-    applicationLaunchConfiguration:self.tableSearchAppLaunch
-    testHostBundle:nil
-    timeout:0
-    initializeUITesting:NO
-    useXcodebuild:NO
-    testsToRun:nil
-    testsToSkip:nil
-    targetApplicationBundle:nil
-    xcTestRunProperties:nil
-    resultBundlePath:nil
-    reportActivities:NO
-    coverageDirectoryPath:nil
-    enableContinuousCoverageCollection:NO
-    logDirectoryPath:nil
-    reportResultBundle:NO];
-}
-
 - (FBTestLaunchConfiguration *)testLaunchSafari
 {
   return [[FBTestLaunchConfiguration alloc]

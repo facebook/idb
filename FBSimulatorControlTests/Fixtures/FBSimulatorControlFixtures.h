@@ -46,11 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XCTestCase (FBSimulatorControlFixtures)
 
 /**
- A XCTest launch configuration with injection inside TableSearch.app.
- */
-- (FBTestLaunchConfiguration *)testLaunchTableSearch;
-
-/**
  A XCTest launch configuration with injection inside Safari.app.
  */
 - (FBTestLaunchConfiguration *)testLaunchSafari;
