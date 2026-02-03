@@ -7,6 +7,43 @@
 
 #import "FBAccessibilityCommands.h"
 
+// Accessibility dictionary keys
+FBAXKeys const FBAXKeysLabel = @"AXLabel";
+FBAXKeys const FBAXKeysFrame = @"AXFrame";
+FBAXKeys const FBAXKeysValue = @"AXValue";
+FBAXKeys const FBAXKeysUniqueID = @"AXUniqueId";
+FBAXKeys const FBAXKeysType = @"type";
+FBAXKeys const FBAXKeysTitle = @"title";
+FBAXKeys const FBAXKeysFrameDict = @"frame";
+FBAXKeys const FBAXKeysHelp = @"help";
+FBAXKeys const FBAXKeysEnabled = @"enabled";
+FBAXKeys const FBAXKeysCustomActions = @"custom_actions";
+FBAXKeys const FBAXKeysRole = @"role";
+FBAXKeys const FBAXKeysRoleDescription = @"role_description";
+FBAXKeys const FBAXKeysSubrole = @"subrole";
+FBAXKeys const FBAXKeysContentRequired = @"content_required";
+FBAXKeys const FBAXKeysPID = @"pid";
+FBAXKeys const FBAXKeysTraits = @"traits";
+FBAXKeys const FBAXKeysExpanded = @"expanded";
+FBAXKeys const FBAXKeysPlaceholder = @"placeholder";
+FBAXKeys const FBAXKeysHidden = @"hidden";
+FBAXKeys const FBAXKeysFocused = @"focused";
+
+NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
+  static NSSet<FBAXKeys> *defaultSet;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    defaultSet = [NSSet setWithArray:@[
+      FBAXKeysLabel, FBAXKeysFrame, FBAXKeysValue, FBAXKeysUniqueID,
+      FBAXKeysType, FBAXKeysTitle, FBAXKeysFrameDict, FBAXKeysHelp,
+      FBAXKeysEnabled, FBAXKeysCustomActions, FBAXKeysRole,
+      FBAXKeysRoleDescription, FBAXKeysSubrole, FBAXKeysContentRequired,
+      FBAXKeysPID, FBAXKeysTraits,
+    ]];
+  });
+  return defaultSet;
+}
+
 @implementation FBAccessibilityRequestOptions
 
 + (instancetype)defaultOptions
@@ -22,7 +59,7 @@
   }
 
   _nestedFormat = NO;
-  _keys = nil;
+  _keys = FBAXKeysDefaultSet();
   _enableLogging = NO;
   _enableProfiling = NO;
 
@@ -44,7 +81,7 @@
   return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@>",
           NSStringFromClass(self.class),
           self.nestedFormat ? @"YES" : @"NO",
-          self.keys ?: @"all",
+          self.keys,
           self.enableLogging ? @"YES" : @"NO",
           self.enableProfiling ? @"YES" : @"NO"];
 }

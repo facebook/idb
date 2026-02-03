@@ -13,6 +13,37 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Keys for accessibility element dictionaries.
+ */
+typedef NSString *FBAXKeys NS_STRING_ENUM;
+
+extern FBAXKeys const FBAXKeysLabel;
+extern FBAXKeys const FBAXKeysFrame;
+extern FBAXKeys const FBAXKeysValue;
+extern FBAXKeys const FBAXKeysUniqueID;
+extern FBAXKeys const FBAXKeysType;
+extern FBAXKeys const FBAXKeysTitle;
+extern FBAXKeys const FBAXKeysFrameDict;
+extern FBAXKeys const FBAXKeysHelp;
+extern FBAXKeys const FBAXKeysEnabled;
+extern FBAXKeys const FBAXKeysCustomActions;
+extern FBAXKeys const FBAXKeysRole;
+extern FBAXKeys const FBAXKeysRoleDescription;
+extern FBAXKeys const FBAXKeysSubrole;
+extern FBAXKeys const FBAXKeysContentRequired;
+extern FBAXKeys const FBAXKeysPID;
+extern FBAXKeys const FBAXKeysTraits;
+extern FBAXKeys const FBAXKeysExpanded;
+extern FBAXKeys const FBAXKeysPlaceholder;
+extern FBAXKeys const FBAXKeysHidden;
+extern FBAXKeys const FBAXKeysFocused;
+
+/**
+ Default set of keys returned when no specific keys are requested.
+ */
+extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
+
+/**
  Request options for accessibility operations.
  Consolidates all parameters needed for an accessibility query.
  */
@@ -25,10 +56,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL nestedFormat;
 
 /**
- Optional set of string keys to filter which properties are returned.
- If nil, all properties are returned.
+ Set of string keys to filter which properties are returned.
+ Default: FBAXKeysDefaultSet() (all standard keys)
  */
-@property (nonatomic, copy, nullable) NSSet<NSString *> *keys;
+@property (nonatomic, copy) NSSet<NSString *> *keys;
 
 /**
  Log accessibility requests and responses to the simulator's logger.
