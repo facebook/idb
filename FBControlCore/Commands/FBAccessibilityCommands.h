@@ -13,16 +13,41 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Options for accessibility operations.
+ Request options for accessibility operations.
+ Consolidates all parameters needed for an accessibility query.
  */
-typedef NS_OPTIONS(NSUInteger, FBAccessibilityOptions) {
-  /** No logging or profiling. */
-  FBAccessibilityOptionsNone = 0,
-  /** Log accessibility requests and responses to the simulator's logger. */
-  FBAccessibilityOptionsLog = 1 << 0,
-  /** Collect profiling data (element counts, timing metrics). */
-  FBAccessibilityOptionsProfile = 1 << 1,
-};
+@interface FBAccessibilityRequestOptions : NSObject <NSCopying>
+
+/**
+ If YES, data is returned in nested format with children. If NO, flat format.
+ Default: NO
+ */
+@property (nonatomic, assign) BOOL nestedFormat;
+
+/**
+ Optional set of string keys to filter which properties are returned.
+ If nil, all properties are returned.
+ */
+@property (nonatomic, copy, nullable) NSSet<NSString *> *keys;
+
+/**
+ Log accessibility requests and responses to the simulator's logger.
+ Default: NO
+ */
+@property (nonatomic, assign) BOOL enableLogging;
+
+/**
+ Collect profiling data (element counts, timing metrics).
+ Default: NO
+ */
+@property (nonatomic, assign) BOOL enableProfiling;
+
+/**
+ Creates options with default values.
+ */
++ (instancetype)defaultOptions;
+
+@end
 
 /**
  Profiling data collected during accessibility operations.
@@ -113,28 +138,23 @@ typedef NS_OPTIONS(NSUInteger, FBAccessibilityOptions) {
 @protocol FBAccessibilityOperations <NSObject>
 
 /**
- The Acessibility Elements.
- Obtain the acessibility elements for the main screen.
+ Obtain the accessibility elements for the main screen.
  The returned value is fully JSON serializable.
 
- @param nestedFormat if YES then data is returned in the nested format, NO for flat format
- @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
- @param options bitmask controlling logging and profiling behavior.
+ @param options the request options controlling format, keys, logging, and profiling.
  @return FBAccessibilityElementsResponse containing the elements and optional profiling data.
  */
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options;
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithOptions:(FBAccessibilityRequestOptions *)options;
 
 /**
- Obtain the acessibility element for the main screen at the given point.
+ Obtain the accessibility element for the main screen at the given point.
  The returned value is fully JSON serializable.
 
  @param point the coordinate at which to obtain the accessibility element.
- @param nestedFormat if YES then data is returned in the nested format, NO for flat format
- @param keys optional set of string keys to filter which properties are returned. If nil, all properties are returned.
- @param options bitmask controlling logging and profiling behavior.
+ @param options the request options controlling format, keys, logging, and profiling.
  @return FBAccessibilityElementsResponse containing the element and optional profiling data.
  */
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options;
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point options:(FBAccessibilityRequestOptions *)options;
 
 @end
 

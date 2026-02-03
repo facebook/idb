@@ -152,10 +152,14 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [[self
     accessibilityCommands]
     onQueue:self.target.workQueue fmap:^ FBFuture * (id<FBAccessibilityCommands> commands) {
+      FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+      options.nestedFormat = nestedFormat;
+      options.enableLogging = YES;
+
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue nestedFormat:nestedFormat keys:nil options:FBAccessibilityOptionsLog];
+        return [commands accessibilityElementAtPoint:value.pointValue options:options];
       } else {
-        return [commands accessibilityElementsWithNestedFormat:nestedFormat keys:nil options:FBAccessibilityOptionsLog];
+        return [commands accessibilityElementsWithOptions:options];
       }
     }];
 }

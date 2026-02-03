@@ -737,7 +737,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 #pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithOptions:(FBAccessibilityRequestOptions *)options
 {
   FBSimulator *simulator = self.simulator;
   NSError *error = nil;
@@ -745,17 +745,17 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat keys:keys ?: FBAXKeysDefaultSet()];
-  if (options & FBAccessibilityOptionsProfile) {
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:options.nestedFormat keys:options.keys ?: FBAXKeysDefaultSet()];
+  if (options.enableProfiling) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
-  if (options & FBAccessibilityOptionsLog) {
+  if (options.enableLogging) {
     translationRequest.logger = simulator.logger;
   }
   return [FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:YES];
 }
 
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat keys:(nullable NSSet<NSString *> *)keys options:(FBAccessibilityOptions)options
+- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point options:(FBAccessibilityRequestOptions *)options
 {
   FBSimulator *simulator = self.simulator;
   NSError *error = nil;
@@ -763,11 +763,11 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil keys:keys ?: FBAXKeysDefaultSet()];
-  if (options & FBAccessibilityOptionsProfile) {
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:options.nestedFormat point:point action:nil keys:options.keys ?: FBAXKeysDefaultSet()];
+  if (options.enableProfiling) {
     translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
   }
-  if (options & FBAccessibilityOptionsLog) {
+  if (options.enableLogging) {
     translationRequest.logger = simulator.logger;
   }
   return [FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:NO];

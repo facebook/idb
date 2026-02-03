@@ -7,6 +7,50 @@
 
 #import "FBAccessibilityCommands.h"
 
+@implementation FBAccessibilityRequestOptions
+
++ (instancetype)defaultOptions
+{
+  return [[self alloc] init];
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _nestedFormat = NO;
+  _keys = nil;
+  _enableLogging = NO;
+  _enableProfiling = NO;
+
+  return self;
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  FBAccessibilityRequestOptions *copy = [[FBAccessibilityRequestOptions alloc] init];
+  copy.nestedFormat = self.nestedFormat;
+  copy.keys = [self.keys copy];
+  copy.enableLogging = self.enableLogging;
+  copy.enableProfiling = self.enableProfiling;
+  return copy;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@>",
+          NSStringFromClass(self.class),
+          self.nestedFormat ? @"YES" : @"NO",
+          self.keys ?: @"all",
+          self.enableLogging ? @"YES" : @"NO",
+          self.enableProfiling ? @"YES" : @"NO"];
+}
+
+@end
+
 @implementation FBAccessibilityProfilingData
 
 - (instancetype)initWithElementCount:(int64_t)elementCount

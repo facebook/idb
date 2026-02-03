@@ -144,13 +144,13 @@
   FBSimulatorAccessibilityCommands *commands = [self commands];
   XCTAssertNotNil(commands);
 
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
-  if (enableProfiling) {
-    options |= FBAccessibilityOptionsProfile;
-  }
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = NO;
+  options.enableLogging = YES;
+  options.enableProfiling = enableProfiling;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:NO keys:nil options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -260,13 +260,13 @@
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
-  if (enableProfiling) {
-    options |= FBAccessibilityOptionsProfile;
-  }
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = NO;
+  options.enableLogging = YES;
+  options.enableProfiling = enableProfiling;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:point nestedFormat:NO keys:nil options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:point options:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -287,13 +287,13 @@
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
-  if (enableProfiling) {
-    options |= FBAccessibilityOptionsProfile;
-  }
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = YES;
+  options.enableLogging = YES;
+  options.enableProfiling = enableProfiling;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:YES keys:nil options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -403,14 +403,14 @@
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
-  if (enableProfiling) {
-    options |= FBAccessibilityOptionsProfile;
-  }
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = NO;
+  options.keys = [NSSet setWithArray:@[@"AXLabel", @"frame"]];
+  options.enableLogging = YES;
+  options.enableProfiling = enableProfiling;
 
-  NSSet *keys = [NSSet setWithArray:@[@"AXLabel", @"frame"]];
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithNestedFormat:NO keys:keys options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -465,14 +465,14 @@
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
-  FBAccessibilityOptions options = FBAccessibilityOptionsLog;
-  if (enableProfiling) {
-    options |= FBAccessibilityOptionsProfile;
-  }
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = NO;
+  options.keys = [NSSet setWithArray:@[@"AXLabel", @"type", @"frame"]];
+  options.enableLogging = YES;
+  options.enableProfiling = enableProfiling;
 
-  NSSet *keys = [NSSet setWithArray:@[@"AXLabel", @"type", @"frame"]];
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:CGPointMake(100, 115) nestedFormat:NO keys:keys options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:CGPointMake(100, 115) options:options] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
