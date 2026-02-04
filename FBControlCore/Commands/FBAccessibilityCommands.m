@@ -28,6 +28,7 @@ FBAXKeys const FBAXKeysExpanded = @"expanded";
 FBAXKeys const FBAXKeysPlaceholder = @"placeholder";
 FBAXKeys const FBAXKeysHidden = @"hidden";
 FBAXKeys const FBAXKeysFocused = @"focused";
+FBAXKeys const FBAXKeysIsRemote = @"is_remote";
 
 NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   static NSSet<FBAXKeys> *defaultSet;

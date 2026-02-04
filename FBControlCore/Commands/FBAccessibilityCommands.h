@@ -37,6 +37,7 @@ extern FBAXKeys const FBAXKeysExpanded;
 extern FBAXKeys const FBAXKeysPlaceholder;
 extern FBAXKeys const FBAXKeysHidden;
 extern FBAXKeys const FBAXKeysFocused;
+extern FBAXKeys const FBAXKeysIsRemote;
 
 /**
  Default set of keys returned when no specific keys are requested.
