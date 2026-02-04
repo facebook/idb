@@ -342,9 +342,8 @@ static NSString *const AXPrefix = @"AX";
 
 @interface FBAXTranslationRequest : NSObject
 
-@property (nonatomic, assign, readonly) BOOL nestedFormat;
+@property (nonatomic, strong, readonly) FBAccessibilityRequestOptions *options;
 @property (nonatomic, copy, readonly) NSString *token;
-@property (nonatomic, copy, readonly) NSSet<NSString *> *keys;
 @property (nonatomic, strong, nullable) SimDevice *device;
 @property (nonatomic, strong, nullable) FBAccessibilityProfilingCollector *collector;
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
@@ -353,7 +352,7 @@ static NSString *const AXPrefix = @"AX";
 
 @implementation FBAXTranslationRequest
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys
+- (instancetype)initWithOptions:(FBAccessibilityRequestOptions *)options
 {
   self = [super init];
   if (!self) {
@@ -361,8 +360,10 @@ static NSString *const AXPrefix = @"AX";
   }
 
   _token = NSUUID.UUID.UUIDString;
-  _nestedFormat = nestedFormat;
-  _keys = [keys copy];
+  _options = options;
+  if (options.enableProfiling) {
+    _collector = [[FBAccessibilityProfilingCollector alloc] init];
+  }
 
   return self;
 }
@@ -400,12 +401,12 @@ static NSString *const AXPrefix = @"AX";
 
 - (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
+  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:self.collector];
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat keys:self.keys];
+  return [[FBAXTranslationRequest_FrontmostApplication alloc] initWithOptions:self.options];
 }
 
 @end
@@ -472,9 +473,9 @@ static NSString *const AXPrefix = @"AX";
 
 @implementation FBAXTranslationRequest_Point
 
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBAXTranslationAction *)action keys:(NSSet<NSString *> *)keys
+- (instancetype)initWithOptions:(FBAccessibilityRequestOptions *)options point:(CGPoint)point action:(FBAXTranslationAction *)action
 {
-  self = [super initWithNestedFormat:nestedFormat keys:keys];
+  self = [super initWithOptions:options];
   if (!self) {
     return nil;
   }
@@ -492,7 +493,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat keys:self.keys collector:self.collector];
+  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:self.collector];
   FBAXTranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
@@ -502,7 +503,7 @@ static NSString *const AXPrefix = @"AX";
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action keys:self.keys];
+  return [[FBAXTranslationRequest_Point alloc] initWithOptions:self.options point:self.point action:self.action];
 }
 
 @end
@@ -711,10 +712,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithNestedFormat:options.nestedFormat keys:options.keys];
-  if (options.enableProfiling) {
-    translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
-  }
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_FrontmostApplication alloc] initWithOptions:options];
   if (options.enableLogging) {
     translationRequest.logger = simulator.logger;
   }
@@ -729,10 +727,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:options.nestedFormat point:point action:nil keys:options.keys];
-  if (options.enableProfiling) {
-    translationRequest.collector = [[FBAccessibilityProfilingCollector alloc] init];
-  }
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithOptions:options point:point action:nil];
   if (options.enableLogging) {
     translationRequest.logger = simulator.logger;
   }
@@ -747,8 +742,10 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
 
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = YES;
   FBAXTranslationAction *action = [[FBAXTranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action keys:FBAXKeysDefaultSet()];
+  FBAXTranslationRequest *translationRequest = [[FBAXTranslationRequest_Point alloc] initWithOptions:options point:point action:action];
   // Extract .elements from the response since this method returns raw dictionary
   return [[FBSimulatorAccessibilityCommands accessibilityElementWithTranslationRequest:translationRequest simulator:simulator remediationPermitted:NO]
     onQueue:simulator.workQueue map:^NSDictionary *(FBAccessibilityElementsResponse *response) {
