@@ -21,10 +21,6 @@
 @interface FBSimulatorAccessibilityCommandsTests : XCTestCase
 
 @property (nonatomic, strong) FBAccessibilityTestFixture *fixture;
-// Child element references for property access assertions
-@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel;
-@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *okButton;
-@property (nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton;
 
 @end
 
@@ -140,6 +136,7 @@
 
 /// Core test for flat output - returns response for optional profiling assertions
 - (FBAccessibilityElementsResponse *)assertFlatOutputWithProfiling:(BOOL)enableProfiling
+                                                     childElements:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)childElements
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
   XCTAssertNotNil(commands);
@@ -240,12 +237,10 @@
   // Verify property access tracking - all serialization properties should be accessed
   XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
     @"All serialization properties should be accessed for root element");
-  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for title label");
-  XCTAssertEqualObjects(self.okButton.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for OK button");
-  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for Cancel button");
+  for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
+    XCTAssertEqualObjects(child.accessedProperties, [self allSerializationProperties],
+      @"All serialization properties should be accessed for child element");
+  }
 
   return response;
 }
@@ -284,6 +279,7 @@
 
 /// Core test for nested output - returns response for optional profiling assertions
 - (FBAccessibilityElementsResponse *)assertNestedOutputWithProfiling:(BOOL)enableProfiling
+                                                       childElements:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)childElements
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
@@ -388,18 +384,17 @@
   // Verify property access tracking - all serialization properties should be accessed
   XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
     @"All serialization properties should be accessed for root element");
-  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for title label");
-  XCTAssertEqualObjects(self.okButton.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for OK button");
-  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for Cancel button");
+  for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
+    XCTAssertEqualObjects(child.accessedProperties, [self allSerializationProperties],
+      @"All serialization properties should be accessed for child element");
+  }
 
   return response;
 }
 
 /// Core test for key filtering - returns response for optional profiling assertions
 - (FBAccessibilityElementsResponse *)assertKeyFilteringWithProfiling:(BOOL)enableProfiling
+                                                       childElements:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)childElements
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
@@ -443,13 +438,11 @@
 
   // Verify property access tracking - only filtered properties should be accessed
   XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self labelAndFrameFilteredProperties],
-    @"Only label, frame, children, and translation properties should be accessed for root element");
-  XCTAssertEqualObjects(self.titleLabel.accessedProperties, [self labelAndFrameFilteredProperties],
-    @"Only label, frame, children, and translation properties should be accessed for title label");
-  XCTAssertEqualObjects(self.okButton.accessedProperties, [self labelAndFrameFilteredProperties],
-    @"Only label, frame, children, and translation properties should be accessed for OK button");
-  XCTAssertEqualObjects(self.cancelButton.accessedProperties, [self labelAndFrameFilteredProperties],
-    @"Only label, frame, children, and translation properties should be accessed for Cancel button");
+    @"Only label and frame properties should be accessed for root element");
+  for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
+    XCTAssertEqualObjects(child.accessedProperties, [self labelAndFrameFilteredProperties],
+      @"Only label and frame properties should be accessed for child element");
+  }
 
   return response;
 }
@@ -497,84 +490,113 @@
 
 #pragma mark - Setup/Teardown
 
-- (void)setUp
-{
-  [super setUp];
-
-  // Create a mock element hierarchy representing a typical UI
-  self.okButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
-                                            identifier:@"ok_button"
-                                                 frame:NSMakeRect(20, 750, 150, 44)];
-
-  self.cancelButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
-                                            identifier:@"cancel_button"
-                                                 frame:NSMakeRect(200, 750, 150, 44)];
-
-  self.titleLabel =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
-                                                     frame:NSMakeRect(20, 100, 350, 30)];
-
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
-    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
-                                                      frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[self.titleLabel, self.okButton, self.cancelButton]];
-
-  // Create fixture with the element tree
-  self.fixture = [FBAccessibilityTestFixture bootedSimulatorFixture];
-  self.fixture.rootElement = root;
-  [self.fixture setUp];
-}
-
 - (void)tearDown
 {
   [self.fixture tearDown];
   self.fixture = nil;
-  self.titleLabel = nil;
-  self.okButton = nil;
-  self.cancelButton = nil;
   [super tearDown];
+}
+
+/// Creates and activates the fixture with the given root element tree.
+/// Call this at the start of each test method.
+- (void)setUpWithRootElement:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)rootElement
+{
+  self.fixture = [FBAccessibilityTestFixture bootedSimulatorFixture];
+  self.fixture.rootElement = rootElement;
+  [self.fixture setUp];
+}
+
+#pragma mark - Default Element Factories
+
+/// Returns a default title label element.
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)defaultTitleLabel
+{
+  return [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
+                                                          frame:NSMakeRect(20, 100, 350, 30)];
+}
+
+/// Returns a default OK button element.
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)defaultOkButton
+{
+  return [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
+                                                 identifier:@"ok_button"
+                                                      frame:NSMakeRect(20, 750, 150, 44)];
+}
+
+/// Returns a default Cancel button element.
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)defaultCancelButton
+{
+  return [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
+                                                 identifier:@"cancel_button"
+                                                      frame:NSMakeRect(200, 750, 150, 44)];
+}
+
+/// Returns the default root element tree with the given children.
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)defaultRootWithChildren:(NSArray *)children
+{
+  return [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                           frame:NSMakeRect(0, 0, 390, 844)
+                                                        children:children];
+}
+
+/// Returns the default element tree (root with titleLabel, okButton, cancelButton).
+- (FBSimulatorControlTests_AXPMacPlatformElement_Double *)defaultElementTree
+{
+  return [self defaultRootWithChildren:@[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]]];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectFlatOutput
 {
-  [self assertFlatOutputWithProfiling:NO];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  [self assertFlatOutputWithProfiling:NO childElements:children];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectFlatOutputWithProfiling
 {
-  FBAccessibilityElementsResponse *response = [self assertFlatOutputWithProfiling:YES];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  FBAccessibilityElementsResponse *response = [self assertFlatOutputWithProfiling:YES childElements:children];
   // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
   [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectNestedOutput
 {
-  [self assertNestedOutputWithProfiling:NO];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  [self assertNestedOutputWithProfiling:NO childElements:children];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectNestedOutputWithProfiling
 {
-  FBAccessibilityElementsResponse *response = [self assertNestedOutputWithProfiling:YES];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  FBAccessibilityElementsResponse *response = [self assertNestedOutputWithProfiling:YES childElements:children];
   // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
   [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
 }
 
 - (void)testAccessibilityCommandsRespectsKeyFiltering
 {
-  [self assertKeyFilteringWithProfiling:NO];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  [self assertKeyFilteringWithProfiling:NO childElements:children];
 }
 
 - (void)testAccessibilityCommandsRespectsKeyFilteringWithProfiling
 {
-  FBAccessibilityElementsResponse *response = [self assertKeyFilteringWithProfiling:YES];
+  NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
+  [self setUpWithRootElement:[self defaultRootWithChildren:children]];
+  FBAccessibilityElementsResponse *response = [self assertKeyFilteringWithProfiling:YES childElements:children];
   // 4 elements × 2 properties (label, frame) = 8 attribute fetches (children/translation not tracked for leaf elements)
   [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:8];
 }
 
 - (void)testAccessibilityPerformTapOnButtonSucceeds
 {
+  [self setUpWithRootElement:[self defaultElementTree]];
+
   // Configure objectAtPointResult to return the OK button element
   FBSimulatorControlTests_AXPMacPlatformElement_Double *okButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
@@ -623,6 +645,8 @@
 
 - (void)testAccessibilityElementAtPointReturnsElement
 {
+  [self setUpWithRootElement:[self defaultElementTree]];
+
   FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
                                             identifier:@"cancel_button"
@@ -652,6 +676,8 @@
 
 - (void)testAccessibilityElementAtPointReturnsElementWithProfiling
 {
+  [self setUpWithRootElement:[self defaultElementTree]];
+
   FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
     [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
                                             identifier:@"cancel_button"
@@ -683,11 +709,13 @@
 
 - (void)testAccessibilityElementAtPointRespectsKeyFiltering
 {
+  [self setUpWithRootElement:[self defaultElementTree]];
   [self assertElementAtPointKeyFilteringWithProfiling:NO];
 }
 
 - (void)testAccessibilityElementAtPointRespectsKeyFilteringWithProfiling
 {
+  [self setUpWithRootElement:[self defaultElementTree]];
   FBAccessibilityElementsResponse *response = [self assertElementAtPointKeyFilteringWithProfiling:YES];
   // 1 element × 3 properties (label, role, frame) = 3 attribute fetches (translation not tracked)
   [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:3];
