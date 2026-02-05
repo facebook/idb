@@ -282,11 +282,11 @@ class Client(ClientBase):
             Channel(
                 host=address.host,
                 port=address.port,
-                loop=asyncio.get_event_loop(),
+                loop=asyncio.get_running_loop(),
                 ssl=ssl_context,
             )
             if isinstance(address, TCPAddress)
-            else Channel(path=address.path, loop=asyncio.get_event_loop())
+            else Channel(path=address.path, loop=asyncio.get_running_loop())
         ) as channel:
             stub = CompanionServiceStub(channel=channel)
             with tempfile.NamedTemporaryFile(mode="w+b") as f:
