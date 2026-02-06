@@ -161,6 +161,30 @@ inline static id ensureJSONSerializable(id obj)
   return [NSJSONSerialization isValidJSONObject:@[obj]] ? obj : [obj description];
 }
 
+/**
+ Category on FBAccessibilityElementsResponse providing a factory method
+ that encapsulates timing calculation and profiling finalization.
+ */
+@implementation FBAccessibilityElementsResponse (ResponseBuilder)
+
++ (instancetype)responseWithElements:(id)elements
+                  serializationStart:(CFAbsoluteTime)serializationStart
+                           collector:(nullable FBAccessibilityProfilingCollector *)collector
+{
+  CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
+
+  FBAccessibilityProfilingData *profilingData = nil;
+  if (collector) {
+    profilingData = [collector finalizeWithSerializationDuration:serializationDuration];
+  }
+
+  return [[self alloc]
+    initWithElements:elements
+       profilingData:profilingData];
+}
+
+@end
+
 @interface FBSimulatorAccessibilitySerializer : NSObject
 
 @end
@@ -374,7 +398,7 @@ static NSString *const AXPrefix = @"AX";
   return nil;
 }
 
-- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -399,9 +423,19 @@ static NSString *const AXPrefix = @"AX";
   return [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:self.token];
 }
 
-- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:self.collector];
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Track serialization timing if profiling
+  CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
+
+  id elements = [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:collector];
+
+  return [FBAccessibilityElementsResponse
+    responseWithElements:elements
+      serializationStart:serializationStart
+               collector:collector];
 }
 
 - (instancetype)cloneWithNewToken
@@ -491,14 +525,24 @@ static NSString *const AXPrefix = @"AX";
   return [translator objectAtPoint:self.point displayId:0 bridgeDelegateToken:self.token];
 }
 
-- (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:self.collector];
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Track serialization timing if profiling
+  CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
+
+  NSDictionary<NSString *, id> *elements = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:collector];
+
   FBAXTranslationAction *action = self.action;
   if (action && [action performActionOnElement:element error:error] == NO) {
     return nil;
   }
-  return result;
+
+  return [FBAccessibilityElementsResponse
+    responseWithElements:elements
+      serializationStart:serializationStart
+               collector:collector];
 }
 
 - (instancetype)cloneWithNewToken
@@ -806,26 +850,11 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
       }
       // Otherwise serialize now, when the context has popped the token is then deregistered.
       AXPMacPlatformElement *element = tuple[1];
-      FBAccessibilityProfilingCollector *collector = request.collector;
-
-      // Track serialization timing if profiling
-      CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
       NSError *error = nil;
-      id serialized = [request serialize:element error:&error];
-      if (serialized == nil) {
+      FBAccessibilityElementsResponse *response = [request run:element error:&error];
+      if (response == nil) {
         return [FBFuture futureWithError:error];
       }
-      CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
-
-      // Always wrap result in FBAccessibilityElementsResponse
-      // profilingData is nil when profile=NO
-      FBAccessibilityProfilingData *profilingData = nil;
-      if (collector) {
-        profilingData = [collector finalizeWithSerializationDuration:serializationDuration];
-      }
-      FBAccessibilityElementsResponse *response = [[FBAccessibilityElementsResponse alloc]
-        initWithElements:serialized
-           profilingData:profilingData];
       return [FBFuture futureWithResult:response];
     }]
     onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElementsResponse *> * (FBAccessibilityElementsResponse *result) {
