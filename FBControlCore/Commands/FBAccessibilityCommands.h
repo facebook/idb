@@ -58,9 +58,10 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 
 /**
  Set of string keys to filter which properties are returned.
- Default: FBAXKeysDefaultSet() (all standard keys)
+ Default: FBAXKeysDefaultSet() (all standard keys).
+ Set to nil to use all default keys.
  */
-@property (nonatomic, copy) NSSet<NSString *> *keys;
+@property (nonatomic, copy, nullable) NSSet<NSString *> *keys;
 
 /**
  Log accessibility requests and responses to the simulator's logger.
