@@ -74,17 +74,19 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   copy.keys = [self.keys copy];
   copy.enableLogging = self.enableLogging;
   copy.enableProfiling = self.enableProfiling;
+  copy.collectFrameCoverage = self.collectFrameCoverage;
   return copy;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@>",
+  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@, collectFrameCoverage=%@>",
           NSStringFromClass(self.class),
           self.nestedFormat ? @"YES" : @"NO",
           self.keys,
           self.enableLogging ? @"YES" : @"NO",
-          self.enableProfiling ? @"YES" : @"NO"];
+          self.enableProfiling ? @"YES" : @"NO",
+          self.collectFrameCoverage ? @"YES" : @"NO"];
 }
 
 @end
@@ -142,7 +144,9 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 
 @implementation FBAccessibilityElementsResponse
 
-- (instancetype)initWithElements:(id)elements profilingData:(nullable FBAccessibilityProfilingData *)profilingData
+- (instancetype)initWithElements:(id)elements
+                   profilingData:(nullable FBAccessibilityProfilingData *)profilingData
+                   frameCoverage:(nullable NSNumber *)frameCoverage
 {
   self = [super init];
   if (!self) {
@@ -151,16 +155,18 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 
   _elements = elements;
   _profilingData = profilingData;
+  _frameCoverage = frameCoverage;
 
   return self;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<%@: elements=%@, profiling=%@>",
+  return [NSString stringWithFormat:@"<%@: elements=%@, profiling=%@, frameCoverage=%@>",
           NSStringFromClass(self.class),
           [self.elements class],
-          self.profilingData];
+          self.profilingData,
+          self.frameCoverage];
 }
 
 @end

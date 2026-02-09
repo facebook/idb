@@ -721,4 +721,159 @@
   [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:3];
 }
 
+#pragma mark - Coverage Calculation Tests
+
+- (void)testCoverageCalculationDisabledByDefault
+{
+  [self setUpWithRootElement:[self defaultElementTree]];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNil(response.frameCoverage, @"Coverage should be nil when collectFrameCoverage is not enabled");
+}
+
+- (void)testCoverageCalculationWithDefaultFixture
+{
+  // Simple test verifying coverage is returned when enabled
+  [self setUpWithRootElement:[self defaultElementTree]];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage, @"Coverage should be returned when collectFrameCoverage is enabled");
+
+  // The fixture has:
+  // - titleLabel at (20, 100, 350, 30) = 10,500 pixels
+  // - okButton at (20, 750, 150, 44) = 6,600 pixels
+  // - cancelButton at (200, 750, 150, 44) = 6,600 pixels
+  // Total covered = 23,700 pixels
+  // Screen area = 390 * 844 = 329,160 pixels
+  // Coverage = 23,700 / 329,160 = ~0.072 (about 7%)
+  // (Application type element is skipped)
+  double coverage = [response.frameCoverage doubleValue];
+  XCTAssertGreaterThan(coverage, 0.0, @"Coverage should be greater than 0");
+  XCTAssertLessThan(coverage, 0.15, @"Coverage should be low since only 3 small elements");
+}
+
+- (void)testCoverageCalculationWithSafariLikeLayout
+{
+  // Simulates Safari: nav bar at top, empty WebView in middle, toolbar at bottom
+  // This pattern indicates remote content (WebView) that doesn't appear in AX tree
+  //
+  // Layout (390x844 screen):
+  // - Navigation bar: (0, 0, 390, 44)
+  // - URL bar: (0, 44, 390, 50)
+  // - WebView area: (0, 94, 390, 606) - NO accessibility elements (remote content)
+  // - Bottom toolbar: (0, 700, 390, 144)
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *navBar =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Navigation Bar"
+                                                     frame:NSMakeRect(0, 0, 390, 44)];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *urlBar =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"URL Bar"
+                                                     frame:NSMakeRect(0, 44, 390, 50)];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *bottomToolbar =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Bottom Toolbar"
+                                                     frame:NSMakeRect(0, 700, 390, 144)];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"Safari"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[navBar, urlBar, bottomToolbar]];
+
+  [self setUpWithRootElement:root];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage);
+
+  // Coverage calculation:
+  // - Nav bar: 390 * 44 = 17,160 pixels
+  // - URL bar: 390 * 50 = 19,500 pixels
+  // - Bottom toolbar: 390 * 144 = 56,160 pixels
+  // - Total covered: 92,820 pixels
+  // - Screen area: 390 * 844 = 329,160 pixels
+  // - Coverage: 92,820 / 329,160 = ~0.28 (about 28%)
+  // The empty WebView area in the middle is not covered
+  double coverage = [response.frameCoverage doubleValue];
+  XCTAssertGreaterThan(coverage, 0.2, @"Coverage should be > 20%% from bars");
+  XCTAssertLessThan(coverage, 0.4, @"Coverage should be < 40%% due to empty WebView area");
+}
+
+- (void)testCoverageCalculationWithFullCoverage
+{
+  // Create an element that covers the entire screen
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *fullCoverageElement =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Full Coverage"
+                                                     frame:NSMakeRect(0, 0, 390, 844)];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[fullCoverageElement]];
+
+  [self setUpWithRootElement:root];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage);
+
+  double coverage = [response.frameCoverage doubleValue];
+  XCTAssertGreaterThanOrEqual(coverage, 0.99, @"Coverage should be near 100%% when element covers full screen");
+}
+
+- (void)testCoverageCalculationSkipsApplicationElement
+{
+  // Create a tree with ONLY an Application element (no children)
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[]];
+
+  [self setUpWithRootElement:root];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage);
+
+  // Application element is skipped, so coverage should be 0
+  double coverage = [response.frameCoverage doubleValue];
+  XCTAssertEqualWithAccuracy(coverage, 0.0, 0.001, @"Coverage should be 0 when only Application element exists");
+}
+
 @end

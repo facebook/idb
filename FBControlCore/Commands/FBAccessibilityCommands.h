@@ -75,6 +75,13 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @property (nonatomic, assign) BOOL enableProfiling;
 
 /**
+ Enable frame coverage calculation during traversal.
+ When YES, frameCoverage will be populated in the response.
+ Default: NO
+ */
+@property (nonatomic, assign) BOOL collectFrameCoverage;
+
+/**
  Creates options with default values.
  */
 + (instancetype)defaultOptions;
@@ -158,9 +165,18 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @property (nonatomic, strong, readonly, nullable) FBAccessibilityProfilingData *profilingData;
 
 /**
+ The proportion of the screen covered by accessibility element frames (0.0 - 1.0).
+ Nil if coverage calculation was not requested (collectFrameCoverage = NO).
+ Low values (e.g., < 0.1) suggest potential remote content like WebViews.
+ */
+@property (nonatomic, strong, readonly, nullable) NSNumber *frameCoverage;
+
+/**
  Designated initializer.
  */
-- (instancetype)initWithElements:(id)elements profilingData:(nullable FBAccessibilityProfilingData *)profilingData;
+- (instancetype)initWithElements:(id)elements
+                   profilingData:(nullable FBAccessibilityProfilingData *)profilingData
+                   frameCoverage:(nullable NSNumber *)frameCoverage;
 
 @end
 
