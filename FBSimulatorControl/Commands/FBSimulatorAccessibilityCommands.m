@@ -171,6 +171,7 @@ inline static id ensureJSONSerializable(id obj)
                   serializationStart:(CFAbsoluteTime)serializationStart
                            collector:(nullable FBAccessibilityProfilingCollector *)collector
                        frameCoverage:(nullable NSNumber *)frameCoverage
+             additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage
 {
   CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
 
@@ -182,7 +183,8 @@ inline static id ensureJSONSerializable(id obj)
   return [[self alloc]
     initWithElements:elements
        profilingData:profilingData
-       frameCoverage:frameCoverage];
+       frameCoverage:frameCoverage
+additionalFrameCoverage:additionalFrameCoverage];
 }
 
 @end
@@ -205,6 +207,10 @@ inline static id ensureJSONSerializable(id obj)
 /// Calculate coverage ratio for the entire screen.
 /// Returns 0.0-1.0, or -1 if grid is invalid.
 - (CGFloat)coverageRatio;
+
+/// Check if the cell containing the given point is already filled.
+/// Returns YES if the cell is marked, NO if empty or out of bounds.
+- (BOOL)isFilledAtPoint:(CGPoint)point;
 
 @property (nonatomic, readonly) CGRect screenBounds;
 @property (nonatomic, readonly) CGFloat cellSize;
@@ -296,6 +302,30 @@ static const CGFloat kDefaultCellSize = 10.0;
   }
 }
 
+- (BOOL)isFilledAtPoint:(CGPoint)point
+{
+  if (!_grid) {
+    return NO;
+  }
+
+  // Convert point coordinates to cell indices relative to screen bounds
+  CGFloat relativeX = point.x - _screenBounds.origin.x;
+  CGFloat relativeY = point.y - _screenBounds.origin.y;
+
+  // Calculate cell indices
+  NSInteger cellX = (NSInteger)floor(relativeX / _cellSize);
+  NSInteger cellY = (NSInteger)floor(relativeY / _cellSize);
+
+  // Check bounds - return NO for out-of-bounds points
+  if (cellX < 0 || cellX >= (NSInteger)_width ||
+      cellY < 0 || cellY >= (NSInteger)_height) {
+    return NO;
+  }
+
+  // O(1) lookup in the grid array
+  return _grid[cellY * _width + cellX] != 0;
+}
+
 - (CGFloat)coverageRatio
 {
   if (!_grid || _width == 0 || _height == 0) {
@@ -333,6 +363,10 @@ static NSString *const AXPrefix = @"AX";
   return [customActionsTemp copy];
 }
 
+// Discovery method constants for is_remote key
+static NSString *const FBAXDiscoveryMethodRecursive = @"recursive";
+static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
+
 // AXTraits is an iOS-specific bitmask that was available in the old SimulatorBridge implementation.
 // Returns nil if traits are not supported (e.g., the element doesn't support the attribute).
 // The caller should convert nil to NSNull to indicate traits are unavailable for this element.
@@ -349,14 +383,18 @@ static NSString *const AXPrefix = @"AX";
   return AXExtractTraits(bitmask).allObjects;
 }
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
++ (NSMutableArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids applicationElement:(NSMutableDictionary<NSString *, id> * _Nullable * _Nullable)outApplicationElement
 {
   element.translation.bridgeDelegateToken = token;
   pid_t frontmostPid = element.translation.pid;
   if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid]];
+    NSMutableDictionary<NSString *, id> *appElement = [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids];
+    if (outApplicationElement) {
+      *outApplicationElement = appElement;
+    }
+    return [@[appElement] mutableCopy];
   }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid];
+  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids];
 }
 
 + (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
@@ -364,16 +402,22 @@ static NSString *const AXPrefix = @"AX";
   element.translation.bridgeDelegateToken = token;
   pid_t frontmostPid = element.translation.pid;
   if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid];
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:nil];
   }
-  return [self.class accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid];
+  return [self.class accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:nil discoveryMethod:FBAXDiscoveryMethodRecursive];
 }
 
 // The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids discoveryMethod:(NSString *)discoveryMethod
 {
   // The token must always be set so that the right callback is called
   element.translation.bridgeDelegateToken = token;
+
+  // Track this element's PID if seenPids is provided
+  pid_t elementPid = element.translation.pid;
+  if (seenPids) {
+    [seenPids addObject:@(elementPid)];
+  }
 
   // Increment element count if collector is present
   if (collector) {
@@ -473,7 +517,7 @@ static NSString *const AXPrefix = @"AX";
   INCLUDE_IF_KEY(FBAXKeysPlaceholder, element.accessibilityPlaceholderValue);
   INCLUDE_IF_KEY(FBAXKeysHidden, @(element.isAccessibilityHidden));
   INCLUDE_IF_KEY(FBAXKeysFocused, @(element.isAccessibilityFocused));
-  INCLUDE_IF_KEY(FBAXKeysIsRemote, element.translation.pid != frontmostPid ? @YES : @NO);
+  INCLUDE_IF_KEY(FBAXKeysIsRemote, discoveryMethod);
 
   #undef INCLUDE_IF_KEY
 
@@ -482,25 +526,25 @@ static NSString *const AXPrefix = @"AX";
 
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
++ (NSMutableArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid]];
+  [values addObject:[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids discoveryMethod:FBAXDiscoveryMethodRecursive]];
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid];
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
++ (NSMutableDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids
 {
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid] mutableCopy];
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids discoveryMethod:FBAXDiscoveryMethodRecursive] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid];
+    NSMutableDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids];
     [childrenValues addObject:childValues];
   }
   values[@"children"] = childrenValues;
@@ -517,6 +561,8 @@ static NSString *const AXPrefix = @"AX";
 @property (nonatomic, strong, nullable) FBAccessibilityProfilingCollector *collector;
 @property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, nullable) NSNumber *frameCoverage;
+@property (nonatomic, strong, nullable) NSNumber *additionalFrameCoverage;
+@property (nonatomic, strong, nullable) AXPTranslator *translator;
 
 @end
 
@@ -569,37 +615,226 @@ static NSString *const AXPrefix = @"AX";
   return [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:self.token];
 }
 
+#pragma mark - Remote Element Discovery Helpers
+
+/**
+ Discover remote elements via grid-based hit-testing.
+ Skips PIDs already seen in the main traversal.
+ Returns an array of discovered element dictionaries.
+ */
+- (NSArray<NSDictionary *> *)discoverRemoteElementsWithScreenBounds:(CGRect)screenBounds
+                                                       frontmostPid:(pid_t)frontmostPid
+                                                           seenPids:(NSSet<NSNumber *> *)seenPids
+                                                       coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
+{
+  FBAccessibilityRemoteContentOptions *remoteOptions = self.options.remoteContentOptions;
+  NSMutableArray<NSDictionary *> *discoveredElements = [NSMutableArray array];
+  NSMutableSet<NSValue *> *discoveredFrames = [NSMutableSet set];
+
+  // Always include AXFrame for hit-tested elements (needed for nesting and coverage)
+  NSMutableSet<NSString *> *keysWithFrame = [self.options.keys mutableCopy];
+  [keysWithFrame addObject:@"AXFrame"];
+
+  CGFloat stepSize = remoteOptions.gridStepSize > 0 ? remoteOptions.gridStepSize : 50.0;
+  CGRect region = CGRectIsNull(remoteOptions.region) ? screenBounds : remoteOptions.region;
+  NSUInteger maxPoints = remoteOptions.maxPoints;
+  NSUInteger pointCount = 0;
+
+  for (CGFloat y = stepSize; y < region.size.height - stepSize; y += stepSize) {
+    for (CGFloat x = stepSize; x < region.size.width - stepSize; x += stepSize) {
+      if (maxPoints > 0 && pointCount >= maxPoints) {
+        break;
+      }
+
+      CGPoint point = CGPointMake(region.origin.x + x, region.origin.y + y);
+
+      // Skip points already covered by native accessibility elements.
+      // This dynamically excludes toolbars, nav bars, and other covered regions.
+      if (coverageGrid && [coverageGrid isFilledAtPoint:point]) {
+        continue;
+      }
+
+      pointCount++;
+
+      AXPTranslationObject *hitTranslation = [self.translator objectAtPoint:point displayId:0 bridgeDelegateToken:self.token];
+      if (!hitTranslation) {
+        continue;
+      }
+
+      hitTranslation.bridgeDelegateToken = self.token;
+      pid_t hitPid = hitTranslation.pid;
+
+      // Skip if PID was already seen in main traversal
+      if ([seenPids containsObject:@(hitPid)]) {
+        continue;
+      }
+
+      if (hitPid <= 0 || hitPid == frontmostPid) {
+        continue;
+      }
+
+      AXPMacPlatformElement *hitElement = [self.translator macPlatformElementFromTranslation:hitTranslation];
+      if (!hitElement) {
+        continue;
+      }
+
+      CGRect hitFrame = hitElement.accessibilityFrame;
+      NSValue *hitFrameValue = [NSValue valueWithRect:hitFrame];
+
+      if ([discoveredFrames containsObject:hitFrameValue]) {
+        continue;
+      }
+
+      [discoveredFrames addObject:hitFrameValue];
+
+      // Mark in coverage grid if provided
+      if (coverageGrid) {
+        [coverageGrid markFilledWithFrame:hitFrame];
+      }
+
+      NSDictionary *elemDict = [FBSimulatorAccessibilitySerializer
+        accessibilityDictionaryForElement:hitElement
+                                    token:self.token
+                                     keys:keysWithFrame  // Use keys with AXFrame
+                                collector:self.collector
+                             frontmostPid:frontmostPid
+                             coverageGrid:nil  // Already marked above
+                                 seenPids:nil  // Don't track, already filtered
+                          discoveryMethod:FBAXDiscoveryMethodPointGrid];
+      [discoveredElements addObject:elemDict];
+    }
+
+    if (maxPoints > 0 && pointCount >= maxPoints) {
+      break;
+    }
+  }
+
+  return discoveredElements;
+}
+
+#pragma mark - Remote Content Processing
+
+/**
+ Process remote content discovery and merge with main elements.
+ Returns the final response with remote elements merged.
+ */
+- (FBAccessibilityElementsResponse *)processRemoteContentWithMainElements:(NSMutableArray<NSDictionary<NSString *, id> *> *)mainAppElements
+                                                       applicationElement:(NSMutableDictionary<NSString *, id> *)applicationElement
+                                                             screenBounds:(CGRect)screenBounds
+                                                             frontmostPid:(pid_t)frontmostPid
+                                                                 seenPids:(NSSet<NSNumber *> *)seenPids
+                                                             coverageGrid:(FBAccessibilityCoverageGrid *)grid
+                                                            frameCoverage:(NSNumber *)frameCoverage
+                                                       serializationStart:(CFAbsoluteTime)serializationStart
+{
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Record coverage before remote discovery
+  CGFloat coverageBefore = grid ? [grid coverageRatio] : 0;
+
+  // Discover remote elements via grid-based hit-testing
+  NSArray<NSDictionary *> *discoveredElements = [self
+    discoverRemoteElementsWithScreenBounds:screenBounds
+                              frontmostPid:frontmostPid
+                                  seenPids:seenPids
+                              coverageGrid:grid];
+
+  // Calculate additional coverage from remote discovery
+  NSNumber *additionalFrameCoverage = nil;
+  if (grid && discoveredElements.count > 0) {
+    CGFloat coverageAfter = [grid coverageRatio];
+    CGFloat additionalCoverage = coverageAfter - coverageBefore;
+    if (additionalCoverage > 0) {
+      additionalFrameCoverage = @(additionalCoverage);
+    }
+  }
+
+  // Merge remote elements directly into mutable structures (no copying needed)
+  if (discoveredElements.count > 0) {
+    if (applicationElement) {
+      // Append to Application element's children for nested format
+      NSMutableArray<NSDictionary<NSString *, id> *> *children = applicationElement[@"children"];
+      if (!children) {
+        children = [NSMutableArray<NSDictionary<NSString *, id> *> new];
+        applicationElement[@"children"] = children;
+      }
+      [children addObjectsFromArray:discoveredElements];
+    } else {
+      // Append to flat array directly
+      [mainAppElements addObjectsFromArray:discoveredElements];
+    }
+  }
+
+  return [FBAccessibilityElementsResponse
+    responseWithElements:mainAppElements
+      serializationStart:serializationStart
+               collector:collector
+           frameCoverage:frameCoverage
+ additionalFrameCoverage:additionalFrameCoverage];
+}
+
+#pragma mark - Serialization
+
 - (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element error:(NSError **)error
 {
   FBAccessibilityProfilingCollector *collector = self.collector;
 
+  // Get screen bounds for coverage calculation and remote content fetching
+  CGRect screenBounds = element.accessibilityFrame;
+
   // Create coverage grid if requested - it will be populated during traversal
   FBAccessibilityCoverageGrid *grid = nil;
   if (self.options.collectFrameCoverage) {
-    CGRect screenBounds = element.accessibilityFrame;
     grid = [[FBAccessibilityCoverageGrid alloc] initWithScreenBounds:screenBounds];
   }
+
+  // Track PIDs during traversal for deduplication during remote content discovery
+  NSMutableSet<NSNumber *> *seenPids = [NSMutableSet set];
 
   // Track serialization timing if profiling
   CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
 
   // Serialize elements, passing the grid to be populated during traversal
-  id elements = [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.options.nestedFormat keys:self.options.keys collector:collector coverageGrid:grid];
+  NSMutableDictionary<NSString *, id> *applicationElement = nil;
+  NSMutableArray<NSDictionary<NSString *, id> *> *mainAppElements = [FBSimulatorAccessibilitySerializer
+    recursiveDescriptionFromElement:element
+                              token:self.token
+                       nestedFormat:self.options.nestedFormat
+                               keys:self.options.keys
+                          collector:collector
+                       coverageGrid:grid
+                           seenPids:seenPids
+                 applicationElement:self.options.nestedFormat ? &applicationElement : nil];
 
-  // Extract coverage ratio after traversal is complete
+  // Calculate base coverage after main traversal
   NSNumber *frameCoverage = nil;
   if (grid) {
-    CGFloat coverage = [grid coverageRatio];
-    if (coverage >= 0) {
-      frameCoverage = @(coverage);
+    CGFloat baseCoverage = [grid coverageRatio];
+    if (baseCoverage >= 0) {
+      frameCoverage = @(baseCoverage);
     }
   }
 
-  return [FBAccessibilityElementsResponse
-    responseWithElements:elements
-      serializationStart:serializationStart
-               collector:collector
-           frameCoverage:frameCoverage];
+  // Check if remote content fetching is enabled
+  FBAccessibilityRemoteContentOptions *remoteOptions = self.options.remoteContentOptions;
+  if (!remoteOptions || !self.translator) {
+    return [FBAccessibilityElementsResponse
+      responseWithElements:mainAppElements
+        serializationStart:serializationStart
+                 collector:collector
+             frameCoverage:frameCoverage
+   additionalFrameCoverage:nil];
+  }
+
+  pid_t frontmostPid = element.translation.pid;
+  return [self processRemoteContentWithMainElements:mainAppElements
+                                 applicationElement:applicationElement
+                                       screenBounds:screenBounds
+                                       frontmostPid:frontmostPid
+                                           seenPids:seenPids
+                                       coverageGrid:grid
+                                      frameCoverage:frameCoverage
+                                 serializationStart:serializationStart];
 }
 
 - (instancetype)cloneWithNewToken
@@ -707,7 +942,8 @@ static NSString *const AXPrefix = @"AX";
     responseWithElements:elements
       serializationStart:serializationStart
                collector:collector
-           frameCoverage:nil];
+           frameCoverage:nil
+ additionalFrameCoverage:nil];
 }
 
 - (instancetype)cloneWithNewToken
@@ -753,6 +989,7 @@ static NSString *const AXPrefix = @"AX";
   return [[FBFuture
     onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
       request.device = simulator.device;
+      request.translator = self.translator;  // Set translator for remote element traversal
       [self pushRequest:request];
       FBAccessibilityProfilingCollector *collector = request.collector;
 

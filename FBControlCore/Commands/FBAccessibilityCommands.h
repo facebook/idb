@@ -45,6 +45,35 @@ extern FBAXKeys const FBAXKeysIsRemote;
 extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 
 /**
+ Options for fetching remote process elements (e.g., WebView content).
+ Remote elements are in separate processes and require grid-based hit-testing to discover.
+ */
+@interface FBAccessibilityRemoteContentOptions : NSObject <NSCopying>
+
+/**
+ Grid step size in points for sampling. Smaller = more thorough but slower.
+ Default: 50.0
+ */
+@property (nonatomic, assign) CGFloat gridStepSize;
+
+/**
+ Region to sample. CGRectNull = full screen (default).
+ */
+@property (nonatomic, assign) CGRect region;
+
+/**
+ Maximum points to sample. 0 = unlimited (default).
+ */
+@property (nonatomic, assign) NSUInteger maxPoints;
+
+/**
+ Creates options with default values.
+ */
++ (instancetype)defaultOptions;
+
+@end
+
+/**
  Request options for accessibility operations.
  Consolidates all parameters needed for an accessibility query.
  */
@@ -81,6 +110,13 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  Default: NO
  */
 @property (nonatomic, assign) BOOL collectFrameCoverage;
+
+/**
+ Options for remote content fetching. If nil (default), remote content is not fetched.
+ Remote elements are in separate processes (e.g., WebKit content in Safari) and require
+ grid-based hit-testing to discover, which adds ~270ms overhead.
+ */
+@property (nonatomic, strong, nullable) FBAccessibilityRemoteContentOptions *remoteContentOptions;
 
 /**
  Creates options with default values.
@@ -173,11 +209,19 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @property (nonatomic, strong, readonly, nullable) NSNumber *frameCoverage;
 
 /**
+ Additional coverage discovered via grid-based hit-testing for remote content.
+ This is the coverage added by remote elements not found in the main traversal.
+ Nil if remote content discovery was not performed or found no additional elements.
+ */
+@property (nonatomic, strong, readonly, nullable) NSNumber *additionalFrameCoverage;
+
+/**
  Designated initializer.
  */
 - (instancetype)initWithElements:(id)elements
                    profilingData:(nullable FBAccessibilityProfilingData *)profilingData
-                   frameCoverage:(nullable NSNumber *)frameCoverage;
+                   frameCoverage:(nullable NSNumber *)frameCoverage
+         additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage;
 
 @end
 

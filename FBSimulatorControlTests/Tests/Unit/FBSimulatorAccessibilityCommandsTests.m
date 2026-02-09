@@ -876,4 +876,40 @@
   XCTAssertEqualWithAccuracy(coverage, 0.0, 0.001, @"Coverage should be 0 when only Application element exists");
 }
 
+- (void)testAdditionalFrameCoverageIsNilWithoutRemoteContent
+{
+  // Test that additionalFrameCoverage is nil when no remote content is discovered
+  [self setUpWithRootElement:[self defaultElementTree]];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage, @"frameCoverage should be set when collectFrameCoverage is enabled");
+  XCTAssertNil(response.additionalFrameCoverage, @"additionalFrameCoverage should be nil when no remote content is discovered");
+}
+
+- (void)testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions
+{
+  // Test that additionalFrameCoverage is nil when remote content options are not set
+  [self setUpWithRootElement:[self defaultElementTree]];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  // remoteContentOptions is nil by default
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNil(response.additionalFrameCoverage, @"additionalFrameCoverage should be nil without remoteContentOptions");
+}
+
 @end

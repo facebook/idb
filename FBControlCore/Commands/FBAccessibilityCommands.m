@@ -45,6 +45,47 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   return defaultSet;
 }
 
+@implementation FBAccessibilityRemoteContentOptions
+
++ (instancetype)defaultOptions
+{
+  return [[self alloc] init];
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _gridStepSize = 50.0;
+  _region = CGRectNull;
+  _maxPoints = 0;
+
+  return self;
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  FBAccessibilityRemoteContentOptions *copy = [[FBAccessibilityRemoteContentOptions alloc] init];
+  copy.gridStepSize = self.gridStepSize;
+  copy.region = self.region;
+  copy.maxPoints = self.maxPoints;
+  return copy;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"<%@: stepSize=%.1f, region=%@, maxPoints=%lu>",
+          NSStringFromClass(self.class),
+          self.gridStepSize,
+          CGRectIsNull(self.region) ? @"fullscreen" : NSStringFromRect(self.region),
+          (unsigned long)self.maxPoints];
+}
+
+@end
+
 @implementation FBAccessibilityRequestOptions
 
 + (instancetype)defaultOptions
@@ -75,18 +116,20 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   copy.enableLogging = self.enableLogging;
   copy.enableProfiling = self.enableProfiling;
   copy.collectFrameCoverage = self.collectFrameCoverage;
+  copy.remoteContentOptions = [self.remoteContentOptions copy];
   return copy;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@, collectFrameCoverage=%@>",
+  return [NSString stringWithFormat:@"<%@: nested=%@, keys=%@, logging=%@, profiling=%@, collectFrameCoverage=%@, remote=%@>",
           NSStringFromClass(self.class),
           self.nestedFormat ? @"YES" : @"NO",
           self.keys,
           self.enableLogging ? @"YES" : @"NO",
           self.enableProfiling ? @"YES" : @"NO",
-          self.collectFrameCoverage ? @"YES" : @"NO"];
+          self.collectFrameCoverage ? @"YES" : @"nil",
+          self.remoteContentOptions ?: @"NO"];
 }
 
 @end
@@ -147,6 +190,7 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 - (instancetype)initWithElements:(id)elements
                    profilingData:(nullable FBAccessibilityProfilingData *)profilingData
                    frameCoverage:(nullable NSNumber *)frameCoverage
+         additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage
 {
   self = [super init];
   if (!self) {
@@ -156,17 +200,19 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   _elements = elements;
   _profilingData = profilingData;
   _frameCoverage = frameCoverage;
+  _additionalFrameCoverage = additionalFrameCoverage;
 
   return self;
 }
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"<%@: elements=%@, profiling=%@, frameCoverage=%@>",
+  return [NSString stringWithFormat:@"<%@: elements=%@, profiling=%@, frameCoverage=%@, additionalFrameCoverage=%@>",
           NSStringFromClass(self.class),
           [self.elements class],
           self.profilingData,
-          self.frameCoverage];
+          self.frameCoverage,
+          self.additionalFrameCoverage];
 }
 
 @end
