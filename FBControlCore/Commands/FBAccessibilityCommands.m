@@ -143,6 +143,7 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
             elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
                serializationDuration:(CFAbsoluteTime)serializationDuration
                      totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
+                          fetchedKeys:(NSSet<NSString *> *)fetchedKeys
 {
   self = [super init];
   if (!self) {
@@ -156,6 +157,7 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   _elementConversionDuration = elementConversionDuration;
   _serializationDuration = serializationDuration;
   _totalXPCDuration = totalXPCDuration;
+  _fetchedKeys = [fetchedKeys copy];
 
   return self;
 }

@@ -557,8 +557,8 @@
   NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
   [self setUpWithRootElement:[self defaultRootWithChildren:children]];
   FBAccessibilityElementsResponse *response = [self assertFlatOutputWithProfiling:YES childElements:children];
-  // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
+  // 4 elements × 15 properties (all except actionNames) = 60 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:60];
 }
 
 - (void)testAccessibilityCommandsProducesCorrectNestedOutput
@@ -573,8 +573,8 @@
   NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
   [self setUpWithRootElement:[self defaultRootWithChildren:children]];
   FBAccessibilityElementsResponse *response = [self assertNestedOutputWithProfiling:YES childElements:children];
-  // 4 elements × 14 properties (all except actionNames) = 56 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:56];
+  // 4 elements × 15 properties (all except actionNames) = 60 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:60];
 }
 
 - (void)testAccessibilityCommandsRespectsKeyFiltering
@@ -589,8 +589,12 @@
   NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
   [self setUpWithRootElement:[self defaultRootWithChildren:children]];
   FBAccessibilityElementsResponse *response = [self assertKeyFilteringWithProfiling:YES childElements:children];
-  // 4 elements × 2 properties (label, frame) = 8 attribute fetches (children/translation not tracked for leaf elements)
-  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:8];
+  // 4 elements × 3 properties (AXFrame always, label, frame dict) = 12 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:4 expectedAttributeFetches:12];
+
+  // Verify fetched keys match exactly the keys that were requested
+  NSSet<NSString *> *expectedKeys = [NSSet setWithArray:@[FBAXKeysFrame, FBAXKeysLabel, FBAXKeysFrameDict]];
+  XCTAssertEqualObjects(response.profilingData.fetchedKeys, expectedKeys, @"fetchedKeys should match exactly the keys that were requested");
 }
 
 - (void)testAccessibilityPerformTapOnButtonSucceeds
@@ -703,8 +707,8 @@
   };
 
   FBAccessibilityElementsResponse *response = [self assertElementAtPointWithProfiling:YES point:CGPointMake(275, 772) element:cancelButton expected:expected];
-  // 1 element × 14 properties (no children) = 14 attribute fetches
-  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:14];
+  // 1 element × 15 properties (no children) = 15 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:15];
 }
 
 - (void)testAccessibilityElementAtPointRespectsKeyFiltering
@@ -717,8 +721,12 @@
 {
   [self setUpWithRootElement:[self defaultElementTree]];
   FBAccessibilityElementsResponse *response = [self assertElementAtPointKeyFilteringWithProfiling:YES];
-  // 1 element × 3 properties (label, role, frame) = 3 attribute fetches (translation not tracked)
-  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:3];
+  // 1 element × 4 properties (AXFrame always, label, role for type, frame dict) = 4 attribute fetches
+  [self assertProfilingData:response.profilingData expectedElements:1 expectedAttributeFetches:4];
+
+  // Verify fetched keys match exactly the keys that were requested
+  NSSet<NSString *> *expectedKeys = [NSSet setWithArray:@[FBAXKeysFrame, FBAXKeysLabel, FBAXKeysType, FBAXKeysFrameDict]];
+  XCTAssertEqualObjects(response.profilingData.fetchedKeys, expectedKeys, @"fetchedKeys should match exactly the keys that were requested");
 }
 
 #pragma mark - Coverage Calculation Tests

@@ -34,9 +34,10 @@
 @property (nonatomic, assign) CFAbsoluteTime translationDuration;
 @property (nonatomic, assign) CFAbsoluteTime elementConversionDuration;
 @property (nonatomic, assign) CFAbsoluteTime serializationDuration;
+@property (nonatomic, strong, readonly) NSSet<NSString *> *fetchedKeys;
 
 - (void)incrementElementCount;
-- (void)incrementAttributeFetchCount;
+- (void)incrementAttributeFetchCountForKey:(nullable NSString *)key;
 - (void)addXPCCallDuration:(CFAbsoluteTime)duration;
 - (int64_t)elementCount;
 - (int64_t)attributeFetchCount;
@@ -51,6 +52,7 @@
   _Atomic int64_t _attributeFetchCount;
   _Atomic int64_t _xpcCallCount;
   _Atomic double _totalXPCDuration;
+  NSMutableSet<NSString *> *_fetchedKeys;
 }
 
 - (instancetype)init
@@ -63,6 +65,7 @@
   atomic_store(&_attributeFetchCount, 0);
   atomic_store(&_xpcCallCount, 0);
   atomic_store(&_totalXPCDuration, 0.0);
+  _fetchedKeys = [NSMutableSet set];
   return self;
 }
 
@@ -71,9 +74,21 @@
   atomic_fetch_add(&_elementCount, 1);
 }
 
-- (void)incrementAttributeFetchCount
+- (void)incrementAttributeFetchCountForKey:(nullable NSString *)key
 {
   atomic_fetch_add(&_attributeFetchCount, 1);
+  if (key) {
+    @synchronized(self) {
+      [_fetchedKeys addObject:key];
+    }
+  }
+}
+
+- (NSSet<NSString *> *)fetchedKeys
+{
+  @synchronized(self) {
+    return [_fetchedKeys copy];
+  }
 }
 
 - (void)addXPCCallDuration:(CFAbsoluteTime)duration
@@ -116,7 +131,8 @@
      translationDuration:self.translationDuration
    elementConversionDuration:self.elementConversionDuration
       serializationDuration:serializationDuration
-            totalXPCDuration:self.totalXPCDuration];
+            totalXPCDuration:self.totalXPCDuration
+                 fetchedKeys:self.fetchedKeys];
 }
 
 @end
@@ -427,15 +443,15 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   // Helper macro to include key with JSON serialization if needed (also increments profiling counter)
   #define INCLUDE_IF_KEY(key, expr) do { \
     if ([keys containsObject:key]) { \
-      if (collector) { [collector incrementAttributeFetchCount]; } \
+      if (collector) { [collector incrementAttributeFetchCountForKey:key]; } \
       values[key] = ensureJSONSerializable(expr); \
     } \
   } while (0)
 
   NSMutableDictionary<NSString *, id> *values = [NSMutableDictionary dictionary];
 
-  // Frame is always computed since it's used by multiple keys
-  if (collector) { [collector incrementAttributeFetchCount]; }
+  // Frame is always computed since it's used by multiple keys and coverage grid
+  if (collector) { [collector incrementAttributeFetchCountForKey:FBAXKeysFrame]; }
   NSRect frame = element.accessibilityFrame;
 
   // Role is used by multiple keys and needs processing
@@ -443,14 +459,14 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   NSString *role = nil;
   NSString *rawRole = nil;
   if ([keys containsObject:FBAXKeysRole]) {
-    if (collector) { [collector incrementAttributeFetchCount]; }
+    if (collector) { [collector incrementAttributeFetchCountForKey:FBAXKeysRole]; }
     rawRole = element.accessibilityRole;
     values[FBAXKeysRole] = ensureJSONSerializable(rawRole);
   }
   if ([keys containsObject:FBAXKeysType]) {
     // Fetch rawRole if not already present
     if (rawRole == nil) {
-      if (collector) { [collector incrementAttributeFetchCount]; }
+      if (collector) { [collector incrementAttributeFetchCountForKey:FBAXKeysType]; }
       rawRole = element.accessibilityRole;
     }
     // The value returned in accessibilityRole may be prefixed with "AX".
@@ -466,7 +482,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   if (coverageGrid) {
     // Fetch role if not already fetched (needed to identify Application elements)
     if (rawRole == nil) {
-      if (collector) { [collector incrementAttributeFetchCount]; }
+      if (collector) { [collector incrementAttributeFetchCountForKey:nil]; }
       rawRole = element.accessibilityRole;
     }
     // Skip Application elements when calculating coverage
@@ -493,6 +509,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   // New values
   INCLUDE_IF_KEY(FBAXKeysTitle, element.accessibilityTitle);
   if ([keys containsObject:FBAXKeysFrameDict]) {
+    if (collector) { [collector incrementAttributeFetchCountForKey:FBAXKeysFrameDict]; }
     values[FBAXKeysFrameDict] = @{
       @"x": @(frame.origin.x),
       @"y": @(frame.origin.y),
@@ -508,7 +525,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   INCLUDE_IF_KEY(FBAXKeysContentRequired, @(element.accessibilityRequired));
   INCLUDE_IF_KEY(FBAXKeysPID, @(element.translation.pid));
   if ([keys containsObject:FBAXKeysTraits]) {
-    if (collector) { [collector incrementAttributeFetchCount]; }
+    if (collector) { [collector incrementAttributeFetchCountForKey:FBAXKeysTraits]; }
     NSArray<NSString *> *traits = [self.class traitsFromElement:element];
     values[FBAXKeysTraits] = traits ?: (id)NSNull.null;
   }

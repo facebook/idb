@@ -168,6 +168,12 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @property (nonatomic, assign, readonly) CFAbsoluteTime totalXPCDuration;
 
 /**
+ The set of keys that were fetched during serialization.
+ Useful for tests to verify which attributes were actually accessed.
+ */
+@property (nonatomic, strong, readonly) NSSet<NSString *> *fetchedKeys;
+
+/**
  Designated initializer.
  */
 - (instancetype)initWithElementCount:(int64_t)elementCount
@@ -176,7 +182,8 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
                   translationDuration:(CFAbsoluteTime)translationDuration
             elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
                serializationDuration:(CFAbsoluteTime)serializationDuration
-                     totalXPCDuration:(CFAbsoluteTime)totalXPCDuration;
+                     totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
+                          fetchedKeys:(NSSet<NSString *> *)fetchedKeys;
 
 /**
  Returns the profiling data as a JSON-serializable dictionary.
