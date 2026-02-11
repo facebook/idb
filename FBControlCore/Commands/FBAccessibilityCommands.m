@@ -207,6 +207,24 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   return self;
 }
 
+- (NSDictionary<NSString *, id> *)asDictionary
+{
+  NSMutableDictionary<NSString *, id> *dict = [NSMutableDictionary dictionary];
+  dict[@"elements"] = self.elements;
+  if (self.profilingData) {
+    dict[@"profile"] = [self.profilingData asDictionary];
+  }
+  if (self.frameCoverage) {
+    NSMutableDictionary *coverageDict = [NSMutableDictionary dictionary];
+    coverageDict[@"frame"] = self.frameCoverage;
+    if (self.additionalFrameCoverage) {
+      coverageDict[@"additional"] = self.additionalFrameCoverage;
+    }
+    dict[@"coverage"] = coverageDict;
+  }
+  return [dict copy];
+}
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"<%@: elements=%@, profiling=%@, frameCoverage=%@, additionalFrameCoverage=%@>",

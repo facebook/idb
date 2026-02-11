@@ -230,6 +230,14 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
                    frameCoverage:(nullable NSNumber *)frameCoverage
          additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage;
 
+/**
+ Returns a JSON-serializable dictionary with elements always embedded.
+ Format: {"elements": <elements>, "profile": <profile_dict>, "coverage": <coverage_dict>}
+ Profile and coverage keys are included only when the corresponding data is present.
+ Use this when you need a single serializable object. Use `elements` when you need raw element data.
+ */
+- (NSDictionary<NSString *, id> *)asDictionary;
+
 @end
 
 /**
