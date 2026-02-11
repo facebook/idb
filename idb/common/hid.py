@@ -68,6 +68,52 @@ def _key_up_event(keycode: int) -> HIDEvent:
     return HIDPress(action=HIDKey(keycode=keycode), direction=HIDDirection.UP)
 
 
+MODIFIER_KEYCODES: dict[str, int] = {
+    "shift": 225,  # Left Shift
+    "control": 224,  # Left Control
+    "option": 226,  # Left Alt/Option
+    "command": 227,  # Left GUI/Command
+    "tab": 43,  # Tab key (used as modifier in iOS Full Keyboard Access)
+}
+
+
+def key_press_with_modifiers_to_events(
+    keycode: int,
+    modifiers: list[str] | None = None,
+    duration: float | None = None,
+) -> list[HIDEvent]:
+    events = []
+    modifier_keycodes = []
+
+    if modifiers:
+        for mod in modifiers:
+            mod_lower = mod.lower()
+            if mod_lower in MODIFIER_KEYCODES:
+                modifier_keycodes.append(MODIFIER_KEYCODES[mod_lower])
+            else:
+                raise ValueError(f"Unknown modifier: {mod}")
+
+    # Press modifiers down
+    for mod_keycode in modifier_keycodes:
+        events.append(_key_down_event(mod_keycode))
+
+    # Press target key
+    events.append(_key_down_event(keycode))
+
+    # Optional delay
+    if duration:
+        events.append(HIDDelay(duration=duration))
+
+    # Release target key
+    events.append(_key_up_event(keycode))
+
+    # Release modifiers in reverse order
+    for mod_keycode in reversed(modifier_keycodes):
+        events.append(_key_up_event(mod_keycode))
+
+    return events
+
+
 def key_press_shifted_to_events(keycode: int) -> list[HIDEvent]:
     return [
         _key_down_event(225),

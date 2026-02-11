@@ -9,6 +9,10 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
+from idb.common.hid import (
+    iterator_to_async_iterator,
+    key_press_with_modifiers_to_events,
+)
 from idb.common.types import Client, HIDButtonType
 
 
@@ -59,7 +63,7 @@ class ButtonCommand(ClientCommand):
 class KeyCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "A short press of a keycode"
+        return "A short press of a keycode with optional keyboard modifiers"
 
     @property
     def name(self) -> str:
@@ -68,10 +72,45 @@ class KeyCommand(ClientCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("key", help="The key code", type=int)
         parser.add_argument("--duration", help="Press duration", type=float)
+        parser.add_argument("--shift", action="store_true", help="Hold Shift modifier")
+        parser.add_argument(
+            "--control", action="store_true", help="Hold Control modifier"
+        )
+        parser.add_argument(
+            "--option", action="store_true", help="Hold Option/Alt modifier"
+        )
+        parser.add_argument(
+            "--command", action="store_true", help="Hold Command/GUI modifier"
+        )
+        parser.add_argument(
+            "--tab",
+            action="store_true",
+            help="Hold Tab modifier (for [iOS Full Keyboard Access](https://support.apple.com/en-gb/guide/iphone/ipha4375873f/ios))",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.key(keycode=args.key, duration=args.duration)
+        modifiers = []
+        if args.control:
+            modifiers.append("control")
+        if args.option:
+            modifiers.append("option")
+        if args.shift:
+            modifiers.append("shift")
+        if args.command:
+            modifiers.append("command")
+        if args.tab:
+            modifiers.append("tab")
+
+        if modifiers:
+            events = key_press_with_modifiers_to_events(
+                keycode=args.key,
+                modifiers=modifiers,
+                duration=args.duration,
+            )
+            await client.hid(iterator_to_async_iterator(events))
+        else:
+            await client.key(keycode=args.key, duration=args.duration)
 
 
 class KeySequenceCommand(ClientCommand):

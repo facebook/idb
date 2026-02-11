@@ -10,7 +10,7 @@ import asyncio
 import os
 import sys
 from argparse import Namespace
-from typing import Any, Optional, Tuple, TypeVar
+from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
@@ -20,6 +20,8 @@ from idb.common.types import (
     CrashLogQuery,
     DomainSocketAddress,
     HIDButtonType,
+    HIDDelay,
+    HIDDirection,
     InstrumentsTimings,
     Permission,
     TCPAddress,
@@ -817,6 +819,114 @@ class TestParser(TestCase):
         self.client_mock.key = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "key", "12"])
         self.client_mock.key.assert_called_once_with(keycode=12, duration=None)
+
+    async def test_key_with_shift_modifier(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Shift+P
+        await cli_main(cmd_input=["ui", "key", "19", "--shift"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args[0][0]
+        events = [event async for event in async_iter]
+        self.assertEqual(len(events), 4)
+        self.assertEqual(events[0].action.keycode, 225)  # Shift down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 19)  # P down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 19)  # P up
+        self.assertEqual(events[2].direction, HIDDirection.UP)
+        self.assertEqual(events[3].action.keycode, 225)  # Shift up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+
+    async def test_key_with_multiple_modifiers(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Control+Option+Shift+Command+R
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "key",
+                "19",
+                "--control",
+                "--option",
+                "--shift",
+                "--command",
+            ]
+        )
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args[0][0]
+        events = [event async for event in async_iter]
+
+        self.assertEqual(len(events), 10)
+        # Modifiers down (in order: control, option, shift, command)
+        self.assertEqual(events[0].action.keycode, 224)  # Control down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 226)  # Option down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 225)  # Shift down
+        self.assertEqual(events[2].direction, HIDDirection.DOWN)
+        self.assertEqual(events[3].action.keycode, 227)  # Command down
+        self.assertEqual(events[3].direction, HIDDirection.DOWN)
+        # Key press
+        self.assertEqual(events[4].action.keycode, 19)  # P down
+        self.assertEqual(events[4].direction, HIDDirection.DOWN)
+        self.assertEqual(events[5].action.keycode, 19)  # P up
+        self.assertEqual(events[5].direction, HIDDirection.UP)
+        # Modifiers up (reversed: command, shift, option, control)
+        self.assertEqual(events[6].action.keycode, 227)  # Command up
+        self.assertEqual(events[6].direction, HIDDirection.UP)
+        self.assertEqual(events[7].action.keycode, 225)  # Shift up
+        self.assertEqual(events[7].direction, HIDDirection.UP)
+        self.assertEqual(events[8].action.keycode, 226)  # Option up
+        self.assertEqual(events[8].direction, HIDDirection.UP)
+        self.assertEqual(events[9].action.keycode, 224)  # Control up
+        self.assertEqual(events[9].direction, HIDDirection.UP)
+
+    async def test_key_with_tab_modifier(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Tab+H
+        await cli_main(cmd_input=["ui", "key", "11", "--tab"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args[0][0]
+        events = [event async for event in async_iter]
+
+        self.assertEqual(len(events), 4)
+        self.assertEqual(events[0].action.keycode, 43)  # Tab down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 11)  # H down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        self.assertEqual(events[2].action.keycode, 11)  # H up
+        self.assertEqual(events[2].direction, HIDDirection.UP)
+        self.assertEqual(events[3].action.keycode, 43)  # Tab up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+
+    async def test_key_with_duration_and_modifiers(self) -> None:
+        self.client_mock.hid = AsyncMock(return_value=[])
+
+        # Shift+P with duration=0.5
+        await cli_main(cmd_input=["ui", "key", "19", "--shift", "--duration", "0.5"])
+        self.client_mock.hid.assert_called_once()
+
+        async_iter = self.client_mock.hid.call_args[0][0]
+        events = [event async for event in async_iter]
+
+        # Expected: Shift down, P down, HIDDelay(0.5), P up, Shift up
+        self.assertEqual(len(events), 5)
+        self.assertEqual(events[0].action.keycode, 225)  # Shift down
+        self.assertEqual(events[0].direction, HIDDirection.DOWN)
+        self.assertEqual(events[1].action.keycode, 19)  # P down
+        self.assertEqual(events[1].direction, HIDDirection.DOWN)
+        # Verify HIDDelay is inserted between key press and release
+        self.assertIsInstance(events[2], HIDDelay)
+        self.assertEqual(events[2].duration, 0.5)
+        self.assertEqual(events[3].action.keycode, 19)  # P up
+        self.assertEqual(events[3].direction, HIDDirection.UP)
+        self.assertEqual(events[4].action.keycode, 225)  # Shift up
+        self.assertEqual(events[4].direction, HIDDirection.UP)
 
     async def test_text_input(self) -> None:
         self.client_mock.text = AsyncMock(return_value=[])
