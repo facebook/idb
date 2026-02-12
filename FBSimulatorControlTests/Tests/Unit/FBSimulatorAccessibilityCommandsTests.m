@@ -141,13 +141,18 @@
   FBSimulatorAccessibilityCommands *commands = [self commands];
   XCTAssertNotNil(commands);
 
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+  XCTAssertNotNil(element);
+
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.nestedFormat = NO;
   options.enableLogging = YES;
   options.enableProfiling = enableProfiling;
 
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -248,20 +253,25 @@
 /// Core test for element at point - returns response for optional profiling assertions
 - (FBAccessibilityElementsResponse *)assertElementAtPointWithProfiling:(BOOL)enableProfiling
                                                                   point:(CGPoint)point
-                                                                element:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)element
+                                                                element:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)elementDouble
                                                                expected:(NSDictionary *)expected
 {
-  self.fixture.translator.macPlatformElementResult = element;
+  self.fixture.translator.macPlatformElementResult = elementDouble;
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
+
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementAtPoint:point] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+  XCTAssertNotNil(element);
 
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.nestedFormat = NO;
   options.enableLogging = YES;
   options.enableProfiling = enableProfiling;
 
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:point options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -271,7 +281,7 @@
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - single element doesn't recurse children
-  XCTAssertEqualObjects(element.accessedProperties, [self singleElementSerializationProperties],
+  XCTAssertEqualObjects(elementDouble.accessedProperties, [self singleElementSerializationProperties],
     @"Single element at point should access all properties except children");
 
   return response;
@@ -283,13 +293,18 @@
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+  XCTAssertNotNil(element);
+
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.nestedFormat = YES;
   options.enableLogging = YES;
   options.enableProfiling = enableProfiling;
 
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -398,14 +413,19 @@
 {
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+  XCTAssertNotNil(element);
+
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.nestedFormat = NO;
   options.keys = [NSSet setWithArray:@[@"AXLabel", @"frame"]];
   options.enableLogging = YES;
   options.enableProfiling = enableProfiling;
 
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -458,14 +478,19 @@
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementAtPoint:CGPointMake(100, 115)] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+  XCTAssertNotNil(element);
+
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.nestedFormat = NO;
   options.keys = [NSSet setWithArray:@[@"AXLabel", @"type", @"frame"]];
   options.enableLogging = YES;
   options.enableProfiling = enableProfiling;
 
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementAtPoint:CGPointMake(100, 115) options:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -610,15 +635,25 @@
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
 
-  // Perform tap at the OK button center, expecting the "OK" label
+  // Acquire element handle then perform tap
   NSError *error = nil;
-  NSDictionary *result = [[commands accessibilityPerformTapOnElementAtPoint:CGPointMake(95, 772) expectedLabel:@"OK"] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementAtPoint:CGPointMake(95, 772)] awaitWithTimeout:5.0 error:&error];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
-  XCTAssertNotNil(result);
+  XCTAssertNotNil(element);
 
-  // Verify the returned element is the button with expected properties
-  // Note: tap returns nested format which includes children
+  BOOL tapSuccess = [element tapWithExpectedLabel:@"OK" error:&error];
+  XCTAssertTrue(tapSuccess, @"Tap should succeed: %@", error);
+  XCTAssertNil(error, @"Should not have error after tap: %@", error);
+
+  // Serialize and verify structure — same expected dict as element-at-point tests
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.nestedFormat = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  XCTAssertNil(error, @"Should not have error serializing: %@", error);
+  XCTAssertNotNil(response);
+
+  NSDictionary *result = (NSDictionary *)response.elements;
   NSDictionary *expected = @{
     @"AXLabel": @"OK",
     @"AXFrame": @"{{20, 750}, {150, 44}}",
@@ -638,13 +673,16 @@
     @"traits": [NSNull null],
     @"children": @[],
   };
-
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
-  // Verify property access tracking - tap operation accesses all properties including action names
-  XCTAssertEqualObjects(okButton.accessedProperties, [self tapOperationProperties],
-    @"Tap operation should access all serialization properties including action names");
+  [element close];
+
+  // Verify property access tracking - tap + serialization accesses
+  XCTAssertTrue([okButton.accessedProperties containsObject:@"accessibilityLabel"],
+    @"Tap operation should access label");
+  XCTAssertTrue([okButton.accessedProperties containsObject:@"accessibilityActionNames"],
+    @"Tap operation should access action names");
 }
 
 - (void)testAccessibilityElementAtPointReturnsElement
@@ -736,10 +774,14 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -752,24 +794,20 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-  options.collectFrameCoverage = YES;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
   XCTAssertNotNil(response.frameCoverage, @"Coverage should be returned when collectFrameCoverage is enabled");
 
-  // The fixture has:
-  // - titleLabel at (20, 100, 350, 30) = 10,500 pixels
-  // - okButton at (20, 750, 150, 44) = 6,600 pixels
-  // - cancelButton at (200, 750, 150, 44) = 6,600 pixels
-  // Total covered = 23,700 pixels
-  // Screen area = 390 * 844 = 329,160 pixels
-  // Coverage = 23,700 / 329,160 = ~0.072 (about 7%)
-  // (Application type element is skipped)
   double coverage = [response.frameCoverage doubleValue];
   XCTAssertGreaterThan(coverage, 0.0, @"Coverage should be greater than 0");
   XCTAssertLessThan(coverage, 0.15, @"Coverage should be low since only 3 small elements");
@@ -806,24 +844,20 @@
   [self setUpWithRootElement:root];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-  options.collectFrameCoverage = YES;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
   XCTAssertNotNil(response.frameCoverage);
 
-  // Coverage calculation:
-  // - Nav bar: 390 * 44 = 17,160 pixels
-  // - URL bar: 390 * 50 = 19,500 pixels
-  // - Bottom toolbar: 390 * 144 = 56,160 pixels
-  // - Total covered: 92,820 pixels
-  // - Screen area: 390 * 844 = 329,160 pixels
-  // - Coverage: 92,820 / 329,160 = ~0.28 (about 28%)
-  // The empty WebView area in the middle is not covered
   double coverage = [response.frameCoverage doubleValue];
   XCTAssertGreaterThan(coverage, 0.2, @"Coverage should be > 20%% from bars");
   XCTAssertLessThan(coverage, 0.4, @"Coverage should be < 40%% due to empty WebView area");
@@ -844,11 +878,15 @@
   [self setUpWithRootElement:root];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-  options.collectFrameCoverage = YES;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -869,11 +907,15 @@
   [self setUpWithRootElement:root];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-  options.collectFrameCoverage = YES;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -890,11 +932,15 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
-  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-  options.collectFrameCoverage = YES;
 
   NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
@@ -908,12 +954,16 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
+
+  NSError *error = nil;
+  FBAccessibilityElement *element = [[commands accessibilityElementForFrontmostApplication] awaitWithTimeout:5.0 error:&error];
+  XCTAssertNil(error, @"Should not have error acquiring element: %@", error);
+
   FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
   options.collectFrameCoverage = YES;
   // remoteContentOptions is nil by default
-
-  NSError *error = nil;
-  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+  FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+  [element close];
 
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
