@@ -947,11 +947,11 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
 #pragma mark Public
 
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
-                                                              simulator:(FBSimulator *)simulator
+- (FBFuture<AXPMacPlatformElement *> *)platformElementWithRequest:(FBAXTranslationRequest *)request
+                                                          simulator:(FBSimulator *)simulator
 {
   return [FBFuture
-    onQueue:simulator.workQueue resolveValue:^ FBAccessibilityElement * (NSError **error) {
+    onQueue:simulator.workQueue resolveValue:^ AXPMacPlatformElement * (NSError **error) {
       request.device = simulator.device;
       request.translator = self.translator;
       [self pushRequest:request];
@@ -980,13 +980,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
       }
 
       element.translation.bridgeDelegateToken = request.token;
-
-      // Don't pop — FBAccessibilityElement.close will pop
-      return [[FBAccessibilityElement alloc]
-        initWithElement:element
-                request:request
-             dispatcher:self
-              simulator:simulator];
+      return element;
     }];
 }
 
@@ -1111,6 +1105,29 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   _simulator = simulator;
   _closed = NO;
   return self;
+}
+
++ (nullable AXPMacPlatformElement *)findElementWithLabelContaining:(NSString *)marker
+                                                         inElement:(AXPMacPlatformElement *)element
+                                                             token:(NSString *)token
+                                                    remainingDepth:(NSUInteger)remainingDepth
+{
+  element.translation.bridgeDelegateToken = token;
+  NSString *label = element.accessibilityLabel;
+  if (label != nil && [label containsString:marker]) {
+    return element;
+  }
+  if (remainingDepth == 0) {
+    return nil;
+  }
+  for (AXPMacPlatformElement *child in element.accessibilityChildren) {
+    child.translation.bridgeDelegateToken = token;
+    AXPMacPlatformElement *found = [self findElementWithLabelContaining:marker inElement:child token:token remainingDepth:remainingDepth - 1];
+    if (found != nil) {
+      return found;
+    }
+  }
+  return nil;
 }
 
 - (void)close
@@ -1257,6 +1274,38 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES];
 }
 
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingLabelSubstring:(NSString *)marker
+                                                                             depth:(NSUInteger)depth
+{
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
+  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
+  return [[FBSimulatorAccessibilityCommands platformElementWithRequest:request simulator:simulator remediationPermitted:YES]
+    onQueue:dispatch_get_main_queue() fmap:^FBFuture *(AXPMacPlatformElement *rootElement) {
+      AXPMacPlatformElement *found = [FBAccessibilityElement
+        findElementWithLabelContaining:marker
+                             inElement:rootElement
+                                 token:request.token
+                        remainingDepth:depth];
+      if (found == nil) {
+        [dispatcher popRequest:request];
+        return [[FBSimulatorError
+          describeFormat:@"Element with label containing '%@' not found within depth %lu",
+            marker, (unsigned long)depth]
+          failFuture];
+      }
+      return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
+        initWithElement:found
+                request:request
+             dispatcher:dispatcher
+              simulator:simulator]];
+    }];
+}
+
 #pragma mark Private
 
 // Uses the CoreSimulator accessibility API via -[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]
@@ -1281,37 +1330,52 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return YES;
 }
 
-+ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
-                                                             simulator:(FBSimulator *)simulator
-                                                  remediationPermitted:(BOOL)remediationPermitted
++ (FBFuture<AXPMacPlatformElement *> *)platformElementWithRequest:(FBAXTranslationRequest *)request
+                                                        simulator:(FBSimulator *)simulator
+                                             remediationPermitted:(BOOL)remediationPermitted
 {
   FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
-  return [[dispatcher accessibilityElementWithRequest:request simulator:simulator]
-    onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (FBAccessibilityElement *element) {
+  return [[dispatcher platformElementWithRequest:request simulator:simulator]
+    onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (AXPMacPlatformElement *element) {
       if (!remediationPermitted) {
         return [FBFuture futureWithResult:element];
       }
       return [[self
         remediationRequiredForSimulator:simulator element:element]
-        onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (NSNumber *remediationRequired) {
+        onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (NSNumber *remediationRequired) {
           if (!remediationRequired.boolValue) {
             return [FBFuture futureWithResult:element];
           }
-          // Close the stale element (pops the request/token)
-          [element close];
+          // Pop the stale request/token
+          [dispatcher popRequest:request];
           FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
           return [[self remediateSpringBoardForSimulator:simulator]
-            onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (id _) {
-              return [self accessibilityElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
+            onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (id _) {
+              return [self platformElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
             }];
         }];
     }];
 }
 
-+ (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator element:(FBAccessibilityElement *)element
++ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
+                                                             simulator:(FBSimulator *)simulator
+                                                  remediationPermitted:(BOOL)remediationPermitted
+{
+  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
+  return [[self platformElementWithRequest:request simulator:simulator remediationPermitted:remediationPermitted]
+    onQueue:simulator.workQueue map:^FBAccessibilityElement *(AXPMacPlatformElement *element) {
+      return [[FBAccessibilityElement alloc]
+        initWithElement:element
+                request:request
+             dispatcher:dispatcher
+              simulator:simulator];
+    }];
+}
+
++ (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator element:(AXPMacPlatformElement *)element
 {
   // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
-  if (CGRectEqualToRect(element.element.accessibilityFrame, CGRectZero) == NO) {
+  if (CGRectEqualToRect(element.accessibilityFrame, CGRectZero) == NO) {
     return [FBFuture futureWithResult:@NO];
   }
   // Then confirm whether the pid of the translation object represents a real pid within the simulator.
@@ -1320,7 +1384,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   // In this case, the remediation is to restart CoreSimulatorBridge, since the CoreSimulatorBridge needs restarting upon a crash.
   // In all likelihood CoreSimulatorBridge contains a constant reference to the pid of SpringBoard and the most effective way of resolving this is to stop it.
   // The Simulator's launchctl will then make sure that the SimulatorBridge is restarted (just like it does for SpringBoard itself).
-  pid_t processIdentifier = element.element.translation.pid;
+  pid_t processIdentifier = element.translation.pid;
   return [[[simulator
     serviceNameForProcessIdentifier:processIdentifier]
     mapReplace:@NO]

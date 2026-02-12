@@ -320,6 +320,19 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  */
 - (FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
 
+/**
+ Obtain an opaque element by searching the frontmost application's element tree for the first
+ element whose AXLabel contains the given marker string.
+ The element keeps the translation token registered so that it can be serialized or acted upon.
+ The caller must call -close on the returned element when done.
+
+ @param marker the substring to search for in AXLabel.
+ @param depth maximum tree depth to search.
+ @return a future wrapping the found element, or an error if not found.
+ */
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingLabelSubstring:(NSString *)marker
+                                                                             depth:(NSUInteger)depth;
+
 @end
 
 
