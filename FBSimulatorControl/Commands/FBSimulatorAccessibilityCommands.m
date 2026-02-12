@@ -1206,54 +1206,6 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 #pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithOptions:(FBAccessibilityRequestOptions *)options
-{
-  return [[self accessibilityElementForFrontmostApplication]
-    onQueue:self.simulator.workQueue fmap:^(FBAccessibilityElement *element) {
-      NSError *error = nil;
-      FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
-      [element close];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:response];
-    }];
-}
-
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point options:(FBAccessibilityRequestOptions *)options
-{
-  return [[self accessibilityElementAtPoint:point]
-    onQueue:self.simulator.workQueue fmap:^(FBAccessibilityElement *element) {
-      NSError *error = nil;
-      FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
-      [element close];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:response];
-    }];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
-{
-  return [[self accessibilityElementAtPoint:point]
-    onQueue:self.simulator.workQueue fmap:^(FBAccessibilityElement *element) {
-      NSError *error = nil;
-      if (![element tapWithExpectedLabel:expectedLabel error:&error]) {
-        [element close];
-        return [FBFuture futureWithError:error];
-      }
-      FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
-      options.nestedFormat = YES;
-      FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
-      [element close];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:(NSDictionary *)response.elements];
-    }];
-}
-
 - (FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point
 {
   FBSimulator *simulator = self.simulator;

@@ -282,34 +282,6 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @protocol FBAccessibilityOperations <NSObject>
 
 /**
- Obtain the accessibility elements for the main screen.
- The returned value is fully JSON serializable.
-
- @param options the request options controlling format, keys, logging, and profiling.
- @return FBAccessibilityElementsResponse containing the elements and optional profiling data.
- */
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementsWithOptions:(FBAccessibilityRequestOptions *)options;
-
-/**
- Obtain the accessibility element for the main screen at the given point.
- The returned value is fully JSON serializable.
-
- @param point the coordinate at which to obtain the accessibility element.
- @param options the request options controlling format, keys, logging, and profiling.
- @return FBAccessibilityElementsResponse containing the element and optional profiling data.
- */
-- (FBFuture<FBAccessibilityElementsResponse *> *)accessibilityElementAtPoint:(CGPoint)point options:(FBAccessibilityRequestOptions *)options;
-
-/**
- Performs an "Accessibility Tap" on the element at the specified point
-
- @param point the point to tap
- @param expectedLabel if provided, the ax label will be confirmed prior to tapping. In the case of a label mismatch the tap will not proceed
- @return the accessibility element at the point, prior to the tap
- */
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(nullable NSString *)expectedLabel;
-
-/**
  Obtain an opaque element at the given point.
  The element keeps the translation token registered so that it can be serialized or acted upon.
  The caller must call -close on the returned element when done.
