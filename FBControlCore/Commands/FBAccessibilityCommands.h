@@ -241,6 +241,42 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @end
 
 /**
+ An opaque accessibility element with a managed token lifecycle.
+ The element's translation token remains registered as long as the element is open,
+ allowing serialization (attribute reads go through XPC callbacks routed by token).
+ Actions (tap, scroll) are direct calls on the element and do not require the token.
+ Call -close when done to deregister the token. After close, serialization will fail.
+ */
+@interface FBAccessibilityElement : NSObject
+
+/**
+ Serialize the element to a full response (preserves profiling/coverage data).
+
+ @param options the request options controlling format, keys, and profiling.
+ @param error an error out parameter.
+ @return the serialized response, or nil on failure.
+ */
+- (nullable FBAccessibilityElementsResponse *)serializeWithOptions:(FBAccessibilityRequestOptions *)options
+                                                             error:(NSError **)error;
+
+/**
+ Perform an accessibility tap (AXPress).
+
+ @param expectedLabel if provided, the label will be verified before tapping.
+ @param error an error out parameter.
+ @return YES on success, NO on failure.
+ */
+- (BOOL)tapWithExpectedLabel:(nullable NSString *)expectedLabel error:(NSError **)error;
+
+/**
+ Close the element, deregistering the token. Called automatically on dealloc as a safety net.
+ After close, serialization will fail. Actions (tap) may still work but are unsupported.
+ */
+- (void)close;
+
+@end
+
+/**
  Used for internal and external implementation.
  */
 @protocol FBAccessibilityOperations <NSObject>
@@ -272,6 +308,25 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  @return the accessibility element at the point, prior to the tap
  */
 - (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(nullable NSString *)expectedLabel;
+
+/**
+ Obtain an opaque element at the given point.
+ The element keeps the translation token registered so that it can be serialized or acted upon.
+ The caller must call -close on the returned element when done.
+
+ @param point the coordinate at which to obtain the accessibility element.
+ @return a future wrapping the element.
+ */
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
+
+/**
+ Obtain an opaque element for the frontmost application.
+ The element keeps the translation token registered so that it can be serialized (full tree traversal) or acted upon.
+ The caller must call -close on the returned element when done.
+
+ @return a future wrapping the element.
+ */
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
 
 @end
 
