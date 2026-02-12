@@ -241,6 +241,17 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 @end
 
 /**
+ The direction of an accessibility scroll action.
+ */
+typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
+  FBAccessibilityScrollDirectionUp,
+  FBAccessibilityScrollDirectionDown,
+  FBAccessibilityScrollDirectionLeft,
+  FBAccessibilityScrollDirectionRight,
+  FBAccessibilityScrollDirectionToVisible,
+};
+
+/**
  An opaque accessibility element with a managed token lifecycle.
  The element's translation token remains registered as long as the element is open,
  allowing serialization (attribute reads go through XPC callbacks routed by token).
@@ -267,6 +278,15 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  @return YES on success, NO on failure.
  */
 - (BOOL)tapWithExpectedLabel:(nullable NSString *)expectedLabel error:(NSError **)error;
+
+/**
+ Perform an accessibility scroll on the element.
+
+ @param direction the scroll direction.
+ @param error an error out parameter.
+ @return YES on success, NO on failure.
+ */
+- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError **)error;
 
 /**
  Close the element, deregistering the token. Called automatically on dealloc as a safety net.

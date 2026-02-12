@@ -1173,6 +1173,35 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   return YES;
 }
 
+- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot scroll a closed element"] failBool:error];
+  }
+  AXPMacPlatformElement *element = self.element;
+  switch (direction) {
+    case FBAccessibilityScrollDirectionDown:
+      [element performScrollDownByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionUp:
+      [element performScrollUpByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionLeft:
+      [element performScrollLeftByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionRight:
+      [element performScrollRightByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionToVisible:
+      [element performScrollToVisible];
+      return YES;
+    default:
+      return [[FBSimulatorError
+        describeFormat:@"Unknown scroll direction %lu", (unsigned long)direction]
+        failBool:error];
+  }
+}
+
 @end
 
 static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
