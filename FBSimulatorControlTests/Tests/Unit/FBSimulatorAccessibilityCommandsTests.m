@@ -124,8 +124,8 @@
      expectedAttributeFetches:(NSUInteger)expectedAttributeFetchCount
 {
   XCTAssertNotNil(profilingData, @"Profiling data should be present");
-  XCTAssertEqual(profilingData.elementCount, expectedElementCount, @"Element count mismatch");
-  XCTAssertEqual(profilingData.attributeFetchCount, expectedAttributeFetchCount, @"Attribute fetch count mismatch");
+  XCTAssertEqual(profilingData.elementCount, (int64_t)expectedElementCount, @"Element count mismatch");
+  XCTAssertEqual(profilingData.attributeFetchCount, (int64_t)expectedAttributeFetchCount, @"Attribute fetch count mismatch");
   XCTAssertGreaterThanOrEqual(profilingData.xpcCallCount, 0, @"XPC call count should be non-negative");
   XCTAssertGreaterThanOrEqual(profilingData.translationDuration, 0, @"Translation duration should be non-negative");
   XCTAssertGreaterThanOrEqual(profilingData.elementConversionDuration, 0, @"Element conversion duration should be non-negative");
@@ -545,6 +545,23 @@
   return [self defaultRootWithChildren:@[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]]];
 }
 
+- (BOOL)elements:(NSArray<NSDictionary<NSString *, id> *> *)elements containsLabel:(NSString *)label
+{
+  for (NSDictionary<NSString *, id> *element in elements) {
+    NSString *elementLabel = element[@"AXLabel"];
+    if ([elementLabel isKindOfClass:NSString.class] && [elementLabel isEqualToString:label]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (NSUInteger)objectAtPointCallCount
+{
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF BEGINSWITH %@", @"objectAtPoint:"];
+  return [[self.fixture.translator.methodCalls filteredArrayUsingPredicate:predicate] count];
+}
+
 - (void)testAccessibilityCommandsProducesCorrectFlatOutput
 {
   NSArray *children = @[[self defaultTitleLabel], [self defaultOkButton], [self defaultCancelButton]];
@@ -918,6 +935,115 @@
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(response);
   XCTAssertNil(response.additionalFrameCoverage, @"additionalFrameCoverage should be nil without remoteContentOptions");
+}
+
+- (void)testCoverageCalculationSkipsWebContentRoleElements
+{
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *webArea =
+    [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
+      initWithLabel:@"Embedded Web Content"
+         identifier:nil
+               role:@"AXWebArea"
+              frame:NSMakeRect(0, 0, 390, 844)
+            enabled:YES
+        actionNames:nil
+           children:nil];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[webArea]];
+  [self setUpWithRootElement:root];
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+  XCTAssertNotNil(response.frameCoverage);
+  XCTAssertEqualWithAccuracy([response.frameCoverage doubleValue], 0.0, 0.001, @"AXWeb* container elements should not count as coverage");
+}
+
+- (void)testRemoteDiscoveryFindsHiddenContentWhenCoverageIsNearFull
+{
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *fullScreenProxy =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Full-Screen Proxy"
+                                                     frame:NSMakeRect(0, 0, 390, 844)];
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[fullScreenProxy]];
+  [self setUpWithRootElement:root];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *hiddenRemoteElement =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Hidden Web CTA"
+                                                     frame:NSMakeRect(24, 520, 220, 44)];
+  FBSimulatorControlTests_AXPTranslationObject_Double *remoteHitTranslation =
+    [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+  // Same pid as frontmost app, which is normally filtered.
+  remoteHitTranslation.pid = 12345;
+  [self.fixture.translator setMacPlatformElement:hiddenRemoteElement forTranslation:remoteHitTranslation];
+  self.fixture.translator.objectAtPointResult = remoteHitTranslation;
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  options.remoteContentOptions = [FBAccessibilityRemoteContentOptions defaultOptions];
+  options.remoteContentOptions.gridStepSize = 150;
+  options.remoteContentOptions.maxPoints = 4;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+
+  NSArray<NSDictionary<NSString *, id> *> *elements = (NSArray<NSDictionary<NSString *, id> *> *)response.elements;
+  XCTAssertTrue([self elements:elements containsLabel:@"Hidden Web CTA"], @"Expected hidden remote element to be discovered");
+  XCTAssertGreaterThan([self objectAtPointCallCount], 0U, @"Near-full coverage path should still probe covered points");
+}
+
+- (void)testRemoteDiscoverySkipsFullscreenProxyInNearFullCoverageMode
+{
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *fullScreenProxy =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Native Full-Screen Proxy"
+                                                     frame:NSMakeRect(0, 0, 390, 844)];
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
+    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                      frame:NSMakeRect(0, 0, 390, 844)
+                                                   children:@[fullScreenProxy]];
+  [self setUpWithRootElement:root];
+
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *remoteProxyElement =
+    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Remote Full-Screen Proxy"
+                                                     frame:NSMakeRect(0, 0, 390, 844)];
+  FBSimulatorControlTests_AXPTranslationObject_Double *remoteHitTranslation =
+    [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+  remoteHitTranslation.pid = 12345;
+  [self.fixture.translator setMacPlatformElement:remoteProxyElement forTranslation:remoteHitTranslation];
+  self.fixture.translator.objectAtPointResult = remoteHitTranslation;
+
+  FBSimulatorAccessibilityCommands *commands = [self commands];
+  FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
+  options.collectFrameCoverage = YES;
+  options.remoteContentOptions = [FBAccessibilityRemoteContentOptions defaultOptions];
+  options.remoteContentOptions.gridStepSize = 150;
+  options.remoteContentOptions.maxPoints = 4;
+
+  NSError *error = nil;
+  FBAccessibilityElementsResponse *response = [[commands accessibilityElementsWithOptions:options] awaitWithTimeout:5.0 error:&error];
+
+  XCTAssertNil(error, @"Should not have error: %@", error);
+  XCTAssertNotNil(response);
+
+  NSArray<NSDictionary<NSString *, id> *> *elements = (NSArray<NSDictionary<NSString *, id> *> *)response.elements;
+  XCTAssertFalse([self elements:elements containsLabel:@"Remote Full-Screen Proxy"], @"Expected full-screen proxy hit to be skipped");
+  XCTAssertEqual(elements.count, 2, @"Expected only main traversal elements when remote hit is a full-screen proxy");
+  XCTAssertGreaterThan([self objectAtPointCallCount], 0U, @"Expected point probing to run in near-full coverage mode");
 }
 
 @end

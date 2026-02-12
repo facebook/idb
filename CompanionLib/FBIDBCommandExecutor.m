@@ -155,6 +155,8 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
       FBAccessibilityRequestOptions *options = [FBAccessibilityRequestOptions defaultOptions];
       options.nestedFormat = nestedFormat;
       options.enableLogging = YES;
+      options.collectFrameCoverage = YES;
+      options.remoteContentOptions = [FBAccessibilityRemoteContentOptions defaultOptions];
 
       if (value) {
         return [commands accessibilityElementAtPoint:value.pointValue options:options];
