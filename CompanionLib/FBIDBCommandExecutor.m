@@ -156,11 +156,22 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
       options.nestedFormat = nestedFormat;
       options.enableLogging = YES;
 
+      FBFuture<FBAccessibilityElement *> *elementFuture;
       if (value) {
-        return [commands accessibilityElementAtPoint:value.pointValue options:options];
+        elementFuture = [commands accessibilityElementAtPoint:value.pointValue];
       } else {
-        return [commands accessibilityElementsWithOptions:options];
+        elementFuture = [commands accessibilityElementForFrontmostApplication];
       }
+      return [elementFuture
+        onQueue:self.target.workQueue map:^ FBAccessibilityElementsResponse * (FBAccessibilityElement *element) {
+          NSError *error = nil;
+          FBAccessibilityElementsResponse *response = [element serializeWithOptions:options error:&error];
+          [element close];
+          if (!response) {
+            return nil;
+          }
+          return response;
+        }];
     }];
 }
 
