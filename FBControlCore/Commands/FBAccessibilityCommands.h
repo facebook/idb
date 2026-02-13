@@ -289,6 +289,15 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
 - (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError **)error;
 
 /**
+ Set the accessibility value of the element (e.g., text field content, slider position).
+
+ @param value the value to set.
+ @param error an error out parameter.
+ @return YES on success, NO on failure.
+ */
+- (BOOL)setValue:(id)value error:(NSError **)error;
+
+/**
  Close the element, deregistering the token. Called automatically on dealloc as a safety net.
  After close, serialization will fail. Actions (tap) may still work but are unsupported.
  */

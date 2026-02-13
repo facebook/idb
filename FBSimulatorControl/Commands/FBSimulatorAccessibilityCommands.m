@@ -1219,6 +1219,16 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   }
 }
 
+- (BOOL)setValue:(id)value error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot set value on a closed element"] failBool:error];
+  }
+  AXPMacPlatformElement *element = self.element;
+  [element setAccessibilityValue:value];
+  return YES;
+}
+
 @end
 
 static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
