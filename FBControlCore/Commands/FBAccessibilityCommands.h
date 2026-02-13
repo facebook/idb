@@ -40,6 +40,21 @@ extern FBAXKeys const FBAXKeysFocused;
 extern FBAXKeys const FBAXKeysIsRemote;
 
 /**
+ Subset of FBAXKeys whose values are strings, suitable for element search matching.
+ */
+typedef NSString *FBAXSearchableKey NS_STRING_ENUM;
+
+extern FBAXSearchableKey const FBAXSearchableKeyLabel;
+extern FBAXSearchableKey const FBAXSearchableKeyUniqueID;
+extern FBAXSearchableKey const FBAXSearchableKeyValue;
+extern FBAXSearchableKey const FBAXSearchableKeyTitle;
+extern FBAXSearchableKey const FBAXSearchableKeyRole;
+extern FBAXSearchableKey const FBAXSearchableKeyRoleDescription;
+extern FBAXSearchableKey const FBAXSearchableKeySubrole;
+extern FBAXSearchableKey const FBAXSearchableKeyHelp;
+extern FBAXSearchableKey const FBAXSearchableKeyPlaceholder;
+
+/**
  Default set of keys returned when no specific keys are requested.
  */
 extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
@@ -331,16 +346,18 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
 
 /**
  Obtain an opaque element by searching the frontmost application's element tree for the first
- element whose AXLabel contains the given marker string.
+ element whose specified accessibility property contains the given value string.
  The element keeps the translation token registered so that it can be serialized or acted upon.
  The caller must call -close on the returned element when done.
 
- @param marker the substring to search for in AXLabel.
+ @param value the substring to search for in the specified property.
+ @param key the searchable key identifying which string property to match (e.g. FBAXSearchableKeyLabel, FBAXSearchableKeyUniqueID).
  @param depth maximum tree depth to search.
  @return a future wrapping the found element, or an error if not found.
  */
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingLabelSubstring:(NSString *)marker
-                                                                             depth:(NSUInteger)depth;
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(NSString *)value
+                                                                   forKey:(FBAXSearchableKey)key
+                                                                    depth:(NSUInteger)depth;
 
 @end
 

@@ -1107,14 +1107,40 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   return self;
 }
 
-+ (nullable AXPMacPlatformElement *)findElementWithLabelContaining:(NSString *)marker
-                                                         inElement:(AXPMacPlatformElement *)element
-                                                             token:(NSString *)token
-                                                    remainingDepth:(NSUInteger)remainingDepth
++ (nullable NSString *)stringValueForKey:(FBAXSearchableKey)key fromElement:(AXPMacPlatformElement *)element
+{
+  if ([key isEqualToString:FBAXKeysLabel]) {
+    return element.accessibilityLabel;
+  } else if ([key isEqualToString:FBAXKeysUniqueID]) {
+    return element.accessibilityIdentifier;
+  } else if ([key isEqualToString:FBAXKeysValue]) {
+    id value = element.accessibilityValue;
+    return [value isKindOfClass:NSString.class] ? value : nil;
+  } else if ([key isEqualToString:FBAXKeysTitle]) {
+    return element.accessibilityTitle;
+  } else if ([key isEqualToString:FBAXKeysRole]) {
+    return element.accessibilityRole;
+  } else if ([key isEqualToString:FBAXKeysRoleDescription]) {
+    return element.accessibilityRoleDescription;
+  } else if ([key isEqualToString:FBAXKeysSubrole]) {
+    return element.accessibilitySubrole;
+  } else if ([key isEqualToString:FBAXKeysHelp]) {
+    return element.accessibilityHelp;
+  } else if ([key isEqualToString:FBAXKeysPlaceholder]) {
+    return element.accessibilityPlaceholderValue;
+  }
+  return nil;
+}
+
++ (nullable AXPMacPlatformElement *)findElementWithValue:(NSString *)value
+                                                  forKey:(FBAXSearchableKey)key
+                                               inElement:(AXPMacPlatformElement *)element
+                                                   token:(NSString *)token
+                                          remainingDepth:(NSUInteger)remainingDepth
 {
   element.translation.bridgeDelegateToken = token;
-  NSString *label = element.accessibilityLabel;
-  if (label != nil && [label containsString:marker]) {
+  NSString *propertyValue = [self stringValueForKey:key fromElement:element];
+  if (propertyValue != nil && [propertyValue containsString:value]) {
     return element;
   }
   if (remainingDepth == 0) {
@@ -1122,7 +1148,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   }
   for (AXPMacPlatformElement *child in element.accessibilityChildren) {
     child.translation.bridgeDelegateToken = token;
-    AXPMacPlatformElement *found = [self findElementWithLabelContaining:marker inElement:child token:token remainingDepth:remainingDepth - 1];
+    AXPMacPlatformElement *found = [self findElementWithValue:value forKey:key inElement:child token:token remainingDepth:remainingDepth - 1];
     if (found != nil) {
       return found;
     }
@@ -1284,8 +1310,9 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES];
 }
 
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingLabelSubstring:(NSString *)marker
-                                                                             depth:(NSUInteger)depth
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(NSString *)value
+                                                                   forKey:(FBAXSearchableKey)key
+                                                                    depth:(NSUInteger)depth
 {
   FBSimulator *simulator = self.simulator;
   NSError *error = nil;
@@ -1297,15 +1324,16 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return [[FBSimulatorAccessibilityCommands platformElementWithRequest:request simulator:simulator remediationPermitted:YES]
     onQueue:dispatch_get_main_queue() fmap:^FBFuture *(AXPMacPlatformElement *rootElement) {
       AXPMacPlatformElement *found = [FBAccessibilityElement
-        findElementWithLabelContaining:marker
-                             inElement:rootElement
-                                 token:request.token
-                        remainingDepth:depth];
+        findElementWithValue:value
+                      forKey:key
+                   inElement:rootElement
+                       token:request.token
+              remainingDepth:depth];
       if (found == nil) {
         [dispatcher popRequest:request];
         return [[FBSimulatorError
-          describeFormat:@"Element with label containing '%@' not found within depth %lu",
-            marker, (unsigned long)depth]
+          describeFormat:@"Element with %@ containing '%@' not found within depth %lu",
+            key, value, (unsigned long)depth]
           failFuture];
       }
       return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]

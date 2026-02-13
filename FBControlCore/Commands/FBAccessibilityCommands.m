@@ -30,6 +30,17 @@ FBAXKeys const FBAXKeysHidden = @"hidden";
 FBAXKeys const FBAXKeysFocused = @"focused";
 FBAXKeys const FBAXKeysIsRemote = @"is_remote";
 
+// Searchable key constants — values match the corresponding FBAXKeys constants
+FBAXSearchableKey const FBAXSearchableKeyLabel = @"AXLabel";
+FBAXSearchableKey const FBAXSearchableKeyUniqueID = @"AXUniqueId";
+FBAXSearchableKey const FBAXSearchableKeyValue = @"AXValue";
+FBAXSearchableKey const FBAXSearchableKeyTitle = @"title";
+FBAXSearchableKey const FBAXSearchableKeyRole = @"role";
+FBAXSearchableKey const FBAXSearchableKeyRoleDescription = @"role_description";
+FBAXSearchableKey const FBAXSearchableKeySubrole = @"subrole";
+FBAXSearchableKey const FBAXSearchableKeyHelp = @"help";
+FBAXSearchableKey const FBAXSearchableKeyPlaceholder = @"placeholder";
+
 NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
   static NSSet<FBAXKeys> *defaultSet;
   static dispatch_once_t onceToken;
