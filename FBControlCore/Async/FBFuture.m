@@ -470,32 +470,32 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     const dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 
     dispatch_source_set_timer(timer, FBCreateDispatchTimeFromDuration(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
+    __weak typeof(future) weakFuture = future;
     dispatch_source_set_event_handler(timer, ^{
-
-
-      if (future.state != FBFutureStateRunning) {
+      __strong typeof(weakFuture) strongFuture = weakFuture;
+      if (!strongFuture || strongFuture.state != FBFutureStateRunning) {
         dispatch_cancel(timer);
-      } else {
-        NSError *error = nil;
-        FBFutureLoopState resolveOrFailWhenResult = resolveOrFailWhen(&error);
-        switch (resolveOrFailWhenResult) {
-           case FBFutureLoopContinue:
-            //Continue running
-            break;
-           case FBFutureLoopFailed:
-            dispatch_cancel(timer);
-            NSCAssert(error != nil, @"Expected error to be set when returning FBFutureLoopFailed");
-            [future resolveWithError:error];
-            break;
-          case FBFutureLoopFinished:
-            dispatch_cancel(timer);
-            NSCAssert(error == nil, @"Error must be set on nil when return FBFutureLoopFinished");
-            [future resolveWithResult:NSNull.null];
-            break;
-          default:
-            NSCAssert(NO, @"Unexpected loop state: %ld", (long)resolveOrFailWhenResult);
-            break;
-        }
+        return;
+      }
+      NSError *error = nil;
+      FBFutureLoopState resolveOrFailWhenResult = resolveOrFailWhen(&error);
+      switch (resolveOrFailWhenResult) {
+        case FBFutureLoopContinue:
+          //Continue running
+          break;
+        case FBFutureLoopFailed:
+          dispatch_cancel(timer);
+          NSCAssert(error != nil, @"Expected error to be set when returning FBFutureLoopFailed");
+          [strongFuture resolveWithError:error];
+          break;
+        case FBFutureLoopFinished:
+          dispatch_cancel(timer);
+          NSCAssert(error == nil, @"Error must be set on nil when return FBFutureLoopFinished");
+          [strongFuture resolveWithResult:NSNull.null];
+          break;
+        default:
+          NSCAssert(NO, @"Unexpected loop state: %ld", (long)resolveOrFailWhenResult);
+          break;
       }
     });
     dispatch_resume(timer);
