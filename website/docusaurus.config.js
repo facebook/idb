@@ -17,7 +17,7 @@ module.exports = {
     announcementBar: {
       id: 'support_ukraine',
       content:
-        'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" href="https://opensource.fb.com/support-ukraine"> Help Provide Humanitarian Aid to Ukraine</a>.',
+        'Support Palestine 🇵🇸 <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/fundraisers/explore/search/fundraisers/?q=palestine"> Help Provide Humanitarian Aid to Palestine</a>.',
       backgroundColor: '#20232a',
       textColor: '#fff',
       isCloseable: false,
