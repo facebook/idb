@@ -104,6 +104,7 @@ FBDeviceModel const FBDeviceModelAppleWatchSeries5_40mm = @"Apple Watch Series 5
 FBDeviceModel const FBDeviceModelAppleWatchSeries5_44mm = @"Apple Watch Series 5 - 44mm";
 FBDeviceModel const FBDeviceModelAppleWatchSeries6_40mm = @"Apple Watch Series 6 - 40mm";
 FBDeviceModel const FBDeviceModelAppleWatchSeries6_44mm = @"Apple Watch Series 6 - 44mm";
+FBDeviceModel const FBDeviceModelAppleVisionPro = @"Apple Vision Pro";
 
 FBOSVersionName const FBOSVersionNameiOS_7_1 = @"iOS 7.1";
 FBOSVersionName const FBOSVersionNameiOS_8_0 = @"iOS 8.0";
@@ -190,6 +191,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_7_0 = @"watchOS 7.0";
 FBOSVersionName const FBOSVersionNamewatchOS_7_1 = @"watchOS 7.1";
 FBOSVersionName const FBOSVersionNamewatchOS_7_2 = @"watchOS 7.2";
 FBOSVersionName const FBOSVersionNamewatchOS_7_4 = @"watchOS 7.4";
+FBOSVersionName const FBOSVersionNamexrOS_1_0 = @"xrOS 1.0";
 
 FBOSVersionName const FBOSVersionNamemac = @"macOS";
 
@@ -310,6 +312,12 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 + (instancetype)watchWithModel:(FBDeviceModel)model productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture
 {
   return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyAppleWatch];
+}
+
++ (instancetype)visionWithModel:(FBDeviceModel)model
+                     productTypes:(NSArray<NSString *> *)productTypes
+               deviceArchitecture:(FBArchitecture)deviceArchitecture {
+  return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture family:FBControlCoreProductFamilyVision];
 }
 
 + (instancetype)genericWithModel:(NSString *)model
@@ -439,6 +447,10 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyAppleWatch)]];
 }
 
++ (instancetype)xrOSWithName:(FBOSVersionName)name {
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyVision)]];
+}
+
 + (instancetype)macOSWithName:(FBOSVersionName)name
 {
   return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyMac)]];
@@ -547,7 +559,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries5_44mm productTypes:@[@"Watch5,2", @"Watch5,4"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_40mm productTypes:@[@"Watch6,1", @"Watch6,3"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType watchWithModel:FBDeviceModelAppleWatchSeries6_44mm productTypes:@[@"Watch6,2", @"Watch6,4"] deviceArchitecture:FBArchitectureArm64],
-
+      [FBDeviceType visionWithModel:FBDeviceModelAppleVisionPro productTypes:@[ @"RealityDevice14,1" ] deviceArchitecture:FBArchitectureArm64],
     ];
   });
   return deviceConfigurations;
@@ -645,6 +657,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_7_1],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_7_2],
       [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_7_4],
+      [FBOSVersion xrOSWithName:FBOSVersionNamexrOS_1_0],
       [FBOSVersion macOSWithName:FBOSVersionNamemac],
     ];
   });
