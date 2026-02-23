@@ -166,12 +166,20 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 - (dispatch_queue_t)workQueue
 {
-  return dispatch_get_main_queue();
+  dispatch_queue_t workQueue = _set.workQueue;
+  if (workQueue == nil) {
+    workQueue = dispatch_get_main_queue();
+  }
+  return workQueue;
 }
 
 - (dispatch_queue_t)asyncQueue
 {
-  return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  dispatch_queue_t asyncQueue = _set.asyncQueue;
+  if (asyncQueue == nil) {
+    asyncQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  }
+  return asyncQueue;
 }
 
 - (NSDictionary<NSString *, id> *)extendedInformation
