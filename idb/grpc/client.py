@@ -7,6 +7,7 @@
 # pyre-strict
 
 import asyncio
+import codecs
 import functools
 import inspect
 import logging
@@ -348,8 +349,11 @@ class Client(ClientBase):
             await stream.send_message(
                 LogRequest(arguments=arguments, source=source), end=True
             )
+            # Use an incremental decoder to properly handle multi-byte UTF-8
+            # characters that may be split across message boundaries
+            decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
             async for message in cancel_wrapper(stream=stream, stop=stop):
-                yield message.output.decode()
+                yield decoder.decode(message.output)
 
     async def _install_to_destination(
         self,
