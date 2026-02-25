@@ -313,8 +313,10 @@ static const CGFloat kDefaultCellSize = 10.0;
 
   // Fill cells row by row using memset for efficiency
   NSUInteger fillWidth = (NSUInteger)(maxX - minX + 1);
+  NSUInteger startX = (NSUInteger)minX;
   for (NSInteger y = minY; y <= maxY; y++) {
-    memset(&_grid[y * _width + minX], 1, fillWidth);
+    NSUInteger row = (NSUInteger)y;
+    memset(&_grid[row * _width + startX], 1, fillWidth);
   }
 }
 
@@ -339,7 +341,9 @@ static const CGFloat kDefaultCellSize = 10.0;
   }
 
   // O(1) lookup in the grid array
-  return _grid[cellY * _width + cellX] != 0;
+  NSUInteger x = (NSUInteger)cellX;
+  NSUInteger y = (NSUInteger)cellY;
+  return _grid[y * _width + x] != 0;
 }
 
 - (CGFloat)coverageRatio
@@ -369,6 +373,14 @@ static const CGFloat kDefaultCellSize = 10.0;
 @implementation FBSimulatorAccessibilitySerializer
 
 static NSString *const AXPrefix = @"AX";
+
+static BOOL FBIsWebContentRole(NSString *rawRole)
+{
+  if (rawRole.length == 0) {
+    return NO;
+  }
+  return [rawRole hasPrefix:@"AXWeb"] || [rawRole hasPrefix:@"Web"];
+}
 
 + (NSArray<NSString *> *)customActionsFromElement:(AXPMacPlatformElement *)element
 {
@@ -487,7 +499,8 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
     }
     // Skip Application elements when calculating coverage
     BOOL isApplication = [rawRole isEqualToString:@"AXApplication"] || [rawRole isEqualToString:@"Application"];
-    if (!isApplication) {
+    BOOL isWebContentContainer = FBIsWebContentRole(rawRole);
+    if (!isApplication && !isWebContentContainer) {
       [coverageGrid markFilledWithFrame:frame];
     }
   }
@@ -652,6 +665,14 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   CGRect region = CGRectIsNull(remoteOptions.region) ? screenBounds : remoteOptions.region;
   NSUInteger maxPoints = remoteOptions.maxPoints;
   NSUInteger pointCount = 0;
+  // If native traversal claims near-total coverage, we still probe covered points.
+  // This handles full-screen proxy/container elements (including some WebView wrappers)
+  // that can mask remote-process accessibility content.
+  BOOL allowCoveredPointProbing = NO;
+  if (coverageGrid) {
+    CGFloat coverageRatio = [coverageGrid coverageRatio];
+    allowCoveredPointProbing = coverageRatio >= 0.98;
+  }
 
   for (CGFloat y = stepSize; y < region.size.height - stepSize; y += stepSize) {
     for (CGFloat x = stepSize; x < region.size.width - stepSize; x += stepSize) {
@@ -663,7 +684,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
       // Skip points already covered by native accessibility elements.
       // This dynamically excludes toolbars, nav bars, and other covered regions.
-      if (coverageGrid && [coverageGrid isFilledAtPoint:point]) {
+      if (coverageGrid && [coverageGrid isFilledAtPoint:point] && !allowCoveredPointProbing) {
         continue;
       }
 
@@ -677,12 +698,11 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
       hitTranslation.bridgeDelegateToken = self.token;
       pid_t hitPid = hitTranslation.pid;
 
-      // Skip if PID was already seen in main traversal
-      if ([seenPids containsObject:@(hitPid)]) {
-        continue;
-      }
-
-      if (hitPid <= 0 || hitPid == frontmostPid) {
+      BOOL seenInMainTraversal = [seenPids containsObject:@(hitPid)];
+      // In near-full-coverage mode, allow seen/frontmost/unknown PID hits to recover
+      // hidden content that isn't surfaced in the recursive tree.
+      BOOL potentiallyHiddenContent = allowCoveredPointProbing && (seenInMainTraversal || hitPid <= 0 || hitPid == frontmostPid);
+      if (seenInMainTraversal && !allowCoveredPointProbing) {
         continue;
       }
 
@@ -692,6 +712,17 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
       }
 
       CGRect hitFrame = hitElement.accessibilityFrame;
+      if (potentiallyHiddenContent) {
+        // Avoid duplicating top-level full-screen proxy elements.
+        CGFloat screenArea = CGRectGetWidth(screenBounds) * CGRectGetHeight(screenBounds);
+        CGFloat hitArea = CGRectGetWidth(hitFrame) * CGRectGetHeight(hitFrame);
+        if (screenArea <= 0 || hitArea >= (screenArea * 0.98)) {
+          continue;
+        }
+      } else if (hitPid <= 0 || hitPid == frontmostPid) {
+        continue;
+      }
+
       NSValue *hitFrameValue = [NSValue valueWithRect:hitFrame];
 
       if ([discoveredFrames containsObject:hitFrameValue]) {
