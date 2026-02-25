@@ -1182,22 +1182,20 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   return [request run:self.element options:options error:error];
 }
 
-- (BOOL)tapWithExpectedLabel:(nullable NSString *)expectedLabel error:(NSError **)error
+- (nullable NSString *)stringValueForSearchableKey:(FBAXSearchableKey)key error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot read from a closed element"] fail:error];
+  }
+  return [FBAccessibilityElement stringValueForKey:key fromElement:self.element];
+}
+
+- (BOOL)tapWithError:(NSError **)error
 {
   if (_closed) {
     return [[FBSimulatorError describe:@"Cannot tap a closed element"] failBool:error];
   }
   AXPMacPlatformElement *element = self.element;
-
-  if (expectedLabel) {
-    NSString *actualLabel = element.accessibilityLabel;
-    if (![expectedLabel isEqualToString:actualLabel]) {
-      return [[FBSimulatorError
-        describeFormat:@"Element does not have expected label %@. Actual: %@",
-          expectedLabel, actualLabel]
-        failBool:error];
-    }
-  }
 
   NSArray<NSString *> *actionNames = element.accessibilityActionNames;
   if (![actionNames containsObject:@"AXPress"]) {

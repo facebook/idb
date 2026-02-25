@@ -286,13 +286,21 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
                                                              error:(NSError **)error;
 
 /**
- Perform an accessibility tap (AXPress).
+ Perform an unconditional accessibility tap (AXPress) without any label verification.
 
- @param expectedLabel if provided, the label will be verified before tapping.
  @param error an error out parameter.
  @return YES on success, NO on failure.
  */
-- (BOOL)tapWithExpectedLabel:(nullable NSString *)expectedLabel error:(NSError **)error;
+- (BOOL)tapWithError:(NSError **)error;
+
+/**
+ Read the string value of a searchable accessibility key from this element.
+
+ @param key the searchable key to read.
+ @param error an error out parameter.
+ @return the string value, or nil if the key has no string value or on failure.
+ */
+- (nullable NSString *)stringValueForSearchableKey:(FBAXSearchableKey)key error:(NSError **)error;
 
 /**
  Perform an accessibility scroll on the element.

@@ -642,7 +642,13 @@
   XCTAssertNil(error, @"Should not have error: %@", error);
   XCTAssertNotNil(element);
 
-  BOOL tapSuccess = [element tapWithExpectedLabel:@"OK" error:&error];
+  // Read the label using the decomposed API and verify it
+  NSString *label = [element stringValueForSearchableKey:FBAXSearchableKeyLabel error:&error];
+  XCTAssertNil(error, @"Should not have error reading label: %@", error);
+  XCTAssertEqualObjects(label, @"OK");
+
+  // Perform the unconditional tap
+  BOOL tapSuccess = [element tapWithError:&error];
   XCTAssertTrue(tapSuccess, @"Tap should succeed: %@", error);
   XCTAssertNil(error, @"Should not have error after tap: %@", error);
 
