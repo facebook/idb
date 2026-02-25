@@ -254,10 +254,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     DISPATCH_PROC_EXIT,
     queue
   );
-  __weak dispatch_source_t weakSource = source;
   dispatch_source_set_event_handler(source, ^{
-    dispatch_source_t strongSource = weakSource;
-    if (!strongSource) return;
     int status = 0;
     if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
       [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
@@ -277,7 +274,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
     // We only need a single notification and the dispatch_source must be retained until we resolve the future.
     // Cancelling the source at the end will release the source as the event handler will no longer be referenced.
-    dispatch_cancel(strongSource);
+    dispatch_cancel(source);
   });
   dispatch_resume(source);
 }
