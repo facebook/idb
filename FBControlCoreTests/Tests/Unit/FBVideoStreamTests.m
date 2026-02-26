@@ -96,9 +96,6 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
 
 #pragma mark H264 Annex-B Writer
 
-// BUG: Modern VideoToolbox encoders omit DependsOnOthers. The current code checks
-// DependsOnOthers == kCFBooleanFalse, which returns NULL here, so keyframe is not
-// detected and parameter sets are not emitted. Fixed in "Modernize H264 Annex-B writer".
 - (void)testH264AnnexBKeyframeDetectionWithModernAttachments
 {
   CMSampleBufferRef sampleBuffer = CreateH264SampleBuffer(YES);
@@ -112,19 +109,24 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
 
   NSData *output = consumer.data;
 
-  // SPS bytes that would appear if keyframe were detected
   const uint8_t sps[] = {0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2};
   NSData *spsData = [NSData dataWithBytes:sps length:sizeof(sps)];
+  const uint8_t pps[] = {0x68, 0xce, 0x38, 0x80};
+  NSData *ppsData = [NSData dataWithBytes:pps length:sizeof(pps)];
 
-  // BUG: Keyframe is NOT detected, so output does NOT contain SPS+PPS.
-  // Output is only: [start_code][NAL data]
+  // Keyframe IS detected: output contains SPS+PPS before NAL data.
+  // Expected: [start_code][SPS][start_code][PPS][start_code][NAL]
   NSRange spsRange = [output rangeOfData:spsData options:0 range:NSMakeRange(0, output.length)];
-  XCTAssertEqual(spsRange.location, (NSUInteger)NSNotFound, @"SPS should NOT be present (bug: keyframe not detected)");
+  XCTAssertNotEqual(spsRange.location, (NSUInteger)NSNotFound, @"SPS should be present for keyframe");
+  NSRange ppsRange = [output rangeOfData:ppsData options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(ppsRange.location, (NSUInteger)NSNotFound, @"PPS should be present for keyframe");
 
-  // Verify output starts with start code followed by NAL data
+  // SPS should come before PPS
+  XCTAssertTrue(spsRange.location < ppsRange.location);
+
+  // Verify output starts with start code
   const uint8_t startCode[] = {0x00, 0x00, 0x00, 0x01};
   NSData *startCodeData = [NSData dataWithBytes:startCode length:sizeof(startCode)];
-  XCTAssertTrue(output.length > 0);
   NSData *firstFourBytes = [output subdataWithRange:NSMakeRange(0, 4)];
   XCTAssertEqualObjects(firstFourBytes, startCodeData);
 

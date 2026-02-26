@@ -50,56 +50,52 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
       failBool:error];
   }
   NSData *headerData = AnnexBNALUStartCodeData();
-  NSMutableData *consumableData = [NSMutableData alloc];
+  NSMutableData *consumableData = [[NSMutableData alloc] init];
 
   bool isKeyFrame = false;
   CFArrayRef attachments =
       CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
   if (CFArrayGetCount(attachments)) {
     CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
-    CFBooleanRef dependsOnOthers = (CFBooleanRef)CFDictionaryGetValue(
-        attachment, kCMSampleAttachmentKey_DependsOnOthers);
-    isKeyFrame = (dependsOnOthers == kCFBooleanFalse);
+    isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
   }
 
   if (isKeyFrame) {
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
-    size_t spsSize, spsCount;
-    const uint8_t *spsParameterSet;
+    size_t parameterSetCount;
     OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
       format,
       0,
-      &spsParameterSet,
-      &spsSize,
-      &spsCount,
-      0
+      NULL,
+      NULL,
+      &parameterSetCount,
+      NULL
     );
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to get SPS Params %d", status]
+        describeFormat:@"Failed to get H264 parameter set count %d", status]
         failBool:error];
     }
-    size_t ppsSize, ppsCount;
-    const uint8_t *ppsParameterSet;
-    status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      format,
-      1,
-      &ppsParameterSet,
-      &ppsSize,
-      &ppsCount,
-      0
-    );
-    if (status != noErr) {
-      return [[FBControlCoreError
-        describeFormat:@"Failed to get PPS Params %d", status]
-        failBool:error];
+    for (size_t i = 0; i < parameterSetCount; i++) {
+      size_t paramSize;
+      const uint8_t *parameterSet;
+      status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+        format,
+        i,
+        &parameterSet,
+        &paramSize,
+        NULL,
+        NULL
+      );
+      if (status != noErr) {
+        return [[FBControlCoreError
+          describeFormat:@"Failed to get H264 parameter set at index %zu: %d", i, status]
+          failBool:error];
+      }
+      NSData *paramData = [NSData dataWithBytes:parameterSet length:paramSize];
+      [consumableData appendData:headerData];
+      [consumableData appendData:paramData];
     }
-    NSData *spsData = [NSData dataWithBytes:spsParameterSet length:spsSize];
-    NSData *ppsData = [NSData dataWithBytes:ppsParameterSet length:ppsSize];
-    [consumableData appendData:headerData];
-    [consumableData appendData:spsData];
-    [consumableData appendData:headerData];
-    [consumableData appendData:ppsData];
   }
 
   // Get the underlying data buffer.
