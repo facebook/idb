@@ -750,7 +750,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   self.framePusherThread = [[NSThread alloc] initWithBlock:^{
     [self runFramePushLoop];
   }];
-  [[NSThread currentThread] setThreadPriority:1.0]; //highest priority
   self.framePusherThread.qualityOfService = NSQualityOfServiceUserInteractive;
   [self.framePusherThread start];
 
@@ -786,6 +785,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 - (void)runFramePushLoop
 {
+  [[NSThread currentThread] setThreadPriority:1.0];
   const uint64_t frameInterval = NSEC_PER_SEC / self.framesPerSecond;
   uint64_t lastPushedTime = 0;
   while (self.stoppedFuture.state == FBFutureStateRunning) {
