@@ -646,6 +646,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
   [derivedCompressionSessionProperties addEntriesFromDictionary:callerProperties];
   derivedCompressionSessionProperties[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration] = configuration.keyFrameRate;
+  derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel;
@@ -654,9 +655,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_High_AutoLevel;
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CABAC;
     }
-  }
-  if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG] || [encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
   }
   return [derivedCompressionSessionProperties copy];
 }

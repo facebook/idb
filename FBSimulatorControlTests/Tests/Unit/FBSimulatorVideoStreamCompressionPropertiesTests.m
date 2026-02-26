@@ -71,10 +71,8 @@
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.5);
 }
 
-- (void)testH264CompressionPropertiesDoNotContainQuality
+- (void)testH264CompressionPropertiesContainQuality
 {
-  // BUG: H264 should get compression quality but currently doesn't.
-  // Quality is only applied to MJPEG and Minicap encodings.
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
@@ -83,8 +81,7 @@
     avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
-  XCTAssertNil(props[(NSString *)kVTCompressionPropertyKey_Quality],
-    @"H264 does not apply compression quality (bug: quality is only applied to MJPEG and Minicap)");
+  XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.5);
 }
 
 #pragma mark - H264 Encoding-Specific Properties
