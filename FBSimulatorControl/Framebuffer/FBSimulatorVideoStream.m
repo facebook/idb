@@ -630,14 +630,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   self.frameNumber = frameNumber + 1;
 }
 
-+ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(FBVideoStreamConfiguration *)configuration callerProperties:(NSDictionary<NSString *, id> *)callerProperties
 {
   NSNumber *avgBitrate = @(800 * 1024);
   if (configuration.avgBitrate != nil) {
     avgBitrate = configuration.avgBitrate;
   }
   NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
-  // Get the base compression session properties, and add the class-cluster properties to them.
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
@@ -645,43 +644,53 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[maxBitrate, @1],
   }];
 
-  [derivedCompressionSessionProperties addEntriesFromDictionary:compressionSessionProperties];
+  [derivedCompressionSessionProperties addEntriesFromDictionary:callerProperties];
   derivedCompressionSessionProperties[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration] = configuration.keyFrameRate;
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel; // ref: http://blog.mediacoderhq.com/h264-profiles-and-levels/
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel;
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CAVLC;
     if (@available(macOS 12.1, *)) {
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_High_AutoLevel;
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CABAC;
     }
+  }
+  if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG] || [encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
+  }
+  return [derivedCompressionSessionProperties copy];
+}
+
++ (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSDictionary<NSString *, id> *derivedCompressionSessionProperties = [self compressionSessionPropertiesForConfiguration:configuration callerProperties:compressionSessionProperties];
+  FBVideoStreamEncoding encoding = configuration.encoding;
+  if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
       initWithConfiguration:configuration
-      compressionSessionProperties:[derivedCompressionSessionProperties copy]
+      compressionSessionProperties:derivedCompressionSessionProperties
       videoCodec:kCMVideoCodecType_H264
       consumer:consumer
       compressorCallback:H264AnnexBCompressorCallback
       logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
-      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
-      return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-        initWithConfiguration:configuration
-        compressionSessionProperties:[derivedCompressionSessionProperties copy]
-        videoCodec:kCMVideoCodecType_JPEG
-        consumer:consumer
-        compressorCallback:MJPEGCompressorCallback
-        logger:logger];
+    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+      initWithConfiguration:configuration
+      compressionSessionProperties:derivedCompressionSessionProperties
+      videoCodec:kCMVideoCodecType_JPEG
+      consumer:consumer
+      compressorCallback:MJPEGCompressorCallback
+      logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
     return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-        initWithConfiguration:configuration
-        compressionSessionProperties:[derivedCompressionSessionProperties copy]
-        videoCodec:kCMVideoCodecType_JPEG
-        consumer:consumer
-        compressorCallback:MinicapCompressorCallback
-        logger:logger];
+      initWithConfiguration:configuration
+      compressionSessionProperties:derivedCompressionSessionProperties
+      videoCodec:kCMVideoCodecType_JPEG
+      consumer:consumer
+      compressorCallback:MinicapCompressorCallback
+      logger:logger];
   }
   if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
     return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];

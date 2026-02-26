@@ -40,6 +40,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
 
+/**
+ Builds the compression session properties dictionary for a given configuration and caller-provided properties.
+ This is extracted for testability — the dictionary is passed to VTSessionSetProperties at stream start.
+
+ @param configuration the stream configuration (encoding, quality, bitrate, etc.).
+ @param callerProperties additional properties from the stream subclass (e.g. FPS-related keys for eager streams).
+ @return an immutable dictionary of compression session properties.
+ */
++ (NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(FBVideoStreamConfiguration *)configuration callerProperties:(NSDictionary<NSString *, id> *)callerProperties;
+
 @end
 
 NS_ASSUME_NONNULL_END
