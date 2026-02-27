@@ -142,7 +142,10 @@ static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourc
 {
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
-  WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, nil);
+  NSError *error = nil;
+  if (!WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, &error)) {
+    [pusher.logger logFormat:@"Failed to write H264 Annex-B frame: %@", error];
+  }
 }
 
 static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
@@ -150,7 +153,10 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-  WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, nil);
+  NSError *error = nil;
+  if (!WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, &error)) {
+    [pusher.logger logFormat:@"Failed to write MJPEG frame: %@", error];
+  }
 }
 
 static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
@@ -161,10 +167,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   if (frameNumber == 0) {
     CMFormatDescriptionRef formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
     CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription);
-    WriteMinicapHeaderToStream((uint32) dimensions.width, (uint32) dimensions.height, pusher.consumer, pusher.logger, nil);
+    NSError *error = nil;
+    if (!WriteMinicapHeaderToStream((uint32) dimensions.width, (uint32) dimensions.height, pusher.consumer, pusher.logger, &error)) {
+      [pusher.logger logFormat:@"Failed to write Minicap header: %@", error];
+    }
   }
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-  WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, nil);
+  NSError *error = nil;
+  if (!WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, &error)) {
+    [pusher.logger logFormat:@"Failed to write Minicap frame: %@", error];
+  }
 }
 
 @implementation FBVideoCompressorCallbackSourceFrame
