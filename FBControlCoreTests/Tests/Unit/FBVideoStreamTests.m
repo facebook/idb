@@ -87,6 +87,50 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
   return sampleBuf;
 }
 
+static CMSampleBufferRef CreateNotReadySampleBuffer(void)
+{
+  // H264 SPS and PPS parameter sets
+  const uint8_t sps[] = {0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2};
+  const uint8_t pps[] = {0x68, 0xce, 0x38, 0x80};
+  const uint8_t *paramSets[] = {sps, pps};
+  size_t paramSizes[] = {sizeof(sps), sizeof(pps)};
+
+  CMFormatDescriptionRef formatDesc = NULL;
+  OSStatus status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
+    NULL, 2, paramSets, paramSizes, 4, &formatDesc);
+  NSCAssert(status == noErr, @"Failed to create H264 format description: %d", (int)status);
+
+  // AVCC NAL data: [4-byte big-endian length][NAL bytes]
+  static uint8_t avccData[] = {
+    0x00, 0x00, 0x00, 0x05,            // NAL length = 5
+    0x65, 0x88, 0x80, 0x40, 0x00       // fake IDR slice
+  };
+
+  CMBlockBufferRef blockBuf = NULL;
+  status = CMBlockBufferCreateWithMemoryBlock(
+    NULL, avccData, sizeof(avccData), kCFAllocatorNull,
+    NULL, 0, sizeof(avccData), 0, &blockBuf);
+  NSCAssert(status == noErr, @"Failed to create block buffer: %d", (int)status);
+
+  CMSampleBufferRef sampleBuf = NULL;
+  size_t sampleSize = sizeof(avccData);
+  CMSampleTimingInfo timing = {
+    .duration = CMTimeMake(1, 30),
+    .presentationTimeStamp = CMTimeMake(0, 90000),
+    .decodeTimeStamp = kCMTimeInvalid
+  };
+  // Pass false for dataReady to create a not-ready buffer
+  status = CMSampleBufferCreate(
+    NULL, blockBuf, false, NULL, NULL, formatDesc,
+    1, 1, &timing, 1, &sampleSize, &sampleBuf);
+  NSCAssert(status == noErr, @"Failed to create sample buffer: %d", (int)status);
+
+  CFRelease(formatDesc);
+  CFRelease(blockBuf);
+
+  return sampleBuf;
+}
+
 #pragma mark - Tests
 
 @interface FBVideoStreamTests : XCTestCase
@@ -184,6 +228,22 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
   };
   NSData *expectedData = [NSData dataWithBytes:expected length:sizeof(expected)];
   XCTAssertEqualObjects(output, expectedData);
+
+  CFRelease(sampleBuffer);
+}
+
+- (void)testH264AnnexBNotReadyBufferReturnsError
+{
+  CMSampleBufferRef sampleBuffer = CreateNotReadySampleBuffer();
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+  NSError *error = nil;
+
+  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, consumer, logger, &error);
+  XCTAssertFalse(result);
+  XCTAssertNotNil(error);
+  XCTAssertTrue([error.localizedDescription containsString:@"Sample Buffer is not ready"]);
+  XCTAssertEqual(consumer.data.length, 0u, @"No data should be written for not-ready buffer");
 
   CFRelease(sampleBuffer);
 }

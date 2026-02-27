@@ -138,10 +138,20 @@ static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CV
     CVPixelBufferUnlockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
-static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStatus, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
+
+  if (encodeStatus != noErr) {
+    [pusher.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
+    return;
+  }
+  if (infoFlags & kVTEncodeInfo_FrameDropped) {
+    [pusher.logger logFormat:@"VideoToolbox dropped frame"];
+    return;
+  }
+
   NSError *error = nil;
   if (!WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, &error)) {
     [pusher.logger logFormat:@"Failed to write H264 Annex-B frame: %@", error];
