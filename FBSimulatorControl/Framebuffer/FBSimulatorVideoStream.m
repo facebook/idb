@@ -399,12 +399,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
+  NSDictionary *frameProperties = nil;
+  if (frameNumber == 0) {
+    frameProperties = @{(__bridge NSString *)kVTEncodeFrameOptionKey_ForceKeyFrame: @YES};
+  }
   OSStatus status = VTCompressionSessionEncodeFrame(
     compressionSession,
     bufferToWrite,
     time,
     kCMTimeInvalid,  // Frame duration
-    NULL,  // Frame properties
+    (__bridge CFDictionaryRef)frameProperties,  // Frame properties
     (__bridge_retained void * _Nullable)(sourceFrameRef),
     &flags
   );
