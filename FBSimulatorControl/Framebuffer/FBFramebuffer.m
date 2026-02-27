@@ -33,14 +33,7 @@
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
-@end
-
-@interface FBFramebuffer_Legacy : FBFramebuffer
-
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
-
-- (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -72,15 +65,16 @@
       [logger logFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass];
       continue;
     }
-    return [[FBFramebuffer_Legacy alloc] initWithSurface:descriptor logger:logger];
+    return [[FBFramebuffer alloc] initWithSurface:descriptor logger:logger];
   }
   return [[FBSimulatorError
     describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
     fail:error];
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
+  self = [super init];
   if (!self) {
     return nil;
   }
@@ -89,6 +83,7 @@
     mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
     valueOptions:NSPointerFunctionsCopyIn];
   _logger = logger;
+  _surface = surface;
 
   return self;
 }
@@ -132,37 +127,6 @@
 }
 
 #pragma mark Private
-
-- (IOSurface *)extractImmediatelyAvailableSurface
-{
-  return nil;
-}
-
-- (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-@end
-
-@implementation FBFramebuffer_Legacy
-
-- (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithLogger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _surface = surface;
-
-  return self;
-}
 
 - (IOSurface *)extractImmediatelyAvailableSurface
 {
