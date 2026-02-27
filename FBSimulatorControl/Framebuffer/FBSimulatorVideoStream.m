@@ -569,7 +569,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   [self pushFrame];
 }
 
-- (void)didReceiveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect
 {
 }
 
@@ -740,7 +740,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStream_Lazy
 
-- (void)didReceiveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect
 {
   [self pushFrame];
 }

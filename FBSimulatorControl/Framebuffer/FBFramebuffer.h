@@ -26,11 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didChangeIOSurface:(nullable IOSurface *)surface;
 
 /**
- When a Damage Rect becomes available.
-
- @param rect the damage rectangle.
+ Called when screen content has changed.
  */
-- (void)didReceiveDamageRect:(CGRect)rect;
+- (void)didReceiveDamageRect;
 
 @end
 

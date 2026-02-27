@@ -150,9 +150,7 @@
 
   [self.surface registerCallbackWithUUID:uuid damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
     dispatch_async(queue, ^{
-      for (NSValue *value in frames) {
-        [consumer didReceiveDamageRect:value.rectValue];
-      }
+      [consumer didReceiveDamageRect];
     });
   }];
 }
