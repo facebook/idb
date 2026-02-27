@@ -16,6 +16,8 @@
 
 #import "FBSimulatorError.h"
 
+typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
 @interface FBVideoCompressorCallbackSourceFrame : NSObject
 
 - (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber;
@@ -50,17 +52,28 @@
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject <FBSimulatorVideoStreamFramePusher>
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback frameWriter:(FBCompressedFrameWriter)frameWriter logger:(id<FBControlCoreLogger>)logger;
 
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
+@property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
+@end
+
+@interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
+@property (nonatomic, assign) NSUInteger consecutiveNotReadyFrameCount;
+@property (nonatomic, assign) NSUInteger totalCallbackFrameCount;
+@property (nonatomic, assign) BOOL warmupComplete;
+@property (nonatomic, assign) BOOL starvationWarningLogged;
+- (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
+                        encodeStatus:(OSStatus)encodeStatus
+                           infoFlags:(VTEncodeInfoFlags)infoFlags;
 @end
 
 static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceBuffer, NSNumber *scaleFactor) {
@@ -138,24 +151,11 @@ static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CV
     CVPixelBufferUnlockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
 }
 
-static void H264AnnexBCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStatus, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
+static void CompressedFrameCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStatus, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
   FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = (__bridge FBSimulatorVideoStreamFramePusher_VideoToolbox *)(outputCallbackRefCon);
-
-  if (encodeStatus != noErr) {
-    [pusher.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
-    return;
-  }
-  if (infoFlags & kVTEncodeInfo_FrameDropped) {
-    [pusher.logger logFormat:@"VideoToolbox dropped frame"];
-    return;
-  }
-
-  NSError *error = nil;
-  if (!WriteFrameToAnnexBStream(sampleBuffer, pusher.consumer, pusher.logger, &error)) {
-    [pusher.logger logFormat:@"Failed to write H264 Annex-B frame: %@", error];
-  }
+  [pusher handleCompressedSampleBuffer:sampleBuffer encodeStatus:encodeStatus infoFlags:infoFlags];
 }
 
 static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStats, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
@@ -278,7 +278,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStreamFramePusher_VideoToolbox
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties videoCodec:(CMVideoCodecType)videoCodec consumer:(id<FBDataConsumer>)consumer compressorCallback:(VTCompressionOutputCallback)compressorCallback frameWriter:(FBCompressedFrameWriter)frameWriter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -288,11 +288,63 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   _configuration = configuration;
   _compressionSessionProperties = compressionSessionProperties;
   _compressorCallback = compressorCallback;
+  _frameWriter = frameWriter;
   _consumer = consumer;
   _logger = logger;
   _videoCodec = videoCodec;
 
   return self;
+}
+
+- (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
+                        encodeStatus:(OSStatus)encodeStatus
+                           infoFlags:(VTEncodeInfoFlags)infoFlags
+{
+  self.totalCallbackFrameCount += 1;
+
+  if (encodeStatus != noErr) {
+    [self.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
+    return;
+  }
+
+  BOOL frameDropped = (infoFlags & kVTEncodeInfo_FrameDropped) != 0;
+  BOOL writeSucceeded = NO;
+  if (!frameDropped) {
+    NSError *error = nil;
+    writeSucceeded = self.frameWriter(sampleBuffer, self.consumer, self.logger, &error);
+  }
+
+  if (frameDropped || !writeSucceeded) {
+    self.consecutiveNotReadyFrameCount += 1;
+    NSUInteger consecutiveFailures = self.consecutiveNotReadyFrameCount;
+
+    if (!self.warmupComplete) {
+      static const NSUInteger WarmupWindowFrames = 20;
+      if (consecutiveFailures == WarmupWindowFrames) {
+        [self.logger logFormat:@"Encoder has not produced a frame after %lu attempts — bitrate may be too low for this resolution", (unsigned long)consecutiveFailures];
+        self.starvationWarningLogged = YES;
+      }
+    } else {
+      static const NSUInteger StarvationThreshold = 10;
+      if (consecutiveFailures == StarvationThreshold && !self.starvationWarningLogged) {
+        [self.logger logFormat:@"Encoder starvation: %lu consecutive frames not ready after warmup — bitrate is likely too low", (unsigned long)consecutiveFailures];
+        self.starvationWarningLogged = YES;
+      }
+    }
+    return;
+  }
+
+  // Success
+  NSUInteger failuresBefore = self.consecutiveNotReadyFrameCount;
+  self.consecutiveNotReadyFrameCount = 0;
+  self.starvationWarningLogged = NO;
+
+  if (!self.warmupComplete) {
+    self.warmupComplete = YES;
+    if (failuresBefore > 0) {
+      [self.logger logFormat:@"Encoder warmed up after %lu skipped frames", (unsigned long)failuresBefore];
+    }
+  }
 }
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
@@ -695,7 +747,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       compressionSessionProperties:derivedCompressionSessionProperties
       videoCodec:kCMVideoCodecType_H264
       consumer:consumer
-      compressorCallback:H264AnnexBCompressorCallback
+      compressorCallback:CompressedFrameCallback
+      frameWriter:WriteFrameToAnnexBStream
       logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
@@ -705,6 +758,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       videoCodec:kCMVideoCodecType_JPEG
       consumer:consumer
       compressorCallback:MJPEGCompressorCallback
+      frameWriter:NULL
       logger:logger];
   }
   if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
@@ -714,6 +768,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       videoCodec:kCMVideoCodecType_JPEG
       consumer:consumer
       compressorCallback:MinicapCompressorCallback
+      frameWriter:NULL
       logger:logger];
   }
   if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
