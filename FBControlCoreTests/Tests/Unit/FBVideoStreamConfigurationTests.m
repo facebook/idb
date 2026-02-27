@@ -38,7 +38,7 @@
     avgBitrate:nil
     keyFrameRate:nil];
 
-  XCTAssertEqualObjects(config.keyFrameRate, @10.0);
+  XCTAssertEqualObjects(config.keyFrameRate, @1.0);
 }
 
 - (void)testExplicitValuesPreserved

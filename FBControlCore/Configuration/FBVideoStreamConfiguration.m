@@ -32,7 +32,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
   _compressionQuality = compressionQuality ?: @0.2;
   _scaleFactor = scaleFactor;
   _avgBitrate = avgBitrate;
-  _keyFrameRate = keyFrameRate ?: @10.0;
+  _keyFrameRate = keyFrameRate ?: @1.0;
 
   return self;
 }

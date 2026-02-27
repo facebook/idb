@@ -26,7 +26,7 @@
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_AllowFrameReordering], @NO);
   XCTAssertNotNil(props[(NSString *)kVTCompressionPropertyKey_AverageBitRate]);
   XCTAssertNotNil(props[(NSString *)kVTCompressionPropertyKey_DataRateLimits]);
-  XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration], @10.0);
+  XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration], @1.0);
 }
 
 - (void)testCallerPropertiesMerged
