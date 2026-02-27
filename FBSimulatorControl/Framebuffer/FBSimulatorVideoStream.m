@@ -66,11 +66,22 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
 
 @end
 
+typedef struct {
+    NSUInteger callbackCount;
+    NSUInteger writeCount;
+    NSUInteger dropCount;
+    NSUInteger writeFailureCount;
+    NSUInteger encodeErrorCount;
+} FBVideoEncoderStats;
+
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
 @property (nonatomic, assign) NSUInteger consecutiveNotReadyFrameCount;
-@property (nonatomic, assign) NSUInteger totalCallbackFrameCount;
 @property (nonatomic, assign) BOOL warmupComplete;
 @property (nonatomic, assign) BOOL starvationWarningLogged;
+@property (nonatomic, assign) FBVideoEncoderStats stats;
+@property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
+@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
+@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
                            infoFlags:(VTEncodeInfoFlags)infoFlags;
@@ -296,15 +307,71 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return self;
 }
 
+static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
+
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
                            infoFlags:(VTEncodeInfoFlags)infoFlags
 {
-  self.totalCallbackFrameCount += 1;
+  if (self.statsStartTime == 0) {
+    self.statsStartTime = CFAbsoluteTimeGetCurrent();
+    self.lastStatsLogTime = self.statsStartTime;
+    [self.logger.info logFormat:@"First encode callback received"];
+  }
+
+  CFAbsoluteTime now = [self _processCompressedSampleBuffer:sampleBuffer encodeStatus:encodeStatus infoFlags:infoFlags];
+
+  if (now - self.lastStatsLogTime < StatsLogIntervalSeconds) {
+    return;
+  }
+  CFTimeInterval intervalDuration = now - self.lastStatsLogTime;
+  self.lastStatsLogTime = now;
+
+  FBVideoEncoderStats current = self.stats;
+  FBVideoEncoderStats last = self.lastLoggedStats;
+  NSUInteger intervalCallbacks = current.callbackCount - last.callbackCount;
+  NSUInteger intervalWritten = current.writeCount - last.writeCount;
+  NSUInteger intervalDropped = current.dropCount - last.dropCount;
+  NSUInteger intervalWriteFailures = current.writeFailureCount - last.writeFailureCount;
+  NSUInteger intervalEncodeErrors = current.encodeErrorCount - last.encodeErrorCount;
+  self.lastLoggedStats = current;
+
+  CFTimeInterval totalElapsed = now - self.statsStartTime;
+  double totalFps = totalElapsed > 0 ? (double)current.callbackCount / totalElapsed : 0;
+  double intervalFps = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
+
+  [self.logger.info logFormat:
+    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors",
+    (unsigned long)intervalCallbacks,
+    intervalDuration,
+    intervalFps,
+    (unsigned long)intervalWritten,
+    (unsigned long)intervalDropped,
+    (unsigned long)intervalWriteFailures,
+    (unsigned long)intervalEncodeErrors];
+  [self.logger.info logFormat:
+    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors",
+    (unsigned long)current.callbackCount,
+    totalElapsed,
+    totalFps,
+    (unsigned long)current.writeCount,
+    (unsigned long)current.dropCount,
+    (unsigned long)current.writeFailureCount,
+    (unsigned long)current.encodeErrorCount];
+}
+
+- (CFAbsoluteTime)_processCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
+                                    encodeStatus:(OSStatus)encodeStatus
+                                       infoFlags:(VTEncodeInfoFlags)infoFlags
+{
+  FBVideoEncoderStats s = self.stats;
+  s.callbackCount += 1;
 
   if (encodeStatus != noErr) {
+    s.encodeErrorCount += 1;
+    self.stats = s;
     [self.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
-    return;
+    return CFAbsoluteTimeGetCurrent();
   }
 
   BOOL frameDropped = (infoFlags & kVTEncodeInfo_FrameDropped) != 0;
@@ -315,6 +382,12 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   if (frameDropped || !writeSucceeded) {
+    if (frameDropped) {
+      s.dropCount += 1;
+    } else {
+      s.writeFailureCount += 1;
+    }
+    self.stats = s;
     self.consecutiveNotReadyFrameCount += 1;
     NSUInteger consecutiveFailures = self.consecutiveNotReadyFrameCount;
 
@@ -331,10 +404,12 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
         self.starvationWarningLogged = YES;
       }
     }
-    return;
+    return CFAbsoluteTimeGetCurrent();
   }
 
   // Success
+  s.writeCount += 1;
+  self.stats = s;
   NSUInteger failuresBefore = self.consecutiveNotReadyFrameCount;
   self.consecutiveNotReadyFrameCount = 0;
   self.starvationWarningLogged = NO;
@@ -345,6 +420,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       [self.logger logFormat:@"Encoder warmed up after %lu skipped frames", (unsigned long)failuresBefore];
     }
   }
+  return CFAbsoluteTimeGetCurrent();
 }
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error

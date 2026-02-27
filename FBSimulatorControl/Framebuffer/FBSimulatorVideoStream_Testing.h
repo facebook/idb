@@ -10,6 +10,14 @@
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
+typedef struct {
+    NSUInteger callbackCount;
+    NSUInteger writeCount;
+    NSUInteger dropCount;
+    NSUInteger writeFailureCount;
+    NSUInteger encodeErrorCount;
+} FBVideoEncoderStats;
+
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
 
 - (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration
@@ -25,9 +33,12 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
                            infoFlags:(VTEncodeInfoFlags)infoFlags;
 
 @property (nonatomic, assign) NSUInteger consecutiveNotReadyFrameCount;
-@property (nonatomic, assign) NSUInteger totalCallbackFrameCount;
 @property (nonatomic, assign) BOOL warmupComplete;
 @property (nonatomic, assign) BOOL starvationWarningLogged;
+@property (nonatomic, assign) FBVideoEncoderStats stats;
+@property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
+@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
+@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
 @property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;

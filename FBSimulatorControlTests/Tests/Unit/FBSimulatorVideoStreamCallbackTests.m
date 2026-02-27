@@ -264,7 +264,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
     }
   }
   XCTAssertTrue(foundError, @"Should log VideoToolbox encode error with status code");
-  XCTAssertEqual(pusher.totalCallbackFrameCount, 1u);
+  XCTAssertEqual(pusher.stats.callbackCount, 1u);
 }
 
 - (void)testFrameDroppedCountedAsFailure
@@ -276,8 +276,8 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   // Dropped frame should increment failure counter, not produce a per-frame log
   XCTAssertEqual(pusher.consecutiveNotReadyFrameCount, 1u);
-  XCTAssertEqual(pusher.totalCallbackFrameCount, 1u);
-  XCTAssertEqual(logger.messages.count, 0u, @"Single dropped frame should not produce a log message");
+  XCTAssertEqual(pusher.stats.callbackCount, 1u);
+  XCTAssertEqual(logger.messages.count, 1u, @"Should only log the first-callback message, not per-frame drop messages");
 }
 
 - (void)testDroppedFramesTriggersStarvationWarning
@@ -297,7 +297,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
     }
   }
   XCTAssertTrue(foundStarvationWarning, @"20 consecutive dropped frames should trigger starvation warning");
-  XCTAssertEqual(logger.messages.count, 1u, @"Should produce exactly one starvation warning");
+  XCTAssertEqual(logger.messages.count, 2u, @"Should produce the first-callback message and one starvation warning");
 }
 
 - (void)testNoWarmupMessageWhenFirstFrameSucceeds
@@ -316,6 +316,125 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   for (NSString *msg in logger.messages) {
     XCTAssertFalse([msg containsString:@"Encoder warmed up"], @"Should not log warmup message when first frame succeeds immediately");
   }
+}
+
+- (void)testPeriodicStatsNotLoggedBeforeInterval
+{
+  FBCapturingLogger *logger = [[FBCapturingLogger alloc] init];
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = [self createPusherWithLogger:logger];
+
+  // Send a few successful frames — stats interval hasn't elapsed
+  for (NSUInteger i = 0; i < 3; i++) {
+    CMSampleBufferRef ready = CreateH264SampleBuffer();
+    [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
+    CFRelease(ready);
+  }
+
+  for (NSString *msg in logger.messages) {
+    XCTAssertFalse([msg containsString:@"Video stats"], @"Should not log stats before interval elapses");
+  }
+}
+
+- (void)testPeriodicStatsLoggedAfterInterval
+{
+  FBCapturingLogger *logger = [[FBCapturingLogger alloc] init];
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = [self createPusherWithLogger:logger];
+
+  // Send one frame to initialize timing
+  CMSampleBufferRef ready = CreateH264SampleBuffer();
+  [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
+  CFRelease(ready);
+
+  // Backdate lastStatsLogTime by 6 seconds to trigger stats on next frame
+  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+
+  ready = CreateH264SampleBuffer();
+  [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
+  CFRelease(ready);
+
+  BOOL foundStats = NO;
+  for (NSString *msg in logger.messages) {
+    if ([msg containsString:@"Video stats"]) {
+      foundStats = YES;
+    }
+  }
+  XCTAssertTrue(foundStats, @"Should log stats after interval elapses");
+}
+
+- (void)testPeriodicStatsCountersAccurate
+{
+  FBCapturingLogger *logger = [[FBCapturingLogger alloc] init];
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = [self createPusherWithLogger:logger];
+
+  // 3 successful writes
+  for (NSUInteger i = 0; i < 3; i++) {
+    CMSampleBufferRef ready = CreateH264SampleBuffer();
+    [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
+    CFRelease(ready);
+  }
+
+  // 2 dropped frames
+  for (NSUInteger i = 0; i < 2; i++) {
+    [pusher handleCompressedSampleBuffer:NULL encodeStatus:noErr infoFlags:kVTEncodeInfo_FrameDropped];
+  }
+
+  // 1 encode error
+  [pusher handleCompressedSampleBuffer:NULL encodeStatus:-12345 infoFlags:0];
+
+  // Verify counters
+  XCTAssertEqual(pusher.stats.writeCount, 3u);
+  XCTAssertEqual(pusher.stats.dropCount, 2u);
+  XCTAssertEqual(pusher.stats.encodeErrorCount, 1u);
+  XCTAssertEqual(pusher.stats.callbackCount, 6u);
+
+  // Backdate to trigger stats log
+  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+
+  CMSampleBufferRef ready = CreateH264SampleBuffer();
+  [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
+  CFRelease(ready);
+
+  BOOL foundStats = NO;
+  for (NSString *msg in logger.messages) {
+    if ([msg containsString:@"Video stats"] &&
+        [msg containsString:@"4 written"] &&
+        [msg containsString:@"2 dropped"] &&
+        [msg containsString:@"1 encode errors"]) {
+      foundStats = YES;
+    }
+  }
+  XCTAssertTrue(foundStats, @"Stats message should contain accurate counters");
+}
+
+- (void)testPeriodicStatsDuringWarmup
+{
+  FBCapturingLogger *logger = [[FBCapturingLogger alloc] init];
+  FBSimulatorVideoStreamFramePusher_VideoToolbox *pusher = [self createPusherWithLogger:logger];
+
+  // Send 10 not-ready buffers (write failures during warmup)
+  for (NSUInteger i = 0; i < 10; i++) {
+    CMSampleBufferRef notReady = CreateNotReadySampleBuffer();
+    [pusher handleCompressedSampleBuffer:notReady encodeStatus:noErr infoFlags:0];
+    CFRelease(notReady);
+  }
+
+  // Backdate to trigger stats log
+  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+
+  // Send one more not-ready buffer to trigger the stats log
+  CMSampleBufferRef notReady = CreateNotReadySampleBuffer();
+  [pusher handleCompressedSampleBuffer:notReady encodeStatus:noErr infoFlags:0];
+  CFRelease(notReady);
+
+  BOOL foundStats = NO;
+  for (NSString *msg in logger.messages) {
+    if ([msg containsString:@"Video stats"] &&
+        [msg containsString:@"0 written"] &&
+        [msg containsString:@"11 write failures"]) {
+      foundStats = YES;
+    }
+  }
+  XCTAssertTrue(foundStats, @"Stats during warmup should show 0 written and write failures");
 }
 
 @end
