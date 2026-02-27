@@ -29,11 +29,25 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
+static const CFTimeInterval FBFramebufferStatsLogIntervalSeconds = 5.0;
+
+typedef struct {
+    NSUInteger damageCallbackCount;
+    NSUInteger damageRectCount;
+    NSUInteger emptyDamageCallbackCount;
+    NSUInteger ioSurfaceChangeCount;
+} FBFramebufferStats;
+
 @interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
+
+@property (nonatomic, assign) FBFramebufferStats stats;
+@property (nonatomic, assign) FBFramebufferStats lastLoggedStats;
+@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
+@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
 
 @end
 
@@ -140,6 +154,12 @@
 - (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
 {
   void (^ioSurfaceChanged)(IOSurface *) = ^void(IOSurface *surface) {
+    FBFramebufferStats s = self.stats;
+    s.ioSurfaceChangeCount += 1;
+    self.stats = s;
+    if (s.ioSurfaceChangeCount == 1) {
+      [self.logger.info logFormat:@"First IOSurface change callback, surface=%@", surface];
+    }
     dispatch_async(queue, ^{
       [consumer didChangeIOSurface:surface];
     });
@@ -149,10 +169,63 @@
   [self.surface registerCallbackWithUUID:uuid ioSurfaceChangeCallback:ioSurfaceChanged];
 
   [self.surface registerCallbackWithUUID:uuid damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
+    FBFramebufferStats s = self.stats;
+    s.damageCallbackCount += 1;
+    s.damageRectCount += frames.count;
+    if (frames.count == 0) {
+      s.emptyDamageCallbackCount += 1;
+    }
+    self.stats = s;
+    [self logStatsIfNeeded];
     dispatch_async(queue, ^{
       [consumer didReceiveDamageRect];
     });
   }];
+}
+
+- (void)logStatsIfNeeded
+{
+  CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+  if (self.statsStartTime == 0) {
+    self.statsStartTime = now;
+    self.lastStatsLogTime = now;
+    [self.logger.info logFormat:@"First damage callback received"];
+    return;
+  }
+  if (now - self.lastStatsLogTime < FBFramebufferStatsLogIntervalSeconds) {
+    return;
+  }
+  CFTimeInterval intervalDuration = now - self.lastStatsLogTime;
+  self.lastStatsLogTime = now;
+
+  FBFramebufferStats current = self.stats;
+  FBFramebufferStats last = self.lastLoggedStats;
+  NSUInteger intervalCallbacks = current.damageCallbackCount - last.damageCallbackCount;
+  NSUInteger intervalRects = current.damageRectCount - last.damageRectCount;
+  NSUInteger intervalEmpty = current.emptyDamageCallbackCount - last.emptyDamageCallbackCount;
+  NSUInteger intervalIOSurface = current.ioSurfaceChangeCount - last.ioSurfaceChangeCount;
+  self.lastLoggedStats = current;
+
+  double intervalRate = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
+  CFTimeInterval totalElapsed = now - self.statsStartTime;
+  double totalRate = totalElapsed > 0 ? (double)current.damageCallbackCount / totalElapsed : 0;
+
+  [self.logger.info logFormat:
+    @"Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+    (unsigned long)intervalCallbacks,
+    intervalDuration,
+    intervalRate,
+    (unsigned long)intervalRects,
+    (unsigned long)intervalEmpty,
+    (unsigned long)intervalIOSurface];
+  [self.logger.info logFormat:
+    @"Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+    (unsigned long)current.damageCallbackCount,
+    totalElapsed,
+    totalRate,
+    (unsigned long)current.damageRectCount,
+    (unsigned long)current.emptyDamageCallbackCount,
+    (unsigned long)current.ioSurfaceChangeCount];
 }
 
 - (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid
