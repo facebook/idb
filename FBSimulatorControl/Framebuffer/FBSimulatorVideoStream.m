@@ -787,7 +787,6 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return @{
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(2 * self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @360,
-    (NSString *) kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration: @10, // key frame at least every 10 seconds
     (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   };
 }
