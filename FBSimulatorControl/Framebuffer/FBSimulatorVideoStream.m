@@ -98,6 +98,7 @@ static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceB
     (NSString *) kCVPixelBufferWidthKey: @(destinationWidth),
     (NSString *) kCVPixelBufferHeightKey: @(destinationHeight),
     (NSString *) kCVPixelBufferPixelFormatTypeKey: @(CVPixelBufferGetPixelFormatType(sourceBuffer)),
+    (NSString *) kCVPixelBufferIOSurfacePropertiesKey: @{},
   };
   
   NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
