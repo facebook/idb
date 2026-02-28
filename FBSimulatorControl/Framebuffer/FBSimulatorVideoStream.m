@@ -142,24 +142,24 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CVPixelBufferRef destinationBuffer) {
     CVPixelBufferLockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
-    CVPixelBufferLockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
- 
+    CVPixelBufferLockBaseAddress(destinationBuffer, 0);
+
     vImage_Buffer scaleInput;
     scaleInput.width =  CVPixelBufferGetWidth(sourceBuffer);
     scaleInput.height = CVPixelBufferGetHeight(sourceBuffer);
     scaleInput.rowBytes = CVPixelBufferGetBytesPerRow(sourceBuffer);
     scaleInput.data = CVPixelBufferGetBaseAddress(sourceBuffer);
-  
+
     vImage_Buffer scaleOutput;
     scaleOutput.width =  CVPixelBufferGetWidth(destinationBuffer);
     scaleOutput.height = CVPixelBufferGetHeight((destinationBuffer));
     scaleOutput.rowBytes = CVPixelBufferGetBytesPerRow(destinationBuffer);
     scaleOutput.data = CVPixelBufferGetBaseAddress(destinationBuffer);
-    
+
     vImageScale_ARGB8888(&scaleInput, &scaleOutput, NULL, 0); // implicitly assumes a 4-channel image, like BGRA/RGBA
-  
+
     CVPixelBufferUnlockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
-    CVPixelBufferUnlockBaseAddress(destinationBuffer, kCVPixelBufferLock_ReadOnly);
+    CVPixelBufferUnlockBaseAddress(destinationBuffer, 0);
 }
 
 static void CompressedFrameCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStatus, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
