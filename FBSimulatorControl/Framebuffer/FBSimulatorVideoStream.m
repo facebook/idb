@@ -101,8 +101,8 @@ static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceB
   };
   
   NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
-    (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(100), // we will have at least 100 pixel buffers in the pool
-    (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(250), // to guard from OOM only 250 pixel buffers are allowed
+    (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(4),
+    (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(16),
   };
   
   
