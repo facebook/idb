@@ -995,7 +995,10 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
 - (void)popRequest:(FBAXTranslationRequest *)request
 {
-  NSParameterAssert([self.tokenToRequest objectForKey:request.token] != nil);
+  if ([self.tokenToRequest objectForKey:request.token] == nil) {
+    [self.logger logFormat:@"popRequest: token %@ not found (already popped or replaced by remediation), ignoring", request.token];
+    return;
+  }
   [self.tokenToRequest removeObjectForKey:request.token];
   [self.logger logFormat:@"Removed request with token %@", request.token];
 }
