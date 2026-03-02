@@ -787,21 +787,24 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
 + (NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(FBVideoStreamConfiguration *)configuration callerProperties:(NSDictionary<NSString *, id> *)callerProperties
 {
-  NSNumber *avgBitrate = @(800 * 1024);
-  if (configuration.avgBitrate != nil) {
-    avgBitrate = configuration.avgBitrate;
-  }
-  NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
-    (NSString *) kVTCompressionPropertyKey_AverageBitRate: avgBitrate,
-    (NSString *) kVTCompressionPropertyKey_DataRateLimits: @[maxBitrate, @1],
   }];
+
+  if (configuration.avgBitrate != nil) {
+    // Explicit bitrate: use bitrate rate-control mode
+    NSNumber *avgBitrate = configuration.avgBitrate;
+    NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AverageBitRate] = avgBitrate;
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_DataRateLimits] = @[maxBitrate, @1];
+  } else {
+    // No explicit bitrate: use constant-quality mode
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
+  }
 
   [derivedCompressionSessionProperties addEntriesFromDictionary:callerProperties];
   derivedCompressionSessionProperties[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration] = configuration.keyFrameRate;
-  derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
   FBVideoStreamEncoding encoding = configuration.encoding;
   if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel;

@@ -24,8 +24,9 @@
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_RealTime], @YES);
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_AllowFrameReordering], @NO);
-  XCTAssertNotNil(props[(NSString *)kVTCompressionPropertyKey_AverageBitRate]);
-  XCTAssertNotNil(props[(NSString *)kVTCompressionPropertyKey_DataRateLimits]);
+  // No avgBitrate set: quality mode with config default (0.2)
+  XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.2);
+  XCTAssertNil(props[(NSString *)kVTCompressionPropertyKey_AverageBitRate]);
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration], @1.0);
 }
 
