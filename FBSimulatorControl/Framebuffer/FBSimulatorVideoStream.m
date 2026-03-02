@@ -790,6 +790,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   NSMutableDictionary<NSString *, id> *derivedCompressionSessionProperties = [NSMutableDictionary dictionaryWithDictionary:@{
     (NSString *) kVTCompressionPropertyKey_RealTime: @YES,
     (NSString *) kVTCompressionPropertyKey_AllowFrameReordering: @NO,
+    (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   }];
 
   if (configuration.avgBitrate != nil) {
@@ -922,7 +923,6 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   return @{
     (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @360,
-    (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   };
 }
 
