@@ -1159,6 +1159,37 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   return nil;
 }
 
+// Searches the accessibility tree rooted at this element for a descendant matching the given value/key.
+// If found, ownership of the request token is transferred to a new handle wrapping the found element,
+// and the receiver is closed without popping. If not found, the receiver is closed and an error is set.
+- (nullable FBAccessibilityElement *)findElementWithValue:(NSString *)value
+                                                   forKey:(FBAXSearchableKey)key
+                                                    depth:(NSUInteger)depth
+                                                    error:(NSError **)error
+{
+  AXPMacPlatformElement *found = [FBAccessibilityElement
+    findElementWithValue:value
+                  forKey:key
+               inElement:_element
+                   token:_request.token
+          remainingDepth:depth];
+  if (found == nil) {
+    [self close];
+    return [[FBSimulatorError
+      describeFormat:@"Element with %@ containing '%@' not found within depth %lu",
+        key, value, (unsigned long)depth]
+      fail:error];
+  }
+  NSAssert(!_closed, @"Cannot transfer ownership from a closed element");
+  FBAccessibilityElement *newHandle = [[FBAccessibilityElement alloc]
+    initWithElement:found
+            request:_request
+         dispatcher:_dispatcher
+          simulator:_simulator];
+  _closed = YES;
+  return newHandle;
+}
+
 - (void)close
 {
   if (!_closed) {
@@ -1321,27 +1352,14 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
     return [FBFuture futureWithError:error];
   }
   FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
-  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
-  return [[FBSimulatorAccessibilityCommands platformElementWithRequest:request simulator:simulator remediationPermitted:YES]
-    onQueue:dispatch_get_main_queue() fmap:^FBFuture *(AXPMacPlatformElement *rootElement) {
-      AXPMacPlatformElement *found = [FBAccessibilityElement
-        findElementWithValue:value
-                      forKey:key
-                   inElement:rootElement
-                       token:request.token
-              remainingDepth:depth];
+  return [[FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES]
+    onQueue:dispatch_get_main_queue() fmap:^FBFuture *(FBAccessibilityElement *rootElement) {
+      NSError *innerError = nil;
+      FBAccessibilityElement *found = [rootElement findElementWithValue:value forKey:key depth:depth error:&innerError];
       if (found == nil) {
-        [dispatcher popRequest:request];
-        return [[FBSimulatorError
-          describeFormat:@"Element with %@ containing '%@' not found within depth %lu",
-            key, value, (unsigned long)depth]
-          failFuture];
+        return [FBFuture futureWithError:innerError];
       }
-      return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
-        initWithElement:found
-                request:request
-             dispatcher:dispatcher
-              simulator:simulator]];
+      return [FBFuture futureWithResult:found];
     }];
 }
 
@@ -1369,45 +1387,41 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return YES;
 }
 
-+ (FBFuture<AXPMacPlatformElement *> *)platformElementWithRequest:(FBAXTranslationRequest *)request
+// Returns an FBAccessibilityElement wrapping the platform element for the given request.
+// The handle owns the request's token and will pop it on close.
+//
+// When remediationPermitted=YES and a stale SpringBoard is detected (zero accessibility frame + dead pid),
+// the original request's token is manually popped (it's not wrapped in a handle yet at that point),
+// CoreSimulatorBridge is restarted, and the method recurses with a fresh request.
+// The recursion is bounded: the retry passes remediationPermitted=NO, so at most one remediation attempt occurs.
++ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
                                                         simulator:(FBSimulator *)simulator
                                              remediationPermitted:(BOOL)remediationPermitted
 {
   FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
   return [[dispatcher platformElementWithRequest:request simulator:simulator]
-    onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (AXPMacPlatformElement *element) {
+    onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (AXPMacPlatformElement *element) {
       if (!remediationPermitted) {
-        return [FBFuture futureWithResult:element];
+        return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
+          initWithElement:element request:request dispatcher:dispatcher simulator:simulator]];
       }
       return [[self
         remediationRequiredForSimulator:simulator element:element]
-        onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (NSNumber *remediationRequired) {
+        onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (NSNumber *remediationRequired) {
           if (!remediationRequired.boolValue) {
-            return [FBFuture futureWithResult:element];
+            return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
+              initWithElement:element request:request dispatcher:dispatcher simulator:simulator]];
           }
-          // Pop the stale request/token
+          // The request's token was pushed by the dispatcher but is not yet wrapped in an
+          // FBAccessibilityElement, so we must pop it manually before discarding the request.
           [dispatcher popRequest:request];
           FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
           return [[self remediateSpringBoardForSimulator:simulator]
-            onQueue:simulator.workQueue fmap:^ FBFuture<AXPMacPlatformElement *> * (id _) {
-              return [self platformElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
+            onQueue:simulator.workQueue fmap:^ FBFuture<FBAccessibilityElement *> * (id _) {
+              // remediationPermitted:NO ensures at most one retry and avoids infinite recursion.
+              return [self accessibilityElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
             }];
         }];
-    }];
-}
-
-+ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
-                                                             simulator:(FBSimulator *)simulator
-                                                  remediationPermitted:(BOOL)remediationPermitted
-{
-  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
-  return [[self platformElementWithRequest:request simulator:simulator remediationPermitted:remediationPermitted]
-    onQueue:simulator.workQueue map:^FBAccessibilityElement *(AXPMacPlatformElement *element) {
-      return [[FBAccessibilityElement alloc]
-        initWithElement:element
-                request:request
-             dispatcher:dispatcher
-              simulator:simulator];
     }];
 }
 
