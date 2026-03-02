@@ -920,7 +920,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
   return @{
-    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(2 * self.framesPerSecond),
+    (NSString *) kVTCompressionPropertyKey_ExpectedFrameRate: @(self.framesPerSecond),
     (NSString *) kVTCompressionPropertyKey_MaxKeyFrameInterval: @360,
     (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   };
