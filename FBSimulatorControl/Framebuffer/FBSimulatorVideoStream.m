@@ -73,6 +73,7 @@ typedef struct {
     NSUInteger writeFailureCount;
     NSUInteger encodeErrorCount;
     NSUInteger tornFrameCount;
+    NSUInteger totalEncodedBytes;
 } FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
@@ -337,27 +338,32 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   NSUInteger intervalWriteFailures = current.writeFailureCount - last.writeFailureCount;
   NSUInteger intervalEncodeErrors = current.encodeErrorCount - last.encodeErrorCount;
   NSUInteger intervalTornFrames = current.tornFrameCount - last.tornFrameCount;
+  NSUInteger intervalEncodedBytes = current.totalEncodedBytes - last.totalEncodedBytes;
   self.lastLoggedStats = current;
 
   CFTimeInterval totalElapsed = now - self.statsStartTime;
   double totalFps = totalElapsed > 0 ? (double)current.callbackCount / totalElapsed : 0;
   double intervalFps = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
+  double intervalBitrateKbps = intervalDuration > 0 ? (double)intervalEncodedBytes * 8.0 / 1000.0 / intervalDuration : 0;
+  double totalBitrateKbps = totalElapsed > 0 ? (double)current.totalEncodedBytes * 8.0 / 1000.0 / totalElapsed : 0;
 
   [self.logger.info logFormat:
-    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)intervalCallbacks,
     intervalDuration,
     intervalFps,
+    intervalBitrateKbps,
     (unsigned long)intervalWritten,
     (unsigned long)intervalDropped,
     (unsigned long)intervalWriteFailures,
     (unsigned long)intervalEncodeErrors,
     (unsigned long)intervalTornFrames];
   [self.logger.info logFormat:
-    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)current.callbackCount,
     totalElapsed,
     totalFps,
+    totalBitrateKbps,
     (unsigned long)current.writeCount,
     (unsigned long)current.dropCount,
     (unsigned long)current.writeFailureCount,
@@ -384,6 +390,12 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   if (!frameDropped) {
     NSError *error = nil;
     writeSucceeded = self.frameWriter(sampleBuffer, self.consumer, self.logger, &error);
+    if (writeSucceeded) {
+      CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+      if (dataBuffer) {
+        s.totalEncodedBytes += CMBlockBufferGetDataLength(dataBuffer);
+      }
+    }
   }
 
   if (frameDropped || !writeSucceeded) {

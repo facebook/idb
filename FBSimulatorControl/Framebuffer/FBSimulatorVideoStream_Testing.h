@@ -17,6 +17,7 @@ typedef struct {
     NSUInteger writeFailureCount;
     NSUInteger encodeErrorCount;
     NSUInteger tornFrameCount;
+    NSUInteger totalEncodedBytes;
 } FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
