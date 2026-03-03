@@ -900,11 +900,8 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   }];
 
   if (configuration.avgBitrate != nil) {
-    // Explicit bitrate: use bitrate rate-control mode
-    NSNumber *avgBitrate = configuration.avgBitrate;
-    NSNumber *maxBitrate = @(1.5 * avgBitrate.doubleValue);
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AverageBitRate] = avgBitrate;
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_DataRateLimits] = @[maxBitrate, @1];
+    // Explicit bitrate: AverageBitRate is in bits/sec
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AverageBitRate] = configuration.avgBitrate;
   } else {
     // No explicit bitrate: use constant-quality mode
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
