@@ -12,7 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <IOSurface/IOSurface.h>
 #import <VideoToolbox/VideoToolbox.h>
-#import <Accelerate/Accelerate.h>
 
 #import "FBSimulatorError.h"
 
@@ -47,6 +46,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
+@property (nonatomic, assign, nullable, readwrite) VTPixelTransferSessionRef pixelTransferSession;
 
 @end
 
@@ -57,6 +57,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
+@property (nonatomic, assign, nullable, readwrite) VTPixelTransferSessionRef pixelTransferSession;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
 @property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
@@ -143,28 +144,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   };
 }
 
-static void scaleFromSourceToDestinationBuffer(CVPixelBufferRef sourceBuffer, CVPixelBufferRef destinationBuffer) {
-    CVPixelBufferLockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
-    CVPixelBufferLockBaseAddress(destinationBuffer, 0);
-
-    vImage_Buffer scaleInput;
-    scaleInput.width =  CVPixelBufferGetWidth(sourceBuffer);
-    scaleInput.height = CVPixelBufferGetHeight(sourceBuffer);
-    scaleInput.rowBytes = CVPixelBufferGetBytesPerRow(sourceBuffer);
-    scaleInput.data = CVPixelBufferGetBaseAddress(sourceBuffer);
-
-    vImage_Buffer scaleOutput;
-    scaleOutput.width =  CVPixelBufferGetWidth(destinationBuffer);
-    scaleOutput.height = CVPixelBufferGetHeight((destinationBuffer));
-    scaleOutput.rowBytes = CVPixelBufferGetBytesPerRow(destinationBuffer);
-    scaleOutput.data = CVPixelBufferGetBaseAddress(destinationBuffer);
-
-    vImageScale_ARGB8888(&scaleInput, &scaleOutput, NULL, 0); // implicitly assumes a 4-channel image, like BGRA/RGBA
-
-    CVPixelBufferUnlockBaseAddress(sourceBuffer, kCVPixelBufferLock_ReadOnly);
-    CVPixelBufferUnlockBaseAddress(destinationBuffer, 0);
-}
-
 static void CompressedFrameCallback(void *outputCallbackRefCon, void *sourceFrameRefCon, OSStatus encodeStatus, VTEncodeInfoFlags infoFlags, CMSampleBufferRef sampleBuffer)
 {
   (void)(__bridge_transfer FBVideoCompressorCallbackSourceFrame *)(sourceFrameRefCon);
@@ -245,12 +224,23 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 {
   if (self.scaleFactor && [self.scaleFactor isGreaterThan:@0] && [self.scaleFactor isLessThan:@1]) {
     self.scaledPixelBufferPoolRef = createScaledPixelBufferPool(pixelBuffer, self.scaleFactor);
+    VTPixelTransferSessionRef transferSession;
+    OSStatus status = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
+    if (status != noErr) {
+      return [[FBControlCoreError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)status] failBool:error];
+    }
+    self.pixelTransferSession = transferSession;
   }
   return YES;
 }
 
 - (BOOL)tearDown:(NSError **)error
 {
+  if (self.pixelTransferSession) {
+    VTPixelTransferSessionInvalidate(self.pixelTransferSession);
+    CFRelease(self.pixelTransferSession);
+    self.pixelTransferSession = nil;
+  }
   CVPixelBufferPoolRelease(self.scaledPixelBufferPoolRef);
   return YES;
 }
@@ -260,12 +250,16 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   CVPixelBufferRef toFree = nil;
   CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
-  if (bufferPool != nil) {
+  if (bufferPool != nil && self.pixelTransferSession != nil) {
     CVPixelBufferRef resizedBuffer;
     if (kCVReturnSuccess == CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer)) {
-      scaleFromSourceToDestinationBuffer(pixelBuffer, resizedBuffer);
-      bufferToWrite = resizedBuffer;
-      toFree = resizedBuffer;
+      OSStatus status = VTPixelTransferSessionTransferImage(self.pixelTransferSession, pixelBuffer, resizedBuffer);
+      if (status == noErr) {
+        bufferToWrite = resizedBuffer;
+        toFree = resizedBuffer;
+      } else {
+        CVPixelBufferRelease(resizedBuffer);
+      }
     }
   }
 
@@ -465,7 +459,13 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     destinationWidth = (size_t)scaledBufferWidth.intValue;
     destinationHeight = (size_t)scaledBufferHeight.intValue;
     self.scaledPixelBufferPoolRef = scaledPixelBufferPool;
-    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
+    VTPixelTransferSessionRef transferSession;
+    OSStatus transferStatus = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
+    if (transferStatus != noErr) {
+      return [[FBSimulatorError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)transferStatus] failBool:error];
+    }
+    self.pixelTransferSession = transferSession;
+    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu (GPU via VTPixelTransferSession)", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
   }
 
   VTCompressionSessionRef compressionSession = NULL;
@@ -514,6 +514,11 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     VTCompressionSessionInvalidate(compression);
     self.compressionSession = nil;
   }
+  if (self.pixelTransferSession) {
+    VTPixelTransferSessionInvalidate(self.pixelTransferSession);
+    CFRelease(self.pixelTransferSession);
+    self.pixelTransferSession = nil;
+  }
   CVPixelBufferPoolRelease(self.scaledPixelBufferPoolRef);
   return YES;
 }
@@ -530,13 +535,18 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
   CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
-  if (bufferPool != nil) {
+  if (bufferPool != nil && self.pixelTransferSession != nil) {
     CVPixelBufferRef resizedBuffer;
     CVReturn returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer);
     if (returnStatus == kCVReturnSuccess) {
-      scaleFromSourceToDestinationBuffer(pixelBuffer, resizedBuffer);
-      bufferToWrite = resizedBuffer;
-      sourceFrameRef.pixelBuffer = resizedBuffer;
+      OSStatus transferStatus = VTPixelTransferSessionTransferImage(self.pixelTransferSession, pixelBuffer, resizedBuffer);
+      if (transferStatus == noErr) {
+        bufferToWrite = resizedBuffer;
+        sourceFrameRef.pixelBuffer = resizedBuffer;
+      } else {
+        [self.logger logFormat:@"VTPixelTransferSession failed: %d", (int)transferStatus];
+        CVPixelBufferRelease(resizedBuffer);
+      }
     } else {
       [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
     }
