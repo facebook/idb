@@ -72,6 +72,7 @@ typedef struct {
     NSUInteger dropCount;
     NSUInteger writeFailureCount;
     NSUInteger encodeErrorCount;
+    NSUInteger tornFrameCount;
 } FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
@@ -335,6 +336,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   NSUInteger intervalDropped = current.dropCount - last.dropCount;
   NSUInteger intervalWriteFailures = current.writeFailureCount - last.writeFailureCount;
   NSUInteger intervalEncodeErrors = current.encodeErrorCount - last.encodeErrorCount;
+  NSUInteger intervalTornFrames = current.tornFrameCount - last.tornFrameCount;
   self.lastLoggedStats = current;
 
   CFTimeInterval totalElapsed = now - self.statsStartTime;
@@ -342,23 +344,25 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   double intervalFps = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
 
   [self.logger.info logFormat:
-    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors",
+    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)intervalCallbacks,
     intervalDuration,
     intervalFps,
     (unsigned long)intervalWritten,
     (unsigned long)intervalDropped,
     (unsigned long)intervalWriteFailures,
-    (unsigned long)intervalEncodeErrors];
+    (unsigned long)intervalEncodeErrors,
+    (unsigned long)intervalTornFrames];
   [self.logger.info logFormat:
-    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors",
+    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)current.callbackCount,
     totalElapsed,
     totalFps,
     (unsigned long)current.writeCount,
     (unsigned long)current.dropCount,
     (unsigned long)current.writeFailureCount,
-    (unsigned long)current.encodeErrorCount];
+    (unsigned long)current.encodeErrorCount,
+    (unsigned long)current.tornFrameCount];
 }
 
 - (CFAbsoluteTime)_processCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -537,6 +541,12 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   // VTCompressionSession reads the pixel data, avoiding screen tearing.
   // VTCompressionSessionEncodeFrame captures the pixel data before returning
   // so we can unlock immediately after.
+  //
+  // Check the IOSurface seed before and after to detect if the surface was
+  // modified during the encode (which would indicate a torn frame despite
+  // the advisory lock).
+  IOSurfaceRef surface = CVPixelBufferGetIOSurface(bufferToWrite);
+  uint32_t seedBefore = surface ? IOSurfaceGetSeed(surface) : 0;
   CVPixelBufferLockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
   OSStatus status = VTCompressionSessionEncodeFrame(
     compressionSession,
@@ -548,6 +558,14 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     &flags
   );
   CVPixelBufferUnlockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
+  if (surface) {
+    uint32_t seedAfter = IOSurfaceGetSeed(surface);
+    if (seedAfter != seedBefore) {
+      FBVideoEncoderStats s = self.stats;
+      s.tornFrameCount += 1;
+      self.stats = s;
+    }
+  }
   if (status != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to compress %d", status]
