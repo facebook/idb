@@ -76,6 +76,7 @@ typedef struct {
     NSUInteger encodeErrorCount;
     NSUInteger tornFrameCount;
     NSUInteger totalEncodedBytes;
+    CFTimeInterval totalEncodeSubmitSeconds;
 } FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
@@ -352,6 +353,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   NSUInteger intervalEncodeErrors = current.encodeErrorCount - last.encodeErrorCount;
   NSUInteger intervalTornFrames = current.tornFrameCount - last.tornFrameCount;
   NSUInteger intervalEncodedBytes = current.totalEncodedBytes - last.totalEncodedBytes;
+  CFTimeInterval intervalEncodeSubmitSeconds = current.totalEncodeSubmitSeconds - last.totalEncodeSubmitSeconds;
   self.lastLoggedStats = current;
 
   CFTimeInterval totalElapsed = now - self.statsStartTime;
@@ -359,24 +361,28 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   double intervalFps = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
   double intervalBitrateKbps = intervalDuration > 0 ? (double)intervalEncodedBytes * 8.0 / 1000.0 / intervalDuration : 0;
   double totalBitrateKbps = totalElapsed > 0 ? (double)current.totalEncodedBytes * 8.0 / 1000.0 / totalElapsed : 0;
+  double intervalAvgEncodeMs = intervalCallbacks > 0 ? (intervalEncodeSubmitSeconds / (double)intervalCallbacks) * 1000.0 : 0;
+  double totalAvgEncodeMs = current.callbackCount > 0 ? (current.totalEncodeSubmitSeconds / (double)current.callbackCount) * 1000.0 : 0;
 
   [self.logger.info logFormat:
-    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+    @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)intervalCallbacks,
     intervalDuration,
     intervalFps,
     intervalBitrateKbps,
+    intervalAvgEncodeMs,
     (unsigned long)intervalWritten,
     (unsigned long)intervalDropped,
     (unsigned long)intervalWriteFailures,
     (unsigned long)intervalEncodeErrors,
     (unsigned long)intervalTornFrames];
   [self.logger.info logFormat:
-    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+    @"Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
     (unsigned long)current.callbackCount,
     totalElapsed,
     totalFps,
     totalBitrateKbps,
+    totalAvgEncodeMs,
     (unsigned long)current.writeCount,
     (unsigned long)current.dropCount,
     (unsigned long)current.writeFailureCount,
@@ -566,6 +572,8 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
 
+  CFAbsoluteTime encodeStart = CFAbsoluteTimeGetCurrent();
+
   // Convert BGRA→NV12 (and scale if needed) in a single VTPixelTransferSession call.
   // VTCompressionSession's native input format is NV12; feeding it NV12 directly
   // avoids an internal conversion pass. When scaleFactor is set, the NV12 pool is
@@ -618,6 +626,15 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     &flags
   );
   CVPixelBufferUnlockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
+
+  // Track time spent in NV12 conversion + encode submission.
+  {
+    CFAbsoluteTime encodeEnd = CFAbsoluteTimeGetCurrent();
+    FBVideoEncoderStats s = self.stats;
+    s.totalEncodeSubmitSeconds += (encodeEnd - encodeStart);
+    self.stats = s;
+  }
+
   if (surface) {
     uint32_t seedAfter = IOSurfaceGetSeed(surface);
     if (seedAfter != seedBefore) {
