@@ -510,7 +510,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
       describeFormat:@"No compression session"]
       failBool:error];
   }
-  
+
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
   CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
@@ -525,13 +525,19 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
       [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
     }
   }
-  
+
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
   NSDictionary *frameProperties = nil;
   if (frameNumber == 0) {
     frameProperties = @{(__bridge NSString *)kVTEncodeFrameOptionKey_ForceKeyFrame: @YES};
   }
+  // Lock the source buffer for read-only access during the encode call. For
+  // IOSurface-backed buffers this prevents the simulator from writing while
+  // VTCompressionSession reads the pixel data, avoiding screen tearing.
+  // VTCompressionSessionEncodeFrame captures the pixel data before returning
+  // so we can unlock immediately after.
+  CVPixelBufferLockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
   OSStatus status = VTCompressionSessionEncodeFrame(
     compressionSession,
     bufferToWrite,
@@ -541,6 +547,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     (__bridge_retained void * _Nullable)(sourceFrameRef),
     &flags
   );
+  CVPixelBufferUnlockBaseAddress(bufferToWrite, kCVPixelBufferLock_ReadOnly);
   if (status != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to compress %d", status]
