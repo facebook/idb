@@ -57,6 +57,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
 @property (nonatomic, assign, nullable, readwrite) VTCompressionSessionRef compressionSession;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef scaledPixelBufferPoolRef;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef nv12PixelBufferPoolRef;
 @property (nonatomic, assign, nullable, readwrite) VTPixelTransferSessionRef pixelTransferSession;
 @property (nonatomic, assign, readonly) CMVideoCodecType videoCodec;
 @property (nonatomic, assign, readonly) VTCompressionOutputCallback compressorCallback;
@@ -93,27 +94,45 @@ typedef struct {
 static CVPixelBufferPoolRef createScaledPixelBufferPool(CVPixelBufferRef sourceBuffer, NSNumber *scaleFactor) {
   size_t sourceWidth = CVPixelBufferGetWidth(sourceBuffer);
   size_t sourceHeight = CVPixelBufferGetHeight(sourceBuffer);
-  
+
   size_t destinationWidth = (size_t) floor(scaleFactor.doubleValue * (double)sourceWidth);
   size_t destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double) sourceHeight);
-  
+
   NSDictionary<NSString *, id> *pixelBufferAttributes = @{
     (NSString *) kCVPixelBufferWidthKey: @(destinationWidth),
     (NSString *) kCVPixelBufferHeightKey: @(destinationHeight),
     (NSString *) kCVPixelBufferPixelFormatTypeKey: @(CVPixelBufferGetPixelFormatType(sourceBuffer)),
     (NSString *) kCVPixelBufferIOSurfacePropertiesKey: @{},
   };
-  
+
   NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
     (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(4),
     (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(16),
   };
-  
-  
+
+
   CVPixelBufferPoolRef scaledPixelBufferPool;
   CVPixelBufferPoolCreate(nil, (__bridge CFDictionaryRef) pixelBufferPoolAttributes, (__bridge CFDictionaryRef) pixelBufferAttributes, &scaledPixelBufferPool);
-  
+
   return scaledPixelBufferPool;
+}
+
+static CVPixelBufferPoolRef createNV12PixelBufferPool(size_t width, size_t height) {
+  NSDictionary<NSString *, id> *pixelBufferAttributes = @{
+    (NSString *) kCVPixelBufferWidthKey: @(width),
+    (NSString *) kCVPixelBufferHeightKey: @(height),
+    (NSString *) kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
+    (NSString *) kCVPixelBufferIOSurfacePropertiesKey: @{},
+  };
+
+  NSDictionary<NSString *, id> *pixelBufferPoolAttributes = @{
+    (NSString *) kCVPixelBufferPoolMinimumBufferCountKey: @(4),
+    (NSString *) kCVPixelBufferPoolAllocationThresholdKey: @(16),
+  };
+
+  CVPixelBufferPoolRef pool;
+  CVPixelBufferPoolCreate(nil, (__bridge CFDictionaryRef) pixelBufferPoolAttributes, (__bridge CFDictionaryRef) pixelBufferAttributes, &pool);
+  return pool;
 }
 
 static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
@@ -452,21 +471,32 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   size_t destinationHeight = sourceHeight;
   NSNumber *scaleFactor = self.configuration.scaleFactor;
   if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
-    CVPixelBufferPoolRef scaledPixelBufferPool = createScaledPixelBufferPool(pixelBuffer, scaleFactor);
-    CFDictionaryRef bufferPoolPixelAttributes = CVPixelBufferPoolGetPixelBufferAttributes(scaledPixelBufferPool);
-    NSNumber *scaledBufferWidth = (NSNumber *) CFDictionaryGetValue(bufferPoolPixelAttributes, kCVPixelBufferWidthKey);
-    NSNumber *scaledBufferHeight = (NSNumber *) CFDictionaryGetValue(bufferPoolPixelAttributes, kCVPixelBufferHeightKey);
-    destinationWidth = (size_t)scaledBufferWidth.intValue;
-    destinationHeight = (size_t)scaledBufferHeight.intValue;
-    self.scaledPixelBufferPoolRef = scaledPixelBufferPool;
-    VTPixelTransferSessionRef transferSession;
-    OSStatus transferStatus = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
-    if (transferStatus != noErr) {
-      return [[FBSimulatorError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)transferStatus] failBool:error];
-    }
-    self.pixelTransferSession = transferSession;
-    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu (GPU via VTPixelTransferSession)", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
+    destinationWidth = (size_t) floor(scaleFactor.doubleValue * (double)sourceWidth);
+    destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double)sourceHeight);
+    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
   }
+
+  // Always create a VTPixelTransferSession to convert BGRA→NV12 (and scale if needed).
+  // VTCompressionSession's native input format is NV12 (420v). Feeding it BGRA causes
+  // an internal conversion pass. By converting explicitly we let VT pre-allocate its
+  // pipeline via sourceImageBufferAttributes and avoid the implicit conversion.
+  VTPixelTransferSessionRef transferSession;
+  OSStatus transferStatus = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
+  if (transferStatus != noErr) {
+    return [[FBSimulatorError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)transferStatus] failBool:error];
+  }
+  self.pixelTransferSession = transferSession;
+  CVPixelBufferPoolRef nv12Pool = createNV12PixelBufferPool(destinationWidth, destinationHeight);
+  self.nv12PixelBufferPoolRef = nv12Pool;
+  [self.logger.info logFormat:@"Created BGRA→NV12 conversion pipeline at w=%zu/h=%zu (GPU via VTPixelTransferSession)", destinationWidth, destinationHeight];
+
+  // Tell VTCompressionSession that it will receive NV12 IOSurface-backed buffers.
+  NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
+    (NSString *) kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
+    (NSString *) kCVPixelBufferWidthKey: @(destinationWidth),
+    (NSString *) kCVPixelBufferHeightKey: @(destinationHeight),
+    (NSString *) kCVPixelBufferIOSurfacePropertiesKey: @{},
+  };
 
   VTCompressionSessionRef compressionSession = NULL;
   OSStatus status = VTCompressionSessionCreate(
@@ -475,7 +505,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     (int32_t) destinationHeight,
     self.videoCodec,
     (__bridge CFDictionaryRef) encoderSpecification,
-    nil,
+    (__bridge CFDictionaryRef) sourceImageBufferAttributes,
     nil, // Compressed Data Allocator
     self.compressorCallback,
     (__bridge void * _Nullable)(self), // Callback Ref.
@@ -520,6 +550,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     self.pixelTransferSession = nil;
   }
   CVPixelBufferPoolRelease(self.scaledPixelBufferPoolRef);
+  CVPixelBufferPoolRelease(self.nv12PixelBufferPoolRef);
   return YES;
 }
 
@@ -534,21 +565,27 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   FBVideoCompressorCallbackSourceFrame *sourceFrameRef = [[FBVideoCompressorCallbackSourceFrame alloc] initWithPixelBuffer:nil frameNumber:frameNumber];
-  CVPixelBufferPoolRef bufferPool = self.scaledPixelBufferPoolRef;
-  if (bufferPool != nil && self.pixelTransferSession != nil) {
-    CVPixelBufferRef resizedBuffer;
-    CVReturn returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer);
+
+  // Convert BGRA→NV12 (and scale if needed) in a single VTPixelTransferSession call.
+  // VTCompressionSession's native input format is NV12; feeding it NV12 directly
+  // avoids an internal conversion pass. When scaleFactor is set, the NV12 pool is
+  // already sized to the destination dimensions, so scaling + format conversion
+  // happen in one GPU pass.
+  CVPixelBufferPoolRef nv12Pool = self.nv12PixelBufferPoolRef;
+  if (nv12Pool != nil && self.pixelTransferSession != nil) {
+    CVPixelBufferRef nv12Buffer;
+    CVReturn returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, nv12Pool, &nv12Buffer);
     if (returnStatus == kCVReturnSuccess) {
-      OSStatus transferStatus = VTPixelTransferSessionTransferImage(self.pixelTransferSession, pixelBuffer, resizedBuffer);
+      OSStatus transferStatus = VTPixelTransferSessionTransferImage(self.pixelTransferSession, pixelBuffer, nv12Buffer);
       if (transferStatus == noErr) {
-        bufferToWrite = resizedBuffer;
-        sourceFrameRef.pixelBuffer = resizedBuffer;
+        bufferToWrite = nv12Buffer;
+        sourceFrameRef.pixelBuffer = nv12Buffer;
       } else {
-        [self.logger logFormat:@"VTPixelTransferSession failed: %d", (int)transferStatus];
-        CVPixelBufferRelease(resizedBuffer);
+        [self.logger logFormat:@"VTPixelTransferSession BGRA→NV12 failed: %d — falling back to BGRA input", (int)transferStatus];
+        CVPixelBufferRelease(nv12Buffer);
       }
     } else {
-      [self.logger logFormat:@"Failed to get a pixel buffer from the pool: %d", returnStatus];
+      [self.logger logFormat:@"Failed to get a pixel buffer from the NV12 pool: %d", returnStatus];
     }
   }
 
