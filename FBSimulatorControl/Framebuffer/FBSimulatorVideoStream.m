@@ -33,7 +33,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
 - (BOOL)tearDown:(NSError **)error;
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error;
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error;
 
 @end
 
@@ -254,7 +254,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error
 {
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   CVPixelBufferRef toFree = nil;
@@ -506,7 +506,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   return YES;
 }
 
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame error:(NSError **)error
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error
 {
   VTCompressionSessionRef compressionSession = self.compressionSession;
   if (!compressionSession) {
@@ -532,6 +532,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
   VTEncodeInfoFlags flags;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
+  CMTime duration = frameDuration > 0 ? CMTimeMakeWithSeconds(frameDuration, NSEC_PER_SEC) : kCMTimeInvalid;
   NSDictionary *frameProperties = nil;
   if (frameNumber == 0) {
     frameProperties = @{(__bridge NSString *)kVTEncodeFrameOptionKey_ForceKeyFrame: @YES};
@@ -552,7 +553,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     compressionSession,
     bufferToWrite,
     time,
-    kCMTimeInvalid,  // Frame duration
+    duration,
     (__bridge CFDictionaryRef)frameProperties,  // Frame properties
     (__bridge_retained void * _Nullable)(sourceFrameRef),
     &flags
@@ -600,6 +601,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
 @property (nonatomic, assign, readwrite) CFTimeInterval timeAtFirstFrame;
+@property (nonatomic, assign, readwrite) CFTimeInterval timeAtLastPush;
 @property (nonatomic, assign, readwrite) NSUInteger frameNumber;
 @property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 @property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
@@ -796,15 +798,18 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   if (!checkConsumerBufferLimit(consumer, self.logger)) {
     return;
   }
-  
+
+  CFTimeInterval now = CFAbsoluteTimeGetCurrent();
   NSUInteger frameNumber = self.frameNumber;
   if (frameNumber == 0) {
-    self.timeAtFirstFrame = CFAbsoluteTimeGetCurrent();
+    self.timeAtFirstFrame = now;
   }
   CFTimeInterval timeAtFirstFrame = self.timeAtFirstFrame;
-  
+  CFTimeInterval frameDuration = self.timeAtLastPush > 0 ? (now - self.timeAtLastPush) : 0;
+  self.timeAtLastPush = now;
+
   // Push the Frame
-  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame error:nil];
+  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration error:nil];
 
   // Increment frame counter
   self.frameNumber = frameNumber + 1;
