@@ -90,7 +90,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
   _encoding = encoding;
   _framesPerSecond = framesPerSecond;
-  _rateControl = [rateControl copy] ?: [FBVideoStreamRateControl quality:@0.2];
+  _rateControl = [rateControl copy] ?: [FBVideoStreamRateControl quality:@0.75];
   _scaleFactor = scaleFactor;
   _keyFrameRate = keyFrameRate ?: @1.0;
 

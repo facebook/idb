@@ -23,9 +23,9 @@
     scaleFactor:nil
     keyFrameRate:nil];
 
-  // Default: constant quality at 0.2
+  // Default: constant quality at 0.75
   XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeConstantQuality);
-  XCTAssertEqualObjects(config.rateControl.value, @0.2);
+  XCTAssertEqualObjects(config.rateControl.value, @0.75);
 }
 
 // NOTE: Default changes to @1.0 in "MPEG-TS container format" commit.
