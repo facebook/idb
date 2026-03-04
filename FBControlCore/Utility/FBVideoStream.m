@@ -27,20 +27,8 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
   return YES;
 }
 
-static NSData *AnnexBNALUStartCodeData(void)
-{
-  // https://www.programmersought.com/article/3901815022/
-  // Annex-B is simpler as it is purely based on a start code to denote the start of the NALU.
-  static NSData *data;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    const uint8_t headerCode[] = {0x00, 0x00, 0x00, 0x01};
-    data = [NSData dataWithBytes:headerCode length:sizeof(headerCode)];
-  });
-  return data;
-}
-
 static const int AVCCHeaderLength = 4;
+static const uint8_t AnnexBStartCode[] = {0x00, 0x00, 0x00, 0x01};
 
 BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
@@ -49,8 +37,6 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
       describeFormat:@"Sample Buffer is not ready"]
       failBool:error];
   }
-  NSData *headerData = AnnexBNALUStartCodeData();
-  NSMutableData *consumableData = [[NSMutableData alloc] init];
 
   bool isKeyFrame = false;
   CFArrayRef attachments =
@@ -58,44 +44,6 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
   if (CFArrayGetCount(attachments)) {
     CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
     isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
-  }
-
-  if (isKeyFrame) {
-    CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
-    size_t parameterSetCount;
-    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      format,
-      0,
-      NULL,
-      NULL,
-      &parameterSetCount,
-      NULL
-    );
-    if (status != noErr) {
-      return [[FBControlCoreError
-        describeFormat:@"Failed to get H264 parameter set count %d", status]
-        failBool:error];
-    }
-    for (size_t i = 0; i < parameterSetCount; i++) {
-      size_t paramSize;
-      const uint8_t *parameterSet;
-      status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-        format,
-        i,
-        &parameterSet,
-        &paramSize,
-        NULL,
-        NULL
-      );
-      if (status != noErr) {
-        return [[FBControlCoreError
-          describeFormat:@"Failed to get H264 parameter set at index %zu: %d", i, status]
-          failBool:error];
-      }
-      NSData *paramData = [NSData dataWithBytes:parameterSet length:paramSize];
-      [consumableData appendData:headerData];
-      [consumableData appendData:paramData];
-    }
   }
 
   // Get the underlying data buffer.
@@ -115,36 +63,56 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
       failBool:error];
   }
 
-  // Enumerate the data buffer
-  size_t dataOffset = 0;
-  while (dataOffset < dataLength - AVCCHeaderLength) {
-    // Write start code to the elementary stream
-    [consumableData appendData:headerData];
-
-    // Get our current position in the buffer
-    void *currentDataPointer = dataPointer + dataOffset;
-
-    // Get the length of the NAL Unit, this is contained in the current offset.
-    // This will tell us how many bytes to write in the current NAL unit, contained in the buffer.
+  // Convert AVCC to Annex-B in-place.
+  // AVCC uses 4-byte big-endian NAL length prefixes; Annex-B uses 4-byte start codes (00 00 00 01).
+  // Both are exactly AVCCHeaderLength bytes, so we overwrite in-place without changing data size.
+  size_t offset = 0;
+  while (offset < dataLength - AVCCHeaderLength) {
     uint32_t nalLength = 0;
-    memcpy(&nalLength, currentDataPointer, AVCCHeaderLength);
-    // Convert the length value from Big-endian to Little-endian.
+    memcpy(&nalLength, dataPointer + offset, AVCCHeaderLength);
     nalLength = CFSwapInt32BigToHost(nalLength);
-
-    // Write the NAL unit without the AVCC length header to the elementary stream
-    void *nalUnitPointer = currentDataPointer + AVCCHeaderLength;
-    if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
-      NSData *nalUnitData = [NSData dataWithBytesNoCopy:nalUnitPointer length:nalLength freeWhenDone:NO];
-      [consumableData appendData:nalUnitData];
-    } else {
-      NSData *nalUnitData = [NSData dataWithBytes:nalUnitPointer length:nalLength];
-      [consumableData appendData:nalUnitData];
-    }
-
-    // Increment the offset for the next iteration.
-    dataOffset += AVCCHeaderLength + nalLength;
+    memcpy(dataPointer + offset, AnnexBStartCode, AVCCHeaderLength);
+    offset += AVCCHeaderLength + nalLength;
   }
-  [consumer consumeData:consumableData];
+
+  if (isKeyFrame) {
+    // Keyframes: prepend parameter sets (SPS, PPS), then append the converted block buffer.
+    NSMutableData *consumableData = [[NSMutableData alloc] init];
+    CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
+    size_t parameterSetCount;
+    status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+      format, 0, NULL, NULL, &parameterSetCount, NULL
+    );
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to get H264 parameter set count %d", status]
+        failBool:error];
+    }
+    for (size_t i = 0; i < parameterSetCount; i++) {
+      size_t paramSize;
+      const uint8_t *parameterSet;
+      status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+        format, i, &parameterSet, &paramSize, NULL, NULL
+      );
+      if (status != noErr) {
+        return [[FBControlCoreError
+          describeFormat:@"Failed to get H264 parameter set at index %zu: %d", i, status]
+          failBool:error];
+      }
+      [consumableData appendBytes:AnnexBStartCode length:AVCCHeaderLength];
+      [consumableData appendBytes:parameterSet length:paramSize];
+    }
+    // Append the entire block buffer (already converted to Annex-B) in one operation.
+    [consumableData appendBytes:dataPointer length:dataLength];
+    [consumer consumeData:consumableData];
+  } else {
+    // Non-keyframes: the block buffer is already converted, send directly.
+    if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
+      [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:dataLength freeWhenDone:NO]];
+    } else {
+      [consumer consumeData:[NSData dataWithBytes:dataPointer length:dataLength]];
+    }
+  }
   return YES;
 }
 
