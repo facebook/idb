@@ -76,8 +76,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
   }
 
   if (isKeyFrame) {
-    // Keyframes: prepend parameter sets (SPS, PPS), then append the converted block buffer.
-    NSMutableData *consumableData = [[NSMutableData alloc] init];
+    // Keyframes: send parameter sets (SPS, PPS) first, then the converted block buffer.
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     size_t parameterSetCount;
     status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
@@ -99,19 +98,18 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
           describeFormat:@"Failed to get H264 parameter set at index %zu: %d", i, status]
           failBool:error];
       }
-      [consumableData appendBytes:AnnexBStartCode length:AVCCHeaderLength];
-      [consumableData appendBytes:parameterSet length:paramSize];
+      uint8_t paramHeader[AVCCHeaderLength + paramSize];
+      memcpy(paramHeader, AnnexBStartCode, AVCCHeaderLength);
+      memcpy(paramHeader + AVCCHeaderLength, parameterSet, paramSize);
+      [consumer consumeData:[NSData dataWithBytes:paramHeader length:sizeof(paramHeader)]];
     }
-    // Append the entire block buffer (already converted to Annex-B) in one operation.
-    [consumableData appendBytes:dataPointer length:dataLength];
-    [consumer consumeData:consumableData];
+  }
+
+  // Send the converted block buffer data.
+  if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
+    [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:dataLength freeWhenDone:NO]];
   } else {
-    // Non-keyframes: the block buffer is already converted, send directly.
-    if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
-      [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:dataLength freeWhenDone:NO]];
-    } else {
-      [consumer consumeData:[NSData dataWithBytes:dataPointer length:dataLength]];
-    }
+    [consumer consumeData:[NSData dataWithBytes:dataPointer length:dataLength]];
   }
   return YES;
 }
