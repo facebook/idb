@@ -17,14 +17,13 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_RealTime], @YES);
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_AllowFrameReordering], @NO);
-  // No avgBitrate set: quality mode with config default (0.2)
+  // No rateControl set: quality mode with default 0.2
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.2);
   XCTAssertNil(props[(NSString *)kVTCompressionPropertyKey_AverageBitRate]);
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration], @1.0);
@@ -35,9 +34,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingMJPEG
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *callerProps = @{@"CustomKey": @42};
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:callerProps];
@@ -51,9 +49,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingMJPEG
     framesPerSecond:nil
-    compressionQuality:@0.5
+    rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.5);
@@ -64,9 +61,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingMinicap
     framesPerSecond:nil
-    compressionQuality:@0.5
+    rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.5);
@@ -77,9 +73,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:@0.5
+    rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_Quality], @0.5);
@@ -92,9 +87,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertNotNil(props[(NSString *)kVTCompressionPropertyKey_ProfileLevel]);
@@ -108,9 +102,8 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingMJPEG
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:[FBVideoStreamRateControl bitrate:@500000]
     scaleFactor:nil
-    avgBitrate:@500000
     keyFrameRate:nil];
   NSDictionary *props = [FBSimulatorVideoStream compressionSessionPropertiesForConfiguration:config callerProperties:@{}];
   XCTAssertEqualObjects(props[(NSString *)kVTCompressionPropertyKey_AverageBitRate], @500000);

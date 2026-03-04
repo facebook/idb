@@ -19,6 +19,46 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 
 /**
+ The rate-control mode for VTCompression.
+ */
+typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
+  FBVideoStreamRateControlModeConstantQuality,
+  FBVideoStreamRateControlModeAverageBitrate,
+};
+
+/**
+ A tagged union representing VTCompression rate control.
+ Either constant-quality (0-1) or average-bitrate (bytes/sec).
+ */
+@interface FBVideoStreamRateControl : NSObject <NSCopying>
+
+/**
+ Create a constant-quality rate control.
+
+ @param quality the quality value between 0 and 1.
+ */
++ (instancetype)quality:(NSNumber *)quality;
+
+/**
+ Create an average-bitrate rate control.
+
+ @param bitrate the average bitrate in bytes per second.
+ */
++ (instancetype)bitrate:(NSNumber *)bitrate;
+
+/**
+ The rate-control mode.
+ */
+@property (nonatomic, assign, readonly) FBVideoStreamRateControlMode mode;
+
+/**
+ The value: quality (0-1) for constant-quality, bitrate (bytes/sec) for average-bitrate.
+ */
+@property (nonatomic, copy, readonly) NSNumber *value;
+
+@end
+
+/**
  A Configuration Object for a Video Stream.
  */
 @interface FBVideoStreamConfiguration : NSObject <NSCopying>
@@ -28,20 +68,16 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 
  @param encoding the stream type to use.
  @param framesPerSecond the number of frames per second for an eager stream. nil if a lazy stream.
- @param compressionQuality the compression quality to use.
+ @param rateControl the rate-control mode for VTCompression. nil for default (constant quality 0.2).
  @param scaleFactor the scale factor, between 0-1. nil for no scaling.
+ @param keyFrameRate key frame interval in seconds. nil for default (1s).
  */
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate keyFrameRate:(nullable NSNumber *)keyFrameRate;
+- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond rateControl:(nullable FBVideoStreamRateControl *)rateControl scaleFactor:(nullable NSNumber *)scaleFactor keyFrameRate:(nullable NSNumber *)keyFrameRate;
 
 /**
  The encoding of the stream.
  */
 @property (nonatomic, assign, readonly) FBVideoStreamEncoding encoding;
-
-/**
- The compression quality to use.
- */
-@property (nonatomic, copy, readonly) NSNumber *compressionQuality;
 
 /**
  The number of frames per second to use if using an eager stream.
@@ -50,14 +86,15 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 @property (nonatomic, copy, nullable, readonly) NSNumber *framesPerSecond;
 
 /**
+ The rate-control mode for VTCompression.
+ Always non-nil; defaults to constant-quality at 0.2 if not provided.
+ */
+@property (nonatomic, copy, readonly) FBVideoStreamRateControl *rateControl;
+
+/**
  The scale factor between 0-1. nil for no scaling.
  */
 @property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
-
-/**
- Average bitrate.
- */
-@property (nonatomic, copy, nullable, readonly) NSNumber *avgBitrate;
 
 /**
  Send a key frame every N seconds.

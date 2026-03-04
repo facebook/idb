@@ -73,14 +73,22 @@ struct VideoStreamMethodHandler {
     }
 
     let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil
-    let avgBitrate = start.avgBitrate > 0 ? NSNumber(value: start.avgBitrate) : nil
     let encoding = try streamEncoding(from: start.format)
+
+    let rateControl: FBVideoStreamRateControl?
+    if start.avgBitrate > 0 {
+      rateControl = .bitrate(NSNumber(value: start.avgBitrate))
+    } else if start.compressionQuality > 0 {
+      rateControl = .quality(NSNumber(value: start.compressionQuality))
+    } else {
+      rateControl = nil
+    }
+
     let config = FBVideoStreamConfiguration(
       encoding: encoding,
       framesPerSecond: framesPerSecond,
-      compressionQuality: .init(value: start.compressionQuality),
+      rateControl: rateControl,
       scaleFactor: .init(value: start.scaleFactor),
-      avgBitrate: avgBitrate,
       keyFrameRate: .init(value: start.keyFrameRate))
 
     let videoStream = try await BridgeFuture.value(target.createStream(with: config))

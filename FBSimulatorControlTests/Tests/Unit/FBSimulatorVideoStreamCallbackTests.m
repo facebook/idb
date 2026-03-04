@@ -152,9 +152,8 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:@30
-    compressionQuality:@0.2
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:@10.0];
   id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]

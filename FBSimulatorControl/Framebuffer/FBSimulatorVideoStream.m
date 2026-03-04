@@ -899,12 +899,12 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     (NSString *) kVTCompressionPropertyKey_MaxFrameDelayCount: @0,
   }];
 
-  if (configuration.avgBitrate != nil) {
+  if (configuration.rateControl.mode == FBVideoStreamRateControlModeAverageBitrate) {
     // Explicit bitrate: AverageBitRate is in bits/sec
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AverageBitRate] = configuration.avgBitrate;
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AverageBitRate] = configuration.rateControl.value;
   } else {
-    // No explicit bitrate: use constant-quality mode
-    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.compressionQuality;
+    // Constant-quality mode
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_Quality] = configuration.rateControl.value;
   }
 
   [derivedCompressionSessionProperties addEntriesFromDictionary:callerProperties];

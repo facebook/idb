@@ -14,17 +14,18 @@
 
 @implementation FBVideoStreamConfigurationTests
 
-- (void)testDefaultCompressionQuality
+- (void)testDefaultRateControl
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
 
-  XCTAssertEqualObjects(config.compressionQuality, @0.2);
+  // Default: constant quality at 0.2
+  XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeConstantQuality);
+  XCTAssertEqualObjects(config.rateControl.value, @0.2);
 }
 
 // NOTE: Default changes to @1.0 in "MPEG-TS container format" commit.
@@ -33,43 +34,56 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
 
   XCTAssertEqualObjects(config.keyFrameRate, @1.0);
 }
 
-- (void)testExplicitValuesPreserved
+- (void)testExplicitQualityPreserved
 {
+  FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.7];
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:@0.5
+    rateControl:rc
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:@5.0];
 
-  XCTAssertEqualObjects(config.compressionQuality, @0.5);
+  XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeConstantQuality);
+  XCTAssertEqualObjects(config.rateControl.value, @0.7);
   XCTAssertEqualObjects(config.keyFrameRate, @5.0);
+}
+
+- (void)testExplicitBitratePreserved
+{
+  FBVideoStreamRateControl *rc = [FBVideoStreamRateControl bitrate:@500000];
+  FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
+    initWithEncoding:FBVideoStreamEncodingH264
+    framesPerSecond:nil
+    rateControl:rc
+    scaleFactor:nil
+    keyFrameRate:nil];
+
+  XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeAverageBitrate);
+  XCTAssertEqualObjects(config.rateControl.value, @500000);
 }
 
 - (void)testConfigurationEquality
 {
+  FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.5];
   FBVideoStreamConfiguration *a = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:@30
-    compressionQuality:@0.5
+    rateControl:rc
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:@5.0];
   FBVideoStreamConfiguration *b = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:@30
-    compressionQuality:@0.5
+    rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:@5.0];
 
   XCTAssertEqualObjects(a, b);
@@ -80,14 +94,23 @@
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
     initWithEncoding:FBVideoStreamEncodingH264
     framesPerSecond:nil
-    compressionQuality:nil
+    rateControl:nil
     scaleFactor:nil
-    avgBitrate:nil
     keyFrameRate:nil];
 
   FBVideoStreamConfiguration *copy = [config copy];
   // Immutable object returns self on copy
   XCTAssertEqual(config, copy);
+}
+
+- (void)testRateControlEquality
+{
+  FBVideoStreamRateControl *a = [FBVideoStreamRateControl quality:@0.5];
+  FBVideoStreamRateControl *b = [FBVideoStreamRateControl quality:@0.5];
+  FBVideoStreamRateControl *c = [FBVideoStreamRateControl bitrate:@500000];
+
+  XCTAssertEqualObjects(a, b);
+  XCTAssertNotEqualObjects(a, c);
 }
 
 @end
