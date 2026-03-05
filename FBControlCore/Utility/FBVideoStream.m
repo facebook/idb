@@ -58,24 +58,8 @@ static BOOL WriteBlockBufferToConsumer(CMBlockBufferRef blockBuffer, id<FBDataCo
   return YES;
 }
 
-BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+static BOOL ConvertAVCCToAnnexBInPlace(CMSampleBufferRef sampleBuffer, NSError **error)
 {
-  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
-    return [[FBControlCoreError
-      describeFormat:@"Sample Buffer is not ready"]
-      failBool:error];
-  }
-
-  bool isKeyFrame = false;
-  CFArrayRef attachments =
-      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
-  if (CFArrayGetCount(attachments)) {
-    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
-    isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
-  }
-
-  // Convert AVCC length-prefixed NAL units to Annex-B start-code format.
-  // Uses CMBlockBuffer APIs to safely handle non-contiguous or read-only backing memory.
   CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   size_t dataLength = CMBlockBufferGetDataLength(dataBuffer);
 
@@ -100,28 +84,53 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     }
     offset += AVCCHeaderLength + nalLength;
   }
+  return YES;
+}
+
+// H264 and HEVC parameter set getters have identical signatures.
+typedef OSStatus (*FBVideoParameterSetGetter)(CMFormatDescriptionRef, size_t, const uint8_t * _Nullable *, size_t *, size_t *, int *);
+
+static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVideoParameterSetGetter paramSetGetter, NSString *codecName, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
+    return [[FBControlCoreError
+      describeFormat:@"Sample Buffer is not ready"]
+      failBool:error];
+  }
+
+  bool isKeyFrame = false;
+  CFArrayRef attachments =
+      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  if (CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
+  }
+
+  // Convert AVCC length-prefixed NAL units to Annex-B start-code format in place.
+  if (!ConvertAVCCToAnnexBInPlace(sampleBuffer, error)) {
+    return NO;
+  }
+
+  // Get the block buffer for parameter sets and consumer write.
+  CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
 
   if (isKeyFrame) {
-    // Keyframes: send parameter sets (SPS, PPS) first, then the converted block buffer.
+    // Keyframes: send parameter sets (SPS, PPS / VPS, SPS, PPS) first, then the converted block buffer.
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     size_t parameterSetCount;
-    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      format, 0, NULL, NULL, &parameterSetCount, NULL
-    );
+    OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to get H264 parameter set count %d", status]
+        describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
         failBool:error];
     }
     for (size_t i = 0; i < parameterSetCount; i++) {
       size_t paramSize;
       const uint8_t *parameterSet;
-      status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-        format, i, &parameterSet, &paramSize, NULL, NULL
-      );
+      status = paramSetGetter(format, i, &parameterSet, &paramSize, NULL, NULL);
       if (status != noErr) {
         return [[FBControlCoreError
-          describeFormat:@"Failed to get H264 parameter set at index %zu: %d", i, status]
+          describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
           failBool:error];
       }
       uint8_t paramHeader[AVCCHeaderLength + paramSize];
@@ -133,6 +142,11 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
 
   // Send the converted block buffer data.
   return WriteBlockBufferToConsumer(dataBuffer, consumer, error);
+}
+
+BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, @"H264", consumer, logger, error);
 }
 
 BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
