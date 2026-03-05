@@ -30,6 +30,34 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
 static const int AVCCHeaderLength = 4;
 static const uint8_t AnnexBStartCode[] = {0x00, 0x00, 0x00, 0x01};
 
+/**
+ Write the contents of a CMBlockBuffer to a data consumer, iterating contiguous segments.
+ Sync consumers receive zero-copy NSData backed by the buffer's memory; async consumers receive a copy.
+ */
+static BOOL WriteBlockBufferToConsumer(CMBlockBufferRef blockBuffer, id<FBDataConsumer> consumer, NSError **error)
+{
+  size_t dataLength = CMBlockBufferGetDataLength(blockBuffer);
+  BOOL isSyncConsumer = [consumer conformsToProtocol:@protocol(FBDataConsumerSync)];
+  size_t offset = 0;
+  while (offset < dataLength) {
+    char *dataPointer;
+    size_t lengthAtOffset;
+    OSStatus status = CMBlockBufferGetDataPointer(blockBuffer, offset, &lengthAtOffset, NULL, &dataPointer);
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to get Data Pointer at offset %zu: %d", offset, status]
+        failBool:error];
+    }
+    if (isSyncConsumer) {
+      [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO]];
+    } else {
+      [consumer consumeData:[NSData dataWithBytes:dataPointer length:lengthAtOffset]];
+    }
+    offset += lengthAtOffset;
+  }
+  return YES;
+}
+
 BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
@@ -103,60 +131,13 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     }
   }
 
-  // Send the converted block buffer data, iterating contiguous segments.
-  BOOL isSyncConsumer = [consumer conformsToProtocol:@protocol(FBDataConsumerSync)];
-  size_t sendOffset = 0;
-  while (sendOffset < dataLength) {
-    char *dataPointer;
-    size_t lengthAtOffset;
-    OSStatus status = CMBlockBufferGetDataPointer(dataBuffer, sendOffset, &lengthAtOffset, NULL, &dataPointer);
-    if (status != noErr) {
-      return [[FBControlCoreError
-        describeFormat:@"Failed to get Data Pointer %d", status]
-        failBool:error];
-    }
-    if (isSyncConsumer) {
-      [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO]];
-    } else {
-      [consumer consumeData:[NSData dataWithBytes:dataPointer length:lengthAtOffset]];
-    }
-    sendOffset += lengthAtOffset;
-  }
-  return YES;
+  // Send the converted block buffer data.
+  return WriteBlockBufferToConsumer(dataBuffer, consumer, error);
 }
 
 BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
-  // Enumerate the data buffer
-  size_t dataLength = CMBlockBufferGetDataLength(jpegDataBuffer);
-  size_t offset = 0;
-  while (offset < dataLength) {
-    char *dataPointer;
-    size_t lengthAtOffset;
-    OSStatus status = CMBlockBufferGetDataPointer(
-      jpegDataBuffer,
-      offset,
-      &lengthAtOffset,
-      NULL,
-      &dataPointer
-    );
-    if (status != noErr) {
-      return [[FBControlCoreError
-        describeFormat:@"Failed to get Data Pointer %d", status]
-        failBool:error];
-    }
-    if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
-      NSData *data = [NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO];
-      [consumer consumeData:data];
-    } else {
-      NSData *data = [NSData dataWithBytes:dataPointer length:lengthAtOffset];
-      [consumer consumeData:data];
-    }
-
-    // Increment the offset for the next iteration.
-    offset += lengthAtOffset;
-  }
-  return YES;
+  return WriteBlockBufferToConsumer(jpegDataBuffer, consumer, error);
 }
 
 BOOL WriteJPEGDataToMinicapStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
