@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <IOSurface/IOSurface.h>
 #import <VideoToolbox/VideoToolbox.h>
+#import <mach/mach_time.h>
 
 #import "FBSimulatorError.h"
 
@@ -1072,38 +1073,72 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   };
 }
 
-// nanosleep can be off up to 8x when invoked for very precise time intervals
-// to minimize the drift run a polling loop with shorter sleep interval
-// returning when total elapsed time reaches intended sleep interval
-- (void)sleep:(uint64_t)timeIntervalNano
-{
-  const uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-  const long sleepInterval = (long)(timeIntervalNano/8);
-  const struct timespec sleepTime = {
-     .tv_sec = 0,
-     .tv_nsec = sleepInterval,
-  };
-  struct timespec remainingTime;
-  while (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) < startTime + timeIntervalNano) {
-    nanosleep(&sleepTime, &remainingTime);
-  }
-}
-
 - (void)runFramePushLoop
 {
   [[NSThread currentThread] setThreadPriority:1.0];
-  const uint64_t frameInterval = NSEC_PER_SEC / self.framesPerSecond;
-  uint64_t lastPushedTime = 0;
+  NSUInteger fps = self.framesPerSecond;
+  const uint64_t frameIntervalNanos = NSEC_PER_SEC / fps;
+
+  mach_timebase_info_data_t timebase;
+  mach_timebase_info(&timebase);
+  const uint64_t frameIntervalMach = frameIntervalNanos * timebase.denom / timebase.numer;
+
+  // Cadence stats (Welford's online algorithm for variance)
+  const double statsIntervalSeconds = 5.0;
+  const uint64_t statsIntervalMach = (uint64_t)(statsIntervalSeconds * 1e9) * timebase.denom / timebase.numer;
+  uint64_t statsStartTime = mach_absolute_time();
+  uint64_t pushCount = 0;
+  uint64_t overrunCount = 0;
+  uint64_t maxPushMach = 0;
+  double pushMean = 0;  // Welford mean (in Mach ticks)
+  double pushM2 = 0;    // Welford M2 (sum of squared deviations)
+
+  uint64_t nextTargetTime = mach_absolute_time() + frameIntervalMach;
   while (self.stoppedFuture.state == FBFutureStateRunning) {
-    const uint64_t loopDuration = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - lastPushedTime;
-    if (lastPushedTime > 0 && loopDuration <= frameInterval) {
-      const uint64_t sleepInterval = frameInterval - loopDuration;
-      [self sleep:sleepInterval];
-    } else if (lastPushedTime > 0) {
-      [self.logger logFormat:@"Push duration exceeded budget"];
-    }
-    lastPushedTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    uint64_t beforePush = mach_absolute_time();
     [self pushFrame];
+    uint64_t afterPush = mach_absolute_time();
+
+    // Track push duration stats
+    uint64_t pushDuration = afterPush - beforePush;
+    pushCount++;
+    if (pushDuration > maxPushMach) {
+      maxPushMach = pushDuration;
+    }
+    double delta = (double)pushDuration - pushMean;
+    pushMean += delta / (double)pushCount;
+    pushM2 += delta * ((double)pushDuration - pushMean);
+
+    // Sleep or log overrun
+    if (afterPush < nextTargetTime) {
+      mach_wait_until(nextTargetTime);
+    } else {
+      overrunCount++;
+      uint64_t overrunNanos = (afterPush - nextTargetTime) * timebase.numer / timebase.denom;
+      [self.logger logFormat:@"Frame push exceeded budget by %.1f ms (budget: %.1f ms)",
+        overrunNanos / 1e6, frameIntervalNanos / 1e6];
+    }
+    nextTargetTime += frameIntervalMach;
+
+    // Periodic cadence stats
+    if (afterPush - statsStartTime >= statsIntervalMach) {
+      double toMs = (double)timebase.numer / (double)timebase.denom / 1e6;
+      double avgMs = pushMean * toMs;
+      double maxMs = (double)maxPushMach * toMs;
+      double stddevMs = pushCount > 1 ? sqrt(pushM2 / (double)(pushCount - 1)) * toMs : 0;
+      double intervalSeconds = (double)(afterPush - statsStartTime) * timebase.numer / timebase.denom / 1e9;
+      [self.logger.info logFormat:
+        @"Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
+        intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, frameIntervalNanos / 1e6];
+
+      // Reset for next interval
+      statsStartTime = afterPush;
+      pushCount = 0;
+      overrunCount = 0;
+      maxPushMach = 0;
+      pushMean = 0;
+      pushM2 = 0;
+    }
   }
 }
 
