@@ -404,6 +404,38 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   XCTAssertEqual(counter, 2);
 }
 
+- (void)testPMTPacketStructureH264
+{
+  uint8_t counter = 0;
+  NSData *pmt = FBMPEGTSCreatePMTPacket(&counter, 0x1B);
+
+  XCTAssertEqual(pmt.length, 188u);
+
+  const uint8_t *bytes = pmt.bytes;
+
+  // Sync byte
+  XCTAssertEqual(bytes[0], 0x47);
+
+  // PID = 0x0100 (PMT), payload_unit_start = 1
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0100);
+  XCTAssertTrue(bytes[1] & 0x40); // payload_unit_start
+
+  // table_id = 0x02 (PMT)
+  XCTAssertEqual(bytes[5], 0x02);
+
+  // Stream entry: stream_type = 0x1B (H264) at section offset 12
+  uint8_t *section = (uint8_t *)&bytes[5];
+  XCTAssertEqual(section[12], 0x1B);
+
+  // Elementary PID = 0x0101 at section offset 13-14
+  uint16_t elementaryPid = ((section[13] & 0x1F) << 8) | section[14];
+  XCTAssertEqual(elementaryPid, (uint16_t)0x0101);
+
+  // Continuity counter incremented
+  XCTAssertEqual(counter, 1);
+}
+
 #pragma mark MPEG-TS Packetization
 
 - (void)testTSPacketizationSinglePacket
@@ -507,6 +539,28 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   // PAT and PMT counters should not have been incremented
   XCTAssertEqual(patCC, 0);
   XCTAssertEqual(pmtCC, 0);
+}
+
+- (void)testTSPacketizationKeyframeUsesH264StreamType
+{
+  uint8_t pesBytes[50];
+  memset(pesBytes, 0xEF, sizeof(pesBytes));
+  NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
+
+  uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
+  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x1B, &videoCC, &patCC, &pmtCC);
+
+  // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
+  XCTAssertEqual(output.length, 188u * 3);
+
+  const uint8_t *bytes = output.bytes;
+
+  // Second packet is PMT (PID = 0x0100)
+  XCTAssertEqual(bytes[188], 0x47);
+
+  // Verify PMT contains H264 stream type (0x1B) in the stream entry
+  uint8_t *pmtSection = (uint8_t *)&bytes[188 + 5];
+  XCTAssertEqual(pmtSection[12], 0x1B);
 }
 
 @end

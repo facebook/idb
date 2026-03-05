@@ -162,6 +162,7 @@ static const uint16_t PATPID = 0x0000;
 static const uint16_t PMTPID = 0x0100;
 static const uint16_t VideoPID = 0x0101;
 static const uint8_t HEVCStreamType = 0x24;
+static const uint8_t H264StreamType = 0x1B;
 
 uint32_t FBMPEGTS_CRC32(const uint8_t *data, size_t length)
 {
@@ -471,6 +472,11 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 BOOL WriteHEVCFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   return WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, @"HEVC", HEVCStreamType, consumer, logger, error);
+}
+
+BOOL WriteH264FrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  return WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, @"H264", H264StreamType, consumer, logger, error);
 }
 
 BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)

@@ -43,6 +43,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @end
 
+@interface FBDeviceVideoStream_H264MPEGTS : FBDeviceVideoStream
+
+@end
+
 @interface FBDeviceVideoStream_MJPEG : FBDeviceVideoStream
 
 @end
@@ -119,6 +123,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   switch (format.type) {
     case FBVideoStreamFormatTypeCompressedVideo: {
       if ([format.codec isEqualToString:FBVideoStreamCodecH264]) {
+        if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
+          return FBDeviceVideoStream_H264MPEGTS.class;
+        }
         return FBDeviceVideoStream_H264.class;
       }
       return nil;
@@ -273,6 +280,15 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
   WriteFrameToAnnexBStream(sampleBuffer, self.consumer, self.logger, nil);
+}
+
+@end
+
+@implementation FBDeviceVideoStream_H264MPEGTS
+
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
+{
+  WriteH264FrameToMPEGTSStream(sampleBuffer, self.consumer, self.logger, nil);
 }
 
 @end

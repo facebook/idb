@@ -83,6 +83,18 @@ extern BOOL WriteHEVCFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDa
 extern BOOL WriteHEVCFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
+ Write an H264 frame to the stream, in the MPEG-TS container format.
+ Emits PAT and PMT tables on keyframes for mid-stream join support.
+
+ @param sampleBuffer the Sample buffer to write.
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteH264FrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
+/**
  Write a JPEG frame to the MJPEG stream.
 
  @param jpegDataBuffer the JPEG data to write.
