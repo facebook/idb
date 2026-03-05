@@ -46,32 +46,30 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
   }
 
-  // Get the underlying data buffer.
+  // Convert AVCC length-prefixed NAL units to Annex-B start-code format.
+  // Uses CMBlockBuffer APIs to safely handle non-contiguous or read-only backing memory.
   CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-  size_t dataLength;
-  char *dataPointer;
-  OSStatus status = CMBlockBufferGetDataPointer(
-    dataBuffer,
-    0,
-    NULL,
-    &dataLength,
-    &dataPointer
-  );
-  if (status != noErr) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to get Data Pointer %d", status]
-      failBool:error];
-  }
+  size_t dataLength = CMBlockBufferGetDataLength(dataBuffer);
 
-  // Convert AVCC to Annex-B in-place.
-  // AVCC uses 4-byte big-endian NAL length prefixes; Annex-B uses 4-byte start codes (00 00 00 01).
-  // Both are exactly AVCCHeaderLength bytes, so we overwrite in-place without changing data size.
   size_t offset = 0;
   while (offset < dataLength - AVCCHeaderLength) {
+    uint8_t nalLengthBuf[AVCCHeaderLength];
+    char *nalLengthPtr;
+    OSStatus status = CMBlockBufferAccessDataBytes(dataBuffer, offset, AVCCHeaderLength, nalLengthBuf, &nalLengthPtr);
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to access block buffer data at offset %zu: %d", offset, status]
+        failBool:error];
+    }
     uint32_t nalLength = 0;
-    memcpy(&nalLength, dataPointer + offset, AVCCHeaderLength);
+    memcpy(&nalLength, nalLengthPtr, AVCCHeaderLength);
     nalLength = CFSwapInt32BigToHost(nalLength);
-    memcpy(dataPointer + offset, AnnexBStartCode, AVCCHeaderLength);
+    status = CMBlockBufferReplaceDataBytes(AnnexBStartCode, dataBuffer, offset, AVCCHeaderLength);
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to replace block buffer data at offset %zu: %d", offset, status]
+        failBool:error];
+    }
     offset += AVCCHeaderLength + nalLength;
   }
 
@@ -79,7 +77,7 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     // Keyframes: send parameter sets (SPS, PPS) first, then the converted block buffer.
     CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
     size_t parameterSetCount;
-    status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
       format, 0, NULL, NULL, &parameterSetCount, NULL
     );
     if (status != noErr) {
@@ -105,11 +103,24 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
     }
   }
 
-  // Send the converted block buffer data.
-  if ([consumer conformsToProtocol:@protocol(FBDataConsumerSync)]) {
-    [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:dataLength freeWhenDone:NO]];
-  } else {
-    [consumer consumeData:[NSData dataWithBytes:dataPointer length:dataLength]];
+  // Send the converted block buffer data, iterating contiguous segments.
+  BOOL isSyncConsumer = [consumer conformsToProtocol:@protocol(FBDataConsumerSync)];
+  size_t sendOffset = 0;
+  while (sendOffset < dataLength) {
+    char *dataPointer;
+    size_t lengthAtOffset;
+    OSStatus status = CMBlockBufferGetDataPointer(dataBuffer, sendOffset, &lengthAtOffset, NULL, &dataPointer);
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to get Data Pointer %d", status]
+        failBool:error];
+    }
+    if (isSyncConsumer) {
+      [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO]];
+    } else {
+      [consumer consumeData:[NSData dataWithBytes:dataPointer length:lengthAtOffset]];
+    }
+    sendOffset += lengthAtOffset;
   }
   return YES;
 }
