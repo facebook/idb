@@ -81,7 +81,7 @@ public extension FBAppleDevicectlCommandExecutor {
               }
             }) as? FBFuture<NSNumber>
       else {
-        assertionFailure("Failed to restore FBFuture generic paramter type after type erasure.")
+        assertionFailure("Failed to restore FBFuture generic parameter type after type erasure.")
       }
       return future
     } catch {
