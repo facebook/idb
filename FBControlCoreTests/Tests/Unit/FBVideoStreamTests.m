@@ -309,4 +309,204 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   XCTAssertFalse(checkConsumerBufferLimit(consumer, logger));
 }
 
+#pragma mark MPEG-TS CRC32
+
+- (void)testMPEGTSCRC32KnownVector
+{
+  // MPEG-2 CRC32 of "123456789" is a well-known test vector
+  const uint8_t data[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
+  uint32_t crc = FBMPEGTS_CRC32(data, sizeof(data));
+  XCTAssertEqual(crc, (uint32_t)0x0376E6E7);
+}
+
+- (void)testMPEGTSCRC32EmptyInput
+{
+  uint32_t crc = FBMPEGTS_CRC32(NULL, 0);
+  XCTAssertEqual(crc, (uint32_t)0xFFFFFFFF);
+}
+
+#pragma mark MPEG-TS PAT/PMT Structure
+
+- (void)testPATPacketStructure
+{
+  uint8_t counter = 0;
+  NSData *pat = FBMPEGTSCreatePATPacket(&counter);
+
+  XCTAssertEqual(pat.length, 188u);
+
+  const uint8_t *bytes = pat.bytes;
+
+  // Sync byte
+  XCTAssertEqual(bytes[0], 0x47);
+
+  // PID = 0x0000 (PAT), payload_unit_start = 1
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0000);
+  XCTAssertTrue(bytes[1] & 0x40); // payload_unit_start
+
+  // Pointer field
+  XCTAssertEqual(bytes[4], 0x00);
+
+  // table_id = 0x00 (PAT)
+  XCTAssertEqual(bytes[5], 0x00);
+
+  // Program number = 1 at section offset 8-9
+  uint8_t *section = (uint8_t *)&bytes[5];
+  uint16_t programNumber = (section[8] << 8) | section[9];
+  XCTAssertEqual(programNumber, (uint16_t)1);
+
+  // PMT PID = 0x0100 at section offset 10-11
+  uint16_t pmtPid = ((section[10] & 0x1F) << 8) | section[11];
+  XCTAssertEqual(pmtPid, (uint16_t)0x0100);
+
+  // Continuity counter incremented
+  XCTAssertEqual(counter, 1);
+}
+
+- (void)testPMTPacketStructureHEVC
+{
+  uint8_t counter = 0;
+  NSData *pmt = FBMPEGTSCreatePMTPacket(&counter, 0x24);
+
+  XCTAssertEqual(pmt.length, 188u);
+
+  const uint8_t *bytes = pmt.bytes;
+
+  // Sync byte
+  XCTAssertEqual(bytes[0], 0x47);
+
+  // PID = 0x0100 (PMT), payload_unit_start = 1
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0100);
+  XCTAssertTrue(bytes[1] & 0x40); // payload_unit_start
+
+  // table_id = 0x02 (PMT)
+  XCTAssertEqual(bytes[5], 0x02);
+
+  // Stream entry: stream_type = 0x24 (HEVC) at section offset 12
+  uint8_t *section = (uint8_t *)&bytes[5];
+  XCTAssertEqual(section[12], 0x24);
+
+  // Elementary PID = 0x0101 at section offset 13-14
+  uint16_t elementaryPid = ((section[13] & 0x1F) << 8) | section[14];
+  XCTAssertEqual(elementaryPid, (uint16_t)0x0101);
+
+  // Continuity counter incremented
+  XCTAssertEqual(counter, 1);
+}
+
+- (void)testPATContinuityCounterIncrements
+{
+  uint8_t counter = 0;
+  FBMPEGTSCreatePATPacket(&counter);
+  XCTAssertEqual(counter, 1);
+  FBMPEGTSCreatePATPacket(&counter);
+  XCTAssertEqual(counter, 2);
+}
+
+#pragma mark MPEG-TS Packetization
+
+- (void)testTSPacketizationSinglePacket
+{
+  // Small PES payload that fits in one TS packet (< 184 bytes)
+  uint8_t pesBytes[100];
+  memset(pesBytes, 0xAB, sizeof(pesBytes));
+  NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
+
+  uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+
+  // Non-keyframe: no PAT/PMT, just one video TS packet
+  XCTAssertEqual(output.length, 188u);
+
+  const uint8_t *bytes = output.bytes;
+
+  // Sync byte
+  XCTAssertEqual(bytes[0], 0x47);
+
+  // payload_unit_start = 1 (first packet)
+  XCTAssertTrue(bytes[1] & 0x40);
+
+  // Video PID = 0x0101
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0101);
+}
+
+- (void)testTSPacketizationMultiplePackets
+{
+  // PES payload > 184 bytes to require multiple TS packets
+  uint8_t pesBytes[300];
+  memset(pesBytes, 0xCD, sizeof(pesBytes));
+  NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
+
+  uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+
+  // Should produce 2 TS packets (188 * 2 = 376)
+  XCTAssertEqual(output.length, 188u * 2);
+
+  const uint8_t *bytes = output.bytes;
+
+  // First packet: payload_unit_start = 1
+  XCTAssertEqual(bytes[0], 0x47);
+  XCTAssertTrue(bytes[1] & 0x40);
+
+  // Second packet: payload_unit_start = 0
+  XCTAssertEqual(bytes[188], 0x47);
+  XCTAssertFalse(bytes[189] & 0x40);
+}
+
+- (void)testTSPacketizationKeyframeEmitsPATAndPMT
+{
+  uint8_t pesBytes[50];
+  memset(pesBytes, 0xEF, sizeof(pesBytes));
+  NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
+
+  uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
+  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x24, &videoCC, &patCC, &pmtCC);
+
+  // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
+  XCTAssertEqual(output.length, 188u * 3);
+
+  const uint8_t *bytes = output.bytes;
+
+  // First packet is PAT (PID = 0x0000)
+  XCTAssertEqual(bytes[0], 0x47);
+  uint16_t pid0 = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid0, (uint16_t)0x0000);
+
+  // Second packet is PMT (PID = 0x0100)
+  XCTAssertEqual(bytes[188], 0x47);
+  uint16_t pid1 = ((bytes[189] & 0x1F) << 8) | bytes[190];
+  XCTAssertEqual(pid1, (uint16_t)0x0100);
+
+  // Third packet is video (PID = 0x0101)
+  XCTAssertEqual(bytes[376], 0x47);
+  uint16_t pid2 = ((bytes[377] & 0x1F) << 8) | bytes[378];
+  XCTAssertEqual(pid2, (uint16_t)0x0101);
+}
+
+- (void)testTSPacketizationNonKeyframeNoPATOrPMT
+{
+  uint8_t pesBytes[50];
+  memset(pesBytes, 0xEF, sizeof(pesBytes));
+  NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
+
+  uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+
+  // Non-keyframe: just 1 video packet
+  XCTAssertEqual(output.length, 188u);
+
+  const uint8_t *bytes = output.bytes;
+
+  // First (and only) packet is video (PID = 0x0101), not PAT/PMT
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0101);
+
+  // PAT and PMT counters should not have been incremented
+  XCTAssertEqual(patCC, 0);
+  XCTAssertEqual(pmtCC, 0);
+}
+
 @end

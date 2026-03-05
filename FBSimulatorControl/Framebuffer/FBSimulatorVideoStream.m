@@ -946,6 +946,16 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
           logger:logger];
       }
       if ([format.codec isEqualToString:FBVideoStreamCodecHEVC]) {
+        if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
+          return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+            initWithConfiguration:configuration
+            compressionSessionProperties:derivedCompressionSessionProperties
+            videoCodec:kCMVideoCodecType_HEVC
+            consumer:consumer
+            compressorCallback:CompressedFrameCallback
+            frameWriter:WriteHEVCFrameToMPEGTSStream
+            logger:logger];
+        }
         return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
           initWithConfiguration:configuration
           compressionSessionProperties:derivedCompressionSessionProperties

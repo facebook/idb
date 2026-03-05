@@ -154,6 +154,325 @@ BOOL WriteHEVCFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsu
   return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, @"HEVC", consumer, logger, error);
 }
 
+#pragma mark - MPEG-TS Writer
+
+static const int TSPacketSize = 188;
+static const uint8_t TSSyncByte = 0x47;
+static const uint16_t PATPID = 0x0000;
+static const uint16_t PMTPID = 0x0100;
+static const uint16_t VideoPID = 0x0101;
+static const uint8_t HEVCStreamType = 0x24;
+
+uint32_t FBMPEGTS_CRC32(const uint8_t *data, size_t length)
+{
+  static uint32_t table[256];
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    for (uint32_t i = 0; i < 256; i++) {
+      uint32_t crc = i << 24;
+      for (int j = 0; j < 8; j++) {
+        if (crc & 0x80000000) {
+          crc = (crc << 1) ^ 0x04C11DB7;
+        } else {
+          crc <<= 1;
+        }
+      }
+      table[i] = crc;
+    }
+  });
+  uint32_t crc = 0xFFFFFFFF;
+  for (size_t i = 0; i < length; i++) {
+    crc = (crc << 8) ^ table[((crc >> 24) ^ data[i]) & 0xFF];
+  }
+  return crc;
+}
+
+NSData *FBMPEGTSCreatePATPacket(uint8_t *continuityCounter)
+{
+  uint8_t packet[TSPacketSize];
+  memset(packet, 0xFF, TSPacketSize);
+
+  // TS header
+  packet[0] = TSSyncByte;
+  packet[1] = 0x40 | ((PATPID >> 8) & 0x1F); // payload_unit_start=1
+  packet[2] = PATPID & 0xFF;
+  packet[3] = 0x10 | ((*continuityCounter) & 0x0F); // no adaptation, payload only
+  (*continuityCounter)++;
+
+  // Pointer field
+  packet[4] = 0x00;
+
+  // PAT section
+  uint8_t *section = &packet[5];
+  section[0] = 0x00; // table_id = PAT
+  // section_length will be filled after
+  section[3] = 0x00; section[4] = 0x01; // transport_stream_id = 1
+  section[5] = 0xC1; // version=0, current_next=1
+  section[6] = 0x00; // section_number
+  section[7] = 0x00; // last_section_number
+  // Program 1 -> PMT PID
+  section[8] = 0x00; section[9] = 0x01; // program_number = 1
+  section[10] = 0xE0 | ((PMTPID >> 8) & 0x1F);
+  section[11] = PMTPID & 0xFF;
+  // section_length = 13 (5 bytes after length field + 4 program + 4 CRC)
+  uint16_t sectionLength = 9 + 4; // 9 bytes data + 4 CRC
+  section[1] = 0xB0 | ((sectionLength >> 8) & 0x0F);
+  section[2] = sectionLength & 0xFF;
+
+  uint32_t crc = FBMPEGTS_CRC32(section, 12);
+  section[12] = (crc >> 24) & 0xFF;
+  section[13] = (crc >> 16) & 0xFF;
+  section[14] = (crc >> 8) & 0xFF;
+  section[15] = crc & 0xFF;
+
+  return [NSData dataWithBytes:packet length:TSPacketSize];
+}
+
+NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t streamType)
+{
+  uint8_t packet[TSPacketSize];
+  memset(packet, 0xFF, TSPacketSize);
+
+  // TS header
+  packet[0] = TSSyncByte;
+  packet[1] = 0x40 | ((PMTPID >> 8) & 0x1F); // payload_unit_start=1
+  packet[2] = PMTPID & 0xFF;
+  packet[3] = 0x10 | ((*continuityCounter) & 0x0F);
+  (*continuityCounter)++;
+
+  // Pointer field
+  packet[4] = 0x00;
+
+  // PMT section
+  uint8_t *section = &packet[5];
+  section[0] = 0x02; // table_id = PMT
+  // section_length filled after
+  section[3] = 0x00; section[4] = 0x01; // program_number = 1
+  section[5] = 0xC1; // version=0, current_next=1
+  section[6] = 0x00; // section_number
+  section[7] = 0x00; // last_section_number
+  // PCR PID = VideoPID
+  section[8] = 0xE0 | ((VideoPID >> 8) & 0x1F);
+  section[9] = VideoPID & 0xFF;
+  // program_info_length = 0
+  section[10] = 0xF0;
+  section[11] = 0x00;
+  // Stream entry
+  section[12] = streamType;
+  section[13] = 0xE0 | ((VideoPID >> 8) & 0x1F);
+  section[14] = VideoPID & 0xFF;
+  // ES_info_length = 0
+  section[15] = 0xF0;
+  section[16] = 0x00;
+
+  uint16_t sectionLength = 13 + 4; // 13 bytes data + 4 CRC
+  section[1] = 0xB0 | ((sectionLength >> 8) & 0x0F);
+  section[2] = sectionLength & 0xFF;
+
+  uint32_t crc = FBMPEGTS_CRC32(section, 17);
+  section[17] = (crc >> 24) & 0xFF;
+  section[18] = (crc >> 16) & 0xFF;
+  section[19] = (crc >> 8) & 0xFF;
+  section[20] = crc & 0xFF;
+
+  return [NSData dataWithBytes:packet length:TSPacketSize];
+}
+
+NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
+                                   uint8_t *videoContinuityCounter,
+                                   uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter)
+{
+  size_t numVideoPackets = (pesData.length + 183) / 184;
+  size_t totalPackets = (isKeyFrame ? 2 : 0) + numVideoPackets;
+  NSMutableData *output = [[NSMutableData alloc] initWithCapacity:totalPackets * TSPacketSize];
+
+  // Emit PAT + PMT on keyframes for mid-stream join support
+  if (isKeyFrame) {
+    [output appendData:FBMPEGTSCreatePATPacket(patContinuityCounter)];
+    [output appendData:FBMPEGTSCreatePMTPacket(pmtContinuityCounter, streamType)];
+  }
+
+  const uint8_t *pesBytes = (const uint8_t *)pesData.bytes;
+  size_t pesLength = pesData.length;
+  size_t pesOffset = 0;
+  BOOL first = YES;
+
+  while (pesOffset < pesLength) {
+    uint8_t packet[TSPacketSize];
+    memset(packet, 0xFF, TSPacketSize);
+
+    // TS header (4 bytes)
+    packet[0] = TSSyncByte;
+    packet[1] = (first ? 0x40 : 0x00) | ((VideoPID >> 8) & 0x1F);
+    packet[2] = VideoPID & 0xFF;
+
+    size_t headerSize = 4;
+    size_t payloadCapacity = TSPacketSize - headerSize;
+    size_t remaining = pesLength - pesOffset;
+
+    if (remaining < payloadCapacity) {
+      // Need adaptation field for stuffing
+      size_t stuffingBytes = payloadCapacity - remaining;
+      if (stuffingBytes == 1) {
+        // adaptation_field_length = 0, just the length byte
+        packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
+        packet[4] = 0x00; // adaptation_field_length = 0
+        headerSize = 5;
+      } else {
+        packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
+        packet[4] = (uint8_t)(stuffingBytes - 1); // adaptation_field_length
+        if (stuffingBytes > 1) {
+          packet[5] = 0x00; // flags
+          memset(&packet[6], 0xFF, stuffingBytes - 2);
+        }
+        headerSize = 4 + stuffingBytes;
+      }
+    } else {
+      packet[3] = 0x10 | ((*videoContinuityCounter) & 0x0F);
+    }
+
+    (*videoContinuityCounter)++;
+    size_t payloadSize = TSPacketSize - headerSize;
+    if (payloadSize > remaining) {
+      payloadSize = remaining;
+    }
+    memcpy(&packet[headerSize], pesBytes + pesOffset, payloadSize);
+    pesOffset += payloadSize;
+    first = NO;
+
+    [output appendBytes:packet length:TSPacketSize];
+  }
+
+  return output;
+}
+
+static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVideoParameterSetGetter paramSetGetter, NSString *codecName, uint8_t mpegtsStreamType, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
+    return [[FBControlCoreError
+      describeFormat:@"Sample Buffer is not ready"]
+      failBool:error];
+  }
+
+  // Continuity counters persist across calls via static variables
+  static uint8_t videoContinuityCounter = 0;
+  static uint8_t patContinuityCounter = 0;
+  static uint8_t pmtContinuityCounter = 0;
+
+  bool isKeyFrame = false;
+  CFArrayRef attachments =
+      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  if (CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
+  }
+
+  // Convert AVCC to Annex-B in place before computing sizes.
+  // AVCC headers and Annex-B start codes are both 4 bytes so sizes are unchanged.
+  if (!ConvertAVCCToAnnexBInPlace(sampleBuffer, error)) {
+    return NO;
+  }
+
+  CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  size_t dataLength = CMBlockBufferGetDataLength(dataBuffer);
+
+  // Compute parameter set sizes upfront (if keyframe) so we can allocate a single buffer.
+  size_t parameterSetSize = 0;
+  CMFormatDescriptionRef format = NULL;
+  size_t parameterSetCount = 0;
+  if (isKeyFrame) {
+    format = CMSampleBufferGetFormatDescription(sampleBuffer);
+    OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
+    if (status != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
+        failBool:error];
+    }
+    for (size_t i = 0; i < parameterSetCount; i++) {
+      size_t paramSize;
+      status = paramSetGetter(format, i, NULL, &paramSize, NULL, NULL);
+      if (status != noErr) {
+        return [[FBControlCoreError
+          describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
+          failBool:error];
+      }
+      parameterSetSize += AVCCHeaderLength + paramSize;
+    }
+  }
+
+  // Build PES packet in a single allocation: 14-byte header + parameter sets + NAL data.
+  // PES header: start code (3) + stream_id (1) + length (2) + flags (2) + PTS length (1) = 9
+  // With PTS: add 5 bytes = 14 bytes header
+  size_t pesHeaderLength = 14;
+  size_t pesPayloadLength = parameterSetSize + dataLength;
+  size_t pesTotalLength = pesHeaderLength + pesPayloadLength;
+  // PES packet_length field: 0 means unbounded for video, but we'll set it if it fits
+  uint16_t pesPacketLength = 0;
+  if (pesTotalLength - 6 <= 0xFFFF) {
+    pesPacketLength = (uint16_t)(pesTotalLength - 6);
+  }
+
+  CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+  uint64_t pts90k = (uint64_t)(CMTimeGetSeconds(pts) * 90000.0);
+
+  NSMutableData *pesPacket = [[NSMutableData alloc] initWithCapacity:pesTotalLength];
+
+  // PES start code prefix + stream_id (0xE0 = video)
+  uint8_t pesHeader[14];
+  pesHeader[0] = 0x00;
+  pesHeader[1] = 0x00;
+  pesHeader[2] = 0x01;
+  pesHeader[3] = 0xE0; // stream_id: video
+  pesHeader[4] = (pesPacketLength >> 8) & 0xFF;
+  pesHeader[5] = pesPacketLength & 0xFF;
+  pesHeader[6] = 0x80; // marker bits
+  pesHeader[7] = 0x80; // PTS present
+  pesHeader[8] = 0x05; // PES header data length (5 bytes for PTS)
+
+  // PTS encoding (33-bit value in 5 bytes)
+  pesHeader[9]  = 0x21 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  pesHeader[10] = (uint8_t)((pts90k >> 22) & 0xFF);
+  pesHeader[11] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
+  pesHeader[12] = (uint8_t)((pts90k >> 7) & 0xFF);
+  pesHeader[13] = (uint8_t)(((pts90k << 1) & 0xFE) | 0x01);
+
+  [pesPacket appendBytes:pesHeader length:pesHeaderLength];
+
+  // Append parameter sets for keyframes (start code + set bytes for each)
+  if (isKeyFrame) {
+    for (size_t i = 0; i < parameterSetCount; i++) {
+      size_t paramSize;
+      const uint8_t *parameterSet;
+      paramSetGetter(format, i, &parameterSet, &paramSize, NULL, NULL);
+      [pesPacket appendBytes:AnnexBStartCode length:AVCCHeaderLength];
+      [pesPacket appendBytes:parameterSet length:paramSize];
+    }
+  }
+
+  // Copy NAL data directly from CMBlockBuffer into pesPacket (handles non-contiguous buffers)
+  [pesPacket increaseLengthBy:dataLength];
+  uint8_t *nalDest = (uint8_t *)pesPacket.mutableBytes + pesHeaderLength + parameterSetSize;
+  OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, nalDest);
+  if (copyStatus != noErr) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+      failBool:error];
+  }
+
+  // Packetize into MPEG-TS and write to consumer
+  NSData *tsData = FBMPEGTSPacketizePES(pesPacket, isKeyFrame, mpegtsStreamType,
+                                         &videoContinuityCounter,
+                                         &patContinuityCounter, &pmtContinuityCounter);
+  [consumer consumeData:tsData];
+
+  return YES;
+}
+
+BOOL WriteHEVCFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  return WriteCodecFrameToMPEGTSStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, @"HEVC", HEVCStreamType, consumer, logger, error);
+}
+
 BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   return WriteBlockBufferToConsumer(jpegDataBuffer, consumer, error);

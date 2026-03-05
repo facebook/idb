@@ -28,7 +28,6 @@
   XCTAssertEqualObjects(config.rateControl.value, @0.75);
 }
 
-// NOTE: Default changes to @1.0 in "MPEG-TS container format" commit.
 - (void)testDefaultKeyFrameRate
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]

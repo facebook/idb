@@ -20,6 +20,7 @@ FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 FBVideoStreamCodec const FBVideoStreamCodecH264 = @"h264";
 FBVideoStreamCodec const FBVideoStreamCodecHEVC = @"hevc";
 FBVideoStreamTransport const FBVideoStreamTransportAnnexB = @"annex-b";
+FBVideoStreamTransport const FBVideoStreamTransportMPEGTS = @"mpegts";
 
 @implementation FBVideoStreamFormat
 
