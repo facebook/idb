@@ -149,6 +149,11 @@ BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer>
   return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetH264ParameterSetAtIndex, @"H264", consumer, logger, error);
 }
 
+BOOL WriteHEVCFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
+{
+  return WriteCodecFrameToAnnexBStream(sampleBuffer, CMVideoFormatDescriptionGetHEVCParameterSetAtIndex, @"HEVC", consumer, logger, error);
+}
+
 BOOL WriteJPEGDataToMJPEGStream(CMBlockBufferRef jpegDataBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   return WriteBlockBufferToConsumer(jpegDataBuffer, consumer, error);

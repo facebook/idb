@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingHEVC;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
@@ -23,6 +24,7 @@ extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
  */
 typedef NSString *FBVideoStreamCodec NS_STRING_ENUM;
 extern FBVideoStreamCodec const FBVideoStreamCodecH264;
+extern FBVideoStreamCodec const FBVideoStreamCodecHEVC;
 
 /**
  The Transport/Container format for compressed video streams.

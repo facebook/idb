@@ -59,6 +59,18 @@ extern BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCo
 extern BOOL WriteFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
+ Write an HEVC frame to the stream, in the Annex-B stream format.
+ Extracts VPS, SPS, and PPS parameter sets from keyframes.
+
+ @param sampleBuffer the Sample buffer to write.
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteHEVCFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
+/**
  Write a JPEG frame to the MJPEG stream.
 
  @param jpegDataBuffer the JPEG data to write.

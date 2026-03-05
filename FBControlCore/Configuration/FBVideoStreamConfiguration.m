@@ -12,11 +12,13 @@
 #import "FBCollectionOperations.h"
 
 FBVideoStreamEncoding const FBVideoStreamEncodingH264 = @"h264";
+FBVideoStreamEncoding const FBVideoStreamEncodingHEVC = @"hevc";
 FBVideoStreamEncoding const FBVideoStreamEncodingBGRA = @"bgra";
 FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG = @"mjpeg";
 FBVideoStreamEncoding const FBVideoStreamEncodingMinicap = @"minicap";
 
 FBVideoStreamCodec const FBVideoStreamCodecH264 = @"h264";
+FBVideoStreamCodec const FBVideoStreamCodecHEVC = @"hevc";
 FBVideoStreamTransport const FBVideoStreamTransportAnnexB = @"annex-b";
 
 @implementation FBVideoStreamFormat

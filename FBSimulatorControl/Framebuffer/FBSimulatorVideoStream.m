@@ -919,6 +919,13 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CABAC;
     }
   }
+  if (format.type == FBVideoStreamFormatTypeCompressedVideo
+      && [format.codec isEqualToString:FBVideoStreamCodecHEVC]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_HEVC_Main_AutoLevel;
+    if (@available(macOS 13.0, *)) {
+      derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_HEVC_Main10_AutoLevel;
+    }
+  }
   return [derivedCompressionSessionProperties copy];
 }
 
@@ -936,6 +943,16 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
           consumer:consumer
           compressorCallback:CompressedFrameCallback
           frameWriter:WriteFrameToAnnexBStream
+          logger:logger];
+      }
+      if ([format.codec isEqualToString:FBVideoStreamCodecHEVC]) {
+        return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+          initWithConfiguration:configuration
+          compressionSessionProperties:derivedCompressionSessionProperties
+          videoCodec:kCMVideoCodecType_HEVC
+          consumer:consumer
+          compressorCallback:CompressedFrameCallback
+          frameWriter:WriteHEVCFrameToAnnexBStream
           logger:logger];
       }
       return [[FBControlCoreError
