@@ -909,8 +909,9 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
   [derivedCompressionSessionProperties addEntriesFromDictionary:callerProperties];
   derivedCompressionSessionProperties[(NSString *)kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration] = configuration.keyFrameRate;
-  FBVideoStreamEncoding encoding = configuration.encoding;
-  if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
+  FBVideoStreamFormat *format = configuration.format;
+  if (format.type == FBVideoStreamFormatTypeCompressedVideo
+      && [format.codec isEqualToString:FBVideoStreamCodecH264]) {
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_H264_Baseline_AutoLevel;
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_H264EntropyMode] = (NSString *)kVTH264EntropyMode_CAVLC;
     if (@available(macOS 12.1, *)) {
@@ -924,43 +925,48 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 + (id<FBSimulatorVideoStreamFramePusher>)framePusherForConfiguration:(FBVideoStreamConfiguration *)configuration compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties consumer:(id<FBDataConsumer>)consumer logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSDictionary<NSString *, id> *derivedCompressionSessionProperties = [self compressionSessionPropertiesForConfiguration:configuration callerProperties:compressionSessionProperties];
-  FBVideoStreamEncoding encoding = configuration.encoding;
-  if ([encoding isEqualToString:FBVideoStreamEncodingH264]) {
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-      initWithConfiguration:configuration
-      compressionSessionProperties:derivedCompressionSessionProperties
-      videoCodec:kCMVideoCodecType_H264
-      consumer:consumer
-      compressorCallback:CompressedFrameCallback
-      frameWriter:WriteFrameToAnnexBStream
-      logger:logger];
+  FBVideoStreamFormat *format = configuration.format;
+  switch (format.type) {
+    case FBVideoStreamFormatTypeCompressedVideo: {
+      if ([format.codec isEqualToString:FBVideoStreamCodecH264]) {
+        return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+          initWithConfiguration:configuration
+          compressionSessionProperties:derivedCompressionSessionProperties
+          videoCodec:kCMVideoCodecType_H264
+          consumer:consumer
+          compressorCallback:CompressedFrameCallback
+          frameWriter:WriteFrameToAnnexBStream
+          logger:logger];
+      }
+      return [[FBControlCoreError
+        describeFormat:@"Unsupported codec '%@'", format.codec]
+        fail:error];
+    }
+    case FBVideoStreamFormatTypeMJPEG:
+      return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+        initWithConfiguration:configuration
+        compressionSessionProperties:derivedCompressionSessionProperties
+        videoCodec:kCMVideoCodecType_JPEG
+        consumer:consumer
+        compressorCallback:MJPEGCompressorCallback
+        frameWriter:NULL
+        logger:logger];
+    case FBVideoStreamFormatTypeMinicap:
+      return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+        initWithConfiguration:configuration
+        compressionSessionProperties:derivedCompressionSessionProperties
+        videoCodec:kCMVideoCodecType_JPEG
+        consumer:consumer
+        compressorCallback:MinicapCompressorCallback
+        frameWriter:NULL
+        logger:logger];
+    case FBVideoStreamFormatTypeBGRA:
+      return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];
+    default:
+      return [[FBControlCoreError
+        describeFormat:@"Unsupported format type %lu", (unsigned long)format.type]
+        fail:error];
   }
-  if ([encoding isEqualToString:FBVideoStreamEncodingMJPEG]) {
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-      initWithConfiguration:configuration
-      compressionSessionProperties:derivedCompressionSessionProperties
-      videoCodec:kCMVideoCodecType_JPEG
-      consumer:consumer
-      compressorCallback:MJPEGCompressorCallback
-      frameWriter:NULL
-      logger:logger];
-  }
-  if ([encoding isEqualToString:FBVideoStreamEncodingMinicap]) {
-    return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-      initWithConfiguration:configuration
-      compressionSessionProperties:derivedCompressionSessionProperties
-      videoCodec:kCMVideoCodecType_JPEG
-      consumer:consumer
-      compressorCallback:MinicapCompressorCallback
-      frameWriter:NULL
-      logger:logger];
-  }
-  if ([encoding isEqual:FBVideoStreamEncodingBGRA]) {
-    return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];
-  }
-  return [[FBControlCoreError
-    describeFormat:@"%@ is not supported for Simulators", encoding]
-    fail:error];
 }
 
 - (NSDictionary<NSString *, id> *)compressionSessionProperties

@@ -73,7 +73,7 @@ struct VideoStreamMethodHandler {
     }
 
     let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil
-    let encoding = try streamEncoding(from: start.format)
+    let format = streamFormat(from: start.format)
 
     let rateControl: FBVideoStreamRateControl?
     if start.avgBitrate > 0 {
@@ -85,7 +85,7 @@ struct VideoStreamMethodHandler {
     }
 
     let config = FBVideoStreamConfiguration(
-      encoding: encoding,
+      format: format,
       framesPerSecond: framesPerSecond,
       rateControl: rateControl,
       scaleFactor: .init(value: start.scaleFactor),
@@ -98,18 +98,18 @@ struct VideoStreamMethodHandler {
     return videoStream
   }
 
-  private func streamEncoding(from requestFormat: Idb_VideoStreamRequest.Format) throws -> FBVideoStreamEncoding {
+  private func streamFormat(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {
     switch requestFormat {
     case .h264:
-      return .H264
+      return .compressedVideo(withCodec: .H264, transport: .annexB)
     case .rbga:
-      return .BGRA
+      return .bgra()
     case .mjpeg:
-      return .MJPEG
+      return .mjpeg()
     case .minicap:
-      return .minicap
+      return .minicap()
     case .i420, .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "Unrecognized video format")
+      return .compressedVideo(withCodec: .H264, transport: .annexB)
     }
   }
 }

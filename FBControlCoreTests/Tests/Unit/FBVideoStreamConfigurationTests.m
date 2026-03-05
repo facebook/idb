@@ -17,7 +17,7 @@
 - (void)testDefaultRateControl
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil
@@ -32,7 +32,7 @@
 - (void)testDefaultKeyFrameRate
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil
@@ -45,7 +45,7 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.7];
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:rc
     scaleFactor:nil
@@ -60,7 +60,7 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl bitrate:@500000];
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:rc
     scaleFactor:nil
@@ -74,13 +74,13 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.5];
   FBVideoStreamConfiguration *a = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:@30
     rateControl:rc
     scaleFactor:nil
     keyFrameRate:@5.0];
   FBVideoStreamConfiguration *b = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:@30
     rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
@@ -92,7 +92,7 @@
 - (void)testConfigurationCopy
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil

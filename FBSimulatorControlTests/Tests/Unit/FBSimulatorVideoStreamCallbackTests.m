@@ -150,7 +150,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 - (FBSimulatorVideoStreamFramePusher_VideoToolbox *)createPusherWithLogger:(FBCapturingLogger *)logger
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:@30
     rateControl:nil
     scaleFactor:nil

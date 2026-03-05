@@ -15,7 +15,7 @@
 - (void)testBasePropertiesAlwaysPresent
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil
@@ -32,7 +32,7 @@
 - (void)testCallerPropertiesMerged
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingMJPEG
+    initWithFormat:[FBVideoStreamFormat mjpeg]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil
@@ -47,7 +47,7 @@
 - (void)testMJPEGCompressionPropertiesContainQuality
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingMJPEG
+    initWithFormat:[FBVideoStreamFormat mjpeg]
     framesPerSecond:nil
     rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
@@ -59,7 +59,7 @@
 - (void)testMinicapCompressionPropertiesContainQuality
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingMinicap
+    initWithFormat:[FBVideoStreamFormat minicap]
     framesPerSecond:nil
     rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
@@ -71,7 +71,7 @@
 - (void)testH264CompressionPropertiesContainQuality
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:[FBVideoStreamRateControl quality:@0.5]
     scaleFactor:nil
@@ -85,7 +85,7 @@
 - (void)testH264ProfileAndEntropyMode
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingH264
+    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
     framesPerSecond:nil
     rateControl:nil
     scaleFactor:nil
@@ -100,7 +100,7 @@
 - (void)testExplicitBitrate
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithEncoding:FBVideoStreamEncodingMJPEG
+    initWithFormat:[FBVideoStreamFormat mjpeg]
     framesPerSecond:nil
     rateControl:[FBVideoStreamRateControl bitrate:@500000]
     scaleFactor:nil
