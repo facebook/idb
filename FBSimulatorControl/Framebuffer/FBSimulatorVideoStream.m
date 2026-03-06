@@ -842,7 +842,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   
   // Get the Attributes
   NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
-  [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
+  [self.logger logFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]];
   
   // Swap the pixel buffers.
   self.pixelBuffer = buffer;

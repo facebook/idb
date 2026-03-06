@@ -253,7 +253,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!self.pixelBufferAttributes) {
     NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(pixelBuffer);
     self.pixelBufferAttributes = attributes;
-    [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
+    [self.logger logFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]];
   }
 }
 
