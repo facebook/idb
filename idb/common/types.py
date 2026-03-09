@@ -16,7 +16,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import Enum
 from io import StringIO
-from typing import Dict, IO, List, Optional, Set, Tuple, Union
+from typing import IO, List, Optional, Set, Tuple, Union
 
 from python.migrations.py310 import StrEnum310
 
