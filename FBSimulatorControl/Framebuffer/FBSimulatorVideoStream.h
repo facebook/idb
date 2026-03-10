@@ -50,6 +50,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(FBVideoStreamConfiguration *)configuration callerProperties:(NSDictionary<NSString *, id> *)callerProperties;
 
+#pragma mark Overlay
+
+/**
+ Update the overlay buffer and push a frame to encode the change.
+ The buffer should be BGRA with premultiplied alpha, ideally IOSurface-backed for zero-copy GPU compositing.
+ Pass the same buffer reference after updating its contents in-place, or a new buffer to swap.
+ Pass nil to clear the overlay.
+
+ In lazy/VFR mode: dispatches pushFrame on the write queue so overlay changes are encoded immediately.
+ In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
+
+ @param overlayBuffer a CVPixelBuffer with the overlay content, or nil to clear.
+ */
+- (void)updateOverlayBuffer:(nullable CVPixelBufferRef)overlayBuffer;
+
 @end
 
 NS_ASSUME_NONNULL_END

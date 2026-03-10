@@ -7,10 +7,12 @@
 
 #import "FBSimulatorVideoStream.h"
 
+#import <CoreImage/CoreImage.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreVideo/CVPixelBufferIOSurface.h>
 #import <FBControlCore/FBControlCore.h>
 #import <IOSurface/IOSurface.h>
+#import <Metal/Metal.h>
 #import <VideoToolbox/VideoToolbox.h>
 #import <mach/mach_time.h>
 
@@ -684,6 +686,11 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 @property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBSimulatorVideoStreamFramePusher> framePusher;
 
+// Overlay compositing
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef overlayBuffer;
+@property (nonatomic, strong, nullable, readwrite) CIContext *compositorCIContext;
+@property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef compositedBufferPool;
+
 - (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame;
 
 @end
@@ -776,6 +783,12 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
                    failFuture];
         }
       }
+      // Clean up overlay compositing resources.
+      self.overlayBuffer = NULL;
+      if (self.compositedBufferPool) {
+        CVPixelBufferPoolRelease(self.compositedBufferPool);
+        self.compositedBufferPool = NULL;
+      }
       [self.stoppedFuture resolveWithResult:NSNull.null];
       return self.stoppedFuture;
     }];
@@ -857,6 +870,31 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   }
   self.framePusher = framePusher;
 
+  // Set up overlay compositing infrastructure.
+  // Metal-backed CIContext for GPU compositing — created once, reused across frames.
+  if (!self.compositorCIContext) {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    if (device) {
+      self.compositorCIContext = [CIContext contextWithMTLDevice:device options:@{kCIContextCacheIntermediates: @NO}];
+    } else {
+      self.compositorCIContext = [CIContext contextWithOptions:@{kCIContextCacheIntermediates: @NO}];
+    }
+  }
+  // IOSurface-backed BGRA pixel buffer pool for composited output.
+  if (self.compositedBufferPool) {
+    CVPixelBufferPoolRelease(self.compositedBufferPool);
+    self.compositedBufferPool = NULL;
+  }
+  size_t width = CVPixelBufferGetWidth(buffer);
+  size_t height = CVPixelBufferGetHeight(buffer);
+  NSDictionary *compositedPoolAttrs = @{
+    (NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+    (NSString *)kCVPixelBufferWidthKey: @(width),
+    (NSString *)kCVPixelBufferHeightKey: @(height),
+    (NSString *)kCVPixelBufferIOSurfacePropertiesKey: @{},
+  };
+  CVPixelBufferPoolCreate(NULL, NULL, (__bridge CFDictionaryRef)compositedPoolAttrs, &_compositedBufferPool);
+
   // Signal that we've started
   [self.startedFuture resolveWithResult:NSNull.null];
 
@@ -885,8 +923,29 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   CFTimeInterval frameDuration = self.timeAtLastPush > 0 ? (now - self.timeAtLastPush) : 0;
   self.timeAtLastPush = now;
 
+  // Composite the overlay buffer over the source frame if present.
+  CVPixelBufferRef bufferToEncode = pixelBufer;
+  CVPixelBufferRef compositedBuffer = NULL;
+  CVPixelBufferRef overlayBuf = self.overlayBuffer;
+  if (overlayBuf && self.compositorCIContext && self.compositedBufferPool) {
+    CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:pixelBufer];
+    CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
+    CIImage *composited = [overlayImage imageByCompositingOverImage:sourceImage];
+
+    CVReturn poolStatus = CVPixelBufferPoolCreatePixelBuffer(NULL, self.compositedBufferPool, &compositedBuffer);
+    if (poolStatus == kCVReturnSuccess && compositedBuffer) {
+      [self.compositorCIContext render:composited toCVPixelBuffer:compositedBuffer];
+      bufferToEncode = compositedBuffer;
+    }
+  }
+
   // Push the Frame
-  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration forceKeyFrame:forceKeyFrame error:nil];
+  [framePusher writeEncodedFrame:bufferToEncode frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration forceKeyFrame:forceKeyFrame error:nil];
+
+  // Release the composited buffer if we created one.
+  if (compositedBuffer) {
+    CVPixelBufferRelease(compositedBuffer);
+  }
 
   // Increment frame counter
   self.frameNumber = frameNumber + 1;
@@ -1011,6 +1070,34 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 - (NSDictionary<NSString *, id> *)compressionSessionProperties
 {
   return @{};
+}
+
+#pragma mark Overlay
+
+- (void)updateOverlayBuffer:(nullable CVPixelBufferRef)overlayBuffer
+{
+  BOOL sameReference = (overlayBuffer == self.overlayBuffer);
+
+  // Skip atomic self-assignment when the caller is updating buffer contents in-place.
+  if (!sameReference) {
+    self.overlayBuffer = overlayBuffer;
+  }
+
+  [self.logger logFormat:@"Overlay %s (buffer=%p, frame=%lu)",
+    overlayBuffer
+      ? (sameReference ? "contents updated" : "buffer swapped")
+      : "cleared",
+    overlayBuffer, (unsigned long)self.frameNumber];
+
+  // In lazy/VFR mode: force a keyframe push so overlay changes are immediately
+  // decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
+  // In eager/CFR mode: the push loop runs at fixed cadence and picks up the change
+  // on the next tick — an extra push would disrupt frame timing.
+  if ([self isKindOfClass:[FBSimulatorVideoStream_Lazy class]]) {
+    dispatch_async(self.writeQueue, ^{
+      [self pushFrameForceKeyFrame:YES];
+    });
+  }
 }
 
 #pragma mark FBiOSTargetOperation
