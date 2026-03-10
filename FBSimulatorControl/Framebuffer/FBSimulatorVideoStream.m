@@ -922,6 +922,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   }
   if (format.type == FBVideoStreamFormatTypeCompressedVideo
       && [format.codec isEqualToString:FBVideoStreamCodecHEVC]) {
+    derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_AllowOpenGOP] = @NO;
     derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_HEVC_Main_AutoLevel;
     if (@available(macOS 13.0, *)) {
       derivedCompressionSessionProperties[(NSString *) kVTCompressionPropertyKey_ProfileLevel] = (NSString *)kVTProfileLevel_HEVC_Main10_AutoLevel;
