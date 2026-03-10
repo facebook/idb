@@ -7,6 +7,8 @@
 
 #import "FBVideoStream.h"
 
+#import <os/lock.h>
+
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
@@ -161,8 +163,10 @@ static const uint8_t TSSyncByte = 0x47;
 static const uint16_t PATPID = 0x0000;
 static const uint16_t PMTPID = 0x0100;
 static const uint16_t VideoPID = 0x0101;
+const uint16_t FBMPEGTSMetadataPID = 0x0102;
 static const uint8_t HEVCStreamType = 0x24;
 static const uint8_t H264StreamType = 0x1B;
+static const uint8_t TimedMetadataStreamType = 0x15; // PES private data (ID3)
 
 uint32_t FBMPEGTS_CRC32(const uint8_t *data, size_t length)
 {
@@ -279,6 +283,9 @@ NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t streamType)
   return [NSData dataWithBytes:packet length:TSPacketSize];
 }
 
+// Forward declaration of metadata state used by FBMPEGTSPacketizePES
+static BOOL metadataStreamEnabled = NO;
+
 NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
                                    uint64_t pts90k,
                                    uint8_t *videoContinuityCounter,
@@ -295,7 +302,7 @@ NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamTyp
   // Emit PAT + PMT on keyframes for mid-stream join support
   if (isKeyFrame) {
     [output appendData:FBMPEGTSCreatePATPacket(patContinuityCounter)];
-    [output appendData:FBMPEGTSCreatePMTPacket(pmtContinuityCounter, streamType)];
+    [output appendData:FBMPEGTSCreatePMTPacketWithMetadata(pmtContinuityCounter, streamType, metadataStreamEnabled)];
   }
 
   const uint8_t *pesBytes = (const uint8_t *)pesData.bytes;
@@ -377,6 +384,213 @@ NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamTyp
   return output;
 }
 
+NSData *FBMPEGTSCreatePMTPacketWithMetadata(uint8_t *continuityCounter, uint8_t streamType, BOOL includeMetadataStream)
+{
+  if (!includeMetadataStream) {
+    return FBMPEGTSCreatePMTPacket(continuityCounter, streamType);
+  }
+
+  uint8_t packet[TSPacketSize];
+  memset(packet, 0xFF, TSPacketSize);
+
+  // TS header
+  packet[0] = TSSyncByte;
+  packet[1] = 0x40 | ((PMTPID >> 8) & 0x1F);
+  packet[2] = PMTPID & 0xFF;
+  packet[3] = 0x10 | ((*continuityCounter) & 0x0F);
+  (*continuityCounter)++;
+
+  // Pointer field
+  packet[4] = 0x00;
+
+  // PMT section
+  uint8_t *section = &packet[5];
+  section[0] = 0x02; // table_id = PMT
+  section[3] = 0x00; section[4] = 0x01; // program_number = 1
+  section[5] = 0xC1; // version=0, current_next=1
+  section[6] = 0x00; // section_number
+  section[7] = 0x00; // last_section_number
+  // PCR PID = VideoPID
+  section[8] = 0xE0 | ((VideoPID >> 8) & 0x1F);
+  section[9] = VideoPID & 0xFF;
+  // program_info_length = 0
+  section[10] = 0xF0;
+  section[11] = 0x00;
+  // Video stream entry
+  section[12] = streamType;
+  section[13] = 0xE0 | ((VideoPID >> 8) & 0x1F);
+  section[14] = VideoPID & 0xFF;
+  section[15] = 0xF0;
+  section[16] = 0x00; // ES_info_length = 0
+  // Metadata stream entry
+  section[17] = TimedMetadataStreamType;
+  section[18] = 0xE0 | ((FBMPEGTSMetadataPID >> 8) & 0x1F);
+  section[19] = FBMPEGTSMetadataPID & 0xFF;
+  section[20] = 0xF0;
+  section[21] = 0x00; // ES_info_length = 0
+
+  // section_length = 9 (header after length) + 5 (video entry) + 5 (metadata entry) + 4 (CRC) = 23
+  // But PMT section data before CRC is: bytes [3..21] = 19 bytes. section_length covers from byte [3] to end including CRC.
+  // section_length = (21 - 3 + 1) + 4 = 23
+  uint16_t sectionLength = 18 + 4; // 18 bytes data after section_length field + 4 CRC
+  section[1] = 0xB0 | ((sectionLength >> 8) & 0x0F);
+  section[2] = sectionLength & 0xFF;
+
+  uint32_t crc = FBMPEGTS_CRC32(section, 22);
+  section[22] = (crc >> 24) & 0xFF;
+  section[23] = (crc >> 16) & 0xFF;
+  section[24] = (crc >> 8) & 0xFF;
+  section[25] = crc & 0xFF;
+
+  return [NSData dataWithBytes:packet length:TSPacketSize];
+}
+
+NSData *FBMPEGTSCreateTimedMetadataPackets(NSString *text, uint64_t pts90k, uint8_t *metadataContinuityCounter)
+{
+  NSData *textData = [text dataUsingEncoding:NSUTF8StringEncoding];
+
+  // Build ID3v2.4 tag: header (10 bytes) + TXXX frame
+  // TXXX frame: header (10 bytes) + encoding (1) + null description (1) + text
+  size_t txxxPayloadLen = 1 + 1 + textData.length; // encoding + null desc + text
+  size_t id3PayloadLen = 10 + txxxPayloadLen;       // TXXX frame header + payload
+  size_t id3TotalLen = 10 + id3PayloadLen;          // ID3 header + payload
+
+  NSMutableData *id3Tag = [[NSMutableData alloc] initWithCapacity:id3TotalLen];
+
+  // ID3v2 header
+  uint8_t id3Header[10] = {
+    'I', 'D', '3',
+    0x04, 0x00,  // version 2.4
+    0x00,        // flags
+    (uint8_t)((id3PayloadLen >> 21) & 0x7F),
+    (uint8_t)((id3PayloadLen >> 14) & 0x7F),
+    (uint8_t)((id3PayloadLen >> 7)  & 0x7F),
+    (uint8_t)(id3PayloadLen & 0x7F),
+  };
+  [id3Tag appendBytes:id3Header length:10];
+
+  // TXXX frame header
+  uint8_t txxxHeader[10] = {
+    'T', 'X', 'X', 'X',
+    (uint8_t)((txxxPayloadLen >> 24) & 0xFF),
+    (uint8_t)((txxxPayloadLen >> 16) & 0xFF),
+    (uint8_t)((txxxPayloadLen >> 8)  & 0xFF),
+    (uint8_t)(txxxPayloadLen & 0xFF),
+    0x00, 0x00,  // flags
+  };
+  [id3Tag appendBytes:txxxHeader length:10];
+
+  // TXXX payload: UTF-8 encoding (0x03), empty description (\0), then text
+  uint8_t txxxPrefix[2] = {0x03, 0x00}; // encoding=UTF-8, null-terminated empty description
+  [id3Tag appendBytes:txxxPrefix length:2];
+  [id3Tag appendData:textData];
+
+  // Wrap in PES packet (stream_id = 0xBD = private_stream_1)
+  size_t pesHeaderLen = 14; // 9 base + 5 PTS
+  size_t pesTotalLen = pesHeaderLen + id3Tag.length;
+  uint16_t pesPacketLength = (pesTotalLen - 6 <= 0xFFFF) ? (uint16_t)(pesTotalLen - 6) : 0;
+
+  NSMutableData *pesPacket = [[NSMutableData alloc] initWithCapacity:pesTotalLen];
+  uint8_t pesHeader[14];
+  pesHeader[0] = 0x00; pesHeader[1] = 0x00; pesHeader[2] = 0x01;
+  pesHeader[3] = 0xBD; // private_stream_1
+  pesHeader[4] = (pesPacketLength >> 8) & 0xFF;
+  pesHeader[5] = pesPacketLength & 0xFF;
+  pesHeader[6] = 0x80; // marker bits
+  pesHeader[7] = 0x80; // PTS present, no DTS
+  pesHeader[8] = 0x05; // PES header data length (5 bytes for PTS)
+  // PTS encoding (indicator nibble 0x2 when PTS only)
+  pesHeader[9]  = 0x21 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  pesHeader[10] = (uint8_t)((pts90k >> 22) & 0xFF);
+  pesHeader[11] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
+  pesHeader[12] = (uint8_t)((pts90k >> 7) & 0xFF);
+  pesHeader[13] = (uint8_t)(((pts90k << 1) & 0xFE) | 0x01);
+  [pesPacket appendBytes:pesHeader length:pesHeaderLen];
+  [pesPacket appendData:id3Tag];
+
+  // Packetize into TS packets on MetadataPID
+  const uint8_t *pesBytes = (const uint8_t *)pesPacket.bytes;
+  size_t pesLength = pesPacket.length;
+  size_t numPackets = (pesLength + 183) / 184;
+  NSMutableData *output = [[NSMutableData alloc] initWithCapacity:numPackets * TSPacketSize];
+
+  size_t pesOffset = 0;
+  BOOL first = YES;
+
+  while (pesOffset < pesLength) {
+    uint8_t packet[TSPacketSize];
+    memset(packet, 0xFF, TSPacketSize);
+    packet[0] = TSSyncByte;
+    packet[1] = (first ? 0x40 : 0x00) | ((FBMPEGTSMetadataPID >> 8) & 0x1F);
+    packet[2] = FBMPEGTSMetadataPID & 0xFF;
+
+    size_t headerSize = 4;
+    size_t remaining = pesLength - pesOffset;
+    size_t payloadCapacity = TSPacketSize - headerSize; // 184
+
+    if (remaining < payloadCapacity) {
+      size_t stuffingBytes = payloadCapacity - remaining;
+      if (stuffingBytes == 1) {
+        packet[3] = 0x30 | ((*metadataContinuityCounter) & 0x0F);
+        packet[4] = 0x00;
+        headerSize = 5;
+      } else {
+        packet[3] = 0x30 | ((*metadataContinuityCounter) & 0x0F);
+        packet[4] = (uint8_t)(stuffingBytes - 1);
+        if (stuffingBytes > 1) {
+          packet[5] = 0x00;
+          if (stuffingBytes > 2) {
+            memset(&packet[6], 0xFF, stuffingBytes - 2);
+          }
+        }
+        headerSize = 4 + stuffingBytes;
+      }
+    } else {
+      packet[3] = 0x10 | ((*metadataContinuityCounter) & 0x0F);
+    }
+
+    (*metadataContinuityCounter)++;
+    size_t payloadSize = TSPacketSize - headerSize;
+    if (payloadSize > remaining) {
+      payloadSize = remaining;
+    }
+    memcpy(&packet[headerSize], pesBytes + pesOffset, payloadSize);
+    pesOffset += payloadSize;
+    first = NO;
+
+    [output appendBytes:packet length:TSPacketSize];
+  }
+
+  return output;
+}
+
+#pragma mark - MPEG-TS Metadata State
+
+static os_unfair_lock metadataLock = OS_UNFAIR_LOCK_INIT;
+static uint8_t metadataContinuityCounter = 0;
+static uint64_t lastPts90k = 0;
+
+void FBMPEGTSEnableMetadataStream(void)
+{
+  os_unfair_lock_lock(&metadataLock);
+  metadataStreamEnabled = YES;
+  os_unfair_lock_unlock(&metadataLock);
+}
+
+void FBMPEGTSWriteTimedMetadata(NSString *text, id<FBDataConsumer> consumer)
+{
+  os_unfair_lock_lock(&metadataLock);
+  if (!metadataStreamEnabled) {
+    os_unfair_lock_unlock(&metadataLock);
+    return;
+  }
+  uint64_t pts = lastPts90k;
+  NSData *packets = FBMPEGTSCreateTimedMetadataPackets(text, pts, &metadataContinuityCounter);
+  os_unfair_lock_unlock(&metadataLock);
+
+  [consumer consumeData:packets];
+}
+
 static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVideoParameterSetGetter paramSetGetter, NSString *codecName, uint8_t mpegtsStreamType, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error)
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
@@ -445,6 +659,11 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 
   CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
   uint64_t pts90k = (uint64_t)(CMTimeGetSeconds(pts) * 90000.0);
+
+  // Update the shared last PTS for timed metadata injection
+  os_unfair_lock_lock(&metadataLock);
+  lastPts90k = pts90k;
+  os_unfair_lock_unlock(&metadataLock);
 
   NSMutableData *pesPacket = [[NSMutableData alloc] initWithCapacity:pesTotalLength];
 

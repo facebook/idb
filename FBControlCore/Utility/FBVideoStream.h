@@ -172,4 +172,44 @@ extern NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t st
                                      uint8_t *videoContinuityCounter,
                                      uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter);
 
+/**
+ PID for the timed metadata elementary stream (ID3).
+ */
+extern const uint16_t FBMPEGTSMetadataPID;
+
+/**
+ Create a PMT that optionally includes a timed metadata stream entry alongside the video stream.
+
+ @param continuityCounter pointer to the PMT continuity counter, incremented on each call.
+ @param streamType the MPEG-TS stream type for the video elementary stream.
+ @param includeMetadataStream YES to add a second stream entry for ID3 timed metadata on MetadataPID.
+ @return a 188-byte TS packet.
+ */
+extern NSData *FBMPEGTSCreatePMTPacketWithMetadata(uint8_t *continuityCounter, uint8_t streamType, BOOL includeMetadataStream);
+
+/**
+ Build MPEG-TS packets containing an ID3v2 TXXX frame with the given text at the given PTS.
+
+ @param text the chapter/marker label text.
+ @param pts90k the presentation timestamp in 90kHz units.
+ @param metadataContinuityCounter pointer to the metadata PID continuity counter, incremented on each call.
+ @return one or more concatenated 188-byte TS packets on MetadataPID.
+ */
+extern NSData *FBMPEGTSCreateTimedMetadataPackets(NSString *text, uint64_t pts90k, uint8_t *metadataContinuityCounter);
+
+/**
+ Enable the timed metadata stream in the MPEG-TS muxer.
+ After calling this, keyframe PMT emissions will include the metadata stream entry.
+ */
+extern void FBMPEGTSEnableMetadataStream(void);
+
+/**
+ Write a timed metadata marker into the MPEG-TS output stream at the current video PTS.
+ Thread-safe: may be called from any thread while video encoding is active.
+
+ @param text the chapter/marker label text.
+ @param consumer the data consumer to write TS packets to (typically the same consumer as the video stream).
+ */
+extern void FBMPEGTSWriteTimedMetadata(NSString *text, id<FBDataConsumer> consumer);
+
 NS_ASSUME_NONNULL_END

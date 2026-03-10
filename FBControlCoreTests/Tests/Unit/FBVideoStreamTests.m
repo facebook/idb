@@ -567,4 +567,123 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   XCTAssertEqual(pmtSection[12], 0x1B);
 }
 
+#pragma mark MPEG-TS PMT with Metadata
+
+- (void)testPMTWithMetadataStreamContainsTwoEntries
+{
+  uint8_t counter = 0;
+  NSData *pmt = FBMPEGTSCreatePMTPacketWithMetadata(&counter, 0x24, YES);
+
+  XCTAssertEqual(pmt.length, 188u);
+
+  const uint8_t *bytes = pmt.bytes;
+
+  // Sync byte and PID = 0x0100
+  XCTAssertEqual(bytes[0], 0x47);
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, (uint16_t)0x0100);
+
+  // table_id = 0x02 (PMT)
+  XCTAssertEqual(bytes[5], 0x02);
+
+  uint8_t *section = (uint8_t *)&bytes[5];
+
+  // Video stream entry at offset 12: stream_type = 0x24
+  XCTAssertEqual(section[12], 0x24);
+  uint16_t videoPid = ((section[13] & 0x1F) << 8) | section[14];
+  XCTAssertEqual(videoPid, (uint16_t)0x0101);
+
+  // Metadata stream entry at offset 17: stream_type = 0x15
+  XCTAssertEqual(section[17], 0x15);
+  uint16_t metaPid = ((section[18] & 0x1F) << 8) | section[19];
+  XCTAssertEqual(metaPid, FBMPEGTSMetadataPID);
+}
+
+- (void)testPMTWithoutMetadataStreamUnchanged
+{
+  uint8_t counter1 = 0, counter2 = 0;
+  NSData *pmtWithout = FBMPEGTSCreatePMTPacketWithMetadata(&counter1, 0x24, NO);
+  NSData *pmtOriginal = FBMPEGTSCreatePMTPacket(&counter2, 0x24);
+
+  XCTAssertEqualObjects(pmtWithout, pmtOriginal);
+}
+
+#pragma mark MPEG-TS Timed Metadata Packets
+
+- (void)testTimedMetadataPacketStructure
+{
+  uint8_t counter = 0;
+  NSData *output = FBMPEGTSCreateTimedMetadataPackets(@"Chapter 1", 90000, &counter);
+
+  XCTAssertGreaterThan(output.length, 0u);
+  XCTAssertEqual(output.length % 188, 0u);
+
+  const uint8_t *bytes = output.bytes;
+
+  // Sync byte
+  XCTAssertEqual(bytes[0], 0x47);
+
+  // payload_unit_start = 1
+  XCTAssertTrue(bytes[1] & 0x40);
+
+  // PID = MetadataPID (0x0102)
+  uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
+  XCTAssertEqual(pid, FBMPEGTSMetadataPID);
+
+  // Continuity counter incremented
+  XCTAssertEqual(counter, 1);
+
+  // Find PES start code with private_stream_1 (0xBD)
+  NSData *pesStartCode = [NSData dataWithBytes:(uint8_t[]){0x00, 0x00, 0x01, 0xBD} length:4];
+  NSRange pesRange = [output rangeOfData:pesStartCode options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(pesRange.location, (NSUInteger)NSNotFound, @"PES start code with private_stream_1 should be present");
+
+  // Find ID3 header
+  NSData *id3Header = [NSData dataWithBytes:(uint8_t[]){'I', 'D', '3'} length:3];
+  NSRange id3Range = [output rangeOfData:id3Header options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(id3Range.location, (NSUInteger)NSNotFound, @"ID3 header should be present");
+
+  // Find TXXX frame
+  NSData *txxxFrame = [NSData dataWithBytes:(uint8_t[]){'T', 'X', 'X', 'X'} length:4];
+  NSRange txxxRange = [output rangeOfData:txxxFrame options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(txxxRange.location, (NSUInteger)NSNotFound, @"TXXX frame should be present");
+
+  // Find the chapter text
+  NSData *chapterText = [@"Chapter 1" dataUsingEncoding:NSUTF8StringEncoding];
+  NSRange textRange = [output rangeOfData:chapterText options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(textRange.location, (NSUInteger)NSNotFound, @"Chapter text should be present in output");
+}
+
+- (void)testTimedMetadataShortTextFitsInOnePacket
+{
+  uint8_t counter = 0;
+  NSData *output = FBMPEGTSCreateTimedMetadataPackets(@"Hi", 0, &counter);
+  XCTAssertEqual(output.length, 188u);
+}
+
+- (void)testTimedMetadataLongTextSpansMultiplePackets
+{
+  NSMutableString *longText = [NSMutableString string];
+  for (int i = 0; i < 50; i++) {
+    [longText appendString:@"ABCDEFGHIJ"];
+  }
+  uint8_t counter = 0;
+  NSData *output = FBMPEGTSCreateTimedMetadataPackets(longText, 45000, &counter);
+  XCTAssertGreaterThan(output.length, 188u);
+  XCTAssertEqual(output.length % 188, 0u);
+
+  const uint8_t *bytes = output.bytes;
+  size_t numPackets = output.length / 188;
+  for (size_t i = 0; i < numPackets; i++) {
+    XCTAssertEqual(bytes[i * 188], 0x47, @"Packet %zu should have sync byte", i);
+    uint16_t pktPid = ((bytes[i * 188 + 1] & 0x1F) << 8) | bytes[i * 188 + 2];
+    XCTAssertEqual(pktPid, FBMPEGTSMetadataPID, @"Packet %zu should have metadata PID", i);
+  }
+
+  XCTAssertTrue(bytes[1] & 0x40, @"First packet should have payload_unit_start");
+  if (numPackets > 1) {
+    XCTAssertFalse(bytes[189] & 0x40, @"Second packet should not have payload_unit_start");
+  }
+}
+
 @end
