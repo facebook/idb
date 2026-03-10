@@ -1100,6 +1100,50 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   }
 }
 
+#pragma mark Screenshot
+
+- (nullable NSData *)captureCompositedScreenshotWithError:(NSError **)error
+{
+  CVPixelBufferRef sourceBuffer = self.pixelBuffer;
+  if (!sourceBuffer) {
+    return [[FBSimulatorError describe:@"No pixel buffer available for screenshot"] fail:error];
+  }
+
+  // Build a CIImage, compositing the overlay if present.
+  // Unlike pushFrameForceKeyFrame: (which needs a CVPixelBuffer for the encoder),
+  // the screenshot path only needs a CGImage, so we skip the intermediate buffer
+  // and go directly from the composited CIImage to createCGImage:.
+  CIImage *ciImage;
+  CVPixelBufferRef overlayBuf = self.overlayBuffer;
+  if (overlayBuf && self.compositorCIContext && self.compositedBufferPool) {
+    CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
+    CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
+    ciImage = [overlayImage imageByCompositingOverImage:sourceImage];
+  } else {
+    ciImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
+  }
+
+  CIContext *ctx = self.compositorCIContext ?: [CIContext context];
+  CGImageRef cgImage = [ctx createCGImage:ciImage fromRect:ciImage.extent];
+
+  if (!cgImage) {
+    return [[FBSimulatorError describe:@"Failed to create CGImage from pixel buffer"] fail:error];
+  }
+
+  NSMutableData *pngData = [NSMutableData data];
+  CGImageDestinationRef dest = CGImageDestinationCreateWithData((CFMutableDataRef)pngData, kUTTypePNG, 1, NULL);
+  CGImageDestinationAddImage(dest, cgImage, NULL);
+  BOOL finalized = CGImageDestinationFinalize(dest);
+  CFRelease(dest);
+  CGImageRelease(cgImage);
+
+  if (!finalized) {
+    return [[FBSimulatorError describe:@"Failed to encode PNG"] fail:error];
+  }
+
+  return pngData;
+}
+
 #pragma mark FBiOSTargetOperation
 
 - (FBFuture<NSNull *> *)completed

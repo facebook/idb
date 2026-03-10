@@ -65,6 +65,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)updateOverlayBuffer:(nullable CVPixelBufferRef)overlayBuffer;
 
+#pragma mark Screenshot
+
+/**
+ Capture a PNG screenshot of the current frame with overlay composited.
+
+ @param error an error out for any error that occurs.
+ @return PNG data if successful, nil otherwise.
+ */
+- (nullable NSData *)captureCompositedScreenshotWithError:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
