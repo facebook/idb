@@ -33,7 +33,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDat
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
 - (BOOL)tearDown:(NSError **)error;
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error;
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error;
 
 @end
 
@@ -266,7 +266,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error
 {
   CVPixelBufferRef bufferToWrite = pixelBuffer;
   CVPixelBufferRef toFree = nil;
@@ -561,7 +561,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   return YES;
 }
 
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration error:(NSError **)error
+- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error
 {
   VTCompressionSessionRef compressionSession = self.compressionSession;
   if (!compressionSession) {
@@ -602,7 +602,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   CMTime time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, NSEC_PER_SEC);
   CMTime duration = frameDuration > 0 ? CMTimeMakeWithSeconds(frameDuration, NSEC_PER_SEC) : kCMTimeInvalid;
   NSDictionary *frameProperties = nil;
-  if (frameNumber == 0) {
+  if (frameNumber == 0 || forceKeyFrame) {
     frameProperties = @{(__bridge NSString *)kVTEncodeFrameOptionKey_ForceKeyFrame: @YES};
   }
   // Lock the source buffer for read-only access during the encode call. For
@@ -684,7 +684,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 @property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBSimulatorVideoStreamFramePusher> framePusher;
 
-- (void)pushFrame;
+- (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame;
 
 @end
 
@@ -803,7 +803,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 - (void)didChangeIOSurface:(IOSurface *)surface
 {
   [self mountSurface:surface error:nil];
-  [self pushFrame];
+  [self pushFrameForceKeyFrame:NO];
 }
 
 - (void)didReceiveDamageRect
@@ -863,7 +863,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   return YES;
 }
 
-- (void)pushFrame
+- (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame
 {
   // Ensure that we have all preconditions in place before pushing.
   CVPixelBufferRef pixelBufer = self.pixelBuffer;
@@ -886,7 +886,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   self.timeAtLastPush = now;
 
   // Push the Frame
-  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration error:nil];
+  [framePusher writeEncodedFrame:pixelBufer frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration forceKeyFrame:forceKeyFrame error:nil];
 
   // Increment frame counter
   self.frameNumber = frameNumber + 1;
@@ -1030,7 +1030,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
 - (void)didReceiveDamageRect
 {
-  [self pushFrame];
+  [self pushFrameForceKeyFrame:NO];
 }
 
 @end
@@ -1097,7 +1097,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   uint64_t nextTargetTime = mach_absolute_time() + frameIntervalMach;
   while (self.stoppedFuture.state == FBFutureStateRunning) {
     uint64_t beforePush = mach_absolute_time();
-    [self pushFrame];
+    [self pushFrameForceKeyFrame:NO];
     uint64_t afterPush = mach_absolute_time();
 
     // Track push duration stats
