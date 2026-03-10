@@ -156,16 +156,19 @@ extern NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t strea
 /**
  Packetize a PES payload into one or more 188-byte MPEG-TS packets.
  Emits PAT and PMT before video packets when isKeyFrame is YES.
+ The first TS packet of each access unit carries a PCR adaptation field.
 
  @param pesData the PES packet data.
  @param isKeyFrame YES to prepend PAT+PMT for mid-stream join support.
  @param streamType the MPEG-TS stream type for the PMT (e.g. 0x24 for HEVC, 0x1B for H264).
+ @param pts90k the presentation timestamp in 90kHz units, used as the PCR base value.
  @param videoContinuityCounter pointer to the video PID continuity counter.
  @param patContinuityCounter pointer to the PAT continuity counter.
  @param pmtContinuityCounter pointer to the PMT continuity counter.
  @return the concatenated TS packets.
  */
 extern NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
+                                     uint64_t pts90k,
                                      uint8_t *videoContinuityCounter,
                                      uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter);
 

@@ -280,10 +280,15 @@ NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t streamType)
 }
 
 NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
+                                   uint64_t pts90k,
                                    uint8_t *videoContinuityCounter,
                                    uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter)
 {
-  size_t numVideoPackets = (pesData.length + 183) / 184;
+  // First packet carries at most 176 bytes (PCR adaptation field uses 8 bytes),
+  // remaining packets carry 184 bytes each.
+  size_t firstPayload = pesData.length < 176 ? pesData.length : 176;
+  size_t remainingBytes = pesData.length - firstPayload;
+  size_t numVideoPackets = 1 + (remainingBytes + 183) / 184;
   size_t totalPackets = (isKeyFrame ? 2 : 0) + numVideoPackets;
   NSMutableData *output = [[NSMutableData alloc] initWithCapacity:totalPackets * TSPacketSize];
 
@@ -308,28 +313,53 @@ NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamTyp
     packet[2] = VideoPID & 0xFF;
 
     size_t headerSize = 4;
-    size_t payloadCapacity = TSPacketSize - headerSize;
     size_t remaining = pesLength - pesOffset;
 
-    if (remaining < payloadCapacity) {
-      // Need adaptation field for stuffing
-      size_t stuffingBytes = payloadCapacity - remaining;
-      if (stuffingBytes == 1) {
-        // adaptation_field_length = 0, just the length byte
-        packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
-        packet[4] = 0x00; // adaptation_field_length = 0
-        headerSize = 5;
-      } else {
-        packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
-        packet[4] = (uint8_t)(stuffingBytes - 1); // adaptation_field_length
-        if (stuffingBytes > 1) {
-          packet[5] = 0x00; // flags
-          memset(&packet[6], 0xFF, stuffingBytes - 2);
-        }
-        headerSize = 4 + stuffingBytes;
+    if (first) {
+      // First packet of each access unit: include adaptation field with PCR
+      packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F); // adaptation + payload
+      packet[4] = 0x07; // adaptation_field_length = 7
+      packet[5] = 0x10; // flags: PCR present
+      // PCR encoding: 33-bit base (90kHz) + 6 reserved bits (all 1) + 9-bit extension (0)
+      uint64_t pcrBase = pts90k;
+      packet[6]  = (uint8_t)(pcrBase >> 25);
+      packet[7]  = (uint8_t)(pcrBase >> 17);
+      packet[8]  = (uint8_t)(pcrBase >> 9);
+      packet[9]  = (uint8_t)(pcrBase >> 1);
+      packet[10] = (uint8_t)(((pcrBase & 1) << 7) | 0x7E); // base LSB + 6 reserved bits
+      packet[11] = 0x00; // extension = 0
+      headerSize = 12;
+
+      size_t payloadCapacity = TSPacketSize - headerSize; // 176
+      if (remaining < payloadCapacity) {
+        // Extend adaptation field with stuffing bytes
+        size_t stuffingNeeded = payloadCapacity - remaining;
+        packet[4] = (uint8_t)(0x07 + stuffingNeeded); // extend adaptation_field_length
+        memset(&packet[12], 0xFF, stuffingNeeded);
+        headerSize = 12 + stuffingNeeded;
       }
     } else {
-      packet[3] = 0x10 | ((*videoContinuityCounter) & 0x0F);
+      size_t payloadCapacity = TSPacketSize - headerSize; // 184
+      if (remaining < payloadCapacity) {
+        // Need adaptation field for stuffing
+        size_t stuffingBytes = payloadCapacity - remaining;
+        if (stuffingBytes == 1) {
+          // adaptation_field_length = 0, just the length byte
+          packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
+          packet[4] = 0x00; // adaptation_field_length = 0
+          headerSize = 5;
+        } else {
+          packet[3] = 0x30 | ((*videoContinuityCounter) & 0x0F);
+          packet[4] = (uint8_t)(stuffingBytes - 1); // adaptation_field_length
+          if (stuffingBytes > 1) {
+            packet[5] = 0x00; // flags
+            memset(&packet[6], 0xFF, stuffingBytes - 2);
+          }
+          headerSize = 4 + stuffingBytes;
+        }
+      } else {
+        packet[3] = 0x10 | ((*videoContinuityCounter) & 0x0F);
+      }
     }
 
     (*videoContinuityCounter)++;
@@ -401,10 +431,10 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
     }
   }
 
-  // Build PES packet in a single allocation: 14-byte header + parameter sets + NAL data.
-  // PES header: start code (3) + stream_id (1) + length (2) + flags (2) + PTS length (1) = 9
-  // With PTS: add 5 bytes = 14 bytes header
-  size_t pesHeaderLength = 14;
+  // Build PES packet in a single allocation: 19-byte header + parameter sets + NAL data.
+  // PES header: start code (3) + stream_id (1) + length (2) + flags (2) + header data length (1) = 9
+  // With PTS + DTS: add 10 bytes = 19 bytes header
+  size_t pesHeaderLength = 19;
   size_t pesPayloadLength = parameterSetSize + dataLength;
   size_t pesTotalLength = pesHeaderLength + pesPayloadLength;
   // PES packet_length field: 0 means unbounded for video, but we'll set it if it fits
@@ -419,7 +449,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
   NSMutableData *pesPacket = [[NSMutableData alloc] initWithCapacity:pesTotalLength];
 
   // PES start code prefix + stream_id (0xE0 = video)
-  uint8_t pesHeader[14];
+  uint8_t pesHeader[19];
   pesHeader[0] = 0x00;
   pesHeader[1] = 0x00;
   pesHeader[2] = 0x01;
@@ -427,15 +457,23 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
   pesHeader[4] = (pesPacketLength >> 8) & 0xFF;
   pesHeader[5] = pesPacketLength & 0xFF;
   pesHeader[6] = 0x80; // marker bits
-  pesHeader[7] = 0x80; // PTS present
-  pesHeader[8] = 0x05; // PES header data length (5 bytes for PTS)
+  pesHeader[7] = 0xC0; // PTS + DTS present
+  pesHeader[8] = 0x0A; // PES header data length (10 bytes for PTS + DTS)
 
-  // PTS encoding (33-bit value in 5 bytes)
-  pesHeader[9]  = 0x21 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  // PTS encoding (33-bit value in 5 bytes, indicator nibble 0x3 when DTS present)
+  pesHeader[9]  = 0x31 | (uint8_t)(((pts90k >> 29) & 0x0E));
   pesHeader[10] = (uint8_t)((pts90k >> 22) & 0xFF);
   pesHeader[11] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
   pesHeader[12] = (uint8_t)((pts90k >> 7) & 0xFF);
   pesHeader[13] = (uint8_t)(((pts90k << 1) & 0xFE) | 0x01);
+
+  // DTS encoding (33-bit value in 5 bytes, indicator nibble 0x1)
+  // DTS == PTS since AllowFrameReordering is NO (decode order = presentation order)
+  pesHeader[14] = 0x11 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  pesHeader[15] = (uint8_t)((pts90k >> 22) & 0xFF);
+  pesHeader[16] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
+  pesHeader[17] = (uint8_t)((pts90k >> 7) & 0xFF);
+  pesHeader[18] = (uint8_t)(((pts90k << 1) & 0xFE) | 0x01);
 
   [pesPacket appendBytes:pesHeader length:pesHeaderLength];
 
@@ -462,6 +500,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 
   // Packetize into MPEG-TS and write to consumer
   NSData *tsData = FBMPEGTSPacketizePES(pesPacket, isKeyFrame, mpegtsStreamType,
+                                         pts90k,
                                          &videoContinuityCounter,
                                          &patContinuityCounter, &pmtContinuityCounter);
   [consumer consumeData:tsData];

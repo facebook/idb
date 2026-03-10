@@ -446,7 +446,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
 
   uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
-  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, 90000, &videoCC, &patCC, &pmtCC);
 
   // Non-keyframe: no PAT/PMT, just one video TS packet
   XCTAssertEqual(output.length, 188u);
@@ -462,6 +462,10 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   // Video PID = 0x0101
   uint16_t pid = ((bytes[1] & 0x1F) << 8) | bytes[2];
   XCTAssertEqual(pid, (uint16_t)0x0101);
+
+  // First packet should have adaptation field with PCR
+  XCTAssertEqual(bytes[3] & 0x30, 0x30); // adaptation + payload
+  XCTAssertTrue(bytes[5] & 0x10); // PCR flag set
 }
 
 - (void)testTSPacketizationMultiplePackets
@@ -472,7 +476,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
 
   uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
-  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, 90000, &videoCC, &patCC, &pmtCC);
 
   // Should produce 2 TS packets (188 * 2 = 376)
   XCTAssertEqual(output.length, 188u * 2);
@@ -495,7 +499,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
 
   uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
-  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x24, &videoCC, &patCC, &pmtCC);
+  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x24, 90000, &videoCC, &patCC, &pmtCC);
 
   // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
   XCTAssertEqual(output.length, 188u * 3);
@@ -525,7 +529,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
 
   uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
-  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, &videoCC, &patCC, &pmtCC);
+  NSData *output = FBMPEGTSPacketizePES(pesData, NO, 0x24, 90000, &videoCC, &patCC, &pmtCC);
 
   // Non-keyframe: just 1 video packet
   XCTAssertEqual(output.length, 188u);
@@ -548,7 +552,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   NSData *pesData = [NSData dataWithBytes:pesBytes length:sizeof(pesBytes)];
 
   uint8_t videoCC = 0, patCC = 0, pmtCC = 0;
-  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x1B, &videoCC, &patCC, &pmtCC);
+  NSData *output = FBMPEGTSPacketizePES(pesData, YES, 0x1B, 90000, &videoCC, &patCC, &pmtCC);
 
   // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
   XCTAssertEqual(output.length, 188u * 3);
