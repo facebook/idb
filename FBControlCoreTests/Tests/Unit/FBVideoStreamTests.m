@@ -147,7 +147,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
   NSError *error = nil;
 
-  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, consumer, logger, &error);
+  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error);
   XCTAssertTrue(result);
   XCTAssertNil(error);
 
@@ -184,7 +184,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
   NSError *error = nil;
 
-  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, consumer, logger, &error);
+  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error);
   XCTAssertTrue(result);
   XCTAssertNil(error);
 
@@ -215,7 +215,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
   NSError *error = nil;
 
-  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, consumer, logger, &error);
+  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error);
   XCTAssertTrue(result);
   XCTAssertNil(error);
 
@@ -239,7 +239,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
   NSError *error = nil;
 
-  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, consumer, logger, &error);
+  BOOL result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error);
   XCTAssertFalse(result);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.localizedDescription containsString:@"Sample Buffer is not ready"]);

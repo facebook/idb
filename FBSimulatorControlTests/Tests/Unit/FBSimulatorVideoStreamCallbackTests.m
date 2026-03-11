@@ -163,6 +163,7 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
     consumer:consumer
     compressorCallback:NULL
     frameWriter:WriteFrameToAnnexBStream
+    frameWriterContext:nil
     logger:logger];
 }
 

@@ -6,9 +6,11 @@
 #import <VideoToolbox/VideoToolbox.h>
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBVideoStreamConfiguration;
 
-typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 typedef struct {
     NSUInteger callbackCount;
@@ -29,6 +31,7 @@ typedef struct {
                          consumer:(id<FBDataConsumer>)consumer
                compressorCallback:(VTCompressionOutputCallback)compressorCallback
                       frameWriter:(FBCompressedFrameWriter)frameWriter
+               frameWriterContext:(id _Nullable)frameWriterContext
                            logger:(id<FBControlCoreLogger>)logger;
 
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -43,7 +46,10 @@ typedef struct {
 @property (nonatomic, assign) CFAbsoluteTime statsStartTime;
 @property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
 @property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
+@property (nonatomic, strong, nullable, readonly) id frameWriterContext;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
+
+NS_ASSUME_NONNULL_END

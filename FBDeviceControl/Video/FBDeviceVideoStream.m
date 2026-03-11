@@ -279,7 +279,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
-  WriteFrameToAnnexBStream(sampleBuffer, self.consumer, self.logger, nil);
+  WriteFrameToAnnexBStream(sampleBuffer, nil, self.consumer, self.logger, nil);
 }
 
 @end
@@ -288,7 +288,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
-  WriteH264FrameToMPEGTSStream(sampleBuffer, self.consumer, self.logger, nil);
+  WriteH264FrameToMPEGTSStream(sampleBuffer, nil, self.consumer, self.logger, nil);
 }
 
 @end
