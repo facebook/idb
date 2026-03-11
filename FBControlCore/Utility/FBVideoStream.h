@@ -99,6 +99,64 @@ extern BOOL WriteHEVCFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id _Nul
 extern BOOL WriteH264FrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 /**
+ Muxer context for fragmented MP4 (fMP4) output.
+ Minimal state holder — all frame writing logic lives in the C writer functions.
+ Created per video stream — no static/global state.
+ */
+@interface FBFMP4MuxerContext : NSObject
+
+/**
+ Create a new fMP4 muxer context.
+
+ @param isHEVC YES for HEVC/H.265, NO for H.264.
+ @return a new muxer context.
+ */
+- (instancetype)initWithHEVC:(BOOL)isHEVC;
+
+@property (nonatomic, assign, readonly) BOOL isHEVC;
+@property (nonatomic, assign) BOOL initWritten;
+@property (nonatomic, assign) uint32_t sequenceNumber;
+@property (nonatomic, assign) uint64_t baseDecodeTime;
+@property (nonatomic, assign) uint64_t lastPts90k;
+
+@end
+
+/**
+ Write an H264 frame to the stream, in the fMP4 container format.
+ Emits ftyp + moov on first keyframe. Each frame is a single-sample moof + mdat fragment.
+ NAL data is kept in AVCC (length-prefixed) format — not converted to Annex-B.
+
+ @param sampleBuffer the Sample buffer to write.
+ @param context an FBFMP4MuxerContext instance holding per-stream state.
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteH264FrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
+/**
+ Write an HEVC frame to the stream, in the fMP4 container format.
+
+ @param sampleBuffer the Sample buffer to write.
+ @param context an FBFMP4MuxerContext instance holding per-stream state.
+ @param consumer the consumer to write to.
+ @param logger the logger to use.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+extern BOOL WriteHEVCFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+
+/**
+ Write an emsg (Event Message) box for a chapter marker to the fMP4 stream.
+
+ @param context the FBFMP4MuxerContext for PTS tracking.
+ @param text the chapter/marker label text.
+ @param consumer the data consumer to write the emsg box to.
+ */
+extern void FBFMP4WriteEmsgBox(FBFMP4MuxerContext *context, NSString *text, id<FBDataConsumer> consumer);
+
+/**
  Write a JPEG frame to the MJPEG stream.
 
  @param jpegDataBuffer the JPEG data to write.

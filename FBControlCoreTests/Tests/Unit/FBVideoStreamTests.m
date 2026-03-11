@@ -686,4 +686,140 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   }
 }
 
+#pragma mark fMP4 Writer
+
+- (void)testFMP4InitSegmentEmittedOnFirstKeyframe
+{
+  CMSampleBufferRef sampleBuffer = CreateH264SampleBuffer(YES);
+  FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+  NSError *error = nil;
+
+  BOOL result = WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error);
+  XCTAssertTrue(result);
+  XCTAssertNil(error);
+  XCTAssertTrue(ctx.initWritten);
+
+  NSData *output = consumer.data;
+  XCTAssertGreaterThan(output.length, 16u);
+
+  const uint8_t *bytes = output.bytes;
+
+  // First box should be ftyp: [4-byte size]["ftyp"]
+  XCTAssertEqual(bytes[4], 'f');
+  XCTAssertEqual(bytes[5], 't');
+  XCTAssertEqual(bytes[6], 'y');
+  XCTAssertEqual(bytes[7], 'p');
+
+  // Read ftyp box size and find moov after it
+  uint32_t ftypSize = CFSwapInt32BigToHost(*(uint32_t *)bytes);
+  XCTAssertGreaterThan(output.length, (NSUInteger)(ftypSize + 8));
+  XCTAssertEqual(bytes[ftypSize + 4], 'm');
+  XCTAssertEqual(bytes[ftypSize + 5], 'o');
+  XCTAssertEqual(bytes[ftypSize + 6], 'o');
+  XCTAssertEqual(bytes[ftypSize + 7], 'v');
+
+  CFRelease(sampleBuffer);
+}
+
+- (void)testFMP4NonKeyframeBeforeFirstKeyframeDropped
+{
+  CMSampleBufferRef nonKeyframe = CreateH264SampleBuffer(NO);
+  FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+  NSError *error = nil;
+
+  BOOL result = WriteH264FrameToFMP4Stream(nonKeyframe, ctx, consumer, logger, &error);
+  XCTAssertTrue(result);
+  XCTAssertNil(error);
+  XCTAssertFalse(ctx.initWritten);
+  XCTAssertEqual(consumer.data.length, 0u, @"No data should be written before first keyframe");
+
+  CFRelease(nonKeyframe);
+}
+
+- (void)testFMP4FragmentContainsMoofAndMdat
+{
+  FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+
+  CMSampleBufferRef keyframe = CreateH264SampleBuffer(YES);
+  WriteH264FrameToFMP4Stream(keyframe, ctx, consumer, logger, nil);
+  CFRelease(keyframe);
+
+  NSData *output = consumer.data;
+  NSData *moofType = [NSData dataWithBytes:"moof" length:4];
+  NSData *mdatType = [NSData dataWithBytes:"mdat" length:4];
+
+  NSRange moofRange = [output rangeOfData:moofType options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(moofRange.location, (NSUInteger)NSNotFound, @"Output should contain moof box");
+
+  NSRange mdatRange = [output rangeOfData:mdatType options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(mdatRange.location, (NSUInteger)NSNotFound, @"Output should contain mdat box");
+
+  XCTAssertTrue(moofRange.location < mdatRange.location);
+  XCTAssertEqual(ctx.sequenceNumber, 1u);
+}
+
+- (void)testFMP4EmsgBoxStructure
+{
+  FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+  ctx.lastPts90k = 90000;
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+
+  FBFMP4WriteEmsgBox(ctx, @"Chapter 1", consumer);
+
+  NSData *output = consumer.data;
+  XCTAssertGreaterThan(output.length, 12u);
+
+  const uint8_t *bytes = output.bytes;
+
+  // Box type should be "emsg"
+  XCTAssertEqual(bytes[4], 'e');
+  XCTAssertEqual(bytes[5], 'm');
+  XCTAssertEqual(bytes[6], 's');
+  XCTAssertEqual(bytes[7], 'g');
+
+  uint32_t boxSize = CFSwapInt32BigToHost(*(uint32_t *)bytes);
+  XCTAssertEqual(boxSize, (uint32_t)output.length);
+
+  NSData *chapterText = [@"Chapter 1" dataUsingEncoding:NSUTF8StringEncoding];
+  NSRange textRange = [output rangeOfData:chapterText options:0 range:NSMakeRange(0, output.length)];
+  XCTAssertNotEqual(textRange.location, (NSUInteger)NSNotFound, @"Chapter text should be present in emsg box");
+}
+
+- (void)testFMP4NotReadyBufferReturnsError
+{
+  CMSampleBufferRef sampleBuffer = CreateNotReadySampleBuffer();
+  FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+  NSError *error = nil;
+
+  BOOL result = WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error);
+  XCTAssertFalse(result);
+  XCTAssertNotNil(error);
+  XCTAssertTrue([error.localizedDescription containsString:@"Sample Buffer is not ready"]);
+  XCTAssertEqual(consumer.data.length, 0u);
+
+  CFRelease(sampleBuffer);
+}
+
+- (void)testFMP4NilContextReturnsError
+{
+  CMSampleBufferRef sampleBuffer = CreateH264SampleBuffer(YES);
+  id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
+  id<FBControlCoreLogger> logger = [[FBControlCoreLoggerDouble alloc] init];
+  NSError *error = nil;
+
+  BOOL result = WriteH264FrameToFMP4Stream(sampleBuffer, nil, consumer, logger, &error);
+  XCTAssertFalse(result);
+  XCTAssertNotNil(error);
+
+  CFRelease(sampleBuffer);
+}
+
 @end

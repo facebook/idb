@@ -793,3 +793,608 @@ BOOL WriteMinicapHeaderToStream(uint32 width, uint32 height, id<FBDataConsumer> 
   [consumer consumeData:data];
   return YES;
 }
+
+#pragma mark - Fragmented MP4 (fMP4) Writer
+
+// ISO BMFF box helpers — all values are big-endian per spec.
+
+static void FBFMP4Write8(NSMutableData *data, uint8_t value)
+{
+  [data appendBytes:&value length:1];
+}
+
+static void FBFMP4Write16(NSMutableData *data, uint16_t value)
+{
+  uint16_t be = CFSwapInt16HostToBig(value);
+  [data appendBytes:&be length:2];
+}
+
+static void FBFMP4Write32(NSMutableData *data, uint32_t value)
+{
+  uint32_t be = CFSwapInt32HostToBig(value);
+  [data appendBytes:&be length:4];
+}
+
+static void FBFMP4Write64(NSMutableData *data, uint64_t value)
+{
+  uint64_t be = CFSwapInt64HostToBig(value);
+  [data appendBytes:&be length:8];
+}
+
+static NSUInteger FBFMP4BeginBox(NSMutableData *data, const char *type)
+{
+  NSUInteger offset = data.length;
+  FBFMP4Write32(data, 0);
+  [data appendBytes:type length:4];
+  return offset;
+}
+
+static void FBFMP4EndBox(NSMutableData *data, NSUInteger sizeOffset)
+{
+  uint32_t size = (uint32_t)(data.length - sizeOffset);
+  uint32_t be = CFSwapInt32HostToBig(size);
+  [data replaceBytesInRange:NSMakeRange(sizeOffset, 4) withBytes:&be];
+}
+
+static void FBFMP4WriteFullBoxHeader(NSMutableData *data, uint8_t version, uint32_t flags)
+{
+  uint32_t vf = ((uint32_t)version << 24) | (flags & 0x00FFFFFF);
+  FBFMP4Write32(data, vf);
+}
+
+static void FBFMP4WriteZeros(NSMutableData *data, NSUInteger count)
+{
+  NSCAssert(count <= 64, @"Zero count greater than 64");
+  uint8_t zeros[64] = {0};
+  [data appendBytes:zeros length:count];
+}
+
+// Extract codec configuration atom (avcC or hvcC) from CMFormatDescription.
+static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription, BOOL isHEVC)
+{
+  NSDictionary *atoms = (__bridge NSDictionary *)CMFormatDescriptionGetExtension(
+    formatDescription, kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms);
+  if (atoms) {
+    NSString *key = isHEVC ? @"hvcC" : @"avcC";
+    NSData *configData = atoms[key];
+    if (configData) {
+      return configData;
+    }
+  }
+  // Fallback: build avcC/hvcC manually from parameter sets.
+  NSMutableData *config = [NSMutableData new];
+  if (!isHEVC) {
+    const uint8_t *sps = NULL;
+    size_t spsSize = 0;
+    size_t paramCount = 0;
+    OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+      formatDescription, 0, &sps, &spsSize, &paramCount, NULL);
+    if (status != noErr || spsSize < 4) return nil;
+
+    const uint8_t *pps = NULL;
+    size_t ppsSize = 0;
+    if (paramCount > 1) {
+      CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+        formatDescription, 1, &pps, &ppsSize, NULL, NULL);
+    }
+
+    FBFMP4Write8(config, 1);
+    FBFMP4Write8(config, sps[1]);
+    FBFMP4Write8(config, sps[2]);
+    FBFMP4Write8(config, sps[3]);
+    FBFMP4Write8(config, 0xFF);
+    FBFMP4Write8(config, 0xE1);
+    FBFMP4Write16(config, (uint16_t)spsSize);
+    [config appendBytes:sps length:spsSize];
+    FBFMP4Write8(config, pps ? 1 : 0);
+    if (pps) {
+      FBFMP4Write16(config, (uint16_t)ppsSize);
+      [config appendBytes:pps length:ppsSize];
+    }
+  } else {
+    size_t paramCount = 0;
+    OSStatus status = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+      formatDescription, 0, NULL, NULL, &paramCount, NULL);
+    if (status != noErr) return nil;
+
+    NSMutableArray<NSData *> *paramSets = [NSMutableArray new];
+    NSMutableArray<NSNumber *> *paramTypes = [NSMutableArray new];
+    for (size_t i = 0; i < paramCount; i++) {
+      const uint8_t *ps = NULL;
+      size_t psSize = 0;
+      CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+        formatDescription, i, &ps, &psSize, NULL, NULL);
+      if (ps && psSize > 0) {
+        [paramSets addObject:[NSData dataWithBytes:ps length:psSize]];
+        uint8_t nalType = (ps[0] >> 1) & 0x3F;
+        [paramTypes addObject:@(nalType)];
+      }
+    }
+
+    FBFMP4Write8(config, 1);
+    FBFMP4Write8(config, 0);
+    FBFMP4Write32(config, 0);
+    FBFMP4Write16(config, 0);
+    FBFMP4Write32(config, 0);
+    FBFMP4Write8(config, 0);
+    FBFMP4Write16(config, 0xF000);
+    FBFMP4Write8(config, 0xFC);
+    FBFMP4Write8(config, 0xFC);
+    FBFMP4Write8(config, 0xF8);
+    FBFMP4Write8(config, 0xF8);
+    FBFMP4Write16(config, 0);
+    FBFMP4Write8(config, 0x0F);
+
+    NSMutableDictionary<NSNumber *, NSMutableArray<NSData *> *> *grouped = [NSMutableDictionary new];
+    for (NSUInteger i = 0; i < paramSets.count; i++) {
+      NSNumber *type = paramTypes[i];
+      if (!grouped[type]) grouped[type] = [NSMutableArray new];
+      [grouped[type] addObject:paramSets[i]];
+    }
+
+    FBFMP4Write8(config, (uint8_t)grouped.count);
+    for (NSNumber *nalType in grouped) {
+      NSArray<NSData *> *sets = grouped[nalType];
+      FBFMP4Write8(config, nalType.unsignedCharValue & 0x3F);
+      FBFMP4Write16(config, (uint16_t)sets.count);
+      for (NSData *set in sets) {
+        FBFMP4Write16(config, (uint16_t)set.length);
+        [config appendData:set];
+      }
+    }
+  }
+  return config;
+}
+
+static NSData *FBFMP4CreateFtypBox(BOOL isHEVC)
+{
+  NSMutableData *data = [NSMutableData dataWithCapacity:24];
+  NSUInteger off = FBFMP4BeginBox(data, "ftyp");
+  [data appendBytes:"isom" length:4];
+  FBFMP4Write32(data, 0x200);
+  [data appendBytes:"isom" length:4];
+  [data appendBytes:"iso6" length:4];
+  if (isHEVC) {
+    [data appendBytes:"hvc1" length:4];
+  } else {
+    [data appendBytes:"mp41" length:4];
+  }
+  FBFMP4EndBox(data, off);
+  return data;
+}
+
+static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription, BOOL isHEVC,
+                                    uint32_t width, uint32_t height, uint32_t timescale)
+{
+  NSMutableData *data = [NSMutableData dataWithCapacity:512];
+
+  NSData *codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, isHEVC);
+  const char *sampleEntryType = isHEVC ? "hvc1" : "avc1";
+  const char *codecConfigType = isHEVC ? "hvcC" : "avcC";
+
+  NSUInteger moovOff = FBFMP4BeginBox(data, "moov");
+
+  // mvhd
+  {
+    NSUInteger off = FBFMP4BeginBox(data, "mvhd");
+    FBFMP4WriteFullBoxHeader(data, 0, 0);
+    FBFMP4Write32(data, 0);
+    FBFMP4Write32(data, 0);
+    FBFMP4Write32(data, timescale);
+    FBFMP4Write32(data, 0);
+    FBFMP4Write32(data, 0x00010000);
+    FBFMP4Write16(data, 0x0100);
+    FBFMP4WriteZeros(data, 10);
+    uint32_t matrix[] = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+    for (int i = 0; i < 9; i++) FBFMP4Write32(data, matrix[i]);
+    FBFMP4WriteZeros(data, 24);
+    FBFMP4Write32(data, 2);
+    FBFMP4EndBox(data, off);
+  }
+
+  // trak
+  {
+    NSUInteger trakOff = FBFMP4BeginBox(data, "trak");
+
+    // tkhd
+    {
+      NSUInteger off = FBFMP4BeginBox(data, "tkhd");
+      FBFMP4WriteFullBoxHeader(data, 0, 0x03);
+      FBFMP4Write32(data, 0);
+      FBFMP4Write32(data, 0);
+      FBFMP4Write32(data, 1);
+      FBFMP4Write32(data, 0);
+      FBFMP4Write32(data, 0);
+      FBFMP4WriteZeros(data, 8);
+      FBFMP4Write16(data, 0);
+      FBFMP4Write16(data, 0);
+      FBFMP4Write16(data, 0);
+      FBFMP4Write16(data, 0);
+      uint32_t matrix[] = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+      for (int i = 0; i < 9; i++) FBFMP4Write32(data, matrix[i]);
+      FBFMP4Write32(data, width << 16);
+      FBFMP4Write32(data, height << 16);
+      FBFMP4EndBox(data, off);
+    }
+
+    // mdia
+    {
+      NSUInteger mdiaOff = FBFMP4BeginBox(data, "mdia");
+
+      // mdhd
+      {
+        NSUInteger off = FBFMP4BeginBox(data, "mdhd");
+        FBFMP4WriteFullBoxHeader(data, 0, 0);
+        FBFMP4Write32(data, 0);
+        FBFMP4Write32(data, 0);
+        FBFMP4Write32(data, timescale);
+        FBFMP4Write32(data, 0);
+        FBFMP4Write16(data, 0x55C4);
+        FBFMP4Write16(data, 0);
+        FBFMP4EndBox(data, off);
+      }
+
+      // hdlr
+      {
+        NSUInteger off = FBFMP4BeginBox(data, "hdlr");
+        FBFMP4WriteFullBoxHeader(data, 0, 0);
+        FBFMP4Write32(data, 0);
+        [data appendBytes:"vide" length:4];
+        FBFMP4WriteZeros(data, 12);
+        const char *name = "VideoHandler";
+        [data appendBytes:name length:strlen(name) + 1];
+        FBFMP4EndBox(data, off);
+      }
+
+      // minf
+      {
+        NSUInteger minfOff = FBFMP4BeginBox(data, "minf");
+
+        // vmhd
+        {
+          NSUInteger off = FBFMP4BeginBox(data, "vmhd");
+          FBFMP4WriteFullBoxHeader(data, 0, 1);
+          FBFMP4Write16(data, 0);
+          FBFMP4WriteZeros(data, 6);
+          FBFMP4EndBox(data, off);
+        }
+
+        // dinf → dref → url
+        {
+          NSUInteger dinfOff = FBFMP4BeginBox(data, "dinf");
+          NSUInteger drefOff = FBFMP4BeginBox(data, "dref");
+          FBFMP4WriteFullBoxHeader(data, 0, 0);
+          FBFMP4Write32(data, 1);
+          NSUInteger urlOff = FBFMP4BeginBox(data, "url ");
+          FBFMP4WriteFullBoxHeader(data, 0, 1);
+          FBFMP4EndBox(data, urlOff);
+          FBFMP4EndBox(data, drefOff);
+          FBFMP4EndBox(data, dinfOff);
+        }
+
+        // stbl
+        {
+          NSUInteger stblOff = FBFMP4BeginBox(data, "stbl");
+
+          // stsd
+          {
+            NSUInteger stsdOff = FBFMP4BeginBox(data, "stsd");
+            FBFMP4WriteFullBoxHeader(data, 0, 0);
+            FBFMP4Write32(data, 1);
+
+            // Visual sample entry (avc1 or hvc1)
+            {
+              NSUInteger entryOff = FBFMP4BeginBox(data, sampleEntryType);
+              FBFMP4WriteZeros(data, 6);
+              FBFMP4Write16(data, 1);
+              FBFMP4WriteZeros(data, 16);
+              FBFMP4Write16(data, (uint16_t)width);
+              FBFMP4Write16(data, (uint16_t)height);
+              FBFMP4Write32(data, 0x00480000);
+              FBFMP4Write32(data, 0x00480000);
+              FBFMP4Write32(data, 0);
+              FBFMP4Write16(data, 1);
+              FBFMP4WriteZeros(data, 32);
+              FBFMP4Write16(data, 0x0018);
+              FBFMP4Write16(data, 0xFFFF);
+
+              if (codecConfig) {
+                NSUInteger ccOff = FBFMP4BeginBox(data, codecConfigType);
+                [data appendData:codecConfig];
+                FBFMP4EndBox(data, ccOff);
+              }
+
+              FBFMP4EndBox(data, entryOff);
+            }
+
+            FBFMP4EndBox(data, stsdOff);
+          }
+
+          // Empty required boxes
+          {
+            NSUInteger off;
+            off = FBFMP4BeginBox(data, "stts");
+            FBFMP4WriteFullBoxHeader(data, 0, 0);
+            FBFMP4Write32(data, 0);
+            FBFMP4EndBox(data, off);
+
+            off = FBFMP4BeginBox(data, "stsc");
+            FBFMP4WriteFullBoxHeader(data, 0, 0);
+            FBFMP4Write32(data, 0);
+            FBFMP4EndBox(data, off);
+
+            off = FBFMP4BeginBox(data, "stsz");
+            FBFMP4WriteFullBoxHeader(data, 0, 0);
+            FBFMP4Write32(data, 0);
+            FBFMP4Write32(data, 0);
+            FBFMP4EndBox(data, off);
+
+            off = FBFMP4BeginBox(data, "stco");
+            FBFMP4WriteFullBoxHeader(data, 0, 0);
+            FBFMP4Write32(data, 0);
+            FBFMP4EndBox(data, off);
+          }
+
+          FBFMP4EndBox(data, stblOff);
+        }
+
+        FBFMP4EndBox(data, minfOff);
+      }
+
+      FBFMP4EndBox(data, mdiaOff);
+    }
+
+    FBFMP4EndBox(data, trakOff);
+  }
+
+  // mvex
+  {
+    NSUInteger mvexOff = FBFMP4BeginBox(data, "mvex");
+    NSUInteger trexOff = FBFMP4BeginBox(data, "trex");
+    FBFMP4WriteFullBoxHeader(data, 0, 0);
+    FBFMP4Write32(data, 1);
+    FBFMP4Write32(data, 1);
+    FBFMP4Write32(data, 0);
+    FBFMP4Write32(data, 0);
+    FBFMP4Write32(data, 0);
+    FBFMP4EndBox(data, trexOff);
+    FBFMP4EndBox(data, mvexOff);
+  }
+
+  FBFMP4EndBox(data, moovOff);
+  return data;
+}
+
+// Build the moof + mdat header for a single-sample fragment.
+// The sample data itself is NOT included — the caller emits it separately
+// to avoid a redundant copy of the (potentially large) video frame payload.
+// The returned NSData ends just after the mdat box header; the caller must
+// append exactly `sampleSize` bytes of sample data, then the fragment is complete.
+static NSData *FBFMP4CreateFragmentHeader(uint32_t sequenceNumber, uint64_t baseDecodeTime,
+                                           uint32_t duration, uint32_t sampleSize, BOOL isKeyFrame)
+{
+  uint32_t trunFlags = 0x000701;
+  // trun: header(12) + data_offset(4) + 1 sample entry (duration(4) + size(4) + flags(4))
+  size_t trunSize = 12 + 4 + 12;
+  size_t moofSize = 8 + 16 + 8 + 16 + 20 + trunSize;
+  size_t mdatHeaderSize = 8;
+
+  NSMutableData *data = [NSMutableData dataWithCapacity:moofSize + mdatHeaderSize];
+
+  NSUInteger moofOff = FBFMP4BeginBox(data, "moof");
+
+  // mfhd
+  {
+    NSUInteger off = FBFMP4BeginBox(data, "mfhd");
+    FBFMP4WriteFullBoxHeader(data, 0, 0);
+    FBFMP4Write32(data, sequenceNumber);
+    FBFMP4EndBox(data, off);
+  }
+
+  // traf
+  {
+    NSUInteger trafOff = FBFMP4BeginBox(data, "traf");
+
+    // tfhd
+    {
+      NSUInteger off = FBFMP4BeginBox(data, "tfhd");
+      FBFMP4WriteFullBoxHeader(data, 0, 0x020000);
+      FBFMP4Write32(data, 1);
+      FBFMP4EndBox(data, off);
+    }
+
+    // tfdt
+    {
+      NSUInteger off = FBFMP4BeginBox(data, "tfdt");
+      FBFMP4WriteFullBoxHeader(data, 1, 0);
+      FBFMP4Write64(data, baseDecodeTime);
+      FBFMP4EndBox(data, off);
+    }
+
+    // trun — single sample
+    {
+      FBFMP4BeginBox(data, "trun");
+      FBFMP4WriteFullBoxHeader(data, 0, trunFlags);
+      FBFMP4Write32(data, 1); // sample_count = 1
+      FBFMP4Write32(data, 0); // placeholder for data_offset (patched below)
+      FBFMP4Write32(data, duration);
+      FBFMP4Write32(data, sampleSize);
+      FBFMP4Write32(data, isKeyFrame ? 0x02000000 : 0x01010000);
+    }
+
+    FBFMP4EndBox(data, trafOff);
+  }
+
+  FBFMP4EndBox(data, moofOff);
+
+  // Patch data_offset: distance from moof start to first sample byte in mdat.
+  uint32_t actualMoofSize = (uint32_t)(data.length - moofOff);
+  uint32_t dataOffset = actualMoofSize + (uint32_t)mdatHeaderSize;
+  // dataOffsetPos = moofOff + moof_header(8) + mfhd(16) + traf_header(8) + tfhd(16) + tfdt(20) + trun_header(12) + sample_count(4)
+  NSUInteger patchPos = moofOff + 8 + 16 + 8 + 16 + 20 + 12 + 4;
+  uint32_t dataOffsetBE = CFSwapInt32HostToBig(dataOffset);
+  [data replaceBytesInRange:NSMakeRange(patchPos, 4) withBytes:&dataOffsetBE];
+
+  // mdat header only — caller appends sample data.
+  FBFMP4Write32(data, (uint32_t)(mdatHeaderSize + sampleSize));
+  [data appendBytes:"mdat" length:4];
+
+  return data;
+}
+
+// FBFMP4MuxerContext — minimal per-stream state holder for fMP4 writers.
+
+@implementation FBFMP4MuxerContext
+
+- (instancetype)initWithHEVC:(BOOL)isHEVC
+{
+  self = [super init];
+  if (!self) return nil;
+
+  _isHEVC = isHEVC;
+  _initWritten = NO;
+  _sequenceNumber = 0;
+  _baseDecodeTime = 0;
+  _lastPts90k = 0;
+
+  return self;
+}
+
+@end
+
+// Per-frame fMP4 writer: each frame is immediately emitted as a single-sample moof+mdat fragment.
+
+static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
+                                         id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
+                                         NSError **error)
+{
+  FBFMP4MuxerContext *ctx = (FBFMP4MuxerContext *)context;
+  if (!ctx) {
+    return [[FBControlCoreError describeFormat:@"fMP4 writer called without context"] failBool:error];
+  }
+
+  if (!CMSampleBufferDataIsReady(sampleBuffer)) {
+    return [[FBControlCoreError describeFormat:@"Sample Buffer is not ready"] failBool:error];
+  }
+
+  // Detect keyframe.
+  bool isKeyFrame = false;
+  CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  if (CFArrayGetCount(attachments)) {
+    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
+  }
+
+  // Extract PTS.
+  CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+  uint64_t pts90k = (uint64_t)(CMTimeGetSeconds(pts) * 90000.0);
+  uint64_t prevPts90k = ctx.lastPts90k;
+  ctx.lastPts90k = pts90k;
+
+  // On first keyframe: emit init segment (ftyp + moov).
+  if (!ctx.initWritten) {
+    if (!isKeyFrame) {
+      return YES; // Drop frames before first keyframe.
+    }
+
+    CMFormatDescriptionRef formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
+    CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(formatDesc);
+
+    NSData *ftyp = FBFMP4CreateFtypBox(ctx.isHEVC);
+    NSData *moov = FBFMP4CreateMoovBox(formatDesc, ctx.isHEVC,
+                                        (uint32_t)dims.width, (uint32_t)dims.height, 90000);
+
+    [consumer consumeData:ftyp];
+    [consumer consumeData:moov];
+
+    ctx.initWritten = YES;
+    ctx.baseDecodeTime = pts90k;
+    [logger logFormat:@"fMP4 init segment written (%dx%d, %s)",
+      dims.width, dims.height, ctx.isHEVC ? "HEVC" : "H264"];
+  }
+
+  // Compute duration.
+  uint32_t duration90k;
+  CMTime sampleDuration = CMSampleBufferGetDuration(sampleBuffer);
+  if (CMTIME_IS_VALID(sampleDuration) && CMTimeGetSeconds(sampleDuration) > 0) {
+    duration90k = (uint32_t)(CMTimeGetSeconds(sampleDuration) * 90000.0);
+  } else if (prevPts90k > 0 && pts90k > prevPts90k) {
+    duration90k = (uint32_t)(pts90k - prevPts90k);
+  } else {
+    duration90k = 3000; // ~33ms at 30fps fallback
+  }
+
+  // Get AVCC NAL data (do NOT convert to Annex-B).
+  CMBlockBufferRef dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
+  size_t dataLength = CMBlockBufferGetDataLength(dataBuffer);
+
+  // Emit moof + mdat header, then sample data — single copy only.
+  ctx.sequenceNumber += 1;
+  NSData *header = FBFMP4CreateFragmentHeader(
+    ctx.sequenceNumber,
+    ctx.baseDecodeTime,
+    duration90k, (uint32_t)dataLength, isKeyFrame
+  );
+  [consumer consumeData:header];
+
+  // Try zero-copy via CMBlockBufferGetDataPointer (works when buffer is contiguous).
+  char *dataPointer = NULL;
+  size_t lengthAtOffset = 0;
+  OSStatus ptrStatus = CMBlockBufferGetDataPointer(dataBuffer, 0, &lengthAtOffset, NULL, &dataPointer);
+  if (ptrStatus == noErr && dataPointer && lengthAtOffset >= dataLength) {
+    [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:dataLength freeWhenDone:NO]];
+  } else {
+    // Fallback: copy when the block buffer is non-contiguous.
+    NSMutableData *sampleData = [NSMutableData dataWithLength:dataLength];
+    OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, sampleData.mutableBytes);
+    if (copyStatus != noErr) {
+      return [[FBControlCoreError
+        describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+        failBool:error];
+    }
+    [consumer consumeData:sampleData];
+  }
+
+  ctx.baseDecodeTime += duration90k;
+
+  return YES;
+}
+
+BOOL WriteH264FrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
+                                 id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
+                                 NSError **error)
+{
+  return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error);
+}
+
+BOOL WriteHEVCFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
+                                  id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
+                                  NSError **error)
+{
+  return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error);
+}
+
+void FBFMP4WriteEmsgBox(FBFMP4MuxerContext *context, NSString *text, id<FBDataConsumer> consumer)
+{
+  NSData *textData = [text dataUsingEncoding:NSUTF8StringEncoding];
+  if (!textData) return;
+
+  NSMutableData *data = [NSMutableData dataWithCapacity:64 + textData.length];
+
+  NSUInteger off = FBFMP4BeginBox(data, "emsg");
+  FBFMP4WriteFullBoxHeader(data, 1, 0);
+  FBFMP4Write32(data, 90000);
+  FBFMP4Write64(data, context.lastPts90k);
+  FBFMP4Write32(data, 0);
+  FBFMP4Write32(data, 0);
+
+  const char *scheme = "urn:sime2e:chapter";
+  [data appendBytes:scheme length:strlen(scheme) + 1];
+  uint8_t zero = 0;
+  [data appendBytes:&zero length:1];
+  [data appendData:textData];
+
+  FBFMP4EndBox(data, off);
+
+  [consumer consumeData:data];
+}
