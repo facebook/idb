@@ -13,6 +13,53 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBAMDServiceConnection;
 
+/**
+ The wire format for the SpringBoard icon layout, as returned by the `getIconState` command
+ on the `com.apple.springboardservices` lockdown service (format version 2).
+
+ The top-level structure is an array of pages, where page 0 is the dock and pages 1..N
+ are the home screen pages. Each page is an array of icon entries (dictionaries).
+
+ There are several types of icon entry, distinguished by the keys present:
+
+ 1. Regular App Icons
+    Required keys:
+      - `bundleIdentifier` (NSString): The app's bundle identifier (e.g. "com.apple.mobilesafari")
+      - `displayIdentifier` (NSString): Usually the same as bundleIdentifier
+      - `displayName` (NSString): The user-visible app name
+    Optional keys:
+      - `bundleVersion` (NSString/NSNumber): The app's CFBundleVersion
+      - `iconModDate` (NSString): ISO 8601 date when the icon was last modified
+
+ 2. Folders
+    Required keys:
+      - `listType` (NSString): Always "folder"
+      - `displayName` (NSString): The folder's name (e.g. "Utilities")
+      - `iconLists` (NSArray<NSArray<NSDictionary>>): Nested pages of icon entries within the folder.
+        Each inner array is a page within the folder, containing regular app icon dictionaries.
+
+ 3. Siri Suggestions / App Predictions Widget
+    Required keys:
+      - `elementType` (NSString): "appPredictions"
+      - `iconType` (NSString): "custom"
+      - `displayIdentifier` (NSString): A UUID identifying this widget instance
+      - `gridSize` (NSString): The widget size (e.g. "medium")
+    Optional keys:
+      - `allowsSuggestions` (NSNumber<BOOL>)
+      - `allowsExternalSuggestions` (NSNumber<BOOL>)
+      - `iconLists` (NSArray): Typically empty
+
+ 4. Offloaded / App Library Apps
+    These are apps that are not currently installed but retain a position in the layout.
+    Required keys:
+      - `displayIdentifier` (NSString): The app's bundle identifier
+      - `displayName` (NSString): The app's name
+    Notable absence:
+      - No `bundleIdentifier` key (this distinguishes them from installed apps)
+
+ When setting the icon layout via `setIconState`, the same format is expected.
+ Entries should be round-tripped: preserve all original keys when moving icons between positions.
+ */
 typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> * IconLayoutType;
 
 /**
