@@ -32,6 +32,7 @@ extern FBVideoStreamCodec const FBVideoStreamCodecHEVC;
 typedef NSString *FBVideoStreamTransport NS_STRING_ENUM;
 extern FBVideoStreamTransport const FBVideoStreamTransportAnnexB;
 extern FBVideoStreamTransport const FBVideoStreamTransportMPEGTS;
+extern FBVideoStreamTransport const FBVideoStreamTransportFMP4;
 
 /**
  The type of video stream format.
