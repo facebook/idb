@@ -1004,6 +1004,18 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   switch (format.type) {
     case FBVideoStreamFormatTypeCompressedVideo: {
       if ([format.codec isEqualToString:FBVideoStreamCodecH264]) {
+        if ([format.transport isEqualToString:FBVideoStreamTransportFMP4]) {
+          FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:NO];
+          return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+            initWithConfiguration:configuration
+            compressionSessionProperties:derivedCompressionSessionProperties
+            videoCodec:kCMVideoCodecType_H264
+            consumer:consumer
+            compressorCallback:CompressedFrameCallback
+            frameWriter:WriteH264FrameToFMP4Stream
+            frameWriterContext:ctx
+            logger:logger];
+        }
         if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
           return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
             initWithConfiguration:configuration
@@ -1026,6 +1038,18 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
           logger:logger];
       }
       if ([format.codec isEqualToString:FBVideoStreamCodecHEVC]) {
+        if ([format.transport isEqualToString:FBVideoStreamTransportFMP4]) {
+          FBFMP4MuxerContext *ctx = [[FBFMP4MuxerContext alloc] initWithHEVC:YES];
+          return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
+            initWithConfiguration:configuration
+            compressionSessionProperties:derivedCompressionSessionProperties
+            videoCodec:kCMVideoCodecType_HEVC
+            consumer:consumer
+            compressorCallback:CompressedFrameCallback
+            frameWriter:WriteHEVCFrameToFMP4Stream
+            frameWriterContext:ctx
+            logger:logger];
+        }
         if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
           return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
             initWithConfiguration:configuration
@@ -1095,6 +1119,11 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
     FBMPEGTSEnableMetadataStream();
     FBMPEGTSWriteTimedMetadata(text, self.consumer);
+  } else if ([format.transport isEqualToString:FBVideoStreamTransportFMP4]) {
+    FBFMP4MuxerContext *ctx = self.frameWriterContext;
+    if (ctx) {
+      FBFMP4WriteEmsgBox(ctx, text, self.consumer);
+    }
   } else {
     [self.logger logFormat:@"writeTimedMetadata: not supported for transport '%@', dropping", format.transport];
   }

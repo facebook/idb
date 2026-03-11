@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Write a timed metadata marker (chapter) to the stream.
- Dispatches to the appropriate transport mechanism (e.g. MPEG-TS ID3 timed metadata).
+ Dispatches to the appropriate transport mechanism (MPEG-TS ID3, fMP4 emsg).
  Logs and drops if the transport does not support timed metadata.
 
  @param text the chapter/marker label text.
