@@ -65,6 +65,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)updateOverlayBuffer:(nullable CVPixelBufferRef)overlayBuffer;
 
+#pragma mark Timed Metadata
+
+/**
+ Write a timed metadata marker (chapter) to the stream.
+ Dispatches to the appropriate transport mechanism (e.g. MPEG-TS ID3 timed metadata).
+ Logs and drops if the transport does not support timed metadata.
+
+ @param text the chapter/marker label text.
+ */
+- (void)writeTimedMetadata:(NSString *)text;
+
 #pragma mark Screenshot
 
 /**

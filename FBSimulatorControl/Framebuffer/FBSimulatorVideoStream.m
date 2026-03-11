@@ -1085,6 +1085,21 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   return @{};
 }
 
+#pragma mark Timed Metadata
+
+- (void)writeTimedMetadata:(NSString *)text
+{
+  FBVideoStreamFormat *format = self.configuration.format;
+  if (format.type != FBVideoStreamFormatTypeCompressedVideo) return;
+
+  if ([format.transport isEqualToString:FBVideoStreamTransportMPEGTS]) {
+    FBMPEGTSEnableMetadataStream();
+    FBMPEGTSWriteTimedMetadata(text, self.consumer);
+  } else {
+    [self.logger logFormat:@"writeTimedMetadata: not supported for transport '%@', dropping", format.transport];
+  }
+}
+
 #pragma mark Overlay
 
 - (void)updateOverlayBuffer:(nullable CVPixelBufferRef)overlayBuffer
