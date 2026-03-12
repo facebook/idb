@@ -5,6 +5,7 @@
 #import <CoreMedia/CoreMedia.h>
 #import <VideoToolbox/VideoToolbox.h>
 #import <FBControlCore/FBControlCore.h>
+#import "FBPeriodicStatsTimer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -43,8 +44,7 @@ typedef struct {
 @property (nonatomic, assign) BOOL starvationWarningLogged;
 @property (nonatomic, assign) FBVideoEncoderStats stats;
 @property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
-@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
-@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
+@property (nonatomic, assign) FBPeriodicStatsTimer statsTimer;
 @property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
 @property (nonatomic, strong, nullable, readonly) id frameWriterContext;
 @property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;

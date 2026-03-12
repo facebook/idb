@@ -17,6 +17,7 @@
 #import <mach/mach_time.h>
 
 #import "FBSimulatorError.h"
+#import "FBPeriodicStatsTimer.h"
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
@@ -89,8 +90,7 @@ typedef struct {
 @property (nonatomic, assign) BOOL starvationWarningLogged;
 @property (nonatomic, assign) FBVideoEncoderStats stats;
 @property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
-@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
-@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
+@property (nonatomic, assign) FBPeriodicStatsTimer statsTimer;
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
                            infoFlags:(VTEncodeInfoFlags)infoFlags;
@@ -325,29 +325,32 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   _consumer = consumer;
   _logger = logger;
   _videoCodec = videoCodec;
+  _statsTimer = FBPeriodicStatsTimerCreate(5.0);
 
   return self;
 }
-
-static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
 
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
                            infoFlags:(VTEncodeInfoFlags)infoFlags
 {
-  if (self.statsStartTime == 0) {
-    self.statsStartTime = CFAbsoluteTimeGetCurrent();
-    self.lastStatsLogTime = self.statsStartTime;
+  FBPeriodicStatsTimer timer = self.statsTimer;
+  if (timer.startTime == 0) {
+    // First call — initialize the timer.
+    CFTimeInterval unused1, unused2;
+    FBPeriodicStatsTimerTick(&timer, &unused1, &unused2);
+    self.statsTimer = timer;
     [self.logger.info logFormat:@"First encode callback received"];
   }
 
-  CFAbsoluteTime now = [self _processCompressedSampleBuffer:sampleBuffer encodeStatus:encodeStatus infoFlags:infoFlags];
+  [self _processCompressedSampleBuffer:sampleBuffer encodeStatus:encodeStatus infoFlags:infoFlags];
 
-  if (now - self.lastStatsLogTime < StatsLogIntervalSeconds) {
+  CFTimeInterval intervalDuration, totalElapsed;
+  timer = self.statsTimer;
+  if (!FBPeriodicStatsTimerTick(&timer, &intervalDuration, &totalElapsed)) {
     return;
   }
-  CFTimeInterval intervalDuration = now - self.lastStatsLogTime;
-  self.lastStatsLogTime = now;
+  self.statsTimer = timer;
 
   FBVideoEncoderStats current = self.stats;
   FBVideoEncoderStats last = self.lastLoggedStats;
@@ -361,7 +364,6 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
   CFTimeInterval intervalEncodeSubmitSeconds = current.totalEncodeSubmitSeconds - last.totalEncodeSubmitSeconds;
   self.lastLoggedStats = current;
 
-  CFTimeInterval totalElapsed = now - self.statsStartTime;
   double totalFps = totalElapsed > 0 ? (double)current.callbackCount / totalElapsed : 0;
   double intervalFps = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
   double intervalBitrateKbps = intervalDuration > 0 ? (double)intervalEncodedBytes * 8.0 / 1000.0 / intervalDuration : 0;
@@ -395,7 +397,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     (unsigned long)current.tornFrameCount];
 }
 
-- (CFAbsoluteTime)_processCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
+- (void)_processCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                                     encodeStatus:(OSStatus)encodeStatus
                                        infoFlags:(VTEncodeInfoFlags)infoFlags
 {
@@ -406,7 +408,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
     s.encodeErrorCount += 1;
     self.stats = s;
     [self.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
-    return CFAbsoluteTimeGetCurrent();
+    return;
   }
 
   BOOL frameDropped = (infoFlags & kVTEncodeInfo_FrameDropped) != 0;
@@ -445,7 +447,7 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
         self.starvationWarningLogged = YES;
       }
     }
-    return CFAbsoluteTimeGetCurrent();
+    return;
   }
 
   // Success
@@ -461,7 +463,6 @@ static const CFTimeInterval StatsLogIntervalSeconds = 5.0;
       [self.logger logFormat:@"Encoder warmed up after %lu skipped frames", (unsigned long)failuresBefore];
     }
   }
-  return CFAbsoluteTimeGetCurrent();
 }
 
 - (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error

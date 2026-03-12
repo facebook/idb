@@ -28,8 +28,7 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
-
-static const CFTimeInterval FBFramebufferStatsLogIntervalSeconds = 5.0;
+#import "FBPeriodicStatsTimer.h"
 
 typedef struct {
     NSUInteger damageCallbackCount;
@@ -46,8 +45,7 @@ typedef struct {
 
 @property (nonatomic, assign) FBFramebufferStats stats;
 @property (nonatomic, assign) FBFramebufferStats lastLoggedStats;
-@property (nonatomic, assign) CFAbsoluteTime statsStartTime;
-@property (nonatomic, assign) CFAbsoluteTime lastStatsLogTime;
+@property (nonatomic, assign) FBPeriodicStatsTimer statsTimer;
 
 @end
 
@@ -98,6 +96,7 @@ typedef struct {
     valueOptions:NSPointerFunctionsCopyIn];
   _logger = logger;
   _surface = surface;
+  _statsTimer = FBPeriodicStatsTimerCreate(5.0);
 
   return self;
 }
@@ -185,18 +184,17 @@ typedef struct {
 
 - (void)logStatsIfNeeded
 {
-  CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
-  if (self.statsStartTime == 0) {
-    self.statsStartTime = now;
-    self.lastStatsLogTime = now;
-    [self.logger.info logFormat:@"First damage callback received"];
+  FBPeriodicStatsTimer timer = self.statsTimer;
+  CFTimeInterval intervalDuration, totalElapsed;
+  if (!FBPeriodicStatsTimerTick(&timer, &intervalDuration, &totalElapsed)) {
+    if (timer.startTime != self.statsTimer.startTime) {
+      // First tick — timer was just initialized.
+      self.statsTimer = timer;
+      [self.logger.info logFormat:@"First damage callback received"];
+    }
     return;
   }
-  if (now - self.lastStatsLogTime < FBFramebufferStatsLogIntervalSeconds) {
-    return;
-  }
-  CFTimeInterval intervalDuration = now - self.lastStatsLogTime;
-  self.lastStatsLogTime = now;
+  self.statsTimer = timer;
 
   FBFramebufferStats current = self.stats;
   FBFramebufferStats last = self.lastLoggedStats;
@@ -207,7 +205,6 @@ typedef struct {
   self.lastLoggedStats = current;
 
   double intervalRate = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
-  CFTimeInterval totalElapsed = now - self.statsStartTime;
   double totalRate = totalElapsed > 0 ? (double)current.damageCallbackCount / totalElapsed : 0;
 
   [self.logger.info logFormat:

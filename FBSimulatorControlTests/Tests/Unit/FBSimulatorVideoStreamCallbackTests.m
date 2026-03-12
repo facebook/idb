@@ -345,8 +345,10 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
   CFRelease(ready);
 
-  // Backdate lastStatsLogTime by 6 seconds to trigger stats on next frame
-  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  // Backdate statsTimer by 6 seconds to trigger stats on next frame
+  FBPeriodicStatsTimer timer = pusher.statsTimer;
+  timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  pusher.statsTimer = timer;
 
   ready = CreateH264SampleBuffer();
   [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
@@ -388,7 +390,9 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   XCTAssertEqual(pusher.stats.callbackCount, 6u);
 
   // Backdate to trigger stats log
-  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  FBPeriodicStatsTimer timer = pusher.statsTimer;
+  timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  pusher.statsTimer = timer;
 
   CMSampleBufferRef ready = CreateH264SampleBuffer();
   [pusher handleCompressedSampleBuffer:ready encodeStatus:noErr infoFlags:0];
@@ -419,7 +423,9 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   }
 
   // Backdate to trigger stats log
-  pusher.lastStatsLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  FBPeriodicStatsTimer timer = pusher.statsTimer;
+  timer.lastLogTime = CFAbsoluteTimeGetCurrent() - 6.0;
+  pusher.statsTimer = timer;
 
   // Send one more not-ready buffer to trigger the stats log
   CMSampleBufferRef notReady = CreateNotReadySampleBuffer();
