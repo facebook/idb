@@ -693,6 +693,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef compositedBufferPool;
 
 - (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame;
+- (nullable CIImage *)compositedImageFromSource:(CVPixelBufferRef)sourceBuffer;
 
 @end
 
@@ -906,6 +907,19 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
+/// Build a composited CIImage from the source pixel buffer, overlaying the overlay buffer
+/// if present. Returns nil if no compositing is needed.
+- (nullable CIImage *)compositedImageFromSource:(CVPixelBufferRef)sourceBuffer
+{
+  CVPixelBufferRef overlayBuf = self.overlayBuffer;
+  if (!overlayBuf || !self.compositorCIContext || !self.compositedBufferPool) {
+    return nil;
+  }
+  CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
+  CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
+  return [overlayImage imageByCompositingOverImage:sourceImage];
+}
+
 - (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame
 {
   // Ensure that we have all preconditions in place before pushing.
@@ -931,12 +945,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   // Composite the overlay buffer over the source frame if present.
   CVPixelBufferRef bufferToEncode = pixelBufer;
   CVPixelBufferRef compositedBuffer = NULL;
-  CVPixelBufferRef overlayBuf = self.overlayBuffer;
-  if (overlayBuf && self.compositorCIContext && self.compositedBufferPool) {
-    CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:pixelBufer];
-    CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
-    CIImage *composited = [overlayImage imageByCompositingOverImage:sourceImage];
-
+  CIImage *composited = [self compositedImageFromSource:pixelBufer];
+  if (composited) {
     CVReturn poolStatus = CVPixelBufferPoolCreatePixelBuffer(NULL, self.compositedBufferPool, &compositedBuffer);
     if (poolStatus == kCVReturnSuccess && compositedBuffer) {
       [self.compositorCIContext render:composited toCVPixelBuffer:compositedBuffer];
@@ -1168,13 +1178,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   // Unlike pushFrameForceKeyFrame: (which needs a CVPixelBuffer for the encoder),
   // the screenshot path only needs a CGImage, so we skip the intermediate buffer
   // and go directly from the composited CIImage to createCGImage:.
-  CIImage *ciImage;
-  CVPixelBufferRef overlayBuf = self.overlayBuffer;
-  if (overlayBuf && self.compositorCIContext && self.compositedBufferPool) {
-    CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
-    CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
-    ciImage = [overlayImage imageByCompositingOverImage:sourceImage];
-  } else {
+  CIImage *ciImage = [self compositedImageFromSource:sourceBuffer];
+  if (!ciImage) {
     ciImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
   }
 
