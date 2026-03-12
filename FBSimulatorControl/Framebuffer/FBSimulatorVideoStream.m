@@ -34,7 +34,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 
 @protocol FBSimulatorVideoStreamFramePusher <NSObject>
 
-- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error;
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets error:(NSError **)error;
 - (BOOL)tearDown:(NSError **)error;
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error;
 
@@ -236,7 +236,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return self;
 }
 
-- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets error:(NSError **)error
 {
   if (self.scaleFactor && [self.scaleFactor isGreaterThan:@0] && [self.scaleFactor isLessThan:@1]) {
     self.scaledPixelBufferPoolRef = createScaledPixelBufferPool(pixelBuffer, self.scaleFactor);
@@ -457,12 +457,12 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 }
 
-- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer error:(NSError **)error
+- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets error:(NSError **)error
 {
   NSDictionary<NSString *, id> * encoderSpecification = @{
     (NSString *) kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder: @YES,
   };
-  
+
   if (@available(macOS 12.1, *)) {
     encoderSpecification = @{
       (NSString *) kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: @YES,
@@ -479,6 +479,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double)sourceHeight);
     [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
   }
+  // Add edge insets to output dimensions. The composited frame includes the insets,
+  // so the NV12 pool and compression session must accommodate the full output size.
+  destinationWidth += edgeInsets.left + edgeInsets.right;
+  destinationHeight += edgeInsets.top + edgeInsets.bottom;
+  // H.264 and NV12 require even dimensions.
+  destinationWidth += destinationWidth % 2;
+  destinationHeight += destinationHeight % 2;
 
   // Always create a VTPixelTransferSession to convert BGRA→NV12 (and scale if needed).
   // VTCompressionSession's native input format is NV12 (420v). Feeding it BGRA causes
@@ -665,7 +672,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, readonly) NSUInteger framesPerSecond;
 @property (nonatomic, strong, readwrite) NSThread *framePusherThread;
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -673,6 +680,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, copy, readonly) FBVideoStreamConfiguration *configuration;
+@property (nonatomic, assign, readonly) FBVideoStreamEdgeInsets edgeInsets;
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startedFuture;
@@ -691,6 +699,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef overlayBuffer;
 @property (nonatomic, strong, nullable, readwrite) CIContext *compositorCIContext;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferPoolRef compositedBufferPool;
+@property (nonatomic, assign, readwrite) size_t compositedWidth;
+@property (nonatomic, assign, readwrite) size_t compositedHeight;
 
 - (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame;
 - (nullable CIImage *)compositedImageFromSource:(CVPixelBufferRef)sourceBuffer;
@@ -707,15 +717,21 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 + (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
+  FBVideoStreamEdgeInsets zeroInsets = {0, 0, 0, 0};
+  return [self streamWithFramebuffer:framebuffer configuration:configuration edgeInsets:zeroInsets logger:logger];
+}
+
++ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(id<FBControlCoreLogger>)logger
+{
   NSNumber *framesPerSecondNumber = configuration.framesPerSecond;
   NSUInteger framesPerSecond = framesPerSecondNumber.unsignedIntegerValue;
   if (framesPerSecondNumber && framesPerSecond > 0) {
-    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer configuration:configuration framesPerSecond:framesPerSecond writeQueue:self.writeQueue logger:logger];
+    return [[FBSimulatorVideoStream_Eager alloc] initWithFramebuffer:framebuffer configuration:configuration framesPerSecond:framesPerSecond edgeInsets:edgeInsets writeQueue:self.writeQueue logger:logger];
   }
-  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer configuration:configuration writeQueue:self.writeQueue logger:logger];
+  return [[FBSimulatorVideoStream_Lazy alloc] initWithFramebuffer:framebuffer configuration:configuration edgeInsets:edgeInsets writeQueue:self.writeQueue logger:logger];
 }
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -724,6 +740,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
   _framebuffer = framebuffer;
   _configuration = configuration;
+  _edgeInsets = edgeInsets;
   _writeQueue = writeQueue;
   _logger = logger;
   _startedFuture = FBMutableFuture.future;
@@ -868,7 +885,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   if (!framePusher) {
     return NO;
   }
-  if (![framePusher setupWithPixelBuffer:buffer error:error]) {
+  if (![framePusher setupWithPixelBuffer:buffer edgeInsets:self.edgeInsets error:error]) {
     return NO;
   }
   self.framePusher = framePusher;
@@ -887,19 +904,38 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     }
   }
   // IOSurface-backed BGRA pixel buffer pool for composited output.
+  // Include edge insets in the pool dimensions so the composited frame has room for overlay content.
   if (self.compositedBufferPool) {
     CVPixelBufferPoolRelease(self.compositedBufferPool);
     self.compositedBufferPool = NULL;
   }
   size_t width = CVPixelBufferGetWidth(buffer);
   size_t height = CVPixelBufferGetHeight(buffer);
+  NSNumber *scaleFactor = self.configuration.scaleFactor;
+  size_t compositedWidth = width;
+  size_t compositedHeight = height;
+  if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
+    compositedWidth = (size_t) floor(scaleFactor.doubleValue * (double)width);
+    compositedHeight = (size_t) floor(scaleFactor.doubleValue * (double)height);
+  }
+  FBVideoStreamEdgeInsets insets = self.edgeInsets;
+  compositedWidth += insets.left + insets.right;
+  compositedHeight += insets.top + insets.bottom;
+  // H.264 and NV12 require even dimensions.
+  compositedWidth += compositedWidth % 2;
+  compositedHeight += compositedHeight % 2;
+  self.compositedWidth = compositedWidth;
+  self.compositedHeight = compositedHeight;
   NSDictionary *compositedPoolAttrs = @{
     (NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
-    (NSString *)kCVPixelBufferWidthKey: @(width),
-    (NSString *)kCVPixelBufferHeightKey: @(height),
+    (NSString *)kCVPixelBufferWidthKey: @(compositedWidth),
+    (NSString *)kCVPixelBufferHeightKey: @(compositedHeight),
     (NSString *)kCVPixelBufferIOSurfacePropertiesKey: @{},
   };
   CVPixelBufferPoolCreate(NULL, NULL, (__bridge CFDictionaryRef)compositedPoolAttrs, &_compositedBufferPool);
+  if (insets.top + insets.bottom + insets.left + insets.right > 0) {
+    [self.logger.info logFormat:@"Composited pool includes edge insets (t=%lu b=%lu l=%lu r=%lu): w=%zu/h=%zu", (unsigned long)insets.top, (unsigned long)insets.bottom, (unsigned long)insets.left, (unsigned long)insets.right, compositedWidth, compositedHeight];
+  }
 
   // Signal that we've started
   [self.startedFuture resolveWithResult:NSNull.null];
@@ -907,17 +943,39 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
-/// Build a composited CIImage from the source pixel buffer, overlaying the overlay buffer
-/// if present. Returns nil if no compositing is needed.
+/// Build a composited CIImage from the source pixel buffer, applying edge insets
+/// and overlaying the overlay buffer if present. Returns nil if no compositing is needed.
 - (nullable CIImage *)compositedImageFromSource:(CVPixelBufferRef)sourceBuffer
 {
   CVPixelBufferRef overlayBuf = self.overlayBuffer;
-  if (!overlayBuf || !self.compositorCIContext || !self.compositedBufferPool) {
+  FBVideoStreamEdgeInsets insets = self.edgeInsets;
+  BOOL hasInsets = (insets.top + insets.bottom + insets.left + insets.right) > 0;
+  BOOL needsComposite = hasInsets || (overlayBuf != NULL);
+  if (!needsComposite || !self.compositorCIContext || !self.compositedBufferPool) {
     return nil;
   }
+
   CIImage *sourceImage = [CIImage imageWithCVPixelBuffer:sourceBuffer];
-  CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
-  return [overlayImage imageByCompositingOverImage:sourceImage];
+
+  // Scale source to fit within the composited output (excluding insets).
+  // CIImage origin is bottom-left, so after scaling we translate by (left, bottom)
+  // to position the video content inside the inset frame.
+  size_t sourceW = CVPixelBufferGetWidth(sourceBuffer);
+  size_t targetW = self.compositedWidth - insets.left - insets.right;
+  if (targetW != sourceW && sourceW > 0) {
+    CGFloat s = (CGFloat)targetW / (CGFloat)sourceW;
+    sourceImage = [sourceImage imageByApplyingTransform:CGAffineTransformMakeScale(s, s)];
+  }
+  if (insets.left > 0 || insets.bottom > 0) {
+    sourceImage = [sourceImage imageByApplyingTransform:CGAffineTransformMakeTranslation(insets.left, insets.bottom)];
+  }
+
+  CIImage *result = sourceImage;
+  if (overlayBuf) {
+    CIImage *overlayImage = [CIImage imageWithCVPixelBuffer:overlayBuf];
+    result = [overlayImage imageByCompositingOverImage:sourceImage];
+  }
+  return result;
 }
 
 - (void)pushFrameForceKeyFrame:(BOOL)forceKeyFrame
@@ -942,7 +1000,10 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   CFTimeInterval frameDuration = self.timeAtLastPush > 0 ? (now - self.timeAtLastPush) : 0;
   self.timeAtLastPush = now;
 
-  // Composite the overlay buffer over the source frame if present.
+  // Composite the overlay buffer over the source frame, or apply edge inset padding.
+  // When any edge inset > 0, every frame must be composited to match the output dimensions
+  // of the encoder (which includes the insets). Without this, raw framebuffer pixels
+  // would be fed to an encoder sized for the larger output, causing distortion.
   CVPixelBufferRef bufferToEncode = pixelBufer;
   CVPixelBufferRef compositedBuffer = NULL;
   CIImage *composited = [self compositedImageFromSource:pixelBufer];
@@ -1174,7 +1235,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     return [[FBSimulatorError describe:@"No pixel buffer available for screenshot"] fail:error];
   }
 
-  // Build a CIImage, compositing the overlay if present.
+  // Build a CIImage, compositing the overlay if present, or applying edge inset padding.
   // Unlike pushFrameForceKeyFrame: (which needs a CVPixelBuffer for the encoder),
   // the screenshot path only needs a CGImage, so we skip the intermediate buffer
   // and go directly from the composited CIImage to createCGImage:.
@@ -1260,9 +1321,9 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
 @implementation FBSimulatorVideoStream_Eager
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration framesPerSecond:(NSUInteger)framesPerSecond edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithFramebuffer:framebuffer configuration:configuration writeQueue:writeQueue logger:logger];
+  self = [super initWithFramebuffer:framebuffer configuration:configuration edgeInsets:edgeInsets writeQueue:writeQueue logger:logger];
   if (!self) {
     return nil;
   }

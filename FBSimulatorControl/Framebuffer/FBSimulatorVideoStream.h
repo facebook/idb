@@ -21,6 +21,17 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
+ Edge insets that extend the output frame dimensions beyond the source framebuffer.
+ Each edge adds opaque pixels for overlay content (label bars, diagnostic stats, etc.).
+ */
+typedef struct {
+    NSUInteger top;
+    NSUInteger bottom;
+    NSUInteger left;
+    NSUInteger right;
+} FBVideoStreamEdgeInsets;
+
+/**
  Stats tracked by the video encoder (VideoToolbox).
  Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
  */
@@ -54,6 +65,18 @@ typedef struct {
  @return a new Bitmap Stream object, nil on failure
  */
 + (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Constructs a Bitmap Stream with edge insets for overlay content.
+ Insets extend the output frame dimensions, pushing video content inward.
+
+ @param framebuffer the framebuffer to get frames from.
+ @param configuration the configuration to use.
+ @param edgeInsets the number of output pixels to add on each edge for overlay content.
+ @param logger the logger to log to.
+ @return a new Bitmap Stream object, nil on failure
+ */
++ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Builds the compression session properties dictionary for a given configuration and caller-provided properties.
