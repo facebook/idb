@@ -9,6 +9,8 @@
 
 #import <objc/runtime.h>
 
+#import <FBSimulatorControl/FBSimulatorControl.h>
+
 #import "FBSimulator.h"
 
 @implementation FBSimulatorControlTests_AXPTranslationObject_Double
@@ -452,6 +454,10 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
 
 - (void)setUp
 {
+  // Ensure the AccessibilityPlatformTranslation framework is loaded so that
+  // AXPTranslator class is available for swizzling.
+  [FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworksOrAbort];
+
   // Configure the translator with default results
   FBSimulatorControlTests_AXPTranslationObject_Double *translation =
     [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
