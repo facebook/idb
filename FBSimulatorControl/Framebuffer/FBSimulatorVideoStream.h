@@ -21,6 +21,21 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
+ Stats tracked by the video encoder (VideoToolbox).
+ Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
+ */
+typedef struct {
+    NSUInteger callbackCount;
+    NSUInteger writeCount;
+    NSUInteger dropCount;
+    NSUInteger writeFailureCount;
+    NSUInteger encodeErrorCount;
+    NSUInteger tornFrameCount;
+    NSUInteger totalEncodedBytes;
+    CFTimeInterval totalEncodeSubmitSeconds;
+} FBVideoEncoderStats;
+
+/**
  A Video Stream of a Simulator's Framebuffer.
  This component can be used to provide a real-time stream of a Simulator's Framebuffer.
  This can be connected to additional software via a stream to a File Handle or Fifo.
@@ -85,6 +100,34 @@ NS_ASSUME_NONNULL_BEGIN
  @return PNG data if successful, nil otherwise.
  */
 - (nullable NSData *)captureCompositedScreenshotWithError:(NSError **)error;
+
+#pragma mark Stats
+
+/**
+ Returns a snapshot of the current video encoder stats.
+ Returns a zeroed struct if the stream uses a non-encoded format (e.g. bitmap/BGRA).
+ */
+- (FBVideoEncoderStats)currentEncoderStats;
+
+/**
+ Returns a snapshot of the current framebuffer stats (from the underlying FBFramebuffer).
+ */
+- (FBFramebufferStats)currentFramebufferStats;
+
+/**
+ Total number of frames pushed to the encoder since streaming started.
+ */
+@property (nonatomic, readonly) NSUInteger currentFrameNumber;
+
+/**
+ Wall-clock time when the first frame was pushed, or 0 if not yet started.
+ */
+@property (nonatomic, readonly) CFTimeInterval currentTimeAtFirstFrame;
+
+/**
+ Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
+ */
+@property (nonatomic, readonly) CFTimeInterval framebufferStatsStartTime;
 
 @end
 

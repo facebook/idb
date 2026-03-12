@@ -38,6 +38,9 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 - (BOOL)tearDown:(NSError **)error;
 - (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error;
 
+@optional
+- (FBVideoEncoderStats)currentStats;
+
 @end
 
 @interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
@@ -72,17 +75,6 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 @property (nonatomic, strong, readonly) NSDictionary<NSString *, id> *compressionSessionProperties;
 
 @end
-
-typedef struct {
-    NSUInteger callbackCount;
-    NSUInteger writeCount;
-    NSUInteger dropCount;
-    NSUInteger writeFailureCount;
-    NSUInteger encodeErrorCount;
-    NSUInteger tornFrameCount;
-    NSUInteger totalEncodedBytes;
-    CFTimeInterval totalEncodeSubmitSeconds;
-} FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox ()
 @property (nonatomic, assign) NSUInteger consecutiveNotReadyFrameCount;
@@ -657,6 +649,11 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return YES;
 }
 
+- (FBVideoEncoderStats)currentStats
+{
+  return self.stats;
+}
+
 @end
 
 @interface FBSimulatorVideoStream_Lazy : FBSimulatorVideoStream
@@ -1200,6 +1197,38 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   return pngData;
+}
+
+#pragma mark Stats
+
+- (FBVideoEncoderStats)currentEncoderStats
+{
+  id<FBSimulatorVideoStreamFramePusher> pusher = self.framePusher;
+  if (pusher && [pusher respondsToSelector:@selector(currentStats)]) {
+    return [pusher currentStats];
+  }
+  FBVideoEncoderStats zeroed = {0};
+  return zeroed;
+}
+
+- (FBFramebufferStats)currentFramebufferStats
+{
+  return [self.framebuffer currentStats];
+}
+
+- (NSUInteger)currentFrameNumber
+{
+  return self.frameNumber;
+}
+
+- (CFTimeInterval)currentTimeAtFirstFrame
+{
+  return self.timeAtFirstFrame;
+}
+
+- (CFTimeInterval)framebufferStatsStartTime
+{
+  return self.framebuffer.statsStartTime;
 }
 
 #pragma mark FBiOSTargetOperation

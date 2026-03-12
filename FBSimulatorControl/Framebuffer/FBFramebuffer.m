@@ -30,13 +30,6 @@
 #import "FBSimulatorError.h"
 #import "FBPeriodicStatsTimer.h"
 
-typedef struct {
-    NSUInteger damageCallbackCount;
-    NSUInteger damageRectCount;
-    NSUInteger emptyDamageCallbackCount;
-    NSUInteger ioSurfaceChangeCount;
-} FBFramebufferStats;
-
 @interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
@@ -137,6 +130,18 @@ typedef struct {
     }
   }
   return false;
+}
+
+#pragma mark Stats
+
+- (FBFramebufferStats)currentStats
+{
+  return self.stats;
+}
+
+- (CFTimeInterval)statsStartTime
+{
+  return self.statsTimer.startTime;
 }
 
 #pragma mark Private

@@ -6,23 +6,13 @@
 #import <VideoToolbox/VideoToolbox.h>
 #import <FBControlCore/FBControlCore.h>
 #import "FBPeriodicStatsTimer.h"
+#import "FBSimulatorVideoStream.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBVideoStreamConfiguration;
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
-
-typedef struct {
-    NSUInteger callbackCount;
-    NSUInteger writeCount;
-    NSUInteger dropCount;
-    NSUInteger writeFailureCount;
-    NSUInteger encodeErrorCount;
-    NSUInteger tornFrameCount;
-    NSUInteger totalEncodedBytes;
-    CFTimeInterval totalEncodeSubmitSeconds;
-} FBVideoEncoderStats;
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
 

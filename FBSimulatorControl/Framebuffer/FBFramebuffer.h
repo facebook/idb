@@ -14,6 +14,16 @@ NS_ASSUME_NONNULL_BEGIN
 @class IOSurface;
 
 /**
+ Stats tracked by the framebuffer from the simulator's damage/IOSurface callbacks.
+ */
+typedef struct {
+    NSUInteger damageCallbackCount;
+    NSUInteger damageRectCount;
+    NSUInteger emptyDamageCallbackCount;
+    NSUInteger ioSurfaceChangeCount;
+} FBFramebufferStats;
+
+/**
  A Consumer of a Framebuffer.
  */
 @protocol FBFramebufferConsumer <NSObject>
@@ -76,6 +86,18 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if attached, NO otherwise.
  */
 - (BOOL)isConsumerAttached:(id<FBFramebufferConsumer>)consumer;
+
+#pragma mark Stats
+
+/**
+ Returns a snapshot of the current framebuffer stats.
+ */
+- (FBFramebufferStats)currentStats;
+
+/**
+ Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
+ */
+@property (nonatomic, readonly) CFTimeInterval statsStartTime;
 
 @end
 
