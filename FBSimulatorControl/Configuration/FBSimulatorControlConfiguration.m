@@ -35,10 +35,33 @@
 
 + (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
 {
-  return [[self alloc] initWithDeviceSetPath:deviceSetPath logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger) reporter:reporter];
+  return [[self alloc] initWithDeviceSetPath:deviceSetPath
+                                      logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger)
+                                    reporter:reporter
+                                   workQueue:nil
+                                  asyncQueue:nil
+  ];
 }
 
-- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
++ (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath
+                                        logger:(id<FBControlCoreLogger>)logger
+                                      reporter:(id<FBEventReporter>)reporter
+                                     workQueue:(dispatch_queue_t)workQueue
+                                    asyncQueue:(dispatch_queue_t)asyncQueue
+{
+    return [[self alloc] initWithDeviceSetPath:deviceSetPath
+                                        logger:(logger ?: FBControlCoreGlobalConfiguration.defaultLogger)
+                                      reporter:reporter
+                                     workQueue:workQueue
+                                    asyncQueue:asyncQueue
+    ];
+}
+
+- (instancetype)initWithDeviceSetPath:(NSString *)deviceSetPath
+                               logger:(id<FBControlCoreLogger>)logger
+                             reporter:(id<FBEventReporter>)reporter
+                            workQueue:(dispatch_queue_t)workQueue
+                           asyncQueue:(dispatch_queue_t)asyncQueue
 {
   self = [super init];
   if (!self) {
@@ -48,6 +71,8 @@
   _deviceSetPath = deviceSetPath;
   _logger = logger;
   _reporter = reporter;
+  _workQueue = workQueue;
+  _asyncQueue = asyncQueue;
 
   return self;
 }
