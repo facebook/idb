@@ -82,6 +82,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBSimulatorControlTests_AXPTranslationObject_Double *)frontmostApplicationWithDisplayId:(int)displayId bridgeDelegateToken:(NSString *)token;
 - (FBSimulatorControlTests_AXPTranslationObject_Double *)objectAtPoint:(CGPoint)point displayId:(int)displayId bridgeDelegateToken:(NSString *)token;
 - (FBSimulatorControlTests_AXPMacPlatformElement_Double *)macPlatformElementFromTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation;
+- (void)setMacPlatformElement:(nullable FBSimulatorControlTests_AXPMacPlatformElement_Double *)element
+               forTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation;
+- (void)clearMacPlatformElementMappings;
 
 - (void)resetTracking;
 

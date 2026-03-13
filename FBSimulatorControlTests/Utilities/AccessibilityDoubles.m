@@ -189,6 +189,9 @@
 @end
 
 @implementation FBSimulatorControlTests_AXPTranslator_Double
+{
+  NSMapTable *_macPlatformElementByTranslation;
+}
 
 - (instancetype)init
 {
@@ -198,6 +201,7 @@
   }
 
   _methodCalls = [NSMutableArray array];
+  _macPlatformElementByTranslation = [NSMapTable strongToStrongObjectsMapTable];
 
   return self;
 }
@@ -221,14 +225,33 @@
 - (FBSimulatorControlTests_AXPMacPlatformElement_Double *)macPlatformElementFromTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation
 {
   [_methodCalls addObject:@"macPlatformElementFromTranslation"];
-  FBSimulatorControlTests_AXPMacPlatformElement_Double *result = self.macPlatformElementResult;
+  FBSimulatorControlTests_AXPMacPlatformElement_Double *result = [_macPlatformElementByTranslation objectForKey:translation] ?: self.macPlatformElementResult;
   result.translation = translation;
   return result;
+}
+
+- (void)setMacPlatformElement:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)element
+               forTranslation:(FBSimulatorControlTests_AXPTranslationObject_Double *)translation
+{
+  if (!translation) {
+    return;
+  }
+  if (element) {
+    [_macPlatformElementByTranslation setObject:element forKey:translation];
+  } else {
+    [_macPlatformElementByTranslation removeObjectForKey:translation];
+  }
+}
+
+- (void)clearMacPlatformElementMappings
+{
+  [_macPlatformElementByTranslation removeAllObjects];
 }
 
 - (void)resetTracking
 {
   [_methodCalls removeAllObjects];
+  [_macPlatformElementByTranslation removeAllObjects];
 }
 
 @end
