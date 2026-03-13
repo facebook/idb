@@ -109,6 +109,14 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
 - (FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout;
 
 /**
+ Queries the home screen grid dimensions from SpringBoard.
+ Returns a dictionary with keys like "iconColumns", "iconRows", "dockColumns", etc.
+
+ @return a Future with the metrics dictionary.
+ */
+- (FBFuture<NSDictionary<NSString *, id> *> *)getHomeScreenIconMetrics;
+
+/**
  Obtains Wallpaper for the Homescreen.
 
  @param name the name of wallpaper to retrieve.

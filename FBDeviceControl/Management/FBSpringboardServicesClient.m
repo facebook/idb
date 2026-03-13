@@ -276,6 +276,18 @@ static size_t IconLayoutSize = 4;
     }];
 }
 
+- (FBFuture<NSDictionary<NSString *, id> *> *)getHomeScreenIconMetrics
+{
+  return [FBFuture
+    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
+      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"command": @"getHomeScreenIconMetrics"} error:error];
+      if (!result) {
+        return nil;
+      }
+      return result;
+    }];
+}
+
 - (FBFuture<NSData *> *)wallpaperImageDataForKind:(FBWallpaperName)name
 {
   return [FBFuture
