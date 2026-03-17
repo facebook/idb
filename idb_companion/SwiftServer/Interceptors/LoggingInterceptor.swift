@@ -56,8 +56,6 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
 
   private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
     logger.info().log("Start of \(methodName)")
-    let subject = FBEventReporterSubject(forStartedCall: methodName, arguments: [], reportNativeSwiftMethodCall: true)
-    reporter.report(subject)
   }
 
   // MARK: Request end + outgoing frames

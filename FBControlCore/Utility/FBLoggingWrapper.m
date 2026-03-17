@@ -69,8 +69,7 @@
   NSDate *startDate = NSDate.date;
   NSString *methodName = [self.class methodName:invocation simplifiedNaming:self.simplifiedNaming];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
-  FBEventReporterSubject *beforeSubject = [self.class subjectForBeforeInvocation:methodName descriptionOfArguments:descriptionOfArguments logger:self.logger];
-  [self.eventReporter report:beforeSubject];
+  [self.logger.info logFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]];
 
   // Extract the first method argument and retain it, if it exists
   id firstMethodArgument = nil;
@@ -96,12 +95,6 @@
 }
 
 #pragma mark - Subjects
-
-+ (FBEventReporterSubject *)subjectForBeforeInvocation:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments logger:(id<FBControlCoreLogger>)logger
-{
-  [logger.info logFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]];
-  return [FBEventReporterSubject subjectForStartedCall:methodName arguments:descriptionOfArguments reportNativeSwiftMethodCall: NO];
-}
 
 + (FBEventReporterSubject *)subjectAfterCompletion:(FBFuture *)future methodName:(NSString *)methodName descriptionOfArguments:(NSArray<NSString *> *)descriptionOfArguments startDate:(NSDate *)startDate firstMethodArgument:(id)firstMethodArgument logger:(id<FBControlCoreLogger>)logger
 {
