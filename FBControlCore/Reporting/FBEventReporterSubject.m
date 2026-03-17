@@ -23,28 +23,27 @@ FBEventType const FBEventTypeFailure = @"failure";
 @synthesize duration = _duration;
 @synthesize message = _message;
 @synthesize size = _size;
-@synthesize reportNativeSwiftMethodCall = _reportNativeSwiftMethodCall;
 
 #pragma mark Initializers
 
 + (instancetype)subjectForEvent:(NSString *)eventName
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete arguments:nil duration:nil size:nil message:nil reportNativeSwiftMethodCall:NO];
+  return [[FBEventReporterSubject alloc] initWithEventName:eventName eventType:FBEventTypeDiscrete arguments:nil duration:nil size:nil message:nil];
 }
 
-+ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
++ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeStarted arguments:arguments duration:nil size:nil message:nil reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeStarted arguments:arguments duration:nil size:nil message:nil];
 }
 
-+ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
++ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess arguments:arguments duration:[self durationMilliseconds:duration] size:size message:nil reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeSuccess arguments:arguments duration:[self durationMilliseconds:duration] size:size message:nil];
 }
 
-+ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
++ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(NSNumber *)size arguments:(NSArray<NSString *> *)arguments
 {
-  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeFailure arguments:arguments duration:[self durationMilliseconds:duration] size:size message:message reportNativeSwiftMethodCall:reportNativeSwiftMethodCall];
+  return [[FBEventReporterSubject alloc] initWithEventName:call eventType:FBEventTypeFailure arguments:arguments duration:[self durationMilliseconds:duration] size:size message:message];
 }
 
 + (NSNumber *)durationMilliseconds:(NSTimeInterval)timeInterval
@@ -53,7 +52,7 @@ FBEventType const FBEventTypeFailure = @"failure";
   return @(milliseconds);
 }
 
-- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message reportNativeSwiftMethodCall:(BOOL)reportNativeSwiftMethodCall
+- (instancetype)initWithEventName:(NSString *)eventName eventType:(FBEventType)eventType arguments:(NSArray<NSString *> *)arguments duration:(NSNumber *)duration size:(NSNumber *)size message:(NSString *)message
 {
   self = [super init];
   if (!self) {
@@ -66,7 +65,6 @@ FBEventType const FBEventTypeFailure = @"failure";
   _duration = duration;
   _size = size;
   _message = message;
-  _reportNativeSwiftMethodCall = reportNativeSwiftMethodCall;
 
   return self;
 }

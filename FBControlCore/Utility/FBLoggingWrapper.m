@@ -107,10 +107,10 @@
   if (error) {
     NSString *message = error.localizedDescription;
     [logger.debug logFormat:@"%@ failed with: %@", methodName, message];
-    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message size:size arguments:descriptionOfArguments reportNativeSwiftMethodCall: NO];
+    return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message size:size arguments:descriptionOfArguments];
   } else {
     [logger.debug logFormat:@"%@ succeeded", methodName];
-    return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration size:size arguments:descriptionOfArguments reportNativeSwiftMethodCall: NO];
+    return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration size:size arguments:descriptionOfArguments];
   }
 }
 

@@ -11,7 +11,6 @@ import Foundation
 class IDBConfiguration: NSObject {
 
   @objc static var eventReporter: FBEventReporter = EmptyEventReporter.shared
-  @objc static var swiftEventReporter: FBEventReporter = EmptyEventReporter.shared
 
   static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
 

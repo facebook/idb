@@ -430,12 +430,12 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
                                                debugserverPort:ports.debugserverPort
                                                logger:logger];
 
-      FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.swiftEventReporter logger:logger];
+      FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.eventReporter logger:logger];
 
       GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
                                       initWithTarget:target
                                       commandExecutor:loggingCommandExecutor
-                                      reporter:IDBConfiguration.swiftEventReporter
+                                      reporter:IDBConfiguration.eventReporter
                                       logger:logger
                                       ports:ports
                                       error:&err];
