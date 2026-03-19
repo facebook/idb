@@ -808,6 +808,27 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "tap", "10", "20"])
         self.client_mock.tap.assert_called_once_with(x=10, y=20, duration=None)
 
+    async def test_multi_tap_default(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=2, duration=None, pause=0.1
+        )
+
+    async def test_multi_tap_triple(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20", "--count", "3"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=3, duration=None, pause=0.1
+        )
+
+    async def test_multi_tap_with_pause(self) -> None:
+        self.client_mock.multi_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "multi-tap", "10", "20", "--pause", "0.2"])
+        self.client_mock.multi_tap.assert_called_once_with(
+            x=10, y=20, count=2, duration=None, pause=0.2
+        )
+
     async def test_button(self) -> None:
         self.client_mock.button = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "button", "SIRI"])

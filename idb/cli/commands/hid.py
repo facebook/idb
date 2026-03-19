@@ -35,6 +35,43 @@ class TapCommand(ClientCommand):
         await client.tap(x=args.x, y=args.y, duration=args.duration)
 
 
+class MultiTapCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Multi Tap On the Screen (default: double tap)"
+
+    @property
+    def name(self) -> str:
+        return "multi-tap"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("x", help="The x-coordinate", type=int)
+        parser.add_argument("y", help="The y-coordinate", type=int)
+        parser.add_argument(
+            "--count",
+            help="Number of taps (default: 2)",
+            type=int,
+            default=2,
+        )
+        parser.add_argument("--duration", help="Press duration", type=float)
+        parser.add_argument(
+            "--pause",
+            help="Pause between taps in seconds (default: 0.1)",
+            type=float,
+            default=0.1,
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.multi_tap(
+            x=args.x,
+            y=args.y,
+            count=args.count,
+            duration=args.duration,
+            pause=args.pause,
+        )
+
+
 class ButtonCommand(ClientCommand):
     @property
     def description(self) -> str:

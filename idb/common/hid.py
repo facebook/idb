@@ -28,6 +28,21 @@ def tap_to_events(x: float, y: float, duration: float | None = None) -> list[HID
     return _press_with_duration(HIDTouch(point=Point(x=x, y=y)), duration=duration)
 
 
+def multi_tap_to_events(
+    x: float,
+    y: float,
+    count: int = 2,
+    duration: float | None = None,
+    pause: float = 0.1,
+) -> list[HIDEvent]:
+    events = []
+    for i in range(count):
+        if i > 0:
+            events.append(HIDDelay(duration=pause))
+        events.extend(tap_to_events(x, y, duration))
+    return events
+
+
 def button_press_to_events(
     button: HIDButtonType, duration: float | None = None
 ) -> list[HIDEvent]:

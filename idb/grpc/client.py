@@ -33,6 +33,7 @@ from idb.common.hid import (
     button_press_to_events,
     iterator_to_async_iterator,
     key_press_to_events,
+    multi_tap_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -875,6 +876,17 @@ class Client(ClientBase):
     @log_and_handle_exceptions("hid")
     async def tap(self, x: float, y: float, duration: float | None = None) -> None:
         await self.send_events(tap_to_events(x, y, duration))
+
+    @log_and_handle_exceptions("hid")
+    async def multi_tap(
+        self,
+        x: float,
+        y: float,
+        count: int = 2,
+        duration: float | None = None,
+        pause: float = 0.1,
+    ) -> None:
+        await self.send_events(multi_tap_to_events(x, y, count, duration, pause))
 
     @log_and_handle_exceptions("hid")
     async def button(

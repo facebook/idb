@@ -618,6 +618,17 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def multi_tap(
+        self,
+        x: float,
+        y: float,
+        count: int = 2,
+        duration: float | None = None,
+        pause: float = 0.1,
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def button(
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
