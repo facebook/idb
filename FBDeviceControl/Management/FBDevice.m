@@ -20,7 +20,6 @@
 #import "FBDeviceDiagnosticInformationCommands.h"
 #import "FBDeviceEraseCommands.h"
 #import "FBDeviceFileCommands.h"
-#import "FBDeviceFileCommands.h"
 #import "FBDeviceLifecycleCommands.h"
 #import "FBDeviceLocationCommands.h"
 #import "FBDeviceLogCommands.h"
