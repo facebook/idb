@@ -101,6 +101,15 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
 - (FBFuture<IconLayoutType> *)getIconLayout;
 
 /**
+ Gets the raw Icon State response from SpringBoard for a given format version.
+ Returns the raw plist object without type checking, for protocol exploration.
+
+ @param formatVersion the format version number (e.g. 2, 3).
+ @return a Future wrapping the raw response object.
+ */
+- (FBFuture<id> *)getRawIconState:(NSUInteger)formatVersion;
+
+/**
  Sets the Icon Layout of Springboard.
 
  @param iconLayout the icon layout to set.
