@@ -213,9 +213,8 @@ class ClientManager(ClientManagerBase):
     async def connect(
         self,
         destination: ConnectionDestination,
-        metadata: dict[str, str] | None = None,
     ) -> CompanionInfo:
-        self._logger.debug(f"Connecting directly to {destination} with meta {metadata}")
+        self._logger.debug(f"Connecting directly to {destination}")
         if isinstance(destination, TCPAddress) or isinstance(
             destination, DomainSocketAddress
         ):

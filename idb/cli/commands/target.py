@@ -11,7 +11,6 @@ from argparse import ArgumentParser, Namespace, SUPPRESS
 from collections.abc import Mapping
 from typing import Union
 
-import idb.common.plugin as plugin
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info
 from idb.common.signal import signal_handler_event
@@ -82,11 +81,6 @@ class TargetConnectCommand(ManagementCommand):
             destination = get_destination(args=args)
             response = await manager.connect(
                 destination=destination,
-                metadata={
-                    key: value
-                    for (key, value) in plugin.resolve_metadata(self.logger).items()
-                    if isinstance(value, str)
-                },
             )
             if args.json:
                 print(

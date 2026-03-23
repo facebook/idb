@@ -813,7 +813,6 @@ class ClientManager:
     async def connect(
         self,
         destination: ConnectionDestination,
-        metadata: dict[str, str] | None = None,
     ) -> CompanionInfo:
         pass
 

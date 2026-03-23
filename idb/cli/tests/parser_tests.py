@@ -252,7 +252,7 @@ class TestParser(TestCase):
         port = 1234
         await cli_main(cmd_input=["connect", host, str(port)])
         self.client_manager_mock().connect.assert_called_once_with(
-            destination=TCPAddress(host=host, port=port), metadata=ANY
+            destination=TCPAddress(host=host, port=port),
         )
 
     async def test_connect_with_udid(self) -> None:
@@ -260,7 +260,7 @@ class TestParser(TestCase):
         udid = "0B3311FA-234C-4665-950F-37544F690B61"
         await cli_main(cmd_input=["connect", udid])
         self.client_manager_mock().connect.assert_called_once_with(
-            destination=udid, metadata=ANY
+            destination=udid,
         )
 
     async def test_disconnect_with_host_and_port(self) -> None:
