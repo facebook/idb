@@ -207,7 +207,7 @@ static const uint32_t GetFileAck = GetFileCommand;
   NSDictionary<NSString *, id> *message = [connection receiveMessageWithError:&innerError];
   if (!message) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve ListFiles plist message %@", innerError]
+      describeFormat:@"Failed to receive ListFiles plist message %@", innerError]
       fail:error];
   }
   NSArray<NSString *> *files = message[@"files"];
@@ -232,7 +232,7 @@ static const uint32_t GetFileAck = GetFileCommand;
   success = [connection receiveUnsignedInt32:&response error:&innerError];
   if (!success) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve '%@' response from %@", commandName, innerError]
+      describeFormat:@"Failed to receive '%@' response from %@", commandName, innerError]
       failBool:error];
   }
   if (response != ack) {
