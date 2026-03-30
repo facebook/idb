@@ -272,7 +272,7 @@ NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t streamType)
   section[15] = 0xF0;
   section[16] = 0x00;
 
-  uint16_t sectionLength = 13 + 4; // 13 bytes data + 4 CRC
+  uint16_t sectionLength = 14 + 4; // 14 bytes data (section[3..16]) + 4 CRC
   section[1] = 0xB0 | ((sectionLength >> 8) & 0x0F);
   section[2] = sectionLength & 0xFF;
 
