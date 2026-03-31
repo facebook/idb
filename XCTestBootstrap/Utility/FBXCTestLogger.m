@@ -65,7 +65,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:&error];
   NSAssert(success, @"Expected to create directory at path %@, but could not %@", directory, error);
 
-  // Create an empty file so that it can be appeneded to.
+  // Create an empty file so that it can be appended to.
   NSString *path = [directory stringByAppendingPathComponent:name];
   success = [[NSData new] writeToFile:path options:0 error:&error];
   NSAssert(success, @"Expected to create file at path %@, but could not: %@", path, error);

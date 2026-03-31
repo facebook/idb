@@ -117,7 +117,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  Starts a Service on the AMDevice.
 
  @param service the service name
- @return a Future wrapping the FBAFCConnection.
+ @return a Future wrapping the FBAMDServiceConnection.
  */
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service;
 

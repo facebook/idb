@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)deviceAttached:(PublicDevice)device forKey:(NSString *)key;
 
 /**
- Will attach the device to the collection.
+ Will detach the device from the collection.
  If a device is still referenced, it can still be obtained later
 
  @param key the key of the device

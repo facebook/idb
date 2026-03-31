@@ -523,7 +523,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
             }
             self.readEnd = fileDescriptors[0];
             self.writeEnd = fileDescriptors[1];
-            // Pass out the write end in the attachment, for the caller to write to.
+            // Pass out the write end in the attachment, for the subprocess to write to.
             return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithFileDescriptor:fileDescriptors[1] closeOnEndOfFile:YES mode:FBProcessStreamAttachmentModeOutput]];
           }];
 }

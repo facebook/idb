@@ -17,8 +17,8 @@
 /**
  The Designated Initializer.
 
- @param target the target to construct an update for.
- @return a new Target Update
+ @param target the target to construct a description for.
+ @return a new Target Description
  */
 - (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target;
 

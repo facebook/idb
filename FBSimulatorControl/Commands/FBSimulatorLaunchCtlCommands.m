@@ -248,7 +248,7 @@
 
 - (FBFuture<NSString *> *)runWithArguments:(NSArray<NSString *> *)arguments
 {
-  // Construct a Launch Configuration for launchctl we'll use the 'list' command.
+  // Construct a Launch Configuration for launchctl with the given arguments.
   FBProcessSpawnConfiguration *launchConfiguration = [[FBProcessSpawnConfiguration alloc]
                                                       initWithLaunchPath:self.launchctlLaunchPath
                                                       arguments:arguments

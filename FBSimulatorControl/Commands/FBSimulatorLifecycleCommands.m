@@ -229,7 +229,7 @@ const int OPEN_URL_RETRIES = 2;
           }];
 }
 
-#pragma mark Bridge
+#pragma mark HID
 
 - (FBFuture<FBSimulatorHID *> *)connectToHID
 {

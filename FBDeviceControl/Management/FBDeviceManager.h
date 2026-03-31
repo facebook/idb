@@ -66,7 +66,7 @@ typedef CFTypeRef PrivateDevice;
 - (PublicDevice)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(nullable NSDictionary<NSString *, id> *)info;
 
 /**
- Construct the public type from the private type
+ Update the public type with data from the private type
 
  @param publicDevice the public device
  @param privateDevice the private device

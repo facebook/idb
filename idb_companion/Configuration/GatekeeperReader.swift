@@ -34,9 +34,9 @@ public final class GatekeeperReader {
   /// Reads and caches gatekeeper value.
   ///
   /// - Parameters:
-  ///   - sitevarName: Your fancy name of the gatekeeper
+  ///   - name: Your fancy name of the gatekeeper
   ///   - default: value to use on network error
-  /// - Returns: Sitevar value
+  /// - Returns: Gatekeeper value
   /// - Throws: FBInternGraphError on incorrect library usage or implementation. Network/server errors do *not* throw an error but uses `defaultValue`
   public func read(name: String, unixname: String, `default` defaultValue: Bool) async throws -> Bool {
     do {

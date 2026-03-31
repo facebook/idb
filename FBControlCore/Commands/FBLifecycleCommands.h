@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Defines an interface for power related commands.
+ Defines an interface for lifecycle state-related commands.
  */
 @protocol FBLifecycleCommands <NSObject, FBiOSTargetCommand>
 

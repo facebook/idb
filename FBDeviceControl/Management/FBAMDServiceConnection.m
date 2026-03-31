@@ -230,7 +230,7 @@ static size_t ReadBufferSize = 1024 * 4;
 
 #pragma mark FBAMDServiceConnectionTransfer Implementation
 
-// There's an upper limit on the number of bytes we can receive at once
+// There's an upper limit on the number of bytes we can send at once
 static size_t SendBufferSize = 1024 * 4;
 
 - (BOOL)send:(NSData *)data error:(NSError **)error

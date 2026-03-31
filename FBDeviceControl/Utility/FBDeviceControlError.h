@@ -10,7 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 /**
- The Error Domain for XCTestBootstrap Errors.
+ The Error Domain for FBDeviceControl Errors.
  */
 extern NSString *const FBDeviceControlErrorDomain;
 

@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Implementation of FBApplicationCommands for Devices
+ An Implementation of FBDiagnosticInformationCommands for Devices
  */
 @interface FBDeviceDiagnosticInformationCommands : NSObject <FBDiagnosticInformationCommands>
 

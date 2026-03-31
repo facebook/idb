@@ -221,7 +221,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // This also means that the errorCode in the dispatch_io_read callback will correspond to ECANCELED.
   //
   // There is also the issue of "relinquishment", which is whether the file descriptor can be used elsewhere.
-  // The libdispatch documentation does explicitly say that it is fine to assume that control has been relinquished:
+  // The libdispatch documentation does explicitly say that the system takes control of the file descriptor:
   // > "After calling this function, the system takes control of the specified file descriptor until one of the following occurs"
   // > "- You close the channel by calling the dispatch_io_close function"
   // However, this does not appear to be the case and the only safe way of considering a file descriptor relinquished is in the dispatch_io_create handler.

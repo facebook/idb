@@ -286,7 +286,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 }
 
 /// After _XCT_launchProcessWithPath:bundleID:arguments:environmentVariables: is called,
-/// this method will be called to check on wherer the process has already been launched or not
+/// this method will be called to check on whether the process has already been launched or not
 /// return should be 0 or 1.
 ///
 /// If 0 is returned, `_XCT_getProgressForLaunch:` will be called again until 1 is returned

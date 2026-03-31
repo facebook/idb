@@ -220,7 +220,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportTestTargetXctest:(NSDictionary<NSString *, NSObject *> *)testTargetXctest testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
-  NSAssert(testTargetXctest, @"selectedTest is nil");
+  NSAssert(testTargetXctest, @"testTargetXctest is nil");
   NSAssert([testTargetXctest isKindOfClass:NSDictionary.class], @"testTargetXctest not a NSDictionary");
 
   NSArray *testClasses = (NSArray *)testTargetXctest[@"Subtests"];
@@ -229,7 +229,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportTestClasses:(NSArray<NSDictionary *> *)testClasses testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
-  NSAssert(testClasses, @"selectedTest is nil");
+  NSAssert(testClasses, @"testClasses is nil");
   NSAssert([testClasses isKindOfClass:NSArray.class], @"testClasses not a NSArray");
 
   for (NSDictionary *testClass in testClasses) {
@@ -239,7 +239,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (void)reportTestClass:(NSDictionary<NSString *, NSObject *> *)testClass testBundleName:(NSString *)testBundleName reporter:(id<FBXCTestReporter>)reporter
 {
-  NSAssert(testClass, @"selectedTest is nil");
+  NSAssert(testClass, @"testClass is nil");
   NSAssert([testClass isKindOfClass:NSDictionary.class], @"testClass not a NSDictionary");
 
   NSString *testClassName = readStringFromDict(testClass, @"TestIdentifier");
@@ -532,7 +532,7 @@ static inline NSDate *dateFromString(NSString *date)
                         logger:(id<FBControlCoreLogger>)logger
             extractScreenshots:(BOOL)extractScreenshots
 {
-  NSAssert(testTargetXctest, @"selectedTest is nil");
+  NSAssert(testTargetXctest, @"testTargetXctest is nil");
   NSAssert([testTargetXctest isKindOfClass:NSDictionary.class], @"testTargetXctest not a NSDictionary");
 
   NSArray *testClasses = accessAndUnwrapValues(testTargetXctest, @"subtests", logger);
@@ -556,7 +556,7 @@ static inline NSDate *dateFromString(NSString *date)
                    logger:(id<FBControlCoreLogger>)logger
        extractScreenshots:(BOOL)extractScreenshots
 {
-  NSAssert(testClasses, @"selectedTest is nil");
+  NSAssert(testClasses, @"testClasses is nil");
   NSAssert([testClasses isKindOfClass:NSArray.class], @"testClasses not a NSArray");
 
   for (NSDictionary *testClass in testClasses) {
@@ -572,7 +572,7 @@ static inline NSDate *dateFromString(NSString *date)
                  logger:(id<FBControlCoreLogger>)logger
      extractScreenshots:(BOOL)extractScreenshots
 {
-  NSAssert(testClass, @"selectedTest is nil");
+  NSAssert(testClass, @"testClass is nil");
   NSAssert([testClass isKindOfClass:NSDictionary.class], @"testClass not a NSDictionary");
 
   NSString *testClassName = (NSString *)accessAndUnwrapValue(testClass, @"identifier", logger);

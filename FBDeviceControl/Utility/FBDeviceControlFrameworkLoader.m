@@ -151,7 +151,7 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
 
 /**
  Sets the Default Log Level and File Path for MobileDevice.framework.
- Must be called before any MobileDevice APIs are called, as these values are read during Framework initialization.
+ Called after MobileDevice framework initialization to configure logging preferences.
  Logging goes via asl instead of os_log, so logging to a file path may be unpredicatable.
 
  @param level the Log Level to use.

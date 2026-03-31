@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- An Implementation of FBCrashLogCommand for Devices
+ An Implementation of FBDeviceRecoveryCommands for Devices
  */
 @interface FBDeviceRecoveryCommands : NSObject <FBDeviceRecoveryCommands>
 

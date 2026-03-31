@@ -200,7 +200,7 @@ static inline NSArray<NSString *> *ReadRPathsSpecific(FILE *file, uint32_t magic
       fseek(file, offset, SEEK_SET);
       fread(&rpathCommand, sizeof(rpathCommand), 1, file);
 
-      // Calculate the offset and move back
+      // Calculate the offset to the path string
       const uint32_t pathOffset = offset + rpathCommand.path.offset;
       const uint32_t pathLength = command.cmdsize;
 
@@ -254,7 +254,7 @@ static inline NSUUID *ReadUUIDFat(FILE *file, uint32_t fatMagic)
 {
   return EnumerateFat(file,
     fatMagic, ^id (struct fat_arch fatArch, uint32_t magic) {
-      // Get the Arch
+      // Get the UUID
       return ReadUUID(file, magic);
     });
 }

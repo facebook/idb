@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param directory the directory to search.
  @param logger the logger to log to.
- @return a future wrapping the application bundle.
+ @return an FBBundleDescriptor for the application bundle, or nil on error.
  */
 + (nullable FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 

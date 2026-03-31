@@ -114,7 +114,7 @@
                             simctlVersionNumber]
                            onQueue:self.queue
                            fmap:^(NSDecimalNumber *simctlVersion) {
-                             // Earlier versions use --type=codec instead of --type, so we need to switch on the version of simctl
+                             // Earlier versions use --type instead of --codec, so we need to switch on the version of simctl
                              NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
                              if ([simctlVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
                                recordVideoParameters = @[@"--codec=h264", @"--force"];
@@ -160,7 +160,7 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
     return FBFuture.empty;
   }
 
-  // Stop for real be interrupting the task itself.
+  // Stop for real by interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[[recordingTask
                                       sendSignal:SIGINT
                                       backingOffToKillWithTimeout:recordingTaskWaitTimeout

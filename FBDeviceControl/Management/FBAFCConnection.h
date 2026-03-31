@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceConnection the connection to use.
  @param calls the calls to use.
  @param logger the logger to use.
- @param queue the logger to use.
+ @param queue the queue to use.
  @return an FBAFCConnection instance.
  */
 + (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;

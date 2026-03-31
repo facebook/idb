@@ -44,7 +44,7 @@ typedef int (*SharedCacheExtractor)(const char *sharedCachePath, const char *ext
   return self;
 }
 
-#pragma mark FBDeviceActivationCommands Implementation
+#pragma mark FBDeviceDebugSymbolsCommands Implementation
 
 static const uint32_t ListFilesPlistCommand = 0x30303030;
 static const uint32_t ListFilesPlistAck = ListFilesPlistCommand;

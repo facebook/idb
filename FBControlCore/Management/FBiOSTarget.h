@@ -120,7 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSString *runtimeRootDirectory;
 
 /**
- The root of the "Runtime" where applicable
+ The root of the "Platform" where applicable
  */
 @property (nonatomic, readonly, copy) NSString *platformRootDirectory;
 

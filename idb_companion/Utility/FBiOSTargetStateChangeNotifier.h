@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  A notifier that writes state updates to a file.
  The current set of targets is updated and the data is stored as an JSON array.
 
- @param filePath the filepath to write the updates to. This
+ @param filePath the filepath to write the updates to.
  @param targetSets the FBiOSTargetSets to monitor
  @param logger the logger to log to.
  @return a future that resolves when the notifier is created.

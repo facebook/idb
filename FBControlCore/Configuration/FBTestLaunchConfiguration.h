@@ -99,7 +99,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly, copy) NSString *logDirectoryPath;
 
 /*
- Path to the result bundle.
+ Whether to report the result bundle.
  */
 @property (nonatomic, readonly, assign) BOOL reportResultBundle;
 

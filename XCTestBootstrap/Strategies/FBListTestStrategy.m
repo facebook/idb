@@ -232,7 +232,7 @@
   if ([FBBundleDescriptor isApplicationAtPath:configuration.runnerAppPath]) {
     // Since we're loading the test bundle in app binary's process without booting a simulator,
     // testing frameworks like XCTest.framework and XCTAutomationSupport.framework won't be available.
-    // (They are available in iOS simulator's runtime). To fix this, we could add the paths of those
+    // (They are available in iOS simulator's runtime). To fix this, we add the paths of those
     // frameworks (developer library version) to `DYLD_FALLBACK_FRAMEWORK_PATH` to meet the dependency
     // requirements of loading test bundle.
     NSString *developerLibraryPath =

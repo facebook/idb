@@ -200,7 +200,7 @@
     return self.using.count;
   }
 
-  // Otherwise we pull the pending to the front and start it off.
+  // Otherwise we pop the most recent pending item and start it off.
   NSUUID *next = [self.pendingOrdering lastObject];
   [self.pendingOrdering removeLastObject];
 

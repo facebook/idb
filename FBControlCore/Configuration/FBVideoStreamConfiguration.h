@@ -111,7 +111,7 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 
  @param format the video stream format to use.
  @param framesPerSecond the number of frames per second for an eager stream. nil if a lazy stream.
- @param rateControl the rate-control mode for VTCompression. nil for default (constant quality 0.2).
+ @param rateControl the rate-control mode for VTCompression. nil for default (constant quality 0.75).
  @param scaleFactor the scale factor, between 0-1. nil for no scaling.
  @param keyFrameRate key frame interval in seconds. nil for default (1s).
  */
