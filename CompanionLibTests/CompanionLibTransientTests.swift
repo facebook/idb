@@ -214,7 +214,7 @@ final class CompanionLibTransientTests: XCTestCase {
     XCTAssertEqual(request.environment, ["KEY": "VALUE"])
     XCTAssertEqual(request.arguments, ["-arg1"])
     XCTAssertEqual(request.testsToRun, Set(["TestClass/testMethod"]))
-    XCTAssertTrue((request.testsToSkip ?? Set()).isEmpty)
+    XCTAssertTrue(request.testsToSkip.isEmpty)
     XCTAssertEqual(request.testTimeout, NSNumber(value: 300))
     XCTAssertTrue(request.reportActivities)
     XCTAssertFalse(request.reportAttachments)
@@ -327,13 +327,13 @@ final class CompanionLibTransientTests: XCTestCase {
       resultBundlePath: nil,
       coverageConfiguration: nil,
       logDirectoryPath: nil,
-      binariesPaths: nil,
+      binariesPaths: [],
       reportAttachments: false,
       reportResultBundle: true
     )
     XCTAssertNil(config.resultBundlePath)
     XCTAssertNil(config.logDirectoryPath)
-    XCTAssertNil(config.binariesPaths)
+    XCTAssertTrue(config.binariesPaths.isEmpty)
     XCTAssertFalse(config.reportAttachments)
     XCTAssertTrue(config.reportResultBundle)
   }

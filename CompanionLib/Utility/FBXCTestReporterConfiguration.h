@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  App binary path
  */
-@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *binariesPaths;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *binariesPaths;
 
 /**
  Whether to report attachments or not.
@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, readonly, assign) BOOL reportResultBundle;
 
-- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments reportResultBundle:(BOOL)reportResultBundle;
+- (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments reportResultBundle:(BOOL)reportResultBundle;
 
 @end
 

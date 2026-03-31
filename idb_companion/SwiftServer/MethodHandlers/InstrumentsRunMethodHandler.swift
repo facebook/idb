@@ -104,7 +104,7 @@ struct InstrumentsRunMethodHandler {
       targetApplication: request.appBundleID,
       appEnvironment: request.environment,
       appArguments: request.arguments,
-      toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments) ?? [],
+      toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments),
       timings: .init(
         terminateTimeout: withDefaultTimeout(request.timings.terminateTimeout, DefaultInstrumentsTerminateTimeout),
         launchRetryTimeout: withDefaultTimeout(request.timings.launchRetryTimeout, DefaultInstrumentsLaunchRetryTimeout),

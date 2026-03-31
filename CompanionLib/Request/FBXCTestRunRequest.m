@@ -57,7 +57,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   }
 
   NSString *testFilter = nil;
-  NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects ?: @[];
+  NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects;
   if (testsToSkip.count > 0) {
     return [[FBXCTestError
              describeFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]
