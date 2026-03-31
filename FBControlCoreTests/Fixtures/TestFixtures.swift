@@ -28,4 +28,12 @@ enum TestFixtures {
 
   static let appCrashWithJSONFormat = Bundle(for: BundleFinder.self)
     .path(forResource: "xctest-concated-json-crash", ofType: "ips")!
+
+  static let photo0Path = Bundle(for: BundleFinder.self)
+    .path(forResource: "photo0", ofType: "png")!
+
+  static let simulatorSystemLogPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "simulator_system", ofType: "log")!
+
+  static let bundleResource = Bundle(for: BundleFinder.self).resourcePath!
 }
