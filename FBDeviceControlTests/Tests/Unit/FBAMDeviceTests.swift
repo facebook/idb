@@ -114,9 +114,11 @@ final class FBAMDeviceTests: XCTestCase {
 
   func testConnectToDeviceWithSuccess() throws {
     let future = device.connectionContextManager.utilize(withPurpose: "test")
-      .onQueue(DispatchQueue.main, pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-        return FBFuture<AnyObject>(result: NSNull())
-      })
+      .onQueue(
+        DispatchQueue.main,
+        pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
+          return FBFuture<AnyObject>(result: NSNull())
+        })
 
     let value = try future.await()
     XCTAssertNotNil(value)
@@ -136,9 +138,11 @@ final class FBAMDeviceTests: XCTestCase {
 
   func testConnectToDeviceWithFailure() {
     let future = device.connectionContextManager.utilize(withPurpose: "test")
-      .onQueue(DispatchQueue.main, pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-        return FBDeviceControlError.describe("A bad thing").failFuture()
-      })
+      .onQueue(
+        DispatchQueue.main,
+        pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
+          return FBDeviceControlError.describe("A bad thing").failFuture()
+        })
 
     XCTAssertThrowsError(try future.await())
 
@@ -171,24 +175,30 @@ final class FBAMDeviceTests: XCTestCase {
 
     schedule.async {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(map, pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 0))
-        })
-      future0.resolve(from:inner)
+        .onQueue(
+          map,
+          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 0))
+          })
+      future0.resolve(from: inner)
     }
     schedule.async {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(map, pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 1))
-        })
-      future1.resolve(from:inner)
+        .onQueue(
+          map,
+          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 1))
+          })
+      future1.resolve(from: inner)
     }
     schedule.async {
       let inner = device.houseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: afcCalls)
-        .onQueue(map, pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 2))
-        })
-      future2.resolve(from:inner)
+        .onQueue(
+          map,
+          pop: { (_: FBAFCConnection) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 2))
+          })
+      future2.resolve(from: inner)
     }
 
     let value = try FBFutureFromArray([future0, future1, future2]).await()
@@ -230,24 +240,30 @@ final class FBAMDeviceTests: XCTestCase {
 
     schedule.async {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(map, pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 0))
-        })
-      future0.resolve(from:future)
+        .onQueue(
+          map,
+          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 0))
+          })
+      future0.resolve(from: future)
     }
     schedule.async {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(map, pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 1))
-        })
-      future1.resolve(from:future)
+        .onQueue(
+          map,
+          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 1))
+          })
+      future1.resolve(from: future)
     }
     schedule.async {
       let future = device.connectionContextManager.utilize(withPurpose: "test")
-        .onQueue(map, pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>(result:NSNumber(value: 2))
-        })
-      future2.resolve(from:future)
+        .onQueue(
+          map,
+          pop: { (_: FBAMDevice) -> FBFuture<AnyObject> in
+            return FBFuture<AnyObject>(result: NSNumber(value: 2))
+          })
+      future2.resolve(from: future)
     }
 
     let value = try FBFutureFromArray([future0, future1, future2]).await() as? [NSNumber]
