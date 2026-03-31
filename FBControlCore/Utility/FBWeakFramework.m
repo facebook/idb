@@ -84,7 +84,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   for (NSString *requiredClassName in self.requiredClassNames) {
     if (!NSClassFromString(requiredClassName)) {
       return [[FBControlCoreError
-               describeFormat:@"Missing %@ class from %@ framework", requiredClassName, self.name]
+               describe:[NSString stringWithFormat:@"Missing %@ class from %@ framework", requiredClassName, self.name]]
               failBool:error];
     }
   }
@@ -96,7 +96,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   // Checking if classes are already loaded. Error here is irrelevant (returning NO means something is not loaded)
   if ([self allRequiredClassesExistsWithError:nil] && self.requiredClassNames.count > 0) {
     // The Class exists, therefore has been loaded
-    [logger.debug logFormat:@"%@: Already loaded, skipping", self.name];
+    [logger.debug log:[NSString stringWithFormat:@"%@: Already loaded, skipping", self.name]];
     NSError *innerError = nil;
     if (![self verifyIfLoadedWithLogger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
@@ -107,7 +107,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   // Check that the framework can be loaded as root if root.
   if ([NSUserName() isEqualToString:@"root"] && self.rootPermitted == NO) {
     return [[FBControlCoreError
-             describeFormat:@"%@ cannot be loaded from the root user. Don't run this as root.", self.relativePath]
+             describe:[NSString stringWithFormat:@"%@ cannot be loaded from the root user. Don't run this as root.", self.relativePath]]
             failBool:error];
   }
 
@@ -115,25 +115,25 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   NSString *path = [[relativeDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:nil]) {
     return [[FBControlCoreError
-             describeFormat:@"Attempting to load a file at path '%@', but it does not exist", path]
+             describe:[NSString stringWithFormat:@"Attempting to load a file at path '%@', but it does not exist", path]]
             failBool:error];
   }
 
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to load the bundle for path %@", path]
+             describe:[NSString stringWithFormat:@"Failed to load the bundle for path %@", path]]
             failBool:error];
   }
 
-  [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
+  [logger.debug log:[NSString stringWithFormat:@"%@: Loading from %@ ", self.name, path]];
   if (![bundle loadAndReturnError:error]) {
     return NO;
   }
 
-  [logger.debug logFormat:@"%@: Successfully loaded", self.name];
+  [logger.debug log:[NSString stringWithFormat:@"%@: Successfully loaded", self.name]];
   if (![self allRequiredClassesExistsWithError:error]) {
-    [logger logFormat:@"Failed to load %@", path.lastPathComponent];
+    [logger log:[NSString stringWithFormat:@"Failed to load %@", path.lastPathComponent]];
     return NO;
   }
   if (![self verifyIfLoadedWithLogger:logger error:error]) {
@@ -165,7 +165,7 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
   if (!bundle) {
     return [[FBControlCoreError
-             describeFormat:@"Could not obtain Framework bundle for class named %@", className]
+             describe:[NSString stringWithFormat:@"Could not obtain Framework bundle for class named %@", className]]
             failBool:error];
   }
 
@@ -174,10 +174,10 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   NSString *basePath = [[self.basePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
   if (![bundle.bundlePath hasPrefix:basePath]) {
     return [[FBControlCoreError
-             describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
+             describe:[NSString stringWithFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]]
             failBool:error];
   }
-  [logger.debug logFormat:@"%@: %@ has correct path of %@", self.name, className, basePath];
+  [logger.debug log:[NSString stringWithFormat:@"%@: %@ has correct path of %@", self.name, className, basePath]];
   return YES;
 }
 

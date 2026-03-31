@@ -91,23 +91,23 @@
              int connectionID = device.calls.GetConnectionID(device.amDeviceRef);
              if (connectionID <= 0) {
                return [[FBDeviceControlError
-                        describeFormat:@"Failed to get ConnectionID from Device"]
+                        describe:@"Failed to get ConnectionID from Device"]
                        failFuture];
              }
-             [logger logFormat:@"Got connection ID %d, for device. Connecting to remote port %d", connectionID, remotePort];
+             [logger log:[NSString stringWithFormat:@"Got connection ID %d, for device. Connecting to remote port %d", connectionID, remotePort]];
              int localSocket = 0;
              int status = device.calls.USBMuxConnectByPort(connectionID, htons(remotePort), &localSocket);
              if (status != 0) {
                return [[FBDeviceControlError
-                        describeFormat:@"Failed to connect to remote port %d", remotePort]
+                        describe:[NSString stringWithFormat:@"Failed to connect to remote port %d", remotePort]]
                        failFuture];
              }
-             [logger logFormat:@"Got local socket %d for remote port %d", localSocket, remotePort];
+             [logger log:[NSString stringWithFormat:@"Got local socket %d for remote port %d", localSocket, remotePort]];
              return [FBFuture futureWithResult:@(localSocket)];
            }]
           onQueue:self.device.asyncQueue
           contextualTeardown:^(NSNumber *localSocketNumber, FBFutureState _) {
-            [logger logFormat:@"Closing local socket %@", localSocketNumber];
+            [logger log:[NSString stringWithFormat:@"Closing local socket %@", localSocketNumber]];
             close(localSocketNumber.intValue);
             return FBFuture.empty;
           }];

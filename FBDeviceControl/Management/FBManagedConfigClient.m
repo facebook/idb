@@ -63,7 +63,7 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
   NSNumber *whereNumber = FBManagedConfigClient.wallpaperWhereForName[name];
   if (!whereNumber) {
     return [[FBControlCoreError
-             describeFormat:@"%@ is not a valid Wallpaper Name", name]
+             describe:[NSString stringWithFormat:@"%@ is not a valid Wallpaper Name", name]]
             failFuture];
   }
   return [self changeSettings:@[
@@ -88,7 +88,7 @@ static NSString * const PayloadVersion = @"PayloadVersion";
             NSArray<NSString *> *orderedIdentifiers = result[OrderedIdentifiers];
             if (![FBCollectionInformation isArrayHeterogeneous:orderedIdentifiers withClass:NSString.class]) {
               return [[FBControlCoreError
-                       describeFormat:@"%@ is not an Array<String>", OrderedIdentifiers]
+                       describe:[NSString stringWithFormat:@"%@ is not an Array<String>", OrderedIdentifiers]]
                       fail:error];
             }
             return orderedIdentifiers;
@@ -120,7 +120,7 @@ static NSString * const PayloadVersion = @"PayloadVersion";
             NSDictionary<NSString *, id> *profileMetadata = result[ProfileMetadata][profileName];
             if (!profileMetadata) {
               return [[FBControlCoreError
-                       describeFormat:@"%@ is not one of %@", profileName, [FBCollectionInformation oneLineDescriptionFromArray:result[OrderedIdentifiers]]]
+                       describe:[NSString stringWithFormat:@"%@ is not one of %@", profileName, [FBCollectionInformation oneLineDescriptionFromArray:result[OrderedIdentifiers]]]]
                       fail:error];
             }
             NSDictionary<NSString *, id> *profileIdentifier = @{
@@ -140,7 +140,7 @@ static NSString * const PayloadVersion = @"PayloadVersion";
             NSString *status = result[@"Status"];
             if ([status isEqualToString:@"Error"]) {
               return [[FBControlCoreError
-                       describeFormat:@"Status is Error: %@", result]
+                       describe:[NSString stringWithFormat:@"Status is Error: %@", result]]
                       fail:error];
             }
             return NSNull.null;

@@ -74,7 +74,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
            }]
           onQueue:bridgeQueue
           fmap:^(FBSimulatorBridge *bridge) {
-            [simulator.logger logFormat:@"Enabling Accessibility on the bridge %@", bridge];
+            [simulator.logger log:[NSString stringWithFormat:@"Enabling Accessibility on the bridge %@", bridge]];
             return [[bridge enableAccessibility] mapReplace:bridge];
           }];
 }
@@ -97,7 +97,7 @@ static NSTimeInterval BridgeReadyTimeout = 5.0;
                       ]];
             }
             // Otherwise just return the original future wrapped in the array.
-            [simulator.logger logFormat:@"SimulatorBridge Agent %@ is already running for %@", future.result, portName];
+            [simulator.logger log:[NSString stringWithFormat:@"SimulatorBridge Agent %@ is already running for %@", future.result, portName]];
             return [FBFuture futureWithFutures:@[future]];
           }];
 }
@@ -131,7 +131,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
                                          io:processIO
                                          mode:FBProcessSpawnModeDefault];
 
-  [logger logFormat:@"Launching SimulatorBridge agent for %@", portName];
+  [logger log:[NSString stringWithFormat:@"Launching SimulatorBridge agent for %@", portName]];
   return [[[simulator
             launchProcess:config]
            onQueue:simulator.asyncQueue
@@ -139,12 +139,12 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
              return [[[buffer
                        consumeAndNotifyWhen:[@"READY" dataUsingEncoding:NSUTF8StringEncoding]]
                       timeout:BridgeReadyTimeout
-                      waitingFor:@"The launched process %@ to specify 'READY' for %@", process, portName]
+                      waitingFor:[NSString stringWithFormat:@"The launched process %@ to specify 'READY' for %@", process, portName]]
                      mapReplace:process];
            }]
           onQueue:simulator.asyncQueue
           doOnResolved:^(FBSubprocess *process) {
-            [logger logFormat:@"Bridge process is launched %@. %@ is now ready", process, portName];
+            [logger log:[NSString stringWithFormat:@"Bridge process is launched %@. %@ is now ready", process, portName]];
           }];
 }
 
@@ -156,10 +156,10 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
               return [self bridgeForSimulator:simulator portName:portName];
             }]
            timeout:timeout
-           waitingFor:@"Bridge Port %@ to exist", portName]
+           waitingFor:[NSString stringWithFormat:@"Bridge Port %@ to exist", portName]]
           onQueue:simulator.asyncQueue
           doOnResolved:^(NSProxy<SimulatorBridge> *bridge) {
-            [simulator.logger logFormat:@"SimulatorBridge Proxy %@ for %@ is now ready", bridge, portName];
+            [simulator.logger log:[NSString stringWithFormat:@"SimulatorBridge Proxy %@ for %@ is now ready", bridge, portName]];
           }];
 }
 
@@ -180,7 +180,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
             SEL knownSelector = @selector(setLocationScenarioWithPath:);
             if (![bridge respondsToSelector:knownSelector]) {
               return [[FBSimulatorError
-                       describeFormat:@"Distant Object '%@' for '%@' at isn't a SimulatorBridge as it doesn't respond to %@", portName, bridgeDistantObject, NSStringFromSelector(knownSelector)]
+                       describe:[NSString stringWithFormat:@"Distant Object '%@' for '%@' at isn't a SimulatorBridge as it doesn't respond to %@", portName, bridgeDistantObject, NSStringFromSelector(knownSelector)]]
                       failFuture];
             }
 
@@ -194,7 +194,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   mach_port_t bridgePort = [simulator.device lookup:portName error:&error];
   if (bridgePort == 0) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not lookup mach port for '%@'", portName]
+              describe:[NSString stringWithFormat:@"Could not lookup mach port for '%@'", portName]]
              causedBy:error]
             failFuture];
   }
@@ -262,7 +262,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
             NSNumber *enabled = [bridge performSelector:@selector(accessibilityEnabled)];
             if (enabled.boolValue != YES) {
               return [[FBSimulatorError
-                       describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
+                       describe:[NSString stringWithFormat:@"Could not enable accessibility for bridge '%@'", bridge]]
                       failFuture];
             }
             return FBFuture.empty;
@@ -278,7 +278,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
              id elements = [bridge accessibilityElementsWithDisplayId:0];
              if (!elements) {
                return [[FBSimulatorError
-                        describeFormat:@"No Elements returned from bridge"]
+                        describe:@"No Elements returned from bridge"]
                        failFuture];
              }
              return [FBFuture futureWithResult:elements];
@@ -298,7 +298,7 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
              id element = [bridge accessibilityElementForPoint:point.x andY:point.y displayId:0];
              if (!element) {
                return [[FBSimulatorError
-                        describeFormat:@"No Elements at %f,%f returned from bridge", point.x, point.y]
+                        describe:[NSString stringWithFormat:@"No Elements at %f,%f returned from bridge", point.x, point.y]]
                        failFuture];
              }
              return [FBFuture futureWithResult:element];
@@ -338,13 +338,13 @@ static NSString *const SimulatorBridgePortSuffix = @"FBSimulatorControl";
   id<SimulatorBridge> bridge = self.bridge;
   if (!bridge) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot interact with bridge as it has been destroyed"]
+             describe:@"Cannot interact with bridge as it has been destroyed"]
             failFuture];
   }
   NSDistantObject *distantObject = (NSDistantObject *) bridge;
   if (!distantObject.connectionForProxy.isValid) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot interact with bridge as the connection is invalid"]
+             describe:@"Cannot interact with bridge as the connection is invalid"]
             failFuture];
   }
 

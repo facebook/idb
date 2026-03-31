@@ -57,7 +57,7 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
             NSData *screenshotData = response[ScreenShotDataKey];
             if (![screenshotData isKindOfClass:NSData.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not an NSData for %@", screenshotData, ScreenShotDataKey]
+                       describe:[NSString stringWithFormat:@"%@ is not an NSData for %@", screenshotData, ScreenShotDataKey]]
                       failFuture];
             }
             return [FBFuture futureWithResult:screenshotData];

@@ -109,7 +109,7 @@
   SimDeviceSet *deviceSet = [self.serviceContext deviceSetWithPath:deviceSetPath error:&innerError];
   if (!deviceSet) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not create underlying device set for configuration %@", configuration]
+              describe:[NSString stringWithFormat:@"Could not create underlying device set for configuration %@", configuration]]
              causedBy:innerError]
             fail:error];
   }
@@ -125,7 +125,7 @@
   NSError *innerError = nil;
   if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBSimulatorError
-              describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]
+              describe:[NSString stringWithFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]]
              causedBy:innerError]
             fail:error];
   }
@@ -136,7 +136,7 @@
   char *result = realpath(deviceSetPath.UTF8String, pathBuffer);
   if (!result) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to get realpath for %@ '%s'", deviceSetPath, strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to get realpath for %@ '%s'", deviceSetPath, strerror(errno)]]
             fail:error];
   }
   return [[NSString alloc] initWithCString:pathBuffer encoding:NSASCIIStringEncoding];

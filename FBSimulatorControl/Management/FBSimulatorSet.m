@@ -89,20 +89,20 @@
   SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
+              describe:[NSString stringWithFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]]
              causedBy:innerError]
             failFuture];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
+              describe:[NSString stringWithFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]]
              causedBy:innerError]
             failFuture];
   }
 
   // First, create the device.
-  [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
+  [self.logger.debug log:[NSString stringWithFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime]];
   return [[[FBSimulatorSet
             onDeviceSet:self.deviceSet
             createDeviceWithType:deviceType
@@ -116,7 +116,7 @@
           onQueue:self.workQueue
           fmap:^(FBSimulator *simulator) {
             simulator.configuration = configuration;
-            [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
+            [self.logger.debug log:[NSString stringWithFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration]];
 
             // This step ensures that the Simulator is in a known-shutdown state after creation.
             // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
@@ -216,7 +216,7 @@
   FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   if (!simulator) {
     return [[FBSimulatorError
-             describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
+             describe:[NSString stringWithFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]]
             failFuture];
   }
   return [FBFuture futureWithResult:simulator];

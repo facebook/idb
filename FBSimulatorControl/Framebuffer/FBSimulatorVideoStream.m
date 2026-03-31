@@ -176,7 +176,7 @@ static void MJPEGCompressorCallback(void *outputCallbackRefCon, void *sourceFram
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   NSError *error = nil;
   if (!WriteJPEGDataToMJPEGStream(blockBufffer, pusher.consumer, pusher.logger, &error)) {
-    [pusher.logger logFormat:@"Failed to write MJPEG frame: %@", error];
+    [pusher.logger log:[NSString stringWithFormat:@"Failed to write MJPEG frame: %@", error]];
   }
 }
 
@@ -190,13 +190,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription);
     NSError *error = nil;
     if (!WriteMinicapHeaderToStream((uint32) dimensions.width, (uint32) dimensions.height, pusher.consumer, pusher.logger, &error)) {
-      [pusher.logger logFormat:@"Failed to write Minicap header: %@", error];
+      [pusher.logger log:[NSString stringWithFormat:@"Failed to write Minicap header: %@", error]];
     }
   }
   CMBlockBufferRef blockBufffer = CMSampleBufferGetDataBuffer(sampleBuffer);
   NSError *error = nil;
   if (!WriteJPEGDataToMinicapStream(blockBufffer, pusher.consumer, pusher.logger, &error)) {
-    [pusher.logger logFormat:@"Failed to write Minicap frame: %@", error];
+    [pusher.logger log:[NSString stringWithFormat:@"Failed to write Minicap frame: %@", error]];
   }
 }
 
@@ -244,7 +244,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     VTPixelTransferSessionRef transferSession;
     OSStatus status = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
     if (status != noErr) {
-      return [[FBControlCoreError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)status] failBool:error];
+      return [[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to create VTPixelTransferSession: %d", (int)status]] failBool:error];
     }
     self.pixelTransferSession = transferSession;
   }
@@ -333,7 +333,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     CFTimeInterval unused1, unused2;
     FBPeriodicStatsTimerTick(&timer, &unused1, &unused2);
     self.statsTimer = timer;
-    [self.logger.info logFormat:@"First encode callback received"];
+    [self.logger.info log:@"First encode callback received"];
   }
 
   [self _processCompressedSampleBuffer:sampleBuffer encodeStatus:encodeStatus infoFlags:infoFlags];
@@ -364,30 +364,30 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   double intervalAvgEncodeMs = intervalCallbacks > 0 ? (intervalEncodeSubmitSeconds / (double)intervalCallbacks) * 1000.0 : 0;
   double totalAvgEncodeMs = current.callbackCount > 0 ? (current.totalEncodeSubmitSeconds / (double)current.callbackCount) * 1000.0 : 0;
 
-  [self.logger.info logFormat:
-   @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-   (unsigned long)intervalCallbacks,
-   intervalDuration,
-   intervalFps,
-   intervalBitrateKbps,
-   intervalAvgEncodeMs,
-   (unsigned long)intervalWritten,
-   (unsigned long)intervalDropped,
-   (unsigned long)intervalWriteFailures,
-   (unsigned long)intervalEncodeErrors,
-   (unsigned long)intervalTornFrames];
-  [self.logger.info logFormat:
-   @"Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-   (unsigned long)current.callbackCount,
-   totalElapsed,
-   totalFps,
-   totalBitrateKbps,
-   totalAvgEncodeMs,
-   (unsigned long)current.writeCount,
-   (unsigned long)current.dropCount,
-   (unsigned long)current.writeFailureCount,
-   (unsigned long)current.encodeErrorCount,
-   (unsigned long)current.tornFrameCount];
+  [self.logger.info log:[NSString stringWithFormat:
+                         @"Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+                         (unsigned long)intervalCallbacks,
+                         intervalDuration,
+                         intervalFps,
+                         intervalBitrateKbps,
+                         intervalAvgEncodeMs,
+                         (unsigned long)intervalWritten,
+                         (unsigned long)intervalDropped,
+                         (unsigned long)intervalWriteFailures,
+                         (unsigned long)intervalEncodeErrors,
+                         (unsigned long)intervalTornFrames]];
+  [self.logger.info log:[NSString stringWithFormat:
+                         @"Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+                         (unsigned long)current.callbackCount,
+                         totalElapsed,
+                         totalFps,
+                         totalBitrateKbps,
+                         totalAvgEncodeMs,
+                         (unsigned long)current.writeCount,
+                         (unsigned long)current.dropCount,
+                         (unsigned long)current.writeFailureCount,
+                         (unsigned long)current.encodeErrorCount,
+                         (unsigned long)current.tornFrameCount]];
 }
 
 - (void)_processCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -400,7 +400,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   if (encodeStatus != noErr) {
     s.encodeErrorCount += 1;
     self.stats = s;
-    [self.logger logFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus];
+    [self.logger log:[NSString stringWithFormat:@"VideoToolbox encode error: OSStatus %d", (int)encodeStatus]];
     return;
   }
 
@@ -430,13 +430,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     if (!self.warmupComplete) {
       static const NSUInteger WarmupWindowFrames = 20;
       if (consecutiveFailures == WarmupWindowFrames) {
-        [self.logger logFormat:@"Encoder has not produced a frame after %lu attempts — bitrate may be too low for this resolution", (unsigned long)consecutiveFailures];
+        [self.logger log:[NSString stringWithFormat:@"Encoder has not produced a frame after %lu attempts — bitrate may be too low for this resolution", (unsigned long)consecutiveFailures]];
         self.starvationWarningLogged = YES;
       }
     } else {
       static const NSUInteger StarvationThreshold = 10;
       if (consecutiveFailures == StarvationThreshold && !self.starvationWarningLogged) {
-        [self.logger logFormat:@"Encoder starvation: %lu consecutive frames not ready after warmup — bitrate is likely too low", (unsigned long)consecutiveFailures];
+        [self.logger log:[NSString stringWithFormat:@"Encoder starvation: %lu consecutive frames not ready after warmup — bitrate is likely too low", (unsigned long)consecutiveFailures]];
         self.starvationWarningLogged = YES;
       }
     }
@@ -453,7 +453,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   if (!self.warmupComplete) {
     self.warmupComplete = YES;
     if (failuresBefore > 0) {
-      [self.logger logFormat:@"Encoder warmed up after %lu skipped frames", (unsigned long)failuresBefore];
+      [self.logger log:[NSString stringWithFormat:@"Encoder warmed up after %lu skipped frames", (unsigned long)failuresBefore]];
     }
   }
 }
@@ -478,7 +478,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   if (scaleFactor && [scaleFactor isGreaterThan:@0] && [scaleFactor isLessThan:@1]) {
     destinationWidth = (size_t) floor(scaleFactor.doubleValue * (double)sourceWidth);
     destinationHeight = (size_t) floor(scaleFactor.doubleValue * (double)sourceHeight);
-    [self.logger.info logFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight];
+    [self.logger.info log:[NSString stringWithFormat:@"Applying %@ scale from w=%zu/h=%zu to w=%zu/h=%zu", scaleFactor, sourceWidth, sourceHeight, destinationWidth, destinationHeight]];
   }
   // Add edge insets to output dimensions. The composited frame includes the insets,
   // so the NV12 pool and compression session must accommodate the full output size.
@@ -495,12 +495,12 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   VTPixelTransferSessionRef transferSession;
   OSStatus transferStatus = VTPixelTransferSessionCreate(kCFAllocatorDefault, &transferSession);
   if (transferStatus != noErr) {
-    return [[FBSimulatorError describeFormat:@"Failed to create VTPixelTransferSession: %d", (int)transferStatus] failBool:error];
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Failed to create VTPixelTransferSession: %d", (int)transferStatus]] failBool:error];
   }
   self.pixelTransferSession = transferSession;
   CVPixelBufferPoolRef nv12Pool = createNV12PixelBufferPool(destinationWidth, destinationHeight);
   self.nv12PixelBufferPoolRef = nv12Pool;
-  [self.logger.info logFormat:@"Created BGRA→NV12 conversion pipeline at w=%zu/h=%zu (GPU via VTPixelTransferSession)", destinationWidth, destinationHeight];
+  [self.logger.info log:[NSString stringWithFormat:@"Created BGRA→NV12 conversion pipeline at w=%zu/h=%zu (GPU via VTPixelTransferSession)", destinationWidth, destinationHeight]];
 
   // Tell VTCompressionSession that it will receive NV12 IOSurface-backed buffers.
   NSDictionary<NSString *, id> *sourceImageBufferAttributes = @{
@@ -525,7 +525,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   );
   if (status != noErr) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to start Compression Session %d", status]
+             describe:[NSString stringWithFormat:@"Failed to start Compression Session %d", status]]
             failBool:error];
   }
 
@@ -535,13 +535,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   );
   if (status != noErr) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to set compression session properties %d", status]
+             describe:[NSString stringWithFormat:@"Failed to set compression session properties %d", status]]
             failBool:error];
   }
   status = VTCompressionSessionPrepareToEncodeFrames(compressionSession);
   if (status != noErr) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to prepare compression session %d", status]
+             describe:[NSString stringWithFormat:@"Failed to prepare compression session %d", status]]
             failBool:error];
   }
   self.compressionSession = compressionSession;
@@ -571,7 +571,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   VTCompressionSessionRef compressionSession = self.compressionSession;
   if (!compressionSession) {
     return [[FBControlCoreError
-             describeFormat:@"No compression session"]
+             describe:@"No compression session"]
             failBool:error];
   }
 
@@ -595,11 +595,11 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
         bufferToWrite = nv12Buffer;
         sourceFrameRef.pixelBuffer = nv12Buffer;
       } else {
-        [self.logger logFormat:@"VTPixelTransferSession BGRA→NV12 failed: %d — falling back to BGRA input", (int)transferStatus];
+        [self.logger log:[NSString stringWithFormat:@"VTPixelTransferSession BGRA→NV12 failed: %d — falling back to BGRA input", (int)transferStatus]];
         CVPixelBufferRelease(nv12Buffer);
       }
     } else {
-      [self.logger logFormat:@"Failed to get a pixel buffer from the NV12 pool: %d", returnStatus];
+      [self.logger log:[NSString stringWithFormat:@"Failed to get a pixel buffer from the NV12 pool: %d", returnStatus]];
     }
   }
 
@@ -651,7 +651,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
   if (status != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to compress %d", status]
+             describe:[NSString stringWithFormat:@"Failed to compress %d", status]]
             failBool:error];
   }
   return YES;
@@ -806,7 +806,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
               NSError *error = nil;
               if (![self.framePusher tearDown:&error]) {
                 return [[FBSimulatorError
-                         describeFormat:@"Failed to tear down frame pusher: %@", error]
+                         describe:[NSString stringWithFormat:@"Failed to tear down frame pusher: %@", error]]
                         failFuture];
               }
             }
@@ -830,7 +830,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
           onQueue:self.writeQueue
           resolve:^{
             if ([self.framebuffer isConsumerAttached:self]) {
-              [self.logger logFormat:@"Already attached %@ as a consumer", self];
+              [self.logger log:[NSString stringWithFormat:@"Already attached %@ as a consumer", self]];
               return FBFuture.empty;
             }
             // If we have a surface now, we can start rendering, so mount the surface.
@@ -870,7 +870,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   );
   if (status != kCVReturnSuccess) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to create Pixel Buffer from Surface with errorCode %d", status]
+             describe:[NSString stringWithFormat:@"Failed to create Pixel Buffer from Surface with errorCode %d", status]]
             failBool:error];
   }
 
@@ -883,7 +883,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
 
   // Get the Attributes
   NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
-  [self.logger logFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]];
+  [self.logger log:[NSString stringWithFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]]];
 
   // Swap the pixel buffers.
   self.pixelBuffer = buffer;
@@ -946,7 +946,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   };
   CVPixelBufferPoolCreate(NULL, NULL, (__bridge CFDictionaryRef)compositedPoolAttrs, &_compositedBufferPool);
   if (insets.top + insets.bottom + insets.left + insets.right > 0) {
-    [self.logger.info logFormat:@"Composited pool includes edge insets (t=%lu b=%lu l=%lu r=%lu): w=%zu/h=%zu", (unsigned long)insets.top, (unsigned long)insets.bottom, (unsigned long)insets.left, (unsigned long)insets.right, compositedWidth, compositedHeight];
+    [self.logger.info log:[NSString stringWithFormat:@"Composited pool includes edge insets (t=%lu b=%lu l=%lu r=%lu): w=%zu/h=%zu", (unsigned long)insets.top, (unsigned long)insets.bottom, (unsigned long)insets.left, (unsigned long)insets.right, compositedWidth, compositedHeight]];
   }
 
   // Signal that we've started
@@ -1153,7 +1153,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
                 logger:logger];
       }
       return [[FBControlCoreError
-               describeFormat:@"Unsupported codec '%@'", format.codec]
+               describe:[NSString stringWithFormat:@"Unsupported codec '%@'", format.codec]]
               fail:error];
     }
     case FBVideoStreamFormatTypeMJPEG:
@@ -1180,7 +1180,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       return [[FBSimulatorVideoStreamFramePusher_Bitmap alloc] initWithConsumer:consumer scaleFactor:configuration.scaleFactor];
     default:
       return [[FBControlCoreError
-               describeFormat:@"Unsupported format type %lu", (unsigned long)format.type]
+               describe:[NSString stringWithFormat:@"Unsupported format type %lu", (unsigned long)format.type]]
               fail:error];
   }
 }
@@ -1208,7 +1208,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       FBFMP4WriteEmsgBox(ctx, text, self.consumer);
     }
   } else {
-    [self.logger logFormat:@"writeTimedMetadata: not supported for transport '%@', dropping", format.transport];
+    [self.logger log:[NSString stringWithFormat:@"writeTimedMetadata: not supported for transport '%@', dropping", format.transport]];
   }
 }
 
@@ -1223,11 +1223,11 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     self.overlayBuffer = overlayBuffer;
   }
 
-  [self.logger logFormat:@"Overlay %s (buffer=%p, frame=%lu)",
-   overlayBuffer
-   ? (sameReference ? "contents updated" : "buffer swapped")
-   : "cleared",
-   overlayBuffer, (unsigned long)self.frameNumber];
+  [self.logger log:[NSString stringWithFormat:@"Overlay %s (buffer=%p, frame=%lu)",
+                    overlayBuffer
+                    ? (sameReference ? "contents updated" : "buffer swapped")
+                    : "cleared",
+                    overlayBuffer, (unsigned long)self.frameNumber]];
 
   // In lazy/VFR mode: force a keyframe push so overlay changes are immediately
   // decodable by consumers (e.g. ffplay) that need a keyframe to start rendering.
@@ -1415,8 +1415,8 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     } else {
       overrunCount++;
       uint64_t overrunNanos = (afterPush - nextTargetTime) * timebase.numer / timebase.denom;
-      [self.logger logFormat:@"Frame push exceeded budget by %.1f ms (budget: %.1f ms)",
-       overrunNanos / 1e6, frameIntervalNanos / 1e6];
+      [self.logger log:[NSString stringWithFormat:@"Frame push exceeded budget by %.1f ms (budget: %.1f ms)",
+                        overrunNanos / 1e6, frameIntervalNanos / 1e6]];
     }
     nextTargetTime += frameIntervalMach;
 
@@ -1427,9 +1427,9 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       double maxMs = (double)maxPushMach * toMs;
       double stddevMs = pushCount > 1 ? sqrt(pushM2 / (double)(pushCount - 1)) * toMs : 0;
       double intervalSeconds = (double)(afterPush - statsStartTime) * timebase.numer / timebase.denom / 1e9;
-      [self.logger.info logFormat:
-       @"Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
-       intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, frameIntervalNanos / 1e6];
+      [self.logger.info log:[NSString stringWithFormat:
+                             @"Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
+                             intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, frameIntervalNanos / 1e6]];
 
       // Reset for next interval
       statsStartTime = afterPush;

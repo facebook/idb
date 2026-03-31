@@ -47,7 +47,7 @@ NSString *const JPEG = @"public.jpeg";
 
 + (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)getJSONFrom:(NSString *)path forId:(nullable NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"Getting json for id %@", bundleObjectId];
+  [logger log:[NSString stringWithFormat:@"Getting json for id %@", bundleObjectId]];
   NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
   [arguments addObjectsFromArray:@[@"get", @"--path", path, @"--format", @"json"]];
   if (bundleObjectId && bundleObjectId.length > 0) {
@@ -86,7 +86,7 @@ NSString *const JPEG = @"public.jpeg";
             } else if ([encodeType isEqualToString:JPEG]) {
               return [FBFuture futureWithResult:task];
             } else {
-              return [[FBControlCoreError describeFormat:@"Unrecognized XCTest screenshot encoding: %@", encodeType] failFuture];
+              return [[FBControlCoreError describe:[NSString stringWithFormat:@"Unrecognized XCTest screenshot encoding: %@", encodeType]] failFuture];
             }
           }];
 }

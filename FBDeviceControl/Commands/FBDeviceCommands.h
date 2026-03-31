@@ -109,7 +109,7 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
  @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (nonnull FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
+- (nonnull FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(nonnull NSString *)purpose;
 
 /**
  Starts a Service on the AMDevice.

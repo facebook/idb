@@ -198,7 +198,7 @@
     if (!proxyError) {
       return;
     }
-    [logger logFormat:@"Error occured during synchronousRemoteObjectProxyWithErrorHandler call: %@", proxyError.description];
+    [logger log:[NSString stringWithFormat:@"Error occured during synchronousRemoteObjectProxyWithErrorHandler call: %@", proxyError.description]];
     weakSelf.connection = nil;
   }];
 
@@ -207,7 +207,7 @@
   __block NSFileHandle *transport;
   [proxy _XCT_requestConnectedSocketForTransport:^(NSFileHandle *file, NSError *xctError) {
     if (!file) {
-      [logger logFormat:@"Error requesting connection with test manager daemon: %@", xctError.description];
+      [logger log:[NSString stringWithFormat:@"Error requesting connection with test manager daemon: %@", xctError.description]];
       error = xctError;
       return;
     }
@@ -229,7 +229,7 @@
 {
   FBSubprocess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
-    NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
+    NSError *error = [XCTestBootstrapError errorForDescription:[NSString stringWithFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID]];
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:@(self.bundleIDToRunningTask[bundleID].processIdentifier)];
@@ -286,7 +286,7 @@
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[bundleID];
   if (!bundle) {
     return [[XCTestBootstrapError
-             describeFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]
+             describe:[NSString stringWithFormat:@"Application with bundleID (%@) was not installed by XCTestBootstrap", bundleID]]
             failFuture];
   }
 
@@ -333,7 +333,7 @@
 {
   FBSubprocess *task = self.bundleIDToRunningTask[bundleID];
   if (!task) {
-    NSError *error = [XCTestBootstrapError errorForFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID];
+    NSError *error = [XCTestBootstrapError errorForDescription:[NSString stringWithFormat:@"Application with bundleID (%@) was not launched by XCTestBootstrap", bundleID]];
     return [FBFuture futureWithError:error];
   }
   [task sendSignal:SIGTERM backingOffToKillWithTimeout:2 logger:self.logger];
@@ -346,7 +346,7 @@
   FBBundleDescriptor *bundle = self.bundleIDToProductMap[configuration.bundleID];
   if (!bundle) {
     return [[FBControlCoreError
-             describeFormat:@"Could not find application for %@", configuration.bundleID]
+             describe:[NSString stringWithFormat:@"Could not find application for %@", configuration.bundleID]]
             failFuture];
   }
   return [[[[[FBProcessBuilder
@@ -436,21 +436,21 @@
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -481,14 +481,14 @@
 - (FBFuture<id<FBiOSTargetOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -500,35 +500,35 @@
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 

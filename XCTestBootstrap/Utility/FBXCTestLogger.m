@@ -101,16 +101,6 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2)
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
-}
-
 - (id<FBControlCoreLogger>)info
 {
   return [[self.class alloc]
@@ -165,7 +155,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
            asyncWriterForFilePath:filePath]
           onQueue:queue
           map:^(id<FBDataConsumer, FBDataConsumerLifecycle> writer) {
-            [logger.info logFormat:@"Mirroring output to %@", filePath];
+            [logger.info log:[NSString stringWithFormat:@"Mirroring output to %@", filePath]];
             return [FBCompositeDataConsumer consumerWithConsumers:@[
               consumer,
               writer,

@@ -21,7 +21,7 @@ static NSString *const ImageMounterService = @"com.apple.mobile.mobile_image_mou
 
 static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, id<FBDeviceCommands> device)
 {
-  [device.logger logFormat:@"Mount Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]];
+  [device.logger log:[NSString stringWithFormat:@"Mount Progress: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:callbackDictionary]]];
 }
 
 @interface FBDeviceDeveloperDiskImageCommands ()
@@ -85,7 +85,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
               return [self unmountDiskImageAtPath:mountPath];
             }
             return [[FBDeviceControlError
-                     describeFormat:@"%@ does not appear to be mounted", diskImage]
+                     describe:[NSString stringWithFormat:@"%@ does not appear to be mounted", diskImage]]
                     failFuture];
           }];
 }
@@ -122,7 +122,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
               NSData *signature = mountEntry[ImageSignatureKey];
               FBDeveloperDiskImage *image = imagesBySignature[signature];
               if (!image) {
-                [logger logFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage];
+                [logger log:[NSString stringWithFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage]];
                 image = [FBDeveloperDiskImage unknownDiskImageWithSignature:signature];
               }
               mountEntryToDiskImage[mountEntry] = image;
@@ -148,7 +148,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
             NSString *errorString = response[@"Error"];
             if (errorString) {
               return [[FBDeviceControlError
-                       describeFormat:@"Could not get mounted image info: %@", errorString]
+                       describe:[NSString stringWithFormat:@"Could not get mounted image info: %@", errorString]]
                       failFuture];
             }
             NSArray<NSDictionary<NSString *, id> *> *entries = response[@"EntryList"];
@@ -178,7 +178,7 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
           onQueue:self.device.asyncQueue
           fmap:^FBFuture<FBDeveloperDiskImage *> *(NSDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage) {
             if (signatureToDiskImage[diskImage.signature]) {
-              [logger logFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage];
+              [logger log:[NSString stringWithFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage]];
               return [FBFuture futureWithResult:diskImage];
             }
             return [self performDiskImageMount:diskImage imageType:imageType];
@@ -204,12 +204,12 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
             );
             if (status == DiskImageMountingError) {
               return [[FBDeviceControlError
-                       describeFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]
+                       describe:[NSString stringWithFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]]
                       failFuture];
             } else if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
               return [[FBDeviceControlError
-                       describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
+                       describe:[NSString stringWithFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]]
                       failFuture];
             }
             return [FBFuture futureWithResult:diskImage];

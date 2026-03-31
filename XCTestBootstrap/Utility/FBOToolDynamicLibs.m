@@ -22,7 +22,7 @@
                                                                                                 if ([fileList count] == 0 || error) {
                                                                                                   if (error == nil) {
                                                                                                     return [[FBControlCoreError
-                                                                                                             describeFormat:@"No clang version found in %@", clanLocation] failFuture];
+                                                                                                             describe:[NSString stringWithFormat:@"No clang version found in %@", clanLocation]] failFuture];
                                                                                                   }
                                                                                                   return [FBFuture futureWithError:error];
                                                                                                 }
@@ -68,7 +68,7 @@
   NSArray<NSURL *> *filesInDirectory = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&innerError];
   if (filesInDirectory == nil) {
     *error = [[[FBControlCoreError
-                describeFormat:@"Failed to list files in directory %@", directory]
+                describe:[NSString stringWithFormat:@"Failed to list files in directory %@", directory]]
                causedBy:innerError]
               fail:error];
   }

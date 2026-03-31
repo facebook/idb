@@ -61,7 +61,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
     }
   }
 
-  [logger logFormat:@"Starting test with xcodebuild | Arguments: %@ | Environments: %@", [arguments componentsJoinedByString:@" "], [environment description]];
+  [logger log:[NSString stringWithFormat:@"Starting test with xcodebuild | Arguments: %@ | Environments: %@", [arguments componentsJoinedByString:@" "], [environment description]]];
   FBProcessBuilder *builder = [[[FBProcessBuilder
                                  withLaunchPath:xcodeBuildPath
                                  arguments:arguments]
@@ -75,7 +75,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
            start]
           onQueue:queue
           map:^(FBSubprocess *task) {
-            [logger logFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]];
+            [logger log:[NSString stringWithFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]]];
             return task;
           }];
 }
@@ -113,7 +113,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[XCTestBootstrapError
-             describeFormat:@"Failed to write to file %@", path]
+             describe:[NSString stringWithFormat:@"Failed to write to file %@", path]]
             fail:error];
   }
   return path;
@@ -123,10 +123,10 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 {
   NSArray<FBProcessInfo *> *processes = [self activeXcodebuildProcessesForUDID:udid processFetcher:processFetcher];
   if (processes.count == 0) {
-    [logger logFormat:@"No processes for %@ to terminate", udid];
+    [logger log:[NSString stringWithFormat:@"No processes for %@ to terminate", udid]];
     return [FBFuture futureWithResult:@[]];
   }
-  [logger logFormat:@"Terminating abandoned xcodebuild processes %@", [FBCollectionInformation oneLineDescriptionFromArray:processes]];
+  [logger log:[NSString stringWithFormat:@"Terminating abandoned xcodebuild processes %@", [FBCollectionInformation oneLineDescriptionFromArray:processes]]];
   FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher workQueue:queue logger:logger];
   NSMutableArray<FBFuture<FBProcessInfo *> *> *futures = [NSMutableArray array];
   for (FBProcessInfo *process in processes) {
@@ -141,7 +141,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[XCTestBootstrapError
-             describeFormat:@"xcodebuild does not exist at expected path %@", path]
+             describe:[NSString stringWithFormat:@"xcodebuild does not exist at expected path %@", path]]
             fail:error];
   }
   return path;
@@ -174,7 +174,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
            onQueue:target.workQueue
            fmap:^(id _) {
              // This will execute only if the operation completes successfully.
-             [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+             [logger log:[NSString stringWithFormat:@"xcodebuild operation completed successfully %@", task]];
              if (configuration.resultBundlePath) {
                // If we don't want to return result bundle in payload, there is no need to do expensive screenshot extraction
                return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger extractScreenshots:configuration.reportResultBundle];

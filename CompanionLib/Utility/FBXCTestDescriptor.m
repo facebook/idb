@@ -104,7 +104,7 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
   id<FBApplicationCommands> commands = (id<FBApplicationCommands>) target;
   if (![commands conformsToProtocol:@protocol(FBApplicationCommands)]) {
     return [[FBIDBError
-             describeFormat:@"%@ does not conform to FBApplicationCommands", commands]
+             describe:[NSString stringWithFormat:@"%@ does not conform to FBApplicationCommands", commands]]
             failFuture];
   }
   return [[[commands

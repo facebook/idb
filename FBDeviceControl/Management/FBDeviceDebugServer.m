@@ -60,11 +60,11 @@ static size_t const ConnectionReadSizeLimit = 1024;
           break;
         }
         if (![connection send:data error:&innerError]) {
-          [logger logFormat:@"Sending data to remote debugserver failed: %@", innerError];
+          [logger log:[NSString stringWithFormat:@"Sending data to remote debugserver failed: %@", innerError]];
           break;
         }
       }
-      [logger logFormat:@"Exiting socket %d read loop", socket];
+      [logger log:[NSString stringWithFormat:@"Exiting socket %d read loop", socket]];
       [socketReadCompleted resolveWithResult:NSNull.null];
     });
     dispatch_async(self.connectionToSocketQueue, ^{
@@ -72,15 +72,15 @@ static size_t const ConnectionReadSizeLimit = 1024;
         NSError *innerError = nil;
         NSData *data = [connection receiveUpTo:ConnectionReadSizeLimit error:&innerError];
         if (data.length == 0) {
-          [logger logFormat:@"debugserver read ended: %@", innerError];
+          [logger log:[NSString stringWithFormat:@"debugserver read ended: %@", innerError]];
           break;
         }
         if (![socketWriteHandle writeData:data error:&innerError]) {
-          [logger logFormat:@"Socket write failed: %@", innerError];
+          [logger log:[NSString stringWithFormat:@"Socket write failed: %@", innerError]];
           break;
         }
       }
-      [logger logFormat:@"Exiting connection %@ read loop", connection];
+      [logger log:[NSString stringWithFormat:@"Exiting connection %@ read loop", connection]];
       [connectionReadCompleted resolveWithResult:NSNull.null];
     });
     return [[FBFuture
@@ -90,7 +90,7 @@ static size_t const ConnectionReadSizeLimit = 1024;
              ]]
             onQueue:self.connectionToSocketQueue
             notifyOfCompletion:^(id _) {
-              [logger logFormat:@"Closing socket file descriptor %d", socket];
+              [logger log:[NSString stringWithFormat:@"Closing socket file descriptor %d", socket]];
               close(socket);
             }];
   }
@@ -164,7 +164,7 @@ static size_t const ConnectionReadSizeLimit = 1024;
   NSError *error = nil;
   FBFuture<NSNull *> *completed = [twistedPair startWithError:&error];
   if (!completed) {
-    [self.logger logFormat:@"Failed to start connection %@", error];
+    [self.logger log:[NSString stringWithFormat:@"Failed to start connection %@", error]];
     return;
   }
   [completed onQueue:self.queue
@@ -191,7 +191,7 @@ static size_t const ConnectionReadSizeLimit = 1024;
            startListeningContext]
           onQueue:self.queue
           pend:^(NSNull *_) {
-            [self.logger logFormat:@"TCP Server now running, boostrap commands for lldb are %@", [self.lldbBootstrapCommands componentsJoinedByString:@"\n"]];
+            [self.logger log:[NSString stringWithFormat:@"TCP Server now running, boostrap commands for lldb are %@", [self.lldbBootstrapCommands componentsJoinedByString:@"\n"]]];
             return [FBFuture futureWithResult:self];
           }];
 }

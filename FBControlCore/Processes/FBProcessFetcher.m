@@ -312,7 +312,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
   struct kinfo_proc proc_info;
   if (!ProcInfoForProcessIdentifier(processIdentifier, &proc_info) || proc_info.kp_proc.p_pid != processIdentifier) {
     [[FBControlCoreError
-      describeFormat:@"Failed fetching process info for (pid %d)", processIdentifier]
+      describe:[NSString stringWithFormat:@"Failed fetching process info for (pid %d)", processIdentifier]]
      failBool:error];
   }
   return proc_info;
@@ -390,7 +390,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
            onQueue:queue
            handleError:^(NSError *error) {
              return [[[FBControlCoreError
-                       describeFormat:@"Failed to obtain a stack sample of process %d", processIdentifier]
+                       describe:[NSString stringWithFormat:@"Failed to obtain a stack sample of process %d", processIdentifier]]
                       causedBy:error]
                      failFuture];
            }]

@@ -179,7 +179,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   NSError *error = nil;
   NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
   if (event == nil) {
-    [self.logger logFormat:@"Received unexpected output from otest-shim:\n%@", line];
+    [self.logger log:[NSString stringWithFormat:@"Received unexpected output from otest-shim:\n%@", line]];
   }
   if ([event[@"event"] isEqualToString:@"end-test"]) {
     NSMutableDictionary *mutableEvent = event.mutableCopy;

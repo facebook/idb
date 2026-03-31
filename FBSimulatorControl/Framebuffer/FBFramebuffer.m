@@ -56,19 +56,19 @@
       continue;
     }
     if (![descriptor respondsToSelector:@selector(state)]) {
-      [logger logFormat:@"SimDisplay %@ does not have a state, cannot determine if it is the main display", descriptor];
+      [logger log:[NSString stringWithFormat:@"SimDisplay %@ does not have a state, cannot determine if it is the main display", descriptor]];
       continue;
     }
     id<SimDisplayDescriptorState> descriptorState = [descriptor performSelector:@selector(state)];
     unsigned short displayClass = descriptorState.displayClass;
     if (displayClass != 0) {
-      [logger logFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass];
+      [logger log:[NSString stringWithFormat:@"SimDisplay Class is '%d' which is not the main display '0'", displayClass]];
       continue;
     }
     return [[FBFramebuffer alloc] initWithSurface:descriptor logger:logger];
   }
   return [[FBSimulatorError
-           describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
+           describe:[NSString stringWithFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]]
           fail:error];
 }
 
@@ -157,7 +157,7 @@
     s.ioSurfaceChangeCount += 1;
     self.stats = s;
     if (s.ioSurfaceChangeCount == 1) {
-      [self.logger.info logFormat:@"First IOSurface change callback, surface=%@", surface];
+      [self.logger.info log:[NSString stringWithFormat:@"First IOSurface change callback, surface=%@", surface]];
     }
     dispatch_async(queue, ^{
       [consumer didChangeIOSurface:surface];
@@ -191,7 +191,7 @@
     if (timer.startTime != self.statsTimer.startTime) {
       // First tick — timer was just initialized.
       self.statsTimer = timer;
-      [self.logger.info logFormat:@"First damage callback received"];
+      [self.logger.info log:@"First damage callback received"];
     }
     return;
   }
@@ -208,22 +208,22 @@
   double intervalRate = intervalDuration > 0 ? (double)intervalCallbacks / intervalDuration : 0;
   double totalRate = totalElapsed > 0 ? (double)current.damageCallbackCount / totalElapsed : 0;
 
-  [self.logger.info logFormat:
-   @"Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-   (unsigned long)intervalCallbacks,
-   intervalDuration,
-   intervalRate,
-   (unsigned long)intervalRects,
-   (unsigned long)intervalEmpty,
-   (unsigned long)intervalIOSurface];
-  [self.logger.info logFormat:
-   @"Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-   (unsigned long)current.damageCallbackCount,
-   totalElapsed,
-   totalRate,
-   (unsigned long)current.damageRectCount,
-   (unsigned long)current.emptyDamageCallbackCount,
-   (unsigned long)current.ioSurfaceChangeCount];
+  [self.logger.info log:[NSString stringWithFormat:
+                         @"Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+                         (unsigned long)intervalCallbacks,
+                         intervalDuration,
+                         intervalRate,
+                         (unsigned long)intervalRects,
+                         (unsigned long)intervalEmpty,
+                         (unsigned long)intervalIOSurface]];
+  [self.logger.info log:[NSString stringWithFormat:
+                         @"Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+                         (unsigned long)current.damageCallbackCount,
+                         totalElapsed,
+                         totalRate,
+                         (unsigned long)current.damageRectCount,
+                         (unsigned long)current.emptyDamageCallbackCount,
+                         (unsigned long)current.ioSurfaceChangeCount]];
 }
 
 - (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid

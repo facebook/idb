@@ -60,7 +60,7 @@ Much of the implementation here comes from:
 {
   if (self.device.osVersion.version.majorVersion >= 17) {
     return [[FBDeviceControlError
-             describeFormat:@"Debugging is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
+             describe:[NSString stringWithFormat:@"Debugging is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]]
             failFuture];
   }
   return [[self
@@ -120,7 +120,7 @@ Much of the implementation here comes from:
             NSString *developerSymbolsPath = [FBDeveloperDiskImage pathForDeveloperSymbols:device.buildVersion logger:logger error:&innerError];
             NSString *platformSelectCommand = @"platform select remote-ios";
             if (!developerSymbolsPath) {
-              [logger logFormat:@"Failed to get developer symbols for %@, no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: %@", device, innerError];
+              [logger log:[NSString stringWithFormat:@"Failed to get developer symbols for %@, no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: %@", device, innerError]];
               return platformSelectCommand;
             }
             return [platformSelectCommand stringByAppendingFormat:@" --sysroot '%@'", developerSymbolsPath];

@@ -71,7 +71,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
                 int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
                 if (fileDescriptor == -1) {
                   return [[FBControlCoreError
-                           describeFormat:@"open of %@ returned an error '%s'", filePath, strerror(errno)]
+                           describe:[NSString stringWithFormat:@"open of %@ returned an error '%s'", filePath, strerror(errno)]]
                           fail:error];
                 }
                 return [[self alloc] initWithFileDescriptor:fileDescriptor
@@ -94,7 +94,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   _consumer = consumer;
   _targeting = targeting;
   _readQueue = queue;
-  _ioChannelRelinquishedControl = [FBMutableFuture futureWithNameFormat:@"IO Channel control relinquished %@", targeting];
+  _ioChannelRelinquishedControl = [FBMutableFuture futureWithName:[NSString stringWithFormat:@"IO Channel control relinquished %@", targeting]];
   _logger = logger;
   _state = FBFileReaderStateNotStarted;
   _closeOnEndOfFile = closeOnEndOfFile;
@@ -145,7 +145,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 {
   // We don't re-alias ioChannelFinishedReadOperation as if it's externally cancelled, we want the ioChannelFinishedReadOperation to resolve normally
   return [[[FBMutableFuture
-            futureWithNameFormat:@"Finished reading of %@", self.targeting]
+            futureWithName:[NSString stringWithFormat:@"Finished reading of %@", self.targeting]]
            resolveFromFuture:self.ioChannelRelinquishedControl]
           onQueue:self.readQueue
           respondToCancellation:^{
@@ -159,7 +159,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
 {
   if (self.state != FBFileReaderStateNotStarted) {
     return [[FBControlCoreError
-             describeFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]
+             describe:[NSString stringWithFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]]
             failFuture];
   }
   NSAssert(!self.io, @"IO Channel should not exist when not started");
@@ -180,7 +180,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
     });
   if (!self.io) {
     return [[FBControlCoreError
-             describeFormat:@"A IO Channel could not be created for %@", self.description]
+             describe:[NSString stringWithFormat:@"A IO Channel could not be created for %@", self.description]]
             failFuture];
   }
 
@@ -207,7 +207,7 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // The only error condition is that we haven't yet started reading
   if (self.state == FBFileReaderStateNotStarted) {
     return [[FBControlCoreError
-             describeFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]
+             describe:[NSString stringWithFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]]
             failFuture];
   }
   // All states other than reading mean that we don't need to close the channel.

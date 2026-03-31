@@ -65,11 +65,11 @@ static NSArray *accessAndUnwrapValues(NSDictionary<NSString *, NSDictionary<NSSt
   if (wrapped != nil) {
     NSArray *unwrapped = unwrapValues(wrapped);
     if (unwrapped == nil) {
-      [logger logFormat:@"Failed to unwrap values for %@ from %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[wrapped allKeys]]];
+      [logger log:[NSString stringWithFormat:@"Failed to unwrap values for %@ from %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[wrapped allKeys]]]];
     }
     return unwrapped;
   } else {
-    [logger logFormat:@"%@ does not exist inside %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[dict allKeys]]];
+    [logger log:[NSString stringWithFormat:@"%@ does not exist inside %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[dict allKeys]]]];
     return nil;
   }
 }
@@ -80,11 +80,11 @@ static id accessAndUnwrapValue(NSDictionary<NSString *, NSDictionary<NSString *,
   if (wrapped != nil) {
     id unwrapped = unwrapValue(wrapped);
     if (unwrapped == nil) {
-      [logger logFormat:@"Failed to unwrap value for %@ from %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[wrapped allKeys]]];
+      [logger log:[NSString stringWithFormat:@"Failed to unwrap value for %@ from %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[wrapped allKeys]]]];
     }
     return unwrapped;
   } else {
-    [logger logFormat:@"%@ does not exist inside %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[dict allKeys]]];
+    [logger log:[NSString stringWithFormat:@"%@ does not exist inside %@", key, [FBCollectionInformation oneLineDescriptionFromArray:[dict allKeys]]]];
     return nil;
   }
 }
@@ -103,7 +103,7 @@ static inline NSDate *dateFromString(NSString *date)
 
 + (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger extractScreenshots:(BOOL)extractScreenshots
 {
-  [logger logFormat:@"Parsing the result bundle %@", resultBundlePath];
+  [logger log:[NSString stringWithFormat:@"Parsing the result bundle %@", resultBundlePath]];
 
   NSString *testSummariesPath = [resultBundlePath stringByAppendingPathComponent:@"TestSummaries.plist"];
   NSDictionary<NSString *, NSArray *> *results = [NSDictionary dictionaryWithContentsOfFile:testSummariesPath];
@@ -113,12 +113,12 @@ static inline NSDate *dateFromString(NSString *date)
 
   if (results) {
     [self reportResults:results reporter:reporter];
-    [logger logFormat:@"ResultBundlePath: %@", resultBundlePath];
+    [logger log:[NSString stringWithFormat:@"ResultBundlePath: %@", resultBundlePath]];
     return FBFuture.empty;
   } else if (bundleFormatVersion && [bundleFormatVersion isKindOfClass:NSDictionary.class]) {
     NSNumber *majorVersion = readNumberFromDict(bundleFormatVersion, @"major");
     NSNumber *minorVersion = readNumberFromDict(bundleFormatVersion, @"minor");
-    [logger logFormat:@"Test result bundle format version: %@.%@", majorVersion, minorVersion];
+    [logger log:[NSString stringWithFormat:@"Test result bundle format version: %@.%@", majorVersion, minorVersion]];
     return [[FBXCTestResultToolOperation
              getJSONFrom:resultBundlePath
              forId:nil
@@ -137,7 +137,7 @@ static inline NSDate *dateFromString(NSString *date)
                                         logger:logger]
                                        onQueue:target.workQueue
                                        doOnResolved:^void (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *xcresults) {
-                                         [logger logFormat:@"Parsing summaries for id %@", bundleObjectId];
+                                         [logger log:[NSString stringWithFormat:@"Parsing summaries for id %@", bundleObjectId]];
                                          NSArray<NSDictionary *> *summaries = accessAndUnwrapValues(xcresults, @"summaries", logger);
                                          [self reportSummaries:summaries
                                                       reporter:reporter
@@ -145,7 +145,7 @@ static inline NSDate *dateFromString(NSString *date)
                                               resultBundlePath:resultBundlePath
                                                         logger:logger
                                             extractScreenshots:extractScreenshots];
-                                         [logger logFormat:@"Done parsing summaries for id %@", bundleObjectId];
+                                         [logger log:[NSString stringWithFormat:@"Done parsing summaries for id %@", bundleObjectId]];
                                        }];
                 [operations addObject:operation];
               }
@@ -585,7 +585,7 @@ static inline NSDate *dateFromString(NSString *date)
                      logger:logger
          extractScreenshots:extractScreenshots];
   } else {
-    [logger logFormat:@"Test failed for %@ and no test method results found", testClassName];
+    [logger log:[NSString stringWithFormat:@"Test failed for %@ and no test method results found", testClassName]];
     [reporter testCaseDidFailForTestClass:@""
                                    method:@""
                                exceptions:@[
@@ -756,7 +756,7 @@ static inline NSDate *dateFromString(NSString *date)
   NSError *error = nil;
   NSString *screenshotsPath = [self ensureSubdirectory:@"Attachments" insideResultBundle:resultBundlePath error:&error];
   if (error != nil) {
-    [logger logFormat:@"Failed to ensure attachments directory %@", error];
+    [logger log:[NSString stringWithFormat:@"Failed to ensure attachments directory %@", error]];
     return;
   }
   for (NSDictionary *activity in activities) {
@@ -778,11 +778,11 @@ static inline NSDate *dateFromString(NSString *date)
   BOOL isDirectory = NO;
   if ([fileManager fileExistsAtPath:subdirectoryFullPath isDirectory:&isDirectory]) {
     if (!isDirectory) {
-      return [[FBControlCoreError describeFormat:@"%@ is not a directory", subdirectoryFullPath] fail:error];
+      return [[FBControlCoreError describe:[NSString stringWithFormat:@"%@ is not a directory", subdirectoryFullPath]] fail:error];
     }
   } else {
     if (![fileManager createDirectoryAtPath:subdirectoryFullPath withIntermediateDirectories:NO attributes:nil error:error]) {
-      return [[FBControlCoreError describeFormat:@"Failed to create directory at %@", subdirectoryFullPath] fail:error];
+      return [[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to create directory at %@", subdirectoryFullPath]] fail:error];
     }
   }
   return subdirectoryFullPath;
@@ -856,7 +856,7 @@ static inline NSDate *dateFromString(NSString *date)
   NSError *error = nil;
   NSData *json = [NSJSONSerialization dataWithJSONObject:metrics options:NSJSONWritingPrettyPrinted error:&error];
   if (error != nil) {
-    [logger logFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error];
+    [logger log:[NSString stringWithFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error]];
     return;
   }
   if (json == nil) {
@@ -864,7 +864,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
   NSString *performanceMetricsDirectory = [self ensureSubdirectory:@"Metrics" insideResultBundle:resultBundlePath error:&error];
   if (error != nil) {
-    [logger logFormat:@"Failed to ensure performance metrics directory %@", error];
+    [logger log:[NSString stringWithFormat:@"Failed to ensure performance metrics directory %@", error]];
     return;
   }
   NSString *metricFilePath = [performanceMetricsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@_%@.json", testTarget, testClass, testMethod]];

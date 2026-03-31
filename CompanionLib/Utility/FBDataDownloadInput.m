@@ -51,7 +51,7 @@
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
 {
   if (error) {
-    [self.logger.error logFormat:@"Download task %@ failed with error %@", task, error];
+    [self.logger.error log:[NSString stringWithFormat:@"Download task %@ failed with error %@", task, error]];
   }
   [self.input.contents consumeEndOfFile];
 }

@@ -58,7 +58,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 
   if (self.isRunningXcodeBuildOperation) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+             describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
             failFuture];
   }
   return [[[[FBXcodeBuildOperation
@@ -97,7 +97,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
              if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
                close(socketFD);
                return [[FBSimulatorError
-                        describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
+                        describe:[NSString stringWithFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]]
                        failFuture];
              }
 
@@ -105,7 +105,7 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
              if (strlen(testManagerSocketPath) >= 0x68) {
                close(socketFD);
                return [[FBSimulatorError
-                        describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
+                        describe:[NSString stringWithFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]]
                        failFuture];
              }
 
@@ -200,14 +200,14 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
              NSString *socketPath = [self.simulator.device getenv:SimSockEnvKey error:&error];
              if (socketPath.length == 0) {
                return [[[FBSimulatorError
-                         describeFormat:@"Failed to get %@ from simulator environment", SimSockEnvKey]
+                         describe:[NSString stringWithFormat:@"Failed to get %@ from simulator environment", SimSockEnvKey]]
                         causedBy:error]
                        failFuture];
              }
              return [FBFuture futureWithResult:socketPath];
            }]
           timeout:TestmanagerdSimSockTimeout
-          waitingFor:@"%@ to become available in the simulator environment", SimSockEnvKey];
+          waitingFor:[NSString stringWithFormat:@"%@ to become available in the simulator environment", SimSockEnvKey]];
 }
 
 - (FBFuture<FBSubprocess *> *)_startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger

@@ -56,13 +56,13 @@
   NSString *file = [self.simulator.auxillaryDirectory stringByAppendingPathComponent:@"temporary.plist"];
   if (![NSFileManager.defaultManager createDirectoryAtPath:[file stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not create intermediate directories for temporary plist %@", file]
+              describe:[NSString stringWithFormat:@"Could not create intermediate directories for temporary plist %@", file]]
              causedBy:innerError]
             failFuture];
   }
   if (![defaults writeToFile:file atomically:YES]) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to write out defaults to temporary file %@", file]
+             describe:[NSString stringWithFormat:@"Failed to write out defaults to temporary file %@", file]]
             failFuture];
   }
 
@@ -125,7 +125,7 @@
   FBiOSTargetState state = simulator.state;
   if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+             describe:[NSString stringWithFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
             failFuture];
   }
 
@@ -208,7 +208,7 @@ static NSString *const AppleGlobalDomain = @"Apple Global Domain";
   FBiOSTargetState state = simulator.state;
   if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+             describe:[NSString stringWithFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
             failFuture];
   }
 

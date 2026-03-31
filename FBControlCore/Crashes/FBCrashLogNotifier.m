@@ -58,7 +58,7 @@
 {
   if (![self startListening:YES]) {
     return [[FBControlCoreError
-             describeFormat:@"Crash Log Info could not be obtained"]
+             describe:@"Crash Log Info could not be obtained"]
             failFuture];
   }
 
@@ -73,7 +73,7 @@
                                          firstObject];
             if (!crashInfo) {
               return [[FBControlCoreError
-                       describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
+                       describe:[NSString stringWithFormat:@"Crash Log Info for %@ could not be obtained", predicate]]
                       failFuture];
             }
             [self.store ingestCrashLogAtPath:crashInfo.crashPath];

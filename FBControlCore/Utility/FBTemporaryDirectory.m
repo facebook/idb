@@ -54,9 +54,9 @@
   NSError *error;
   BOOL success = [NSFileManager.defaultManager removeItemAtURL:self.rootTemporaryDirectory error:&error];
   if (!success) {
-    [self.logger.error logFormat:@"Couldn't remove temporary directory: %@ (%@)", self.rootTemporaryDirectory, error.localizedDescription];
+    [self.logger.error log:[NSString stringWithFormat:@"Couldn't remove temporary directory: %@ (%@)", self.rootTemporaryDirectory, error.localizedDescription]];
   } else {
-    [self.logger.debug logFormat:@"Successfully removed temporal directory: %@", self.rootTemporaryDirectory];
+    [self.logger.debug log:[NSString stringWithFormat:@"Successfully removed temporal directory: %@", self.rootTemporaryDirectory]];
   }
 }
 
@@ -141,10 +141,10 @@
 - (NSURL *)temporaryDirectory
 {
   NSURL *tempDirectory = self.ephemeralTemporaryDirectory;
-  [self.logger logFormat:@"Creating Temp Dir %@", tempDirectory];
+  [self.logger log:[NSString stringWithFormat:@"Creating Temp Dir %@", tempDirectory]];
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtURL:tempDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-    [self.logger logFormat:@"Failed to create Temp Dir %@ with error %@", tempDirectory, error];
+    [self.logger log:[NSString stringWithFormat:@"Failed to create Temp Dir %@ with error %@", tempDirectory, error]];
   }
   return tempDirectory;
 }
@@ -152,11 +152,11 @@
 - (FBFutureContext<NSURL *> *)withTemporaryDirectory
 {
   NSURL *tempDirectory = self.ephemeralTemporaryDirectory;
-  [self.logger logFormat:@"Creating Temp Dir %@", tempDirectory];
+  [self.logger log:[NSString stringWithFormat:@"Creating Temp Dir %@", tempDirectory]];
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtURL:tempDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
     return [[[FBControlCoreError
-              describeFormat:@"Failed to create Temp Dir %@", tempDirectory]
+              describe:[NSString stringWithFormat:@"Failed to create Temp Dir %@", tempDirectory]]
              causedBy:error]
             failFutureContext];
   }
@@ -166,9 +166,9 @@
           contextualTeardown:^(id _, FBFutureState __) {
             NSError *innerError = nil;
             if ([NSFileManager.defaultManager removeItemAtURL:tempDirectory error:&innerError]) {
-              [self.logger logFormat:@"Deleted Temp Dir %@", tempDirectory];
+              [self.logger log:[NSString stringWithFormat:@"Deleted Temp Dir %@", tempDirectory]];
             } else {
-              [self.logger logFormat:@"Failed to delete Temp Dir %@: %@", tempDirectory, innerError];
+              [self.logger log:[NSString stringWithFormat:@"Failed to delete Temp Dir %@: %@", tempDirectory, innerError]];
             }
             return FBFuture.empty;
           }];
@@ -187,9 +187,9 @@
           contextualTeardown:^(NSURL *tempFile, FBFutureState __) {
             NSError *innerError = nil;
             if ([NSFileManager.defaultManager removeItemAtURL:tempFile error:&innerError]) {
-              [self.logger logFormat:@"Deleted Temp File %@", tempFile];
+              [self.logger log:[NSString stringWithFormat:@"Deleted Temp File %@", tempFile]];
             } else {
-              [self.logger logFormat:@"Failed to delete Temp File %@: %@", tempFile, innerError];
+              [self.logger log:[NSString stringWithFormat:@"Failed to delete Temp File %@: %@", tempFile, innerError]];
             }
             return FBFuture.empty;
           }];

@@ -55,12 +55,12 @@
 
 + (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"Process %d (%@) has exited, tearing down IO...", processIdentifier, configuration.processName];
+  [logger log:[NSString stringWithFormat:@"Process %d (%@) has exited, tearing down IO...", processIdentifier, configuration.processName]];
   [[attachment
     detach]
    onQueue:queue
    notifyOfCompletion:^(id _) {
-     [logger logFormat:@"Teardown of IO for process %d (%@) has completed", processIdentifier, configuration.processName];
+     [logger log:[NSString stringWithFormat:@"Teardown of IO for process %d (%@) has completed", processIdentifier, configuration.processName]];
      [statLocFuture resolveWithResult:@(statLoc)];
      if (WIFSIGNALED(statLoc)) {
        int signalCode = WTERMSIG(statLoc);

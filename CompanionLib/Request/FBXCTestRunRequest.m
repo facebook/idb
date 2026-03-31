@@ -60,13 +60,13 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
   NSArray<NSString *> *testsToSkip = self.testsToSkip.allObjects;
   if (testsToSkip.count > 0) {
     return [[FBXCTestError
-             describeFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]
+             describe:[NSString stringWithFormat:@"'Tests to Skip' %@ provided, but Logic Tests to not support this.", [FBCollectionInformation oneLineDescriptionFromArray:testsToSkip]]]
             failFuture];
   }
   NSArray<NSString *> *testsToRun = self.testsToRun.allObjects ?: @[];
   if (testsToRun.count > 1) {
     return [[FBXCTestError
-             describeFormat:@"More than one 'Tests to Run' %@ provided, but only one 'Tests to Run' is supported.", [FBCollectionInformation oneLineDescriptionFromArray:testsToRun]]
+             describe:[NSString stringWithFormat:@"More than one 'Tests to Run' %@ provided, but only one 'Tests to Run' is supported.", [FBCollectionInformation oneLineDescriptionFromArray:testsToRun]]]
             failFuture];
   }
   testFilter = testsToRun.firstObject;
@@ -141,12 +141,12 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
             target:target]
            onQueue:target.workQueue
            fmap:^FBFuture<FBIDBAppHostedTestConfiguration *> *(FBTestApplicationsPair *pair) {
-             [logger logFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor];
+             [logger log:[NSString stringWithFormat:@"Obtaining launch configuration for App Pair %@ on descriptor %@", pair, testDescriptor]];
              return [testDescriptor testConfigWithRunRequest:self testApps:pair logDirectoryPath:logDirectoryPath logger:logger queue:target.workQueue];
            }]
           onQueue:target.workQueue
           fmap:^FBFuture<FBIDBTestOperation *> *(FBIDBAppHostedTestConfiguration *appHostedTestConfig) {
-            [logger logFormat:@"Obtained app-hosted test configuration %@", appHostedTestConfig];
+            [logger log:[NSString stringWithFormat:@"Obtained app-hosted test configuration %@", appHostedTestConfig]];
             return [FBXCTestRunRequest_AppTest startTestExecution:appHostedTestConfig
                                                 reportAttachments:self.reportAttachments
                                                            target:target
@@ -423,7 +423,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
 - (FBFuture<FBIDBTestOperation *> *)startWithTestDescriptor:(id<FBXCTestDescriptor>)testDescriptor logDirectoryPath:(NSString *)logDirectoryPath reportActivities:(BOOL)reportActivities target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger temporaryDirectory:(FBTemporaryDirectory *)temporaryDirectory
 {
   return [[FBIDBError
-           describeFormat:@"%@ not implemented in abstract base class", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not implemented in abstract base class", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -456,7 +456,7 @@ static const NSTimeInterval FBLogicTestTimeout = 60 * 60; //Aprox. an hour.
       }
       if (descriptors.count != 1) {
         return [[FBIDBError
-                 describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
+                 describe:[NSString stringWithFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]]
                 failFuture];
       }
 

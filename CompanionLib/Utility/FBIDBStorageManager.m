@@ -106,11 +106,11 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 - (nullable FBInstalledArtifact *)copyInto:(NSURL *)basePath from:(NSURL *)fromURL error:(NSError **)error
 {
   NSURL *destination = [basePath URLByAppendingPathComponent:fromURL.lastPathComponent];
-  [self.logger logFormat:@"Persisting %@ to %@", fromURL.lastPathComponent, destination];
+  [self.logger log:[NSString stringWithFormat:@"Persisting %@ to %@", fromURL.lastPathComponent, destination]];
   if (![NSFileManager.defaultManager copyItemAtURL:fromURL toURL:destination error:error]) {
     return nil;
   }
-  [self.logger logFormat:@"Persisted %@", destination.lastPathComponent];
+  [self.logger log:[NSString stringWithFormat:@"Persisted %@", destination.lastPathComponent]];
   return [[FBInstalledArtifact alloc] initWithName:destination.lastPathComponent uuid:nil path:destination];
 }
 
@@ -146,7 +146,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
 
   if (!(containsExactArch || arm64eEquivalent)) {
     return [[FBIDBError
-             describeFormat:@"The supported architectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]
+             describe:[NSString stringWithFormat:@"The supported architectures of the target %@ do not intersect with any architectures in the bundle: %@", [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects]]]
             failBool:error];
   }
 
@@ -176,17 +176,17 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   NSURL *destinationBundlePath = [storageDirectory URLByAppendingPathComponent:sourceBundlePath.lastPathComponent];
   if (useSymlink) {
     // Symlink the bundle
-    [self.logger logFormat:@"Symlink %@ to %@", bundle.identifier, destinationBundlePath];
+    [self.logger log:[NSString stringWithFormat:@"Symlink %@ to %@", bundle.identifier, destinationBundlePath]];
     if (![NSFileManager.defaultManager createSymbolicLinkAtURL:destinationBundlePath withDestinationURL:sourceBundlePath error:&error]) {
       return [FBFuture futureWithError:error];
     }
   } else {
     // Move the bundle
-    [self.logger logFormat:@"Moving %@ to %@", bundle.identifier, destinationBundlePath];
+    [self.logger log:[NSString stringWithFormat:@"Moving %@ to %@", bundle.identifier, destinationBundlePath]];
     if (![NSFileManager.defaultManager moveItemAtURL:sourceBundlePath toURL:destinationBundlePath error:&error]) {
       return [FBFuture futureWithError:error];
     }
-    [self.logger logFormat:@"Moved %@", bundle.identifier];
+    [self.logger log:[NSString stringWithFormat:@"Moved %@", bundle.identifier]];
   }
 
   FBInstalledArtifact *artifact = [[FBInstalledArtifact alloc] initWithName:bundle.identifier uuid:bundle.binary.uuid path:destinationBundlePath];
@@ -224,7 +224,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
     }
     FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:bundlePath.path error:&error];
     if (!bundle) {
-      [self.logger logFormat:@"Failed to get bundle info for bundle at path %@", bundlePath];
+      [self.logger log:[NSString stringWithFormat:@"Failed to get bundle info for bundle at path %@", bundlePath]];
     }
     mapping[key] = bundle;
   }
@@ -285,19 +285,19 @@ static NSString *const XctestRunExtension = @"xctestrun";
   NSURL *xctestBundleURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
-             describeFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+             describe:[NSString stringWithFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]]
             failFuture];
   }
   bucket = buckets[XctestRunExtension].allObjects;
   NSURL *xctestrunURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
-             describeFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+             describe:[NSString stringWithFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]]
             failFuture];
   }
   if (!xctestBundleURL && !xctestrunURL) {
     return [[FBIDBError
-             describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]
+             describe:[NSString stringWithFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]]
             failFuture];
   }
 
@@ -308,7 +308,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     return [self saveTestRun:xctestrunURL];
   }
   return [[FBIDBError
-           describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
+           describe:[NSString stringWithFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]]
           failFuture];
 }
 
@@ -322,7 +322,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     return [self saveTestRun:filePath];
   }
   return [[FBControlCoreError
-           describeFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]
+           describe:[NSString stringWithFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]]
           failFuture];
 }
 
@@ -381,7 +381,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
   }
 
-  return [[FBIDBError describeFormat:@"Couldn't find test with id: %@", bundleId] fail:error];
+  return [[FBIDBError describe:[NSString stringWithFormat:@"Couldn't find test with id: %@", bundleId]] fail:error];
 }
 
 - (nullable NSArray<id<FBXCTestDescriptor>> *)getXCTestRunDescriptorsFromURL:(NSURL *)xctestrunURL error:(NSError **)error
@@ -393,7 +393,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   NSDictionary<NSString *, NSNumber *> *xctestrunMetadata = contentDict[@"__xctestrun_metadata__"];
   // The legacy format of xctestrun file does not contain __xctestrun_metadata__
   if (xctestrunMetadata) {
-    [self.logger.info logFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]];
+    [self.logger.info log:[NSString stringWithFormat:@"Using xctestrun format version: %@", xctestrunMetadata[@"FormatVersion"]]];
     return [self getDescriptorsFrom:contentDict with:xctestrunURL];
   } else {
     [self.logger.info log:@"Using the legacy xctestrun file format"];
@@ -450,7 +450,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
     }
   }
 
-  return [[FBIDBError describeFormat:@"Couldn't find test with url: %@", url] fail:error];
+  return [[FBIDBError describe:[NSString stringWithFormat:@"Couldn't find test with url: %@", url]] fail:error];
 }
 
 // xctestrun for Xcode 11+
@@ -458,7 +458,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   NSMutableArray<id<FBXCTestDescriptor>> *descriptors = [[NSMutableArray alloc] init];
   for (NSString *field in xctestrunContents) {
-    [self.logger.info logFormat:@"Checking the %@ field to extract test descriptors", field];
+    [self.logger.info log:[NSString stringWithFormat:@"Checking the %@ field to extract test descriptors", field]];
     if ([field isEqualToString:@"__xctestrun_metadata__"] || [field isEqualToString:@"CodeCoverageBuildableInfos"]) {
       continue;
     }
@@ -541,7 +541,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   if (descriptors.count != 1) {
     return [[FBIDBError
-             describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
+             describe:[NSString stringWithFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]]
             failFuture];
   }
 
@@ -594,7 +594,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
   NSURL *xctestBasePath = [[NSURL fileURLWithPath:target.auxillaryDirectory] URLByAppendingPathComponent:name];
   if (![NSFileManager.defaultManager createDirectoryAtURL:xctestBasePath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBIDBError
-              describeFormat:@"Failed to create xctest storage location %@", xctestBasePath]
+              describe:[NSString stringWithFormat:@"Failed to create xctest storage location %@", xctestBasePath]]
              causedBy:innerError]
             fail:error];
   }
@@ -664,14 +664,14 @@ static NSString *const XctestRunExtension = @"xctestrun";
 
 - (NSArray<NSString *> *)interpolateArgumentReplacements:(NSArray<NSString *> *)arguments
 {
-  [self.logger logFormat:@"Original arguments: %@", arguments];
+  [self.logger log:[NSString stringWithFormat:@"Original arguments: %@", arguments]];
   NSDictionary<NSString *, NSString *> *nameToPath = [self replacementMapping];
-  [self.logger logFormat:@"Existing replacement mapping: %@", nameToPath];
+  [self.logger log:[NSString stringWithFormat:@"Existing replacement mapping: %@", nameToPath]];
   NSMutableArray<NSString *> *interpolatedArguments = [NSMutableArray arrayWithArray:arguments];
   [arguments enumerateObjectsUsingBlock:^(NSString *argument, NSUInteger idx, BOOL *stop) {
     [interpolatedArguments replaceObjectAtIndex:idx withObject:nameToPath[argument] ?: argument];
   }];
-  [self.logger logFormat:@"Interpolated arguments: %@", interpolatedArguments];
+  [self.logger log:[NSString stringWithFormat:@"Interpolated arguments: %@", interpolatedArguments]];
   return interpolatedArguments;
 }
 

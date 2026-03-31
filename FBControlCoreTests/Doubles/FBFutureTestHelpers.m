@@ -16,7 +16,7 @@
 
 + (FBFuture *)applyTimeout:(NSTimeInterval)timeout description:(NSString *)description toFuture:(FBFuture *)future
 {
-  return [future timeout:timeout waitingFor:@"%@", description];
+  return [future timeout:timeout waitingFor:[NSString stringWithFormat:@"%@", description]];
 }
 
 @end

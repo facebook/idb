@@ -58,7 +58,7 @@
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to load bundle at path %@", path]
+             describe:[NSString stringWithFormat:@"Failed to load bundle at path %@", path]]
             fail:error];
   }
   NSString *bundleName = [self bundleNameForBundle:bundle];
@@ -66,7 +66,7 @@
   if (!identifier) {
     if (!fallbackIdentifier) {
       return [[FBControlCoreError
-               describeFormat:@"Could not obtain Bundle ID for bundle '%@' at %@", path.lastPathComponent, path]
+               describe:[NSString stringWithFormat:@"Could not obtain Bundle ID for bundle '%@' at %@", path.lastPathComponent, path]]
               fail:error];
     }
     identifier = bundleName;
@@ -131,7 +131,7 @@
                [arguments addObject:replacements[key]];
              }
              [arguments addObject:self.binary.path];
-             [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
+             [logger log:[NSString stringWithFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]]];
              return [[[[FBProcessBuilder
                         withLaunchPath:@"/usr/bin/install_name_tool"
                         arguments:arguments]
@@ -141,7 +141,7 @@
            }]
           onQueue:queue
           fmap:^(NSDictionary<NSString *, NSString *> *replacements) {
-            [logger logFormat:@"Re-Codesigning after rpath update %@", self.path];
+            [logger log:[NSString stringWithFormat:@"Re-Codesigning after rpath update %@", self.path]];
             return [[codesign signBundleAtPath:self.path] mapReplace:replacements];
           }];
 }
@@ -153,7 +153,7 @@
   NSString *binaryPath = [bundle executablePath];
   if (!binaryPath) {
     return [[FBControlCoreError
-             describeFormat:@"Could not obtain binary path for bundle %@", bundle.bundlePath]
+             describe:[NSString stringWithFormat:@"Could not obtain binary path for bundle %@", bundle.bundlePath]]
             fail:error];
   }
 

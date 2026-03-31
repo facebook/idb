@@ -23,7 +23,7 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
     NSInteger framesInProcess = asyncConsumer.unprocessedDataCount;
     // drop frames if consumer is overflown
     if (framesInProcess > MaxAllowedUnprocessedDataCounts) {
-      [logger logFormat:@"Consumer is overflown. Number of unsent frames: %@", @(framesInProcess)];
+      [logger log:[NSString stringWithFormat:@"Consumer is overflown. Number of unsent frames: %@", @(framesInProcess)]];
       return NO;
     }
   }
@@ -48,7 +48,7 @@ static BOOL WriteBlockBufferToConsumer(CMBlockBufferRef blockBuffer, id<FBDataCo
     OSStatus status = CMBlockBufferGetDataPointer(blockBuffer, offset, &lengthAtOffset, NULL, &dataPointer);
     if (status != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to get Data Pointer at offset %zu: %d", offset, status]
+               describe:[NSString stringWithFormat:@"Failed to get Data Pointer at offset %zu: %d", offset, status]]
               failBool:error];
     }
     if (isSyncConsumer) {
@@ -73,7 +73,7 @@ static BOOL ConvertAVCCToAnnexBInPlace(CMSampleBufferRef sampleBuffer, NSError *
     OSStatus status = CMBlockBufferAccessDataBytes(dataBuffer, offset, AVCCHeaderLength, nalLengthBuf, &nalLengthPtr);
     if (status != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to access block buffer data at offset %zu: %d", offset, status]
+               describe:[NSString stringWithFormat:@"Failed to access block buffer data at offset %zu: %d", offset, status]]
               failBool:error];
     }
     uint32_t nalLength = 0;
@@ -82,7 +82,7 @@ static BOOL ConvertAVCCToAnnexBInPlace(CMSampleBufferRef sampleBuffer, NSError *
     status = CMBlockBufferReplaceDataBytes(AnnexBStartCode, dataBuffer, offset, AVCCHeaderLength);
     if (status != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to replace block buffer data at offset %zu: %d", offset, status]
+               describe:[NSString stringWithFormat:@"Failed to replace block buffer data at offset %zu: %d", offset, status]]
               failBool:error];
     }
     offset += AVCCHeaderLength + nalLength;
@@ -97,7 +97,7 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
-             describeFormat:@"Sample Buffer is not ready"]
+             describe:@"Sample Buffer is not ready"]
             failBool:error];
   }
 
@@ -124,7 +124,7 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
     OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
     if (status != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
+               describe:[NSString stringWithFormat:@"Failed to get %@ parameter set count %d", codecName, status]]
               failBool:error];
     }
     for (size_t i = 0; i < parameterSetCount; i++) {
@@ -133,7 +133,7 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
       status = paramSetGetter(format, i, &parameterSet, &paramSize, NULL, NULL);
       if (status != noErr) {
         return [[FBControlCoreError
-                 describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
+                 describe:[NSString stringWithFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]]
                 failBool:error];
       }
       uint8_t paramHeader[AVCCHeaderLength + paramSize];
@@ -601,7 +601,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
-             describeFormat:@"Sample Buffer is not ready"]
+             describe:@"Sample Buffer is not ready"]
             failBool:error];
   }
 
@@ -636,7 +636,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
     OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
     if (status != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
+               describe:[NSString stringWithFormat:@"Failed to get %@ parameter set count %d", codecName, status]]
               failBool:error];
     }
     for (size_t i = 0; i < parameterSetCount; i++) {
@@ -644,7 +644,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
       status = paramSetGetter(format, i, NULL, &paramSize, NULL, NULL);
       if (status != noErr) {
         return [[FBControlCoreError
-                 describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
+                 describe:[NSString stringWithFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]]
                 failBool:error];
       }
       parameterSetSize += AVCCHeaderLength + paramSize;
@@ -719,7 +719,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
   OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, nalDest);
   if (copyStatus != noErr) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+             describe:[NSString stringWithFormat:@"Failed to copy block buffer data: %d", copyStatus]]
             failBool:error];
   }
 
@@ -1325,11 +1325,11 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
 {
   FBFMP4MuxerContext *ctx = (FBFMP4MuxerContext *)context;
   if (!ctx) {
-    return [[FBControlCoreError describeFormat:@"fMP4 writer called without context"] failBool:error];
+    return [[FBControlCoreError describe:@"fMP4 writer called without context"] failBool:error];
   }
 
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
-    return [[FBControlCoreError describeFormat:@"Sample Buffer is not ready"] failBool:error];
+    return [[FBControlCoreError describe:@"Sample Buffer is not ready"] failBool:error];
   }
 
   // Detect keyframe.
@@ -1369,8 +1369,8 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
 
     ctx.initWritten = YES;
     ctx.baseDecodeTime = pts90k;
-    [logger logFormat:@"fMP4 init segment written (%dx%d, %s)",
-     dims.width, dims.height, ctx.isHEVC ? "HEVC" : "H264"];
+    [logger log:[NSString stringWithFormat:@"fMP4 init segment written (%dx%d, %s)",
+                 dims.width, dims.height, ctx.isHEVC ? "HEVC" : "H264"]];
   }
 
   // Compute duration.
@@ -1411,7 +1411,7 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
     OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, sampleData.mutableBytes);
     if (copyStatus != noErr) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+               describe:[NSString stringWithFormat:@"Failed to copy block buffer data: %d", copyStatus]]
               failBool:error];
     }
     [consumer consumeData:sampleData];

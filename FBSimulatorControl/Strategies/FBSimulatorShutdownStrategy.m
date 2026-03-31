@@ -45,7 +45,7 @@
 + (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator
 {
   id<FBControlCoreLogger> logger = simulator.logger;
-  [logger.debug logFormat:@"Starting Safe Shutdown of %@", simulator.udid];
+  [logger.debug log:[NSString stringWithFormat:@"Starting Safe Shutdown of %@", simulator.udid]];
 
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBiOSTargetStateUnknown) {
@@ -56,7 +56,7 @@
 
   // Calling shutdown when already shutdown should be avoided (if detected).
   if (simulator.state == FBiOSTargetStateShutdown) {
-    [logger.debug logFormat:@"Shutdown of %@ succeeded as it is already shutdown", simulator.udid];
+    [logger.debug log:[NSString stringWithFormat:@"Shutdown of %@ succeeded as it is already shutdown", simulator.udid]];
     return FBFuture.empty;
   }
 
@@ -93,12 +93,12 @@
   id<FBControlCoreLogger> logger = simulator.logger;
   NSInteger errorCodeForShutdownWhenShuttingDown = FBSimulatorShutdownStrategy.errorCodeForShutdownWhenShuttingDown;
 
-  [logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
+  [logger.debug log:[NSString stringWithFormat:@"Shutting down Simulator %@", simulator.udid]];
   [simulator.device
    shutdownAsyncWithCompletionQueue:simulator.asyncQueue
    completionHandler:^(NSError *error) {
      if (error && error.code == errorCodeForShutdownWhenShuttingDown) {
-       [logger logFormat:@"Got Error Code %lu from shutdown, simulator is already shutdown", error.code];
+       [logger log:[NSString stringWithFormat:@"Got Error Code %lu from shutdown, simulator is already shutdown", error.code]];
        [future resolveWithResult:NSNull.null];
      } else if (error) {
        [future resolveWithError:error];
@@ -118,7 +118,7 @@
   return [[[simulator
             resolveState:FBiOSTargetStateShutdown]
            timeout:FBControlCoreGlobalConfiguration.regularTimeout
-           waitingFor:@"Simulator to resolve state %@", FBiOSTargetStateStringShutdown]
+           waitingFor:[NSString stringWithFormat:@"Simulator to resolve state %@", FBiOSTargetStateStringShutdown]]
           onQueue:simulator.workQueue
           chain:^FBFuture<NSNull *> *(FBFuture *future) {
             if (future.result) {
@@ -133,7 +133,7 @@
   FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
   id<FBControlCoreLogger> logger = simulator.logger;
 
-  [logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
+  [logger.debug log:[NSString stringWithFormat:@"Erasing Simulator %@", simulator.udid]];
   [simulator.device
    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.asyncQueue
    completionHandler:^(NSError *error) {

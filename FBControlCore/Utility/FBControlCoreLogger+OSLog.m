@@ -57,16 +57,6 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
-}
-
 - (id<FBControlCoreLogger>)info
 {
   return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelInfo];

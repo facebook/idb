@@ -41,7 +41,7 @@
 - (FBFuture<FBAFCConnection *> *)prepare:(id<FBControlCoreLogger>)logger
 {
   AFCConnectionRef afcConnection = NULL;
-  [logger logFormat:@"Starting house arrest for '%@'", self.bundleID];
+  [logger log:[NSString stringWithFormat:@"Starting house arrest for '%@'", self.bundleID]];
   int status = self.device.calls.CreateHouseArrestService(
     self.device.amDeviceRef,
     (__bridge CFStringRef _Nonnull)(self.bundleID),
@@ -51,7 +51,7 @@
   if (status != 0) {
     NSString *internalMessage = CFBridgingRelease(self.device.calls.CopyErrorText(status));
     return [[FBDeviceControlError
-             describeFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]
+             describe:[NSString stringWithFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]]
             failFuture];
   }
   FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:self.calls logger:logger];
@@ -60,13 +60,13 @@
 
 - (FBFuture<NSNull *> *)teardown:(FBAFCConnection *)connection logger:(id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"Closing connection to House Arrest for '%@'", self.bundleID];
+  [logger log:[NSString stringWithFormat:@"Closing connection to House Arrest for '%@'", self.bundleID]];
   NSError *error = nil;
   if (![connection closeWithError:&error]) {
-    [logger logFormat:@"Failed to close House Arrest for '%@' with error %@", self.bundleID, error];
+    [logger log:[NSString stringWithFormat:@"Failed to close House Arrest for '%@' with error %@", self.bundleID, error]];
     return [FBFuture futureWithError:error];
   } else {
-    [logger logFormat:@"Closed House Arrest service for '%@'", self.bundleID];
+    [logger log:[NSString stringWithFormat:@"Closed House Arrest service for '%@'", self.bundleID]];
     return FBFuture.empty;
   }
 }

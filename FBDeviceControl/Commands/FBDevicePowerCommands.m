@@ -64,7 +64,7 @@
             }
             if (![result[@"Status"] isEqualToString:@"Success"]) {
               return [[FBControlCoreError
-                       describeFormat:@"Not successful %@", result]
+                       describe:[NSString stringWithFormat:@"Not successful %@", result]]
                       failFuture];
             }
             return FBFuture.empty;

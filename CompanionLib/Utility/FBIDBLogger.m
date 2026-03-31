@@ -98,13 +98,13 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
   if (logFilePath) {
     NSURL *logFileURL = [NSURL fileURLWithPath:logFilePath];
     if (![NSFileManager.defaultManager createDirectoryAtURL:logFileURL.URLByDeletingLastPathComponent withIntermediateDirectories:YES attributes:@{} error:&error]) {
-      [systemLogger.error logFormat:@"Couldn't create log directory at %@: %@", logFileURL.URLByDeletingLastPathComponent, error];
+      [systemLogger.error log:[NSString stringWithFormat:@"Couldn't create log directory at %@: %@", logFileURL.URLByDeletingLastPathComponent, error]];
       exit(1);
     }
 
     int fileDescriptor = open(logFileURL.path.UTF8String, O_WRONLY | O_APPEND | O_CREAT);
     if (!fileDescriptor) {
-      [systemLogger.error logFormat:@"Couldn't create log file at %@ %s", logFileURL.path, strerror(errno)];
+      [systemLogger.error log:[NSString stringWithFormat:@"Couldn't create log file at %@ %s", logFileURL.path, strerror(errno)]];
       exit(1);
     }
 

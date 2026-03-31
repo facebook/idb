@@ -67,11 +67,11 @@
               [self cancelTimer:logger];
               FBFuture<id> *context = self.context;
               if (context.hasCompleted) {
-                [logger logFormat:@"Re-Using existing context %@", context.result];
+                [logger log:[NSString stringWithFormat:@"Re-Using existing context %@", context.result]];
                 return [FBFuture futureWithResult:context.result];
               }
               if (context) {
-                [logger logFormat:@"Re-Using preparing context %@", context];
+                [logger log:[NSString stringWithFormat:@"Re-Using preparing context %@", context]];
                 return context;
               }
               [logger log:@"No active context, preparing..."];
@@ -94,14 +94,14 @@
               NSNumber *poolTimeout = self.delegate.contextPoolTimeout;
               if (poolTimeout) {
                 NSTimeInterval timeout = poolTimeout.doubleValue;
-                [logger logFormat:@"No more consumers, but pooling the context, will wait for %f seconds of inactivity before tearing down", timeout];
+                [logger log:[NSString stringWithFormat:@"No more consumers, but pooling the context, will wait for %f seconds of inactivity before tearing down", timeout]];
                 [self teardownInFuture:timeout logger:logger];
               } else {
                 [logger log:@"No more consumers, no timeout tearing down context now"];
                 [self teardownNow:logger];
               }
             } else {
-              [logger logFormat:@"%lu More consumers waiting or running, not tearing down", remainingConsumers];
+              [logger log:[NSString stringWithFormat:@"%lu More consumers waiting or running, not tearing down", remainingConsumers]];
             }
             return FBFuture.empty;
           }];
@@ -111,14 +111,14 @@
 {
   if (self.pending.count > 0 || self.using.count > 0 || self.context) {
     return [[FBControlCoreError
-             describeFormat:@"Could not utilize context synchronously for %@ it is already in use", purpose]
+             describe:[NSString stringWithFormat:@"Could not utilize context synchronously for %@ it is already in use", purpose]]
             fail:error];
   }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   FBFuture<id> *context = [self.delegate prepare:logger];
   if (!context.result) {
     return [[FBControlCoreError
-             describeFormat:@"Could not extract prepare synchronously in %@", context]
+             describe:[NSString stringWithFormat:@"Could not extract prepare synchronously in %@", context]]
             fail:error];
   }
   self.context = context;
@@ -130,14 +130,14 @@
   FBFuture<id> *context = self.context;
   if (!context) {
     return [[FBControlCoreError
-             describeFormat:@"Could not return context for '%@' as none exists", purpose]
+             describe:[NSString stringWithFormat:@"Could not return context for '%@' as none exists", purpose]]
             failBool:error];
   }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   FBFuture<NSNull *> *teardown = [self.delegate teardown:context.result logger:logger];
   if (!teardown.result) {
     return [[FBControlCoreError
-             describeFormat:@"Could not return context synchronously in %@", teardown]
+             describe:[NSString stringWithFormat:@"Could not return context synchronously in %@", teardown]]
             failBool:error];
   }
   self.context = nil;
@@ -158,18 +158,18 @@
           resolve:^FBFuture<NSUUID *> * {
             if (self.using.count > 0) {
               if (self.delegate.isContextSharable) {
-                [logger logFormat:@"Context '%@' in use, but it can be shared", self.delegate.contextName];
+                [logger log:[NSString stringWithFormat:@"Context '%@' in use, but it can be shared", self.delegate.contextName]];
                 return [self immedateResourceAvailable:uuid];
               } else {
-                [logger logFormat:@"Context '%@' currently in use, waiting for it to be available", self.delegate.contextName];
+                [logger log:[NSString stringWithFormat:@"Context '%@' currently in use, waiting for it to be available", self.delegate.contextName]];
                 return [self pushPending:uuid];
               }
             }
             if (self.context) {
-              [logger logFormat:@"No user of context '%@' but we don't need to re-aquire it", self.delegate.contextName];
+              [logger log:[NSString stringWithFormat:@"No user of context '%@' but we don't need to re-aquire it", self.delegate.contextName]];
               return [self immedateResourceAvailable:uuid];
             }
-            [logger logFormat:@"Context '%@' not in use, time to aquire it", self.delegate.contextName];
+            [logger log:[NSString stringWithFormat:@"Context '%@' not in use, time to aquire it", self.delegate.contextName]];
             return [self immedateResourceAvailable:uuid];
           }];
 }
@@ -227,9 +227,9 @@
                               return;
                             }
                             if (weakSelf.using.count > 0) {
-                              [logger logFormat:@"Not tearing down context after %f seconds as we have an existing consumer", timeout];
+                              [logger log:[NSString stringWithFormat:@"Not tearing down context after %f seconds as we have an existing consumer", timeout]];
                             } else {
-                              [logger logFormat:@"No-one else wants the context, tearing it down"];
+                              [logger log:@"No-one else wants the context, tearing it down"];
                               [weakSelf teardownNow:logger];
                             }
                           }];
@@ -238,7 +238,7 @@
 - (void)cancelTimer:(id<FBControlCoreLogger>)logger
 {
   if (self.teardownTimeout) {
-    [logger logFormat:@"Cancelling timer for old timeout"];
+    [logger log:@"Cancelling timer for old timeout"];
     [self.teardownTimeout cancel];
     self.teardownTimeout = nil;
   }
@@ -251,7 +251,7 @@
     [logger log:@"Nothing to teardown"];
     return;
   }
-  [logger logFormat:@"Tearing down context %@ now", result];
+  [logger log:[NSString stringWithFormat:@"Tearing down context %@ now", result]];
   [self.delegate teardown:result logger:logger];
   self.context = nil;
 }

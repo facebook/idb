@@ -89,13 +89,13 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   // We need at least one approval in the input
   if (services.count == 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot approve any services for %@ since no services were provided", bundleIDs]
+             describe:[NSString stringWithFormat:@"Cannot approve any services for %@ since no services were provided", bundleIDs]]
             failFuture];
   }
   // We also need at least one bundle id in the input.
   if (bundleIDs.count == 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot approve %@ since no bundle ids were provided", services]
+             describe:[NSString stringWithFormat:@"Cannot approve %@ since no bundle ids were provided", services]]
             failFuture];
   }
 
@@ -144,7 +144,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   // Error out if there's nothing we can do to handle a specific approval.
   if (toApprove.count > 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toApprove.allObjects]]
+             describe:[NSString stringWithFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toApprove.allObjects]]]
             failFuture];
   }
   // Nothing to do with zero futures.
@@ -163,13 +163,13 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   // We need at least one revoke in the input
   if (services.count == 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot revoke any services for %@ since no services were provided", bundleIDs]
+             describe:[NSString stringWithFormat:@"Cannot revoke any services for %@ since no services were provided", bundleIDs]]
             failFuture];
   }
   // We also need at least one bundle id in the input.
   if (bundleIDs.count == 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot revoke %@ since no bundle ids were provided", services]
+             describe:[NSString stringWithFormat:@"Cannot revoke %@ since no bundle ids were provided", services]]
             failFuture];
   }
 
@@ -218,7 +218,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   // Error out if there's nothing we can do to handle a specific revocation.
   if (toRevoke.count > 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot revoke %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toRevoke.allObjects]]
+             describe:[NSString stringWithFormat:@"Cannot revoke %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toRevoke.allObjects]]]
             failFuture];
   }
   // Nothing to do with zero futures.
@@ -254,7 +254,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     schemeApprovalProperties = [[NSDictionary dictionaryWithContentsOfFile:schemeApprovalPlistPath] mutableCopy];
     if (schemeApprovalProperties == nil) {
       return [[FBSimulatorError
-               describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
+               describe:[NSString stringWithFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]]
               failFuture];
     }
   }
@@ -307,7 +307,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     schemeApprovalProperties = [[NSDictionary dictionaryWithContentsOfFile:schemeApprovalPlistPath] mutableCopy];
     if (schemeApprovalProperties == nil) {
       return [[FBSimulatorError
-               describeFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]
+               describe:[NSString stringWithFormat:@"Failed to read the file at %@", schemeApprovalPlistPath]]
               failFuture];
     }
   } else {
@@ -334,7 +334,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   NSString *destinationDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/AddressBook"];
   if (![NSFileManager.defaultManager fileExistsAtPath:destinationDirectory]) {
     return [[FBSimulatorError
-             describeFormat:@"Expected Address Book path to exist at %@ but it was not there", destinationDirectory]
+             describe:[NSString stringWithFormat:@"Expected Address Book path to exist at %@ but it was not there", destinationDirectory]]
             failFuture];
   }
 
@@ -384,7 +384,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
                      if (![NSFileManager.defaultManager fileExistsAtPath:helperPath]) {
                        return [[FBSimulatorError
-                                describeFormat:@"SimulatorFrameworkBridge binary found in bundle but does not exist at path: %@", helperPath]
+                                describe:[NSString stringWithFormat:@"SimulatorFrameworkBridge binary found in bundle but does not exist at path: %@", helperPath]]
                                failFuture];
                      }
 
@@ -394,7 +394,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
                               runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
                              onQueue:self.simulator.asyncQueue
                              fmap:^(FBSubprocess *task) {
-                               [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
+                               [self.simulator.logger log:[NSString stringWithFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action]];
                                return [FBFuture futureWithResult:NSNull.null];
                              }];
                    }];
@@ -439,7 +439,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
     }
     if (data == nil) {
-      return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
+      return [[FBSimulatorError describe:[NSString stringWithFormat:@"No section info for %@", bundleID]] failFuture];
     }
     if (approved) {
       NSError *readError = nil;
@@ -481,17 +481,17 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
   BOOL isDirectory = YES;
   if (![NSFileManager.defaultManager fileExistsAtPath:databasePath isDirectory:&isDirectory]) {
     return [[FBSimulatorError
-             describeFormat:@"Expected file to exist at path %@ but it was not there", databasePath]
+             describe:[NSString stringWithFormat:@"Expected file to exist at path %@ but it was not there", databasePath]]
             failFuture];
   }
   if (isDirectory) {
     return [[FBSimulatorError
-             describeFormat:@"Expected file to exist at path %@ but it is a directory", databasePath]
+             describe:[NSString stringWithFormat:@"Expected file to exist at path %@ but it is a directory", databasePath]]
             failFuture];
   }
   if ([NSFileManager.defaultManager isWritableFileAtPath:databasePath] == NO) {
     return [[FBSimulatorError
-             describeFormat:@"Database file at path %@ is not writable", databasePath]
+             describe:[NSString stringWithFormat:@"Database file at path %@ is not writable", databasePath]]
             failFuture];
   }
 
@@ -760,7 +760,7 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 + (FBFuture<NSString *> *)runSqliteCommandOnDatabase:(NSString *)databasePath arguments:(NSArray<NSString *> *)arguments queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   arguments = [@[databasePath] arrayByAddingObjectsFromArray:arguments];
-  [logger logFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
+  [logger log:[NSString stringWithFormat:@"Running sqlite3 %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]];
   return [[[[[[FBProcessBuilder
                withLaunchPath:@"/usr/bin/sqlite3"
                arguments:arguments]
@@ -772,12 +772,12 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
           fmap:^(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
             if (![task.exitCode.result isEqualToNumber:@0]) {
               return [[FBSimulatorError
-                       describeFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]
+                       describe:[NSString stringWithFormat:@"Task did not exit 0: %@ %@ %@", task.exitCode.result, task.stdOut, task.stdErr]]
                       failFuture];
             }
             if ([task.stdErr hasPrefix:@"Error"]) {
               return [[FBSimulatorError
-                       describeFormat:@"Failed to execute sqlite command: %@", task.stdErr]
+                       describe:[NSString stringWithFormat:@"Failed to execute sqlite command: %@", task.stdErr]]
                       failFuture];
             }
             return [FBFuture futureWithResult:task.stdOut];

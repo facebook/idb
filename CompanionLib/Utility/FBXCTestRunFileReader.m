@@ -18,14 +18,14 @@
   NSFileManager *fileManager = [NSFileManager defaultManager];
   if (![fileManager fileExistsAtPath:[xctestrunURL path]]) {
     return [[FBXCTestError
-             describeFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL]
+             describe:[NSString stringWithFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL]]
             fail:error];
   }
   NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
   NSString *idbAppStoragePath = [path stringByAppendingPathComponent:IdbApplicationsFolder];
   if (![fileManager fileExistsAtPath:idbAppStoragePath]) {
     return [[FBXCTestError
-             describeFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath]
+             describe:[NSString stringWithFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath]]
             fail:error];
   }
   NSDictionary<NSString *, id> *xctestrunContents = [NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error];

@@ -257,7 +257,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the description of the timeout.
  @return the current future with a timeout applied.
  */
-- (nonnull FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(2, 3);
+- (nonnull FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(nonnull NSString *)description;
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
@@ -310,7 +310,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the format string to re-phrase the failure message.
  @return a future with the replacement.
  */
-- (nonnull FBFuture<T> *)rephraseFailure:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
+- (nonnull FBFuture<T> *)rephraseFailure:(nonnull NSString *)description;
 
 #pragma mark Creating Context
 
@@ -347,21 +347,13 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (nonnull FBFuture<T> *)named:(nonnull NSString *)name;
 
 /**
- Rename the future with a format string.
-
- @param format the format string for the Future's name.
- @return the receiver, for chaining.
- */
-- (nonnull FBFuture<T> *)nameFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
-
-/**
  A helper to log completion of the future.
 
  @param logger the logger to log to.
- @param format a description of the future.
+ @param purpose a description of the future.
  @return the receiver, for chaining
  */
-- (nonnull FBFuture<T> *)logCompletion:(nonnull id<FBControlCoreLogger>)logger withPurpose:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(2, 3);
+- (nonnull FBFuture<T> *)logCompletion:(nonnull id<FBControlCoreLogger>)logger withPurpose:(nonnull NSString *)purpose;
 
 #pragma mark Properties
 
@@ -416,14 +408,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a new Mutable Future.
  */
 + (nonnull FBMutableFuture<T> *)futureWithName:(nullable NSString *)name;
-
-/**
- A Mutable Future with a Formatted Name
-
- @param format the format string for the Future's name.
- @return a new Mutable Future.
- */
-+ (nonnull FBMutableFuture<T> *)futureWithNameFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 #pragma mark Mutation
 

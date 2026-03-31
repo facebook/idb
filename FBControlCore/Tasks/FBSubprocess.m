@@ -32,7 +32,7 @@ static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProc
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
+             describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
             failBool:error];
   }
   return YES;
@@ -50,7 +50,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]
+             describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
             failBool:error];
   }
   return YES;
@@ -140,7 +140,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
            onQueue:self.queue
            timeout:timeout
            handler:^{
-             [logger logFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", self.processIdentifier, timeout, signo];
+             [logger log:[NSString stringWithFormat:@"Process %d didn't exit after wait for %f seconds for sending signal %d, sending SIGKILL now.", self.processIdentifier, timeout, signo]];
              return [self sendSignal:SIGKILL];
            }]
           mapReplace:@(signo)];
@@ -175,7 +175,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     return FBFuture.empty;
   }
   return [[FBControlCoreError
-           describeFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]
+           describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
           failFuture];
 }
 
@@ -237,10 +237,10 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawnattr_destroy(&spawnAttributes);
   if (status != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]
+             describe:[NSString stringWithFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]]
             fail:error];
   }
-  [logger logFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier];
+  [logger log:[NSString stringWithFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier]];
 
   FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
@@ -261,7 +261,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   dispatch_source_set_event_handler(source, ^{
     int status = 0;
     if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
-      [logger logFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)];
+      [logger log:[NSString stringWithFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)]];
     }
 
     // Resolve all of the related process finshed futures now, so that they do not need asynchronous resolution.

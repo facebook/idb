@@ -80,7 +80,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   Class streamClass = [self classForConfiguration:configuration];
   if (!streamClass) {
     return [[FBDeviceControlError
-             describeFormat:@"%@ is not a valid stream format", configuration.format]
+             describe:[NSString stringWithFormat:@"%@ is not a valid stream format", configuration.format]]
             fail:error];
   }
   // Create the output.
@@ -108,7 +108,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, NSEC_PER_SEC);
     } else {
       return [[FBDeviceControlError
-               describeFormat:@"Cannot set FPS on an OS prior to 10.15"]
+               describe:@"Cannot set FPS on an OS prior to 10.15"]
               fail:error];
     }
   }
@@ -210,7 +210,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
 {
-  [self.logger logFormat:@"Dropped a sample!"];
+  [self.logger log:@"Dropped a sample!"];
 }
 
 #pragma mark Data consumption
@@ -254,7 +254,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!self.pixelBufferAttributes) {
     NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(pixelBuffer);
     self.pixelBufferAttributes = attributes;
-    [self.logger logFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]];
+    [self.logger log:[NSString stringWithFormat:@"Mounting Surface with Attributes: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:attributes]]];
   }
 }
 

@@ -25,13 +25,13 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
 + (NSArray<FBDeveloperDiskImage *> *)allDiskImagesFromSearchPath:(NSString *)searchPath xcodeVersion:(NSOperatingSystemVersion)xcodeVersion logger:(id<FBControlCoreLogger>)logger
 {
   NSMutableArray<FBDeveloperDiskImage *> *images = NSMutableArray.array;
-  [logger logFormat:@"Attempting to find Disk Images at path %@", searchPath];
+  [logger log:[NSString stringWithFormat:@"Attempting to find Disk Images at path %@", searchPath]];
   for (NSString *fileName in [NSFileManager.defaultManager contentsOfDirectoryAtPath:searchPath error:nil] ?: @[]) {
     NSString *resolvedPath = [searchPath stringByAppendingPathComponent:fileName];
     NSError *error = nil;
     FBDeveloperDiskImage *image = [self diskImageAtPath:resolvedPath xcodeVersion:xcodeVersion error:&error];
     if (!image) {
-      [logger logFormat:@"%@ does not contain a valid disk image", error];
+      [logger log:[NSString stringWithFormat:@"%@ does not contain a valid disk image", error]];
       continue;
     }
     [images addObject:image];
@@ -44,14 +44,14 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   NSString *diskImagePath = [path stringByAppendingPathComponent:@"DeveloperDiskImage.dmg"];
   if (![NSFileManager.defaultManager fileExistsAtPath:diskImagePath]) {
     return [[FBControlCoreError
-             describeFormat:@"Disk image does not exist at expected path %@", diskImagePath]
+             describe:[NSString stringWithFormat:@"Disk image does not exist at expected path %@", diskImagePath]]
             fail:error];
   }
   NSString *signaturePath = [diskImagePath stringByAppendingString:@".signature"];
   NSData *signature = [NSData dataWithContentsOfFile:signaturePath];
   if (!signature) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to load signature at %@", signaturePath]
+             describe:[NSString stringWithFormat:@"Failed to load signature at %@", signaturePath]]
             fail:error];
   }
   NSOperatingSystemVersion version = [FBOSVersion operatingSystemVersionFromName:path.lastPathComponent];
@@ -117,7 +117,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Developer/Xcode/iOS DeviceSupport"],
     [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"],
   ];
-  [logger logFormat:@"Attempting to find Symbols directory by build version %@", buildVersion];
+  [logger log:[NSString stringWithFormat:@"Attempting to find Symbols directory by build version %@", buildVersion]];
   NSMutableArray<NSString *> *paths = NSMutableArray.array;
   for (NSString *searchPath in searchPaths) {
     NSError *innerError = nil;
@@ -151,7 +151,7 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     return path;
   }
   return [[FBControlCoreError
-           describeFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]
+           describe:[NSString stringWithFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]]
           fail:error];
 }
 
@@ -181,15 +181,15 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   FBDeveloperDiskImage *best = sorted.firstObject;
   NSOperatingSystemVersion bestVersion = best.version;
   if (bestVersion.majorVersion == targetVersion.majorVersion && bestVersion.minorVersion == targetVersion.minorVersion) {
-    [logger logFormat:@"Found the best match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best];
+    [logger log:[NSString stringWithFormat:@"Found the best match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best]];
     return best;
   }
   if (bestVersion.majorVersion == targetVersion.majorVersion) {
-    [logger logFormat:@"Found the closest match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best];
+    [logger log:[NSString stringWithFormat:@"Found the closest match for %ld.%ld at %@", targetVersion.majorVersion, targetVersion.minorVersion, best]];
     return best;
   }
   return [[FBControlCoreError
-           describeFormat:@"The best match %@ is not suitable for %ld.%ld", best, targetVersion.majorVersion, targetVersion.minorVersion]
+           describe:[NSString stringWithFormat:@"The best match %@ is not suitable for %ld.%ld", best, targetVersion.majorVersion, targetVersion.minorVersion]]
           fail:error];
 }
 

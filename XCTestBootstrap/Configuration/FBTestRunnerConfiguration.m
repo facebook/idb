@@ -38,7 +38,7 @@
   if (codesign) {
     return [[[codesign
               cdHashForBundleAtPath:testLaunchConfiguration.testBundle.path]
-             rephraseFailure:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundle.path]
+             rephraseFailure:[NSString stringWithFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", testLaunchConfiguration.testBundle.path]]
             onQueue:target.asyncQueue
             fmap:^(id _) {
               return [self prepareConfigurationWithTargetAfterCodesignatureCheck:target testLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory];

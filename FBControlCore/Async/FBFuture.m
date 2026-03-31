@@ -533,17 +533,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return final;
 }
 
-- (instancetype)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ...
+- (instancetype)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)description
 {
   NSParameterAssert(timeout > 0);
 
-  va_list args;
-  va_start(args, format);
-  NSString *description = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
   FBFuture *timeoutFuture = [[[FBControlCoreError
-                               describeFormat:@"Timed out after %f seconds waiting for %@", timeout, description]
+                               describe:[NSString stringWithFormat:@"Timed out after %f seconds waiting for %@", timeout, description]]
                               failFuture]
                              delay:timeout];
   return [FBFuture race:@[self, timeoutFuture]];
@@ -908,13 +903,8 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [FBFuture futureWithDelay:delay future:self];
 }
 
-- (FBFuture *)rephraseFailure:(NSString *)format, ...
+- (FBFuture *)rephraseFailure:(NSString *)description
 {
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
   return [self onQueue:FBFuture.internalQueue
                  chain:^(FBFuture *future) {
                    NSError *error = future.error;
@@ -922,7 +912,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
                      return future;
                    }
                    return [[[FBControlCoreError
-                             describe:string]
+                             describe:description]
                             causedBy:error]
                            failFuture];
                  }];
@@ -958,26 +948,11 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (FBFuture *)nameFormat:(NSString *)format, ...
+- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)purpose
 {
-  va_list args;
-  va_start(args, format);
-  NSString *name = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self named:name];
-}
-
-- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
   return [self onQueue:FBFuture.internalQueue
           notifyOfCompletion:^(FBFuture *resolved) {
-            [logger logFormat:@"Completed %@ with state '%@'", string, resolved];
+            [logger log:[NSString stringWithFormat:@"Completed %@ with state '%@'", purpose, resolved]];
           }];
 }
 
@@ -1163,16 +1138,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 + (FBMutableFuture *)futureWithName:(NSString *)name
 {
   return [[FBMutableFuture alloc] initWithName:name];
-}
-
-+ (FBMutableFuture *)futureWithNameFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *name = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self futureWithName:name];
 }
 
 @end

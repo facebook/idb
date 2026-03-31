@@ -47,7 +47,7 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
   if (self.simulator.state == FBiOSTargetStateBooted) {
     stopServiceFuture = [[[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
                          timeout:kSecuritydServiceStartupShutdownTimeout
-                         waitingFor:@"%@ service to stop", SecuritydServiceName];
+                         waitingFor:[NSString stringWithFormat:@"%@ service to stop", SecuritydServiceName]];
   }
   return [stopServiceFuture
           onQueue:self.simulator.workQueue
@@ -59,7 +59,7 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
             if (self.simulator.state == FBiOSTargetStateBooted) {
               return [[[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
                       timeout:kSecuritydServiceStartupShutdownTimeout
-                      waitingFor:@"%@ service to restart", SecuritydServiceName];
+                      waitingFor:[NSString stringWithFormat:@"%@ service to restart", SecuritydServiceName]];
             }
             return FBFuture.empty;
           }];
@@ -85,12 +85,12 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
 
   BOOL isDirectory = NO;
   if (![NSFileManager.defaultManager fileExistsAtPath:keychainDirectory isDirectory:&isDirectory]) {
-    [self.simulator.logger.info logFormat:@"The keychain directory does not exist at '%@'", keychainDirectory];
+    [self.simulator.logger.info log:[NSString stringWithFormat:@"The keychain directory does not exist at '%@'", keychainDirectory]];
     return YES;
   }
   if (!isDirectory) {
     return [[FBSimulatorError
-             describeFormat:@"Keychain path %@ is not a directory", keychainDirectory]
+             describe:[NSString stringWithFormat:@"Keychain path %@ is not a directory", keychainDirectory]]
             failBool:error];
   }
 
@@ -98,19 +98,19 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
   NSArray<NSString *> *paths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:keychainDirectory error:&innerError];
   if (!paths) {
     return [[FBSimulatorError
-             describeFormat:@"Could not list the contents of the keychain directory %@", keychainDirectory]
+             describe:[NSString stringWithFormat:@"Could not list the contents of the keychain directory %@", keychainDirectory]]
             failBool:error];
   }
   for (NSString *path in paths) {
     NSString *fullPath = [keychainDirectory stringByAppendingPathComponent:path];
     if ([FBSimulatorKeychainCommands.keychainPathsToIgnore containsObject:fullPath.lastPathComponent]) {
-      [logger logFormat:@"Not removing keychain at path %@", fullPath];
+      [logger log:[NSString stringWithFormat:@"Not removing keychain at path %@", fullPath]];
       continue;
     }
-    [logger logFormat:@"Removing keychain at path %@", fullPath];
+    [logger log:[NSString stringWithFormat:@"Removing keychain at path %@", fullPath]];
     if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&innerError]) {
       return [[[FBSimulatorError
-                describeFormat:@"Failed to delete keychain at path %@", fullPath]
+                describe:[NSString stringWithFormat:@"Failed to delete keychain at path %@", fullPath]]
                causedBy:innerError]
               failBool:error];
     }

@@ -74,7 +74,7 @@
   self.video = nil;
   if (!video) {
     return [[FBSimulatorError
-             describeFormat:@"There was no existing video instance for %@", self.simulator]
+             describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.simulator]]
             failFuture];
   }
 

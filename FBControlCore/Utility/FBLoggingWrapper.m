@@ -69,7 +69,7 @@
   NSDate *startDate = NSDate.date;
   NSString *methodName = [self.class methodName:invocation simplifiedNaming:self.simplifiedNaming];
   NSArray<NSString *> *descriptionOfArguments = [self.class descriptionOfArguments:invocation];
-  [self.logger.info logFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]];
+  [self.logger.info log:[NSString stringWithFormat:@"%@ called with: %@", methodName, [FBCollectionInformation oneLineDescriptionFromArray:descriptionOfArguments]]];
 
   // Extract the first method argument and retain it, if it exists
   id firstMethodArgument = nil;
@@ -112,10 +112,10 @@
   }
   if (error) {
     NSString *message = error.localizedDescription;
-    [logger.debug logFormat:@"%@ failed with: %@", methodName, message];
+    [logger.debug log:[NSString stringWithFormat:@"%@ failed with: %@", methodName, message]];
     return [FBEventReporterSubject subjectForFailingCall:methodName duration:duration message:message size:size arguments:descriptionOfArguments];
   } else {
-    [logger.debug logFormat:@"%@ succeeded", methodName];
+    [logger.debug log:[NSString stringWithFormat:@"%@ succeeded", methodName]];
     return [FBEventReporterSubject subjectForSuccessfulCall:methodName duration:duration size:size arguments:descriptionOfArguments];
   }
 }

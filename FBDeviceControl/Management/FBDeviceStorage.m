@@ -41,11 +41,11 @@
   id attached = self.attachedDevices[key];
   id referenced = [self.referencedDevices objectForKey:key];
   if (attached && referenced) {
-    [self.logger logFormat:@"%@ is an attached device update", device];
+    [self.logger log:[NSString stringWithFormat:@"%@ is an attached device update", device]];
   } else if (referenced) {
-    [self.logger logFormat:@"%@ is referenced and now attached again", device];
+    [self.logger log:[NSString stringWithFormat:@"%@ is referenced and now attached again", device]];
   } else {
-    [self.logger logFormat:@"%@ appeared for the first time", device];
+    [self.logger log:[NSString stringWithFormat:@"%@ appeared for the first time", device]];
   }
   self.attachedDevices[key] = device;
   [self.referencedDevices setObject:device forKey:key];

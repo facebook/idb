@@ -58,7 +58,7 @@
   int fileDescriptor = open(filePath.UTF8String, O_WRONLY | O_CREAT, 0644);
   if (!fileDescriptor) {
     return [[FBControlCoreError
-             describeFormat:@"A file handle for path %@ could not be opened: %s", filePath, strerror(errno)]
+             describe:[NSString stringWithFormat:@"A file handle for path %@ could not be opened: %s", filePath, strerror(errno)]]
             failInt:error];
   }
   return fileDescriptor;
@@ -270,7 +270,7 @@
     });
   if (!self.io) {
     return [[FBControlCoreError
-             describeFormat:@"A IO Channel could not be created for fd %d", self.fileDescriptor]
+             describe:[NSString stringWithFormat:@"A IO Channel could not be created for fd %d", self.fileDescriptor]]
             failBool:error];
   }
 

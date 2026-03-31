@@ -40,16 +40,6 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
-}
-
 - (id<FBControlCoreLogger>)info
 {
   return self;
@@ -101,16 +91,6 @@
     [logger log:message];
   }
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info
@@ -222,16 +202,6 @@
     [self.consumer consumeData:data];
   }
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2)
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info

@@ -50,7 +50,7 @@
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
               return [[FBDeviceControlError
-                       describeFormat:@"Failed have device enter recovery %@", internalMessage]
+                       describe:[NSString stringWithFormat:@"Failed have device enter recovery %@", internalMessage]]
                       failFuture];
             }
             return FBFuture.empty;
@@ -66,21 +66,21 @@
             AMRecoveryModeDeviceRef recoveryDevice = device.recoveryModeDeviceRef;
             if (recoveryDevice == NULL) {
               return [[FBDeviceControlError
-                       describeFormat:@"Device %@ is not in recovery mode", device]
+                       describe:[NSString stringWithFormat:@"Device %@ is not in recovery mode", device]]
                       failFuture];
             }
             int status = device.calls.RecoveryModeDeviceSetAutoBoot(recoveryDevice, 1);
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
               return [[FBDeviceControlError
-                       describeFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]
+                       describe:[NSString stringWithFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]]
                       failFuture];
             }
             status = device.calls.RecoveryDeviceReboot(recoveryDevice);
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
               return [[FBDeviceControlError
-                       describeFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]
+                       describe:[NSString stringWithFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]]
                       failFuture];
             }
             return FBFuture.empty;

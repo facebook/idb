@@ -156,7 +156,7 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
 
   // Grab the task and see if it died already.
   if (recordingTask.statLoc.hasCompleted) {
-    [self.logger logFormat:@"Stop Recording requested, but it's completed with output '%@' '%@', perhaps the video is damaged", recordingTask.stdOut, recordingTask.stdErr];
+    [self.logger log:[NSString stringWithFormat:@"Stop Recording requested, but it's completed with output '%@' '%@', perhaps the video is damaged", recordingTask.stdOut, recordingTask.stdErr]];
     return FBFuture.empty;
   }
 
@@ -174,7 +174,7 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
                                     }]
                                    onQueue:self.queue
                                    handleError:^(NSError *error) {
-                                     [self.logger logFormat:@"Failed confirm video file been written %@", error];
+                                     [self.logger log:[NSString stringWithFormat:@"Failed confirm video file been written %@", error]];
                                      return [FBFuture futureWithResult:NSNull.null];
                                    }];
 
@@ -201,13 +201,13 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
              NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:nil];
              NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
              if (fileSize > 0) {
-               [logger logFormat:@"simctl has written out the video to %@ with file size %lu", filePath, fileSize];
+               [logger log:[NSString stringWithFormat:@"simctl has written out the video to %@ with file size %lu", filePath, fileSize]];
                return YES;
              }
              return NO;
            }]
           timeout:SimctlResolveFileTimeout
-          waitingFor:@"simctl to write file to %@", filePath];
+          waitingFor:[NSString stringWithFormat:@"simctl to write file to %@", filePath]];
 }
 
 - (FBFuture<NSDecimalNumber *> *)simctlVersionNumber
@@ -234,7 +234,7 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
 
              // Some versions can output information twice, pick the first one
              if (matches.count < 1) {
-               [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
+               [self.logger log:[NSString stringWithFormat:@"Couldn't find simctl version from: %@, return 0.0", output]];
                return [FBFuture futureWithResult:NSDecimalNumber.zero];
              }
              NSTextCheckingResult *match = matches[0];
@@ -244,7 +244,7 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
            }]
           onQueue:self.queue
           handleError:^(NSError *error) {
-            [self.logger logFormat:@"Abnormal exit of 'what' process %@, assuming version 0.0", error];
+            [self.logger log:[NSString stringWithFormat:@"Abnormal exit of 'what' process %@, assuming version 0.0", error]];
             return [FBFuture futureWithResult:NSDecimalNumber.zero];
           }];
 }

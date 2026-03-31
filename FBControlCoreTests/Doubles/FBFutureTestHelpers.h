@@ -12,7 +12,6 @@
 /**
  Helpers to work around Swift limitations with ObjC APIs.
  - futureWithFutures: is NS_SWIFT_UNAVAILABLE
- - timeout:waitingFor: is variadic (NS_FORMAT_FUNCTION) and can't be called from Swift
  */
 @interface FBFutureTestHelpers : NSObject
 

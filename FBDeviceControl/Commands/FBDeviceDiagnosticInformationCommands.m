@@ -76,7 +76,7 @@ static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_
             }
             if (![result[@"Status"] isEqualToString:@"Success"]) {
               return [[FBControlCoreError
-                       describeFormat:@"Not successful %@", result]
+                       describe:[NSString stringWithFormat:@"Not successful %@", result]]
                       failFuture];
             }
             return [FBFuture futureWithResult:[FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result[@"Diagnostics"]]];

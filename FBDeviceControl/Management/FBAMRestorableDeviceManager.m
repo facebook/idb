@@ -42,15 +42,15 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   AMRestorableDeviceState deviceState = manager.calls.RestorableDeviceGetState(device);
   FBiOSTargetState targetState = [FBAMRestorableDevice targetStateForDeviceState:deviceState];
   NSString *identifier = [@(manager.calls.RestorableDeviceGetECID(device)) stringValue];
-  [logger logFormat:@"%@ %@ in state %@", device, NotificationTypeToString(status), FBiOSTargetStateStringFromState(targetState)];
+  [logger log:[NSString stringWithFormat:@"%@ %@ in state %@", device, NotificationTypeToString(status), FBiOSTargetStateStringFromState(targetState)]];
   if (manager.ecidFilter && ![identifier isEqualToString:manager.ecidFilter]) {
-    [logger logFormat:@"Ignoring %@ as it does not match filter of %@", device, manager.ecidFilter];
+    [logger log:[NSString stringWithFormat:@"Ignoring %@ as it does not match filter of %@", device, manager.ecidFilter]];
     return;
   }
   switch (status) {
     case AMRestorableDeviceNotificationTypeConnected: {
       NSDictionary<NSString *, id> *info = [manager infoForRestorableDevice:device];
-      [logger logFormat:@"Caching restorable device values %@", info];
+      [logger log:[NSString stringWithFormat:@"Caching restorable device values %@", info]];
       [manager deviceConnected:device identifier:identifier info:info];
       return;
     }
@@ -58,7 +58,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
       [manager deviceDisconnected:device identifier:identifier];
       return;
     default:
-      [logger logFormat:@"Unknown Restorable Notification %d", status];
+      [logger log:[NSString stringWithFormat:@"Unknown Restorable Notification %d", status]];
       return;
   }
 }
@@ -94,7 +94,7 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   );
   if (registrationID < 1) {
     return [[FBDeviceControlError
-             describeFormat:@"AMRestorableDeviceRegisterForNotifications failed with %d", registrationID]
+             describe:[NSString stringWithFormat:@"AMRestorableDeviceRegisterForNotifications failed with %d", registrationID]]
             failBool:error];
   }
   self.registrationID = registrationID;

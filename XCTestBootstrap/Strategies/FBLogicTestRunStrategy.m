@@ -102,7 +102,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 - (FBFuture<NSNull *> *)testFutureWithOutputs:(FBLogicTestRunOutputs *)outputs shimPath:(NSString *)shimPath uuid:(NSUUID *)uuid
 {
-  [self.logger logFormat:@"Starting Logic Test execution of %@", self.configuration];
+  [self.logger log:[NSString stringWithFormat:@"Starting Logic Test execution of %@", self.configuration]];
   id<FBLogicXCTestReporter> reporter = self.reporter;
   [reporter didBeginExecutingTestPlan];
 
@@ -181,13 +181,13 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   id<FBLogicXCTestReporter> reporter = self.reporter;
   dispatch_queue_t queue = self.target.workQueue;
 
-  [logger logFormat:@"Starting to read shim output from location %@", outputs.shimOutput.filePath];
+  [logger log:[NSString stringWithFormat:@"Starting to read shim output from location %@", outputs.shimOutput.filePath]];
 
   return [[[[outputs.shimOutput
              startReading]
             onQueue:queue
             fmap:^(id _) {
-              [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", outputs.shimOutput.filePath];
+              [logger log:[NSString stringWithFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", outputs.shimOutput.filePath]];
               return [self waitForSuccessfulCompletion:exitCode closingOutputs:outputs];
             }]
            onQueue:queue
@@ -198,7 +198,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
            }]
           onQueue:queue
           handleError:^(NSError *error) {
-            [logger logFormat:@"Abnormal exit of xctest process %@", error];
+            [logger log:[NSString stringWithFormat:@"Abnormal exit of xctest process %@", error]];
             [reporter didCrashDuringTest:error];
             return [FBFuture futureWithError:error];
           }];
@@ -224,18 +224,18 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
                          [outputs.shimConsumer finishedConsuming],
                        ]]
                       timeout:EndOfFileFromStopReadingTimeout
-                      waitingFor:@"receive and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode]
+                      waitingFor:[NSString stringWithFormat:@"receive and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode]]
                      chainReplace:exitCode];
            }]
           onQueue:queue
           fmap:^FBFuture<NSNull *> *(NSNumber *exitCodeNumber) {
-            [logger logFormat:@"xctest process terminated, exited with %@, checking status code", exitCodeNumber];
+            [logger log:[NSString stringWithFormat:@"xctest process terminated, exited with %@, checking status code", exitCodeNumber]];
             int exitCodeValue = exitCodeNumber.intValue;
             NSString *descriptionOfExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
             if (descriptionOfExit) {
               NSString *stdErrReversed = [outputs.stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
               return [[FBControlCoreError
-                       describeFormat:@"xctest process exited in failure (%d): %@ %@", exitCodeValue, descriptionOfExit, stdErrReversed]
+                       describe:[NSString stringWithFormat:@"xctest process exited in failure (%d): %@ %@", exitCodeValue, descriptionOfExit, stdErrReversed]]
                       failFuture];
             }
             return [FBFuture futureWithResult:exitCodeNumber];
@@ -254,7 +254,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
                                                                           chain:^FBFuture *(FBFuture *future) {
                                                                             if (future.error) {
                                                                               return [[XCTestBootstrapError
-                                                                                       describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]
+                                                                                       describe:[NSString stringWithFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]]
                                                                                       failFuture];
                                                                             }
                                                                             [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
@@ -336,11 +336,11 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   id<FBLogicXCTestReporter> reporter = self.reporter;
   NSTimeInterval timeout = self.configuration.testTimeout;
 
-  [logger logFormat:
-   @"Launching xctest process with arguments %@, environment %@",
-   [FBCollectionInformation oneLineDescriptionFromArray:[@[launchPath] arrayByAddingObjectsFromArray:arguments]],
-   [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
-  ];
+  [logger log:[NSString stringWithFormat:
+               @"Launching xctest process with arguments %@, environment %@",
+               [FBCollectionInformation oneLineDescriptionFromArray:[@[launchPath] arrayByAddingObjectsFromArray:arguments]],
+               [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
+   ]];
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:outputs.stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:outputs.stdErrConsumer]];
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModePosixSpawn];
   FBArchitectureProcessAdapter *adapter = [[FBArchitectureProcessAdapter alloc] init];

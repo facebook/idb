@@ -243,18 +243,14 @@
 
 #pragma mark FBDeviceCommands Protocol Implementation
 
-- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ...
+- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)purpose
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    va_list args;
-    va_start(args, format);
-    NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-    va_end(args);
-    return [amDevice connectToDeviceWithPurpose:@"%@", string];
+    return [amDevice connectToDeviceWithPurpose:purpose];
   }
   return [[FBDeviceControlError
-           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
@@ -265,7 +261,7 @@
     return [amDevice startService:service];
   }
   return [[FBDeviceControlError
-           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
@@ -276,7 +272,7 @@
     return [amDevice startDeviceLinkService:service];
   }
   return [[FBDeviceControlError
-           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
@@ -287,7 +283,7 @@
     return [amDevice startAFCService:service];
   }
   return [[FBDeviceControlError
-           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
@@ -298,7 +294,7 @@
     return [amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
   }
   return [[FBDeviceControlError
-           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 

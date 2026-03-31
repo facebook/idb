@@ -56,7 +56,7 @@
   // There should only ever be one test run per-device.
   if (self.runningXcodeBuildOperation) {
     return [[FBDeviceControlError
-             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+             describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
             failFuture];
   }
   // Terminate the reparented xcodebuild invocations.

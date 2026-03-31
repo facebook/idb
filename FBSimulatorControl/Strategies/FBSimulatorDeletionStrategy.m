@@ -30,37 +30,37 @@
   FBSimulatorSet *set = simulator.set;
 
   // Kill the Simulators before deleting them.
-  [simulator.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
+  [simulator.logger log:[NSString stringWithFormat:@"Killing Simulator, in preparation for deletion %@", simulator]];
   return [[[[FBSimulatorShutdownStrategy
              shutdown:simulator]
             onQueue:workQueue
             fmap:^(id _) {
               // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
-              [simulator.logger logFormat:@"Deleting Simulator %@", simulator];
+              [simulator.logger log:[NSString stringWithFormat:@"Deleting Simulator %@", simulator]];
               return [FBSimulatorDeletionStrategy onDeviceSet:simulator.set.deviceSet performDeletionOfDevice:simulator.device onQueue:simulator.asyncQueue];
             }]
            onQueue:workQueue
            fmap:^(id _) {
-             [simulator.logger logFormat:@"Simulator %@ Deleted", udid];
+             [simulator.logger log:[NSString stringWithFormat:@"Simulator %@ Deleted", udid]];
 
              // The Logfiles now need disposing of. Deleting a Simulator via CoreSimulator will not
              // automatically remove the logfiles. There's no sense in letting this directory accumulate files.
              if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
-               [simulator.logger logFormat:@"Deleting Simulator Log Directory at %@", coreSimulatorLogsDirectory];
+               [simulator.logger log:[NSString stringWithFormat:@"Deleting Simulator Log Directory at %@", coreSimulatorLogsDirectory]];
                NSError *error = nil;
                if ([NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&error]) {
-                 [simulator.logger logFormat:@"Deleted Simulator Log Directory at %@", coreSimulatorLogsDirectory];
+                 [simulator.logger log:[NSString stringWithFormat:@"Deleted Simulator Log Directory at %@", coreSimulatorLogsDirectory]];
                } else {
-                 [simulator.logger.error logFormat:@"Failed to delete Simulator Log Directory %@: %@", coreSimulatorLogsDirectory, error];
+                 [simulator.logger.error log:[NSString stringWithFormat:@"Failed to delete Simulator Log Directory %@: %@", coreSimulatorLogsDirectory, error]];
                }
              }
 
-             [simulator.logger logFormat:@"Confirming %@ has been removed from set", udid];
+             [simulator.logger log:[NSString stringWithFormat:@"Confirming %@ has been removed from set", udid]];
              return [FBSimulatorDeletionStrategy confirmSimulatorUDID:udid isRemovedFromSet:set];
            }]
           onQueue:workQueue
           doOnResolved:^(id _) {
-            [simulator.logger logFormat:@"%@ has been removed from set", udid];
+            [simulator.logger log:[NSString stringWithFormat:@"%@ has been removed from set", udid]];
           }];
 }
 

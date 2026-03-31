@@ -91,13 +91,13 @@
   NSArray<NSURL *> *unknown = [mediaFileURLs filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:FBSimulatorMediaCommands.predicateForMediaPaths]];
   if (unknown.count > 0) {
     return [[FBSimulatorError
-             describeFormat:@"%@ not a known media path", unknown]
+             describe:[NSString stringWithFormat:@"%@ not a known media path", unknown]]
             failBool:error];
   }
 
   if (self.simulator.state != FBiOSTargetStateBooted) {
     return [[FBSimulatorError
-             describeFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]
+             describe:[NSString stringWithFormat:@"Simulator must be booted to upload photos, is %@", self.simulator.device.stateString]]
             failBool:error];
   }
 
@@ -105,7 +105,7 @@
     NSError *innerError = nil;
     if (![self.simulator.device addPhoto:url error:&innerError]) {
       return [[[FBSimulatorError
-                describeFormat:@"Failed to add photo %@", url]
+                describe:[NSString stringWithFormat:@"Failed to add photo %@", url]]
                causedBy:innerError]
               failBool:error];
     }
@@ -115,7 +115,7 @@
     NSError *innerError = nil;
     if (![self.simulator.device addVideo:url error:&innerError]) {
       return [[[FBSimulatorError
-                describeFormat:@"Failed to add video %@", url]
+                describe:[NSString stringWithFormat:@"Failed to add video %@", url]]
                causedBy:innerError]
               failBool:error];
     }
@@ -126,7 +126,7 @@
     NSError *innerError = nil;
     if (![self.simulator.device addMedia:contacts error:&innerError]) {
       return [[[FBSimulatorError
-                describeFormat:@"Failed to add contacts %@", contacts]
+                describe:[NSString stringWithFormat:@"Failed to add contacts %@", contacts]]
                causedBy:innerError]
               failBool:error];
     }

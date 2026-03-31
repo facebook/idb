@@ -193,7 +193,7 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
   NSDictionary<NSString *, NSNumber *> *channels = response.auxillaryValues.firstObject;
   if (![channels isKindOfClass:NSDictionary.class]) {
     return [[FBControlCoreError
-             describeFormat:@"%@ is not a dictionary", channels]
+             describe:[NSString stringWithFormat:@"%@ is not a dictionary", channels]]
             fail:error];
   }
   return channels;
@@ -302,7 +302,7 @@ static const uint32 Int32ArgumentType = 3;
 {
   if (data.length < 16) {
     return [[FBControlCoreError
-             describeFormat:@"Data is of insufficient length %@", data]
+             describe:[NSString stringWithFormat:@"Data is of insufficient length %@", data]]
             fail:error];
   }
   uint64 magic = 0;
@@ -320,7 +320,7 @@ static const uint32 Int32ArgumentType = 3;
     data = [self advanceData:data buffer:&argumentType length:sizeof(argumentType)];
     if (argumentType != 2) {
       return [[FBControlCoreError
-               describeFormat:@"Canot decode argument of type %d", argumentType]
+               describe:[NSString stringWithFormat:@"Canot decode argument of type %d", argumentType]]
               fail:error];
     }
     data = [self advanceData:data buffer:&argumentLength length:sizeof(argumentLength)];
@@ -329,7 +329,7 @@ static const uint32 Int32ArgumentType = 3;
     id argument = [NSKeyedUnarchiver unarchivedObjectOfClasses:self.supportedReturnSerializerValues fromData:argumentData error:error];
     if (!argument) {
       return [[FBControlCoreError
-               describeFormat:@"Failed to decode argument %@", data]
+               describe:[NSString stringWithFormat:@"Failed to decode argument %@", data]]
               fail:error];
     }
     [arguments addObject:argument];
@@ -380,13 +380,13 @@ static const uint32 Int32ArgumentType = 3;
     // We should always expect that identifiers are increasing.
     if (messageHeader.conversationIndex == 0 && messageHeader.identifier < request.messageIdentifier) {
       [[FBControlCoreError
-        describeFormat:@"Response identifier %d with lower identifier than that requested (%d)", messageHeader.identifier, request.messageIdentifier]
+        describe:[NSString stringWithFormat:@"Response identifier %d with lower identifier than that requested (%d)", messageHeader.identifier, request.messageIdentifier]]
        fail:error];
       return InvalidResponsePayload;
     }
     if (messageHeader.conversationIndex == 1 && messageHeader.identifier != request.messageIdentifier) {
       [[FBControlCoreError
-        describeFormat:@"Response identifier %d is not the same as requested identifier (%d)", messageHeader.identifier, request.messageIdentifier]
+        describe:[NSString stringWithFormat:@"Response identifier %d is not the same as requested identifier (%d)", messageHeader.identifier, request.messageIdentifier]]
        fail:error];
       return InvalidResponsePayload;
     }
@@ -494,7 +494,7 @@ static const uint32 Int32ArgumentType = 3;
 {
   if (self.channels[identifier] == nil) {
     return [[FBControlCoreError
-             describeFormat:@"Could not make a channel %@ as it is not one of %@", identifier, self.channels.allKeys]
+             describe:[NSString stringWithFormat:@"Could not make a channel %@ as it is not one of %@", identifier, self.channels.allKeys]]
             fail:error];
   }
   int32_t channelIdentifier = [self nextChannelIdentifier];

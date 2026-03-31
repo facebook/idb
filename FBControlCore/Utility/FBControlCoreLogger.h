@@ -36,14 +36,6 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 - (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
 
 /**
- Logs a Message with the provided Format String.
-
- @param format the Format String for the Logger.
- @return the receiver, for chaining.
- */
-- (nonnull id<FBControlCoreLogger>)logFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
-
-/**
  Returns the Info Logger variant.
  */
 - (nonnull id<FBControlCoreLogger>)info;
