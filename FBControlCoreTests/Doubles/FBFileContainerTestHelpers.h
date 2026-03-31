@@ -11,8 +11,8 @@
 
 /**
  Helper to work around Swift's inability to handle ObjC classes and protocols
- that share the same name (FBFileContainer).
- This class conforms to the FBFileContainer protocol and delegates to an
+ that share the same name (FBFileContainer/FBFileContainerProtocol).
+ This class conforms to the FBFileContainerProtocol protocol and delegates to an
  underlying container, making the protocol methods accessible from Swift.
  */
 @interface FBFileContainerTestHelpers : NSObject

@@ -13,7 +13,7 @@
 /**
  An implementation of FBFileContainer, backed by an FBAFCConnection
  */
-@interface FBDeviceFileContainer : NSObject <FBFileContainer>
+@interface FBDeviceFileContainer : NSObject <FBFileContainerProtocol>
 
 /**
  The Designated Initializer.

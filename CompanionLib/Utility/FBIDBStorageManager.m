@@ -66,7 +66,7 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   return YES;
 }
 
-- (id<FBFileContainer>)asFileContainer
+- (id<FBFileContainerProtocol>)asFileContainer
 {
   return [FBFileContainer fileContainerForBasePath:self.basePath.path];
 }

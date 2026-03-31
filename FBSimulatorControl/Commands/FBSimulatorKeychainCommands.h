@@ -11,7 +11,7 @@
 
 @class FBSimulator;
 
-@protocol FBSimulatorKeychainCommands <NSObject>
+@protocol FBSimulatorKeychainCommandsProtocol <NSObject>
 
 /**
  Cleans the keychain of the Simulator.
@@ -26,6 +26,6 @@
  A Strategy for clearing the system keychain.
  This is useful if you wish to restore the Simulator to a state where there are no login credentials in the keychain.
  */
-@interface FBSimulatorKeychainCommands : NSObject <FBSimulatorKeychainCommands, FBiOSTargetCommand>
+@interface FBSimulatorKeychainCommands : NSObject <FBSimulatorKeychainCommandsProtocol, FBiOSTargetCommand>
 
 @end

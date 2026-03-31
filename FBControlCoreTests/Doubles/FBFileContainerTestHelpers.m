@@ -8,7 +8,7 @@
 #import "FBFileContainerTestHelpers.h"
 
 @interface FBFileContainerTestHelpers ()
-@property (nonatomic, strong) id<FBFileContainer> wrapped;
+@property (nonatomic, strong) id<FBFileContainerProtocol> wrapped;
 @end
 
 @implementation FBFileContainerTestHelpers

@@ -23,7 +23,7 @@ static size_t ReadBufferSize = 1024 * 4;
 
 @end
 
-@interface FBAMDServiceConnection_FileReader : NSObject <FBFileReader>
+@interface FBAMDServiceConnection_FileReader : NSObject <FBFileReaderProtocol>
 
 @property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
 @property (nonatomic, readonly, strong) FBAMDServiceConnection *connection;
@@ -359,7 +359,7 @@ static size_t SendBufferSize = 1024 * 4;
   return [self receive:valueOut ofSize:sizeof(uint64_t) error:error];
 }
 
-- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
+- (id<FBFileReaderProtocol>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue
 {
   return [[FBAMDServiceConnection_FileReader alloc] initWithServiceConnection:self consumer:consumer queue:queue];
 }

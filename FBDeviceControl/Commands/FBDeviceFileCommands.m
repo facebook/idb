@@ -143,7 +143,7 @@
 
 @end
 
-@interface FBDeviceFileContainer_Wallpaper : NSObject <FBFileContainer>
+@interface FBDeviceFileContainer_Wallpaper : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 @property (nonatomic, readonly, strong) FBSpringboardServicesClient *springboard;
@@ -232,7 +232,7 @@
 
 @end
 
-@interface FBDeviceFileContainer_MDMProfiles : NSObject <FBFileContainer>
+@interface FBDeviceFileContainer_MDMProfiles : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 @property (nonatomic, readonly, strong) FBManagedConfigClient *managedConfig;
@@ -312,7 +312,7 @@
 
 static NSString *const MountRootPath = @"mounted";
 
-@interface FBDeviceFileCommands_DiskImages : NSObject <FBFileContainer>
+@interface FBDeviceFileCommands_DiskImages : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) id<FBDeveloperDiskImageCommands> commands;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
@@ -488,9 +488,9 @@ static NSString *const MountRootPath = @"mounted";
 
 @end
 
-@interface FBDeviceFileCommands_Symbols : NSObject <FBFileContainer>
+@interface FBDeviceFileCommands_Symbols : NSObject <FBFileContainerProtocol>
 
-@property (nonatomic, readonly, strong) id<FBDeviceDebugSymbolsCommands> commands;
+@property (nonatomic, readonly, strong) id<FBDeviceDebugSymbolsCommandsProtocol> commands;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
@@ -499,7 +499,7 @@ static NSString *const MountRootPath = @"mounted";
 
 static NSString *const ExtractedSymbolsDirectory = @"Symbols";
 
-- (instancetype)initWithCommands:(id<FBDeviceDebugSymbolsCommands>)commands queue:(dispatch_queue_t)queue
+- (instancetype)initWithCommands:(id<FBDeviceDebugSymbolsCommandsProtocol>)commands queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -603,81 +603,81 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
 
 #pragma mark FBFileCommands
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForContainerApplication:(NSString *)bundleID
 {
   return [[self.device
            houseArrestAFCConnectionForBundleID:bundleID
            afcCalls:self.afcCalls]
           onQueue:self.device.asyncQueue
-          pend:^FBFuture<id<FBFileContainer>> *(FBAFCConnection *connection) {
+          pend:^FBFuture<id<FBFileContainerProtocol>> *(FBAFCConnection *connection) {
             return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForAuxillary
 {
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.device.auxillaryDirectory]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForApplicationContainers
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForGroupContainers
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForRootFilesystem
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMediaDirectory
 {
   return [[self.device
            startAFCService:@"com.apple.afc"]
           onQueue:self.device.asyncQueue
-          pend:^FBFuture<id<FBFileContainer>> *(FBAFCConnection *connection) {
+          pend:^FBFuture<id<FBFileContainerProtocol>> *(FBAFCConnection *connection) {
             return [FBFuture futureWithResult:[[FBDeviceFileContainer alloc] initWithAFCConnection:connection queue:self.device.asyncQueue]];
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForProvisioningProfiles
 {
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForProvisioningProfileCommands:[FBDeviceProvisioningProfileCommands commandsWithTarget:self.device]
                                                                                                          queue:self.device.workQueue]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMDMProfiles
 {
   return [[self.device
            startService:FBManagedConfigService]
           onQueue:self.device.asyncQueue
-          pend:^FBFuture<id<FBFileContainer>> *(FBAMDServiceConnection *connection) {
+          pend:^FBFuture<id<FBFileContainerProtocol>> *(FBAMDServiceConnection *connection) {
             FBManagedConfigClient *managedConfig = [FBManagedConfigClient managedConfigClientWithConnection:connection logger:self.device.logger];
             return [FBFuture futureWithResult:[[FBDeviceFileContainer_MDMProfiles alloc] initWithManagedConfig:managedConfig queue:self.device.workQueue]];
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSpringboardIconLayout
 {
   return [[self.device
            startService:FBSpringboardServiceName]
           onQueue:self.device.asyncQueue
-          pend:^FBFuture<id<FBFileContainer>> *(FBAMDServiceConnection *connection) {
+          pend:^FBFuture<id<FBFileContainerProtocol>> *(FBAMDServiceConnection *connection) {
             return [FBFuture futureWithResult:[[FBSpringboardServicesClient springboardServicesClientWithConnection:connection logger:self.device.logger] iconContainer]];
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForWallpaper
 {
   return [[FBFutureContext
            futureContextWithFutureContexts:@[
@@ -685,19 +685,19 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
              [self.device startService:FBManagedConfigService],
            ]]
           onQueue:self.device.asyncQueue
-          pend:^FBFuture<id<FBFileContainer>> *(NSArray<FBAMDServiceConnection *> *connections) {
+          pend:^FBFuture<id<FBFileContainerProtocol>> *(NSArray<FBAMDServiceConnection *> *connections) {
             FBSpringboardServicesClient *springboard = [FBSpringboardServicesClient springboardServicesClientWithConnection:connections[0] logger:self.device.logger];
             FBManagedConfigClient *managedConfig = [FBManagedConfigClient managedConfigClientWithConnection:connections[1] logger:self.device.logger];
             return [FBFuture futureWithResult:[[FBDeviceFileContainer_Wallpaper alloc] initWithSpringboard:springboard managedConfig:managedConfig queue:self.device.workQueue]];
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForDiskImages
 {
   return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_DiskImages alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSymbols
 {
   return [FBFutureContext futureContextWithResult:[[FBDeviceFileCommands_Symbols alloc] initWithCommands:self.device queue:self.device.asyncQueue]];
 }

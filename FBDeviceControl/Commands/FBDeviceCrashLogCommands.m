@@ -83,7 +83,7 @@ static NSString *const PingSuccess = @"ping";
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)crashLogFiles
 {
   return [[self
            crashReportFileConnection]

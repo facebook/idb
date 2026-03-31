@@ -11,7 +11,7 @@
 
 @class FBSimulator;
 
-@protocol FBSimulatorApplicationCommands <NSObject>
+@protocol FBSimulatorApplicationCommandsProtocol <NSObject>
 
 /**
  Returns the Installed Application Info associated with the given Bundle ID
@@ -27,6 +27,6 @@
 /**
  Implementation of FBApplicationCommands for Simulators.
  */
-@interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands, FBSimulatorApplicationCommands, FBiOSTargetCommand>
+@interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand>
 
 @end

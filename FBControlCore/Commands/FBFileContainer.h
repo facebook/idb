@@ -34,7 +34,7 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
  File Operations related to a single "container"
  These containers are obtained from implementors of FBFileCommands.
  */
-@protocol FBFileContainer <NSObject>
+@protocol FBFileContainerProtocol <NSObject>
 
 /**
  Copy a path from the host, to inside the container.
@@ -206,7 +206,7 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
  @param queue the queue to do work on.
  @return a File Container implementation.
  */
-+ (nonnull id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(nonnull id<FBProvisioningProfileCommands>)commands queue:(nonnull dispatch_queue_t)queue;
++ (nonnull id<FBFileContainerProtocol>)fileContainerForProvisioningProfileCommands:(nonnull id<FBProvisioningProfileCommands>)commands queue:(nonnull dispatch_queue_t)queue;
 
 /**
  A contained file relative to the path on the host.
@@ -229,7 +229,7 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
  @param basePath the base path to use.
  @return a File Container implementation
  */
-+ (nonnull id<FBFileContainer>)fileContainerForBasePath:(nonnull NSString *)basePath;
++ (nonnull id<FBFileContainerProtocol>)fileContainerForBasePath:(nonnull NSString *)basePath;
 
 /**
  A file container that relative to a path on the host.
@@ -237,7 +237,7 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
  @param pathMapping the mapped base paths.
  @return a File Container implementation
  */
-+ (nonnull id<FBFileContainer>)fileContainerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull id<FBFileContainerProtocol>)fileContainerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
 
 /**
  Returns an FBFileContainer wrapper around a FBContainedFile
@@ -245,6 +245,6 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
  @param containedFile the contained file to wrap.
  @return a File Container implementation.
  */
-+ (nonnull id<FBFileContainer>)fileContainerForContainedFile:(nonnull id<FBContainedFile>)containedFile;
++ (nonnull id<FBFileContainerProtocol>)fileContainerForContainedFile:(nonnull id<FBContainedFile>)containedFile;
 
 @end

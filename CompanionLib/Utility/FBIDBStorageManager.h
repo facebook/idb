@@ -88,7 +88,7 @@ extern NSString *const IdbFrameworksFolder;
 
  @return a FBFileContainer instance.
  */
-- (id<FBFileContainer>)asFileContainer;
+- (id<FBFileContainerProtocol>)asFileContainer;
 
 /**
  Cleans all storage

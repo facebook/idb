@@ -11,7 +11,7 @@
 
 @class FBDevice;
 
-@protocol FBDeviceRecoveryCommands <FBiOSTargetCommand>
+@protocol FBDeviceRecoveryCommandsProtocol <FBiOSTargetCommand>
 
 /**
  Enters recovery mode.
@@ -32,6 +32,6 @@
 /**
  An Implementation of FBDeviceRecoveryCommands for Devices
  */
-@interface FBDeviceRecoveryCommands : NSObject <FBDeviceRecoveryCommands>
+@interface FBDeviceRecoveryCommands : NSObject <FBDeviceRecoveryCommandsProtocol>
 
 @end

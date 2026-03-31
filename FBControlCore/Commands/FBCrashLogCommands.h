@@ -49,6 +49,6 @@
 
  @return a Future context that resolves with the file commands.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)crashLogFiles;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)crashLogFiles;
 
 @end

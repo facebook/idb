@@ -135,6 +135,6 @@ extern FBWallpaperName _Nonnull const FBWallpaperNameLockscreen;
 
  @return an FBFileContainer implementation.
  */
-- (nonnull id<FBFileContainer>)iconContainer;
+- (nonnull id<FBFileContainerProtocol>)iconContainer;
 
 @end

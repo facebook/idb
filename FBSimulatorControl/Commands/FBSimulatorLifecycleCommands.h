@@ -21,7 +21,7 @@
 /**
  Interactions for the Lifecycle of the Simulator.
  */
-@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands>
+@protocol FBSimulatorLifecycleCommandsProtocol <NSObject, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands>
 
 #pragma mark Boot/Shutdown
 
@@ -97,6 +97,6 @@
 /**
  The Implementation of FBSimulatorLifecycleCommands
  */
-@interface FBSimulatorLifecycleCommands : NSObject <FBSimulatorLifecycleCommands>
+@interface FBSimulatorLifecycleCommands : NSObject <FBSimulatorLifecycleCommandsProtocol>
 
 @end

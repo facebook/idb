@@ -267,7 +267,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @end
 
-@interface FBContainedFile_ContainedRoot : NSObject <FBFileContainer>
+@interface FBContainedFile_ContainedRoot : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 @property (nonatomic, readonly, strong) id<FBContainedFile> rootFile;
@@ -474,7 +474,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @end
 
-@interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainer>
+@interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) id<FBProvisioningProfileCommands> commands;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
@@ -563,7 +563,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @implementation FBFileContainer
 
-+ (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
++ (id<FBFileContainerProtocol>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
 {
   return [[FBFileContainer_ProvisioningProfile alloc] initWithCommands:commands queue:queue];
 }
@@ -578,19 +578,19 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
 }
 
-+ (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath
++ (id<FBFileContainerProtocol>)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [self containedFileForBasePath:basePath];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
++ (id<FBFileContainerProtocol>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
 {
   id<FBContainedFile> rootFile = [self containedFileForPathMapping:pathMapping];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainer>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
++ (id<FBFileContainerProtocol>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.file_container", DISPATCH_QUEUE_SERIAL);
   return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:containedFile queue:queue];

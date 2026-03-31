@@ -15,7 +15,7 @@
 /**
  The Protocol for Debug Symbol related commands.
  */
-@protocol FBDeviceDebugSymbolsCommands <FBiOSTargetCommand>
+@protocol FBDeviceDebugSymbolsCommandsProtocol <FBiOSTargetCommand>
 
 /**
  Obtains a listing of symbol files on a device.
@@ -46,6 +46,6 @@
 /**
  An Implementation of FBDeviceDebugSymbolsCommands.
  */
-@interface FBDeviceDebugSymbolsCommands : NSObject <FBDeviceDebugSymbolsCommands>
+@interface FBDeviceDebugSymbolsCommands : NSObject <FBDeviceDebugSymbolsCommandsProtocol>
 
 @end

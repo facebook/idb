@@ -24,7 +24,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 /**
  A Protocol for defining file reading.
  */
-@protocol FBFileReader
+@protocol FBFileReaderProtocol
 
 #pragma mark Public Methods
 
@@ -77,7 +77,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  Reads a file in the background, forwarding to a consumer.
  Closing of a file descriptor when reading has finished is also provided, where relevant.
  */
-@interface FBFileReader : NSObject <FBFileReader>
+@interface FBFileReader : NSObject <FBFileReaderProtocol>
 
 #pragma mark Initializers
 
