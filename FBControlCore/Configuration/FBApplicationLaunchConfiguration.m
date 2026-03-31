@@ -36,7 +36,7 @@
   return [super isEqual:object]
   && [self.bundleID isEqualToString:object.bundleID]
   && (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName])
-  && self.waitForDebugger == self.waitForDebugger
+  && self.waitForDebugger == object.waitForDebugger
   && self.launchMode == object.launchMode;
 }
 

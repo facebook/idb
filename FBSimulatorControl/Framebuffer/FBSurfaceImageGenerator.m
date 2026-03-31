@@ -86,8 +86,8 @@
 {
   self.lastSeedValue = 0;
   if (self.surface != NULL) {
-    [self.logger.info log:[NSString stringWithFormat:@"Removing old surface %@", surface]];
-    [surface decrementUseCount];
+    [self.logger.info log:[NSString stringWithFormat:@"Removing old surface %@", self.surface]];
+    [self.surface decrementUseCount];
     self.surface = nil;
   }
   if (surface != NULL) {

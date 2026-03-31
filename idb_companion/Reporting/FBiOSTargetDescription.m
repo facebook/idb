@@ -48,7 +48,6 @@
 }
 
 // These values are parsed into TargetDescription in idb/common/types.py, so need to be stable.
-static NSString *const KeyArchitecture = @"architecture";
 static NSString *const KeyModel = @"model";
 static NSString *const KeyName = @"name";
 static NSString *const KeyOSVersion = @"os_version";

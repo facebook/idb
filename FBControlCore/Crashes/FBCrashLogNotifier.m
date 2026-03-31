@@ -56,11 +56,7 @@
 
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate
 {
-  if (![self startListening:YES]) {
-    return [[FBControlCoreError
-             describe:@"Crash Log Info could not be obtained"]
-            failFuture];
-  }
+  [self startListening:YES];
 
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.crashlogfetch", DISPATCH_QUEUE_SERIAL);
   return [FBFuture

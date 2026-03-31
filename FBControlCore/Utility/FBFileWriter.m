@@ -35,7 +35,7 @@
 
 - (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile writeQueue:(dispatch_queue_t)writeQueue;
 
-- (BOOL)startReadingWithError:(NSError **)error;
+- (BOOL)startWritingWithError:(NSError **)error;
 
 @end
 
@@ -68,7 +68,7 @@
 {
   NSError *error = nil;
   FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile writeQueue:self.createWorkQueue];
-  if (![writer startReadingWithError:&error]) {
+  if (![writer startWritingWithError:&error]) {
     return [FBFuture futureWithError:error];
   }
   return [FBFuture futureWithResult:writer];
@@ -82,7 +82,7 @@
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile queue:(dispatch_queue_t)queue error:(NSError **)error
 {
   FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile writeQueue:queue];
-  if (![writer startReadingWithError:error]) {
+  if (![writer startWritingWithError:error]) {
     return nil;
   }
   return [FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer];
@@ -115,7 +115,7 @@
               return [FBFuture futureWithError:error];
             }
             FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES writeQueue:queue];
-            if (![writer startReadingWithError:&error]) {
+            if (![writer startWritingWithError:&error]) {
               return [FBFuture futureWithError:error];
             }
             return [FBFuture futureWithResult:[FBDataConsumerAdaptor dataConsumerForDispatchDataConsumer:writer]];
@@ -238,7 +238,7 @@
 
 #pragma mark Private
 
-- (BOOL)startReadingWithError:(NSError **)error
+- (BOOL)startWritingWithError:(NSError **)error
 {
   NSParameterAssert(!self.io);
 
