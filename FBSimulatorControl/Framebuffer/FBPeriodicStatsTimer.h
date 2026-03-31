@@ -8,9 +8,6 @@
 // Private header — not part of the public FBSimulatorControl API.
 // Shared timing logic for periodic stats logging across framebuffer and encoder.
 
-#ifndef FBPeriodicStatsTimer_h
-#define FBPeriodicStatsTimer_h
-
 #import <CoreFoundation/CoreFoundation.h>
 
 typedef struct {
@@ -44,5 +41,3 @@ static inline BOOL FBPeriodicStatsTimerTick(FBPeriodicStatsTimer *timer, CFTimeI
   timer->lastLogTime = now;
   return YES;
 }
-
-#endif /* FBPeriodicStatsTimer_h */

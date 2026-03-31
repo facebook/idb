@@ -45,8 +45,8 @@
 
 #pragma mark Public
 
-static NSTimeInterval BootVerificationWaitInterval = 0.5; // 500ms
-static NSTimeInterval BootVerificationStallInterval = 1.5; // 1.5s
+static NSTimeInterval const BootVerificationWaitInterval = 0.5; // 500ms
+static NSTimeInterval const BootVerificationStallInterval = 1.5; // 1.5s
 
 - (FBFuture<NSNull *> *)verifySimulatorIsBooted
 {

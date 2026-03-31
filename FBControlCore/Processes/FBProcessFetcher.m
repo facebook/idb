@@ -17,8 +17,6 @@
 #import "FBProcessBuilder.h"
 #import "FBProcessInfo.h"
 
-#define PID_MAX 99999
-
 static NSTimeInterval const SampleDuration = 1;
 
 #pragma mark Calling libproc

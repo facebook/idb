@@ -13,7 +13,7 @@
 #import "FBXCTestProcess.h"
 #import "XCTestBootstrapError.h"
 
-FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;
+FBXCTestType const FBXCTestTypeApplicationTest = @"application-test";
 FBXCTestType const FBXCTestTypeLogicTest = @"logic-test";
 FBXCTestType const FBXCTestTypeListTest = @"list-test";
 FBXCTestType const FBXCTestTypeUITest = @"ui-test";

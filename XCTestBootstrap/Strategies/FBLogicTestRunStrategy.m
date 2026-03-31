@@ -16,7 +16,7 @@
 #import "FBLogicXCTestReporter.h"
 #import "FBXCTestConstants.h"
 
-static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
+static NSTimeInterval const EndOfFileFromStopReadingTimeout = 5;
 
 @interface FBLogicTestRunOutputs : NSObject
 
