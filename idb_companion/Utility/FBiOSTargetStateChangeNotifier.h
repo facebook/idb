@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulatorSet;
 @class FBDeviceSet;
 
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a future that resolves when the notifier is created.
  */
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(NSString *)filePath withTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToFilePath:(nonnull NSString *)filePath withTargetSets:(nonnull NSArray<id<FBiOSTargetSet>> *)targetSets logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  A notifier that writes state updates to stdout
@@ -38,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetSets the FBiOSTargetSets to monitor
  @param logger the logger to log to.
  */
-+ (FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBiOSTargetStateChangeNotifier *> *)notifierToStdOutWithTargetSets:(nonnull NSArray<id<FBiOSTargetSet>> *)targetSets logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -47,15 +45,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the notifier has started
  */
-- (FBFuture<NSNull *> *)startNotifier;
+- (nonnull FBFuture<NSNull *> *)startNotifier;
 
 #pragma mark Properties
 
 /**
  A Future that resolves when the notifier has stopped notifying.
 */
-@property (nonatomic, readonly, strong) FBFuture<NSNull *> *notifierDone;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *notifierDone;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -20,11 +20,11 @@
  @param target the target to construct a description for.
  @return a new Target Description
  */
-- (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target;
+- (nullable instancetype)initWithTarget:(nonnull id<FBiOSTargetInfo>)target;
 
 /**
  A JSON Dictionary representing the target description.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *asJSON;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *asJSON;
 
 @end

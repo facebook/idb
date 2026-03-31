@@ -14,10 +14,10 @@
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
 @property (nullable, nonatomic, readonly, strong) NSString *filePath;
-@property (nonatomic, readonly, strong) NSArray<id<FBiOSTargetSet>> *targetSets;
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
-@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBiOSTargetDescription *> *current;
-@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finished;
+@property (nonnull, nonatomic, readonly, strong) NSArray<id<FBiOSTargetSet>> *targetSets;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBiOSTargetDescription *> *current;
+@property (nonnull, nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finished;
 
 @end
 
@@ -65,7 +65,7 @@
   return [FBFuture futureWithResult:notifier];
 }
 
-- (instancetype)initWithFilePath:(nullable NSString *)filePath targetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger
+- (nullable instancetype)initWithFilePath:(nullable NSString *)filePath targetSets:(nonnull NSArray<id<FBiOSTargetSet>> *)targetSets logger:(nonnull id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -128,7 +128,7 @@
   return filePath ? [self writeTargetsData:data toFilePath:filePath] : [self writeTargetsDataToStdOut:data];
 }
 
-- (BOOL)writeTargetsData:(NSData *)data toFilePath:(NSString *)filePath
+- (BOOL)writeTargetsData:(nonnull NSData *)data toFilePath:(nonnull NSString *)filePath
 {
   NSError *error = nil;
   if (![data writeToFile:filePath options:NSDataWritingAtomic error:&error]) {
@@ -139,7 +139,7 @@
   return YES;
 }
 
-- (BOOL)writeTargetsDataToStdOut:(NSData *)data
+- (BOOL)writeTargetsDataToStdOut:(nonnull NSData *)data
 {
   write(STDOUT_FILENO, data.bytes, data.length);
   data = FBDataBuffer.newlineTerminal;
@@ -150,19 +150,19 @@
 
 #pragma mark FBiOSTargetSetDelegate Methods
 
-- (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+- (void)targetAdded:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet
 {
   self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetDescription alloc] initWithTarget:targetInfo];
   [self writeTargets];
 }
 
-- (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+- (void)targetRemoved:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet
 {
   [self.current removeObjectForKey:targetInfo.uniqueIdentifier];
   [self writeTargets];
 }
 
-- (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
+- (void)targetUpdated:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet
 {
   self.current[targetInfo.uniqueIdentifier] = [[FBiOSTargetDescription alloc] initWithTarget:targetInfo];
   [self writeTargets];
