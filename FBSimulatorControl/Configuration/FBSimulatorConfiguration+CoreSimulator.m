@@ -51,14 +51,14 @@
   FBOSVersion *osVersion = FBiOSTargetConfiguration.nameToOSVersion[osName];
   if (!osVersion) {
     return [[FBSimulatorError
-             describeFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", osName]
+             describe:[NSString stringWithFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", osName]]
             fail:error];
   }
   FBDeviceModel model = simDevice.deviceType.name;
   FBDeviceType *deviceType = FBiOSTargetConfiguration.nameToDevice[model];
   if (!deviceType) {
     return [[FBSimulatorError
-             describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", model]
+             describe:[NSString stringWithFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", model]]
             fail:error];
   }
   return [[FBSimulatorConfiguration.defaultConfiguration
@@ -85,20 +85,20 @@
   SimRuntime *runtime = [self obtainRuntimeWithError:&innerError];
   if (!runtime) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not obtain available SimRuntime for configuration %@", self]
+              describe:[NSString stringWithFormat:@"Could not obtain available SimRuntime for configuration %@", self]]
              causedBy:innerError]
             failBool:error];
   }
   SimDeviceType *deviceType = [self obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not obtain availableSimDeviceType for configuration %@", self]
+              describe:[NSString stringWithFormat:@"Could not obtain availableSimDeviceType for configuration %@", self]]
              causedBy:innerError]
             failBool:error];
   }
   if (![runtime supportsDeviceType:deviceType]) {
     return [[FBSimulatorError
-             describeFormat:@"Device Type %@ does not support Runtime %@", deviceType.name, runtime.name]
+             describe:[NSString stringWithFormat:@"Device Type %@ does not support Runtime %@", deviceType.name, runtime.name]]
             failBool:error];
   }
   return YES;
@@ -110,10 +110,10 @@
   NSArray<NSString *> *absentDeviceTypes = nil;
   NSArray<FBSimulatorConfiguration *> *configurations = [self allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:&absentOSVersions absentDeviceTypesOut:&absentDeviceTypes];
   for (NSString *absentOSVersion in absentOSVersions) {
-    [logger.error logFormat:@"OS Version configuration for '%@' is missing", absentOSVersion];
+    [logger.error log:[NSString stringWithFormat:@"OS Version configuration for '%@' is missing", absentOSVersion]];
   }
   for (NSString *absentDeviceType in absentDeviceTypes) {
-    [logger.error logFormat:@"Device Type configuration for '%@' is missing", absentDeviceType];
+    [logger.error log:[NSString stringWithFormat:@"Device Type configuration for '%@' is missing", absentDeviceType]];
   }
   return configurations;
 }
@@ -180,10 +180,10 @@
   }
   NSArray *matchingRuntimes = [supportedRuntimes filteredArrayUsingPredicate:self.runtimePredicate];
   if (matchingRuntimes.count == 0) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain matching SimRuntime, no matches. Available Runtimes %@", supportedRuntimes] fail:error];
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Could not obtain matching SimRuntime, no matches. Available Runtimes %@", supportedRuntimes]] fail:error];
   }
   if (matchingRuntimes.count > 1) {
-    return [[FBSimulatorError describeFormat:@"Matching Runtimes is ambiguous: %@", matchingRuntimes] fail:error];
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Matching Runtimes is ambiguous: %@", matchingRuntimes]] fail:error];
   }
   return [matchingRuntimes firstObject];
 }
@@ -196,10 +196,10 @@
   }
   NSArray *matchingDeviceTypes = [supportedDeviceTypes filteredArrayUsingPredicate:[FBSimulatorConfiguration deviceTypePredicate:self.device]];
   if (matchingDeviceTypes.count == 0) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain matching DeviceTypes, no matches. Available Device Types %@", matchingDeviceTypes] fail:error];
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Could not obtain matching DeviceTypes, no matches. Available Device Types %@", matchingDeviceTypes]] fail:error];
   }
   if (matchingDeviceTypes.count > 1) {
-    return [[FBSimulatorError describeFormat:@"Matching Device Types is ambiguous: %@", matchingDeviceTypes] fail:error];
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Matching Device Types is ambiguous: %@", matchingDeviceTypes]] fail:error];
   }
   return [matchingDeviceTypes firstObject];
 }

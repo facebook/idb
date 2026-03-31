@@ -94,14 +94,14 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 {
   return [[FBFuture
            futureWithResult:NSNull.null]
-          nameFormat:@"Start reading %@", self.description];
+          named:[NSString stringWithFormat:@"Start reading %@", self.description]];
 }
 
 - (FBFuture<NSNull *> *)stopReading
 {
   return [[FBFuture
            futureWithResult:NSNull.null]
-          nameFormat:@"Stop reading %@", self.description];
+          named:[NSString stringWithFormat:@"Stop reading %@", self.description]];
 }
 
 #pragma mark NSObject
@@ -142,7 +142,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
            resolve:^FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
              if (self.task) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot start reading, already reading"]
+                        describe:@"Cannot start reading, already reading"]
                        failFuture];
              }
              return [[[[FBProcessBuilder
@@ -168,7 +168,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              self.task = nil;
              if (!task) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot stop reading, not reading"]
+                        describe:@"Cannot stop reading, not reading"]
                        failFuture];
              }
              return [task sendSignal:SIGTERM];
@@ -234,7 +234,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              self.nested = nested;
              return NSNull.null;
            }]
-          nameFormat:@"Start Reading %@", self.description];
+          named:[NSString stringWithFormat:@"Start Reading %@", self.description]];
 }
 
 - (FBFuture<NSNull *> *)stopReading
@@ -244,7 +244,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
             resolve:^FBFuture<NSNull *> * {
               if (!self.writer || !self.nested) {
                 return [[FBControlCoreError
-                         describeFormat:@"No active reader for fifo"]
+                         describe:@"No active reader for fifo"]
                         failFuture];
               }
               return [self.nested stopReading];
@@ -254,7 +254,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              self.nested = nil;
              return NSNull.null;
            }]
-          nameFormat:@"Stop Reading %@", self.description];
+          named:[NSString stringWithFormat:@"Stop Reading %@", self.description]];
 }
 
 #pragma mark NSObject
@@ -451,7 +451,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
   NSString *fifoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   if (mkfifo(fifoPath.UTF8String, S_IWUSR | S_IRUSR) != 0) {
     return [[[FBControlCoreError
-              describeFormat:@"Failed to create a named pipe for fifo %@ with error '%s'", fifoPath, strerror(errno)]
+              describe:[NSString stringWithFormat:@"Failed to create a named pipe for fifo %@ with error '%s'", fifoPath, strerror(errno)]]
              inDomain:NSPOSIXErrorDomain]
             failFuture];
   }
@@ -511,14 +511,14 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
           resolve:^{
             if (self.readEnd != 0 || self.writeEnd != 0) {
               return [[FBControlCoreError
-                       describeFormat:@"Cannot attach when already attached to %d:%d", self.readEnd, self.writeEnd]
+                       describe:[NSString stringWithFormat:@"Cannot attach when already attached to %d:%d", self.readEnd, self.writeEnd]]
                       failFuture];
             }
 
             int fileDescriptors[2] = {0, 0};
             if (pipe(fileDescriptors) != 0) {
               return [[FBControlCoreError
-                       describeFormat:@"Failed to create a pipe: %s", strerror(errno)]
+                       describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
                       failFuture];
             }
             self.readEnd = fileDescriptors[0];
@@ -532,7 +532,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 {
   return [[self
            closeWriteEndOfPipe]
-          nameFormat:@"Detach %@", self];
+          named:[NSString stringWithFormat:@"Detach %@", self]];
 }
 
 #pragma mark Private
@@ -557,7 +557,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
              return FBFuture.empty;
            }]
-          nameFormat:@"Detach %@", self.description];
+          named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
 @end
@@ -599,7 +599,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 {
   return [[self
            closeWriteEndOfPipe]
-          nameFormat:@"Detach %@", self];
+          named:[NSString stringWithFormat:@"Detach %@", self]];
 }
 
 @end
@@ -677,7 +677,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
           fmap:^(FBProcessStreamAttachment *attachment) {
             if (self.reader) {
               return [[FBControlCoreError
-                       describeFormat:@"Cannot attach to %@ twice", self]
+                       describe:[NSString stringWithFormat:@"Cannot attach to %@ twice", self]]
                       failFuture];
             }
 
@@ -697,7 +697,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
             return [[[self.reader
                       startReading]
                      mapReplace:attachment]
-                    nameFormat:@"Attach to pipe %@", self.description];
+                    named:[NSString stringWithFormat:@"Attach to pipe %@", self.description]];
           }];
 }
 
@@ -710,7 +710,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
               FBFileReader *reader = self.reader;
               if (!reader) {
                 return [[FBControlCoreError
-                         describeFormat:@"Cannot detach from %@, no active reader", self]
+                         describe:[NSString stringWithFormat:@"Cannot detach from %@, no active reader", self]]
                         failFuture];
               }
               // Since detach may be called before the reader has finished reading asynchronously,
@@ -722,7 +722,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              self.reader = nil;
              return future;
            }]
-          nameFormat:@"Detach %@", self.description];
+          named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
 - (id<FBDataConsumer>)contents
@@ -740,7 +740,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
            map:^id<FBProcessFileOutput>(NSString *fifoPath) {
              return [[FBProcessFileOutput_Consumer alloc] initWithConsumer:self.consumer filePath:fifoPath queue:FBProcessOutput.createWorkQueue];
            }]
-          nameFormat:@"Relay %@ to file", self.description];
+          named:[NSString stringWithFormat:@"Relay %@ to file", self.description]];
 }
 
 - (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
@@ -814,20 +814,20 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              int fileDescriptor = self.fileDescriptor;
              if (fileDescriptor) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot attach when already attached to file %@: %d", self.filePath, fileDescriptor]
+                        describe:[NSString stringWithFormat:@"Cannot attach when already attached to file %@: %d", self.filePath, fileDescriptor]]
                        failFuture];
              }
 
              fileDescriptor = open(self.filePath.UTF8String, O_WRONLY | O_CREAT);
              if (!fileDescriptor) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot create file descriptor for %@: %s", self.filePath, strerror(errno)]
+                        describe:[NSString stringWithFormat:@"Cannot create file descriptor for %@: %s", self.filePath, strerror(errno)]]
                        failFuture];
              }
              self.fileDescriptor = fileDescriptor;
              return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES mode:FBProcessStreamAttachmentModeOutput]];
            }]
-          nameFormat:@"Attach to %@", self.description];
+          named:[NSString stringWithFormat:@"Attach to %@", self.description]];
 }
 
 - (FBFuture<NSNull *> *)detach
@@ -845,7 +845,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              self.fileDescriptor = 0;
              return FBFuture.empty;
            }]
-          nameFormat:@"Detach from %@", self.description];
+          named:[NSString stringWithFormat:@"Detach from %@", self.description]];
 }
 
 - (NSString *)contents
@@ -1023,14 +1023,14 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
            resolve:^{
              if (self.readEnd || self.writeEnd) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot Attach Twice"]
+                        describe:@"Cannot Attach Twice"]
                        failFuture];
              }
 
              int fileDescriptors[2] = {0, 0};
              if (pipe(fileDescriptors) != 0) {
                return [[FBControlCoreError
-                        describeFormat:@"Failed to create a pipe: %s", strerror(errno)]
+                        describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
                        failFuture];
              }
              self.readEnd = fileDescriptors[0];
@@ -1040,7 +1040,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              // Subclases will write to the write end.
              return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithFileDescriptor:self.readEnd closeOnEndOfFile:YES mode:FBProcessStreamAttachmentModeInput]];
            }]
-          nameFormat:@"Attach %@ to pipe", self.description];
+          named:[NSString stringWithFormat:@"Attach %@ to pipe", self.description]];
 }
 
 - (FBFuture<NSNull *> *)detach
@@ -1051,7 +1051,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              int readEnd = self.readEnd;
              if (!readEnd) {
                return [[FBControlCoreError
-                        describeFormat:@"Nothing is attached to %@", self]
+                        describe:[NSString stringWithFormat:@"Nothing is attached to %@", self]]
                        failFuture];
              }
 
@@ -1063,7 +1063,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
 
              return FBFuture.empty;
            }]
-          nameFormat:@"Detach %@", self.description];
+          named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
 - (id<FBDataConsumer>)contents
@@ -1100,13 +1100,13 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:self.writeEnd closeOnEndOfFile:YES error:&error];
              if (!writer) {
                return [[FBControlCoreError
-                        describeFormat:@"Failed to create a writer for pipe %@", error]
+                        describe:[NSString stringWithFormat:@"Failed to create a writer for pipe %@", error]]
                        failFuture];
              }
              self.writer = writer;
              return [FBFuture futureWithResult:attachment];
            }]
-          nameFormat:@"Attach %@ to pipe", self.description];
+          named:[NSString stringWithFormat:@"Attach %@ to pipe", self.description]];
 }
 
 - (FBFuture<NSNull *> *)detach
@@ -1117,7 +1117,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
            notifyOfCompletion:^(id _) {
              self.writer = nil;
            }]
-          nameFormat:@"Detach %@", self.description];
+          named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
 #pragma mark FBDataConsumer
@@ -1169,7 +1169,7 @@ static NSTimeInterval ProcessDetachDrainTimeout = 4;
              [self.writer consumeEndOfFile];
              return attachment;
            }]
-          nameFormat:@"Attach %@ to pipe", self.description];
+          named:[NSString stringWithFormat:@"Attach %@ to pipe", self.description]];
 }
 
 - (NSData *)contents

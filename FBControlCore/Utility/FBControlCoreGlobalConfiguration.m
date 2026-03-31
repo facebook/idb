@@ -46,7 +46,7 @@ static id<FBControlCoreLogger> logger;
 + (void)setDefaultLogger:(id<FBControlCoreLogger>)defaultLogger
 {
   if (logger) {
-    [defaultLogger.debug logFormat:@"Overriding the Default Logger with %@", defaultLogger];
+    [defaultLogger.debug log:[NSString stringWithFormat:@"Overriding the Default Logger with %@", defaultLogger]];
   }
   logger = defaultLogger;
 }

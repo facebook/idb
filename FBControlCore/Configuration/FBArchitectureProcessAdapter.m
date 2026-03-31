@@ -65,7 +65,7 @@ static int processIsTranslated(void)
   FBArchitecture architecture = [self selectArchitectureFrom:requestedArchitectures supportedArchitectures:hostArchitectures];
   if (!architecture) {
     return [[FBControlCoreError
-             describeFormat:@"Could not select an architecture from %@ compatible with %@", [FBCollectionInformation oneLineDescriptionFromArray:requestedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:hostArchitectures.allObjects]
+             describe:[NSString stringWithFormat:@"Could not select an architecture from %@ compatible with %@", [FBCollectionInformation oneLineDescriptionFromArray:requestedArchitectures.allObjects], [FBCollectionInformation oneLineDescriptionFromArray:hostArchitectures.allObjects]]
             ] failFuture];
   }
 
@@ -104,7 +104,7 @@ static int processIsTranslated(void)
                withStdOutToDevNull]
               withStdErrToDevNull]
              runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-            rephraseFailure:@"Desired architecture %@ not found in %@ binary", architecture, binary]
+            rephraseFailure:[NSString stringWithFormat:@"Desired architecture %@ not found in %@ binary", architecture, binary]]
            mapReplace:[NSNull null]]
           timeout:20
           waitingFor:@"lipo -verify_arch"];
@@ -120,7 +120,7 @@ static int processIsTranslated(void)
                 NSLog(@"LINE %@\n", line);
               }]
              runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-            rephraseFailure:@"Failed to thin %@ architecture out from %@ binary", architecture, processConfiguration.launchPath]
+            rephraseFailure:[NSString stringWithFormat:@"Failed to thin %@ architecture out from %@ binary", architecture, processConfiguration.launchPath]]
            mapReplace:[NSNull null]]
           timeout:10
           waitingFor:@"lipo -extract"];
@@ -157,13 +157,13 @@ static int processIsTranslated(void)
                withStdOutInMemoryAsString]
               withStdErrToDevNull]
              runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-            rephraseFailure:@"Failed query otool -l from %@", binary]
+            rephraseFailure:[NSString stringWithFormat:@"Failed query otool -l from %@", binary]]
            onQueue:queue
            fmap:^FBFuture<NSString *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
              if (task.stdOut) {
                return [FBFuture futureWithResult:task.stdOut];
              }
-             return [[FBControlCoreError describeFormat:@"Failed to call otool -l over %@", binary] failFuture];
+             return [[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to call otool -l over %@", binary]] failFuture];
            }]
           timeout:10
           waitingFor:@"otool -l"];

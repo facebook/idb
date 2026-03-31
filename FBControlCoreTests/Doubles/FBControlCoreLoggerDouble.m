@@ -14,11 +14,6 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  return self;
-}
-
 - (id<FBControlCoreLogger>)info
 {
   return self;

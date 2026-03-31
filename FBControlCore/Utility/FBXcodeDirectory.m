@@ -34,7 +34,7 @@ static NSString * const HelpText = @".\n\n============================\n"
              NSString *directory = task.stdOut;
              if ([directory stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length == 0) {
                return [[FBControlCoreError
-                        describeFormat:@"Empty output for xcode directory returned from `xcode-select -p`: %@%@", task.stdErr, HelpText]
+                        describe:[NSString stringWithFormat:@"Empty output for xcode directory returned from `xcode-select -p`: %@%@", task.stdErr, HelpText]]
                        failFuture];
              }
              directory = [directory stringByResolvingSymlinksInPath];
@@ -67,17 +67,17 @@ static NSString * const HelpText = @".\n\n============================\n"
   }
   if ([directory isEqual:@"/Library/Developer/CommandLineTools"]) {
     return [[FBControlCoreError
-             describeFormat:@"`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install.%@", HelpText]
+             describe:[NSString stringWithFormat:@"`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install.%@", HelpText]]
             failBool:error];
   }
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
     return [[FBControlCoreError
-             describeFormat:@"`xcode-select -p` returned %@ which doesn't exist%@", directory, HelpText]
+             describe:[NSString stringWithFormat:@"`xcode-select -p` returned %@ which doesn't exist%@", directory, HelpText]]
             failBool:error];
   }
   if ([directory isEqualToString:@"/"]) {
     return [[FBControlCoreError
-             describeFormat:@"`xcode-select -p` returned / which isn't valid.%@", HelpText]
+             describe:[NSString stringWithFormat:@"`xcode-select -p` returned / which isn't valid.%@", HelpText]]
             failBool:error];
   }
   return YES;

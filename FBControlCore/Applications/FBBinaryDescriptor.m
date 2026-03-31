@@ -367,13 +367,13 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
     return [[FBControlCoreError
-             describeFormat:@"Binary does not exist at path %@", binaryPath]
+             describe:[NSString stringWithFormat:@"Binary does not exist at path %@", binaryPath]]
             fail:error];
   }
 
   FILE *file = fopen(binaryPath.UTF8String, "rb");
   if (file == NULL) {
-    return [[FBControlCoreError describeFormat:@"Could not fopen file at path %@", binaryPath] fail:error];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", binaryPath]] fail:error];
   }
 
   // Seek to and read the magic.
@@ -382,13 +382,13 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 
   if (!IsMagic(magic)) {
     fclose(file);
-    return [[FBControlCoreError describeFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath] fail:error];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath]] fail:error];
   }
 
   NSArray *archs = ReadArchs(file, magic);
   if (!archs) {
     fclose(file);
-    return [[FBControlCoreError describeFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath] fail:error];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath]] fail:error];
   }
 
   // Rewind to the start of the file
@@ -445,7 +445,7 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 {
   FILE *file = fopen(self.path.UTF8String, "rb");
   if (file == NULL) {
-    return [[FBControlCoreError describeFormat:@"Could not fopen file at path %@", self.path] fail:error];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", self.path]] fail:error];
   }
 
   // Seek to and read the magic.
@@ -454,7 +454,7 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 
   if (!IsMagic(magic)) {
     fclose(file);
-    return [[FBControlCoreError describeFormat:@"Could not interpret magic '%d' in file %@", magic, self.path] fail:error];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, self.path]] fail:error];
   }
 
   NSArray<NSString *> *rpaths = ReadRPaths(file, magic);

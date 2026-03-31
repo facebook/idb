@@ -66,7 +66,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
     return [FBFuture futureWithError:error];
   }
   id<FBControlCoreLogger> logger = self.logger;
-  [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
+  [logger log:[NSString stringWithFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName]];
 
   return [[[[[[FBProcessBuilder
                withLaunchPath:@"/usr/bin/codesign"
@@ -80,10 +80,10 @@ static NSString *const CDHashPrefix = @"CDHash=";
             NSNumber *exitCode = task.exitCode.result;
             if (![exitCode isEqualToNumber:@0]) {
               return [[FBControlCoreError
-                       describeFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+                       describe:[NSString stringWithFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
                       failFuture];
             }
-            [logger logFormat:@"Successfully signed bundle %@", task.stdErr];
+            [logger log:[NSString stringWithFormat:@"Successfully signed bundle %@", task.stdErr]];
             return FBFuture.empty;
           }];
 }
@@ -100,7 +100,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
   NSMutableDictionary<NSFileAttributeKey, id> *attributes = [NSMutableDictionary dictionaryWithDictionary:[fileManager attributesOfItemAtPath:codeSignatureFile error:error]];
   if (*error) {
-    [self.logger logFormat:@"Failed to get attributes of code sign file: %@", *error];
+    [self.logger log:[NSString stringWithFormat:@"Failed to get attributes of code sign file: %@", *error]];
     return;
   }
   // Add user writable
@@ -108,7 +108,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   attributes[NSFilePosixPermissions] = [NSNumber numberWithShort:newPermissions];
   [fileManager setAttributes:[NSDictionary dictionaryWithDictionary:attributes] ofItemAtPath:codeSignatureFile error:error];
   if (*error) {
-    [self.logger logFormat:@"Failed to set attributes of code sign file: %@", *error];
+    [self.logger log:[NSString stringWithFormat:@"Failed to set attributes of code sign file: %@", *error]];
   }
   [self.logger log:@"Added user writable permission to code sign file"];
 }
@@ -137,7 +137,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
 - (FBFuture<NSString *> *)cdHashForBundleAtPath:(NSString *)bundlePath
 {
   id<FBControlCoreLogger> logger = self.logger;
-  [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
+  [logger log:[NSString stringWithFormat:@"Obtaining CDHash for bundle at path %@", bundlePath]];
   return [[[[[[FBProcessBuilder
                withLaunchPath:@"/usr/bin/codesign"
                arguments:@[@"-dvvvv", bundlePath]]
@@ -150,18 +150,18 @@ static NSString *const CDHashPrefix = @"CDHash=";
             NSNumber *exitCode = task.exitCode.result;
             if (![exitCode isEqualToNumber:@0]) {
               return [[FBControlCoreError
-                       describeFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+                       describe:[NSString stringWithFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
                       failFuture];
             }
             NSString *output = task.stdErr;
             NSTextCheckingResult *result = [FBCodesignProvider.cdHashRegex firstMatchInString:task.stdErr options:0 range:NSMakeRange(0, output.length)];
             if (!result) {
               return [[FBControlCoreError
-                       describeFormat:@"Could not find 'CDHash' in output: %@", output]
+                       describe:[NSString stringWithFormat:@"Could not find 'CDHash' in output: %@", output]]
                       failFuture];
             }
             NSString *cdHash = [output substringWithRange:[result rangeAtIndex:1]];
-            [logger logFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath];
+            [logger log:[NSString stringWithFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath]];
             return [FBFuture futureWithResult:cdHash];
           }];
 }

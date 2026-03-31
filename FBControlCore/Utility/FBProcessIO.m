@@ -184,7 +184,7 @@
           resolve:^FBFuture<NSNull *> * {
             if (self.attached == NO) {
               return [[FBControlCoreError
-                       describeFormat:@"Cannot detach when -attach has not been called"]
+                       describe:@"Cannot detach when -attach has not been called"]
                       failFuture];
             }
             FBMutableFuture<NSNull *> *detachment = self.detachment;
@@ -205,7 +205,7 @@
           resolve:^FBFuture<NSNull *> * {
             if (self.attached) {
               return [[FBControlCoreError
-                       describeFormat:@"Cannot -attach twice"]
+                       describe:@"Cannot -attach twice"]
                       failFuture];
             }
             self.attached = YES;

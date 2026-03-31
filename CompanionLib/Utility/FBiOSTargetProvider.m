@@ -67,14 +67,14 @@
     }
     if (![targetInfo conformsToProtocol:@protocol(FBiOSTarget)]) {
       return [[FBDeviceControlError
-               describeFormat:@"UDID %@ exists, but the target is not usable %@", udid, targetInfo]
+               describe:[NSString stringWithFormat:@"UDID %@ exists, but the target is not usable %@", udid, targetInfo]]
               fail:error];
     }
     return (id<FBiOSTarget>) targetInfo;
   }
 
   return [[FBIDBError
-           describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]
+           describe:[NSString stringWithFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]]
           fail:error];
 }
 
@@ -86,12 +86,12 @@
   }
   if (targets.count > 1) {
     return [[FBIDBError
-             describeFormat:@"Cannot get a sole target when multiple found %@", [FBCollectionInformation oneLineDescriptionFromArray:targets]]
+             describe:[NSString stringWithFormat:@"Cannot get a sole target when multiple found %@", [FBCollectionInformation oneLineDescriptionFromArray:targets]]]
             fail:error];
   }
   if (targets.count == 0) {
     return [[FBIDBError
-             describeFormat:@"Cannot get a sole target when none were found in target sets %@", [FBCollectionInformation oneLineDescriptionFromArray:targetSets]]
+             describe:[NSString stringWithFormat:@"Cannot get a sole target when none were found in target sets %@", [FBCollectionInformation oneLineDescriptionFromArray:targetSets]]]
             fail:error];
   }
   return targets.firstObject;

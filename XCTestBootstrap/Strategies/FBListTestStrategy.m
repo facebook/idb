@@ -193,7 +193,7 @@
               NSString *testName = test[kReporter_ListTest_LegacyTestNameKey];
               if (![testName isKindOfClass:NSString.class]) {
                 return [[FBXCTestError
-                         describeFormat:@"Received unexpected test name from shim: %@", testName]
+                         describe:[NSString stringWithFormat:@"Received unexpected test name from shim: %@", testName]]
                         failFuture];
               }
               [testNames addObject:testName];
@@ -212,7 +212,7 @@
             if (descriptionOfFailingExit) {
               NSString *stdErrReversed = [stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
               return [[XCTestBootstrapError
-                       describeFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %d [%@]: %@", exitCodeValue, descriptionOfFailingExit, stdErrReversed]
+                       describe:[NSString stringWithFormat:@"Listing of tests failed due to xctest binary exiting with non-zero exit code %d [%@]: %@", exitCodeValue, descriptionOfFailingExit, stdErrReversed]]
                       failFuture];
             }
             return [FBFuture futureWithFutures:@[

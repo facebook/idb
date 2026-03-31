@@ -39,14 +39,14 @@
 - (BOOL)startListeningWithError:(NSError **)error
 {
   return [[FBDeviceControlError
-           describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
 - (BOOL)stopListeningWithError:(NSError **)error
 {
   return [[FBDeviceControlError
-           describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
@@ -71,7 +71,7 @@
 
 - (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
-  [self.logger logFormat:@"Device Connected %@", privateDevice];
+  [self.logger log:[NSString stringWithFormat:@"Device Connected %@", privateDevice]];
 
   // Make sure that we pull from all known instances created by this class.
   // We do this instead of the attached ones.
@@ -80,22 +80,22 @@
   // If the device is no-longer referenced it will have been removed from the referencedDevices mapping as it's values are weakly-held.
   id device = [self.storage deviceForKey:identifier];
   if (device) {
-    [self.logger.info logFormat:@"Device has been re-attached %@", device];
+    [self.logger.info log:[NSString stringWithFormat:@"Device has been re-attached %@", device]];
   } else {
     device = [self constructPublic:privateDevice identifier:identifier info:info];
-    [self.logger.info logFormat:@"Created a new Device instance %@", device];
+    [self.logger.info log:[NSString stringWithFormat:@"Created a new Device instance %@", device]];
   }
 
   // See whether the Private API reference represents a replacement of something we already know bout.
   PrivateDevice oldPrivateDevice = [self.class extractPrivateReference:device];
   if (oldPrivateDevice == NULL) {
-    [self.logger logFormat:@"New '%@' appeared for the first time", privateDevice];
+    [self.logger log:[NSString stringWithFormat:@"New '%@' appeared for the first time", privateDevice]];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else if (privateDevice != oldPrivateDevice) {
-    [self.logger logFormat:@"New '%@' replaces Old Device '%@'", privateDevice, oldPrivateDevice];
+    [self.logger log:[NSString stringWithFormat:@"New '%@' replaces Old Device '%@'", privateDevice, oldPrivateDevice]];
     [self.class updatePublicReference:device privateDevice:privateDevice identifier:identifier info:info];
   } else {
-    [self.logger logFormat:@"Existing Device %@ is the same as the old", privateDevice];
+    [self.logger log:[NSString stringWithFormat:@"Existing Device %@ is the same as the old", privateDevice]];
   }
 
   // Update the internal state
@@ -107,13 +107,13 @@
 
 - (void)deviceDisconnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier
 {
-  [self.logger logFormat:@"Device Disconnected %@", privateDevice];
+  [self.logger log:[NSString stringWithFormat:@"Device Disconnected %@", privateDevice]];
   id device = [self.storage deviceForKey:identifier];
   if (!device) {
-    [self.logger logFormat:@"No Device named %@ from attached devices, nothing to remove", identifier];
+    [self.logger log:[NSString stringWithFormat:@"No Device named %@ from attached devices, nothing to remove", identifier]];
     return;
   }
-  [self.logger logFormat:@"Removing Device %@ from attached devices", identifier];
+  [self.logger log:[NSString stringWithFormat:@"Removing Device %@ from attached devices", identifier]];
 
   // Update the internal state.
   [self.storage deviceDetachedForKey:identifier];

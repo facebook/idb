@@ -32,7 +32,7 @@
 
 + (FBFuture<FBSimulator *> *)eraseContentsAndSettings:(FBSimulator *)simulator
 {
-  [simulator.logger logFormat:@"Erasing %@", simulator];
+  [simulator.logger log:[NSString stringWithFormat:@"Erasing %@", simulator]];
   FBMutableFuture<FBSimulator *> *future = FBMutableFuture.future;
   [simulator.device
    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.workQueue
@@ -40,7 +40,7 @@
      if (error) {
        [future resolveWithError:error];
      } else {
-       [simulator.logger logFormat:@"Erased %@", simulator];
+       [simulator.logger log:[NSString stringWithFormat:@"Erased %@", simulator]];
        [future resolveWithResult:simulator];
      }
    }];

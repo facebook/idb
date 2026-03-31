@@ -103,7 +103,7 @@ const int OPEN_URL_RETRIES = 2;
   NSString *deviceSetPath = self.simulator.customDeviceSetPath;
   if (deviceSetPath) {
     return [[FBSimulatorError
-             describeFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]
+             describe:[NSString stringWithFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]]
             failFuture];
   }
 
@@ -127,7 +127,7 @@ const int OPEN_URL_RETRIES = 2;
   // Multiple apps, we don't know which to select.
   if (simulatorApps.count > 1) {
     return [[FBSimulatorError
-             describeFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]
+             describe:[NSString stringWithFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]]
             failFuture];
   }
 
@@ -135,7 +135,7 @@ const int OPEN_URL_RETRIES = 2;
   NSRunningApplication *simulatorApp = simulatorApps.firstObject;
   if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
     return [[FBSimulatorError
-             describeFormat:@"Failed to focus %@", simulatorApp]
+             describe:[NSString stringWithFormat:@"Failed to focus %@", simulatorApp]]
             failFuture];
   }
 
@@ -177,7 +177,7 @@ const int OPEN_URL_RETRIES = 2;
            waitingFor:@"Simulator connections to teardown"]
           onQueue:self.simulator.workQueue
           map:^(id _) {
-            [logger.debug logFormat:@"Simulator connections torn down in %f seconds", [NSDate.date timeIntervalSinceDate:date]];
+            [logger.debug log:[NSString stringWithFormat:@"Simulator connections torn down in %f seconds", [NSDate.date timeIntervalSinceDate:date]]];
             return NSNull.null;
           }];
 }
@@ -262,7 +262,7 @@ const int OPEN_URL_RETRIES = 2;
   } while (retry <= OPEN_URL_RETRIES);
 
   return [[[FBSimulatorError
-            describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
+            describe:[NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]]
            causedBy:error]
           failFuture];
 }

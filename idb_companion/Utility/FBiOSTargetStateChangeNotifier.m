@@ -40,7 +40,7 @@
 
   if (!didCreateFile) {
     return [[FBIDBError
-             describeFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]]
             failFuture];
   }
   FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:filePath targetSets:targetSets logger:logger];
@@ -121,7 +121,7 @@
   }
   NSData *data = [NSJSONSerialization dataWithJSONObject:jsonArray options:0 error:&error];
   if (!data) {
-    [self.finished resolveWithError:[[FBIDBError describeFormat:@"error writing update to consumer %@", error] build]];
+    [self.finished resolveWithError:[[FBIDBError describe:[NSString stringWithFormat:@"error writing update to consumer %@", error]] build]];
     return NO;
   }
   NSString *filePath = self.filePath;
@@ -132,8 +132,8 @@
 {
   NSError *error = nil;
   if (![data writeToFile:filePath options:NSDataWritingAtomic error:&error]) {
-    [self.logger logFormat:@"Failed writing updates %@", error];
-    [self.finished resolveWithError:[[FBIDBError describeFormat:@"Failed writing updates %@", error] build]];
+    [self.logger log:[NSString stringWithFormat:@"Failed writing updates %@", error]];
+    [self.finished resolveWithError:[[FBIDBError describe:[NSString stringWithFormat:@"Failed writing updates %@", error]] build]];
     return NO;
   }
   return YES;

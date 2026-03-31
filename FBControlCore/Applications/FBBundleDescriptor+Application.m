@@ -29,32 +29,32 @@
                                                 errorHandler:nil];
   NSMutableArray<NSString *> *applicationPaths = NSMutableArray.array;
   NSMutableArray<NSString *> *nonApplicationPaths = NSMutableArray.array;
-  [logger logFormat:@"Finding Application Path from root directory %@", directory];
+  [logger log:[NSString stringWithFormat:@"Finding Application Path from root directory %@", directory]];
   for (NSURL *fileURL in directoryEnumerator) {
     NSString *path = fileURL.path;
     if ([FBBundleDescriptor isApplicationAtPath:path]) {
-      [logger logFormat:@"Found application at path %@", path];
+      [logger log:[NSString stringWithFormat:@"Found application at path %@", path]];
       [applicationPaths addObject:path];
       [directoryEnumerator skipDescendants];
     } else {
-      [logger logFormat:@"Non-application path at %@", path];
+      [logger log:[NSString stringWithFormat:@"Non-application path at %@", path]];
       [nonApplicationPaths addObject:path];
     }
   }
   if (applicationPaths.count == 0) {
     return [[FBControlCoreError
-             describeFormat:@"Could not find an Application in IPA, present files %@", [FBCollectionInformation oneLineDescriptionFromArray:[nonApplicationPaths valueForKey:@"lastPathComponent"]]]
+             describe:[NSString stringWithFormat:@"Could not find an Application in IPA, present files %@", [FBCollectionInformation oneLineDescriptionFromArray:[nonApplicationPaths valueForKey:@"lastPathComponent"]]]]
             fail:error];
   }
   if (applicationPaths.count > 1) {
     return [[FBControlCoreError
-             describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]
+             describe:[NSString stringWithFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]]
             fail:error];
   }
   NSString *applicationPath = applicationPaths.firstObject;
-  [logger logFormat:@"Using Application at path %@", applicationPath];
+  [logger log:[NSString stringWithFormat:@"Using Application at path %@", applicationPath]];
   FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:applicationPath error:error];
-  [logger logFormat:@"Bundle in IPA is %@", bundle];
+  [logger log:[NSString stringWithFormat:@"Bundle in IPA is %@", bundle]];
   if (!bundle) {
     return nil;
   }

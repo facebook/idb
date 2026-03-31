@@ -93,7 +93,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
   [self.tokenToLaunchedAppMap removeAllObjects];
 
   if (appsToKill.count > 0) {
-    [self.logger logFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:appsToKill]];
+    [self.logger log:[NSString stringWithFormat:@"Terminating processes spawned due to test bundle requests: %@", [FBCollectionInformation oneLineDescriptionFromArray:appsToKill]]];
 
     NSMutableArray<FBFuture *> *futuresToWait = [NSMutableArray arrayWithCapacity:appsToKill.count];
     for (id<FBLaunchedApplication> app in appsToKill) {
@@ -134,7 +134,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
             NSError *error = future.error;
             if (error) {
-              [logger logFormat:@"Test Execution finished in error %@", error];
+              [logger log:[NSString stringWithFormat:@"Test Execution finished in error %@", error]];
               [reporter didCrashDuringTest:error];
             }
             return future;
@@ -160,14 +160,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
           timeout:timeout
           handler:^{
             // The timeout is applied to the lifecycle of the entire application.
-            [logger logFormat:@"Timed out after %f, attempting stack sample", timeout];
+            [logger log:[NSString stringWithFormat:@"Timed out after %f, attempting stack sample", timeout]];
             return [[[FBProcessFetcher
                       performSampleStackshotForProcessIdentifier:launchedApplication.processIdentifier
                       queue:queue]
                      onQueue:queue
                      fmap:^FBFuture<id> *(NSString *stackshot) {
                        return [[FBXCTestError
-                                describeFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]
+                                describe:[NSString stringWithFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]]
                                failFuture];
                      }]
                     onQueue:queue
@@ -191,7 +191,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 {
   if (!path) {
     return [[FBControlCoreError
-             describeFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]
+             describe:[NSString stringWithFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]]
             failFuture];
   }
   return [[[[self
@@ -247,7 +247,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 /// This `token` will be used later on for further requests ralated to this process
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
-  [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
+  [self.logger log:[NSString stringWithFormat:@"Test process requested process launch with bundleID %@", bundleID]];
   NSMutableDictionary<NSString *, NSString *> *targetEnvironment = @{}.mutableCopy;
   [targetEnvironment addEntriesFromDictionary:self.context.testedApplicationAdditionalEnvironment];
   [targetEnvironment addEntriesFromDictionary:environment];
@@ -295,7 +295,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 /// completion after the process is launched, we just return 1 (because the process is already launched)
 - (id)_XCT_getProgressForLaunch:(id)token
 {
-  [self.logger logFormat:@"Test process requested launch process status with token %@", token];
+  [self.logger log:[NSString stringWithFormat:@"Test process requested launch process status with token %@", token]];
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   [receipt invokeCompletionWithReturnValue:@1 error:nil];
   return receipt;
@@ -310,7 +310,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 /// This method doesn't seem to be called when all the tests finish execution.
 - (id)_XCT_terminateProcess:(id)token
 {
-  [self.logger logFormat:@"Test process requested process termination with token %@", token];
+  [self.logger log:[NSString stringWithFormat:@"Test process requested process termination with token %@", token]];
   NSError *error;
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   if (!token) {
@@ -332,7 +332,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
     }
   }
   if (error) {
-    [self.logger logFormat:@"Failed to kill process with token %@ dure to %@", token, error];
+    [self.logger log:[NSString stringWithFormat:@"Failed to kill process with token %@ dure to %@", token, error]];
   }
   return receipt;
 }
@@ -357,14 +357,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_testSuite:(NSString *)testSuite didStartAt:(NSString *)time
 {
-  [self.logger logFormat:@"Test Suite %@ started", testSuite];
+  [self.logger log:[NSString stringWithFormat:@"Test Suite %@ started", testSuite]];
   if (testSuite.length == 0) {
     NSError *error = [[[[XCTestBootstrapError
                          describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
                         inDomain:@"IDETestOperationsObserverErrorDomain"]
                        code:0x9]
                       build];
-    [self.logger logFormat:@"%@", error];
+    [self.logger log:[NSString stringWithFormat:@"%@", error]];
   }
 
   [self.reporterAdapter _XCT_testSuite:testSuite didStartAt:time];
@@ -380,14 +380,14 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_didBeginExecutingTestPlan
 {
-  [self.logger logFormat:@"Test Plan Started"];
+  [self.logger log:@"Test Plan Started"];
   [self.reporterAdapter _XCT_didBeginExecutingTestPlan];
   return nil;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.logger logFormat:@"Test Plan Ended"];
+  [self.logger log:@"Test Plan Ended"];
   [self.reporterAdapter _XCT_didFinishExecutingTestPlan];
   return nil;
 }
@@ -399,21 +399,21 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  [self.logger logFormat:@"Test Case %@/%@ did start", testClass, method];
+  [self.logger log:[NSString stringWithFormat:@"Test Case %@/%@ did start", testClass, method]];
   [self.reporterAdapter _XCT_testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidStartWithIdentifier:(XCTTestIdentifier *)arg1 testCaseRunConfiguration:(XCTestCaseRunConfiguration *)arg2
 {
-  [self.logger logFormat:@"Test Case %@/%@ did start", arg1.firstComponent, arg1.lastComponent];
+  [self.logger log:[NSString stringWithFormat:@"Test Case %@/%@ did start", arg1.firstComponent, arg1.lastComponent]];
   [self.reporterAdapter _XCT_testCaseDidStartForTestClass:arg1.firstComponent method:arg1.lastComponent];
   return nil;
 }
 
 - (id)_XCT_testCaseWithIdentifier:(XCTTestIdentifier *)arg1 didRecordIssue:(XCTIssue *)arg2
 {
-  [self.logger logFormat:@"Test Case %@/%@ did fail: %@", arg1.firstComponent, arg1.lastComponent, arg2.detailedDescription ?: arg2.compactDescription];
+  [self.logger log:[NSString stringWithFormat:@"Test Case %@/%@ did fail: %@", arg1.firstComponent, arg1.lastComponent, arg2.detailedDescription ?: arg2.compactDescription]];
   return [self.reporterAdapter _XCT_testCaseDidFailForTestClass:arg1.firstComponent
                                                          method:arg1.lastComponent
                                                     withMessage:arg2.compactDescription
@@ -423,7 +423,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.logger logFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message];
+  [self.logger log:[NSString stringWithFormat:@"Test Case %@/%@ did fail: %@", testClass, method, message]];
   [self.reporterAdapter _XCT_testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line];
   return nil;
 }
@@ -436,13 +436,13 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_logMessage:(NSString *)message
 {
-  [self.logger logFormat:@"_XCT_logMessage: %@", message];
+  [self.logger log:[NSString stringWithFormat:@"_XCT_logMessage: %@", message]];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
-  [self.logger logFormat:@"Test Case %@/%@ did finish (%@)", testClass, method, statusString];
+  [self.logger log:[NSString stringWithFormat:@"Test Case %@/%@ did finish (%@)", testClass, method, statusString]];
   [self.reporterAdapter _XCT_testCaseDidFinishForTestClass:testClass method:method withStatus:statusString duration:duration];
   return nil;
 }
@@ -454,7 +454,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 
 - (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  [self.logger logFormat:@"Test Suite Did Finish %@", testSuite];
+  [self.logger log:[NSString stringWithFormat:@"Test Suite Did Finish %@", testSuite]];
   [self.reporterAdapter _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
   return nil;
 }

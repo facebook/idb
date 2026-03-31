@@ -64,7 +64,7 @@ static NSString *const IconJSONFile = @"icons.json";
            resolve:^FBFuture<IconLayoutType> * {
              if (![self.validFilenames containsObject:filename]) {
                return [[FBControlCoreError
-                        describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
+                        describe:[NSString stringWithFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]]
                        failFuture];
              }
              return [self.client getIconLayout];
@@ -110,28 +110,28 @@ static NSString *const IconJSONFile = @"icons.json";
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -165,7 +165,7 @@ static NSString *const IconJSONFile = @"icons.json";
               return [FBFuture futureWithResult:layout];
             }
             return [[FBControlCoreError
-                     describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
+                     describe:[NSString stringWithFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]]
                     failFuture];
           }];
 }
@@ -184,7 +184,7 @@ static NSString *const IconJSONFile = @"icons.json";
                 NSDictionary<NSString *, id> *icon = iconsByBundleID[bundleID];
                 if (!bundleID) {
                   return [[FBControlCoreError
-                           describeFormat:@"Cannot use layout %@ is not any of %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:iconsByBundleID.allKeys]]
+                           describe:[NSString stringWithFormat:@"Cannot use layout %@ is not any of %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:iconsByBundleID.allKeys]]]
                           failFuture];
                 }
                 [fullPage addObject:icon];
@@ -316,7 +316,7 @@ static size_t IconLayoutSize = 4;
             NSData *data = response[@"pngData"];
             if (![data isKindOfClass:NSData.class]) {
               return [[FBControlCoreError
-                       describeFormat:@"No pngData in response %@", response]
+                       describe:[NSString stringWithFormat:@"No pngData in response %@", response]]
                       fail:error];
             }
             return data;

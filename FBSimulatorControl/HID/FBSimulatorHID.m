@@ -48,7 +48,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&error];
   if (!client) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
+              describe:[NSString stringWithFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]]
              causedBy:error]
             failFuture];
   }

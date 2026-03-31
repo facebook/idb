@@ -78,7 +78,7 @@ static NSString *const PingSuccess = @"ping";
           onQueue:self.device.workQueue
           fmap:^(NSArray<FBCrashLogInfo *> *_) {
             NSArray<FBCrashLogInfo *> *pruned = [self.store pruneCrashLogsMatchingPredicate:predicate];
-            [logger logFormat:@"Pruned %@ logs from local cache", [FBCollectionInformation oneLineDescriptionFromArray:[pruned valueForKeyPath:@"name"]]];
+            [logger log:[NSString stringWithFormat:@"Pruned %@ logs from local cache", [FBCollectionInformation oneLineDescriptionFromArray:[pruned valueForKeyPath:@"name"]]]];
             return [self removeCrashLogsFromDevice:pruned logger:logger];
           }];
 }
@@ -123,7 +123,7 @@ static NSString *const PingSuccess = @"ping";
                       for (NSString *path in paths) {
                         FBCrashLogInfo *crash = [self crashLogInfo:afc path:path error:&error];
                         if (!crash) {
-                          [logger logFormat:@"Failed to ingest crash log %@: %@", path, error];
+                          [logger log:[NSString stringWithFormat:@"Failed to ingest crash log %@: %@", path, error]];
                           continue;
                         }
                         [crashes addObject:crash];
@@ -143,10 +143,10 @@ static NSString *const PingSuccess = @"ping";
             for (FBCrashLogInfo *crash in crashesToRemove) {
               NSError *error = nil;
               if ([afc removePath:crash.name recursively:NO error:&error]) {
-                [logger logFormat:@"Crash %@ removed from device", crash.name];
+                [logger log:[NSString stringWithFormat:@"Crash %@ removed from device", crash.name]];
                 [removed addObject:crash];
               } else {
-                [logger logFormat:@"Crash %@ could not be removed from device: %@", crash.name, error];
+                [logger log:[NSString stringWithFormat:@"Crash %@ could not be removed from device: %@", crash.name, error]];
               }
             }
             return [FBFuture futureWithResult:removed];
@@ -158,7 +158,7 @@ static NSString *const PingSuccess = @"ping";
   NSString *name = path;
   FBCrashLogInfo *existing = [self.store ingestedCrashLogWithName:path];
   if (existing) {
-    [self.device.logger logFormat:@"No need to re-ingest %@", path];
+    [self.device.logger log:[NSString stringWithFormat:@"No need to re-ingest %@", path]];
     return existing;
   }
   NSData *data = [afc contentsOfPath:path error:error];
@@ -179,14 +179,14 @@ static NSString *const PingSuccess = @"ping";
             NSData *data = [connection receive:4 error:&error];
             if (!data) {
               return [[[FBDeviceControlError
-                        describeFormat:@"Failed to get pingback from %@", CrashReportMoverService]
+                        describe:[NSString stringWithFormat:@"Failed to get pingback from %@", CrashReportMoverService]]
                        causedBy:error]
                       failFuture];
             }
             NSString *response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
             if (![response isEqualToString:PingSuccess]) {
               return [[[FBDeviceControlError
-                        describeFormat:@"Pingback from %@ is '%@' not '%@'", CrashReportMoverService, response, PingSuccess]
+                        describe:[NSString stringWithFormat:@"Pingback from %@ is '%@' not '%@'", CrashReportMoverService, response, PingSuccess]]
                        causedBy:error]
                       failFuture];
             }

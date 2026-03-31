@@ -17,7 +17,7 @@ static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed
 {
   if (!completed) {
     return [[FBControlCoreError
-             describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
+             describe:[NSString stringWithFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]]
             fail:error];
   }
   if (future.error) {
@@ -28,7 +28,7 @@ static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed
   }
   if (future.state == FBFutureStateCancelled) {
     return [[FBControlCoreError
-             describeFormat:@"Future %@ was cancelled", future]
+             describe:[NSString stringWithFormat:@"Future %@ was cancelled", future]]
             fail:error];
   }
   return future.result;
@@ -44,7 +44,7 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   BOOL spinningRecursively = spinning && [threadLocals[KeyIsAwaiting] boolValue];
   if (spinningRecursively) {
     id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-    [logger logFormat:@"Awaiting Future Recursively %@", [FBCollectionInformation oneLineDescriptionFromArray:NSThread.callStackSymbols]];
+    [logger log:[NSString stringWithFormat:@"Awaiting Future Recursively %@", [FBCollectionInformation oneLineDescriptionFromArray:NSThread.callStackSymbols]]];
   }
   threadLocals[KeyIsAwaiting] = @(spinning);
 }

@@ -49,7 +49,7 @@
   }
   if (files.count != 1) {
     return [[FBControlCoreError
-             describeFormat:@"%lu files with extension .%@ in %@", (unsigned long)files.count, extension, url]
+             describe:[NSString stringWithFormat:@"%lu files with extension .%@ in %@", (unsigned long)files.count, extension, url]]
             fail:error];
   }
 
@@ -69,7 +69,7 @@
   }
   if (filesInDirectory.count != 1) {
     return [[FBControlCoreError
-             describeFormat:@"Expected one top level file, found %lu: %@", filesInDirectory.count, [FBCollectionInformation oneLineDescriptionFromArray:filesInDirectory]]
+             describe:[NSString stringWithFormat:@"Expected one top level file, found %lu: %@", filesInDirectory.count, [FBCollectionInformation oneLineDescriptionFromArray:filesInDirectory]]]
             fail:error];
   }
   return filesInDirectory[0];
@@ -81,7 +81,7 @@
   NSArray<NSURL *> *filesInDirectory = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&innerError];
   if (filesInDirectory == nil) {
     return [[[FBControlCoreError
-              describeFormat:@"Failed to list files in directory %@", directory]
+              describe:[NSString stringWithFormat:@"Failed to list files in directory %@", directory]]
              causedBy:innerError]
             fail:error];
   }

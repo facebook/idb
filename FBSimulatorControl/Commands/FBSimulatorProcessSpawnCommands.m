@@ -77,10 +77,10 @@
 {
   // Prepare captured futures
   id<FBControlCoreLogger> logger = simulator.logger;
-  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithNameFormat:@"Launch of %@ on %@", configuration.launchPath, simulator.udid];
-  FBMutableFuture<NSNumber *> *statLoc = [FBMutableFuture futureWithNameFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid];
-  FBMutableFuture<NSNumber *> *exitCode = [FBMutableFuture futureWithNameFormat:@"Process exit of %@ on %@", configuration.launchPath, simulator.udid];
-  FBMutableFuture<NSNumber *> *signal = [FBMutableFuture futureWithNameFormat:@"Process signal of %@ on %@", configuration.launchPath, simulator.udid];
+  FBMutableFuture<NSNumber *> *launchFuture = [FBMutableFuture futureWithName:[NSString stringWithFormat:@"Launch of %@ on %@", configuration.launchPath, simulator.udid]];
+  FBMutableFuture<NSNumber *> *statLoc = [FBMutableFuture futureWithName:[NSString stringWithFormat:@"Process completion of %@ on %@", configuration.launchPath, simulator.udid]];
+  FBMutableFuture<NSNumber *> *exitCode = [FBMutableFuture futureWithName:[NSString stringWithFormat:@"Process exit of %@ on %@", configuration.launchPath, simulator.udid]];
+  FBMutableFuture<NSNumber *> *signal = [FBMutableFuture futureWithName:[NSString stringWithFormat:@"Process signal of %@ on %@", configuration.launchPath, simulator.udid]];
 
   // Get the Options
   NSDictionary<NSString *, id> *options = [self

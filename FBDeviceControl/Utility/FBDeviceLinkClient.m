@@ -69,18 +69,18 @@ static NSString *const ProcessMessage = @"DLMessageProcessMessage";
             NSString *responseType = result[0];
             if (![responseType isKindOfClass:NSString.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not an NSString in %@", responseType, result]
+                       describe:[NSString stringWithFormat:@"%@ is not an NSString in %@", responseType, result]]
                       fail:error];
             }
             if (![responseType isEqualToString:ProcessMessage]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ should be a %@", responseType, ProcessMessage]
+                       describe:[NSString stringWithFormat:@"%@ should be a %@", responseType, ProcessMessage]]
                       fail:error];
             }
             NSDictionary<NSString *, id> *response = result[1];
             if (![response isKindOfClass:NSDictionary.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not a NSDictionary", response]
+                       describe:[NSString stringWithFormat:@"%@ is not a NSDictionary", response]]
                       fail:error];
             }
             return response;
@@ -99,13 +99,13 @@ static NSString *const DeviceReady = @"DLMessageDeviceReady";
             id plist = [connection receiveMessageWithError:error];
             if (![plist isKindOfClass:NSArray.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not an array in version exchange", plist]
+                       describe:[NSString stringWithFormat:@"%@ is not an array in version exchange", plist]]
                       fail:error];
             }
             NSNumber *versionNumber = plist[1];
             if (![versionNumber isKindOfClass:NSNumber.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not a NSNumber for the handshake version", versionNumber]
+                       describe:[NSString stringWithFormat:@"%@ is not a NSNumber for the handshake version", versionNumber]]
                       fail:error];
             }
             NSArray<id> *response = @[
@@ -119,18 +119,18 @@ static NSString *const DeviceReady = @"DLMessageDeviceReady";
             }
             if (![plist isKindOfClass:NSArray.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not an array in version exchange", plist]
+                       describe:[NSString stringWithFormat:@"%@ is not an array in version exchange", plist]]
                       fail:error];
             }
             NSString *message = plist[0];
             if (![message isKindOfClass:NSString.class]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not a NSString for the device ready call", message]
+                       describe:[NSString stringWithFormat:@"%@ is not a NSString for the device ready call", message]]
                       fail:error];
             }
             if (![message isEqualToString:DeviceReady]) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not equal to %@", message, DeviceReady]
+                       describe:[NSString stringWithFormat:@"%@ is not equal to %@", message, DeviceReady]]
                       fail:error];
             }
             return NSNull.null;

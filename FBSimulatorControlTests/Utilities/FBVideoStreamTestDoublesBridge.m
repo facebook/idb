@@ -33,16 +33,6 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  [self.messages addObject:message];
-  return self;
-}
-
 - (id<FBControlCoreLogger>)info { return self; }
 
 - (id<FBControlCoreLogger>)debug { return self; }

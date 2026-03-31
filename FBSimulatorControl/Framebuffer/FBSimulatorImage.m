@@ -62,10 +62,10 @@
 - (nullable CGImageRef)image
 {
   if (![self.framebuffer isConsumerAttached:self.imageGenerator]) {
-    [self.logger logFormat:@"Image Generator %@ not attached, attaching", self.imageGenerator];
+    [self.logger log:[NSString stringWithFormat:@"Image Generator %@ not attached, attaching", self.imageGenerator]];
     IOSurface *surface = [self.framebuffer attachConsumer:self.imageGenerator onQueue:self.writeQueue];
     if (surface) {
-      [self.logger logFormat:@"Surface %@ immediately available, adding to Image Generator %@", surface, self.imageGenerator];
+      [self.logger log:[NSString stringWithFormat:@"Surface %@ immediately available, adding to Image Generator %@", surface, self.imageGenerator]];
       [self.imageGenerator didChangeIOSurface:surface];
     } else {
       [self.logger log:@"Surface for ImageGenerator not immedately available"];

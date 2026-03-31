@@ -114,42 +114,42 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
@@ -164,7 +164,7 @@
   NSString *container = installedApplication.dataContainer;
   if (!container) {
     return [[FBSimulatorError
-             describeFormat:@"No data container present for application %@", installedApplication]
+             describe:[NSString stringWithFormat:@"No data container present for application %@", installedApplication]]
             fail:error];
   }
   return [FBFileContainer containedFileForBasePath:container];

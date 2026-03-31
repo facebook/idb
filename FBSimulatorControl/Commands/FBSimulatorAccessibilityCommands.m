@@ -1025,7 +1025,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
             if (translation == nil) {
               [self popRequest:request];
               return [[FBSimulatorError
-                       describeFormat:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
+                       describe:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
                       fail:error];
             }
             translation.bridgeDelegateToken = request.token;
@@ -1048,17 +1048,17 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 {
   NSParameterAssert([self.tokenToRequest objectForKey:request.token] == nil);
   [self.tokenToRequest setObject:request forKey:request.token];
-  [self.logger logFormat:@"Registered request with token %@", request.token];
+  [self.logger log:[NSString stringWithFormat:@"Registered request with token %@", request.token]];
 }
 
 - (void)popRequest:(FBAXTranslationRequest *)request
 {
   if ([self.tokenToRequest objectForKey:request.token] == nil) {
-    [self.logger logFormat:@"popRequest: token %@ not found (already popped or replaced by remediation), ignoring", request.token];
+    [self.logger log:[NSString stringWithFormat:@"popRequest: token %@ not found (already popped or replaced by remediation), ignoring", request.token]];
     return;
   }
   [self.tokenToRequest removeObjectForKey:request.token];
-  [self.logger logFormat:@"Removed request with token %@", request.token];
+  [self.logger log:[NSString stringWithFormat:@"Removed request with token %@", request.token]];
 }
 
 #pragma mark AXPTranslationTokenDelegateHelper
@@ -1071,7 +1071,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   FBAXTranslationRequest *request = [self.tokenToRequest objectForKey:token];
   if (!request) {
     return ^AXPTranslatorResponse *(AXPTranslatorRequest *axRequest) {
-      [self.logger logFormat:@"Request with token %@ is gone. Returning empty response", token];
+      [self.logger log:[NSString stringWithFormat:@"Request with token %@ is gone. Returning empty response", token]];
       return [objc_getClass("AXPTranslatorResponse") emptyResponse];
     };
   }
@@ -1080,7 +1080,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   id<FBControlCoreLogger> logger = request.logger;
   return ^AXPTranslatorResponse *(AXPTranslatorRequest *axRequest) {
     if (logger) {
-      [logger logFormat:@"Sending Accessibility Request %@", axRequest];
+      [logger log:[NSString stringWithFormat:@"Sending Accessibility Request %@", axRequest]];
     }
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
@@ -1099,7 +1099,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
     }
 
     if (logger) {
-      [logger logFormat:@"Got Accessibility Response %@", response];
+      [logger log:[NSString stringWithFormat:@"Got Accessibility Response %@", response]];
     }
     return response;
   };
@@ -1112,7 +1112,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
 - (id)accessibilityTranslationRootParentWithToken:(NSString *)token
 {
-  [self.logger logFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token];
+  [self.logger log:[NSString stringWithFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token]];
   return nil;
 }
 
@@ -1238,8 +1238,8 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   if (found == nil) {
     [self close];
     return [[FBSimulatorError
-             describeFormat:@"Element with %@ containing '%@' not found within depth %lu",
-             key, value, (unsigned long)depth]
+             describe:[NSString stringWithFormat:@"Element with %@ containing '%@' not found within depth %lu",
+             key, value, (unsigned long)depth]]
             fail:error];
   }
   NSAssert(!_closed, @"Cannot transfer ownership from a closed element");
@@ -1296,14 +1296,14 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   NSArray<NSString *> *actionNames = element.accessibilityActionNames;
   if (![actionNames containsObject:@"AXPress"]) {
     return [[FBSimulatorError
-             describeFormat:@"Element does not support pressing. Supported: %@",
-             [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
+             describe:[NSString stringWithFormat:@"Element does not support pressing. Supported: %@",
+             [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]]
             failBool:error];
   }
 
   if (![element accessibilityPerformPress]) {
     return [[FBSimulatorError
-             describeFormat:@"accessibilityPerformPress did not succeed"]
+             describe:@"accessibilityPerformPress did not succeed"]
             failBool:error];
   }
 
@@ -1334,7 +1334,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
       return YES;
     default:
       return [[FBSimulatorError
-               describeFormat:@"Unknown scroll direction %lu", (unsigned long)direction]
+               describe:[NSString stringWithFormat:@"Unknown scroll direction %lu", (unsigned long)direction]]
               failBool:error];
   }
 }
@@ -1435,13 +1435,13 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   FBSimulator *simulator = self.simulator;
   if (simulator.state != FBiOSTargetStateBooted) {
     return [[FBControlCoreError
-             describeFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]
+             describe:[NSString stringWithFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]]
             failBool:error];
   }
   SimDevice *device = simulator.device;
   if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
     return [[FBControlCoreError
-             describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use accessibility.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
+             describe:[NSString stringWithFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use accessibility.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]]
             failBool:error];
   }
   if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:error]) {
@@ -1516,7 +1516,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
            mapReplace:@NO]
           onQueue:simulator.workQueue
           handleError:^(NSError *error) {
-            [simulator.logger logFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName];
+            [simulator.logger log:[NSString stringWithFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName]];
             return [FBFuture futureWithResult:@YES];
           }];
 }
@@ -1526,7 +1526,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
   return [[[simulator
             stopServiceWithName:CoreSimulatorBridgeServiceName]
            mapReplace:NSNull.null]
-          rephraseFailure:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName];
+          rephraseFailure:[NSString stringWithFormat:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName]];
 }
 
 @end

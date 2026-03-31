@@ -72,7 +72,7 @@
             }
 
             return [[[FBSimulatorError
-                      describeFormat:@"Failed to install Application %@ with options %@", appBundle, options]
+                      describe:[NSString stringWithFormat:@"Failed to install Application %@ with options %@", appBundle, options]]
                      causedBy:error]
                     failFuture];
           }];
@@ -146,7 +146,7 @@
             fmap:^FBFuture *(FBInstalledApplication *installedApplication) {
               if (installedApplication.installType == FBApplicationInstallTypeSystem) {
                 return [[FBSimulatorError
-                         describeFormat:@"Can't uninstall '%@' as it is a system Application", installedApplication]
+                         describe:[NSString stringWithFormat:@"Can't uninstall '%@' as it is a system Application", installedApplication]]
                         failFuture];
               }
               return [FBFuture futureWithResult:installedApplication];
@@ -160,7 +160,7 @@
             NSError *error = nil;
             if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&error]) {
               return [[[FBSimulatorError
-                        describeFormat:@"Failed to uninstall '%@'", bundleID]
+                        describe:[NSString stringWithFormat:@"Failed to uninstall '%@'", bundleID]]
                        causedBy:error]
                       failFuture];
             }
@@ -210,7 +210,7 @@
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
     return [[FBSimulatorError
-             describeFormat:@"Couldn't build search pattern for '%@'", bundleID]
+             describe:[NSString stringWithFormat:@"Couldn't build search pattern for '%@'", bundleID]]
             failFuture];
   }
   return [[FBFuture
@@ -236,7 +236,7 @@
   BOOL applicationIsInstalled = [device applicationIsInstalled:bundleID type:&applicationType error:error];
   if (!applicationIsInstalled) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot get app information for '%@', it is not installed", bundleID]
+             describe:[NSString stringWithFormat:@"Cannot get app information for '%@', it is not installed", bundleID]]
             fail:error];
   }
   // appInfo is usually always returned, even if there is no app installed.
@@ -262,7 +262,7 @@
           onQueue:self.simulator.asyncQueue
           handleError:^(NSError *error) {
             return [[FBSimulatorError
-                     describeFormat:@"App %@ can't be launched as it isn't installed: %@", bundleID, error]
+                     describe:[NSString stringWithFormat:@"App %@ can't be launched as it isn't installed: %@", bundleID, error]]
                     failFuture];
           }];
 }
@@ -286,7 +286,7 @@
             }
             if (launchMode == FBApplicationLaunchModeFailIfRunning) {
               return [[FBSimulatorError
-                       describeFormat:@"App '%@' can't be launched as it is already running (PID=%@)", bundleID, processID]
+                       describe:[NSString stringWithFormat:@"App '%@' can't be launched as it is already running (PID=%@)", bundleID, processID]]
                       failFuture];
             } else if (launchMode == FBApplicationLaunchModeRelaunchIfRunning) {
               return [self killApplicationWithBundleID:bundleID];
@@ -335,21 +335,21 @@
   FBMutableFuture<NSNumber *> *future = [FBMutableFuture future];
 
   id<FBControlCoreLogger> logger = self.simulator.logger;
-  [logger logFormat:
-   @"Launching Application %@ with %@ %@",
-   configuration.bundleID,
-   [FBCollectionInformation oneLineDescriptionFromArray:configuration.arguments],
-   [FBCollectionInformation oneLineDescriptionFromDictionary:configuration.environment]
-  ];
+  [logger log:[NSString stringWithFormat:
+               @"Launching Application %@ with %@ %@",
+               configuration.bundleID,
+               [FBCollectionInformation oneLineDescriptionFromArray:configuration.arguments],
+               [FBCollectionInformation oneLineDescriptionFromDictionary:configuration.environment]
+   ]];
   [simulator.device launchApplicationAsyncWithID:configuration.bundleID
                                          options:options
                                  completionQueue:simulator.workQueue
                                completionHandler:^(NSError *error, pid_t pid) {
                                  if (error) {
-                                   [logger logFormat:@"Failed to launch Application %@ %@", configuration.bundleID, error];
+                                   [logger log:[NSString stringWithFormat:@"Failed to launch Application %@ %@", configuration.bundleID, error]];
                                    [future resolveWithError:error];
                                  } else {
-                                   [logger logFormat:@"Launched Application %@ with pid %d", configuration.bundleID, pid];
+                                   [logger log:[NSString stringWithFormat:@"Launched Application %@ with pid %d", configuration.bundleID, pid]];
                                    [future resolveWithResult:@(pid)];
                                  }
                                }];
@@ -393,31 +393,31 @@ static NSString *const KeyDataContainer = @"DataContainer";
   NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
   if (![appName isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
-             describeFormat:@"Bundle Name %@ is not a String for %@ in %@", appName, FBApplicationInstallInfoKeyBundleName, appInfo]
+             describe:[NSString stringWithFormat:@"Bundle Name %@ is not a String for %@ in %@", appName, FBApplicationInstallInfoKeyBundleName, appInfo]]
             fail:error];
   }
   NSString *bundleIdentifier = appInfo[FBApplicationInstallInfoKeyBundleIdentifier];
   if (![bundleIdentifier isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
-             describeFormat:@"Bundle Identifier %@ is not a String for %@ in %@", bundleIdentifier, FBApplicationInstallInfoKeyBundleIdentifier, appInfo]
+             describe:[NSString stringWithFormat:@"Bundle Identifier %@ is not a String for %@ in %@", bundleIdentifier, FBApplicationInstallInfoKeyBundleIdentifier, appInfo]]
             fail:error];
   }
   NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
   if (![appPath isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
-             describeFormat:@"App Path %@ is not a String for %@ in %@", appPath, FBApplicationInstallInfoKeyPath, appInfo]
+             describe:[NSString stringWithFormat:@"App Path %@ is not a String for %@ in %@", appPath, FBApplicationInstallInfoKeyPath, appInfo]]
             fail:error];
   }
   NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
   if (![typeString isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
-             describeFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]
+             describe:[NSString stringWithFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]]
             fail:error];
   }
   NSURL *dataContainer = appInfo[KeyDataContainer];
   if (dataContainer && ![dataContainer isKindOfClass:NSURL.class]) {
     return [[FBControlCoreError
-             describeFormat:@"Data Container %@ is not a NSURL for %@ in %@", dataContainer, KeyDataContainer, appInfo]
+             describe:[NSString stringWithFormat:@"Data Container %@ is not a NSURL for %@ in %@", dataContainer, KeyDataContainer, appInfo]]
             fail:error];
   }
 
@@ -439,7 +439,7 @@ static NSString *const KeyDataContainer = @"DataContainer";
   FBBundleDescriptor *application = [FBBundleDescriptor bundleFromPath:path error:&error];
   if (!application) {
     return [[[FBSimulatorError
-              describeFormat:@"Could not determine Application information for path %@", path]
+              describe:[NSString stringWithFormat:@"Could not determine Application information for path %@", path]]
              causedBy:error]
             failFuture];
   }
@@ -451,18 +451,18 @@ static NSString *const KeyDataContainer = @"DataContainer";
             FBInstalledApplication *installed = future.result;
             if (installed && installed.installType == FBApplicationInstallTypeSystem) {
               return [[FBSimulatorError
-                       describeFormat:@"Cannot install app as it is a system app %@", installed]
+                       describe:[NSString stringWithFormat:@"Cannot install app as it is a system app %@", installed]]
                       failFuture];
             }
             NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
             NSSet<NSString *> *supportedArchitectures = [FBiOSTargetConfiguration baseArchsToCompatibleArch:self.simulator.architectures];
             if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
               return [[FBSimulatorError
-                       describeFormat:
-                       @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
-                       [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
-                       application.binary.path,
-                       [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+                       describe:[NSString stringWithFormat:
+                                 @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+                                 [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+                                 application.binary.path,
+                                 [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]]
                       failFuture];
             }
             return [FBFuture futureWithResult:application];

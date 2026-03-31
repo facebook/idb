@@ -27,7 +27,7 @@
   }
   if (simulator.state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]
+             describe:[NSString stringWithFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]]
             failFuture];
   }
 

@@ -56,24 +56,6 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return self;
 }
 
-+ (instancetype)describeFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  return [self describe:string];
-}
-
-- (instancetype)describeFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  return [self describe:string];
-}
-
 + (instancetype)causedBy:(NSError *)cause
 {
   return [self.new causedBy:cause];
@@ -234,15 +216,6 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 + (NSError *)errorForDescription:(NSString *)description
 {
   return [[self describe:description] build];
-}
-
-+ (NSError *)errorForFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  return [self errorForDescription:string];
 }
 
 + (id)failWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut

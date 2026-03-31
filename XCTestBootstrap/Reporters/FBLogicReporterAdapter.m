@@ -63,7 +63,7 @@
   NSError *error;
   NSDictionary<NSString *, id> *JSONEvent = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
   if (![JSONEvent isKindOfClass:[NSDictionary class]]) {
-    [self.logger logFormat:@"Received invalid JSON: '%@' %@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding], error];
+    [self.logger log:[NSString stringWithFormat:@"Received invalid JSON: '%@' %@", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding], error]];
     return;
   }
 
@@ -98,7 +98,7 @@
                                            totalDuration:[JSONEvent[kReporter_EndTest_TotalDurationKey] doubleValue]];
     [reporter finishedWithSummary:summary];
   } else {
-    [self.logger logFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent];
+    [self.logger log:[NSString stringWithFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent]];
     //We don't know how to handle it, but an upstream reporter might.
     NSString *stringEvent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     [reporter handleExternalEvent:stringEvent];

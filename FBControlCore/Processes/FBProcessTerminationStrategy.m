@@ -82,21 +82,21 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
   if (checkExists && [self.processFetcher processInfoFor:processIdentifier] == nil) {
     return [[FBControlCoreError
-             describeFormat:@"Could not find that process %d exists", processIdentifier]
+             describe:[NSString stringWithFormat:@"Could not find that process %d exists", processIdentifier]]
             failFuture];
   }
 
   // Kill the process with kill(2).
-  [self.logger.debug logFormat:@"Killing %d", processIdentifier];
+  [self.logger.debug log:[NSString stringWithFormat:@"Killing %d", processIdentifier]];
   if (kill(processIdentifier, self.configuration.signo) != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to kill %d: '%s'", processIdentifier, strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to kill %d: '%s'", processIdentifier, strerror(errno)]]
             failFuture];
   }
 
   BOOL checkDeath = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckDeathAfterSignal) == FBProcessTerminationStrategyOptionsCheckDeathAfterSignal;
   if (!checkDeath) {
-    [self.logger.debug logFormat:@"Killed %d", processIdentifier];
+    [self.logger.debug log:[NSString stringWithFormat:@"Killed %d", processIdentifier]];
     return FBFuture.empty;
   }
 
@@ -104,23 +104,23 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
   // well behaved when responding to other terminating signals.
   // There's nothing more than can be done with a SIGKILL.
-  [self.logger.debug logFormat:@"Waiting on %d to dissappear from the process table", processIdentifier];
+  [self.logger.debug log:[NSString stringWithFormat:@"Waiting on %d to dissappear from the process table", processIdentifier]];
   return [[[self
             onQueue:self.workQueue
             waitForProcessIdentifierToDie:processIdentifier
             processFetcher:self.processFetcher]
            timeout:ProcessTableRemovalTimeout
-           waitingFor:@"Process %d to be removed from the process table", processIdentifier]
+           waitingFor:[NSString stringWithFormat:@"Process %d to be removed from the process table", processIdentifier]]
           onQueue:self.workQueue
           chain:^FBFuture *(FBFuture *future) {
             if (future.result) {
-              [self.logger.debug logFormat:@"Process %d terminated", processIdentifier];
+              [self.logger.debug log:[NSString stringWithFormat:@"Process %d terminated", processIdentifier]];
               return FBFuture.empty;
             }
             BOOL backoff = (self.configuration.options & FBProcessTerminationStrategyOptionsBackoffToSIGKILL) == FBProcessTerminationStrategyOptionsBackoffToSIGKILL;
             if (self.configuration.signo == SIGKILL || !backoff) {
               return [[[FBControlCoreError
-                        describeFormat:@"Timed out waiting for %d to dissapear from the process table", processIdentifier]
+                        describe:[NSString stringWithFormat:@"Timed out waiting for %d to dissapear from the process table", processIdentifier]]
                        attachProcessInfoForIdentifier:processIdentifier
                        processFetcher:self.processFetcher]
                       failFuture];
@@ -129,11 +129,11 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
             // Try with SIGKILL instead.
             FBProcessTerminationStrategyConfiguration configuration = self.configuration;
             configuration.signo = SIGKILL;
-            [self.logger.debug logFormat:@"Backing off kill of %d to SIGKILL", processIdentifier];
+            [self.logger.debug log:[NSString stringWithFormat:@"Backing off kill of %d to SIGKILL", processIdentifier]];
             return [[[self
                       strategyWithConfiguration:configuration]
                      killProcessIdentifier:processIdentifier]
-                    rephraseFailure:@"Attempted to SIGKILL %d after failed kill with signo %d", processIdentifier, self.configuration.signo];
+                    rephraseFailure:[NSString stringWithFormat:@"Attempted to SIGKILL %d after failed kill with signo %d", processIdentifier, self.configuration.signo]];
           }];
 }
 

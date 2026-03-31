@@ -37,13 +37,13 @@
              AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
              if (!captureDevice) {
                return [[FBDeviceControlError
-                        describeFormat:@"Capture Device %@ not available", device.udid]
+                        describe:[NSString stringWithFormat:@"Capture Device %@ not available", device.udid]]
                        failFuture];
              }
              return [FBFuture futureWithResult:captureDevice];
            }]
           timeout:FBControlCoreGlobalConfiguration.fastTimeout
-          waitingFor:@"Device %@ to have an associated capture device appear", device];
+          waitingFor:[NSString stringWithFormat:@"Device %@ to have an associated capture device appear", device]];
 }
 
 + (BOOL)allowAccessToScreenCaptureDevicesWithError:(NSError **)error
@@ -64,7 +64,7 @@
   );
   if (status != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Failed to enable Screen Capture devices with status %d", status]
+             describe:[NSString stringWithFormat:@"Failed to enable Screen Capture devices with status %d", status]]
             failBool:error];
   }
   return YES;
@@ -89,7 +89,7 @@
             AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
             if (!deviceInput) {
               return [[[FBDeviceControlError
-                        describeFormat:@"Failed to create Device Input for %@", captureDevice]
+                        describe:[NSString stringWithFormat:@"Failed to create Device Input for %@", captureDevice]]
                        causedBy:innerError]
                       failFuture];
             }
@@ -97,7 +97,7 @@
             AVCaptureSession *session = [[AVCaptureSession alloc] init];
             if (![session canAddInput:deviceInput]) {
               return [[FBDeviceControlError
-                       describeFormat:@"Cannot add Device Input to session for %@", captureDevice]
+                       describe:[NSString stringWithFormat:@"Cannot add Device Input to session for %@", captureDevice]]
                       failFuture];
             }
             [session addInput:deviceInput];

@@ -31,7 +31,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   NSString *traceDir = [target.auxillaryDirectory stringByAppendingPathComponent:[@"xctrace-" stringByAppendingString:[[NSUUID UUID] UUIDString]]];
   NSError *error = nil;
   if (![[NSFileManager defaultManager] createDirectoryAtPath:traceDir withIntermediateDirectories:NO attributes:nil error:&error]) {
-    return [[FBControlCoreError describeFormat:@"Failed to create xctrace trace output directory: %@", error] failFuture];
+    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to create xctrace trace output directory: %@", error]] failFuture];
   }
   NSString *traceFile = [traceDir stringByAppendingPathComponent:@"trace.trace"];
 
@@ -59,7 +59,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     [arguments addObjectsFromArray:@[@"--launch", @"--", configuration.processToLaunch]];
     [arguments addObjectsFromArray:configuration.launchArgs];
   }
-  [logger logFormat:@"Starting xctrace with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
+  [logger log:[NSString stringWithFormat:@"Starting xctrace with arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]];
 
   // Find the absolute path to xctrace
   NSString *xctracePath = [FBXCTraceRecordOperation xctracePathWithError:&error];
@@ -86,7 +86,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
            start]
           onQueue:target.asyncQueue
           map:^FBXCTraceRecordOperation *(FBSubprocess *task) {
-            [logger logFormat:@"Started xctrace %@", task];
+            [logger log:[NSString stringWithFormat:@"Started xctrace %@", task]];
             return [[FBXCTraceRecordOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
           }];
 }
@@ -114,7 +114,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   return [[FBFuture
            onQueue:self.queue
            resolve:^{
-             [self.logger logFormat:@"Terminating xctrace record %@. Backoff Timeout %f", self.task, timeout];
+             [self.logger log:[NSString stringWithFormat:@"Terminating xctrace record %@. Backoff Timeout %f", self.task, timeout]];
              return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:timeout logger:self.logger];
            }] chainReplace:[[self.task exitCode]
                             onQueue:self.queue
@@ -122,7 +122,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
                               if ([exitCode isEqualToNumber:@0]) {
                                 return [FBFuture futureWithResult:self.traceDir];
                               } else {
-                                return [[FBControlCoreError describeFormat:@"Xctrace record exited with failure - status: %@", exitCode] failFuture];
+                                return [[FBControlCoreError describe:[NSString stringWithFormat:@"Xctrace record exited with failure - status: %@", exitCode]] failFuture];
                               }
                             }]
   ];
@@ -139,7 +139,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
     [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange) {3, [arguments count] - 3}]];
   }
 
-  [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
+  [logger log:[NSString stringWithFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]]];
   return [[[[[[[[FBProcessBuilder
                  withLaunchPath:arguments[0]]
                 withArguments:launchArguments]
@@ -159,7 +159,7 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xctrace"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[FBControlCoreError
-             describeFormat:@"xctrace does not exist at expected path %@", path]
+             describe:[NSString stringWithFormat:@"xctrace does not exist at expected path %@", path]]
             fail:error];
   }
   return path;

@@ -182,7 +182,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
                     onQueue:self.requestQueue
                     fmap:^FBFuture<id> *(NSString *stackshot) {
                       return [[FBXCTestError
-                               describeFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]
+                               describe:[NSString stringWithFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]]
                               failFuture];
                     }];
           }];
@@ -211,7 +211,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
              }]
             onQueue:self.requestQueue
             pend:^(NSArray<id> *results) {
-              [self.logger logFormat:@"Waiting for test bundle to be ready.."];
+              [self.logger log:@"Waiting for test bundle to be ready.."];
               testBundleProxy = results[0];
               return [self.bundleReadyFuture timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"];
             }]
@@ -221,7 +221,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
            }]
           onQueue:self.requestQueue
           pop:^(id result) {
-            [self.logger logFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion];
+            [self.logger log:[NSString stringWithFormat:@"Starting Execution of the test plan w/ version %ld", FBProtocolVersion]];
             [testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
             return self.bundleDisconnectedSuccessfully;
           }];
@@ -242,22 +242,22 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 
 + (FBFutureContext<DTXConnection *> *)connectionWithSocket:(int)socket queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket];
+  [logger log:[NSString stringWithFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket]];
   DTXTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket
                                                                                    disconnectAction:^{
-                                                                                     [logger logFormat:@"Notified that daemon socket disconnected"];
+                                                                                     [logger log:@"Notified that daemon socket disconnected"];
                                                                                    }];
   DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
   [connection registerDisconnectHandler:^{
-    [logger logFormat:@"Notified that testmanagerd connection disconnected"];
+    [logger log:@"Notified that testmanagerd connection disconnected"];
   }];
-  [logger logFormat:@"testmanagerd socket %d wrapped in %@", socket, connection];
+  [logger log:[NSString stringWithFormat:@"testmanagerd socket %d wrapped in %@", socket, connection]];
 
   return [[FBFuture
            futureWithResult:connection]
           onQueue:queue
           contextualTeardown:^(id _, FBFutureState __) {
-            [logger logFormat:@"Ending the testmanagerd connection. %@", connection];
+            [logger log:[NSString stringWithFormat:@"Ending the testmanagerd connection. %@", connection]];
             [connection suspend];
             [connection cancel];
             return FBFuture.empty;
@@ -267,18 +267,18 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 - (FBFuture<id<XCTestDriverInterface>> *)setupTestBundleConnectionWithConnection:(DTXConnection *)connection
 {
   FBMutableFuture<id<XCTestDriverInterface>> *future = FBMutableFuture.future;
-  [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
+  [self.logger log:@"Listening for proxy connection request from the test bundle (all platforms)"];
 
   [connection
    xct_handleProxyRequestForInterface:@protocol(XCTMessagingChannel_RunnerToIDE)
    peerInterface:@protocol(XCTMessagingChannel_IDEToRunner)
    handler:^(DTXProxyChannel *channel) {
-     [self.logger logFormat:@"Got proxy channel request from test bundle"];
+     [self.logger log:@"Got proxy channel request from test bundle"];
      [channel setExportedObject:self queue:self.target.workQueue];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      [future resolveWithResult:interface];
    }];
-  [self.logger logFormat:@"Resuming the test bundle connection."];
+  [self.logger log:@"Resuming the test bundle connection."];
   [connection resume];
 
   return [future timeout:IDEInterfaceReadyTimeout waitingFor:@"XCTestManager_IDEInterface to be ready"];
@@ -294,7 +294,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
   [proxyChannel setExportedObject:self queue:self.target.workQueue];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
-  [self.logger logFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString];
+  [self.logger log:[NSString stringWithFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString]];
 
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
                                          _IDE_initiateSessionWithIdentifier:self.context.sessionIdentifier
@@ -308,15 +308,15 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     [proxyChannel cancel];
     if (error) {
-      [self.logger logFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error];
+      [self.logger log:[NSString stringWithFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error]];
       [future resolveWithError:error];
       return;
     }
-    [self.logger logFormat:@"testmanagerd handled session request using protocol version requested=%ld received=%ld", FBProtocolVersion, version.longValue];
+    [self.logger log:[NSString stringWithFormat:@"testmanagerd handled session request using protocol version requested=%ld received=%ld", FBProtocolVersion, version.longValue]];
     [future resolveWithResult:version];
   }];
 
-  return [future timeout:DaemonSessionReadyTimeout waitingFor:@"%@ to be resolved", sessionStartMethod];
+  return [future timeout:DaemonSessionReadyTimeout waitingFor:[NSString stringWithFormat:@"%@ to be resolved", sessionStartMethod]];
 }
 
 - (FBFuture<NSNull *> *)bundleDisconnectedSuccessfully
@@ -326,10 +326,10 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
           onQueue:self.requestQueue
           fmap:^FBFuture<NSNull *> *(id _) {
             if (self.testPlanFuture.hasCompleted) {
-              [self.logger logFormat:@"Bundle disconnected, with the test plan completed. Bundle exited successfully."];
+              [self.logger log:@"Bundle disconnected, with the test plan completed. Bundle exited successfully."];
               return FBFuture.empty;
             }
-            [self.logger logFormat:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
+            [self.logger log:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
             return [self
                     failedFutureWithCrashLogOrNotFoundErrorDescription:@"Lost connection to test process, but could not find a crash log"];
           }];
@@ -349,7 +349,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
                        failFuture];
              }
              return [[FBXCTestError
-                      describeFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]
+                      describe:[NSString stringWithFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]]
                      failFuture];
            }] mapReplace:NSNull.null];
 }
@@ -364,14 +364,14 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
            chain:^FBFuture<FBCrashLogInfo *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
              if (processIdentifierFuture.result) {
                return [[FBControlCoreError
-                        describeFormat:@"The Process for %@ is not crashed as it is running", processIdentifierFuture.result]
+                        describe:[NSString stringWithFormat:@"The Process for %@ is not crashed as it is running", processIdentifierFuture.result]]
                        failFuture];
              }
 
              id<FBCrashLogCommands> crashLog = (id<FBCrashLogCommands>) self.target;
              if (![crashLog conformsToProtocol:@protocol(FBCrashLogCommands)]) {
                return [[FBControlCoreError
-                        describeFormat:@"%@ does not conform to %@", self.target, NSStringFromProtocol(@protocol(FBCrashLogCommands))]
+                        describe:[NSString stringWithFormat:@"%@ does not conform to %@", self.target, NSStringFromProtocol(@protocol(FBCrashLogCommands))]]
                        failFuture];
              }
 
@@ -384,7 +384,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
              return [[crashLog
                       notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:testHostApplication.processIdentifier]]
                      timeout:crashWaitTimeout
-                     waitingFor:@"Getting crash log for process with pid %d, bunndle ID: %@", testHostApplication.processIdentifier, testHostBundleID];
+                     waitingFor:[NSString stringWithFormat:@"Getting crash log for process with pid %d, bunndle ID: %@", testHostApplication.processIdentifier, testHostBundleID]];
            }]
           onQueue:self.target.workQueue
           fmap:^(FBCrashLogInfo *info) {
@@ -399,7 +399,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 
 - (void)concludeWithError:(NSError *)error
 {
-  [self.logger logFormat:@"Test Completed with error: %@", error];
+  [self.logger log:[NSString stringWithFormat:@"Test Completed with error: %@", error]];
   [self.bundleReadyFuture resolveWithError:error];
   [self.testPlanFuture resolveWithError:error];
 }
@@ -417,10 +417,10 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
   NSInteger protocolVersionInt = protocolVersion.integerValue;
   NSInteger minimumVersionInt = minimumVersion.integerValue;
 
-  [self.logger logFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
+  [self.logger log:[NSString stringWithFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion]];
   if (minimumVersionInt > FBProtocolVersion) {
     NSError *error = [[[XCTestBootstrapError
-                        describeFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion]
+                        describe:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion]]
                        code:XCTestBootstrapErrorCodeStartupFailure]
                       build];
     [self concludeWithError:error];
@@ -428,13 +428,13 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
   }
   if (protocolVersionInt < FBProtocolMinimumVersion) {
     NSError *error = [[[XCTestBootstrapError
-                        describeFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion, protocolVersionInt]
+                        describe:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion, protocolVersionInt]]
                        code:XCTestBootstrapErrorCodeStartupFailure]
                       build];
     [self concludeWithError:error];
     return nil;
   }
-  [self.logger logFormat:@"Test Bundle is Ready"];
+  [self.logger log:@"Test Bundle is Ready"];
   [self.bundleReadyFuture resolveWithResult:NSNull.null];
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
 }
@@ -457,7 +457,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 /// tests should run alongside other options for the test execution.
 - (id)_XCT_testRunnerReadyWithCapabilities:(XCTCapabilities *)arg1
 {
-  [self.logger logFormat:@"Test Bundle is Ready"];
+  [self.logger log:@"Test Bundle is Ready"];
 
   DTXRemoteInvocationReceipt *receipt = [[objc_lookUpClass("DTXRemoteInvocationReceipt") alloc] init];
   [receipt invokeCompletionWithReturnValue:self.context.testConfiguration.xcTestConfiguration error:nil];

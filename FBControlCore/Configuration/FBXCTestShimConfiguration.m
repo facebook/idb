@@ -51,7 +51,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   NSString *shimPath = [directory stringByAppendingPathComponent:filename];
   if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
     return [[FBControlCoreError
-             describeFormat:@"No shim located at expected location of %@", shimPath]
+             describe:[NSString stringWithFormat:@"No shim located at expected location of %@", shimPath]]
             failFuture];
   }
   if (!signingRequired) {
@@ -59,7 +59,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   }
   return [[[codesign
             cdHashForBundleAtPath:shimPath]
-           rephraseFailure:@"Shim at path %@ was required to be signed, but it was not", shimPath]
+           rephraseFailure:[NSString stringWithFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]]
           mapReplace:shimPath];
 }
 
@@ -96,7 +96,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
                       }
                       NSArray<NSString *> *shimNames = self.canonicalShimNameToShimFilenames.allValues;
                       return [[FBControlCoreError
-                               describeFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
+                               describe:[NSString stringWithFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]]
                               failFuture];
                     }];
           }];
@@ -106,7 +106,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
     return [[FBControlCoreError
-             describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
+             describe:[NSString stringWithFormat:@"A shim directory was searched for at '%@', but it was not there", directory]]
             failFuture];
   }
   NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];

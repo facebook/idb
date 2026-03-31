@@ -62,7 +62,7 @@
             NSError *error;
             if (![fileData writeToFile:destination options:0 error:&error]) {
               return [[[FBDeviceControlError
-                        describeFormat:@"Failed to write data to file at path %@", destination]
+                        describe:[NSString stringWithFormat:@"Failed to write data to file at path %@", destination]]
                        causedBy:error]
                       failFuture];
             }
@@ -73,7 +73,7 @@
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -205,28 +205,28 @@
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Wallpaper File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -264,7 +264,7 @@
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -285,21 +285,21 @@
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for MDM Profile File Containers", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -337,28 +337,28 @@ static NSString *const MountRootPath = @"mounted";
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Disk Images", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -366,14 +366,14 @@ static NSString *const MountRootPath = @"mounted";
 {
   if (![destinationPath hasPrefix:MountRootPath]) {
     return [[FBDeviceControlError
-             describeFormat:@"%@ only moving into mounts is supported.", destinationPath]
+             describe:[NSString stringWithFormat:@"%@ only moving into mounts is supported.", destinationPath]]
             failFuture];
   }
   NSDictionary<NSString *, FBDeveloperDiskImage *> *mountableImagesByPath = self.mountableDiskImagesByPath;
   FBDeveloperDiskImage *image = mountableImagesByPath[sourcePath];
   if (!image) {
     return [[FBControlCoreError
-             describeFormat:@"%@ is not one of %@", sourcePath, [FBCollectionInformation oneLineDescriptionFromArray:mountableImagesByPath.allKeys]]
+             describe:[NSString stringWithFormat:@"%@ is not one of %@", sourcePath, [FBCollectionInformation oneLineDescriptionFromArray:mountableImagesByPath.allKeys]]]
             failFuture];
   }
   return [[self.commands
@@ -385,7 +385,7 @@ static NSString *const MountRootPath = @"mounted";
 {
   if (![path hasPrefix:MountRootPath]) {
     return [[FBDeviceControlError
-             describeFormat:@"%@ cannot be removed, only mounts can be removed", path]
+             describe:[NSString stringWithFormat:@"%@ cannot be removed, only mounts can be removed", path]]
             failFuture];
   }
   return [[self
@@ -395,7 +395,7 @@ static NSString *const MountRootPath = @"mounted";
             FBDeveloperDiskImage *image = mountedImages[path];
             if (!image) {
               return [[FBDeviceControlError
-                       describeFormat:@"%@ is not one of the available mounts %@", path, [FBCollectionInformation oneLineDescriptionFromArray:mountedImages.allKeys]]
+                       describe:[NSString stringWithFormat:@"%@ is not one of the available mounts %@", path, [FBCollectionInformation oneLineDescriptionFromArray:mountedImages.allKeys]]]
                       failFuture];
             }
             return [self.commands unmountDiskImage:image];
@@ -515,7 +515,7 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
 - (FBFuture<NSNull *> *)copyFromHost:(NSURL *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -530,28 +530,28 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not make sense for Symbols", NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
@@ -622,21 +622,21 @@ static NSString *const ExtractedSymbolsDirectory = @"Symbols";
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ not supported on devices, requires a rooted device", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 

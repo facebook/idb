@@ -67,7 +67,7 @@
 {
   if (!self.video) {
     return [[FBDeviceControlError
-             describeFormat:@"There was no existing video instance for %@", self.device]
+             describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.device]]
             failFuture];
   }
   FBDeviceVideo *video = self.video;

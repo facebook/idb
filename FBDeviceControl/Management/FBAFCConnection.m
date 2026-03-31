@@ -24,7 +24,7 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
   AFCConnectionRef connection = connectionRefPtr;
   AFCOperationRef operation = afcOperationPtr;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  [logger logFormat:@"Connection %@, operation %@", connection, operation];
+  [logger log:[NSString stringWithFormat:@"Connection %@, operation %@", connection, operation]];
 }
 
 @implementation FBAFCConnection
@@ -53,7 +53,7 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
              FBAFCConnection *connection = [serviceConnection asAFCConnectionWithCalls:calls callback:AFCConnectionCallback logger:logger];
              if (![connection connectionIsValid]) {
                return [[FBDeviceControlError
-                        describeFormat:@"Created AFC Connection %@ is not valid", connection]
+                        describe:[NSString stringWithFormat:@"Created AFC Connection %@ is not valid", connection]]
                        failFuture];
              }
              return [FBFuture futureWithResult:connection];
@@ -87,14 +87,14 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
 
 - (BOOL)createDirectory:(NSString *)path error:(NSError **)error
 {
-  [self.logger logFormat:@"Creating Directory %@", path];
+  [self.logger log:[NSString stringWithFormat:@"Creating Directory %@", path]];
   mach_error_t result = self.calls.DirectoryCreate(self.connection, [path UTF8String]);
   if (result != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when creating directory: %@", [self errorMessageWithCode:result]]
+             describe:[NSString stringWithFormat:@"Error when creating directory: %@", [self errorMessageWithCode:result]]]
             failBool:error];
   }
-  [self.logger logFormat:@"Created Directory %@", path];
+  [self.logger log:[NSString stringWithFormat:@"Created Directory %@", path]];
   return YES;
 }
 
@@ -103,12 +103,12 @@ const char *DoubleDot = "..";
 
 - (NSArray<NSString *> *)contentsOfDirectory:(NSString *)path error:(NSError **)error
 {
-  [self.logger logFormat:@"Listing contents of directory %@", path];
+  [self.logger log:[NSString stringWithFormat:@"Listing contents of directory %@", path]];
   CFTypeRef directory;
   mach_error_t result = self.calls.DirectoryOpen(self.connection, path.UTF8String, &directory);
   if (result != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when opening directory %@: %@", path, [self errorMessageWithCode:result]]
+             describe:[NSString stringWithFormat:@"Error when opening directory %@: %@", path, [self errorMessageWithCode:result]]]
             fail:error];
   }
   NSMutableArray<NSString *> *dirs = [NSMutableArray array];
@@ -126,18 +126,18 @@ const char *DoubleDot = "..";
   }
 
   self.calls.DirectoryClose(self.connection, directory);
-  [self.logger logFormat:@"Contents of directory %@ %@", path, [FBCollectionInformation oneLineDescriptionFromArray:dirs]];
+  [self.logger log:[NSString stringWithFormat:@"Contents of directory %@ %@", path, [FBCollectionInformation oneLineDescriptionFromArray:dirs]]];
   return [NSArray arrayWithArray:dirs];
 }
 
 - (NSData *)contentsOfPath:(NSString *)path error:(NSError **)error
 {
-  [self.logger logFormat:@"Contents of path %@", path];
+  [self.logger log:[NSString stringWithFormat:@"Contents of path %@", path]];
   CFTypeRef file;
   mach_error_t result = self.calls.FileRefOpen(self.connection, path.UTF8String, FBAFCReadOnlyMode, &file);
   if (result != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when opening file %@: %@", path, [self errorMessageWithCode:result]]
+             describe:[NSString stringWithFormat:@"Error when opening file %@: %@", path, [self errorMessageWithCode:result]]]
             fail:error];
   }
   self.calls.FileRefSeek(self.connection, file, 0, 2);
@@ -154,12 +154,12 @@ const char *DoubleDot = "..";
     if (result != 0) {
       self.calls.FileRefClose(self.connection, file);
       return [[FBDeviceControlError
-               describeFormat:@"Error when reading file %@: %@", path, [self errorMessageWithCode:result]]
+               describe:[NSString stringWithFormat:@"Error when reading file %@: %@", path, [self errorMessageWithCode:result]]]
               fail:error];
     }
   }
   self.calls.FileRefClose(self.connection, file);
-  [self.logger logFormat:@"Read %lu bytes from path %@", buffer.length, path];
+  [self.logger log:[NSString stringWithFormat:@"Read %lu bytes from path %@", buffer.length, path]];
   return buffer;
 }
 
@@ -168,14 +168,14 @@ const char *DoubleDot = "..";
   if (recursively) {
     return [self removePathAndContents:path error:error];
   } else {
-    [self.logger logFormat:@"Removing file path %@", path];
+    [self.logger log:[NSString stringWithFormat:@"Removing file path %@", path]];
     mach_error_t result = self.calls.RemovePath(self.connection, [path UTF8String]);
     if (result != 0) {
       return [[FBDeviceControlError
-               describeFormat:@"Error when removing path %@: %@", path, [self errorMessageWithCode:result]]
+               describe:[NSString stringWithFormat:@"Error when removing path %@: %@", path, [self errorMessageWithCode:result]]]
               failBool:error];
     }
-    [self.logger logFormat:@"Removed file path %@", path];
+    [self.logger log:[NSString stringWithFormat:@"Removed file path %@", path]];
     return YES;
   }
 }
@@ -185,7 +185,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.RenamePath(self.connection, path.UTF8String, destination.UTF8String);
   if (result != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when renaming from %@ to %@: %@", path, destination, [self errorMessageWithCode:result]]
+             describe:[NSString stringWithFormat:@"Error when renaming from %@ to %@: %@", path, destination, [self errorMessageWithCode:result]]]
             failBool:error];
   }
   return YES;
@@ -199,14 +199,14 @@ const char *DoubleDot = "..";
             failBool:error];
   }
   NSString *connectionDescription = CFBridgingRelease(CFCopyDescription(self.connection));
-  [self.logger logFormat:@"Closing %@", connectionDescription];
+  [self.logger log:[NSString stringWithFormat:@"Closing %@", connectionDescription]];
   int status = self.calls.ConnectionClose(self.connection);
   if (status != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Failed to close connection with error %d", status]
+             describe:[NSString stringWithFormat:@"Failed to close connection with error %d", status]]
             failBool:error];
   }
-  [self.logger logFormat:@"Closed AFC Connection %@", connectionDescription];
+  [self.logger log:[NSString stringWithFormat:@"Closed AFC Connection %@", connectionDescription]];
   // AFCConnectionClose does release the connection.
   _connection = NULL;
   return YES;
@@ -216,11 +216,11 @@ const char *DoubleDot = "..";
 
 - (BOOL)copyFileFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error
 {
-  [self.logger logFormat:@"Copying %@ to %@", hostPath, containerPath];
+  [self.logger log:[NSString stringWithFormat:@"Copying %@ to %@", hostPath, containerPath]];
   NSData *data = [NSData dataWithContentsOfFile:hostPath];
   if (!data) {
     return [[FBDeviceControlError
-             describeFormat:@"Could not find file on host: %@", hostPath]
+             describe:[NSString stringWithFormat:@"Could not find file on host: %@", hostPath]]
             failBool:error];
   }
 
@@ -228,7 +228,7 @@ const char *DoubleDot = "..";
   mach_error_t result = self.calls.FileRefOpen(self.connection, containerPath.UTF8String, FBAFCreateReadAndWrite, &fileReference);
   if (result != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when opening file %@: %@", containerPath, [self errorMessageWithCode:result]]
+             describe:[NSString stringWithFormat:@"Error when opening file %@: %@", containerPath, [self errorMessageWithCode:result]]]
             failBool:error];
   }
 
@@ -245,16 +245,16 @@ const char *DoubleDot = "..";
   self.calls.FileRefClose(self.connection, fileReference);
   if (writeResult != 0) {
     return [[FBDeviceControlError
-             describeFormat:@"Error when writing file %@: %@", containerPath, [self errorMessageWithCode:writeResult]]
+             describe:[NSString stringWithFormat:@"Error when writing file %@: %@", containerPath, [self errorMessageWithCode:writeResult]]]
             failBool:error];
   }
-  [self.logger logFormat:@"Copied from %@ to %@", hostPath, containerPath];
+  [self.logger log:[NSString stringWithFormat:@"Copied from %@ to %@", hostPath, containerPath]];
   return YES;
 }
 
 - (BOOL)copyContentsOfHostDirectory:(NSString *)hostDirectory toContainerPath:(NSString *)containerPath error:(NSError **)error
 {
-  [self.logger logFormat:@"Copying from %@ to %@", hostDirectory, containerPath];
+  [self.logger log:[NSString stringWithFormat:@"Copying from %@ to %@", hostDirectory, containerPath]];
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSDirectoryEnumerator<NSURL *> *urls = [fileManager
                                           enumeratorAtURL:[NSURL fileURLWithPath:hostDirectory]
@@ -265,17 +265,17 @@ const char *DoubleDot = "..";
   for (NSURL *url in urls) {
     BOOL success = [self copyFromHost:url.path toContainerPath:containerPath error:error];
     if (!success) {
-      [self.logger logFormat:@"Failed to copy %@ to %@ with error %@", url, containerPath, *error];
+      [self.logger log:[NSString stringWithFormat:@"Failed to copy %@ to %@ with error %@", url, containerPath, *error]];
       return NO;
     }
   }
-  [self.logger logFormat:@"Copied from %@ to %@", hostDirectory, containerPath];
+  [self.logger log:[NSString stringWithFormat:@"Copied from %@ to %@", hostDirectory, containerPath]];
   return YES;
 }
 
 - (BOOL)removePathAndContents:(NSString *)path error:(NSError **)error
 {
-  [self.logger logFormat:@"Removing path %@ and contents", path];
+  [self.logger log:[NSString stringWithFormat:@"Removing path %@ and contents", path]];
   AFCOperationRef operation = self.calls.OperationCreateRemovePathAndContents(
     CFGetAllocator(self.connection),
     (__bridge CFStringRef _Nonnull)(path),
@@ -283,14 +283,14 @@ const char *DoubleDot = "..";
   );
   if (operation == nil) {
     return [[FBDeviceControlError
-             describeFormat:@"Operation for path removal %@ couldn't be created", path]
+             describe:[NSString stringWithFormat:@"Operation for path removal %@ couldn't be created", path]]
             failBool:error];
   }
   int op_result = self.calls.ConnectionProcessOperation(self.connection, operation);
   if (op_result != 0) {
     CFRelease(operation);
     return [[FBDeviceControlError
-             describeFormat:@"Operation couldn't be processed (%d)", op_result]
+             describe:[NSString stringWithFormat:@"Operation couldn't be processed (%d)", op_result]]
             failBool:error];
   }
   BOOL success = [self afcOperationSucceeded:operation error:error];
@@ -307,7 +307,7 @@ const char *DoubleDot = "..";
   NSDictionary<NSString *, id> *infoDictionary = (__bridge id)(self.calls.OperationGetResultObject(operation));
   if (![infoDictionary isKindOfClass:[NSDictionary class]]) {
     return [[FBDeviceControlError
-             describeFormat:@"AFCOperation failed. status: %d, result object: %@", status, infoDictionary]
+             describe:[NSString stringWithFormat:@"AFCOperation failed. status: %d, result object: %@", status, infoDictionary]]
             failBool:error];
   }
 
@@ -315,11 +315,11 @@ const char *DoubleDot = "..";
   NSString *domain = infoDictionary[AFCDomainKey];
   if (!code || ![code respondsToSelector:@selector(integerValue)] || !domain || ![domain isKindOfClass:NSString.class]) {
     return [[FBDeviceControlError
-             describeFormat:@"AFCOperation failed. status: %d, result object: %@", status, infoDictionary]
+             describe:[NSString stringWithFormat:@"AFCOperation failed. status: %d, result object: %@", status, infoDictionary]]
             failBool:error];
   }
   return [[[FBDeviceControlError
-            describeFormat:@"AFCOperation failed. underlying error: %@", infoDictionary]
+            describe:[NSString stringWithFormat:@"AFCOperation failed. underlying error: %@", infoDictionary]]
            code:code.integerValue]
           failBool:error];
 }

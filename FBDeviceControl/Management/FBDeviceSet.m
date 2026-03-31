@@ -142,7 +142,7 @@
 {
   FBDevice *device = [self.storage deviceForKey:amDevice.uniqueIdentifier];
   if (!device) {
-    [self.logger logFormat:@"%@ was removed, but there's no active device for it", amDevice];
+    [self.logger log:[NSString stringWithFormat:@"%@ was removed, but there's no active device for it", amDevice]];
     return;
   }
   device.amDevice = NULL;
@@ -170,7 +170,7 @@
 {
   FBDevice *device = [self.storage deviceForKey:restorableDevice.uniqueIdentifier];
   if (!device) {
-    [self.logger logFormat:@"%@ was removed, but there's no active device for it", restorableDevice];
+    [self.logger log:[NSString stringWithFormat:@"%@ was removed, but there's no active device for it", restorableDevice]];
     return;
   }
   device.restorableDevice = NULL;
@@ -198,7 +198,7 @@
   } else if ([targetInfo isKindOfClass:FBAMRestorableDevice.class]) {
     [self restorableDeviceAdded:(FBAMRestorableDevice *) targetInfo];
   } else {
-    [self.logger logFormat:@"Ignoring %@ as it is not a valid target type", targetInfo];
+    [self.logger log:[NSString stringWithFormat:@"Ignoring %@ as it is not a valid target type", targetInfo]];
   }
 }
 
@@ -209,7 +209,7 @@
   } else if ([targetInfo isKindOfClass:FBAMRestorableDevice.class]) {
     [self restorableDeviceRemoved:(FBAMRestorableDevice *) targetInfo];
   } else {
-    [self.logger logFormat:@"Ignoring %@ as it is not a valid target type", targetInfo];
+    [self.logger log:[NSString stringWithFormat:@"Ignoring %@ as it is not a valid target type", targetInfo]];
   }
 }
 

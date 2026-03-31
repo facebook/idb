@@ -86,13 +86,13 @@
 {
   self.lastSeedValue = 0;
   if (self.surface != NULL) {
-    [self.logger.info logFormat:@"Removing old surface %@", surface];
+    [self.logger.info log:[NSString stringWithFormat:@"Removing old surface %@", surface]];
     [surface decrementUseCount];
     self.surface = nil;
   }
   if (surface != NULL) {
     [surface incrementUseCount];
-    [self.logger.info logFormat:@"Received IOSurface from Framebuffer Service %@", surface];
+    [self.logger.info log:[NSString stringWithFormat:@"Received IOSurface from Framebuffer Service %@", surface]];
     self.surface = surface;
   }
 }

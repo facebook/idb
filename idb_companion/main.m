@@ -7,19 +7,18 @@
 
 #import <Foundation/Foundation.h>
 
+#import <CompanionLib/FBIDBCommandExecutor.h>
+#import <CompanionLib/FBIDBError.h>
+#import <CompanionLib/FBIDBLogger.h>
+#import <CompanionLib/FBIDBStorageManager.h>
+#import <CompanionLib/FBiOSTargetProvider.h>
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import <CompanionLib/FBIDBError.h>
-#import <CompanionLib/FBIDBLogger.h>
-#import <CompanionLib/FBiOSTargetProvider.h>
-#import "FBiOSTargetStateChangeNotifier.h"
 #import "FBiOSTargetDescription.h"
-#import <CompanionLib/FBIDBStorageManager.h>
-#import <CompanionLib/FBIDBCommandExecutor.h>
-
+#import "FBiOSTargetStateChangeNotifier.h"
 #import "idb-Swift.h"
 
 const char *kUsageHelpMessage = "\
@@ -81,7 +80,7 @@ static FBFuture<FBSimulatorSet *> *SimulatorSetWithPath(NSString *deviceSetPath,
 {
   // Give a more meaningful message if we can't load the frameworks.
   NSError *error = nil;
-  if(![FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworks:logger error:&error]) {
+  if (![FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworks:logger error:&error]) {
     return [FBFuture futureWithError:error];
   }
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath logger:logger reporter:reporter];
@@ -101,18 +100,19 @@ static FBFuture<FBSimulatorSet *> *SimulatorSet(NSUserDefaults *userDefaults, id
 static FBFuture<FBDeviceSet *> *DeviceSet(id<FBControlCoreLogger> logger, NSString *ecidFilter)
 {
   return [[FBFuture
-    onQueue:dispatch_get_main_queue() resolveValue:^ FBDeviceSet * (NSError **error) {
-      // Give a more meaningful message if we can't load the frameworks.
-      if(![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:error]) {
-        return nil;
-      }
-      FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil ecidFilter:ecidFilter error:error];
-      if (!deviceSet) {
-        return nil;
-      }
-      return deviceSet;
-    }]
-    delay:0.2]; // This is needed to give the Restorable Devices time to populate.
+           onQueue:dispatch_get_main_queue()
+           resolveValue:^FBDeviceSet *(NSError **error) {
+             // Give a more meaningful message if we can't load the frameworks.
+             if (![FBDeviceControlFrameworkLoader.new loadPrivateFrameworks:logger error:error]) {
+               return nil;
+             }
+             FBDeviceSet *deviceSet = [FBDeviceSet setWithLogger:logger delegate:nil ecidFilter:ecidFilter error:error];
+             if (!deviceSet) {
+               return nil;
+             }
+             return deviceSet;
+           }]
+          delay:0.2]; // This is needed to give the Restorable Devices time to populate.
 }
 
 static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -129,12 +129,12 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
     }
     if ([only.lowercaseString hasPrefix:@"ecid:"]) {
       NSString *ecid = [only.lowercaseString stringByReplacingOccurrencesOfString:@"ecid:" withString:@""];
-      [logger logFormat:@"ECID filter of %@", ecid];
+      [logger log:[NSString stringWithFormat:@"ECID filter of %@", ecid]];
       return [FBFuture futureWithFutures:@[DeviceSet(logger, ecid)]];
     }
     return [[FBIDBError
-      describeFormat:@"%@ is not a valid argument for '--only'", only]
-      failFuture];
+             describe:[NSString stringWithFormat:@"%@ is not a valid argument for '--only'", only]]
+            failFuture];
   }
   if (!xcodeAvailable) {
     [logger log:@"Xcode is not available, only Devices will be provided"];
@@ -144,55 +144,60 @@ static FBFuture<NSArray<id<FBiOSTargetSet>> *> *DefaultTargetSets(NSUserDefaults
   return [FBFuture futureWithFutures:@[
     SimulatorSet(userDefaults, logger, reporter),
     DeviceSet(logger, nil),
-  ]];
+          ]];
 }
 
 static FBFuture<id<FBiOSTarget>> *TargetForUDID(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, BOOL warmUp, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [DefaultTargetSets(userDefaults, xcodeAvailable, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
-      return [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets warmUp:warmUp logger:logger];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
+            return [FBiOSTargetProvider targetWithUDID:udid targetSets:targetSets warmUp:warmUp logger:logger];
+          }];
 }
 
 static FBFuture<FBDevice *> *DeviceForECID(NSString *ecid, id<FBControlCoreLogger> logger)
 {
   return [DeviceSet(logger, [ecid stringByReplacingOccurrencesOfString:@"ecid:" withString:@""])
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDeviceSet *deviceSet) {
-      NSArray<FBDevice *> *devices = deviceSet.allDevices;
-      if (devices.count == 0) {
-        return [[FBIDBError
-          describeFormat:@"No devices %@ matching %@", [FBCollectionInformation oneLineDescriptionFromArray:devices], ecid]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:devices.firstObject];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(FBDeviceSet *deviceSet) {
+            NSArray<FBDevice *> *devices = deviceSet.allDevices;
+            if (devices.count == 0) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"No devices %@ matching %@", [FBCollectionInformation oneLineDescriptionFromArray:devices], ecid]]
+                      failFuture];
+            }
+            return [FBFuture futureWithResult:devices.firstObject];
+          }];
 }
 
 static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [[SimulatorSet(userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulatorSet *simulatorSet) {
-      return [FBiOSTargetProvider targetWithUDID:udid targetSets:@[simulatorSet] warmUp:NO logger:logger];
-    }]
-    onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
-      id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-      if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-        return [[FBIDBError
-          describeFormat:@"%@ does not support Simulator Lifecycle commands", commands]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:commands];
-    }];
+           onQueue:dispatch_get_main_queue()
+           fmap:^(FBSimulatorSet *simulatorSet) {
+             return [FBiOSTargetProvider targetWithUDID:udid targetSets:@[simulatorSet] warmUp:NO logger:logger];
+           }]
+          onQueue:dispatch_get_main_queue()
+          fmap:^(id<FBiOSTarget> target) {
+            id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
+            if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"%@ does not support Simulator Lifecycle commands", commands]]
+                      failFuture];
+            }
+            return [FBFuture futureWithResult:commands];
+          }];
 }
 
 static FBFuture<NSNull *> *TargetOfflineFuture(id<FBiOSTarget> target, id<FBControlCoreLogger> logger)
 {
   return [[target
-    resolveLeavesState:FBiOSTargetStateBooted]
-    onQueue:target.workQueue doOnResolved:^(id _){
-      [target.logger log:@"Target is no longer booted, companion going offline"];
-    }];
+           resolveLeavesState:FBiOSTargetStateBooted]
+          onQueue:target.workQueue
+          doOnResolved:^(id _) {
+            [target.logger log:@"Target is no longer booted, companion going offline"];
+          }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -200,202 +205,219 @@ static FBFuture<FBFuture<NSNull *> *> *BootFuture(NSString *udid, NSUserDefaults
   BOOL headless = [userDefaults boolForKey:@"-headless"];
   BOOL verifyBooted = [userDefaults objectForKey:@"-verify-booted"] == nil ? YES : [userDefaults boolForKey:@"-verify-booted"];
   return [[SimulatorFuture(udid, userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(FBSimulator *simulator) {
-      // Boot the simulator with the options provided.
-      FBSimulatorBootOptions options = FBSimulatorBootConfiguration.defaultConfiguration.options;
-      if (headless) {
-        [logger logFormat:@"Booting %@ headlessly", udid];
-        options = options | FBSimulatorBootOptionsTieToProcessLifecycle;
-      } else {
-        [logger logFormat:@"Booting %@ normally", udid];
-        options = options & ~FBSimulatorBootOptionsTieToProcessLifecycle;
-      }
-      if (verifyBooted) {
-        [logger logFormat:@"Booting %@ with verification", udid];
-        options = options | FBSimulatorBootOptionsVerifyUsable;
-      } else {
-        [logger logFormat:@"Booting %@ without verification", udid];
-        options = options & ~FBSimulatorBootOptionsVerifyUsable;
-      }
-      FBSimulatorBootConfiguration *config = [[FBSimulatorBootConfiguration alloc] initWithOptions:options environment:@{}];
-      return [[simulator boot:config] mapReplace:simulator];
-    }]
-    onQueue:dispatch_get_main_queue() map:^ FBFuture<NSNull *> * (FBSimulator *simulator) {
-      // Write the boot success to stdout
-      WriteTargetToStdOut(simulator);
-      // In a headless boot:
-      // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
-      // - If this process is manually killed then the simulator will die
-      // For a regular boot the sim will outlive this process.
-      if (!headless) {
-        return FBFuture.empty;
-      }
-      // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
-      // This means that we should attempt to handle cancellation gracefully.
-      // In this case we should attempt to shutdown in response to cancellation.
-      // This means if this future is cancelled and waited-for before the process exits we will return it in a "Shutdown" state.
-      return [TargetOfflineFuture(simulator, logger)
-        onQueue:dispatch_get_main_queue() respondToCancellation:^{
-          return [simulator shutdown];
-        }];
-    }];
+           onQueue:dispatch_get_main_queue()
+           fmap:^(FBSimulator *simulator) {
+             // Boot the simulator with the options provided.
+             FBSimulatorBootOptions options = FBSimulatorBootConfiguration.defaultConfiguration.options;
+             if (headless) {
+               [logger log:[NSString stringWithFormat:@"Booting %@ headlessly", udid]];
+               options = options | FBSimulatorBootOptionsTieToProcessLifecycle;
+             } else {
+               [logger log:[NSString stringWithFormat:@"Booting %@ normally", udid]];
+               options = options & ~FBSimulatorBootOptionsTieToProcessLifecycle;
+             }
+             if (verifyBooted) {
+               [logger log:[NSString stringWithFormat:@"Booting %@ with verification", udid]];
+               options = options | FBSimulatorBootOptionsVerifyUsable;
+             } else {
+               [logger log:[NSString stringWithFormat:@"Booting %@ without verification", udid]];
+               options = options & ~FBSimulatorBootOptionsVerifyUsable;
+             }
+             FBSimulatorBootConfiguration *config = [[FBSimulatorBootConfiguration alloc] initWithOptions:options environment:@{}];
+             return [[simulator boot:config] mapReplace:simulator];
+           }]
+          onQueue:dispatch_get_main_queue()
+          map:^FBFuture<NSNull *> *(FBSimulator *simulator) {
+            // Write the boot success to stdout
+            WriteTargetToStdOut(simulator);
+            // In a headless boot:
+            // - We need to keep this process running until it's otherwise shutdown. When the sim is shutdown this process will die.
+            // - If this process is manually killed then the simulator will die
+            // For a regular boot the sim will outlive this process.
+            if (!headless) {
+              return FBFuture.empty;
+            }
+            // Whilst we can rely on this process being killed shutting the simulator, this is asynchronous.
+            // This means that we should attempt to handle cancellation gracefully.
+            // In this case we should attempt to shutdown in response to cancellation.
+            // This means if this future is cancelled and waited-for before the process exits we will return it in a "Shutdown" state.
+            return [TargetOfflineFuture(simulator, logger)
+                    onQueue:dispatch_get_main_queue()
+                    respondToCancellation:^{
+                      return [simulator shutdown];
+                    }];
+          }];
 }
 
 static FBFuture<NSNull *> *ShutdownFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, NO, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
-      id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
-      if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
-        return [[FBIDBError
-          describeFormat:@"Cannot shutdown %@, does not support shutting down", target]
-          failFuture];
-      }
-      return [commands shutdown];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+            id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
+            if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"Cannot shutdown %@, does not support shutting down", target]]
+                      failFuture];
+            }
+            return [commands shutdown];
+          }];
 }
 
 static FBFuture<NSNull *> *RebootFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, NO, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
-      id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
-      if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
-        return [[FBIDBError
-          describeFormat:@"Cannot shutdown %@, does not support rebooting", target]
-          failFuture];
-      }
-      return [commands reboot];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+            id<FBPowerCommands> commands = (id<FBPowerCommands>) target;
+            if (![commands conformsToProtocol:@protocol(FBPowerCommands)]) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"Cannot shutdown %@, does not support rebooting", target]]
+                      failFuture];
+            }
+            return [commands reboot];
+          }];
 }
 
 static FBFuture<NSNull *> *EraseFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, NO, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
-      id<FBEraseCommands> commands = (id<FBEraseCommands>) target;
-      if (![commands conformsToProtocol:@protocol(FBEraseCommands)]) {
-        return [[FBIDBError
-          describeFormat:@"Cannot erase %@, does not support erasing", target]
-          failFuture];
-      }
-      return [commands erase];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+            id<FBEraseCommands> commands = (id<FBEraseCommands>) target;
+            if (![commands conformsToProtocol:@protocol(FBEraseCommands)]) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"Cannot erase %@, does not support erasing", target]]
+                      failFuture];
+            }
+            return [commands erase];
+          }];
 }
 
 static FBFuture<NSNull *> *DeleteFuture(NSString *udidOrAll, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [[SimulatorSet(userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture * (FBSimulatorSet *set) {
-      if ([udidOrAll.lowercaseString isEqualToString:@"all"]) {
-        return [set deleteAll];
-      }
-      FBSimulator *simulator = [set simulatorWithUDID:udidOrAll];
-      if (!simulator) {
-        return [[FBIDBError
-          describeFormat:@"Could not find a simulator with udid %@", udidOrAll]
-          failFuture];
-      }
-      return [set delete:simulator];
-    }]
-    mapReplace:NSNull.null];
+           onQueue:dispatch_get_main_queue()
+           fmap:^FBFuture *(FBSimulatorSet *set) {
+             if ([udidOrAll.lowercaseString isEqualToString:@"all"]) {
+               return [set deleteAll];
+             }
+             FBSimulator *simulator = [set simulatorWithUDID:udidOrAll];
+             if (!simulator) {
+               return [[FBIDBError
+                        describe:[NSString stringWithFormat:@"Could not find a simulator with udid %@", udidOrAll]]
+                       failFuture];
+             }
+             return [set delete:simulator];
+           }]
+          mapReplace:NSNull.null];
 }
 
 static FBFuture<NSNull *> *ListFuture(NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [DefaultTargetSets(userDefaults, xcodeAvailable, logger, reporter)
-    onQueue:dispatch_get_main_queue() map:^ NSNull * (NSArray<id<FBiOSTargetSet>> *targetSets) {
-      NSUInteger reportedCount = 0;
-      for (id<FBiOSTargetSet> targetSet in targetSets) {
-        for (id<FBiOSTargetInfo> targetInfo in targetSet.allTargetInfos) {
-          WriteTargetToStdOut(targetInfo);
-          reportedCount++;
-        }
-      }
-      [logger logFormat:@"Reported %lu targets to stdout", reportedCount];
-      return NSNull.null;
-    }];
+          onQueue:dispatch_get_main_queue()
+          map:^NSNull *(NSArray<id<FBiOSTargetSet>> *targetSets) {
+            NSUInteger reportedCount = 0;
+            for (id<FBiOSTargetSet> targetSet in targetSets) {
+              for (id<FBiOSTargetInfo> targetInfo in targetSet.allTargetInfos) {
+                WriteTargetToStdOut(targetInfo);
+                reportedCount++;
+              }
+            }
+            [logger log:[NSString stringWithFormat:@"Reported %lu targets to stdout", reportedCount]];
+            return NSNull.null;
+          }];
 }
 
 static FBFuture<NSNull *> *CreateFuture(NSString *create, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [[SimulatorSet(userDefaults, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<FBSimulator *> * (FBSimulatorSet *set) {
-      NSArray<NSString *> *parameters = [create componentsSeparatedByString:@","];
-      FBSimulatorConfiguration *config = [FBSimulatorConfiguration defaultConfiguration];
-      if (parameters.count > 0) {
-        config = [config withDeviceModel:parameters[0]];
-      }
-      if (parameters.count > 1) {
-        config = [config withOSNamed:parameters[1]];
-      }
-      return [set createSimulatorWithConfiguration:config];
-    }]
-    onQueue:dispatch_get_main_queue() map:^(FBSimulator *simulator) {
-      WriteTargetToStdOut(simulator);
-      return NSNull.null;
-    }];
+           onQueue:dispatch_get_main_queue()
+           fmap:^FBFuture<FBSimulator *> *(FBSimulatorSet *set) {
+             NSArray<NSString *> *parameters = [create componentsSeparatedByString:@","];
+             FBSimulatorConfiguration *config = [FBSimulatorConfiguration defaultConfiguration];
+             if (parameters.count > 0) {
+               config = [config withDeviceModel:parameters[0]];
+             }
+             if (parameters.count > 1) {
+               config = [config withOSNamed:parameters[1]];
+             }
+             return [set createSimulatorWithConfiguration:config];
+           }]
+          onQueue:dispatch_get_main_queue()
+          map:^(FBSimulator *simulator) {
+            WriteTargetToStdOut(simulator);
+            return NSNull.null;
+          }];
 }
 
 static FBFuture<NSNull *> *CloneFuture(NSString *udid, NSUserDefaults *userDefaults, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   NSString *destinationSet = [userDefaults stringForKey:@"-clone-destination-set"];
   return [[[FBFuture
-    futureWithFutures:@[
-      SimulatorFuture(udid, userDefaults, logger, reporter),
-      SimulatorSetWithPath(destinationSet, logger, reporter),
-    ]]
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<FBSimulator *> * (NSArray<id> *tuple) {
-      FBSimulator *base = tuple[0];
-      FBSimulatorSet *destination = tuple[1];
-      return [base.set cloneSimulator:base toDeviceSet:destination];
-    }]
-    onQueue:dispatch_get_main_queue() map:^(FBSimulator *cloned) {
-      WriteTargetToStdOut(cloned);
-      return NSNull.null;
-    }];
+            futureWithFutures:@[
+              SimulatorFuture(udid, userDefaults, logger, reporter),
+              SimulatorSetWithPath(destinationSet, logger, reporter),
+            ]]
+           onQueue:dispatch_get_main_queue()
+           fmap:^FBFuture<FBSimulator *> *(NSArray<id> *tuple) {
+             FBSimulator *base = tuple[0];
+             FBSimulatorSet *destination = tuple[1];
+             return [base.set cloneSimulator:base toDeviceSet:destination];
+           }]
+          onQueue:dispatch_get_main_queue()
+          map:^(FBSimulator *cloned) {
+            WriteTargetToStdOut(cloned);
+            return NSNull.null;
+          }];
 }
 
 static FBFuture<NSNull *> *EnterRecoveryFuture(NSString *ecid, id<FBControlCoreLogger> logger)
 {
   return [DeviceForECID(ecid, logger)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
-      return [device enterRecovery];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(FBDevice *device) {
+            return [device enterRecovery];
+          }];
 }
+
 static FBFuture<NSNull *> *ExitRecoveryFuture(NSString *ecid, id<FBControlCoreLogger> logger)
 {
   return [DeviceForECID(ecid, logger)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
-      return [device exitRecovery];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(FBDevice *device) {
+            return [device exitRecovery];
+          }];
 }
 
 static FBFuture<NSNull *> *ActivateFuture(NSString *ecid, id<FBControlCoreLogger> logger)
 {
   return [DeviceForECID(ecid, logger)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (FBDevice *device) {
-      return [device activate];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(FBDevice *device) {
+            return [device activate];
+          }];
 }
 
 static FBFuture<NSNull *> *CleanFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
-          onQueue:dispatch_get_main_queue() fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
-    NSError *error = nil;
-    FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
-    if (!storageManager) {
-      return [FBFuture futureWithError:error];
-    }
-    FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-                                             commandExecutorForTarget:target
-                                             storageManager:storageManager
-                                             temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
-                                             debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults].debugserverPort
-                                             logger:logger];
-    return [commandExecutor clean];
-  }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+            NSError *error = nil;
+            FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+            if (!storageManager) {
+              return [FBFuture futureWithError:error];
+            }
+            FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                                     commandExecutorForTarget:target
+                                                     storageManager:storageManager
+                                                     temporaryDirectory:[FBTemporaryDirectory temporaryDirectoryWithLogger:logger]
+                                                     debugserverPort:[[IDBPortsConfiguration alloc] initWithArguments:userDefaults].debugserverPort
+                                                     logger:logger];
+            return [commandExecutor clean];
+          }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -403,88 +425,95 @@ static FBFuture<FBFuture<NSNull *> *> *CompanionServerFuture(NSString *udid, NSU
   BOOL terminateOffline = [userDefaults boolForKey:@"-terminate-offline"];
 
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, YES, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(id<FBiOSTarget> target) {
-      [reporter addMetadata:@{
-        @"udid": udid,
-        @"target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercaseString,
-      }];
-      [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
+          onQueue:dispatch_get_main_queue()
+          fmap:^(id<FBiOSTarget> target) {
+            [reporter addMetadata:@{
+               @"udid" : udid,
+               @"target_type" : FBiOSTargetTypeStringFromTargetType(target.targetType).lowercaseString,
+             }];
+            [reporter report:[FBEventReporterSubject subjectForEvent:@"launched"]];
 
-      FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
-      NSError *error = nil;
+            FBTemporaryDirectory *temporaryDirectory = [FBTemporaryDirectory temporaryDirectoryWithLogger:logger];
+            NSError *error = nil;
 
-      FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
-      if (!storageManager) {
-        return [FBFuture futureWithError:error];
-      }
-      NSError *err = nil;
+            FBIDBStorageManager *storageManager = [FBIDBStorageManager managerForTarget:target logger:logger error:&error];
+            if (!storageManager) {
+              return [FBFuture futureWithError:error];
+            }
+            NSError *err = nil;
 
-      // Start up the companion
-      IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
+            // Start up the companion
+            IDBPortsConfiguration *ports = [[IDBPortsConfiguration alloc] initWithArguments:userDefaults];
 
-      // Command Executor
-      FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
-                                               commandExecutorForTarget:target
-                                               storageManager:storageManager
-                                               temporaryDirectory:temporaryDirectory
-                                               debugserverPort:ports.debugserverPort
-                                               logger:logger];
+            // Command Executor
+            FBIDBCommandExecutor *commandExecutor = [FBIDBCommandExecutor
+                                                     commandExecutorForTarget:target
+                                                     storageManager:storageManager
+                                                     temporaryDirectory:temporaryDirectory
+                                                     debugserverPort:ports.debugserverPort
+                                                     logger:logger];
 
-      FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.eventReporter logger:logger];
+            FBIDBCommandExecutor *loggingCommandExecutor = [FBLoggingWrapper wrap:commandExecutor simplifiedNaming:YES eventReporter:IDBConfiguration.eventReporter logger:logger];
 
-      GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
-                                      initWithTarget:target
-                                      commandExecutor:loggingCommandExecutor
-                                      reporter:IDBConfiguration.eventReporter
-                                      logger:logger
-                                      ports:ports
-                                      error:&err];
-      if (!swiftServer) {
-        return [FBFuture futureWithError:err];
-      }
+            GRPCSwiftServer *swiftServer = [[GRPCSwiftServer alloc]
+                                            initWithTarget:target
+                                            commandExecutor:loggingCommandExecutor
+                                            reporter:IDBConfiguration.eventReporter
+                                            logger:logger
+                                            ports:ports
+                                            error:&err];
+            if (!swiftServer) {
+              return [FBFuture futureWithError:err];
+            }
 
-      return [[swiftServer start] onQueue:target.workQueue map:^ FBFuture * (NSDictionary<NSString *, id> *serverDescription) {
-        WriteJSONToStdOut(serverDescription);
-        NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray: @[swiftServer.completed]];
+            return [[swiftServer start] onQueue:target.workQueue
+                                            map:^FBFuture *(NSDictionary<NSString *, id> *serverDescription) {
+                                              WriteJSONToStdOut(serverDescription);
+                                              NSMutableArray<FBFuture<NSNull *> *> *futures = [[NSMutableArray alloc] initWithArray:@[swiftServer.completed]];
 
-        if (terminateOffline) {
-          [logger.info logFormat:@"Companion will terminate when target goes offline"];
-          [futures addObject:TargetOfflineFuture(target, logger)];
-        } else {
-          [logger.info logFormat:@"Companion will stay alive if target goes offline"];
-        }
+                                              if (terminateOffline) {
+                                                [logger.info log:@"Companion will terminate when target goes offline"];
+                                                [futures addObject:TargetOfflineFuture(target, logger)];
+                                              } else {
+                                                [logger.info log:@"Companion will stay alive if target goes offline"];
+                                              }
 
-        FBFuture<NSNull *> *completed = [FBFuture race: futures];
-        return [completed
-                onQueue:target.workQueue chain:^(FBFuture *future) {
-          [temporaryDirectory cleanOnExit];
-          return future;
-        }];
-      }];
-  }];
+                                              FBFuture<NSNull *> *completed = [FBFuture race:futures];
+                                              return [completed
+                                                      onQueue:target.workQueue
+                                                      chain:^(FBFuture *future) {
+                                                        [temporaryDirectory cleanOnExit];
+                                                        return future;
+                                                      }];
+                                            }];
+          }];
 }
 
 static FBFuture<FBFuture<NSNull *> *> *NotiferFuture(NSString *notify, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
 {
   return [[[DefaultTargetSets(userDefaults, xcodeAvailable, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
-      if ([notify isEqualToString:@"stdout"]) {
-        return [FBiOSTargetStateChangeNotifier notifierToStdOutWithTargetSets:targetSets logger:logger];
-      }
-      return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify withTargetSets:targetSets logger:logger];
-    }]
-    onQueue:dispatch_get_main_queue() fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
-      [logger logFormat:@"Starting Notifier %@", notifier];
-      return [[notifier startNotifier] mapReplace:notifier];
-    }]
-    onQueue:dispatch_get_main_queue() map:^(FBiOSTargetStateChangeNotifier *notifier) {
-      [logger logFormat:@"Started Notifier %@", notifier];
-      return [notifier.notifierDone
-        onQueue:dispatch_get_main_queue() respondToCancellation:^{
-          [logger logFormat:@"Stopping Notifier %@", notifier];
-          return FBFuture.empty;
-        }];
-    }];
+            onQueue:dispatch_get_main_queue()
+            fmap:^(NSArray<id<FBiOSTargetSet>> *targetSets) {
+              if ([notify isEqualToString:@"stdout"]) {
+                return [FBiOSTargetStateChangeNotifier notifierToStdOutWithTargetSets:targetSets logger:logger];
+              }
+              return [FBiOSTargetStateChangeNotifier notifierToFilePath:notify withTargetSets:targetSets logger:logger];
+            }]
+           onQueue:dispatch_get_main_queue()
+           fmap:^(FBiOSTargetStateChangeNotifier *notifier) {
+             [logger log:[NSString stringWithFormat:@"Starting Notifier %@", notifier]];
+             return [[notifier startNotifier] mapReplace:notifier];
+           }]
+          onQueue:dispatch_get_main_queue()
+          map:^(FBiOSTargetStateChangeNotifier *notifier) {
+            [logger log:[NSString stringWithFormat:@"Started Notifier %@", notifier]];
+            return [notifier.notifierDone
+                    onQueue:dispatch_get_main_queue()
+                    respondToCancellation:^{
+                      [logger log:[NSString stringWithFormat:@"Stopping Notifier %@", notifier]];
+                      return FBFuture.empty;
+                    }];
+          }];
 }
 
 static FBFuture<NSNull *> *ForwardFuture(NSString *forward, NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger, id<FBEventReporter> reporter)
@@ -492,25 +521,27 @@ static FBFuture<NSNull *> *ForwardFuture(NSString *forward, NSUserDefaults *user
   NSArray<NSString *> *components = [forward componentsSeparatedByString:@":"];
   if (components.count != 2) {
     return [[FBIDBError
-      describeFormat:@"%@ should be of the form UDID:PORT", forward]
-      failFuture];
+             describe:[NSString stringWithFormat:@"%@ should be of the form UDID:PORT", forward]]
+            failFuture];
   }
   NSString *udid = components[0];
   int remotePort = [components[1] intValue];
 
   return [TargetForUDID(udid, userDefaults, xcodeAvailable, NO, logger, reporter)
-    onQueue:dispatch_get_main_queue() fmap:^ FBFuture<NSNull *> * (id<FBiOSTarget> target) {
-      id<FBSocketForwardingCommands> commands = (id<FBSocketForwardingCommands>) target;
-      if (![commands conformsToProtocol:@protocol(FBSocketForwardingCommands)]) {
-        return [[FBIDBError
-          describeFormat:@"%@ does not conform to FBSocketForwardingCommands", target]
-          failFuture];
-      }
-      return [commands drainLocalFileInput:STDIN_FILENO localFileOutput:STDOUT_FILENO remotePort:remotePort];
-    }];
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture<NSNull *> *(id<FBiOSTarget> target) {
+            id<FBSocketForwardingCommands> commands = (id<FBSocketForwardingCommands>) target;
+            if (![commands conformsToProtocol:@protocol(FBSocketForwardingCommands)]) {
+              return [[FBIDBError
+                       describe:[NSString stringWithFormat:@"%@ does not conform to FBSocketForwardingCommands", target]]
+                      failFuture];
+            }
+            return [commands drainLocalFileInput:STDIN_FILENO localFileOutput:STDOUT_FILENO remotePort:remotePort];
+          }];
 }
 
-static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger) {
+static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefaults *userDefaults, BOOL xcodeAvailable, id<FBControlCoreLogger> logger)
+{
   NSString *boot = [userDefaults stringForKey:@"-boot"];
   NSString *reboot = [userDefaults stringForKey:@"-reboot"];
   NSString *clone = [userDefaults stringForKey:@"-clone"];
@@ -534,48 +565,48 @@ static FBFuture<FBFuture<NSNull *> *> *GetCompanionCompletedFuture(NSUserDefault
     [logger.info log:@"Listing"];
     return [FBFuture futureWithResult:ListFuture(userDefaults, xcodeAvailable, logger, reporter)];
   } else if (notify) {
-    [logger.info logFormat:@"Notifying %@", notify];
+    [logger.info log:[NSString stringWithFormat:@"Notifying %@", notify]];
     return NotiferFuture(notify, userDefaults, xcodeAvailable, logger, reporter);
   } else if (boot) {
-    [logger logFormat:@"Booting %@", boot];
+    [logger log:[NSString stringWithFormat:@"Booting %@", boot]];
     return BootFuture(boot, userDefaults, logger, reporter);
   } else if (shutdown) {
-    [logger.info logFormat:@"Shutting down %@", shutdown];
+    [logger.info log:[NSString stringWithFormat:@"Shutting down %@", shutdown]];
     return [FBFuture futureWithResult:ShutdownFuture(shutdown, userDefaults, xcodeAvailable, logger, reporter)];
   } else if (reboot) {
-    [logger.info logFormat:@"Rebooting %@", reboot];
+    [logger.info log:[NSString stringWithFormat:@"Rebooting %@", reboot]];
     return [FBFuture futureWithResult:RebootFuture(reboot, userDefaults, xcodeAvailable, logger, reporter)];
   } else if (erase) {
-    [logger.info logFormat:@"Erasing %@", erase];
+    [logger.info log:[NSString stringWithFormat:@"Erasing %@", erase]];
     return [FBFuture futureWithResult:EraseFuture(erase, userDefaults, xcodeAvailable, logger, reporter)];
   } else if (delete) {
-    [logger.info logFormat:@"Deleting %@", delete];
+    [logger.info log:[NSString stringWithFormat:@"Deleting %@", delete]];
     return [FBFuture futureWithResult:DeleteFuture(delete, userDefaults, logger, reporter)];
   } else if (create) {
-    [logger.info logFormat:@"Creating %@", create];
+    [logger.info log:[NSString stringWithFormat:@"Creating %@", create]];
     return [FBFuture futureWithResult:CreateFuture(create, userDefaults, logger, reporter)];
   } else if (clone) {
-    [logger.info logFormat:@"Cloning %@", clone];
+    [logger.info log:[NSString stringWithFormat:@"Cloning %@", clone]];
     return [FBFuture futureWithResult:CloneFuture(clone, userDefaults, logger, reporter)];
   } else if (recover) {
-    [logger.info logFormat:@"Putting %@ into recovery", recover];
+    [logger.info log:[NSString stringWithFormat:@"Putting %@ into recovery", recover]];
     return [FBFuture futureWithResult:EnterRecoveryFuture(recover, logger)];
   } else if (unrecover) {
-    [logger.info logFormat:@"Removing %@ from recovery", recover];
+    [logger.info log:[NSString stringWithFormat:@"Removing %@ from recovery", recover]];
     return [FBFuture futureWithResult:ExitRecoveryFuture(unrecover, logger)];
   } else if (activate) {
-    [logger.info logFormat:@"Activating %@", activate];
+    [logger.info log:[NSString stringWithFormat:@"Activating %@", activate]];
     return [FBFuture futureWithResult:ActivateFuture(activate, logger)];
   } else if (clean) {
-    [logger.info logFormat:@"Cleaning %@", clean];
+    [logger.info log:[NSString stringWithFormat:@"Cleaning %@", clean]];
     return [FBFuture futureWithResult:CleanFuture(clean, userDefaults, xcodeAvailable, logger, reporter)];
   } else if (forward) {
-    [logger.info logFormat:@"Forwarding %@", forward];
+    [logger.info log:[NSString stringWithFormat:@"Forwarding %@", forward]];
     return [FBFuture futureWithResult:ForwardFuture(forward, userDefaults, xcodeAvailable, logger, reporter)];
   }
   return [[FBIDBError
-    describeFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]
-    failFuture];
+           describe:[NSString stringWithFormat:@"You must specify at least one 'Mode of operation'\n\n%s", kUsageHelpMessage]]
+          failFuture];
 }
 
 static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString *exitMessage, id<FBControlCoreLogger> logger)
@@ -592,9 +623,10 @@ static FBFuture<NSNumber *> *signalHandlerFuture(uintptr_t signalCode, NSString 
   action.sa_handler = SIG_IGN;
   sigaction((int)signalCode, &action, NULL);
   return [future
-    onQueue:queue notifyOfCompletion:^(FBFuture *_) {
-      dispatch_cancel(source);
-    }];
+          onQueue:queue
+          notifyOfCompletion:^(FBFuture *_) {
+            dispatch_cancel(source);
+          }];
 }
 
 static NSString *EnvDescription(void)
@@ -609,18 +641,19 @@ static NSString *ArchName(void)
 #elif TARGET_CPU_X86_64
   return @"x86_64";
 #else
-  return @"not supported");
+  return @"not supported";
 #endif
 }
 
 static void logStartupInfo(FBIDBLogger *logger)
 {
-    [logger.info logFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__];
-    [logger.info logFormat:@"IDB Companion architecture %@", ArchName()];
-    [logger.info logFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()];
+  [logger.info log:[NSString stringWithFormat:@"IDB Companion Built at %s %s", __DATE__, __TIME__]];
+  [logger.info log:[NSString stringWithFormat:@"IDB Companion architecture %@", ArchName()]];
+  [logger.info log:[NSString stringWithFormat:@"Invoked with args=%@ env=%@", [FBCollectionInformation oneLineDescriptionFromArray:NSProcessInfo.processInfo.arguments], EnvDescription()]];
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[])
+{
   @autoreleasepool
   {
     NSArray<NSString *> *arguments = NSProcessInfo.processInfo.arguments;
@@ -629,7 +662,7 @@ int main(int argc, const char *argv[]) {
       return 1;
     }
     if ([arguments containsObject:@"--version"]) {
-      WriteJSONToStdOut(@{@"build_time": @(__TIME__), @"build_date": @(__DATE__)});
+      WriteJSONToStdOut(@{@"build_time" : @(__TIME__), @"build_date" : @(__DATE__)});
       return 0;
     }
 
@@ -642,14 +675,14 @@ int main(int argc, const char *argv[]) {
     // Check that xcode-select returns a valid path, exit with error if not found
     BOOL xcodeAvailable = [FBXcodeDirectory.xcodeSelectDeveloperDirectory await:&error] != nil;
     if (!xcodeAvailable) {
-      [logger.error logFormat:@"Xcode developer directory not found. idb_companion requires Xcode to be installed and selected via xcode-select: %@", error];
+      [logger.error log:[NSString stringWithFormat:@"Xcode developer directory not found. idb_companion requires Xcode to be installed and selected via xcode-select: %@", error]];
       return 1;
     }
 
     FBFuture<NSNumber *> *signalled = [FBFuture race:@[
       signalHandlerFuture(SIGINT, @"Signalled: SIGINT", logger),
       signalHandlerFuture(SIGTERM, @"Signalled: SIGTERM", logger),
-    ]];
+                                       ]];
     FBFuture<NSNull *> *companionCompleted = [GetCompanionCompletedFuture(userDefaults, xcodeAvailable, logger) await:&error];
     if (!companionCompleted) {
       [logger.error log:error.localizedDescription];
@@ -659,7 +692,7 @@ int main(int argc, const char *argv[]) {
     FBFuture<NSNull *> *completed = [FBFuture race:@[
       companionCompleted,
       signalled,
-    ]];
+                                     ]];
     if (completed.error) {
       [logger.error log:completed.error.localizedDescription];
       return 1;
@@ -670,7 +703,7 @@ int main(int argc, const char *argv[]) {
       return 1;
     }
     if (companionCompleted.state == FBFutureStateCancelled) {
-      [logger logFormat:@"Responding to termination of idb with signo %@", result];
+      [logger log:[NSString stringWithFormat:@"Responding to termination of idb with signo %@", result]];
       FBFuture<NSNull *> *cancellation = [companionCompleted cancel];
       result = [cancellation await:&error];
       if (!result) {

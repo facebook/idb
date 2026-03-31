@@ -68,7 +68,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   NSError *error = nil;
   FBCrashLogInfo *crashLog = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
   if (!crashLog) {
-    [self.logger logFormat:@"Could not obtain crash info %@", error];
+    [self.logger log:[NSString stringWithFormat:@"Could not obtain crash info %@", error]];
     return nil;
   }
   return [self ingestCrashLog:crashLog];
@@ -159,7 +159,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 - (FBCrashLogInfo *)ingestCrashLog:(FBCrashLogInfo *)crashLog
 {
-  [self.logger logFormat:@"Ingesting Crash Log %@", crashLog];
+  [self.logger log:[NSString stringWithFormat:@"Ingesting Crash Log %@", crashLog]];
   self.ingestedCrashLogs[crashLog.name] = crashLog;
   [NSNotificationCenter.defaultCenter postNotificationName:FBCrashLogAppeared object:crashLog];
   return crashLog;

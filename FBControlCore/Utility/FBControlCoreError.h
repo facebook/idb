@@ -29,8 +29,6 @@ extern NSString * _Nonnull const FBControlCoreErrorDomain;
  */
 + (nonnull instancetype)describe:(nonnull NSString *)description;
 - (nonnull instancetype)describe:(nonnull NSString *)description;
-+ (nonnull instancetype)describeFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
-- (nonnull instancetype)describeFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /*
  Adds the Cause of the Error.
@@ -90,11 +88,6 @@ extern NSString * _Nonnull const FBControlCoreErrorDomain;
  Construct a simple error with the provided description.
  */
 + (nonnull NSError *)errorForDescription:(nonnull NSString *)description;
-
-/**
- Construct an error from a format string.
- */
-+ (nonnull NSError *)errorForFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Return NO, wrapping `failureCause` in the FBControlCore domain.

@@ -195,7 +195,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   id<FBLocationCommands> commands = (id<FBLocationCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBLocationCommands)]) {
     return [[FBIDBError
-             describeFormat:@"%@ does not conform to FBLocationCommands", commands]
+             describe:[NSString stringWithFormat:@"%@ does not conform to FBLocationCommands", commands]]
             failFuture];
   }
   return [commands overrideLocationWithLongitude:longitude latitude:latitude];
@@ -369,7 +369,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
             id<FBXCTestExtendedCommands> commands = (id<FBXCTestExtendedCommands>) self.target;
             if (![commands conformsToProtocol:@protocol(FBXCTestExtendedCommands)]) {
               return [[FBIDBError
-                       describeFormat:@"%@ does not conform to FBXCTestExtendedCommands", commands]
+                       describe:[NSString stringWithFormat:@"%@ does not conform to FBXCTestExtendedCommands", commands]]
                       failFuture];
             }
             return [commands listTestsForBundleAtPath:testDescriptor.url.path timeout:ListTestBundleTimeout withAppAtPath:appPath];
@@ -406,8 +406,8 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
 
 - (NSDictionary<NSString *, NSString *> *)applyEnvironmentReplacements:(NSDictionary<NSString *, NSString *> *)environment replacements:(NSDictionary<NSString *, NSString *> *)replacements
 {
-  [self.logger logFormat:@"Original environment: %@", environment];
-  [self.logger logFormat:@"Existing replacement mapping: %@", replacements];
+  [self.logger log:[NSString stringWithFormat:@"Original environment: %@", environment]];
+  [self.logger log:[NSString stringWithFormat:@"Existing replacement mapping: %@", replacements]];
   NSMutableDictionary<NSString *, NSString *> *interpolatedEnvironment = [NSMutableDictionary dictionaryWithCapacity:environment.count];
   for (NSString *name in environment.allKeys) {
     NSString *value = environment[name];
@@ -417,7 +417,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
     }
     interpolatedEnvironment[name] = value;
   }
-  [self.logger logFormat:@"Interpolated environment: %@", interpolatedEnvironment];
+  [self.logger log:[NSString stringWithFormat:@"Interpolated environment: %@", interpolatedEnvironment]];
   return interpolatedEnvironment;
 }
 
@@ -431,7 +431,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBDebuggerCommands> commands = (id<FBDebuggerCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBDebuggerCommands)]) {
     return [[FBControlCoreError
-             describeFormat:@"Target doesn't conform to FBDebuggerCommands protocol %@", commands]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBDebuggerCommands protocol %@", commands]]
             failFuture];
   }
 
@@ -496,12 +496,12 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
           fmap:^(NSArray<FBCrashLogInfo *> *crashes) {
             if (crashes.count > 1) {
               return [[FBIDBError
-                       describeFormat:@"More than one crash log matching %@", predicate]
+                       describe:[NSString stringWithFormat:@"More than one crash log matching %@", predicate]]
                       failFuture];
             }
             if (crashes.count == 0) {
               return [[FBIDBError
-                       describeFormat:@"No crashes matching %@", predicate]
+                       describe:[NSString stringWithFormat:@"No crashes matching %@", predicate]]
                       failFuture];
             }
             NSError *error = nil;
@@ -530,14 +530,14 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
           resolve:^FBFuture<FBBundleDescriptor *> * {
             if (self.debugServer) {
               return [[FBControlCoreError
-                       describeFormat:@"Debug server is already running"]
+                       describe:@"Debug server is already running"]
                       failFuture];
             }
             NSDictionary<NSString *, FBBundleDescriptor *> *persisted = self.storageManager.application.persistedBundles;
             FBBundleDescriptor *bundle = persisted[bundleID];
             if (!bundle) {
               return [[FBIDBError
-                       describeFormat:@"%@ not persisted application and is therefore not debuggable. Suitable applications: %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:persisted.allKeys]]
+                       describe:[NSString stringWithFormat:@"%@ not persisted application and is therefore not debuggable. Suitable applications: %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:persisted.allKeys]]]
                       failFuture];
             }
 
@@ -773,7 +773,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBDapServerCommand> commands = (id<FBDapServerCommand>) self.target;
   if (![commands conformsToProtocol:@protocol(FBDapServerCommand)]) {
     return [[FBControlCoreError
-             describeFormat:@"Target doesn't conform to FBDapServerCommand protocol %@", commands]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBDapServerCommand protocol %@", commands]]
             failFuture];
   }
 
@@ -790,7 +790,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBFileCommands> commands = (id<FBFileCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBFileCommands)]) {
     return [[FBControlCoreError
-             describeFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBFileCommands protocol %@", commands]]
             failFutureContext];
   }
   if ([containerType isEqualToString:FBFileContainerKindApplication]) {
@@ -850,7 +850,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBScreenshotCommands> commands = (id<FBScreenshotCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBScreenshotCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBScreenshotCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBScreenshotCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -861,7 +861,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorLifecycleCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorLifecycleCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -872,7 +872,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBSimulatorMediaCommands> commands = (id<FBSimulatorMediaCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorMediaCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorMediaCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorMediaCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -883,7 +883,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBSimulatorKeychainCommands> commands = (id<FBSimulatorKeychainCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorKeychainCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorKeychainCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorKeychainCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -894,7 +894,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBSimulatorSettingsCommands> commands = (id<FBSimulatorSettingsCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBSimulatorSettingsCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBSimulatorSettingsCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorSettingsCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -905,7 +905,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBAccessibilityCommands> commands = (id<FBAccessibilityCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBAccessibilityCommands)]) {
     return [[FBIDBError
-             describeFormat:@"Target doesn't conform to FBAccessibilityCommands protocol %@", self.target]
+             describe:[NSString stringWithFormat:@"Target doesn't conform to FBAccessibilityCommands protocol %@", self.target]]
             failFuture];
   }
   return [FBFuture futureWithResult:commands];
@@ -920,7 +920,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
             NSError *error = nil;
             if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
               return [[FBIDBError
-                       describeFormat:@"SimulatorKit is required for HID interactions: %@", error]
+                       describe:[NSString stringWithFormat:@"SimulatorKit is required for HID interactions: %@", error]]
                       failFuture];
             }
             return [commands connectToHID];
@@ -970,7 +970,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
                       FBInstalledApplication *installedApp = tuple[0];
                       if (makeDebuggable && installedApp.installType != FBApplicationInstallTypeUserDevelopment && userDevelopmentAppIsRequired) {
                         return [[FBIDBError
-                                 describeFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]
+                                 describe:[NSString stringWithFormat:@"Requested debuggable install of %@ but User Development signing is required", installedApp]]
                                 failFuture];
                       }
                       return [FBFuture futureWithResult:[[FBInstalledArtifact alloc] initWithName:appBundle.identifier uuid:appBundle.binary.uuid path:[NSURL fileURLWithPath:installedApp.bundle.path]]];
@@ -1053,12 +1053,12 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
             if (linkTo.bundle_type == FBDsymBundleTypeApp) {
               future = [[self.target installedApplicationWithBundleID:linkTo.bundle_id] onQueue:self.target.workQueue
                                                                                            fmap:^(FBInstalledApplication *linkToApp) {
-                                                                                             [self.logger logFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name];
+                                                                                             [self.logger log:[NSString stringWithFormat:@"Going to create a symlink for app bundle: %@", linkToApp.bundle.name]];
                                                                                              return [FBFuture futureWithResult:[NSURL fileURLWithPath:linkToApp.bundle.path]];
                                                                                            }];
             } else {
               id<FBXCTestDescriptor> testDescriptor = [self.storageManager.xctest testDescriptorWithID:linkTo.bundle_id error:&error];
-              [self.logger logFormat:@"Going to create a symlink for test bundle: %@", testDescriptor.name];
+              [self.logger log:[NSString stringWithFormat:@"Going to create a symlink for test bundle: %@", testDescriptor.name]];
               future = [FBFuture futureWithResult:testDescriptor.url];
             }
 
@@ -1069,12 +1069,12 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
                                 // delete a simlink if already exists
                                 // TODO: check if what we are deleting is a symlink
                                 [NSFileManager.defaultManager removeItemAtURL:dsymURL error:nil];
-                                [self.logger logFormat:@"Deleted a symlink for dsym if it already exists: %@", dsymURL];
+                                [self.logger log:[NSString stringWithFormat:@"Deleted a symlink for dsym if it already exists: %@", dsymURL]];
                                 NSError *createLinkError = nil;
                                 if (![NSFileManager.defaultManager createSymbolicLinkAtURL:dsymURL withDestinationURL:artifact.path error:&createLinkError]) {
                                   return [FBFuture futureWithError:error];
                                 }
-                                [self.logger logFormat:@"Created a symlink for dsym from: %@ to %@", dsymURL, artifact.path];
+                                [self.logger log:[NSString stringWithFormat:@"Created a symlink for dsym from: %@ to %@", dsymURL, artifact.path]];
                                 return [FBFuture futureWithResult:artifact];
                               }];
           }];
@@ -1099,7 +1099,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBNotificationCommands> commands = (id<FBNotificationCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBNotificationCommands)]) {
     return [[FBIDBError
-             describeFormat:@"%@ does not conform to FBNotificationCommands", commands]
+             describe:[NSString stringWithFormat:@"%@ does not conform to FBNotificationCommands", commands]]
             failFuture];
   }
   return [commands sendPushNotificationForBundleID:bundleID jsonPayload:jsonPayload];
@@ -1110,7 +1110,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   id<FBMemoryCommands> commands = (id<FBMemoryCommands>) self.target;
   if (![commands conformsToProtocol:@protocol(FBMemoryCommands)]) {
     return [[FBIDBError
-             describeFormat:@"%@ does not conform to FBMemoryCommands", commands]
+             describe:[NSString stringWithFormat:@"%@ does not conform to FBMemoryCommands", commands]]
             failFuture];
   }
   return [commands simulateMemoryWarning];

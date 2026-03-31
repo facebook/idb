@@ -27,7 +27,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
   // The start date of the process appear slightly older than we might think, so avoid missing it by a few seconds.
   NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
 
-  [logger logFormat:@"Waiting for %d to exit within %f seconds", process.processIdentifier, timeout];
+  [logger log:[NSString stringWithFormat:@"Waiting for %d to exit within %f seconds", process.processIdentifier, timeout]];
   return [[[process
             statLoc]
            onQueue:queue
@@ -86,37 +86,37 @@ static NSTimeInterval const KillBackoffTimeout = 1;
            onQueue:queue
            fmap:^FBFuture<id> *(NSString *stackshot) {
              return [[FBXCTestError
-                      describeFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, process.processIdentifier, stackshot]
+                      describe:[NSString stringWithFormat:@"Waited %f seconds for process %d to terminate, but the xctest process stalled: %@", timeout, process.processIdentifier, stackshot]]
                      failFuture];
            }]
           onQueue:queue
           notifyOfCompletion:^(FBFuture *_) {
-            [logger logFormat:@"Terminating stalled xctest process %@", process];
+            [logger log:[NSString stringWithFormat:@"Terminating stalled xctest process %@", process]];
             [[process
               sendSignal:SIGTERM
               backingOffToKillWithTimeout:KillBackoffTimeout
               logger:logger]
              onQueue:queue
              notifyOfCompletion:^(FBFuture *__) {
-               [logger logFormat:@"Stalled xctest process %@ has been terminated", process];
+               [logger log:[NSString stringWithFormat:@"Stalled xctest process %@ has been terminated", process]];
              }];
           }];
 }
 
 + (FBFuture<NSNumber *> *)performCrashLogQueryForProcess:(FBSubprocess *)process startDate:(NSDate *)startDate crashLogCommands:(id<FBCrashLogCommands>)crashLogCommands crashLogWaitTime:(NSTimeInterval)crashLogWaitTime queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  [logger logFormat:@"xctest process (%d) died prematurely, checking for crash log for %f seconds", process.processIdentifier, crashLogWaitTime];
+  [logger log:[NSString stringWithFormat:@"xctest process (%d) died prematurely, checking for crash log for %f seconds", process.processIdentifier, crashLogWaitTime]];
   return [[[FBXCTestProcess
             crashLogsForTerminationOfProcess:process
             since:startDate
             crashLogCommands:crashLogCommands
             crashLogWaitTime:crashLogWaitTime
             queue:queue]
-           rephraseFailure:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", process.processIdentifier]
+           rephraseFailure:[NSString stringWithFormat:@"xctest process (%d) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports", process.processIdentifier]]
           onQueue:queue
           fmap:^(FBCrashLogInfo *crashInfo) {
             return [[FBXCTestError
-                     describeFormat:@"xctest process crashed\n%@\n\nRaw Crash File Contents\n%@", crashInfo, [crashInfo loadRawCrashLogStringWithError:nil]]
+                     describe:[NSString stringWithFormat:@"xctest process crashed\n%@\n\nRaw Crash File Contents\n%@", crashInfo, [crashInfo loadRawCrashLogStringWithError:nil]]]
                     failFuture];
           }];
 }
@@ -131,7 +131,7 @@ static NSTimeInterval const KillBackoffTimeout = 1;
   return [[crashLogCommands
            notifyOfCrash:predicate]
           timeout:crashLogWaitTime
-          waitingFor:@"Crash logs for terminated process %d to appear", process.processIdentifier];
+          waitingFor:[NSString stringWithFormat:@"Crash logs for terminated process %d to appear", process.processIdentifier]];
 }
 
 @end

@@ -77,29 +77,29 @@
   }
   if (![NSFileManager.defaultManager fileExistsAtPath:crashPath]) {
     return [[FBControlCoreError
-             describeFormat:@"File does not exist at given crash path: %@", crashPath]
+             describe:[NSString stringWithFormat:@"File does not exist at given crash path: %@", crashPath]]
             fail:error];
   }
   if (![NSFileManager.defaultManager isReadableFileAtPath:crashPath]) {
     return [[FBControlCoreError
-             describeFormat:@"Crash file at %@ is not readable", crashPath]
+             describe:[NSString stringWithFormat:@"Crash file at %@ is not readable", crashPath]]
             fail:error];
   }
   NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
   if (!crashFileData) {
     return [[FBControlCoreError
-             describeFormat:@"Could not read data from %@", crashPath]
+             describe:[NSString stringWithFormat:@"Could not read data from %@", crashPath]]
             fail:error];
   } else if (crashFileData.length == 0) {
     return [[FBControlCoreError
-             describeFormat:@"Crash file at %@ is empty", crashPath]
+             describe:[NSString stringWithFormat:@"Crash file at %@ is empty", crashPath]]
             fail:error];
   }
 
   NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
   if (!crashString) {
     return [[FBControlCoreError
-             describeFormat:@"Could not extract string from %@", crashPath]
+             describe:[NSString stringWithFormat:@"Could not extract string from %@", crashPath]]
             fail:error];
   }
 
@@ -142,7 +142,7 @@
 
   if (err) {
     return [[FBControlCoreError
-             describeFormat:@"Could not parse crash string %@", err]
+             describe:[NSString stringWithFormat:@"Could not parse crash string %@", err]]
             fail:error];
   }
 
@@ -287,7 +287,7 @@
                                                 NSError *error = nil;
                                                 FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
                                                 if (!info) {
-                                                  [logger logFormat:@"Error parsing log %@", error];
+                                                  [logger log:[NSString stringWithFormat:@"Error parsing log %@", error]];
                                                 }
                                                 return info;
                                               }]
@@ -307,7 +307,7 @@
   NSString *contents = [self loadRawCrashLogStringWithError:&innerError];
   if (!contents) {
     return [[[FBControlCoreError
-              describeFormat:@"Failed to read crash log at path %@", self.crashPath]
+              describe:[NSString stringWithFormat:@"Failed to read crash log at path %@", self.crashPath]]
              causedBy:innerError]
             fail:error];
   }

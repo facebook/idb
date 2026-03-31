@@ -69,7 +69,7 @@
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
     return [[FBSimulatorError
-             describeFormat:@"Couldn't build search pattern for '%@'", @(pid)]
+             describe:[NSString stringWithFormat:@"Couldn't build search pattern for '%@'", @(pid)]]
             failFuture];
   }
 
@@ -118,12 +118,12 @@
           fmap:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
             if (serviceNameToProcessIdentifier.count == 0) {
               return [[FBSimulatorError
-                       describeFormat:@"No Matching processes for '%@'", regex.pattern]
+                       describe:[NSString stringWithFormat:@"No Matching processes for '%@'", regex.pattern]]
                       failFuture];
             }
             if (serviceNameToProcessIdentifier.count > 1) {
               return [[FBSimulatorError
-                       describeFormat:@"Multiple Matching processes for '%@' %@", regex.pattern, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]
+                       describe:[NSString stringWithFormat:@"Multiple Matching processes for '%@' %@", regex.pattern, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]]
                       failFuture];
             }
             NSString *serviceName = serviceNameToProcessIdentifier.allKeys.firstObject;
@@ -151,7 +151,7 @@
             NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
             if (lines.count < 2) {
               return [[FBSimulatorError
-                       describeFormat:@"Insufficient number of lines from output '%@'", text]
+                       describe:[NSString stringWithFormat:@"Insufficient number of lines from output '%@'", text]]
                       failFuture];
             }
             lines = [lines subarrayWithRange:NSMakeRange(1, lines.count - 1)];
@@ -179,14 +179,14 @@
 {
   return [[self
            runWithArguments:@[@"stop", serviceName]]
-          rephraseFailure:@"Failed to stop service '%@'", serviceName];
+          rephraseFailure:[NSString stringWithFormat:@"Failed to stop service '%@'", serviceName]];
 }
 
 - (FBFuture<NSString *> *)startServiceWithName:(NSString *)serviceName
 {
   return [[self
            runWithArguments:@[@"start", serviceName]]
-          rephraseFailure:@"Failed to start service '%@'", serviceName];
+          rephraseFailure:[NSString stringWithFormat:@"Failed to start service '%@'", serviceName]];
 }
 
 #pragma mark Helpers
@@ -221,7 +221,7 @@
   NSArray<NSString *> *words = [line componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
   if (words.count != 3) {
     return [[FBSimulatorError
-             describeFormat:@"Output does not have exactly three words: %@", [FBCollectionInformation oneLineDescriptionFromArray:words]]
+             describe:[NSString stringWithFormat:@"Output does not have exactly three words: %@", [FBCollectionInformation oneLineDescriptionFromArray:words]]]
             fail:error];
   }
   NSString *serviceName = [words lastObject];
@@ -236,7 +236,7 @@
   NSInteger processIdentifierInteger = [processIdentifierString integerValue];
   if (processIdentifierInteger < 1) {
     return [[FBSimulatorError
-             describeFormat:@"Expected a process identifier as first word, but got %@ from %@", processIdentifierString, [FBCollectionInformation oneLineDescriptionFromArray:words]]
+             describe:[NSString stringWithFormat:@"Expected a process identifier as first word, but got %@ from %@", processIdentifierString, [FBCollectionInformation oneLineDescriptionFromArray:words]]]
             fail:error];
   }
   if (processIdentifierOut) {

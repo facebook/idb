@@ -70,7 +70,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 {
   if (![destination isKindOfClass:FBContainedFile_Host.class]) {
     return [[FBControlCoreError
-             describeFormat:@"Cannot move to %@, it is not on the host filesystem", destination]
+             describe:[NSString stringWithFormat:@"Cannot move to %@, it is not on the host filesystem", destination]]
             failBool:error];
   }
   FBContainedFile_Host *hostDestination = (FBContainedFile_Host *) destination;
@@ -148,7 +148,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)removeItemWithError:(NSError **)error
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
@@ -160,14 +160,14 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)createDirectoryWithError:(NSError **)error
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
 - (NSData *)contentsOfFileWithError:(NSError **)error
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
           fail:error];
 }
 
@@ -186,14 +186,14 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)populateWithContentsOfHostPath:(NSString *)path error:(NSError **)error
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
 - (BOOL)populateHostPathWithContents:(NSString *)path error:(NSError **)error
 {
   return [[FBControlCoreError
-           describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
           failBool:error];
 }
 
@@ -209,7 +209,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   NSString *mappedPath = self.mappingPaths[firstComponent];
   if (!mappedPath) {
     return [[FBControlCoreError
-             describeFormat:@"'%@' is not a valid root path out of %@", firstComponent, [FBCollectionInformation oneLineDescriptionFromArray:self.mappingPaths.allKeys]]
+             describe:[NSString stringWithFormat:@"'%@' is not a valid root path out of %@", firstComponent, [FBCollectionInformation oneLineDescriptionFromArray:self.mappingPaths.allKeys]]]
             fail:error];
   }
   id<FBContainedFile> mapped = [[FBContainedFile_Host alloc] initWithFileManager:self.fileManager path:mappedPath];
@@ -306,7 +306,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             [destination removeItemWithError:nil];
             if (![destination populateWithContentsOfHostPath:sourcePath error:&error]) {
               return [[[FBControlCoreError
-                        describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]
+                        describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]]
                        causedBy:error]
                       failFuture];
             }
@@ -323,7 +323,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             BOOL sourceIsDirectory = NO;
             if (![source fileExistsIsDirectory:&sourceIsDirectory]) {
               return [[FBControlCoreError
-                       describeFormat:@"Source path does not exist: %@", source]
+                       describe:[NSString stringWithFormat:@"Source path does not exist: %@", source]]
                       failFuture];
             }
             NSString *dstPath = destinationPath;
@@ -331,7 +331,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
               NSError *createDirectoryError;
               if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:@{} error:&createDirectoryError]) {
                 return [[[FBControlCoreError
-                          describeFormat:@"Could not create temporary directory: %@", createDirectoryError]
+                          describe:[NSString stringWithFormat:@"Could not create temporary directory: %@", createDirectoryError]]
                          causedBy:createDirectoryError]
                         failFuture];
               }
@@ -343,7 +343,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
               NSError *removeError;
               if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
                 return [[[FBControlCoreError
-                          describeFormat:@"Could not remove %@", dstPath]
+                          describe:[NSString stringWithFormat:@"Could not remove %@", dstPath]]
                          causedBy:removeError]
                         failFuture];
               }
@@ -352,7 +352,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             NSError *copyError;
             if (![source populateHostPathWithContents:dstPath error:&copyError]) {
               return [[[FBControlCoreError
-                        describeFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]
+                        describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]]
                        causedBy:copyError]
                       failFuture];
             }
@@ -369,7 +369,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
              NSString *pathOnHostFileSystem = fileToTail.pathOnHostFileSystem;
              if (!pathOnHostFileSystem) {
                return [[FBControlCoreError
-                        describeFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]
+                        describe:[NSString stringWithFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]]
                        failFuture];
              }
              return [[[[FBProcessBuilder
@@ -397,7 +397,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             NSError *error;
             if (![directory createDirectoryWithError:&error]) {
               return [[[FBControlCoreError
-                        describeFormat:@"Could not create directory %@: %@", directory, error]
+                        describe:[NSString stringWithFormat:@"Could not create directory %@: %@", directory, error]]
                        causedBy:error]
                       failFuture];
             }
@@ -420,7 +420,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             NSError *error = nil;
             if (![source moveTo:destination error:&error]) {
               return [[[FBControlCoreError
-                        describeFormat:@"Could not move item at %@ to %@: %@", source, destination, error]
+                        describe:[NSString stringWithFormat:@"Could not move item at %@ to %@: %@", source, destination, error]]
                        causedBy:error]
                       failFuture];
             }
@@ -437,7 +437,7 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
             NSError *error;
             if (![file removeItemWithError:&error]) {
               return [[[FBControlCoreError
-                        describeFormat:@"Could not remove item at path %@: %@", file, error]
+                        describe:[NSString stringWithFormat:@"Could not remove item at path %@: %@", file, error]]
                        causedBy:error]
                       failFuture];
             }
@@ -515,28 +515,28 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)originPath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
           failFuture];
 }
 

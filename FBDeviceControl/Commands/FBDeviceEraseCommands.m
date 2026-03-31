@@ -36,7 +36,7 @@ static NSTimeInterval const OnlineTimeout = 300;
 static int EraseCallback(NSString *identifier, int progress, void *context)
 {
   FBDeviceEraseOperation *operation = (__bridge FBDeviceEraseOperation *)(context);
-  [operation.logger logFormat:@"Erase Callback is %d", progress];
+  [operation.logger log:[NSString stringWithFormat:@"Erase Callback is %d", progress]];
   [operation.eraseCallbackResult resolveWithResult:@(progress)];
   return 0;
 }
@@ -90,7 +90,7 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
              }]
             onQueue:self.queue
             fmap:^FBFuture<NSNull *> *(id _) {
-              [logger logFormat:@"Device has been detected, starting erase API Call"];
+              [logger log:@"Device has been detected, starting erase API Call"];
               return [[self startErase] timeout:APICallbackTimeout waitingFor:@"Device erase API call to resolve"];
             }]
            onQueue:self.queue
@@ -98,15 +98,15 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
              const int eraseCallbackValue = eraseCallbackValueNumber.intValue;
              if (eraseCallbackValue != EraseCallbackValueGood) {
                return [[FBDeviceControlError
-                        describeFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]
+                        describe:[NSString stringWithFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]]
                        failFuture];
              }
-             [logger logFormat:@"Device API call finished, waiting for device to go offline"];
+             [logger log:@"Device API call finished, waiting for device to go offline"];
              return [deviceWentAway timeout:OfflineTimeout waitingFor:@"Device to go offline"];
            }]
           onQueue:self.queue
           fmap:^FBFuture<NSNull *> *(id _) {
-            [logger logFormat:@"Device has gone offline, waiting for it to come back online"];
+            [logger log:@"Device has gone offline, waiting for it to come back online"];
             return [deviceCameBack timeout:OnlineTimeout waitingFor:@"Device to come back"];
           }];
 }
@@ -122,7 +122,7 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
           resolve:^FBFuture<NSNumber *> * {
             calls.AMSInitialize(0);
             int status = calls.AMSEraseDevice((__bridge CFStringRef)(udid), EraseCallback, (__bridge void *)(self));
-            [logger logFormat:@"AMSEraseDevice had status %d", status];
+            [logger log:[NSString stringWithFormat:@"AMSEraseDevice had status %d", status]];
             return eraseCallbackResult;
           }];
 }
@@ -132,17 +132,17 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
 - (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
   if (self.deviceDetected.state == FBFutureStateRunning) {
-    [self.logger logFormat:@"Got target %@ added for the first time", targetInfo];
+    [self.logger log:[NSString stringWithFormat:@"Got target %@ added for the first time", targetInfo]];
     [self.deviceDetected resolveWithResult:NSNull.null];
   } else {
-    [self.logger logFormat:@"Got target %@ added", targetInfo];
+    [self.logger log:[NSString stringWithFormat:@"Got target %@ added", targetInfo]];
     [self.deviceCameBack resolveWithResult:NSNull.null];
   }
 }
 
 - (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
 {
-  [self.logger logFormat:@"Got target %@ removed", targetInfo];
+  [self.logger log:[NSString stringWithFormat:@"Got target %@ removed", targetInfo]];
   [self.deviceWentAway resolveWithResult:NSNull.null];
 }
 
@@ -193,7 +193,7 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
                      erase]
                     onQueue:self.device.workQueue
                     doOnResolved:^(id __) {
-                      [logger logFormat:@"Device erase finished successfully %@", operation];
+                      [logger log:[NSString stringWithFormat:@"Device erase finished successfully %@", operation]];
                     }];
           }];
 }

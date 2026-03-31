@@ -140,7 +140,7 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   BOOL isDirectory;
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
     return [[FBControlCoreError
-             describeFormat:@"Path for tarring %@ doesn't exist", path]
+             describe:[NSString stringWithFormat:@"Path for tarring %@ doesn't exist", path]]
             fail:error];
   }
 
@@ -149,18 +149,18 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   if (isDirectory) {
     directory = path;
     fileName = @".";
-    [logger.info logFormat:@"%@ is a directory, tarring with it as the root.", directory];
+    [logger.info log:[NSString stringWithFormat:@"%@ is a directory, tarring with it as the root.", directory]];
     if ([[NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil] count] < 1) {
-      [logger.info logFormat:@"Attempting to tar directory at path %@, but it has no contents", path];
+      [logger.info log:[NSString stringWithFormat:@"Attempting to tar directory at path %@, but it has no contents", path]];
     }
   } else {
     directory = path.stringByDeletingLastPathComponent;
     fileName = path.lastPathComponent;
-    [logger.info logFormat:@"%@ is a file, tarring relative to it's parent %@", path, directory];
+    [logger.info log:[NSString stringWithFormat:@"%@ is a file, tarring relative to it's parent %@", path, directory]];
     NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:path error:nil];
     NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
     if (fileSize <= 0) {
-      [logger.info logFormat:@"Attempting to tar file at path %@, but it has no content", path];
+      [logger.info log:[NSString stringWithFormat:@"Attempting to tar file at path %@, but it has no content", path]];
     }
   }
 

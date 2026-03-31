@@ -87,7 +87,7 @@
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if (socket <= 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to create a socket with error '%s'", strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
             failFuture];
   }
   int flagTrue = 1;
@@ -103,7 +103,7 @@
   int result = bind(socketDescriptor, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]]
             failFuture];
   }
 
@@ -111,7 +111,7 @@
   result = listen(socketDescriptor, 10);
   if (result != 0) {
     return [[FBControlCoreError
-             describeFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]
+             describe:[NSString stringWithFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]]
             failFuture];
   }
 
@@ -152,7 +152,7 @@
   int acceptDescriptor = accept(socketDescriptor, (struct sockaddr *) &address, &addressLength);
   if (!acceptDescriptor) {
     return [[FBControlCoreError
-             describeFormat:@"accept() failed with error '%s'", strerror(errno)]
+             describe:[NSString stringWithFormat:@"accept() failed with error '%s'", strerror(errno)]]
             failBool:error];
   }
 
