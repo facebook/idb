@@ -14,7 +14,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
-#import "FBSimulatorSet+Private.h"
 #import "FBSimulatorShutdownStrategy.h"
 
 @implementation FBSimulatorDeletionStrategy

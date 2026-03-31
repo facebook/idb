@@ -6,7 +6,6 @@
  */
 
 #import "FBDevice.h"
-#import "FBDevice+Private.h"
 
 #import <FBControlCore/FBControlCore.h>
 

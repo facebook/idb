@@ -22,7 +22,7 @@
 #import <xpc/xpc.h>
 
 #import "FBPeriodicStatsTimer.h"
-#import "FBSimulator+Private.h"
+#import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
 @interface FBFramebuffer ()

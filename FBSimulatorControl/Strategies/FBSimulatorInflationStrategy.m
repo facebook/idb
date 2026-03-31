@@ -10,7 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorInflationStrategy ()

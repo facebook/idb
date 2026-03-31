@@ -8,7 +8,6 @@
 #import "FBSimulatorLaunchedApplication.h"
 
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
 
 @interface FBSimulatorLaunchedApplication ()
 

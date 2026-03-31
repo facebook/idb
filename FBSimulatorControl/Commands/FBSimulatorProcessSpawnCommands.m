@@ -11,7 +11,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorProcessSpawnCommands ()

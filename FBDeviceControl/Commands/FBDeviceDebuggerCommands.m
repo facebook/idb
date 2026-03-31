@@ -8,7 +8,6 @@
 #import "FBDeviceDebuggerCommands.h"
 
 #import "FBDevice.h"
-#import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebugServer.h"
 

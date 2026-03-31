@@ -14,6 +14,8 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
+@class FBSimulatorInflationStrategy;
+@class FBSimulatorNotificationUpdateStrategy;
 @class SimDeviceSet;
 
 @protocol FBControlCoreLogger;
@@ -152,5 +154,12 @@
  The async queue that will be used by all simulators within the set.
  */
 @property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+
+#pragma mark - Should be marked private when converting to Swift
+
+- (nonnull instancetype)initWithConfiguration:(nonnull FBSimulatorControlConfiguration *)configuration deviceSet:(nonnull SimDeviceSet *)deviceSet delegate:(nullable id<FBiOSTargetSetDelegate>)delegate logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
+
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorInflationStrategy *inflationStrategy;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorNotificationUpdateStrategy *notificationUpdateStrategy;
 
 @end

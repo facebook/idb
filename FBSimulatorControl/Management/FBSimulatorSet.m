@@ -6,7 +6,6 @@
  */
 
 #import "FBSimulatorSet.h"
-#import "FBSimulatorSet+Private.h"
 
 #import <objc/runtime.h>
 
