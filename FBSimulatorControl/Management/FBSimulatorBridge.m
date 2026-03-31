@@ -21,7 +21,7 @@ static NSString *const KeyAXTraits = @"AXTraits";
 static NSString *const KeyTraits = @"traits";
 static NSString *const KeyType = @"type";
 
-static NSTimeInterval BridgeReadyTimeout = 5.0;
+static NSTimeInterval const BridgeReadyTimeout = 5.0;
 
 @interface FBSimulatorBridge ()
 

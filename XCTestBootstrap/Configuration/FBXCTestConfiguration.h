@@ -22,7 +22,7 @@ extern FBXCTestType const _Nonnull FBXCTestTypeUITest;
 /**
  An Application Test.
  */
-#define FBXCTestTypeApplicationTestValue @"application-test"
+static NSString *_Nonnull const FBXCTestTypeApplicationTestValue = @"application-test";
 extern FBXCTestType const _Nonnull FBXCTestTypeApplicationTest;
 
 /**

@@ -24,7 +24,7 @@
 
 @end
 
-static NSTimeInterval ProcessTableRemovalTimeout = 20.0;
+static NSTimeInterval const ProcessTableRemovalTimeout = 20.0;
 
 static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrategyConfigurationDefault = {
   .signo = SIGKILL,

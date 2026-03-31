@@ -18,7 +18,7 @@
 #import "FBProcessBuilder.h"
 #import "FBSubprocess.h"
 
-static NSTimeInterval ProcessDetachDrainTimeout = 4;
+static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark FBProcessStreamAttachment
 

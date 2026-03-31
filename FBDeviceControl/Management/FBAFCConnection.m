@@ -14,8 +14,8 @@
 #import "FBAMDServiceConnection.h"
 #import "FBDeviceControlError.h"
 
-static NSString *AFCCodeKey = @"AFCCode";
-static NSString *AFCDomainKey = @"AFCDomain";
+static NSString *const AFCCodeKey = @"AFCCode";
+static NSString *const AFCDomainKey = @"AFCDomain";
 
 static AFCCalls defaultCalls;
 
