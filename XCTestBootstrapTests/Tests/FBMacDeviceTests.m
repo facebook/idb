@@ -13,6 +13,8 @@
 
 @interface FBMacDeviceTests : XCTestCase
 @property (nullable, nonatomic, readwrite, strong) FBMacDevice *device;
+@property (nullable, nonatomic, readwrite, strong) FBInstalledApplication *installedApp;
+@property (nullable, nonatomic, readwrite, copy) NSString *tempInstallDir;
 @end
 
 @implementation FBMacDeviceTests
@@ -21,6 +23,29 @@
 {
   [super setUp];
   self.device = [[FBMacDevice alloc] init];
+
+  NSError *err = nil;
+  __auto_type descriptor = [FBMacDeviceTests macCommonApplicationWithError:&err];
+  NSAssert(descriptor != nil, @"Failed to load MacCommonApp fixture: %@", err);
+
+  // Copy the .app to a temporary directory so that uninstall (which deletes the
+  // installed path) does not destroy the fixture inside the test bundle.
+  self.tempInstallDir = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
+  NSString *tempDir = self.tempInstallDir;
+  NSAssert(
+    [[NSFileManager defaultManager] createDirectoryAtPath:tempDir withIntermediateDirectories:YES attributes:nil error:&err],
+    @"Failed to create temp dir: %@",
+    err
+  );
+  NSString *destPath = [tempDir stringByAppendingPathComponent:[descriptor.path lastPathComponent]];
+  NSAssert(
+    [[NSFileManager defaultManager] copyItemAtPath:descriptor.path toPath:destPath error:&err],
+    @"Failed to copy fixture app: %@",
+    err
+  );
+
+  self.installedApp = [[self.device installApplicationWithPath:destPath] awaitWithTimeout:5 error:&err];
+  NSAssert(self.installedApp != nil, @"Failed to install dummy app: %@", err);
 }
 
 - (BOOL)tearDownWithError:(NSError *__autoreleasing _Nullable *)error
@@ -29,6 +54,10 @@
   [[self.device restorePrimaryDeviceState] awaitWithTimeout:5 error:&err];
   if (err) {
     NSLog(@"Failed to tearDown test gracefully %@. Further tests may be affected", err.description);
+  }
+  if (self.tempInstallDir) {
+    [[NSFileManager defaultManager] removeItemAtPath:self.tempInstallDir error:nil];
+    self.tempInstallDir = nil;
   }
   *error = err;
   return err == nil;
@@ -65,12 +94,8 @@
 
 - (void)testInstallExistedApplicationAtPath
 {
-  NSError *err = nil;
-  __auto_type res = [self installDummyApplicationWithError:&err];
-  XCTAssertNil(err, @"Failed to install application");
-
   XCTAssertTrue(
-    [res.bundle.identifier isEqualToString:@"com.facebook.MacCommonApp"],
+    [self.installedApp.bundle.identifier isEqualToString:@"com.facebook.MacCommonApp"],
     @"Dummy application should install properly"
   );
 }
@@ -100,14 +125,8 @@
 - (void)testLaunchingExistedApp
 {
   NSError *err = nil;
-  __auto_type installResult = [self installDummyApplicationWithError:&err];
-  XCTAssertNil(
-    err,
-    @"Precondition failure"
-  );
-
-  FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:installResult.bundle.identifier
-                                                                                             bundleName:installResult.bundle.name
+  FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:self.installedApp.bundle.identifier
+                                                                                             bundleName:self.installedApp.bundle.name
                                                                                               arguments:@[]
                                                                                             environment:@{}
                                                                                         waitForDebugger:NO
@@ -120,18 +139,6 @@
     err,
     @"Failed to launch installed application"
   );
-}
-
-- (FBInstalledApplication *)installDummyApplicationWithError:(NSError **)error
-{
-  NSError *err = nil;
-  __auto_type descriptor = [FBMacDeviceTests macCommonApplicationWithError:&err];
-  if (err) {
-    *error = err;
-    return nil;
-  }
-  __auto_type installTask = [self.device installApplicationWithPath:descriptor.path];
-  return [installTask awaitWithTimeout:5 error:error];
 }
 
 @end
