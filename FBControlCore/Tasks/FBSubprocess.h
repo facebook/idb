@@ -69,7 +69,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 @property (nullable, nonatomic, readonly, strong) StdOutType stdOut;
 
 /**
- Returns the stdout of the task.
+ Returns the stderr of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessOutput.
  */

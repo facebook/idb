@@ -65,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Obtains all files within a directory
 
- @return a Future wrapping the list of files.
+ @return the list of file URLs in the directory, or nil on error.
  */
 + (nullable NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error;
 

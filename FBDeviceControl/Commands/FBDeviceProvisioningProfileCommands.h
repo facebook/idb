@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDevice;
 
 /**
- Implementations of debugger related commands.
+ Implementations of provisioning profile related commands.
  */
 @interface FBDeviceProvisioningProfileCommands : NSObject <FBProvisioningProfileCommands>
 

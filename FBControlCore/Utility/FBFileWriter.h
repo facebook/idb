@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a File Writer that does not write anywhere.
 
- @return a File Reader.
+ @return a File Writer.
  */
 @property (class, nonatomic, readonly, strong) id<FBDataConsumer> nullWriter;
 

@@ -37,21 +37,21 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)oneLineDescriptionFromDictionary:(NSDictionary *)dictionary;
 
 /**
- Confirms that the collection is heterogeneous of a given class.
+ Confirms that the array is homogeneous, with all elements being of a given class.
 
  @param array the array to check.
  @param cls the class that all elements in the array should belong to.
- @return YES if hetrogeneous, NO otherwise.
+ @return YES if homogeneous, NO otherwise.
  */
 + (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls;
 
 /**
- Confirms that the collection is heterogeneous of a given class.
+ Confirms that the dictionary is homogeneous, with all keys and values being of the given classes.
 
  @param dictionary the dictionary to check
  @param keyCls the class that all keys in the dictionary should belong to.
  @param valueCls the class that all values in the dictionary should be belong to.
- @return YES if hetrogeneous, NO otherwise.
+ @return YES if homogeneous, NO otherwise.
  */
 + (BOOL)isDictionaryHeterogeneous:(NSDictionary *)dictionary keyClass:(Class)keyCls valueClass:(Class)valueCls;
 

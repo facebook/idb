@@ -510,7 +510,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
           break;
         case FBFutureLoopFinished:
           dispatch_cancel(timer);
-          NSCAssert(error == nil, @"Error must be set on nil when return FBFutureLoopFinished");
+          NSCAssert(error == nil, @"Error must be nil when returning FBFutureLoopFinished");
           [strongFuture resolveWithResult:NSNull.null];
           break;
         default:

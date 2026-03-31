@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a Bitmap Stream for the iOS Target.
 
  @param configuration the stream configuration.
- @return A future that resolves with the Video Recording session.
+ @return A future that resolves with the Video Stream.
  */
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration;
 

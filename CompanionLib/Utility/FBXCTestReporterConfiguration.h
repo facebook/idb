@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, assign) BOOL reportAttachments;
 
 /**
- Whether to report return result bundle or not.
+ Whether to return the result bundle or not.
  */
 @property (nonatomic, readonly, assign) BOOL reportResultBundle;
 

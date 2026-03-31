@@ -31,7 +31,7 @@ extern NSString *const FBManagedConfigService;
 
  @param connection the connection to use.
  @param logger the logger to use.
- @return a Future that resolves with the instruments client.
+ @return a FBManagedConfigClient instance.
  */
 + (instancetype)managedConfigClientWithConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
 

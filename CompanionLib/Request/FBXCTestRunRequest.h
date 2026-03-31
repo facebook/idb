@@ -92,8 +92,8 @@ The Initializer for UI Tests.
 
  @param testBundleID the bundle id of the test to run.
  @param testHostAppBundleID the bundle id of the application hosting the test bundle.
- @param environment environment for the logic test process.
- @param arguments arguments for the logic test process.
+ @param environment environment for the UI test process.
+ @param arguments arguments for the UI test process.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
@@ -104,12 +104,12 @@ The Initializer for UI Tests.
 + (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID testTargetAppBundleID:(NSString *)testTargetAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
 
 /**
-The Initializer for UI Tests.
+The Initializer for UI Tests from a test path.
 
- @param testPath the bundle id of the test to run.
+ @param testPath the path of the .xctest or .xctestrun file.
  @param testHostAppBundleID the bundle id of the application hosting the test bundle.
- @param environment environment for the logic test process.
- @param arguments arguments for the logic test process.
+ @param environment environment for the UI test process.
+ @param arguments arguments for the UI test process.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip
  @param testTimeout the timeout for the entire execution, nil if no timeout should be applied.
@@ -182,7 +182,7 @@ The Initializer for UI Tests.
 @property (nonatomic, readonly, assign) BOOL reportActivities;
 
 /**
- Whether to report activities or not.
+ Whether to report attachments or not.
  */
 @property (nonatomic, readonly, assign) BOOL reportAttachments;
 

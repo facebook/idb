@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  Returns Disk Image for already mounted disk image.
 
  @param signature Signature of the mounted image.
- @return the path of the disk image.
+ @return a disk image instance with an unknown path and version.
  */
 + (FBDeveloperDiskImage *)unknownDiskImageWithSignature:(NSData *)signature;
 
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetVersion the device to target.
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
- @return the path of the disk image.
+ @return a disk image instance for the target version.
  */
 + (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 

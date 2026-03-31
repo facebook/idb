@@ -124,14 +124,14 @@
   self.acceptSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, (uintptr_t) socketDescriptor, 0, acceptQueue);
   __weak typeof(self) weakSelf = self;
 
-  // Dispatch read events from the accept source.
+  // Handle incoming connection events from the accept source.
   dispatch_source_set_event_handler(self.acceptSource, ^{
     [weakSelf accept:socketDescriptor clientQueue:clientQueue error:nil];
   });
   dispatch_source_set_cancel_handler(self.acceptSource, ^{
     close(socketDescriptor);
   });
-  // Start reading socket.
+  // Start accepting connections.
   self.socketDescriptor = socketDescriptor;
   dispatch_resume(self.acceptSource);
 
@@ -156,7 +156,7 @@
             failBool:error];
   }
 
-  // Notify the Delegate the queue it wished to be notified on.
+  // Notify the delegate on its preferred queue.
   dispatch_async(clientQueue, ^{
     [self.delegate socketServer:self clientConnected:address.sin6_addr fileDescriptor:acceptDescriptor];
   });

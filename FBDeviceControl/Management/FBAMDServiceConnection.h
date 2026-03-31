@@ -57,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
 // 3) As with the write side, if there's an SSL context the data will be decrypted through this context.
 
 /**
- Synchronously receive a plist-based packet used by lockdown.
+ Synchronously send a plist-based packet used by lockdown.
 
  @param message the message to send.
  @param error an error out for any error that occurs.
@@ -104,7 +104,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Sends a uint32_t over the connection.
 
- @param value the value to pull.
+ @param value the value to send.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */

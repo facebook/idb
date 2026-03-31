@@ -138,7 +138,7 @@
             if ([stdErr isKindOfClass:NSNumber.class]) {
               stdErr = nil;
             }
-            // Everything is setup, launch the process now.
+            // Everything is set up, return the attachment.
             return [FBFuture futureWithResult:[[FBProcessIOAttachment alloc] initWithIO:self stdIn:stdIn stdOut:stdOut stdErr:stdErr]];
           }];
 }
@@ -170,7 +170,7 @@
             if ([stdErr isKindOfClass:NSNumber.class]) {
               stdErr = nil;
             }
-            // Everything is setup, launch the process now.
+            // Everything is set up, return the attachment.
             return [FBFuture futureWithResult:[[FBProcessFileAttachment alloc] initWithIO:self stdOut:stdOut stdErr:stdErr]];
           }];
 }

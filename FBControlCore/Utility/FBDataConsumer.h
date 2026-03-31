@@ -195,7 +195,7 @@ Number of submitted data that has not been consumed yet
 @protocol FBControlCoreLogger;
 
 /**
- A consumer that does nothing with the data.
+ A consumer that logs received data to a logger.
  */
 @interface FBLoggingDataConsumer : NSObject <FBDataConsumer>
 

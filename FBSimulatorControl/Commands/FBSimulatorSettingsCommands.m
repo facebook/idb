@@ -215,10 +215,10 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
     [toRevoke removeObject:FBTargetSettingsServiceNotification];
   }
 
-  // Error out if there's nothing we can do to handle a specific approval.
+  // Error out if there's nothing we can do to handle a specific revocation.
   if (toRevoke.count > 0) {
     return [[FBSimulatorError
-             describeFormat:@"Cannot approve %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toRevoke.allObjects]]
+             describeFormat:@"Cannot revoke %@ since there is no handling of it", [FBCollectionInformation oneLineDescriptionFromArray:toRevoke.allObjects]]
             failFuture];
   }
   // Nothing to do with zero futures.

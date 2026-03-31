@@ -86,7 +86,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 /**
  Creates a reader of NSData from a file descriptor.
 
- @param fileDescriptor the file descriptor to write to.
+ @param fileDescriptor the file descriptor to read from.
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @param consumer the consumer to forward to.
  @param logger the logger to use.
@@ -97,7 +97,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 /**
  Creates a reader of dispatch data from a file descriptor.
 
- @param fileDescriptor the file descriptor to write to.
+ @param fileDescriptor the file descriptor to read from.
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @param consumer the consumer to forward to.
  @param logger the logger to use.

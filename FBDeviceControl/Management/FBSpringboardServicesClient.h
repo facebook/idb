@@ -86,7 +86,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
 
  @param connection the connection to use.
  @param logger the logger to use.
- @return a Future that resolves with the instruments client.
+ @return a FBSpringboardServicesClient instance.
  */
 + (instancetype)springboardServicesClientWithConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
 

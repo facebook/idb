@@ -43,8 +43,8 @@
            fmap:^(id _) {
              [simulator.logger logFormat:@"Simulator %@ Deleted", udid];
 
-             // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
-             // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
+             // The Logfiles now need disposing of. Deleting a Simulator via CoreSimulator will not
+             // automatically remove the logfiles. There's no sense in letting this directory accumulate files.
              if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
                [simulator.logger logFormat:@"Deleting Simulator Log Directory at %@", coreSimulatorLogsDirectory];
                NSError *error = nil;

@@ -518,7 +518,7 @@ static NSString *const KeyDuration = @"duration";
     [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
     [events addObject:[self delay:stepDelay]];
   }
-  // Add an additional touch down event at the end of the swipe to avoid intertial scroll on arm simulators.
+  // Add an additional touch down event at the end of the swipe to avoid inertial scroll on arm simulators.
   [events addObject:[self touchDownAtX:(xStart + dx * steps) y:(yStart + dy * steps)]];
   [events addObject:[self delay:stepDelay]];
 

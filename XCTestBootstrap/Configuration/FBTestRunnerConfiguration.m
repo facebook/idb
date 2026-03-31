@@ -119,7 +119,7 @@
 
   NSMutableDictionary *testedApplicationAdditionalEnvironment = NSMutableDictionary.dictionary;
   NSString *xctTargetBootstrapInjectPath = [platformRoot stringByAppendingPathComponent:@"Developer/usr/lib/libXCTTargetBootstrapInject.dylib"];
-  // Xcode > 12.5 does not have this file neither requires it's injection in the target test app.
+  // Xcode > 12.5 does not have this file neither requires its injection in the target test app.
   if ([NSFileManager.defaultManager fileExistsAtPath:xctTargetBootstrapInjectPath]) {
     testedApplicationAdditionalEnvironment[@"DYLD_INSERT_LIBRARIES"] = xctTargetBootstrapInjectPath;
   }

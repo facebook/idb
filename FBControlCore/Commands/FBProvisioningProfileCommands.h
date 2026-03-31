@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Obtains all of the information about provisioning profiles
 
- @return A future that resolves with the Video Recording session.
+ @return A future that resolves with an array of provisioning profile information.
  */
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)allProvisioningProfiles;
 
