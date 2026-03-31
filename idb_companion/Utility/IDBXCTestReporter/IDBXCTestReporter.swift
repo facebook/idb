@@ -451,14 +451,6 @@ extension IDBXCTestReporter {
     return stdOut as Data
   }
 
-  private func createFailureInfo(message: String, file: String?, line: UInt) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
-    return Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo.with {
-      $0.failureMessage = message
-      $0.file = file ?? ""
-      $0.line = UInt64(line)
-    }
-  }
-
   private func createFailureInfo(exceptionInfo: FBExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
     return Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo.with {
       $0.failureMessage = exceptionInfo.message

@@ -62,10 +62,7 @@
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
-  if (self.socketDescriptor) {
-    close(self.socketDescriptor);
-    self.socketDescriptor = 0;
-  }
+  self.socketDescriptor = 0;
   return FBFuture.empty;
 }
 
@@ -85,7 +82,7 @@
 {
   // Get the Socket, set some options
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
-  if (socket <= 0) {
+  if (socketDescriptor <= 0) {
     return [[FBControlCoreError
              describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
             failFuture];

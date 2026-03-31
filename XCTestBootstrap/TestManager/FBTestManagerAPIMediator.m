@@ -636,7 +636,7 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (id)handleUnimplementedXCTRequest:(SEL)aSelector
 {
   [self.logger log:[self unknownMessageForSelector:aSelector]];
-  NSAssert(nil, [self unknownMessageForSelector:_cmd]);
+  NSAssert(nil, [self unknownMessageForSelector:aSelector]);
   return nil;
 }
 

@@ -41,6 +41,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   _logger = logger;
   _testBundlePath = testBundlePath;
   _testType = testType;
+  _events = [NSMutableArray array];
   _xctestNameExceptionsMapping = [NSMutableDictionary dictionary];
   _pendingTestOutput = [NSMutableArray array];
 
@@ -59,10 +60,9 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     return [[FBXCTestError describe:[self noStartOfTestPlanErrorMessage]] failBool:error];
   }
   if (!_finished) {
-    NSError *crashError = nil;
     NSString *errorMessage = @"No didFinishExecutingTestPlan event was received, the test bundle has likely crashed.";
-    if (crashError) {
-      errorMessage = crashError.localizedDescription;
+    if (self.crashError) {
+      errorMessage = self.crashError.localizedDescription;
     }
     if (_currentTestName) {
       errorMessage = [errorMessage stringByAppendingString:@". Crash occurred while this test was running: "];
