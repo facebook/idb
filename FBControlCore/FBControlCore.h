@@ -70,7 +70,6 @@
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBProvisioningProfileCommands.h>
 #import <FBControlCore/FBScreenshotCommands.h>
-#import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSettingsCommands.h>
 #import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBStorageUtils.h>
