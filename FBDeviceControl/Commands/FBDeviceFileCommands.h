@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAFCConnection.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An implementation of FBFileContainer, backed by an FBAFCConnection
  */
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to perform work on.
  @return a new FBDeviceFileCommands instance.
  */
-- (instancetype)initWithAFCConnection:(FBAFCConnection *)connection queue:(dispatch_queue_t)queue;
+- (nonnull instancetype)initWithAFCConnection:(nonnull FBAFCConnection *)connection queue:(nonnull dispatch_queue_t)queue;
 
 @end
 
@@ -42,8 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param afcCalls the calls to use.
  @return a new FBDeviceApplicationDataCommands instance.
  */
-+ (instancetype)commandsWithTarget:(id<FBiOSTarget>)target afcCalls:(AFCCalls)afcCalls;
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target afcCalls:(AFCCalls)afcCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END

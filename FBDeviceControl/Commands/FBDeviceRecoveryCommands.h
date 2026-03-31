@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 @protocol FBDeviceRecoveryCommands <FBiOSTargetCommand>
@@ -20,14 +18,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when put into recovery.
  */
-- (FBFuture<NSNull *> *)enterRecovery;
+- (nonnull FBFuture<NSNull *> *)enterRecovery;
 
 /**
  Exits recovery mode.
 
  @return a Future that resolves when removed from recovery.
  */
-- (FBFuture<NSNull *> *)exitRecovery;
+- (nonnull FBFuture<NSNull *> *)exitRecovery;
 
 @end
 
@@ -37,5 +35,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDeviceRecoveryCommands : NSObject <FBDeviceRecoveryCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

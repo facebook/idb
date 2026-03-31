@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 
 /**
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param connection the Service Connection to use.
  @return a Future wrapping the FBDeviceLinkClient instance.
  */
-+ (FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithConnection:(FBAMDServiceConnection *)connection;
++ (nonnull FBFuture<FBDeviceLinkClient *> *)deviceLinkClientWithConnection:(nonnull FBAMDServiceConnection *)connection;
 
 #pragma mark Public Methods
 
@@ -40,8 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param message the message to send. Must be plist serializable.
  @return a Future that resolves with the response.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(id)message;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)processMessage:(nonnull id)message;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBPowerCommands for Devices.
  */
 @interface FBDevicePowerCommands : NSObject <FBPowerCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

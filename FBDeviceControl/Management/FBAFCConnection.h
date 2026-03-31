@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 @protocol FBControlCoreLogger;
 
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAFConnection Instance.
  */
-- (instancetype)initWithConnection:(AFCConnectionRef)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithConnection:(AFCConnectionRef _Nonnull)connection calls:(AFCCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs an FBAFCConnection from a Service Connection and tears it down after.
@@ -41,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to use.
  @return an FBAFCConnection instance.
  */
-+ (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
++ (nonnull FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(nonnull FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(nonnull id<FBControlCoreLogger>)logger queue:(nonnull dispatch_queue_t)queue;
 
 #pragma mark Public Methods
 
@@ -54,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)copyFromHost:(NSString *)hostPath toContainerPath:(NSString *)containerPath error:(NSError **)error;
+- (BOOL)copyFromHost:(nonnull NSString *)hostPath toContainerPath:(nonnull NSString *)containerPath error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a Directory.
@@ -63,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)createDirectory:(NSString *)path error:(NSError **)error;
+- (BOOL)createDirectory:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get the contents of a directory.
@@ -72,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any occurs
  @return the contents of the directory.
  */
-- (nullable NSArray<NSString *> *)contentsOfDirectory:(NSString *)path error:(NSError **)error;
+- (nullable NSArray<NSString *> *)contentsOfDirectory:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get the contents of a file.
@@ -81,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any occurs.
  @return the data for the file.
  */
-- (nullable NSData *)contentsOfPath:(NSString *)path error:(NSError **)error;
+- (nullable NSData *)contentsOfPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Removes a path.
@@ -91,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
+- (BOOL)removePath:(nonnull NSString *)path recursively:(BOOL)recursively error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Renames a path.
@@ -101,7 +99,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error;
+- (BOOL)renamePath:(nonnull NSString *)path destination:(nonnull NSString *)destination error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Close the connection.
@@ -110,7 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if succesful, NO otherwise.
  */
-- (BOOL)closeWithError:(NSError **)error;
+- (BOOL)closeWithError:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Properties
 
@@ -135,5 +133,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (class, nonatomic, readonly, assign) AFCCalls defaultCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END

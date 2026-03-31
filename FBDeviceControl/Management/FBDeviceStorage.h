@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBDeviceStorage <PublicDevice : id> : NSObject
 
 #pragma mark Properties
@@ -19,12 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A mapping of all referenced devices, keyed by identifier.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *attached;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *attached;
 
 /**
  A mapping of all referenced devices, keyed by identifier.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *referenced;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *referenced;
 
 #pragma mark Public Methods
 
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a storage instance.
  */
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Will attach the device to the collection
@@ -42,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the device to add.
  @param key the key of the device
  */
-- (void)deviceAttached:(PublicDevice)device forKey:(NSString *)key;
+- (void)deviceAttached:(nonnull PublicDevice)device forKey:(nonnull NSString *)key;
 
 /**
  Will detach the device from the collection.
@@ -50,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param key the key of the device
  */
-- (void)deviceDetachedForKey:(NSString *)key;
+- (void)deviceDetachedForKey:(nonnull NSString *)key;
 
 /**
  Obtains a device from the collection.
@@ -59,8 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param key the key of the device
  @return a device, if present.
  */
-- (nullable PublicDevice)deviceForKey:(NSString *)key;
+- (nullable PublicDevice)deviceForKey:(nonnull NSString *)key;
 
 @end
-
-NS_ASSUME_NONNULL_END

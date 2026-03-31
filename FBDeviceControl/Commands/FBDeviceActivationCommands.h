@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -26,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when the device activates.
  */
-- (FBFuture<NSNull *> *)activate;
+- (nonnull FBFuture<NSNull *> *)activate;
 
 @end
 
@@ -37,5 +35,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDeviceActivationCommands : NSObject <FBDeviceActivationCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

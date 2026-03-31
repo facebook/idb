@@ -10,10 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBDeviceLifecycleCommands : NSObject <FBLifecycleCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

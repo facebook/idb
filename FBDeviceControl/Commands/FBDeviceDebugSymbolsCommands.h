@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves with the listing of symbol files..
  */
-- (FBFuture<NSArray<NSString *> *> *)listSymbols;
+- (nonnull FBFuture<NSArray<NSString *> *> *)listSymbols;
 
 /**
  Writes a file out to a destination
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param destinationPath the destination to write to.
  @return a  Future that resolves with the extract path.
  */
-- (FBFuture<NSString *> *)pullSymbolFile:(NSString *)fileName toDestinationPath:(NSString *)destinationPath;
+- (nonnull FBFuture<NSString *> *)pullSymbolFile:(nonnull NSString *)fileName toDestinationPath:(nonnull NSString *)destinationPath;
 
 /**
  Pulls and extracts symbols to the provided path.
@@ -41,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param destinationDirectory the destination to write to.
  @return a  Future that resolves with the extract path.
  */
-- (FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(NSString *)destinationDirectory;
+- (nonnull FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(nonnull NSString *)destinationDirectory;
 
 @end
 
@@ -51,5 +49,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDeviceDebugSymbolsCommands : NSObject <FBDeviceDebugSymbolsCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -19,7 +19,6 @@ typedef int (*SharedCacheExtractor)(const char *sharedCachePath, const char *ext
 @interface FBDeviceDebugSymbolsCommands ()
 
 @property (nonatomic, readonly, weak) FBDevice *device;
-@property (nullable, nonatomic, readwrite, copy) NSArray<NSString *> *cachedFileListing;
 
 @end
 

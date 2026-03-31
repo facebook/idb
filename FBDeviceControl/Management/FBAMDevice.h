@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDeviceType;
 @class FBOSVersion;
 
@@ -43,13 +41,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The queue on which work should be serialized.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  The queue on which asynchronous work can be performed sequentially.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 @end
-
-NS_ASSUME_NONNULL_END

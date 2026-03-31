@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 @class FBDevice;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the target to use.
  @return a new instance of the Command.
  */
-+ (instancetype)commandsWithTarget:(FBDevice *)target;
++ (nonnull instancetype)commandsWithTarget:(nonnull FBDevice *)target;
 
 #pragma mark Public Methods
 
@@ -36,8 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a future context with the service connection to the debug server.
  */
-- (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer;
+- (nonnull FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer;
 
 @end
-
-NS_ASSUME_NONNULL_END

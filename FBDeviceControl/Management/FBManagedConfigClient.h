@@ -10,14 +10,12 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBSpringboardServicesClient.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 
 /**
  The Service Name for Managed Config.
  */
-extern NSString *const FBManagedConfigService;
+extern NSString * _Nonnull const FBManagedConfigService;
 
 /**
  A client for Manged Config.
@@ -33,7 +31,7 @@ extern NSString *const FBManagedConfigService;
  @param logger the logger to use.
  @return a FBManagedConfigClient instance.
  */
-+ (instancetype)managedConfigClientWithConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)managedConfigClientWithConnection:(nonnull FBAMDServiceConnection *)connection logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -42,7 +40,7 @@ extern NSString *const FBManagedConfigService;
 
  @return a Future that resolves with the cloud configuration.
 */
-- (FBFuture<NSDictionary<NSString *, id> *> *)getCloudConfiguration;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)getCloudConfiguration;
 
 /**
  Changes the Wallpaper.
@@ -51,14 +49,14 @@ extern NSString *const FBManagedConfigService;
  @param data the PNG data of the wallpaper.
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)changeWallpaperWithName:(FBWallpaperName)name data:(NSData *)data;
+- (nonnull FBFuture<NSNull *> *)changeWallpaperWithName:(nonnull FBWallpaperName)name data:(nonnull NSData *)data;
 
 /**
  Returns all of the installed MDM profiles.
 
  @return a Future with the profile listing.
  */
-- (FBFuture<NSArray<NSString *> *> *)getProfileList;
+- (nonnull FBFuture<NSArray<NSString *> *> *)getProfileList;
 
 /**
  Installs an MDM profile.
@@ -66,7 +64,7 @@ extern NSString *const FBManagedConfigService;
  @param payload data for the MDM Profile.
  @return a Future with the profile listing.
  */
-- (FBFuture<NSNull *> *)installProfile:(NSData *)payload;
+- (nonnull FBFuture<NSNull *> *)installProfile:(nonnull NSData *)payload;
 
 /**
  Removes a MDM profile.
@@ -74,8 +72,6 @@ extern NSString *const FBManagedConfigService;
  @param profileName the name of the profile
  @return a Future with the profile listing.
  */
-- (FBFuture<NSNull *> *)removeProfile:(NSString *)profileName;
+- (nonnull FBFuture<NSNull *> *)removeProfile:(nonnull NSString *)profileName;
 
 @end
-
-NS_ASSUME_NONNULL_END

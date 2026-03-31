@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Device Implementation for Screenshots
  */
 @interface FBDeviceScreenshotCommands : NSObject <FBScreenshotCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 
 /**
@@ -60,19 +58,19 @@ NS_ASSUME_NONNULL_BEGIN
  When setting the icon layout via `setIconState`, the same format is expected.
  Entries should be round-tripped: preserve all original keys when moving icons between positions.
  */
-typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> *IconLayoutType;
+typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> * _Nonnull IconLayoutType;
 
 /**
  The Service Name for Managed Config.
  */
-extern NSString *const FBSpringboardServiceName;
+extern NSString * _Nonnull const FBSpringboardServiceName;
 
 /**
  A String Enum for wallpaper names.
  */
 typedef NSString *FBWallpaperName NS_STRING_ENUM;
-extern FBWallpaperName const FBWallpaperNameHomescreen;
-extern FBWallpaperName const FBWallpaperNameLockscreen;
+extern FBWallpaperName _Nonnull const FBWallpaperNameHomescreen;
+extern FBWallpaperName _Nonnull const FBWallpaperNameLockscreen;
 
 /**
  A client for SpringBoardServices.
@@ -88,7 +86,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
  @param logger the logger to use.
  @return a FBSpringboardServicesClient instance.
  */
-+ (instancetype)springboardServicesClientWithConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)springboardServicesClientWithConnection:(nonnull FBAMDServiceConnection *)connection logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -97,7 +95,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
 
  @return a Future wrapping the Icon Layout.
  */
-- (FBFuture<IconLayoutType> *)getIconLayout;
+- (nonnull FBFuture<IconLayoutType> *)getIconLayout;
 
 /**
  Gets the raw Icon State response from SpringBoard for a given format version.
@@ -106,7 +104,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
  @param formatVersion the format version number (e.g. 2, 3).
  @return a Future wrapping the raw response object.
  */
-- (FBFuture<id> *)getRawIconState:(NSUInteger)formatVersion;
+- (nonnull FBFuture<id> *)getRawIconState:(NSUInteger)formatVersion;
 
 /**
  Sets the Icon Layout of Springboard.
@@ -114,7 +112,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
  @param iconLayout the icon layout to set.
  @return a Future that resolves when the icon layout has been set.
  */
-- (FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout;
+- (nonnull FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout;
 
 /**
  Queries the home screen grid dimensions from SpringBoard.
@@ -122,7 +120,7 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
 
  @return a Future with the metrics dictionary.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)getHomeScreenIconMetrics;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)getHomeScreenIconMetrics;
 
 /**
  Obtains Wallpaper for the Homescreen.
@@ -130,15 +128,13 @@ extern FBWallpaperName const FBWallpaperNameLockscreen;
  @param name the name of wallpaper to retrieve.
  @return a Future with the Image PNG Data.
  */
-- (FBFuture<NSData *> *)wallpaperImageDataForKind:(FBWallpaperName)name;
+- (nonnull FBFuture<NSData *> *)wallpaperImageDataForKind:(nonnull FBWallpaperName)name;
 
 /**
  A File Container for Icon Manipulation
 
  @return an FBFileContainer implementation.
  */
-- (id<FBFileContainer>)iconContainer;
+- (nonnull id<FBFileContainer>)iconContainer;
 
 @end
-
-NS_ASSUME_NONNULL_END

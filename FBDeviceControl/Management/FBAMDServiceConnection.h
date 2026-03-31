@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAFCConnection;
 @protocol FBControlCoreLogger;
 
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a FBAMDServiceConnection instance.
  */
-+ (instancetype)connectionWithName:(NSString *)name connection:(AMDServiceConnectionRef)connection device:(AMDeviceRef)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)connectionWithName:(nonnull NSString *)name connection:(AMDServiceConnectionRef _Nonnull)connection device:(AMDeviceRef _Nonnull)device calls:(AMDCalls)calls logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark plist Messaging
 
@@ -63,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if the message was sent, NO otherwise.
  */
-- (BOOL)sendMessage:(id)message error:(NSError **)error;
+- (BOOL)sendMessage:(nonnull id)message error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously receive a plist-based packet used by lockdown.
@@ -71,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the read plist on success, nil on error.
  */
-- (nullable id)receiveMessageWithError:(NSError **)error;
+- (nullable id)receiveMessageWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Send then receive a plist.
@@ -80,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the message received, if successful.
  */
-- (nullable id)sendAndReceiveMessage:(id)message error:(NSError **)error;
+- (nullable id)sendAndReceiveMessage:(nonnull id)message error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Raw Bytes Read/Write
 /**
@@ -90,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if the bytes were sent, NO otherwise.
  */
-- (BOOL)send:(NSData *)data error:(NSError **)error;
+- (BOOL)send:(nonnull NSData *)data error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously send bytes on the connection, prefixed with a length packet.
@@ -99,7 +97,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if the bytes were sent, NO otherwise.
  */
-- (BOOL)sendWithLengthHeader:(NSData *)data error:(NSError **)error;
+- (BOOL)sendWithLengthHeader:(nonnull NSData *)data error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Sends a uint32_t over the connection.
@@ -108,7 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendUnsignedInt32:(uint32_t)value error:(NSError **)error;
+- (BOOL)sendUnsignedInt32:(uint32_t)value error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously receive bytes from the connection.
@@ -119,7 +117,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the data.
  */
-- (NSData *)receive:(size_t)size error:(NSError **)error;
+- (nullable NSData *)receive:(size_t)size error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously receive up to 'size' bytes in the connection
@@ -129,7 +127,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the data.
  */
-- (NSData *)receiveUpTo:(size_t)size error:(NSError **)error;
+- (nullable NSData *)receiveUpTo:(size_t)size error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously receive bytes from the connection, writing to a file handle.
@@ -139,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the data.
  */
-- (BOOL)receive:(size_t)size toFile:(NSFileHandle *)fileHandle error:(NSError **)error;
+- (BOOL)receive:(size_t)size toFile:(nonnull NSFileHandle *)fileHandle error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously receive bytes into a buffer.
@@ -149,7 +147,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if all bytes read, NO otherwise.
  */
-- (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error;
+- (BOOL)receive:(void * _Nonnull)destination ofSize:(size_t)size error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Receives a uint32_t a from the connection.
@@ -158,7 +156,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)receiveUnsignedInt32:(uint32_t *)valueOut error:(NSError **)error;
+- (BOOL)receiveUnsignedInt32:(uint32_t * _Nonnull)valueOut error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Receives a uint64_t a from the connection.
@@ -167,7 +165,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)receiveUnsignedInt64:(uint64_t *)valueOut error:(NSError **)error;
+- (BOOL)receiveUnsignedInt64:(uint64_t * _Nonnull)valueOut error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Streams
 
@@ -178,7 +176,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to consume on.
  @return the FBFileReader instance, this can be used to start reading the receiver's connection.
 */
-- (id<FBFileReader>)readFromConnectionWritingToConsumer:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+- (nonnull id<FBFileReader>)readFromConnectionWritingToConsumer:(nonnull id<FBDataConsumer>)consumer onQueue:(nonnull dispatch_queue_t)queue;
 
 /**
  Constructs a data consumer that writes to the underlying connection.
@@ -186,7 +184,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to perform writes on.
  @return a consumer that writes to the receiver's connection.
 */
-- (id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(dispatch_queue_t)queue;
+- (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)writeWithConsumerWritingOnQueue:(nonnull dispatch_queue_t)queue;
 
 #pragma mark Lifecycle
 
@@ -197,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES is succesful, NO otherwise.
  */
-- (BOOL)invalidateWithError:(NSError **)error;
+- (BOOL)invalidateWithError:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark AFC
 
@@ -209,14 +207,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging.
  @return a new FBAFCConnection wrapper instance.
  */
-- (FBAFCConnection *)asAFCConnectionWithCalls:(AFCCalls)calls callback:(AFCNotificationCallback)callback logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBAFCConnection *)asAFCConnectionWithCalls:(AFCCalls)calls callback:(AFCNotificationCallback _Nonnull)callback logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
 /**
  The name of of the service.
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
 
 /**
  The Wrapped Connection.
@@ -226,7 +224,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device to use.
  */
-@property (nonatomic, readonly, assign) AMDeviceRef device;
+@property (nonatomic, readonly, assign) AMDeviceRef _Nonnull device;
 
 /**
  The Calls to use.
@@ -239,5 +237,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
-
-NS_ASSUME_NONNULL_END
