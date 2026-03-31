@@ -5,11 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
-
-@class NSString, NSUUID;
-
-@protocol SimDeviceIOPortConsumer <FoundationXPCProtocolProxyable>
-@property (nonatomic, readonly) NSUUID *consumerUUID;
-@property (nonatomic, readonly, copy) NSString *consumerIdentifier;
-@end
+#import <CoreSimulator/SimDeviceIOPortConsumer-Protocol.h>

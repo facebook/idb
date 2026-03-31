@@ -22,7 +22,6 @@
 @property (nonatomic, retain) NSUUID *poolIdentifier;
 @property (nonatomic, retain) NSObject<OS_dispatch_queue> *processing_queue;
 @property (nonatomic, retain) NSMapTable *pasteboards;
-- (void).cxx_destruct;
 - (void)unregisterAndRemoveAll;
 - (BOOL)removePasteboard:(id)arg1 withError:(id *)arg2;
 - (BOOL)addPasteboard:(id)arg1 withError:(id *)arg2;

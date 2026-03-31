@@ -29,7 +29,7 @@
 
 // Remaining properties
 @property (atomic, readonly, copy) NSString *debugDescription;
-@property (atomic, readonly) unsigned long long hash;
+@property (atomic, readonly) NSUInteger hash;
 @property (atomic, readonly) Class superclass;
 
 @end

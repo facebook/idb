@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CoreSimulator/NSPasteboardItemDataProvider-Protocol.h>
+#import <AppKit/AppKit.h>
 
 @class NSArray, NSMapTable, NSMutableArray, NSMutableDictionary, NSPasteboardItem, NSString;
 
@@ -39,7 +39,7 @@
 
 // Remaining properties
 @property (atomic, readonly, copy) NSString *debugDescription;
-@property (atomic, readonly) unsigned long long hash;
+@property (atomic, readonly) NSUInteger hash;
 @property (atomic, readonly) Class superclass;
 
 @end

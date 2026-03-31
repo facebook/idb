@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <AccessibilityPlatformTranslation/CDStructures.h>
 #import <AppKit/AppKit.h>
 
 @class AXPTranslationObject, NSArray, NSMutableDictionary, NSString;

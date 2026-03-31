@@ -5,15 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <AccessibilityPlatformTranslation/NSObject.h>
-
-@class NSString;
-
-@protocol NSAccessibilityElement <NSObject>
-- (id)accessibilityParent;
-- (struct CGRect)accessibilityFrame;
-
-@optional
-- (NSString *)accessibilityIdentifier;
-- (BOOL)isAccessibilityFocused;
-@end
+#import <AppKit/AppKit.h>

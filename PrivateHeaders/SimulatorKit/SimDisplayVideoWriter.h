@@ -10,6 +10,7 @@
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDisplayDamageRectangleDelegate-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderableDelegate-Protocol.h>
+@protocol OS_dispatch_queue;
 
 @class MTLTextureDescriptor, NSString, NSUUID, SimVideoFile;
 @protocol MTLCommandQueue, MTLComputePipelineState, MTLDevice, MTLFunction, MTLLibrary, OS_dispatch_io, OS_dispatch_queue;

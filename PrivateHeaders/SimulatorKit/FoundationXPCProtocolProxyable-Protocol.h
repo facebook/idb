@@ -5,7 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
-
-@protocol FoundationXPCProtocolProxyable <NSObject>
-@end
+#import <CoreSimulator/FoundationXPCProtocolProxyable-Protocol.h>

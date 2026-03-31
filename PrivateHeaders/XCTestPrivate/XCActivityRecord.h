@@ -63,7 +63,7 @@
 - (void)attachAutomaticScreenshotForDevice:(id)arg1;
 
 // Remaining properties
-@property (readonly) unsigned long long hash;
+@property (readonly) NSUInteger hash;
 @property (readonly) Class superclass;
 
 @end

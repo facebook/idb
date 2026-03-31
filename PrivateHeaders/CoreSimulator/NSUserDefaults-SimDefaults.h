@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSUserDefaults.h>
+#import <Foundation/Foundation.h>
 
 @interface NSUserDefaults (SimDefaults)
 + (id)simulatorDefaults;

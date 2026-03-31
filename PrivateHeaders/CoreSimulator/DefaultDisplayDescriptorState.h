@@ -12,7 +12,7 @@
 @interface DefaultDisplayDescriptorState : NSObject <SimDisplayDescriptorState>
 {
   int _powerState;
-  int _displayClass;
+  unsigned short _displayClass;
   unsigned int _defaultWidthForDisplay;
   unsigned int _defaultHeightForDisplay;
 }
@@ -20,7 +20,7 @@
 + (id)defaultDisplayDescriptorStateWithPowerState:(int)arg1 displayClass:(int)arg2 width:(unsigned int)arg3 height:(unsigned int)arg4;
 @property (nonatomic, assign) unsigned int defaultHeightForDisplay;
 @property (nonatomic, assign) unsigned int defaultWidthForDisplay;
-@property (nonatomic, assign) int displayClass;
+@property (nonatomic, assign) unsigned short displayClass;
 @property (nonatomic, assign) int powerState;
 - (id)xpcObject;
 

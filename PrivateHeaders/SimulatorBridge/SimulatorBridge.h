@@ -13,6 +13,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+struct __AXUIElement;
+struct __AXObserver;
+
 @class CLSimulationManager, NSDistantObject, NSString;
 @protocol AccessibilityNotificationUpstream, OS_dispatch_queue;
 

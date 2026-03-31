@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
+
+struct opaqueCMSampleBuffer;
+struct opaqueCMFormatDescription;
+typedef void (^CDUnknownBlockType)(void);
 
 @protocol OS_dispatch_io;
 
