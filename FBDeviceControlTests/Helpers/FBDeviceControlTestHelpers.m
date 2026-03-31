@@ -2,6 +2,7 @@
 
 #import "FBDeviceControlTestHelpers.h"
 
-FBFuture<NSArray *> *FBFutureFromArray(NSArray<FBFuture *> *futures) {
+FBFuture<NSArray *> *FBFutureFromArray(NSArray<FBFuture *> *futures)
+{
   return [FBFuture futureWithFutures:futures];
 }
