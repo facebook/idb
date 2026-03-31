@@ -5,17 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Test utilities
-#import "AccessibilityDoubles.h"
-#import "FBSimulatorControlAssertions.h"
-#import "FBSimulatorControlTestCase.h"
-#import "FBSimulatorSetTestCase.h"
-
 // Test fixtures
 #import "FBSimulatorControlFixtures.h"
 
-// Templates
-#import "FBControlCoreValueTestCase.h"
-
-// Video stream test doubles
-#import "FBVideoStreamTestDoubles.h"
+// ObjC bridge for nullable CMSampleBuffer wrapper
+#import "FBVideoStreamTestDoublesBridge.h"

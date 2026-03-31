@@ -6,5 +6,4 @@
  */
 
 #import "FBControlCoreLoggerDouble.h"
-#import "FBControlCoreValueTestCase.h"
 #import "FBiOSTargetDouble.h"
