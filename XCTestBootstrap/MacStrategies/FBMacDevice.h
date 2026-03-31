@@ -9,24 +9,20 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /*
  Class that can be used for operating on local Mac device
  */
 @interface FBMacDevice : NSObject <FBiOSTarget, FBXCTestExtendedCommands, FBProcessSpawnCommands>
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger;
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger catalyst:(BOOL)catalyst;
+- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger catalyst:(BOOL)catalyst;
 
 /*
  Restores primary device state by:
  - Killling all launched process/apps
  - Removing all installed applications
  */
-- (FBFuture<NSNull *> *)restorePrimaryDeviceState;
+- (nonnull FBFuture<NSNull *> *)restorePrimaryDeviceState;
 
 @end
-
-NS_ASSUME_NONNULL_END

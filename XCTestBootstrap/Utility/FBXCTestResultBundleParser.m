@@ -9,8 +9,6 @@
 
 int const XCTestOperationTimeoutSecs = 120;
 
-NS_ASSUME_NONNULL_BEGIN
-
 #pragma mark STATIC FUNCTIONS
 
 static inline id readFromDict(NSDictionary *dict, NSString *key, Class klass)
@@ -773,7 +771,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
 }
 
-+ (NSString *)ensureSubdirectory:(NSString *)subdirectory insideResultBundle:(NSString *)resultBundlePath error:(NSError **)error
++ (NSString *)ensureSubdirectory:(NSString *)subdirectory insideResultBundle:(NSString *)resultBundlePath error:(NSError * _Nullable * _Nullable)error
 {
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSString *subdirectoryFullPath = [resultBundlePath stringByAppendingPathComponent:subdirectory];
@@ -885,5 +883,3 @@ static inline NSDate *dateFromString(NSString *date)
 }
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A common protocol for types of test execution.
  */
@@ -21,8 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the test has finished.
  */
-- (FBFuture<NSNull *> *)execute;
+- (nonnull FBFuture<NSNull *> *)execute;
 
 @end
-
-NS_ASSUME_NONNULL_END

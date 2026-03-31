@@ -53,7 +53,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 #pragma mark FBXCTestReporter
 
-- (BOOL)printReportWithError:(NSError **)error
+- (BOOL)printReportWithError:(NSError * _Nullable * _Nullable)error
 {
   if (!_started) {
     return [[FBXCTestError describe:[self noStartOfTestPlanErrorMessage]] failBool:error];

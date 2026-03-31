@@ -46,7 +46,7 @@
                                                          testApplicationDependencies:(NSDictionary<NSString *, NSString *> *)testApplicationDependencies
                                                              automationFrameworkPath:(NSString *)automationFrameworkPath
                                                                     reportActivities:(BOOL)reportActivities
-                                                                               error:(NSError **)error
+                                                                               error:(NSError * _Nullable * _Nullable)error
 {
   return [FBTestConfiguration configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
                                                                      moduleName:moduleName

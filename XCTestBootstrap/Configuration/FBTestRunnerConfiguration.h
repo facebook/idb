@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 @class FBTestBundle;
 @class FBTestConfiguration;
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param codesign if set this will be used for checking code signatures.
  @return a Future that will resolve with the Test Runner configuration.
  */
-+ (FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
++ (nonnull FBFuture<FBTestRunnerConfiguration *> *)prepareConfigurationWithTarget:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target testLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration workingDirectory:(nonnull NSString *)workingDirectory codesign:(nullable FBCodesignProvider *)codesign;
 
 #pragma mark Public
 
@@ -47,37 +45,35 @@ NS_ASSUME_NONNULL_BEGIN
  @param frameworkSearchPaths the list of search paths to add in the launch.
  @return a new environment dictionary.
  */
-+ (NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(FBBundleDescriptor *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPaths:(NSArray<NSString *> *)frameworkSearchPaths;
++ (nonnull NSDictionary<NSString *, NSString *> *)launchEnvironmentWithHostApplication:(nonnull FBBundleDescriptor *)hostApplication hostApplicationAdditionalEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)hostApplicationAdditionalEnvironment testBundle:(nonnull FBBundleDescriptor *)testBundle testConfigurationPath:(nonnull NSString *)testConfigurationPath frameworkSearchPaths:(nonnull NSArray<NSString *> *)frameworkSearchPaths;
 
 #pragma mark Properties
 
 /**
  Test session identifier
  */
-@property (nonatomic, readonly, copy) NSUUID *sessionIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSUUID *sessionIdentifier;
 
 /**
  Test runner app used for testing
  */
-@property (nonatomic, readonly, strong) FBBundleDescriptor *testRunner;
+@property (nonnull, nonatomic, readonly, strong) FBBundleDescriptor *testRunner;
 
 /**
   Launch arguments for test runner
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *launchArguments;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *launchArguments;
 
 /**
  Launch environment variables for test runner
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *launchEnvironment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *launchEnvironment;
 
 /**
  Launch environment variables added to test target application
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
-@property (nonatomic, readonly, strong) FBTestConfiguration *testConfiguration;
+@property (nonnull, nonatomic, readonly, strong) FBTestConfiguration *testConfiguration;
 
 @end
-
-NS_ASSUME_NONNULL_END

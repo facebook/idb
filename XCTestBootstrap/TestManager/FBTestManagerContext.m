@@ -9,7 +9,7 @@
 
 @implementation FBTestManagerContext
 
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration testedApplicationAdditionalEnvironment:(NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration
 {
   self = [super init];
   if (!self) {

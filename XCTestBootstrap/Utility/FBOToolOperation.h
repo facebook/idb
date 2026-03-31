@@ -9,12 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBOToolOperation : NSObject
 
-+ (FBFuture<NSArray<NSString *> *> *)listSanitiserDylibsRequiredByBundle:(NSString *)testBundlePath onQueue:(dispatch_queue_t)queue;
++ (nonnull FBFuture<NSArray<NSString *> *> *)listSanitiserDylibsRequiredByBundle:(nonnull NSString *)testBundlePath onQueue:(nonnull dispatch_queue_t)queue;
 
 @end
-
-NS_ASSUME_NONNULL_END

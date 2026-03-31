@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A String Enum for Test Types.
  */
@@ -19,23 +17,23 @@ typedef NSString *FBXCTestType NS_STRING_ENUM;
 /**
  An UITest.
  */
-extern FBXCTestType const FBXCTestTypeUITest;
+extern FBXCTestType const _Nonnull FBXCTestTypeUITest;
 
 /**
  An Application Test.
  */
 #define FBXCTestTypeApplicationTestValue @"application-test"
-extern FBXCTestType const FBXCTestTypeApplicationTest;
+extern FBXCTestType const _Nonnull FBXCTestTypeApplicationTest;
 
 /**
  A Logic Test.
  */
-extern FBXCTestType const FBXCTestTypeLogicTest;
+extern FBXCTestType const _Nonnull FBXCTestTypeLogicTest;
 
 /**
  The Listing of Testing of tests in a bundle.
  */
-extern FBXCTestType const FBXCTestTypeListTest;
+extern FBXCTestType const _Nonnull FBXCTestTypeListTest;
 
 @class FBCodeCoverageConfiguration;
 @class FBXCTestDestination;
@@ -50,27 +48,27 @@ extern FBXCTestType const FBXCTestTypeListTest;
  The Default Initializer.
  This should not be called directly.
  */
-- (instancetype)initWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
+- (nonnull instancetype)initWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
 
 /**
  The Environment Variables for the Process-Under-Test that is launched.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 
 /**
  The Directory to use for files required during the execution of the test run.
  */
-@property (nonatomic, readonly, copy) NSString *workingDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *workingDirectory;
 
 /**
  The Test Bundle to Execute.
  */
-@property (nonatomic, readonly, copy) NSString *testBundlePath;
+@property (nonnull, nonatomic, readonly, copy) NSString *testBundlePath;
 
 /**
  The Type of the Test Bundle.
  */
-@property (nonatomic, readonly, copy) FBXCTestType testType;
+@property (nonnull, nonatomic, readonly, copy) FBXCTestType testType;
 
 /**
  YES if the test execution should pause on launch, waiting for a debugger to attach.
@@ -91,7 +89,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
  @param entries the entries to add in
  @return the subprocess environment
  */
-- (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries;
+- (nonnull NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(nonnull NSDictionary<NSString *, NSString *> *)entries;
 
 @end
 
@@ -108,9 +106,9 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
++ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
 
-@property (nonatomic, readonly, copy) NSString *runnerAppPath;
+@property (nullable, nonatomic, readonly, copy) NSString *runnerAppPath;
 
 @end
 
@@ -122,7 +120,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Path to the Application Hosting the Test.
  */
-@property (nonatomic, readonly, copy) NSString *runnerAppPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *runnerAppPath;
 
 /**
  The Path to the test target Application.
@@ -157,7 +155,7 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath;
++ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(nonnull NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath;
 
 @end
 
@@ -203,13 +201,11 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The supported architectures of the test bundle.
  */
-@property (nonatomic, readonly, strong) NSSet<NSString *> *architectures;
+@property (nonnull, nonatomic, readonly, strong) NSSet<NSString *> *architectures;
 
 /**
  The Designated Initializer.
  */
-+ (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures;
++ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures;
 
 @end
-
-NS_ASSUME_NONNULL_END

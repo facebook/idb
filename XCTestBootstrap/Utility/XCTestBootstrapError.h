@@ -9,12 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The Error Domain for XCTestBootstrap Errors.
  */
-extern NSString *const XCTestBootstrapErrorDomain;
+extern NSString * _Nonnull const XCTestBootstrapErrorDomain;
 
 /**
  Error Codes.
@@ -33,7 +31,7 @@ extern const NSInteger XCTestBootstrapErrorCodeStartupTimeout;
 /**
  The Error Domain for FBTestErrorDomain Errors.
  */
-extern NSString *const FBTestErrorDomain;
+extern NSString * _Nonnull const FBTestErrorDomain;
 
 /**
  FBXCTest Errors construction.
@@ -41,5 +39,3 @@ extern NSString *const FBTestErrorDomain;
 @interface FBXCTestError : FBControlCoreError
 
 @end
-
-NS_ASSUME_NONNULL_END

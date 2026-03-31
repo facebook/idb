@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
   FBCodeCoverageExported,
   FBCodeCoverageRaw,
@@ -22,7 +20,7 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
 /**
  The path to the coverage directory
 */
-@property (nonatomic, readonly, strong) NSString *coverageDirectory;
+@property (nonnull, nonatomic, readonly, strong) NSString *coverageDirectory;
 
 /**
   Format in which code coverge data should be returned
@@ -34,8 +32,6 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
  */
 @property (nonatomic, readonly, assign) BOOL shouldEnableContinuousCoverageCollection;
 
-- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
+- (nonnull instancetype)initWithDirectory:(nonnull NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 
 @end
-
-NS_ASSUME_NONNULL_END

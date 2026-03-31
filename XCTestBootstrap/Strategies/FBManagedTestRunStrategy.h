@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBTestLaunchConfiguration;
 
@@ -33,8 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Test Run Strategy instance.
  */
-+ (FBFuture<NSNull *> *)runToCompletionWithTarget:(id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(NSString *)workingDirectory reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNull *> *)runToCompletionWithTarget:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target configuration:(nonnull FBTestLaunchConfiguration *)configuration codesign:(nullable FBCodesignProvider *)codesign workingDirectory:(nonnull NSString *)workingDirectory reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -12,8 +12,6 @@
 #import <XCTestBootstrap/FBExceptionInfo.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  fbxtest's reporting protocol.
  */
@@ -47,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param testSuite the started test suite
  @param startTime a string representation of the start time.
  */
-- (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime;
+- (void)testSuite:(nonnull NSString *)testSuite didStartAt:(nonnull NSString *)startTime;
 
 /**
  Called when a test case has finished
@@ -59,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param duration the duration of the test case.
  @param logs the logs from the test case.
  */
-- (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs;
+- (void)testCaseDidFinishForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs;
 
 /**
  Called when a test case has failed.
@@ -68,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param method the test method that has failed.
  @param exceptions an array of the exceptions that caused the failure.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method exceptions:(NSArray<FBExceptionInfo *> *)exceptions;
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions;
 
 /**
  Called when a test case has started
@@ -76,42 +74,42 @@ NS_ASSUME_NONNULL_BEGIN
  @param testClass the test class that has started.
  @param method the test method that has started.
  */
-- (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method;
+- (void)testCaseDidStartForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method;
 
 /**
  Called to summarize the results of a test execution
 
  @param summary the test summary.
  */
-- (void)finishedWithSummary:(FBTestManagerResultSummary *)summary;
+- (void)finishedWithSummary:(nonnull FBTestManagerResultSummary *)summary;
 
 /**
  Called when the test process has some output.
 
  @param output the test output.
  */
-- (void)testHadOutput:(NSString *)output;
+- (void)testHadOutput:(nonnull NSString *)output;
 
 /**
  Called for some external event to be relayed.
 
  @param event the encoded event.
  */
-- (void)handleExternalEvent:(NSString *)event;
+- (void)handleExternalEvent:(nonnull NSString *)event;
 
 /**
  Called when the results of the test should be written to the output. Warning! This method is bridged to swift incorrectly and loses bool return type. Adapt and use with extra care
 
  @param error an error for an error that occurs.
  */
-- (BOOL)printReportWithError:(NSError **)error;
+- (BOOL)printReportWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Called when the test process has crashed mid test
 
  @param error error returned by the test process, most likely includes a stack trace
  */
-- (void)didCrashDuringTest:(NSError *)error;
+- (void)didCrashDuringTest:(nonnull NSError *)error;
 
 @optional
 /**
@@ -121,7 +119,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param method the current test method
  @param activity information about the activity
  */
-- (void)testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity;
+- (void)testCase:(nonnull NSString *)testClass method:(nonnull NSString *)method willStartActivity:(nonnull FBActivityRecord *)activity;
 
 /**
  Called when a activity has finished
@@ -130,7 +128,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param method the current test method
  @param activity information about the activity
  */
-- (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
+- (void)testCase:(nonnull NSString *)testClass method:(nonnull NSString *)method didFinishActivity:(nonnull FBActivityRecord *)activity;
 
 /**
  Called when the test plan fails for some global issue not specific to any one test
@@ -162,5 +160,3 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path;
 
 @end
-
-NS_ASSUME_NONNULL_END

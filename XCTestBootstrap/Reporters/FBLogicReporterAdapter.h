@@ -10,8 +10,6 @@
 #import <XCTestBootstrap/FBLogicXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 
 /**
@@ -27,8 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger an optional logger to log to,
  @return a new FBLogicXCTestReporter instance.
  */
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithReporter:(nonnull id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

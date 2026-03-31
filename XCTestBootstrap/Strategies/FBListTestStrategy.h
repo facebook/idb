@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/FBXCTestRunner.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBListTestConfiguration;
 
 @protocol FBXCTestReporter;
@@ -31,14 +29,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the the configuration to use.
  @return a new FBListTestStrategy instance.
  */
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBListTestConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithTarget:(nonnull id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(nonnull FBListTestConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
 /**
  List the tests in the test bundle.
  */
-- (FBFuture<NSArray<NSString *> *> *)listTests;
+- (nonnull FBFuture<NSArray<NSString *> *> *)listTests;
 
 /**
  Wraps the Strategy in a Reporter.
@@ -46,8 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the reporter to wrap in.
  @return a Test Runner that wraps the underlying strategy.
  */
-- (id<FBXCTestRunner>)wrapInReporter:(id<FBXCTestReporter>)reporter;
+- (nonnull id<FBXCTestRunner>)wrapInReporter:(nonnull id<FBXCTestReporter>)reporter;
 
 @end
-
-NS_ASSUME_NONNULL_END
