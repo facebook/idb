@@ -8,8 +8,6 @@
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBAMDevice.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAFCConnection;
 @class FBAMDServiceConnection;
 @class FBAMDeviceServiceManager;
@@ -24,22 +22,22 @@ NS_ASSUME_NONNULL_BEGIN
  The underyling AMDeviceRef.
  May be NULL.
  */
-@property (nonatomic, readwrite, assign) AMDeviceRef amDeviceRef;
+@property (nonatomic, readwrite, assign) AMDeviceRef _Nullable amDeviceRef;
 
 /**
  All of the Device Values available.
  */
-@property (nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
+@property (nonnull, nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
 
 /**
  The Context Manager for the Connection
  */
-@property (nonatomic, readonly, strong) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
+@property (nonnull, nonatomic, readonly, strong) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
 
 /**
  The Service Manager.
  */
-@property (nonatomic, readonly, strong) FBAMDeviceServiceManager *serviceManager;
+@property (nonnull, nonatomic, readonly, strong) FBAMDeviceServiceManager *serviceManager;
 
 #pragma mark Private Methods
 
@@ -55,8 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAMDevice instance.
  */
-- (instancetype)initWithAllValues:(NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithAllValues:(nonnull NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

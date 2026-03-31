@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param remotePort remote port number.
  @return A future that resolves when the drain has been fully performed.
  */
-- (FBFuture<NSNull *> *)drainLocalFileInput:(int)localFileDescriptorInput localFileOutput:(int)localFileDescriptorOutput remotePort:(int)remotePort;
+- (nonnull FBFuture<NSNull *> *)drainLocalFileInput:(int)localFileDescriptorInput localFileOutput:(int)localFileDescriptorOutput remotePort:(int)remotePort;
 
 @end
 
@@ -37,5 +35,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDeviceSocketForwardingCommands : NSObject <FBSocketForwardingCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

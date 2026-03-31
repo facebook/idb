@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs constructing the set.
  @return the Default Device Set if successful, nil otherwise.
  */
-+ (nullable instancetype)setWithLogger:(id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate ecidFilter:(nullable NSString *)ecidFilter error:(NSError **)error;
++ (nullable instancetype)setWithLogger:(nonnull id<FBControlCoreLogger>)logger delegate:(nullable id<FBiOSTargetSetDelegate>)delegate ecidFilter:(nullable NSString *)ecidFilter error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Querying
 
@@ -39,20 +37,18 @@ NS_ASSUME_NONNULL_BEGIN
  @param udid the UDID of the Device to Fetch.
  @return a Device with the specified UDID, if one exists.
  */
-- (nullable FBDevice *)deviceWithUDID:(NSString *)udid;
+- (nullable FBDevice *)deviceWithUDID:(nonnull NSString *)udid;
 
 #pragma mark Properties
 
 /**
  All of the Available Devices.
  */
-@property (nonatomic, readonly, copy) NSArray<FBDevice *> *allDevices;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBDevice *> *allDevices;
 
 /**
  The Logger for the device set.
  */
-@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

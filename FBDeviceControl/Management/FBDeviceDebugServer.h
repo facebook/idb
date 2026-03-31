@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 
 /**
@@ -31,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return A future that resolves with the debug server instance.
  */
-+ (FBFuture<FBDeviceDebugServer *> *)debugServerForServiceConnection:(FBFutureContext<FBAMDServiceConnection *> *)service port:(in_port_t)port lldbBootstrapCommands:(NSArray<NSString *> *)lldbBootstrapCommands queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBDeviceDebugServer *> *)debugServerForServiceConnection:(nonnull FBFutureContext<FBAMDServiceConnection *> *)service port:(in_port_t)port lldbBootstrapCommands:(nonnull NSArray<NSString *> *)lldbBootstrapCommands queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

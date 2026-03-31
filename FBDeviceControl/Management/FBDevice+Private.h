@@ -7,8 +7,6 @@
 
 #import <FBDeviceControl/FBDevice.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDevice;
 @class FBAMRestorableDevice;
 @class FBDeviceVideoRecordingCommands;
@@ -19,10 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nullable, nonatomic, readwrite, strong) FBAMDevice *amDevice;
 @property (nullable, nonatomic, readwrite, strong) FBAMRestorableDevice *restorableDevice;
-@property (nonatomic, readonly, strong) FBiOSTargetCommandForwarder *forwarder;
+@property (nonnull, nonatomic, readonly, strong) FBiOSTargetCommandForwarder *forwarder;
 
-- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithSet:(nonnull FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -14,8 +14,6 @@
 #import <FBDeviceControl/FBDeviceRecoveryCommands.h>
 #import <FBDeviceControl/FBDeviceSocketForwardingCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDeviceSet;
 @protocol FBControlCoreLogger;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device Set to which the Device Belongs.
  */
-@property (nonatomic, readonly, weak) FBDeviceSet *set;
+@property (nullable, nonatomic, readonly, weak) FBDeviceSet *set;
 
 /**
  Constructs an Operating System Version from a string.
@@ -35,8 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param string the string to interpolate.
  @return an NSOperatingSystemVersion for the string.
  */
-+ (NSOperatingSystemVersion)operatingSystemVersionFromString:(NSString *)string;
++ (NSOperatingSystemVersion)operatingSystemVersionFromString:(nonnull NSString *)string;
 
 @end
-
-NS_ASSUME_NONNULL_END

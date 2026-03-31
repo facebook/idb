@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBDeviceDeveloperDiskImageCommands for Devices
  */
 @interface FBDeviceDeveloperDiskImageCommands : NSObject <FBDeveloperDiskImageCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

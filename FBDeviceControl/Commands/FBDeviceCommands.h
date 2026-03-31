@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAFCConnection;
 @class FBAMDServiceConnection;
 @class FBDeveloperDiskImage;
@@ -21,27 +19,27 @@ NS_ASSUME_NONNULL_BEGIN
  An enum representing the activation state of the device.
  */
 typedef NSString *FBDeviceActivationState NS_STRING_ENUM;
-extern FBDeviceActivationState const FBDeviceActivationStateUnknown;
-extern FBDeviceActivationState const FBDeviceActivationStateUnactivated;
-extern FBDeviceActivationState const FBDeviceActivationStateActivated;
+extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateUnknown;
+extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateUnactivated;
+extern FBDeviceActivationState _Nonnull const FBDeviceActivationStateActivated;
 
 /**
  A string enum representing keys within device information.
  */
 typedef NSString *FBDeviceKey NS_STRING_ENUM;
-extern FBDeviceKey const FBDeviceKeyChipID;
-extern FBDeviceKey const FBDeviceKeyDeviceClass;
-extern FBDeviceKey const FBDeviceKeyDeviceName;
-extern FBDeviceKey const FBDeviceKeyLocationID;
-extern FBDeviceKey const FBDeviceKeyProductType;
-extern FBDeviceKey const FBDeviceKeySerialNumber;
-extern FBDeviceKey const FBDeviceKeyUniqueChipID;
-extern FBDeviceKey const FBDeviceKeyUniqueDeviceID;
-extern FBDeviceKey const FBDeviceKeyCPUArchitecture;
-extern FBDeviceKey const FBDeviceKeyBuildVersion;
-extern FBDeviceKey const FBDeviceKeyProductVersion;
-extern FBDeviceKey const FBDeviceKeyActivationState;
-extern FBDeviceKey const FBDeviceKeyIsPaired;
+extern FBDeviceKey _Nonnull const FBDeviceKeyChipID;
+extern FBDeviceKey _Nonnull const FBDeviceKeyDeviceClass;
+extern FBDeviceKey _Nonnull const FBDeviceKeyDeviceName;
+extern FBDeviceKey _Nonnull const FBDeviceKeyLocationID;
+extern FBDeviceKey _Nonnull const FBDeviceKeyProductType;
+extern FBDeviceKey _Nonnull const FBDeviceKeySerialNumber;
+extern FBDeviceKey _Nonnull const FBDeviceKeyUniqueChipID;
+extern FBDeviceKey _Nonnull const FBDeviceKeyUniqueDeviceID;
+extern FBDeviceKey _Nonnull const FBDeviceKeyCPUArchitecture;
+extern FBDeviceKey _Nonnull const FBDeviceKeyBuildVersion;
+extern FBDeviceKey _Nonnull const FBDeviceKeyProductVersion;
+extern FBDeviceKey _Nonnull const FBDeviceKeyActivationState;
+extern FBDeviceKey _Nonnull const FBDeviceKeyIsPaired;
 
 /**
  Coerce an Activation State string to the String Enum
@@ -49,7 +47,7 @@ extern FBDeviceKey const FBDeviceKeyIsPaired;
  @param activationState the string representation of the activation state.
  @return a FBDeviceActivationState string enum.
  */
-extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString *activationState);
+extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(NSString * _Nonnull activationState);
 
 /**
  Defines properties that are required on classes related to the implementation of FBDevice.
@@ -76,7 +74,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
 /**
  The Device's Logger.
  */
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Device's 'Product Version'.
@@ -91,12 +89,12 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
 /**
  The Device's 'Activation State'.
  */
-@property (nonatomic, readonly, assign) FBDeviceActivationState activationState;
+@property (nonnull, nonatomic, readonly, assign) FBDeviceActivationState activationState;
 
 /**
  All of the Device Values available.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *allValues;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *allValues;
 
 @end
 
@@ -111,7 +109,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
+- (nonnull FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Starts a Service on the AMDevice.
@@ -119,7 +117,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param service the service name
  @return a Future wrapping the FBAMDServiceConnection.
  */
-- (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service;
+- (nonnull FBFutureContext<FBAMDServiceConnection *> *)startService:(nonnull NSString *)service;
 
 /**
  Starts a Service, wrapping it in a "Device Link" Plist client.
@@ -127,7 +125,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param service the service name.
  @return a Future context wrapping the FBDeviceLinkClient.
  */
-- (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service;
+- (nonnull FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(nonnull NSString *)service;
 
 /**
  Starts a Service, wrapping it in an "AFC" Client.
@@ -135,7 +133,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param service the service name.
  @return a Future wrapping the AFC connection.
  */
-- (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service;
+- (nonnull FBFutureContext<FBAFCConnection *> *)startAFCService:(nonnull NSString *)service;
 
 /**
  Starts house arrest for a given bundle id.
@@ -144,8 +142,6 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param afcCalls the AFC calls to inject
  @return a Future context wrapping the AFC Connection.
  */
-- (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
+- (nonnull FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(nonnull NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END

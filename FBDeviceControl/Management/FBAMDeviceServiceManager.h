@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAFCConnection.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDevice;
 
 /**
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceTimeout the timeout to retain service for.
  @return a FBAMDeviceServiceManager instance.
  */
-+ (instancetype)managerWithAMDevice:(FBAMDevice *)device serviceTimeout:(nullable NSNumber *)serviceTimeout;
++ (nonnull instancetype)managerWithAMDevice:(nonnull FBAMDevice *)device serviceTimeout:(nullable NSNumber *)serviceTimeout;
 
 #pragma mark Public Services
 
@@ -40,8 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param afcCalls the calls to use.
  @return a FBFutureContextManager for the house_arrest service.
  */
-- (FBFutureContextManager<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
+- (nonnull FBFutureContextManager<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(nonnull NSString *)bundleID afcCalls:(AFCCalls)afcCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -11,8 +11,6 @@
 #import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Object Wrapper around AMRestorableDevice
  */
@@ -29,27 +27,27 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new instance.
  */
-- (instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef)restorableDevice allValues:(NSDictionary<NSString *, id> *)allValues workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithCalls:(AMDCalls)calls restorableDevice:(AMRestorableDeviceRef _Nonnull)restorableDevice allValues:(nonnull NSDictionary<NSString *, id> *)allValues workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  The Restorable Device instance.
  */
-@property (nonatomic, readwrite, assign) AMRestorableDeviceRef restorableDevice;
+@property (nonatomic, readwrite, assign) AMRestorableDeviceRef _Nonnull restorableDevice;
 
 /**
  Cached Device Values.
  */
-@property (nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
+@property (nonnull, nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
 
 /**
  The queue on which work should be serialized.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  The queue on which asynchronous work can be performed sequentially.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 /**
  Convert AMRestorableDeviceState to FBiOSTargetState.
@@ -60,5 +58,3 @@ NS_ASSUME_NONNULL_BEGIN
 + (FBiOSTargetState)targetStateForDeviceState:(AMRestorableDeviceState)state;
 
 @end
-
-NS_ASSUME_NONNULL_END

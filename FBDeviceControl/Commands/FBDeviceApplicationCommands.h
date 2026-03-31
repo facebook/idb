@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -19,5 +17,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBDeviceApplicationCommands : NSObject <FBApplicationCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

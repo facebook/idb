@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class AVCaptureSession;
 @class FBDevice;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the Device to obtain the Session for.
  @return A Capture Session if successful, nil otherwise.
  */
-+ (FBFuture<AVCaptureSession *> *)captureSessionForDevice:(FBDevice *)device;
++ (nonnull FBFuture<AVCaptureSession *> *)captureSessionForDevice:(nonnull FBDevice *)device;
 
 /**
  A Factory method for obtaining the Video for a Device.
@@ -36,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the location of the video to record to, will be deleted if it already exists.
  @return a Future wrapping the Device Video.
  */
-+ (FBFuture<FBDeviceVideo *> *)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath;
++ (nonnull FBFuture<FBDeviceVideo *> *)videoForDevice:(nonnull FBDevice *)device filePath:(nonnull NSString *)filePath;
 
 #pragma mark Public
 
@@ -45,15 +43,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when recording has started.
  */
-- (FBFuture<NSNull *> *)startRecording;
+- (nonnull FBFuture<NSNull *> *)startRecording;
 
 /**
  Stops Recording the Video for a Device.
 
  @return a Future that resolves when recording has stopped.
  */
-- (FBFuture<NSNull *> *)stopRecording;
+- (nonnull FBFuture<NSNull *> *)stopRecording;
 
 @end
-
-NS_ASSUME_NONNULL_END
