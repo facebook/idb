@@ -15,7 +15,7 @@
 /**
  Protocol for interacting with a Simulator's launchctl
  */
-@protocol FBSimulatorLaunchCtlCommands <NSObject, FBiOSTargetCommand>
+@protocol FBSimulatorLaunchCtlCommandsProtocol <NSObject, FBiOSTargetCommand>
 
 #pragma mark Querying Services
 
@@ -93,7 +93,7 @@
 /**
  An Interface to a Simulator's launchctl.
  */
-@interface FBSimulatorLaunchCtlCommands : NSObject <FBSimulatorLaunchCtlCommands>
+@interface FBSimulatorLaunchCtlCommands : NSObject <FBSimulatorLaunchCtlCommandsProtocol>
 
 #pragma mark Helpers
 

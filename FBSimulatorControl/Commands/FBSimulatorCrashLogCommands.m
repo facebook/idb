@@ -73,7 +73,7 @@
   return [FBFuture futureWithResult:[self.notifier.store pruneCrashLogsMatchingPredicate:simulatorPredicate]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)crashLogFiles
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]

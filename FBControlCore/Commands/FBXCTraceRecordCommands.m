@@ -33,7 +33,7 @@
   return self;
 }
 
-#pragma mark FBXCTraceRecordCommands
+#pragma mark FBXCTraceRecordCommandsProtocol
 
 - (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {

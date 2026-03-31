@@ -511,7 +511,7 @@
           failFuture];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)crashLogFiles
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]

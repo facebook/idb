@@ -51,7 +51,7 @@
            writingTo:localConsumer]
           onQueue:self.device.asyncQueue
           pop:^(id<FBDataConsumer> remoteConsumer) {
-            id<FBFileReader> reader = [FBFileReader readerWithFileDescriptor:localFileDescriptorInput closeOnEndOfFile:NO consumer:remoteConsumer logger:nil];
+            id<FBFileReaderProtocol> reader = [FBFileReader readerWithFileDescriptor:localFileDescriptorInput closeOnEndOfFile:NO consumer:remoteConsumer logger:nil];
             return [[reader
                      startReading]
                     onQueue:self.device.asyncQueue
@@ -74,7 +74,7 @@
             if (!writer) {
               return [FBFuture futureWithError:error];
             }
-            id<FBFileReader> reader = [FBFileReader readerWithFileDescriptor:remoteSocket.intValue closeOnEndOfFile:NO consumer:consumer logger:nil];
+            id<FBFileReaderProtocol> reader = [FBFileReader readerWithFileDescriptor:remoteSocket.intValue closeOnEndOfFile:NO consumer:consumer logger:nil];
             return [[reader
                      startReading]
                     mapReplace:writer];

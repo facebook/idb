@@ -42,11 +42,11 @@
 
 #pragma mark FBFileCommands Implementation
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForContainerApplication:(NSString *)bundleID
 {
   return [[FBFuture
            onQueue:self.simulator.asyncQueue
-           resolveValue:^id<FBFileContainer>(NSError **error) {
+           resolveValue:^id<FBFileContainerProtocol>(NSError **error) {
              id<FBContainedFile> containedFile = [self containedFileForApplication:bundleID error:error];
              return [FBFileContainer fileContainerForContainedFile:containedFile];
            }]
@@ -57,16 +57,16 @@
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForAuxillary
 {
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:self.simulator.auxillaryDirectory]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForApplicationContainers
 {
   return [[FBFuture
            onQueue:self.simulator.workQueue
-           resolveValue:^id<FBFileContainer>(NSError **error) {
+           resolveValue:^id<FBFileContainerProtocol>(NSError **error) {
              id<FBContainedFile> containedFile = [self containedFileForApplicationContainersWithError:error];
              if (!containedFile) {
                return nil;
@@ -80,11 +80,11 @@
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForGroupContainers
 {
   return [[FBFuture
            onQueue:self.simulator.workQueue
-           resolveValue:^id<FBFileContainer>(NSError **error) {
+           resolveValue:^id<FBFileContainerProtocol>(NSError **error) {
              id<FBContainedFile> containedFile = [self containedFileForGroupContainersWithError:error];
              if (!containedFile) {
                return nil;
@@ -98,62 +98,62 @@
           }];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForRootFilesystem
 {
   id<FBContainedFile> containedFile = [self containedFileForRootFilesystem];
-  id<FBFileContainer> fileContainer = [FBFileContainer fileContainerForContainedFile:containedFile];
+  id<FBFileContainerProtocol> fileContainer = [FBFileContainer fileContainerForContainedFile:containedFile];
   return [FBFutureContext futureContextWithResult:fileContainer];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMediaDirectory
 {
   NSString *mediaDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Media"];
   return [FBFutureContext futureContextWithResult:[FBFileContainer fileContainerForBasePath:mediaDirectory]];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMDMProfiles
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForProvisioningProfiles
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSpringboardIconLayout
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForWallpaper
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForDiskImages
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-- (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
+- (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSymbols
 {
   return [[FBControlCoreError
            describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
           failFutureContext];
 }
 
-#pragma mark FBSimulatorFileCommands Implementation
+#pragma mark FBSimulatorFileCommandsProtocol Implementation
 
 - (id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error
 {

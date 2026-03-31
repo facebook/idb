@@ -90,11 +90,11 @@
             startService:@"com.apple.syslog_relay"]
            onQueue:queue
            pend:^(FBAMDServiceConnection *connection) {
-             id<FBFileReader> reader = [connection readFromConnectionWritingToConsumer:consumer onQueue:readQueue];
+             id<FBFileReaderProtocol> reader = [connection readFromConnectionWritingToConsumer:consumer onQueue:readQueue];
              return [[reader startReading] mapReplace:reader];
            }]
           onQueue:queue
-          enter:^(id<FBFileReader> reader, FBMutableFuture<NSNull *> *teardown) {
+          enter:^(id<FBFileReaderProtocol> reader, FBMutableFuture<NSNull *> *teardown) {
             FBFuture<NSNull *> *readCompleted = [[reader finishedReading] mapReplace:NSNull.null];
             return [[FBDeviceLogOperation alloc] initWithConsumer:consumer readCompleted:readCompleted serviceCompleted:teardown];
           }];

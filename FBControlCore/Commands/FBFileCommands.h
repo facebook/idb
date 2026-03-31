@@ -24,83 +24,83 @@
  @param bundleID the bundle ID of the container application.
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(nonnull NSString *)bundleID;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForContainerApplication:(nonnull NSString *)bundleID;
 
 /**
  Returns a file container for the target's auxillary directory.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForAuxillary;
 
 /**
  Returns a file container for all of the application containers.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForApplicationContainers;
 
 /**
  Returns a file container for all of the group containers.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForGroupContainers;
 
 /**
  Returns a file container for the root of the filesystem
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForRootFilesystem;
 
 /**
  Returns a file container for the 'media' directory.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForMediaDirectory;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMediaDirectory;
 
 /**
  Returns a file container for Provisioning Profiles.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForProvisioningProfiles;
 
 /**
  Returns a file container for MDM Profiles.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMDMProfiles;
 
 /**
  Returns a file container for modification of the Springboard icon layout.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSpringboardIconLayout;
 
 /**
  Returns a file container for modification wallpaper.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForWallpaper;
 
 /**
  Returns a file container for disk image modification
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForDiskImages;
 
 /**
  Returns a file container for manipulating device symbols.
 
  @return a Future context that resolves with an implementation of the file container.
  */
-- (nonnull FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols;
+- (nonnull FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSymbols;
 
 @end

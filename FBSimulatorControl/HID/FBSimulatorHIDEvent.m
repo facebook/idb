@@ -44,9 +44,9 @@ static BOOL shouldLogHIDEventDetails(void)
   return NSProcessInfo.processInfo.environment[@"FBSIMULATORCONTROL_LOG_HID_DETAILS"].boolValue;
 }
 
-@interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventComposite>
+@interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEventProtocol, FBSimulatorHIDEventComposite>
 
-@property (nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEvent>> *events;
+@property (nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEventProtocol>> *events;
 
 @end
 
@@ -54,7 +54,7 @@ static BOOL shouldLogHIDEventDetails(void)
 
 static NSString *const KeyEvents = @"events";
 
-- (instancetype)initWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
+- (instancetype)initWithEvents:(NSArray<id<FBSimulatorHIDEventProtocol>> *)events
 {
   self = [super init];
   if (!self) {
@@ -71,13 +71,13 @@ static NSString *const KeyEvents = @"events";
   return [self performEvents:self.events onHid:hid];
 }
 
-- (FBFuture<NSNull *> *)performEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events onHid:(FBSimulatorHID *)hid
+- (FBFuture<NSNull *> *)performEvents:(NSArray<id<FBSimulatorHIDEventProtocol>> *)events onHid:(FBSimulatorHID *)hid
 {
   if (events.count == 0) {
     return FBFuture.empty;
   }
-  id<FBSimulatorHIDEvent> event = events.firstObject;
-  NSArray<id<FBSimulatorHIDEvent>> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
+  id<FBSimulatorHIDEventProtocol> event = events.firstObject;
+  NSArray<id<FBSimulatorHIDEventProtocol>> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
   return [[event
            performOnHID:hid]
           onQueue:dispatch_get_main_queue()
@@ -359,7 +359,7 @@ static NSString *const KeyKeycode = @"keycode";
 
 @end
 
-@interface FBSimulatorHIDEvent_Delay : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventDelay>
+@interface FBSimulatorHIDEvent_Delay : NSObject <FBSimulatorHIDEventProtocol, FBSimulatorHIDEventDelay>
 
 @end
 
@@ -450,7 +450,7 @@ static NSString *const KeyDuration = @"duration";
 
 #pragma mark Multiple Payload Events
 
-+ (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
++ (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEventProtocol>> *)events
 {
   return [[FBSimulatorHIDEvent_Composite alloc] initWithEvents:events];
 }
@@ -488,7 +488,7 @@ static NSString *const KeyDuration = @"duration";
           ]];
 }
 
-+ (id<FBSimulatorHIDEvent>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
++ (id<FBSimulatorHIDEventProtocol>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
 {
   NSMutableArray<id<FBSimulatorHIDEventPayload>> *events = [NSMutableArray array];
 
@@ -500,9 +500,9 @@ static NSString *const KeyDuration = @"duration";
   return [self eventWithEvents:events];
 }
 
-+ (id<FBSimulatorHIDEvent>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration
++ (id<FBSimulatorHIDEventProtocol>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration
 {
-  NSMutableArray<id<FBSimulatorHIDEvent>> *events = [NSMutableArray array];
+  NSMutableArray<id<FBSimulatorHIDEventProtocol>> *events = [NSMutableArray array];
   double distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2));
   if (delta <= 0.0) {
     delta = DEFAULT_SWIPE_DELTA;

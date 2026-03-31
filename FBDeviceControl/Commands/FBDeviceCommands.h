@@ -52,7 +52,7 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 /**
  Defines properties that are required on classes related to the implementation of FBDevice.
  */
-@protocol FBDevice <NSObject>
+@protocol FBDeviceProtocol <NSObject>
 
 /**
  The AMDevice Calls to use.
@@ -101,7 +101,7 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 /**
  Defines Device-Specific commands, off which others are based.
  */
-@protocol FBDeviceCommands <FBDevice>
+@protocol FBDeviceCommands <FBDeviceProtocol>
 
 /**
  Obtain the connection for a device.

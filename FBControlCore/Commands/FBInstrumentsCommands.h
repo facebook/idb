@@ -16,7 +16,7 @@
 /**
  Defines an interface for interacting with Instruments.
  */
-@protocol FBInstrumentsCommands <NSObject, FBiOSTargetCommand>
+@protocol FBInstrumentsCommandsProtocol <NSObject, FBiOSTargetCommand>
 
 /**
  Runs instruments with the given configuration
@@ -30,9 +30,9 @@
 @end
 
 /**
- A concrete implementation of FBInstrumentsCommands.
+ A concrete implementation of FBInstrumentsCommandsProtocol.
  */
-@interface FBInstrumentsCommands : NSObject <FBInstrumentsCommands>
+@interface FBInstrumentsCommands : NSObject <FBInstrumentsCommandsProtocol>
 
 @property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
 

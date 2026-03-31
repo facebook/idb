@@ -205,7 +205,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 {
   return [self.keychainCommands
           onQueue:self.target.workQueue
-          fmap:^FBFuture *(id<FBSimulatorKeychainCommands> commands) {
+          fmap:^FBFuture *(id<FBSimulatorKeychainCommandsProtocol> commands) {
             return [commands clearKeychain];
           }];
 }
@@ -250,7 +250,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 {
   return [self.lifecycleCommands
           onQueue:self.target.workQueue
-          fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
+          fmap:^FBFuture *(id<FBSimulatorLifecycleCommandsProtocol> commands) {
             return [commands openURL:[NSURL URLWithString:url]];
           }];
 }
@@ -297,7 +297,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 {
   return [self.lifecycleCommands
           onQueue:self.target.workQueue
-          fmap:^FBFuture *(id<FBSimulatorLifecycleCommands> commands) {
+          fmap:^FBFuture *(id<FBSimulatorLifecycleCommandsProtocol> commands) {
             return [commands focus];
           }];
 }
@@ -560,7 +560,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [commands fetchDiagnosticInformation];
 }
 
-- (FBFuture<NSNull *> *)hid:(id<FBSimulatorHIDEvent>)event
+- (FBFuture<NSNull *> *)hid:(id<FBSimulatorHIDEventProtocol>)event
 {
   return [self.connectToHID
           onQueue:self.target.workQueue
@@ -631,7 +631,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^(id<FBFileContainer> container) {
+          pop:^(id<FBFileContainerProtocol> container) {
             NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
             for (NSString *originPath in originPaths) {
               [futures addObject:[container moveFrom:originPath to:destinationPath]];
@@ -663,7 +663,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
             return [[self
                      applicationDataContainerCommands:containerType]
                     onQueue:self.target.workQueue
-                    pop:^FBFuture *(id<FBFileContainer> container) {
+                    pop:^FBFuture *(id<FBFileContainerProtocol> container) {
                       NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
                       for (NSURL *originPath in paths) {
                         [futures addObject:[container copyFromHost:originPath.path toContainer:destinationPath]];
@@ -678,7 +678,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^FBFuture *(id<FBFileContainer> commands) {
+          pop:^FBFuture *(id<FBFileContainerProtocol> commands) {
             return [commands copyFromContainer:path toHost:destinationPath];
           }];
 }
@@ -695,7 +695,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
              return [[self
                       applicationDataContainerCommands:containerType]
                      onQueue:self.target.workQueue
-                     pop:^(id<FBFileContainer> container) {
+                     pop:^(id<FBFileContainerProtocol> container) {
                        return [container copyFromContainer:path toHost:tempPath];
                      }];
            }]
@@ -710,7 +710,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^(id<FBFileContainer> container) {
+          pop:^(id<FBFileContainerProtocol> container) {
             return [container tail:path toConsumer:consumer];
           }];
 }
@@ -720,7 +720,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^(id<FBFileContainer> targetApplicationData) {
+          pop:^(id<FBFileContainerProtocol> targetApplicationData) {
             return [targetApplicationData createDirectory:directoryPath];
           }];
 }
@@ -730,7 +730,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^FBFuture *(id<FBFileContainer> container) {
+          pop:^FBFuture *(id<FBFileContainerProtocol> container) {
             NSMutableArray<FBFuture<NSNull *> *> *futures = NSMutableArray.array;
             for (NSString *path in paths) {
               [futures addObject:[container remove:path]];
@@ -744,7 +744,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            applicationDataContainerCommands:containerType]
           onQueue:self.target.workQueue
-          pop:^FBFuture *(id<FBFileContainer> container) {
+          pop:^FBFuture *(id<FBFileContainerProtocol> container) {
             return [container contentsOfDirectory:path];
           }];
 }
@@ -754,7 +754,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[[self
             applicationDataContainerCommands:containerType]
            onQueue:self.target.workQueue
-           pop:^FBFuture *(id<FBFileContainer> container) {
+           pop:^FBFuture *(id<FBFileContainerProtocol> container) {
              NSMutableArray<FBFuture<NSArray<NSString *> *> *> *futures = NSMutableArray.array;
              for (NSString *path in paths) {
                [futures addObject:[container contentsOfDirectory:path]];
@@ -782,7 +782,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
 
 #pragma mark Private Methods
 
-- (FBFutureContext<id<FBFileContainer>> *)applicationDataContainerCommands:(NSString *)containerType
+- (FBFutureContext<id<FBFileContainerProtocol>> *)applicationDataContainerCommands:(NSString *)containerType
 {
   if ([containerType isEqualToString:FBFileContainerKindCrashes]) {
     return [self.target crashLogFiles];
@@ -856,10 +856,10 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [FBFuture futureWithResult:commands];
 }
 
-- (FBFuture<id<FBSimulatorLifecycleCommands>> *)lifecycleCommands
+- (FBFuture<id<FBSimulatorLifecycleCommandsProtocol>> *)lifecycleCommands
 {
-  id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) self.target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+  id<FBSimulatorLifecycleCommandsProtocol> commands = (id<FBSimulatorLifecycleCommandsProtocol>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommandsProtocol)]) {
     return [[FBIDBError
              describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorLifecycleCommands protocol %@", self.target]]
             failFuture];
@@ -878,10 +878,10 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [FBFuture futureWithResult:commands];
 }
 
-- (FBFuture<id<FBSimulatorKeychainCommands>> *)keychainCommands
+- (FBFuture<id<FBSimulatorKeychainCommandsProtocol>> *)keychainCommands
 {
-  id<FBSimulatorKeychainCommands> commands = (id<FBSimulatorKeychainCommands>) self.target;
-  if (![commands conformsToProtocol:@protocol(FBSimulatorKeychainCommands)]) {
+  id<FBSimulatorKeychainCommandsProtocol> commands = (id<FBSimulatorKeychainCommandsProtocol>) self.target;
+  if (![commands conformsToProtocol:@protocol(FBSimulatorKeychainCommandsProtocol)]) {
     return [[FBIDBError
              describe:[NSString stringWithFormat:@"Target doesn't conform to FBSimulatorKeychainCommands protocol %@", self.target]]
             failFuture];
@@ -916,7 +916,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
            lifecycleCommands]
           onQueue:self.target.workQueue
-          fmap:^FBFuture<FBSimulatorHID *> *(id<FBSimulatorLifecycleCommands> commands) {
+          fmap:^FBFuture<FBSimulatorHID *> *(id<FBSimulatorLifecycleCommandsProtocol> commands) {
             NSError *error = nil;
             if (![FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworks:self.target.logger error:&error]) {
               return [[FBIDBError

@@ -176,7 +176,7 @@
  @param queue the queue to consume on.
  @return the FBFileReader instance, this can be used to start reading the receiver's connection.
 */
-- (nonnull id<FBFileReader>)readFromConnectionWritingToConsumer:(nonnull id<FBDataConsumer>)consumer onQueue:(nonnull dispatch_queue_t)queue;
+- (nonnull id<FBFileReaderProtocol>)readFromConnectionWritingToConsumer:(nonnull id<FBDataConsumer>)consumer onQueue:(nonnull dispatch_queue_t)queue;
 
 /**
  Constructs a data consumer that writes to the underlying connection.

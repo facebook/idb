@@ -16,7 +16,7 @@
 /**
  Defines an interface for running `xctrace record`.
  */
-@protocol FBXCTraceRecordCommands <NSObject, FBiOSTargetCommand>
+@protocol FBXCTraceRecordCommandsProtocol <NSObject, FBiOSTargetCommand>
 
 /**
  Run `xctrace record` with the given configuration
@@ -30,9 +30,9 @@
 @end
 
 /**
- A concrete implementation of FBXCTraceRecordCommands.
+ A concrete implementation of FBXCTraceRecordCommandsProtocol.
  */
-@interface FBXCTraceRecordCommands : NSObject <FBXCTraceRecordCommands>
+@interface FBXCTraceRecordCommands : NSObject <FBXCTraceRecordCommandsProtocol>
 
 @property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
 

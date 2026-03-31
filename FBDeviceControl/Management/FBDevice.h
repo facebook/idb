@@ -20,7 +20,7 @@
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget, FBDebuggerCommands, FBDeviceCommands, FBDiagnosticInformationCommands, FBLocationCommands, FBDeviceRecoveryCommands, FBDeviceActivationCommands, FBPowerCommands, FBDeveloperDiskImageCommands, FBSocketForwardingCommands, FBDeviceDebugSymbolsCommands>
+@interface FBDevice : NSObject <FBiOSTarget, FBDebuggerCommands, FBDeviceCommands, FBDiagnosticInformationCommands, FBLocationCommands, FBDeviceRecoveryCommandsProtocol, FBDeviceActivationCommandsProtocol, FBPowerCommands, FBDeveloperDiskImageCommands, FBSocketForwardingCommands, FBDeviceDebugSymbolsCommandsProtocol>
 
 /**
  The Device Set to which the Device Belongs.

@@ -224,7 +224,7 @@
           }];
 }
 
-#pragma mark - FBSimulatorApplicationCommands
+#pragma mark - FBSimulatorApplicationCommandsProtocol
 
 - (FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 {

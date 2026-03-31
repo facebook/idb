@@ -32,7 +32,7 @@
   return self;
 }
 
-#pragma mark FBInstrumentsCommands
+#pragma mark FBInstrumentsCommandsProtocol
 
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {

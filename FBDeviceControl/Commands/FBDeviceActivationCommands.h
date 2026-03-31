@@ -15,7 +15,7 @@
 /**
  The Protocol for defining Device Activations.
  */
-@protocol FBDeviceActivationCommands <FBiOSTargetCommand>
+@protocol FBDeviceActivationCommandsProtocol <FBiOSTargetCommand>
 
 /**
  Activates the iOS Device.
@@ -32,6 +32,6 @@
  An Implementation of FBDeviceActivationCommands.
  URLs used in the activation process can be overriden via IDB_DRM_HANDSHAKE_URL & IDB_ACTIVATION_URL environment variables.
  */
-@interface FBDeviceActivationCommands : NSObject <FBDeviceActivationCommands>
+@interface FBDeviceActivationCommands : NSObject <FBDeviceActivationCommandsProtocol>
 
 @end

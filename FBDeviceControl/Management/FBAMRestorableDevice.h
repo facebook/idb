@@ -14,7 +14,7 @@
 /**
  An Object Wrapper around AMRestorableDevice
  */
-@interface FBAMRestorableDevice : NSObject <FBiOSTargetInfo, FBDevice>
+@interface FBAMRestorableDevice : NSObject <FBiOSTargetInfo, FBDeviceProtocol>
 
 /**
  The Designated Initializer.

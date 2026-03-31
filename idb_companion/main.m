@@ -180,8 +180,8 @@ static FBFuture<FBSimulator *> *SimulatorFuture(NSString *udid, NSUserDefaults *
            }]
           onQueue:dispatch_get_main_queue()
           fmap:^(id<FBiOSTarget> target) {
-            id<FBSimulatorLifecycleCommands> commands = (id<FBSimulatorLifecycleCommands>) target;
-            if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+            id<FBSimulatorLifecycleCommandsProtocol> commands = (id<FBSimulatorLifecycleCommandsProtocol>) target;
+            if (![commands conformsToProtocol:@protocol(FBSimulatorLifecycleCommandsProtocol)]) {
               return [[FBIDBError
                        describe:[NSString stringWithFormat:@"%@ does not support Simulator Lifecycle commands", commands]]
                       failFuture];

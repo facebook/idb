@@ -37,8 +37,8 @@
   if (target.state != FBiOSTargetStateBooted) {
     return [FBFuture futureWithResult:target];
   }
-  id<FBSimulatorLifecycleCommands> lifecycle = (id<FBSimulatorLifecycleCommands>) target;
-  if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
+  id<FBSimulatorLifecycleCommandsProtocol> lifecycle = (id<FBSimulatorLifecycleCommandsProtocol>) target;
+  if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommandsProtocol)]) {
     return [FBFuture futureWithResult:target];;
   }
 

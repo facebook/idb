@@ -24,7 +24,7 @@ FBWallpaperName const FBWallpaperNameLockscreen = @"lockscreen";
 
 typedef NSArray<NSArray<NSString *> *> *IconLayoutJSONType;
 
-@interface FBSpringboardServicesIconContainer : NSObject <FBFileContainer>
+@interface FBSpringboardServicesIconContainer : NSObject <FBFileContainerProtocol>
 
 @property (nonatomic, readonly, strong) FBSpringboardServicesClient *client;
 @property (nonatomic, readonly, copy) NSArray<NSString *> *validFilenames;
@@ -323,7 +323,7 @@ static size_t IconLayoutSize = 4;
           }];
 }
 
-- (id<FBFileContainer>)iconContainer
+- (id<FBFileContainerProtocol>)iconContainer
 {
   return [[FBSpringboardServicesIconContainer alloc] initWithClient:self];
 }

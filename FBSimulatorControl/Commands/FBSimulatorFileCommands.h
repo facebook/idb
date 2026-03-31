@@ -11,7 +11,7 @@
 
 @class FBSimulator;
 
-@protocol FBSimulatorFileCommands <NSObject>
+@protocol FBSimulatorFileCommandsProtocol <NSObject>
 
 /**
  Returns the File Container for the given container application
@@ -50,6 +50,6 @@
 /**
  An implementation of FBFileCommands for Simulators
  */
-@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBSimulatorFileCommands, FBiOSTargetCommand>
+@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand>
 
 @end

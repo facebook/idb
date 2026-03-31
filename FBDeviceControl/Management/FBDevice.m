@@ -171,7 +171,7 @@
   return _restorableDevice;
 }
 
-- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDevice>)targetInfo overwrite:(BOOL)overwrite
+- (void)cacheValuesFromInfo:(id<FBiOSTargetInfo, FBDeviceProtocol>)targetInfo overwrite:(BOOL)overwrite
 {
   // Don't overwrite with nil values.
   if (!targetInfo) {

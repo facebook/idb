@@ -17,7 +17,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  A HID event that can be performed on a HID
  */
-@protocol FBSimulatorHIDEvent <NSObject, NSCopying>
+@protocol FBSimulatorHIDEventProtocol <NSObject, NSCopying>
 
 /**
  Materializes the event, performing it on the hid object.
@@ -32,7 +32,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  A HID event that resolves to a single payload, performed on a HID
  */
-@protocol FBSimulatorHIDEventPayload <FBSimulatorHIDEvent>
+@protocol FBSimulatorHIDEventPayload <FBSimulatorHIDEventProtocol>
 
 /**
  Constructs the Indigo event data for the reciever.
@@ -47,7 +47,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  A HID event that delays and does not resolve to a event performed on the HID.
  */
-@protocol FBSimulatorHIDEventDelay <FBSimulatorHIDEvent>
+@protocol FBSimulatorHIDEventDelay <FBSimulatorHIDEventProtocol>
 
 /**
  The duration of the delay.
@@ -59,12 +59,12 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  A HID event that is composed through a discrete set of sub-events
  */
-@protocol FBSimulatorHIDEventComposite <FBSimulatorHIDEvent>
+@protocol FBSimulatorHIDEventComposite <FBSimulatorHIDEventProtocol>
 
 /**
  The subevents, may be a FBSimulatorHIDEventPayload or a FBSimulatorHIDEventDelay.
  */
-@property (nonnull, nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEvent>> *events;
+@property (nonnull, nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEventProtocol>> *events;
 
 @end
 
@@ -190,7 +190,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param events an array of events
  @return a composite event
  */
-+ (nonnull id<FBSimulatorHIDEventComposite>)eventWithEvents:(nonnull NSArray<id<FBSimulatorHIDEvent>> *)events NS_SWIFT_NAME(with(events:));
++ (nonnull id<FBSimulatorHIDEventComposite>)eventWithEvents:(nonnull NSArray<id<FBSimulatorHIDEventProtocol>> *)events NS_SWIFT_NAME(with(events:));
 
 /**
  A HID Event that delays the next event by a set duration
