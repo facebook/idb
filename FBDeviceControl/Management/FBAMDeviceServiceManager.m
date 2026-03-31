@@ -8,7 +8,6 @@
 #import "FBAMDeviceServiceManager.h"
 
 #import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 
 @interface FBAMDeviceServiceManager_HouseArrest : NSObject <FBFutureContextManagerDelegate>

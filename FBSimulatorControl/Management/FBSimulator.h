@@ -63,8 +63,9 @@
 
 /**
  The FBSimulatorConfiguration representing this Simulator.
+ Should be marked private when converting to Swift (was readwrite in private extension).
  */
-@property (nonnull, nonatomic, readonly, copy) FBSimulatorConfiguration *configuration;
+@property (nonnull, nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
 
 /**
  A command executor for simctl
@@ -75,6 +76,14 @@
  The directory path of the expected location of the CoreSimulator logs directory.
  */
 @property (nonnull, nonatomic, readonly, copy) NSString *coreSimulatorLogsDirectory;
+
+#pragma mark - Should be marked private when converting to Swift
+
+@property (nonnull, nonatomic, readonly, strong) id forwarder;
+
++ (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;
+- (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
+- (nonnull instancetype)initWithDevice:(nonnull id)device logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
 
 @end
 

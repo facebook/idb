@@ -7,7 +7,7 @@
 
 #import "FBDeviceManager.h"
 
-#import "FBAMDevice+Private.h"
+#import "FBAMDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDeviceStorage.h"

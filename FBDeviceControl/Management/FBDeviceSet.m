@@ -14,12 +14,10 @@
 #import <FBControlCore/FBiOSTargetSet.h>
 
 #import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 #import "FBAMDeviceManager.h"
 #import "FBAMRestorableDevice.h"
 #import "FBAMRestorableDeviceManager.h"
 #import "FBDevice.h"
-#import "FBDevice+Private.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDeviceStorage.h"
 

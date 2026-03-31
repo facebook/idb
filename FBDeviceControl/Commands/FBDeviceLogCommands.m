@@ -8,7 +8,7 @@
 #import "FBDeviceLogCommands.h"
 
 #import "FBAMDServiceConnection.h"
-#import "FBDevice+Private.h"
+#import "FBDevice.h"
 #import "FBDeviceControlError.h"
 
 #pragma mark Protocol Adaptor

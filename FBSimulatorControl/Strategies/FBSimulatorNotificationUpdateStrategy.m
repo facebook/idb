@@ -12,7 +12,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorNotificationUpdateStrategy ()

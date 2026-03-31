@@ -9,7 +9,6 @@
 
 #import "FBAFCConnection.h"
 #import "FBDevice.h"
-#import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebugSymbolsCommands.h"
 #import "FBDeviceProvisioningProfileCommands.h"

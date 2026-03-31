@@ -6,7 +6,6 @@
  */
 
 #import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
 
 #include <dlfcn.h>
 

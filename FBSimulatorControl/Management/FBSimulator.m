@@ -6,7 +6,6 @@
  */
 
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
 
 #import <Foundation/Foundation.h>
 

@@ -14,7 +14,12 @@
 #import <FBDeviceControl/FBDeviceRecoveryCommands.h>
 #import <FBDeviceControl/FBDeviceSocketForwardingCommands.h>
 
+@class FBAMDevice;
+@class FBAMRestorableDevice;
 @class FBDeviceSet;
+@class FBDeviceVideoRecordingCommands;
+@class FBDeviceXCTestCommands;
+@class FBiOSTargetCommandForwarder;
 @protocol FBControlCoreLogger;
 
 /**
@@ -34,5 +39,13 @@
  @return an NSOperatingSystemVersion for the string.
  */
 + (NSOperatingSystemVersion)operatingSystemVersionFromString:(nonnull NSString *)string;
+
+#pragma mark - Should be marked private when converting to Swift
+
+@property (nullable, nonatomic, readwrite, strong) FBAMDevice *amDevice;
+@property (nullable, nonatomic, readwrite, strong) FBAMRestorableDevice *restorableDevice;
+@property (nonnull, nonatomic, readonly, strong) FBiOSTargetCommandForwarder *forwarder;
+
+- (nonnull instancetype)initWithSet:(nonnull FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end

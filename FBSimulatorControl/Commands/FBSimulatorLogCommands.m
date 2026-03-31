@@ -10,7 +10,7 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBSimulator+Private.h"
+#import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorLogCommands ()
