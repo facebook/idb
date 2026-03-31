@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCoreTestDoubles
 import XCTest
 
 @testable import FBControlCore
-import FBControlCoreTestDoubles
 
 // swiftlint:disable force_cast
 final class FBSubprocessTests: XCTestCase {
@@ -211,9 +211,11 @@ final class FBSubprocessTests: XCTestCase {
     FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/bin/sleep", arguments: ["1"])
       .runUntilCompletion(withAcceptableExitCodes: nil)
-      .onQueue(DispatchQueue.main, notifyOfCompletion: { _ in
-        expectation.fulfill()
-      })
+      .onQueue(
+        DispatchQueue.main,
+        notifyOfCompletion: { _ in
+          expectation.fulfill()
+        })
 
     wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
   }
@@ -225,9 +227,11 @@ final class FBSubprocessTests: XCTestCase {
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000"])
     )
 
-    process.statLoc.onQueue(DispatchQueue.main, notifyOfCompletion: { _ in
-      expectation.fulfill()
-    })
+    process.statLoc.onQueue(
+      DispatchQueue.main,
+      notifyOfCompletion: { _ in
+        expectation.fulfill()
+      })
 
     XCTAssertThrowsError(try process.exitCode.await(withTimeout: 2))
     XCTAssertFalse(process.statLoc.hasCompleted)
