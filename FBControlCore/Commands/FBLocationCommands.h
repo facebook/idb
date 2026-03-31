@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands for manipulating location.
  */
@@ -24,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param latitude the latitude.
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)overrideLocationWithLongitude:(double)longitude latitude:(double)latitude;
+- (nonnull FBFuture<NSNull *> *)overrideLocationWithLongitude:(double)longitude latitude:(double)latitude;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -18,8 +18,6 @@ typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode) {
   FBApplicationLaunchModeRelaunchIfRunning = 2,
 };
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBinaryDescriptor;
 @class FBBundleDescriptor;
 @class FBProcessIO;
@@ -41,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Configuration Object with the arguments applied.
  */
 
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger io:(FBProcessIO *)io launchMode:(FBApplicationLaunchMode)launchMode;
+- (nonnull instancetype)initWithBundleID:(nonnull NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger io:(nonnull FBProcessIO *)io launchMode:(FBApplicationLaunchMode)launchMode;
 
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
@@ -64,5 +62,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, assign) BOOL waitForDebugger;
 
 @end
-
-NS_ASSUME_NONNULL_END

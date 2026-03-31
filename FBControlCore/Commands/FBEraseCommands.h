@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Defines an interface for erasing a target.
  */
@@ -24,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the target has been erased.
  */
-- (FBFuture<NSNull *> *)erase;
+- (nonnull FBFuture<NSNull *> *)erase;
 
 @end
-
-NS_ASSUME_NONNULL_END

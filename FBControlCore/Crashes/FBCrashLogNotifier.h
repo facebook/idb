@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBCrashLogInfo;
 @class FBCrashLogStore;
 
@@ -24,12 +22,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Shared Notifier.
  */
-@property (class, nonatomic, readonly, strong) FBCrashLogNotifier *sharedInstance;
+@property (class, nonnull, nonatomic, readonly, strong) FBCrashLogNotifier *sharedInstance;
 
 /**
  The store of crash logs.
  */
-@property (nonatomic, readonly, strong) FBCrashLogStore *store;
+@property (nonnull, nonatomic, readonly, strong) FBCrashLogStore *store;
 
 #pragma mark Notifications
 
@@ -47,8 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to wait for.
  @return a Future that resolves with the next crash log matching the predicate.
  */
-- (FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(NSPredicate *)predicate;
+- (nonnull FBFuture<FBCrashLogInfo *> *)nextCrashLogForPredicate:(nonnull NSPredicate *)predicate;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 @class FBProcessFetcher;
 @class FBProcessInfo;
@@ -48,7 +46,7 @@ typedef struct {
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(nonnull FBProcessFetcher *)processFetcher workQueue:(nonnull dispatch_queue_t)workQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Creates and returns a Strategy strategyWith the default configuration.
@@ -58,7 +56,7 @@ typedef struct {
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher workQueue:(dispatch_queue_t)workQueue logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)strategyWithProcessFetcher:(nonnull FBProcessFetcher *)processFetcher workQueue:(nonnull dispatch_queue_t)workQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -68,8 +66,6 @@ typedef struct {
  @param processIdentifier the pid of the process to kill.
  @return a Future that resolves when the process was killed.
  */
-- (FBFuture<NSNull *> *)killProcessIdentifier:(pid_t)processIdentifier;
+- (nonnull FBFuture<NSNull *> *)killProcessIdentifier:(pid_t)processIdentifier;
 
 @end
-
-NS_ASSUME_NONNULL_END

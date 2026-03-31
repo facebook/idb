@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Contains all the timings for an instruments operation.
  */
@@ -25,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param operationDuration the total duration for the Instruments operation
  @return a new FBInstrumentsTimings object with the specified timing values.
  */
-+ (instancetype)timingsWithTerminateTimeout:(NSTimeInterval)terminateTimeout launchRetryTimeout:(NSTimeInterval)launchRetryTimeout launchErrorTimeout:(NSTimeInterval)launchErrorTimeout operationDuration:(NSTimeInterval)operationDuration;
++ (nonnull instancetype)timingsWithTerminateTimeout:(NSTimeInterval)terminateTimeout launchRetryTimeout:(NSTimeInterval)launchRetryTimeout launchErrorTimeout:(NSTimeInterval)launchErrorTimeout operationDuration:(NSTimeInterval)operationDuration;
 
 /**
  The maximum backoff time when stopping Instruments.
@@ -62,42 +60,40 @@ NS_ASSUME_NONNULL_BEGIN
  @param templateName the name of the template
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings;
++ (nonnull instancetype)configurationWithTemplateName:(nonnull NSString *)templateName targetApplication:(nonnull NSString *)targetApplication appEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(nonnull NSArray<NSString *> *)appArguments toolArguments:(nonnull NSArray<NSString *> *)toolArguments timings:(nonnull FBInstrumentsTimings *)timings;
 
-- (instancetype)initWithTemplateName:(NSString *)templateName targetApplication:(NSString *)targetApplication appEnvironment:(NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(NSArray<NSString *> *)appArguments toolArguments:(NSArray<NSString *> *)toolArguments timings:(FBInstrumentsTimings *)timings;
+- (nonnull instancetype)initWithTemplateName:(nonnull NSString *)templateName targetApplication:(nonnull NSString *)targetApplication appEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)appEnvironment appArguments:(nonnull NSArray<NSString *> *)appArguments toolArguments:(nonnull NSArray<NSString *> *)toolArguments timings:(nonnull FBInstrumentsTimings *)timings;
 
 #pragma mark Properties
 
 /**
  The template name or path.
  */
-@property (nonatomic, readonly, copy) NSString *templateName;
+@property (nonnull, nonatomic, readonly, copy) NSString *templateName;
 
 /**
  The target application bundle id.
  */
-@property (nonatomic, readonly, copy) NSString *targetApplication;
+@property (nonnull, nonatomic, readonly, copy) NSString *targetApplication;
 
 /**
  The target application environment.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *appEnvironment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *appEnvironment;
 
 /**
  The arguments to the target application.
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *appArguments;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *appArguments;
 
 /**
  Additional arguments.
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *toolArguments;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *toolArguments;
 
 /**
  All the timings for the Instruments operation.
  */
-@property (nonatomic, readonly, copy) FBInstrumentsTimings *timings;
+@property (nonnull, nonatomic, readonly, copy) FBInstrumentsTimings *timings;
 
 @end
-
-NS_ASSUME_NONNULL_END

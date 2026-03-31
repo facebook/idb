@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An enum representing how an process should be launched.
  */
@@ -35,12 +33,12 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
  @param mode the launch mode to use.
  @return a new Configuration Object with the arguments applied.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO<StdInType, StdOutType, StdErrType> *)io mode:(FBProcessSpawnMode)mode;
+- (nonnull instancetype)initWithLaunchPath:(nonnull NSString *)launchPath arguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment io:(nonnull FBProcessIO<StdInType, StdOutType, StdErrType> *)io mode:(FBProcessSpawnMode)mode;
 
 /**
  The Binary Path of the process to Launch.
  */
-@property (nonatomic, readonly, copy) NSString *launchPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *launchPath;
 
 /**
  How the process should be launched.
@@ -50,8 +48,6 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
 /**
  The name of the launched process, effectively the argv[0] of the launched process.
  */
-@property (nonatomic, readonly, copy) NSString *processName;
+@property (nonnull, nonatomic, readonly, copy) NSString *processName;
 
 @end
-
-NS_ASSUME_NONNULL_END

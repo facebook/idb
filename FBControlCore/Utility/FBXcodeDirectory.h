@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Obtains the Path to the Current Xcode Install.
  */
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a future wrapping the developer directory
  */
-+ (FBFuture<NSString *> *)xcodeSelectDeveloperDirectory;
++ (nonnull FBFuture<NSString *> *)xcodeSelectDeveloperDirectory;
 
 /**
  Since Xcode 6, /var/db/xcode_select_link is the path that xcode-select(1) reads and writes to.
@@ -32,8 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return the path if it is valid, nil otherwise.
  */
-+ (nullable NSString *)symlinkedDeveloperDirectoryWithError:(NSError **)error;
++ (nullable NSString *)symlinkedDeveloperDirectoryWithError:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

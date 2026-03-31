@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Conveniences for working with collections.
  */
@@ -21,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param indices the indices to extract numbers from.
  @return an Array of Numbers of the indices in the index set.
  */
-+ (NSArray<NSNumber *> *)arrayFromIndices:(NSIndexSet *)indices;
++ (nonnull NSArray<NSNumber *> *)arrayFromIndices:(nonnull NSIndexSet *)indices;
 
 /**
  Returns a recursive copy of the dictionary, filtering out any elements that are not JSON-Serializable. Values that are acceptable are:
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param input the input dictionary.
  @return a filtered dictionary.
  */
-+ (NSDictionary<NSString *, id> *)recursiveFilteredJSONSerializableRepresentationOfDictionary:(NSDictionary<NSString *, id> *)input;
++ (nonnull NSDictionary<NSString *, id> *)recursiveFilteredJSONSerializableRepresentationOfDictionary:(nonnull NSDictionary<NSString *, id> *)input;
 
 /**
  Returns a recursive copy of the array, filtering out any elements that are not JSON-Serializable. Values that are acceptable are:
@@ -47,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param input the input array.
  @return a filtered array.
  */
-+ (NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(NSArray<id> *)input;
++ (nonnull NSArray<id> *)recursiveFilteredJSONSerializableRepresentationOfArray:(nonnull NSArray<id> *)input;
 
 /**
  Creates and returns an Index Set from an Array of Numbers
@@ -56,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param array an array of numbers to extract values from
  @return an Index Set of the values in the array.
  */
-+ (NSIndexSet *)indicesFromArray:(NSArray<NSNumber *> *)array;
++ (nonnull NSIndexSet *)indicesFromArray:(nonnull NSArray<NSNumber *> *)array;
 
 /**
  objectForKey, converting NSNull to nil.
@@ -65,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param key the key to obtain for.
  @return the value if present, else nil if NSNull.null or not present.
  */
-+ (nullable id)nullableValueForDictionary:(NSDictionary<id<NSCopying>, id> *)dictionary key:(id<NSCopying>)key;
++ (nullable id)nullableValueForDictionary:(nonnull NSDictionary<id<NSCopying>, id> *)dictionary key:(nonnull id<NSCopying>)key;
 
 /**
  Create an Array of the same object.
@@ -73,8 +71,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param object the object.
  @param count the number of occurrences.
  */
-+ (NSArray *)arrayWithObject:(id)object count:(NSUInteger)count;
++ (nonnull NSArray *)arrayWithObject:(nonnull id)object count:(NSUInteger)count;
 
 @end
-
-NS_ASSUME_NONNULL_END

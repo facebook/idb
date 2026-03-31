@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSubprocess;
 @class FBProcessIOAttachment;
 @class FBProcessSpawnConfiguration;
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration of the process to launch.
  @return A future wrapping the launched process.
  */
-- (FBFuture<FBSubprocess *> *)launchProcess:(FBProcessSpawnConfiguration *)configuration;
+- (nonnull FBFuture<FBSubprocess *> *)launchProcess:(nonnull FBProcessSpawnConfiguration *)configuration;
 
 @end
 
@@ -47,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param commands the command implementation to use.
  @return the stat_loc exit of the process, wrapped in a Future.
  */
-+ (FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
++ (nonnull FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(nonnull FBProcessSpawnConfiguration *)configuration withCommands:(nonnull id<FBProcessSpawnCommands>)commands;
 
 /**
  Launches an process, consuming it's output and returning it as a String.
@@ -56,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param commands the command implementation to use.
  @return A future that wraps the stdout of the launched process.
  */
-+ (FBFuture<NSString *> *)launchConsumingStdout:(FBProcessSpawnConfiguration *)configuration withCommands:(id<FBProcessSpawnCommands>)commands;
++ (nonnull FBFuture<NSString *> *)launchConsumingStdout:(nonnull FBProcessSpawnConfiguration *)configuration withCommands:(nonnull id<FBProcessSpawnCommands>)commands;
 
 /**
  Resolves an exitCode future from a statLoc.
@@ -72,8 +70,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration of the finished process.
  @param logger the logger to log to.
  */
-+ (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(FBProcessIOAttachment *)attachment statLocFuture:(FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(FBProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(nonnull FBProcessIOAttachment *)attachment statLocFuture:(nonnull FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(nonnull FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(nonnull FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(nonnull FBProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

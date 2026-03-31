@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Concrete Value of Process Information.
  */
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param arguments the arguments that the process was launched with.
  @param environment the environment that the
  */
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment;
+- (nonnull instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(nonnull NSString *)launchPath arguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment;
 
 /**
  The Process Identifier for the running process
@@ -32,23 +30,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Name of the Process.
  */
-@property (nonatomic, readonly, copy) NSString *processName;
+@property (nonnull, nonatomic, readonly, copy) NSString *processName;
 
 /**
  The Launch Path of the running process
  */
-@property (nonatomic, readonly, copy) NSString *launchPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *launchPath;
 
 /**
  An NSArray<NSString *> of the launch arguments of the process.
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *arguments;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  An NSDictionary<NSString *, NSString *> of the environment of the process.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 @end
-
-NS_ASSUME_NONNULL_END

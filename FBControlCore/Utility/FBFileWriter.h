@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBDataConsumer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Data Consumer that writes out to a file or file descriptor.
  The dual of FBFileReader.
@@ -25,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a File Writer.
  */
-@property (class, nonatomic, readonly, strong) id<FBDataConsumer> nullWriter;
+@property (class, nonnull, nonatomic, readonly, strong) id<FBDataConsumer> nullWriter;
 
 /**
  Creates a synchronous data consumer from a file handle.
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a data consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)syncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)syncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Creates a non-blocking Data Consumer from a file handle.
@@ -44,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a data consumer.
  */
-+ (nullable id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile error:(NSError **)error;
++ (nullable id<FBDataConsumer, FBDataConsumerLifecycle>)asyncWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a non-blocking Dispatch Data Consumer from a file Handle.
@@ -53,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a Future wrapping the Data Consumer.
  */
-+ (FBFuture<id<FBDispatchDataConsumer>> *)asyncDispatchDataWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
++ (nonnull FBFuture<id<FBDispatchDataConsumer>> *)asyncDispatchDataWriterWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Creates a blocking Data Consumer from a file path.
@@ -63,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a data consumer on success, nil otherwise.
  */
-+ (nullable id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
++ (nullable id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)syncWriterForFilePath:(nonnull NSString *)filePath error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a non-blocking Data Consumer from a file path.
@@ -73,8 +71,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the file handle to write to from.
  @return a future that resolves with the data consumer.
  */
-+ (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncWriterForFilePath:(NSString *)filePath;
++ (nonnull FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)asyncWriterForFilePath:(nonnull NSString *)filePath;
 
 @end
-
-NS_ASSUME_NONNULL_END

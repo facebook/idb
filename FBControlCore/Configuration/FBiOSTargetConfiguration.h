@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBArchitecture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
  These mirror the values from -[SimDeviceState productFamilyID].
@@ -29,297 +27,297 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
  */
 typedef NSString *FBDeviceModel NS_STRING_ENUM;
 
-extern FBDeviceModel const FBDeviceModeliPhone4s;
-extern FBDeviceModel const FBDeviceModeliPhone5;
-extern FBDeviceModel const FBDeviceModeliPhone5c;
-extern FBDeviceModel const FBDeviceModeliPhone5s;
-extern FBDeviceModel const FBDeviceModeliPhone6;
-extern FBDeviceModel const FBDeviceModeliPhone6Plus;
-extern FBDeviceModel const FBDeviceModeliPhone6S;
-extern FBDeviceModel const FBDeviceModeliPhone6SPlus;
-extern FBDeviceModel const FBDeviceModeliPhoneSE_1stGeneration;
-extern FBDeviceModel const FBDeviceModeliPhoneSE_2ndGeneration;
-extern FBDeviceModel const FBDeviceModeliPhone7;
-extern FBDeviceModel const FBDeviceModeliPhone7Plus;
-extern FBDeviceModel const FBDeviceModeliPhone8;
-extern FBDeviceModel const FBDeviceModeliPhone8Plus;
-extern FBDeviceModel const FBDeviceModeliPhoneX;
-extern FBDeviceModel const FBDeviceModeliPhoneXs;
-extern FBDeviceModel const FBDeviceModeliPhoneXsMax;
-extern FBDeviceModel const FBDeviceModeliPhoneXr;
-extern FBDeviceModel const FBDeviceModeliPhone11;
-extern FBDeviceModel const FBDeviceModeliPhone11Pro;
-extern FBDeviceModel const FBDeviceModeliPhone11ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone12mini;
-extern FBDeviceModel const FBDeviceModeliPhone12;
-extern FBDeviceModel const FBDeviceModeliPhone12Pro;
-extern FBDeviceModel const FBDeviceModeliPhone12ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone13mini;
-extern FBDeviceModel const FBDeviceModeliPhone13;
-extern FBDeviceModel const FBDeviceModeliPhone13Pro;
-extern FBDeviceModel const FBDeviceModeliPhone13ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone14;
-extern FBDeviceModel const FBDeviceModeliPhone14Plus;
-extern FBDeviceModel const FBDeviceModeliPhone14Pro;
-extern FBDeviceModel const FBDeviceModeliPhone14ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone15;
-extern FBDeviceModel const FBDeviceModeliPhone15Plus;
-extern FBDeviceModel const FBDeviceModeliPhone15Pro;
-extern FBDeviceModel const FBDeviceModeliPhone15ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone16;
-extern FBDeviceModel const FBDeviceModeliPhone16Plus;
-extern FBDeviceModel const FBDeviceModeliPhone16Pro;
-extern FBDeviceModel const FBDeviceModeliPhone16ProMax;
-extern FBDeviceModel const FBDeviceModeliPhone16e;
-extern FBDeviceModel const FBDeviceModeliPhone17;
-extern FBDeviceModel const FBDeviceModeliPhone17Pro;
-extern FBDeviceModel const FBDeviceModeliPhone17ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone4s;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone5;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone5c;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone5s;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone6;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone6Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone6S;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone6SPlus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneSE_1stGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneSE_2ndGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone7;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone7Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone8;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone8Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneX;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneXs;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneXsMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhoneXr;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone11;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone11Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone11ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone12mini;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone12;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone12Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone12ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone13mini;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone13;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone13Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone13ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone14;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone14Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone14Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone14ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone15;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone15Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone15Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone15ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone16;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone16Plus;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone16Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone16ProMax;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone16e;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone17;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone17Pro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPhone17ProMax;
 
-extern FBDeviceModel const FBDeviceModeliPodTouch_7thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPodTouch_7thGeneration;
 
-extern FBDeviceModel const FBDeviceModeliPad2;
-extern FBDeviceModel const FBDeviceModeliPad_6thGeneration;
-extern FBDeviceModel const FBDeviceModeliPad_7thGeneration;
-extern FBDeviceModel const FBDeviceModeliPad_8thGeneration;
-extern FBDeviceModel const FBDeviceModeliPad_9thGeneration;
-extern FBDeviceModel const FBDeviceModeliPad_10thGeneration;
-extern FBDeviceModel const FBDeviceModeliPadRetina;
-extern FBDeviceModel const FBDeviceModeliPadA16;
-extern FBDeviceModel const FBDeviceModeliPadAir;
-extern FBDeviceModel const FBDeviceModeliPadAir2;
-extern FBDeviceModel const FBDeviceModeliPadAir_3rdGeneration;
-extern FBDeviceModel const FBDeviceModeliPadAir_4thGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro;
-extern FBDeviceModel const FBDeviceModeliPadPro_9_7_Inch;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch;
-extern FBDeviceModel const FBDeviceModeliPadPro_9_7_Inch_2ndGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_2ndGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_3rdGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch_4thGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_10_5_Inch;
-extern FBDeviceModel const FBDeviceModeliPadPro_11_Inch_1stGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_12_9nch_1stGeneration;
-extern FBDeviceModel const FBDeviceModeliPadPro_11_Inch_2ndGeneration;
-extern FBDeviceModel const FBDeviceModeliPadMini_2;
-extern FBDeviceModel const FBDeviceModeliPadMini_3;
-extern FBDeviceModel const FBDeviceModeliPadMini_4;
-extern FBDeviceModel const FBDeviceModeliPadMini_5;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad2;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad_6thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad_7thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad_8thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad_9thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPad_10thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadRetina;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadA16;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadAir;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadAir2;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadAir_3rdGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadAir_4thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_9_7_Inch;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_12_9_Inch;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_9_7_Inch_2ndGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_12_9_Inch_2ndGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_12_9_Inch_3rdGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_12_9_Inch_4thGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_10_5_Inch;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_11_Inch_1stGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_12_9nch_1stGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadPro_11_Inch_2ndGeneration;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadMini_2;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadMini_3;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadMini_4;
+extern FBDeviceModel _Nonnull const FBDeviceModeliPadMini_5;
 
-extern FBDeviceModel const FBDeviceModelAppleTV;
-extern FBDeviceModel const FBDeviceModelAppleTV4K;
-extern FBDeviceModel const FBDeviceModelAppleTV4KAt1080p;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleTV;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleTV4K;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleTV4KAt1080p;
 
-extern FBDeviceModel const FBDeviceModelAppleWatch38mm;
-extern FBDeviceModel const FBDeviceModelAppleWatch42mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSE_40mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSE_44mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_38mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_42mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries3_38mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries3_42mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries4_40mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries4_44mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_40mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries5_44mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_40mm;
-extern FBDeviceModel const FBDeviceModelAppleWatchSeries6_44mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatch38mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatch42mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSE_40mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSE_44mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries2_38mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries2_42mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries3_38mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries3_42mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries4_40mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries4_44mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries5_40mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries5_44mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries6_40mm;
+extern FBDeviceModel _Nonnull const FBDeviceModelAppleWatchSeries6_44mm;
 
 /**
  OS Versions Name Enumeration.
  */
 typedef NSString *FBOSVersionName NS_STRING_ENUM;
 
-extern FBOSVersionName const FBOSVersionNameiOS_7_1;
-extern FBOSVersionName const FBOSVersionNameiOS_8_0;
-extern FBOSVersionName const FBOSVersionNameiOS_8_1;
-extern FBOSVersionName const FBOSVersionNameiOS_8_2;
-extern FBOSVersionName const FBOSVersionNameiOS_8_3;
-extern FBOSVersionName const FBOSVersionNameiOS_8_4;
-extern FBOSVersionName const FBOSVersionNameiOS_9_0;
-extern FBOSVersionName const FBOSVersionNameiOS_9_1;
-extern FBOSVersionName const FBOSVersionNameiOS_9_2;
-extern FBOSVersionName const FBOSVersionNameiOS_9_3;
-extern FBOSVersionName const FBOSVersionNameiOS_9_3_1;
-extern FBOSVersionName const FBOSVersionNameiOS_9_3_2;
-extern FBOSVersionName const FBOSVersionNameiOS_10_0;
-extern FBOSVersionName const FBOSVersionNameiOS_10_1;
-extern FBOSVersionName const FBOSVersionNameiOS_10_2;
-extern FBOSVersionName const FBOSVersionNameiOS_10_3;
-extern FBOSVersionName const FBOSVersionNameiOS_11_0;
-extern FBOSVersionName const FBOSVersionNameiOS_11_1;
-extern FBOSVersionName const FBOSVersionNameiOS_11_2;
-extern FBOSVersionName const FBOSVersionNameiOS_11_3;
-extern FBOSVersionName const FBOSVersionNameiOS_11_4;
-extern FBOSVersionName const FBOSVersionNameiOS_12_0;
-extern FBOSVersionName const FBOSVersionNameiOS_12_1;
-extern FBOSVersionName const FBOSVersionNameiOS_12_2;
-extern FBOSVersionName const FBOSVersionNameiOS_12_4;
-extern FBOSVersionName const FBOSVersionNameiOS_13_0;
-extern FBOSVersionName const FBOSVersionNameiOS_13_1;
-extern FBOSVersionName const FBOSVersionNameiOS_13_2;
-extern FBOSVersionName const FBOSVersionNameiOS_13_3;
-extern FBOSVersionName const FBOSVersionNameiOS_13_4;
-extern FBOSVersionName const FBOSVersionNameiOS_13_5;
-extern FBOSVersionName const FBOSVersionNameiOS_14_0;
-extern FBOSVersionName const FBOSVersionNameiOS_14_1;
-extern FBOSVersionName const FBOSVersionNameiOS_14_2;
-extern FBOSVersionName const FBOSVersionNameiOS_15_0;
-extern FBOSVersionName const FBOSVersionNameiOS_15_1;
-extern FBOSVersionName const FBOSVersionNameiOS_15_2;
-extern FBOSVersionName const FBOSVersionNameiOS_15_3;
-extern FBOSVersionName const FBOSVersionNameiOS_15_4;
-extern FBOSVersionName const FBOSVersionNameiOS_15_5;
-extern FBOSVersionName const FBOSVersionNameiOS_16_0;
-extern FBOSVersionName const FBOSVersionNameiOS_16_1;
-extern FBOSVersionName const FBOSVersionNameiOS_16_2;
-extern FBOSVersionName const FBOSVersionNameiOS_16_3;
-extern FBOSVersionName const FBOSVersionNameiOS_16_4;
-extern FBOSVersionName const FBOSVersionNameiOS_16_5;
-extern FBOSVersionName const FBOSVersionNameiOS_16_6;
-extern FBOSVersionName const FBOSVersionNameiOS_16_7;
-extern FBOSVersionName const FBOSVersionNameiOS_17_0;
-extern FBOSVersionName const FBOSVersionNameiOS_17_1;
-extern FBOSVersionName const FBOSVersionNameiOS_17_2;
-extern FBOSVersionName const FBOSVersionNameiOS_17_3;
-extern FBOSVersionName const FBOSVersionNameiOS_17_4;
-extern FBOSVersionName const FBOSVersionNameiOS_17_5;
-extern FBOSVersionName const FBOSVersionNameiOS_17_6;
-extern FBOSVersionName const FBOSVersionNameiOS_17_7;
-extern FBOSVersionName const FBOSVersionNameiOS_18_0;
-extern FBOSVersionName const FBOSVersionNameiOS_18_1;
-extern FBOSVersionName const FBOSVersionNameiOS_18_2;
-extern FBOSVersionName const FBOSVersionNameiOS_18_3;
-extern FBOSVersionName const FBOSVersionNameiOS_18_4;
-extern FBOSVersionName const FBOSVersionNameiOS_18_5;
-extern FBOSVersionName const FBOSVersionNameiOS_18_6;
-extern FBOSVersionName const FBOSVersionNameiOS_18_7;
-extern FBOSVersionName const FBOSVersionNameiOS_26_0;
-extern FBOSVersionName const FBOSVersionNameiOS_26_1;
-extern FBOSVersionName const FBOSVersionNameiOS_26_2;
-extern FBOSVersionName const FBOSVersionNameiOS_26_3;
-extern FBOSVersionName const FBOSVersionNameiOS_26_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_7_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_8_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_8_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_8_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_8_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_8_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_3_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_9_3_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_10_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_10_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_10_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_10_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_11_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_11_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_11_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_11_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_11_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_12_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_12_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_12_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_12_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_13_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_14_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_14_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_14_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_15_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_16_7;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_17_7;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_18_7;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_26_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_26_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_26_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_26_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNameiOS_26_4;
 
-extern FBOSVersionName const FBOSVersionNametvOS_9_0;
-extern FBOSVersionName const FBOSVersionNametvOS_9_1;
-extern FBOSVersionName const FBOSVersionNametvOS_9_2;
-extern FBOSVersionName const FBOSVersionNametvOS_10_0;
-extern FBOSVersionName const FBOSVersionNametvOS_10_1;
-extern FBOSVersionName const FBOSVersionNametvOS_10_2;
-extern FBOSVersionName const FBOSVersionNametvOS_11_0;
-extern FBOSVersionName const FBOSVersionNametvOS_11_1;
-extern FBOSVersionName const FBOSVersionNametvOS_11_2;
-extern FBOSVersionName const FBOSVersionNametvOS_11_3;
-extern FBOSVersionName const FBOSVersionNametvOS_11_4;
-extern FBOSVersionName const FBOSVersionNametvOS_12_0;
-extern FBOSVersionName const FBOSVersionNametvOS_12_1;
-extern FBOSVersionName const FBOSVersionNametvOS_12_2;
-extern FBOSVersionName const FBOSVersionNametvOS_12_4;
-extern FBOSVersionName const FBOSVersionNametvOS_13_0;
-extern FBOSVersionName const FBOSVersionNametvOS_13_2;
-extern FBOSVersionName const FBOSVersionNametvOS_13_3;
-extern FBOSVersionName const FBOSVersionNametvOS_13_4;
-extern FBOSVersionName const FBOSVersionNametvOS_14_0;
-extern FBOSVersionName const FBOSVersionNametvOS_14_1;
-extern FBOSVersionName const FBOSVersionNametvOS_14_2;
-extern FBOSVersionName const FBOSVersionNametvOS_14_3;
-extern FBOSVersionName const FBOSVersionNametvOS_14_4;
-extern FBOSVersionName const FBOSVersionNametvOS_14_5;
-extern FBOSVersionName const FBOSVersionNametvOS_14_6;
-extern FBOSVersionName const FBOSVersionNametvOS_14_7;
-extern FBOSVersionName const FBOSVersionNametvOS_15_0;
-extern FBOSVersionName const FBOSVersionNametvOS_15_1;
-extern FBOSVersionName const FBOSVersionNametvOS_15_2;
-extern FBOSVersionName const FBOSVersionNametvOS_15_3;
-extern FBOSVersionName const FBOSVersionNametvOS_15_4;
-extern FBOSVersionName const FBOSVersionNametvOS_15_5;
-extern FBOSVersionName const FBOSVersionNametvOS_15_6;
-extern FBOSVersionName const FBOSVersionNametvOS_16_0;
-extern FBOSVersionName const FBOSVersionNametvOS_16_1;
-extern FBOSVersionName const FBOSVersionNametvOS_16_2;
-extern FBOSVersionName const FBOSVersionNametvOS_16_3;
-extern FBOSVersionName const FBOSVersionNametvOS_16_4;
-extern FBOSVersionName const FBOSVersionNametvOS_16_5;
-extern FBOSVersionName const FBOSVersionNametvOS_16_6;
-extern FBOSVersionName const FBOSVersionNametvOS_17_0;
-extern FBOSVersionName const FBOSVersionNametvOS_17_1;
-extern FBOSVersionName const FBOSVersionNametvOS_17_2;
-extern FBOSVersionName const FBOSVersionNametvOS_17_3;
-extern FBOSVersionName const FBOSVersionNametvOS_17_4;
-extern FBOSVersionName const FBOSVersionNametvOS_17_5;
-extern FBOSVersionName const FBOSVersionNametvOS_17_6;
-extern FBOSVersionName const FBOSVersionNametvOS_18_0;
-extern FBOSVersionName const FBOSVersionNametvOS_18_1;
-extern FBOSVersionName const FBOSVersionNametvOS_18_2;
-extern FBOSVersionName const FBOSVersionNametvOS_18_3;
-extern FBOSVersionName const FBOSVersionNametvOS_18_4;
-extern FBOSVersionName const FBOSVersionNametvOS_18_5;
-extern FBOSVersionName const FBOSVersionNametvOS_18_6;
-extern FBOSVersionName const FBOSVersionNametvOS_26_0;
-extern FBOSVersionName const FBOSVersionNametvOS_26_1;
-extern FBOSVersionName const FBOSVersionNametvOS_26_2;
-extern FBOSVersionName const FBOSVersionNametvOS_26_3;
-extern FBOSVersionName const FBOSVersionNametvOS_26_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_9_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_9_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_9_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_10_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_10_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_10_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_11_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_11_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_11_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_11_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_11_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_12_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_12_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_12_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_12_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_13_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_13_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_13_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_13_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_14_7;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_15_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_16_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_17_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_18_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_26_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_26_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_26_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_26_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNametvOS_26_4;
 
-extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_3_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_3_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_4_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_4_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_5_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_5_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_5_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_5_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_6_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_6_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_6_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_4;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_5;
-extern FBOSVersionName const FBOSVersionNamewatchOS_7_6;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_4;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_5;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_6;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_7;
-extern FBOSVersionName const FBOSVersionNamewatchOS_8_8;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_4;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_5;
-extern FBOSVersionName const FBOSVersionNamewatchOS_9_6;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_4;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_5;
-extern FBOSVersionName const FBOSVersionNamewatchOS_10_6;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_4;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_5;
-extern FBOSVersionName const FBOSVersionNamewatchOS_11_6;
-extern FBOSVersionName const FBOSVersionNamewatchOS_26_0;
-extern FBOSVersionName const FBOSVersionNamewatchOS_26_1;
-extern FBOSVersionName const FBOSVersionNamewatchOS_26_2;
-extern FBOSVersionName const FBOSVersionNamewatchOS_26_3;
-extern FBOSVersionName const FBOSVersionNamewatchOS_26_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_2_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_2_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_2_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_3_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_3_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_3_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_4_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_4_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_4_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_5_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_5_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_5_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_5_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_6_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_6_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_6_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_7_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_7;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_8_8;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_9_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_10_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_4;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_5;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_11_6;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_0;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_1;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_2;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_3;
+extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_4;
 
-extern FBOSVersionName const FBOSVersionNamemac;
+extern FBOSVersionName _Nonnull const FBOSVersionNamemac;
 
 #pragma mark Screen
 
@@ -346,7 +344,7 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  The Designated Initializer.
  */
-- (instancetype)initWithWidthPixels:(NSUInteger)widthPixels heightPixels:(NSUInteger)heightPixels scale:(float)scale;
+- (nonnull instancetype)initWithWidthPixels:(NSUInteger)widthPixels heightPixels:(NSUInteger)heightPixels scale:(float)scale;
 
 @end
 
@@ -357,17 +355,17 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  The Device Name of the Device.
  */
-@property (nonatomic, readonly, copy) FBDeviceModel model;
+@property (nonnull, nonatomic, readonly, copy) FBDeviceModel model;
 
 /**
  The String Representations of the Product Types.
  */
-@property (nonatomic, readonly, copy) NSSet<NSString *> *productTypes;
+@property (nonnull, nonatomic, readonly, copy) NSSet<NSString *> *productTypes;
 
 /**
  The native Device Architecture.
  */
-@property (nonatomic, readonly, copy) FBArchitecture deviceArchitecture;
+@property (nonnull, nonatomic, readonly, copy) FBArchitecture deviceArchitecture;
 
 /**
  The Supported Product Family.
@@ -377,7 +375,7 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  A Generic Device with the Given Name.
  */
-+ (instancetype)genericWithName:(NSString *)name;
++ (nonnull instancetype)genericWithName:(nonnull NSString *)name;
 
 @end
 
@@ -388,17 +386,17 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  A string representation of the OS Version.
  */
-@property (nonatomic, readonly, copy) FBOSVersionName name;
+@property (nonnull, nonatomic, readonly, copy) FBOSVersionName name;
 
 /**
  A String representation of the numeric part of the OS Version.
  */
-@property (nonatomic, readonly, copy) NSString *versionString;
+@property (nonnull, nonatomic, readonly, copy) NSString *versionString;
 
 /**
  An NSDecimalNumber representation of the numeric part of the OS Version.
  */
-@property (nonatomic, readonly, copy) NSDecimalNumber *number;
+@property (nonnull, nonatomic, readonly, copy) NSDecimalNumber *number;
 
 /**
  An NSOperatingSystemVersion representation of the numeric part of the OS Version.
@@ -408,12 +406,12 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  The Supported Families of the OS Version.
  */
-@property (nonatomic, readonly, copy) NSSet<NSNumber *> *families;
+@property (nonnull, nonatomic, readonly, copy) NSSet<NSNumber *> *families;
 
 /**
  A Generic OS with the Given Name.
  */
-+ (instancetype)genericWithName:(NSString *)name;
++ (nonnull instancetype)genericWithName:(nonnull NSString *)name;
 
 /**
  Construct an NSOperatingSystemVersion from a string.
@@ -421,7 +419,7 @@ extern FBOSVersionName const FBOSVersionNamemac;
  @param name the name to process.
  @return a new NSOperatingSystemVersion
  */
-+ (NSOperatingSystemVersion)operatingSystemVersionFromName:(NSString *)name;
++ (NSOperatingSystemVersion)operatingSystemVersionFromName:(nonnull NSString *)name;
 
 @end
 
@@ -433,23 +431,21 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  Maps Device Names to Devices.
  */
-@property (class, nonatomic, readonly, copy) NSDictionary<FBDeviceModel, FBDeviceType *> *nameToDevice;
+@property (class, nonnull, nonatomic, readonly, copy) NSDictionary<FBDeviceModel, FBDeviceType *> *nameToDevice;
 
 /**
  Maps Device 'ProductType' to Device Variants.
  */
-@property (class, nonatomic, readonly, copy) NSDictionary<NSString *, FBDeviceType *> *productTypeToDevice;
+@property (class, nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, FBDeviceType *> *productTypeToDevice;
 
 /**
  OS Version names to OS Versions.
  */
-@property (class, nonatomic, readonly, copy) NSDictionary<FBOSVersionName, FBOSVersion *> *nameToOSVersion;
+@property (class, nonnull, nonatomic, readonly, copy) NSDictionary<FBOSVersionName, FBOSVersion *> *nameToOSVersion;
 
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-+ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture> *)architectures;
++ (nonnull NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(nonnull NSArray<FBArchitecture> *)architectures;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands related to fetching diagnostic information
  */
@@ -19,8 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves with the Diagnostic Information.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)fetchDiagnosticInformation;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)fetchDiagnosticInformation;
 
 @end
-
-NS_ASSUME_NONNULL_END

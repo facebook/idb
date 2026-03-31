@@ -11,8 +11,6 @@
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBTestLaunchConfiguration;
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
@@ -31,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a Future that resolves when the test run has completed.
  */
-- (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(nonnull FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -48,12 +46,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param timeout a timeout for the listing.
  @return an array of strings for the test names if successful, NO otherwise.
  */
-- (FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(nullable NSString *)appPath;
+- (nonnull FBFuture<NSArray<NSString *> *> *)listTestsForBundleAtPath:(nonnull NSString *)bundlePath timeout:(NSTimeInterval)timeout withAppAtPath:(nullable NSString *)appPath;
 
 /**
  Returns the platform specific shims.
  */
-- (FBFuture<NSString *> *)extendedTestShim;
+- (nonnull FBFuture<NSString *> *)extendedTestShim;
 
 /**
  Starts 'testmanagerd' connection and creates socket to it.
@@ -61,13 +59,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future context wrapping the socket transport. The socket transport will be torn down when the context exits
  */
-- (FBFutureContext<NSNumber *> *)transportForTestManagerService;
+- (nonnull FBFutureContext<NSNumber *> *)transportForTestManagerService;
 
 /**
  The Path to the xctest executable.
  */
-@property (nonatomic, readonly, copy) NSString *xctestPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *xctestPath;
 
 @end
-
-NS_ASSUME_NONNULL_END

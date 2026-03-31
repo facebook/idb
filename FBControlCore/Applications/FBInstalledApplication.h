@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 
 /**
@@ -27,11 +25,11 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  Keys from UserInfo about Applications
  */
 typedef NSString *FBApplicationInstallInfoKey NS_EXTENSIBLE_STRING_ENUM;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleName;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath;
-extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity;
+extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyApplicationType;
+extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyBundleIdentifier;
+extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyBundleName;
+extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyPath;
+extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeySignerIdentity;
 
 /**
  A container for an Application Bundle and how it is installed.
@@ -48,7 +46,7 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
  @param dataContainer the Data Container Path, may be nil.
  @return a new Installed Application Instance.
  */
-+ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
++ (nonnull instancetype)installedApplicationWithBundle:(nonnull FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
 
 /**
  The Designated Initializer.
@@ -58,14 +56,14 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
  @param dataContainer the Data Container Path, may be nil.
  @return a new Installed Application Instance.
  */
-+ (instancetype)installedApplicationWithBundle:(FBBundleDescriptor *)bundle installTypeString:(nullable NSString *)installTypeString signerIdentity:(nullable NSString *)signerIdentity dataContainer:(nullable NSString *)dataContainer;
++ (nonnull instancetype)installedApplicationWithBundle:(nonnull FBBundleDescriptor *)bundle installTypeString:(nullable NSString *)installTypeString signerIdentity:(nullable NSString *)signerIdentity dataContainer:(nullable NSString *)dataContainer;
 
 #pragma mark Properties
 
 /**
  The Application Bundle as installed on the target. This may be missing information that is otherwise present from the installed bundle.
  */
-@property (nonatomic, readonly, copy) FBBundleDescriptor *bundle;
+@property (nonnull, nonatomic, readonly, copy) FBBundleDescriptor *bundle;
 
 /**
  The "Install Type" enum of the Application.
@@ -75,7 +73,7 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 /**
  The "Install Type" enum of the Application, represented as a string.
  */
-@property (nonatomic, readonly, copy) NSString *installTypeString;
+@property (nonnull, nonatomic, readonly, copy) NSString *installTypeString;
 
 /**
  The data container path of the Application.
@@ -83,5 +81,3 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 @property (nullable, nonatomic, readonly, copy) NSString *dataContainer;
 
 @end
-
-NS_ASSUME_NONNULL_END

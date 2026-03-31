@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBSubprocess.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBAccumulatingBuffer;
 @protocol FBControlCoreLogger;
 @protocol FBDataConsumer;
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchPath the launch path to use. Must not be nil.
  @return a new Process Builder.
  */
-+ (FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath;
++ (nonnull FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(nonnull NSString *)launchPath;
 
 /**
  Creates a new Process Builder with the provided launch path.
@@ -46,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param arguments the arguments to launch with.
  @return a new Process Builder.
  */
-+ (FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments;
++ (nonnull FBProcessBuilder<NSNull *, NSData *, NSData *> *)withLaunchPath:(nonnull NSString *)launchPath arguments:(nonnull NSArray<NSString *> *)arguments;
 
 #pragma mark Spawn Configuration
 
@@ -56,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchPath the Launch Path. Will remove shellCommand.
  @return the receiver, for chaining.
  */
-- (instancetype)withLaunchPath:(NSString *)launchPath;
+- (nonnull instancetype)withLaunchPath:(nonnull NSString *)launchPath;
 
 /**
  The Arguments of the Process..
@@ -64,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param arguments the arguments for the launch path.
  @return the receiver, for chaining.
  */
-- (instancetype)withArguments:(NSArray<NSString *> *)arguments;
+- (nonnull instancetype)withArguments:(nonnull NSArray<NSString *> *)arguments;
 
 /**
  Replaces the environment with the provided environment dictionary.
@@ -72,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment an Environment Dictionary. Must not be nil.
  @return the receiver, for chaining.
  */
-- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
+- (nonnull instancetype)withEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment;
 
 /**
  Adds the provided dictionary to the environment of the built process.
@@ -80,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment an Environment Dictionary. Must not be nil.
  @return the receiver, for chaining.
  */
-- (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
+- (nonnull instancetype)withEnvironmentAdditions:(nonnull NSDictionary<NSString *, NSString *> *)environment;
 
 #pragma mark stdin
 
@@ -90,14 +88,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param input the input to pass
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<id, StdOutType, StdErrType> *)withStdIn:(FBProcessInput *)input;
+- (nonnull FBProcessBuilder<id, StdOutType, StdErrType> *)withStdIn:(nonnull FBProcessInput *)input;
 
 /**
  Creates a Data Consumer for stdin.
 
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
+- (nonnull FBProcessBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
 
 /**
  Creates a Data Consumer for stdin.
@@ -105,7 +103,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param data the data to send.
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<NSData *, StdOutType, StdErrType> *)withStdInFromData:(NSData *)data;
+- (nonnull FBProcessBuilder<NSData *, StdOutType, StdErrType> *)withStdInFromData:(nonnull NSData *)data;
 
 #pragma mark stdout
 
@@ -114,14 +112,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, NSData *, StdErrType> *)withStdOutInMemoryAsData;
+- (nonnull FBProcessBuilder<StdInType, NSData *, StdErrType> *)withStdOutInMemoryAsData;
 
 /**
  Reads stdout into memory, as a String.
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutInMemoryAsString;
+- (nonnull FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutInMemoryAsString;
 
 /**
  Assigns a path to write stdout to.
@@ -129,21 +127,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdOutPath the path to write stdout to. Must not be nil.
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutPath:(NSString *)stdOutPath;
+- (nonnull FBProcessBuilder<StdInType, NSString *, StdErrType> *)withStdOutPath:(nonnull NSString *)stdOutPath;
 
 /**
  Redirects stdout to /dev/null
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
+- (nonnull FBProcessBuilder<StdInType, NSNull *, StdErrType> *)withStdOutToDevNull;
 
 /**
  Redirects stdout to an input stream.
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
+- (nonnull FBProcessBuilder<StdInType, NSInputStream *, StdErrType> *)withStdOutToInputStream;
 
 /**
  Redirects stdout data to the consumer.
@@ -151,7 +149,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(id<FBDataConsumer>)consumer;
+- (nonnull FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
  Redirects stdout to the reader block, on a per line basis.
@@ -159,7 +157,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(void (^)(NSString *))reader;
+- (nonnull FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
 
 /**
  Redirects stdout to the provided logger, on a per line basis.
@@ -167,7 +165,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Redirects stdout to the provided logger and prints the output in any error message that occurs.
@@ -175,7 +173,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark stderr
 
@@ -184,14 +182,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
+- (nonnull FBProcessBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
 
 /**
  Reads stderr into memory, as a String.
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrInMemoryAsString;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrInMemoryAsString;
 
 /**
  Assigns a path to write stderr to.
@@ -199,14 +197,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErrPath the path to write stderr to. Must not be nil.
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrPath:(NSString *)stdErrPath;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, NSString *> *)withStdErrPath:(nonnull NSString *)stdErrPath;
 
 /**
  Redirects stderr to /dev/null
 
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, NSNull *> *)withStdErrToDevNull;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, NSNull *> *)withStdErrToDevNull;
 
 /**
  Redirects stderr data to the consumer.
@@ -214,7 +212,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(id<FBDataConsumer>)consumer;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
  Redirects stderr to the reader block, on a per line basis.
@@ -222,7 +220,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(void (^)(NSString *))reader;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
 
 /**
  Redirects stderr to the provided logger, on a per line basis.
@@ -230,7 +228,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Redirects stderr to the provided logger and prints the output in any error message that occurs.
@@ -238,7 +236,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use for logging lines.
  @return the reciver, for chaining.
  */
-- (FBProcessBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Logging
 
@@ -251,7 +249,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to. Nil may be passed to disable task lifecycle logging, which is the default.
  @return the receiver for chaining.
  */
-- (instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Building
 
@@ -260,7 +258,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves with the started process..
  */
-- (FBFuture<FBSubprocess<StdInType, StdOutType, StdErrType> *> *)start;
+- (nonnull FBFuture<FBSubprocess<StdInType, StdOutType, StdErrType> *> *)start;
 
 /**
  Builds and starts the process, then waits for it to complete with the provided exit codes.
@@ -269,8 +267,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future, encapsulating the process on completion.
  */
-- (FBFuture<FBSubprocess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
+- (nonnull FBFuture<FBSubprocess<StdInType, StdOutType, StdErrType> *> *)runUntilCompletionWithAcceptableExitCodes:(nullable NSSet<NSNumber *> *)exitCodes;
 
 @end
-
-NS_ASSUME_NONNULL_END

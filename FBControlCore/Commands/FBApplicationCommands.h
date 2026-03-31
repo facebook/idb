@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBApplicationLaunchConfiguration;
 @class FBInstalledApplication;
 @class FBProcessInfo;
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param path the file path of the Application. May be a .app bundle, or a .ipa
  @return A future that resolves when successful.
  */
-- (FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(NSString *)path;
+- (nonnull FBFuture<FBInstalledApplication *> *)installApplicationWithPath:(nonnull NSString *)path;
 
 /**
  Uninstalls application with given bundle id.
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the bundle id of the application to uninstall.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(NSString *)bundleID;
+- (nonnull FBFuture<NSNull *> *)uninstallApplicationWithBundleID:(nonnull NSString *)bundleID;
 
 /**
  Launches an Application with the provided Application Launch Configuration.
@@ -45,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Application Launch Configuration to use.
  @return A future that resolves with the launched process.
  */
-- (FBFuture<id<FBLaunchedApplication>> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
+- (nonnull FBFuture<id<FBLaunchedApplication>> *)launchApplication:(nonnull FBApplicationLaunchConfiguration *)configuration;
 
 /**
  Kills application with the given bundle identifier.
@@ -53,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID bundle ID of installed application
  @return A future that resolves successfully if the bundle was running and is now killed.
  */
-- (FBFuture<NSNull *> *)killApplicationWithBundleID:(NSString *)bundleID;
+- (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID;
 
 /**
  Fetches a list of the Installed Applications.
@@ -61,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future wrapping a List of Installed Applications.
  */
-- (FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications;
+- (nonnull FBFuture<NSArray<FBInstalledApplication *> *> *)installedApplications;
 
 /**
  Fetches the FBInstalledApplication instance by Bundle ID.
@@ -69,14 +67,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID the Bundle ID to fetch an installed application for.
  @return a Future with the installed application.
  */
-- (FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(NSString *)bundleID;
+- (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;
 
 /**
  Returns the Applications running on the target.
 
  @return A future wrapping a mapping of Bundle ID to Process ID.
  */
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications;
+- (nonnull FBFuture<NSDictionary<NSString *, NSNumber *> *> *)runningApplications;
 
 /**
  Returns PID of application with given bundleID
@@ -84,8 +82,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleID bundle ID of installed application.
  @return A future wrapping the process id.
  */
-- (FBFuture<NSNumber *> *)processIDWithBundleID:(NSString *)bundleID;
+- (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID;
 
 @end
-
-NS_ASSUME_NONNULL_END

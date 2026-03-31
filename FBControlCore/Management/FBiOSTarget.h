@@ -22,8 +22,6 @@
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDeviceType;
 @class FBOSVersion;
 @class FBProcessInfo;
@@ -40,40 +38,40 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Unique Identifier that describes this iOS Target.
  */
-@property (nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *uniqueIdentifier;
 
 /**
  The "Unique Device Identifier" of the iOS Target.
  This may be distinct from the uniqueIdentifier.
  */
-@property (nonatomic, readonly, copy) NSString *udid;
+@property (nonnull, nonatomic, readonly, copy) NSString *udid;
 
 /**
  The Name of the iOS Target. This is the name given by the user, such as "Ada's iPhone"
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
 
 /**
  The Device Type of the Target.
  */
-@property (nonatomic, readonly, copy) FBDeviceType *deviceType;
+@property (nonnull, nonatomic, readonly, copy) FBDeviceType *deviceType;
 
 /**
  Available architecture of the iOS Target
  */
-@property (nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
 
 /**
  The OS Version of the Target.
  */
-@property (nonatomic, readonly, copy) FBOSVersion *osVersion;
+@property (nonnull, nonatomic, readonly, copy) FBOSVersion *osVersion;
 
 /**
  A dictionary containing per-target-type information that is unique to them.
  For example iOS Devices have additional metadata that is not present on Simulators.
  This dictionary must be JSON-Serializable.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
 
 /**
  The Type of the iOS Target
@@ -105,24 +103,24 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The directory that the target uses to store scratch files on the host.
  */
-@property (nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
+@property (nonnull, nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
 
 /**
  The directory that the target uses to store per-target files on the host.
  This should only be used for storing files that need to be preserved over the lifespan of the target.
  For example scratch or temporary files should *not* be stored here and -[FBiOSTarget temporaryDirectory] should be used instead..
  */
-@property (nonatomic, readonly, copy) NSString *auxillaryDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *auxillaryDirectory;
 
 /**
  The root of the "Runtime" where applicable
  */
-@property (nonatomic, readonly, copy) NSString *runtimeRootDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *runtimeRootDirectory;
 
 /**
  The root of the "Platform" where applicable
  */
-@property (nonatomic, readonly, copy) NSString *platformRootDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *platformRootDirectory;
 
 /**
  The Screen Info for the Target.
@@ -134,13 +132,13 @@ NS_ASSUME_NONNULL_BEGIN
  This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
  Mutually Exclusive operations should use this queue.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  A queue for independent operations to execute on.
  Examples of these operations are transforming an immutable data structure.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`
@@ -148,7 +146,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the target to compare to.
  @return a Comparison Result.
  */
-- (NSComparisonResult)compare:(id<FBiOSTarget>)target;
+- (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target;
 
 /**
  If the target's bundle needs to be codesigned or not.
@@ -162,60 +160,58 @@ NS_ASSUME_NONNULL_BEGIN
 
   @return a dictionary with the replacements defined
  */
-- (NSDictionary<NSString *, NSString *> *)replacementMapping;
+- (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
 
 /**
   Env var additions
 
   @return a dictionary with additional env vars to add
  */
-- (NSDictionary<NSString *, NSString *> *)environmentAdditions;
+- (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
 @end
 
 /**
  The canonical string representation of the state enum.
  */
-FOUNDATION_EXTERN FBiOSTargetStateString FBiOSTargetStateStringFromState(FBiOSTargetState state);
+FOUNDATION_EXTERN FBiOSTargetStateString _Nonnull FBiOSTargetStateStringFromState(FBiOSTargetState state);
 
 /**
  The canonical enum representation of the state string.
  */
-FOUNDATION_EXTERN FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString stateString);
+FOUNDATION_EXTERN FBiOSTargetState FBiOSTargetStateFromStateString(FBiOSTargetStateString _Nonnull stateString);
 
 /**
  The canonical string representations of the FBiOSTargetType Enum.
  */
-FOUNDATION_EXTERN NSString *FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
+FOUNDATION_EXTERN NSString *_Nonnull FBiOSTargetTypeStringFromTargetType(FBiOSTargetType targetType);
 
 /**
  A Default Comparison Function that can be called for different implementations of FBiOSTarget.
  */
-FOUNDATION_EXTERN NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
+FOUNDATION_EXTERN NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> _Nonnull left, id<FBiOSTarget> _Nonnull right);
 
 /**
  Constructs a string description of the provided target.
  */
-FOUNDATION_EXTERN NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target);
+FOUNDATION_EXTERN NSString *_Nonnull FBiOSTargetDescribe(id<FBiOSTargetInfo> _Nonnull target);
 
 /**
  Constructs an NSPredicate matching the specified UDID.
  */
-FOUNDATION_EXTERN NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid);
+FOUNDATION_EXTERN NSPredicate *_Nonnull FBiOSTargetPredicateForUDID(NSString * _Nonnull udid);
 
 /**
  Constructs an NSPredicate matching the specified UDIDs.
  */
-FOUNDATION_EXTERN NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids);
+FOUNDATION_EXTERN NSPredicate *_Nonnull FBiOSTargetPredicateForUDIDs(NSArray<NSString *> * _Nonnull udids);
 
 /**
  Constructs a future that resolves when the target resolves to a provided state.
  */
-FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state);
+FOUNDATION_EXTERN FBFuture<NSNull *> *_Nonnull FBiOSTargetResolveState(id<FBiOSTarget> _Nonnull target, FBiOSTargetState state);
 
 /**
  Constructs a future that resolves when the target leaves a provided state.
  */
-FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state);
-
-NS_ASSUME_NONNULL_END
+FOUNDATION_EXTERN FBFuture<NSNull *> *_Nonnull FBiOSTargetResolveLeavesState(id<FBiOSTarget> _Nonnull target, FBiOSTargetState state);

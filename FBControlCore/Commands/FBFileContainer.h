@@ -10,24 +10,22 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An enumeration representing the existing file containers.
  */
 typedef NSString *FBFileContainerKind NS_STRING_ENUM;
-extern FBFileContainerKind const FBFileContainerKindApplication;
-extern FBFileContainerKind const FBFileContainerKindAuxillary;
-extern FBFileContainerKind const FBFileContainerKindCrashes;
-extern FBFileContainerKind const FBFileContainerKindDiskImages;
-extern FBFileContainerKind const FBFileContainerKindGroup;
-extern FBFileContainerKind const FBFileContainerKindMDMProfiles;
-extern FBFileContainerKind const FBFileContainerKindMedia;
-extern FBFileContainerKind const FBFileContainerKindProvisioningProfiles;
-extern FBFileContainerKind const FBFileContainerKindRoot;
-extern FBFileContainerKind const FBFileContainerKindSpringboardIcons;
-extern FBFileContainerKind const FBFileContainerKindSymbols;
-extern FBFileContainerKind const FBFileContainerKindWallpaper;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindApplication;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindAuxillary;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindCrashes;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindDiskImages;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindGroup;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindMDMProfiles;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindMedia;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindProvisioningProfiles;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindRoot;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindSpringboardIcons;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindSymbols;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
 
 @protocol FBDataConsumer;
 @protocol FBProvisioningProfileCommands;
@@ -46,7 +44,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param destinationPath the destination path to copy to, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath;
+- (nonnull FBFuture<NSNull *> *)copyFromHost:(nonnull NSString *)sourcePath toContainer:(nonnull NSString *)destinationPath;
 
 /**
  Copy a path from inside the container, to the host.
@@ -55,7 +53,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param destinationPath the destination path on the host.
  @return A future that resolves with the destination path when successful.
  */
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath;
+- (nonnull FBFuture<NSString *> *)copyFromContainer:(nonnull NSString *)sourcePath toHost:(nonnull NSString *)destinationPath;
 
 /**
  Tails the contents of a file path inside the container, to a data consumer.
@@ -64,7 +62,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param consumer the consumer to write to.
  @return a Future that resolves with a Future when the tailing has completed. The wrapped future can be cancelled to end the tailing operation.
  */
-- (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer;
+- (nonnull FBFuture<FBFuture<NSNull *> *> *)tail:(nonnull NSString *)path toConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
  Create a directory inside the container.
@@ -72,7 +70,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param directoryPath the path to the directory to be created within the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath;
+- (nonnull FBFuture<NSNull *> *)createDirectory:(nonnull NSString *)directoryPath;
 
 /**
  Move a path inside the container.
@@ -81,7 +79,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param destinationPath the destination path, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath;
+- (nonnull FBFuture<NSNull *> *)moveFrom:(nonnull NSString *)sourcePath to:(nonnull NSString *)destinationPath;
 
 /**
  Remove a path inside the container.
@@ -89,7 +87,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param path the path to remove, relative to the root of the container.
  @return A future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)remove:(NSString *)path;
+- (nonnull FBFuture<NSNull *> *)remove:(nonnull NSString *)path;
 
 /**
  List directory within the container.
@@ -97,7 +95,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param path the path to list, relative to the root of the container.
  @return A future containing the list of entries that resolves when successful.
  */
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path;
+- (nonnull FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(nonnull NSString *)path;
 
 @end
 
@@ -113,7 +111,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return YES on success, NO otherwise.
  */
-- (BOOL)removeItemWithError:(NSError **)error;
+- (BOOL)removeItemWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  List the contents of a path.
@@ -121,7 +119,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return an array of strings representing the directory contents.
  */
-- (nullable NSArray<NSString *> *)contentsOfDirectoryWithError:(NSError **)error;
+- (nullable NSArray<NSString *> *)contentsOfDirectoryWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Obtains the contents of the contained file.
@@ -129,7 +127,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return Data for the file, or an nil on error.
  */
-- (nullable NSData *)contentsOfFileWithError:(NSError **)error;
+- (nullable NSData *)contentsOfFileWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a directory at the given path.
@@ -137,7 +135,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return YES on success, NO otherwise.
  */
-- (BOOL)createDirectoryWithError:(NSError **)error;
+- (BOOL)createDirectoryWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Checks whether the path exists, optionally providing information about whether the path is a regular file or directory.
@@ -145,7 +143,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param isDirectoryOut an outparam for indicating if the path represents a directory.
  @return YES if exists, NO otherwise.
  */
-- (BOOL)fileExistsIsDirectory:(BOOL *)isDirectoryOut;
+- (BOOL)fileExistsIsDirectory:(nullable BOOL *)isDirectoryOut;
 
 /**
  Moves the receiver to the provided destination file.
@@ -153,7 +151,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param destination the destination to move to.
  @param error an error out for any error that occurs.
  */
-- (BOOL)moveTo:(id<FBContainedFile>)destination error:(NSError **)error;
+- (BOOL)moveTo:(nonnull id<FBContainedFile>)destination error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Replaces the contents of the wrapped file with the provided path on the host filesystem.
@@ -162,7 +160,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)populateWithContentsOfHostPath:(NSString *)path error:(NSError **)error;
+- (BOOL)populateWithContentsOfHostPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Replaces provided path on the host filesystem with the contents of the wrapped file.
@@ -171,7 +169,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)populateHostPathWithContents:(NSString *)path error:(NSError **)error;
+- (BOOL)populateHostPathWithContents:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Constructs a new contained file by appending a path component.
@@ -180,7 +178,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param error an error out if the path is invalid.
  @return the new contained file.
  */
-- (nullable id<FBContainedFile>)fileByAppendingPathComponent:(NSString *)component error:(NSError **)error;
+- (nullable id<FBContainedFile>)fileByAppendingPathComponent:(nonnull NSString *)component error:(NSError * _Nullable * _Nullable)error;
 
 /**
  The host path corresponding to this file, if any.
@@ -208,7 +206,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param queue the queue to do work on.
  @return a File Container implementation.
  */
-+ (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue;
++ (nonnull id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(nonnull id<FBProvisioningProfileCommands>)commands queue:(nonnull dispatch_queue_t)queue;
 
 /**
  A contained file relative to the path on the host.
@@ -216,14 +214,14 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param basePath the base path to use.
  @return a Contained File implementation
  */
-+ (id<FBContainedFile>)containedFileForBasePath:(NSString *)basePath;
++ (nonnull id<FBContainedFile>)containedFileForBasePath:(nonnull NSString *)basePath;
 
 /**
  A contained file using the provided path mapping
  @param pathMapping the mapped base paths.
  @return a Contained File implementation
  */
-+ (id<FBContainedFile>)containedFileForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull id<FBContainedFile>)containedFileForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
 
 /**
  A file container that relative to a path on the host.
@@ -231,7 +229,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param basePath the base path to use.
  @return a File Container implementation
  */
-+ (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath;
++ (nonnull id<FBFileContainer>)fileContainerForBasePath:(nonnull NSString *)basePath;
 
 /**
  A file container that relative to a path on the host.
@@ -239,7 +237,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param pathMapping the mapped base paths.
  @return a File Container implementation
  */
-+ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull id<FBFileContainer>)fileContainerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
 
 /**
  Returns an FBFileContainer wrapper around a FBContainedFile
@@ -247,8 +245,6 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  @param containedFile the contained file to wrap.
  @return a File Container implementation.
  */
-+ (id<FBFileContainer>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile;
++ (nonnull id<FBFileContainer>)fileContainerForContainedFile:(nonnull id<FBContainedFile>)containedFile;
 
 @end
-
-NS_ASSUME_NONNULL_END

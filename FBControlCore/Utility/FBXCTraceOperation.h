@@ -13,8 +13,6 @@
 extern const NSTimeInterval DefaultXCTraceRecordOperationTimeLimit;
 extern const NSTimeInterval DefaultXCTraceRecordStopTimeout;
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBXCTraceRecordConfiguration;
 
 @protocol FBControlCoreLogger;
@@ -35,36 +33,36 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a running `xctrace record` operation.
  */
-+ (FBFuture<FBXCTraceRecordOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBXCTraceRecordOperation *> *)operationWithTarget:(nonnull id<FBiOSTarget>)target configuration:(nonnull FBXCTraceRecordConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
-- (instancetype)initWithTask:(FBSubprocess *)task traceDir:(NSURL *)traceDir configuration:(FBXCTraceRecordConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithTask:(nonnull FBSubprocess *)task traceDir:(nonnull NSURL *)traceDir configuration:(nonnull FBXCTraceRecordConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
 /**
  Task that wraps the operation
  */
-@property (nonatomic, readonly, strong) FBSubprocess *task;
+@property (nonnull, nonatomic, readonly, strong) FBSubprocess *task;
 
 /**
  The queue to use
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  Trace output directory.
  */
-@property (nonatomic, readonly, copy) NSURL *traceDir;
+@property (nonnull, nonatomic, readonly, copy) NSURL *traceDir;
 
 /**
  The configuration of the operation.
  */
-@property (nonatomic, readonly, strong) FBXCTraceRecordConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, strong) FBXCTraceRecordConfiguration *configuration;
 
 /**
  The logger to use.
  */
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 #pragma mark Public Methods
 
@@ -74,7 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param timeout backoff timeout to stop the operation
  @return a Future that returns the trace file if successful.
  */
-- (FBFuture<NSURL *> *)stopWithTimeout:(NSTimeInterval)timeout;
+- (nonnull FBFuture<NSURL *> *)stopWithTimeout:(NSTimeInterval)timeout;
 
 /**
  Post-process a .trace file.
@@ -85,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a delta that post-processes.
  */
-+ (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(nonnull NSURL *)traceDir queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Get the xctrace path.
@@ -93,8 +91,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return xctrace path
  */
-+ (NSString *)xctracePathWithError:(NSError **)error;
++ (nullable NSString *)xctracePathWithError:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

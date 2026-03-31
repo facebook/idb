@@ -15,8 +15,6 @@ extern const NSTimeInterval DefaultInstrumentsTerminateTimeout; // When stopping
 extern const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout;  // Wait this long to ensure instruments started properly
 extern const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout; // Fail instruments if the launch error message appears within this timeout
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBInstrumentsConfiguration;
 
 @protocol FBControlCoreLogger;
@@ -37,29 +35,29 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a running instruments operation.
  */
-+ (FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(nonnull id<FBiOSTarget>)target configuration:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
-- (instancetype)initWithTask:(FBSubprocess *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithTask:(nonnull FBSubprocess *)task traceDir:(nonnull NSURL *)traceDir configuration:(nonnull FBInstrumentsConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
-@property (nonatomic, readonly, strong) FBSubprocess *task;
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonnull, nonatomic, readonly, strong) FBSubprocess *task;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  Trace output directory.
  */
-@property (nonatomic, readonly, copy) NSURL *traceDir;
+@property (nonnull, nonatomic, readonly, copy) NSURL *traceDir;
 
 /**
  The configuration of the operation.
  */
-@property (nonatomic, readonly, strong) FBInstrumentsConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, strong) FBInstrumentsConfiguration *configuration;
 
 /**
  The logger to use.
  */
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 #pragma mark Public Methods
 
@@ -69,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that returns the trace file if successful.
  */
-- (FBFuture<NSURL *> *)stop;
+- (nonnull FBFuture<NSURL *> *)stop;
 
 /**
  Post-process an instruments trace.
@@ -80,8 +78,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a delta that post-processes.
  */
-+ (FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(NSURL *)traceDir queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(nonnull NSURL *)traceDir queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

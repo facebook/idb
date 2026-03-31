@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Additional Predicates for FBControlCore.
  */
@@ -17,8 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns a that will filter out null/NSNull values.
  */
-+ (NSPredicate *)notNullPredicate;
++ (nonnull NSPredicate *)notNullPredicate;
 
 @end
-
-NS_ASSUME_NONNULL_END

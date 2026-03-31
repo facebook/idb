@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBFuture<T>;
 @class FBFutureContext<T>;
 
@@ -25,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a Future that resolves with the prepared context.
  */
-- (FBFuture<id> *)prepare:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<id> *)prepare:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Teardown the resource.
@@ -34,18 +32,18 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return context
  */
-- (FBFuture<NSNull *> *)teardown:(id)context logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<NSNull *> *)teardown:(nonnull id)context logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  The Name of the Resource.
  */
-@property (nonatomic, readonly, copy) NSString *contextName;
+@property (nonnull, nonatomic, readonly, copy) NSString *contextName;
 
 /**
  The amount of time to allow the resource to be held with no-one utilizing it.
  This is useful for ensuring that the same connection
  */
-@property (nonatomic, readonly, copy) NSNumber *contextPoolTimeout;
+@property (nullable, nonatomic, readonly, copy) NSNumber *contextPoolTimeout;
 /**
  Allows the context to be shared.
  */
@@ -68,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBFutureContextManager Instance.
  */
-+ (instancetype)managerWithQueue:(dispatch_queue_t)queue delegate:(id<FBFutureContextManagerDelegate>)delegate logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)managerWithQueue:(nonnull dispatch_queue_t)queue delegate:(nonnull id<FBFutureContextManagerDelegate>)delegate logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods.
 
@@ -78,7 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param purpose the purpose for utilization.
  @return a context that is available at some point in the future.
  */
-- (FBFutureContext<ContextType> *)utilizeWithPurpose:(NSString *)purpose;
+- (nonnull FBFutureContext<ContextType> *)utilizeWithPurpose:(nonnull NSString *)purpose;
 
 /**
  Synchronously attempt to utilize the context.
@@ -87,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the context if one could be synchronously used.
  */
-- (nullable ContextType)utilizeNowWithPurpose:(NSString *)purpose error:(NSError **)error;
+- (nullable ContextType)utilizeNowWithPurpose:(nonnull NSString *)purpose error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Synchronously attempt to return the context.
@@ -96,8 +94,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the context if one could be synchronously returned.
  */
-- (BOOL)returnNowWithPurpose:(NSString *)purpose error:(NSError **)error;
+- (BOOL)returnNowWithPurpose:(nonnull NSString *)purpose error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

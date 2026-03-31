@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBiOSTarget;
 
 /**
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param target the target to use.
  @return a new instance of the Command.
  */
-+ (instancetype)commandsWithTarget:(id<FBiOSTarget>)target;
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
 
 @end
 
@@ -39,8 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param commandClasses the classes to forward to.
  @param statefulCommands A set of stateful command class names that should be memoized.
  */
-+ (instancetype)forwarderWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<Class> *)statefulCommands;
++ (nonnull instancetype)forwarderWithTarget:(nonnull id<FBiOSTarget>)target commandClasses:(nonnull NSArray<Class> *)commandClasses statefulCommands:(nonnull NSSet<Class> *)statefulCommands;
 
 @end
-
-NS_ASSUME_NONNULL_END

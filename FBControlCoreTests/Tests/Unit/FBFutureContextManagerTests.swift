@@ -13,7 +13,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
   var queue: DispatchQueue!
   var prepareCalled: UInt = 0
   var teardownCalled: UInt = 0
-  var contextPoolTimeout: NSNumber = 0
+  var contextPoolTimeout: NSNumber? = 0
   var failPrepare: Bool = false
   var resetFailPrepare: Bool = false
   var isContextSharable: Bool = false

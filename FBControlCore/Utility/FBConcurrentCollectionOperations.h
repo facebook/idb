@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Conveniences for concurent collection operations.
  The Predicates and Blocks Passed to these functions must work in a thread-safe manner, inspecting immutable values is the way to go.
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to generate objects from.
  @return a Generated Array of Objects.
  */
-+ (NSArray *)generate:(NSUInteger)count withBlock:(id (^)(NSUInteger index) )block;
++ (nonnull NSArray *)generate:(NSUInteger)count withBlock:(nonnull id _Nonnull (^)(NSUInteger index))block;
 
 /**
  Map an array of objects concurrently.
@@ -31,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to map objects with.
  @return a Mapped Array of Objects.
  */
-+ (NSArray *)map:(NSArray *)array withBlock:(id (^)(id object) )block;
++ (nonnull NSArray *)map:(nonnull NSArray *)array withBlock:(nonnull id _Nonnull (^)(id _Nonnull object))block;
 
 /**
  Filter an array of objects concurrently.
@@ -40,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to filter the objects with, before they are mapped.
  @return a Filter Array of Objects.
  */
-+ (NSArray *)filter:(NSArray *)array predicate:(NSPredicate *)predicate;
++ (nonnull NSArray *)filter:(nonnull NSArray *)array predicate:(nonnull NSPredicate *)predicate;
 
 /**
  Map and then filter an array of objects concurrently.
@@ -50,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to filter the mapped objects with.
  @return a Mapped then Filtered array of objects.
  */
-+ (NSArray *)mapFilter:(NSArray *)array map:(id (^)(id))block predicate:(NSPredicate *)predicate;
++ (nonnull NSArray *)mapFilter:(nonnull NSArray *)array map:(nonnull id _Nonnull (^)(id _Nonnull))block predicate:(nonnull NSPredicate *)predicate;
 
 /**
  Filter then map an array of objects concurrently.
@@ -60,8 +58,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to map objects with.
  @return a Filtered then Mapped array of objects.
  */
-+ (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block;
++ (nonnull NSArray *)filterMap:(nonnull NSArray *)array predicate:(nonnull NSPredicate *)predicate map:(nonnull id _Nonnull (^)(id _Nonnull))block;
 
 @end
-
-NS_ASSUME_NONNULL_END

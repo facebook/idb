@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBiOSTarget.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBiOSTargetSet;
 
 /**
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetInfo the target info.
  @param targetSet the target set.
  */
-- (void)targetAdded:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
+- (void)targetAdded:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet;
 
 /**
  Called every time an iOS Target is removed from the set.
@@ -32,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetInfo the target info.
  @param targetSet the target set.
  */
-- (void)targetRemoved:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
+- (void)targetRemoved:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet;
 
 /**
  Called every time the target info is change.
@@ -40,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetInfo the target info.
  @param targetSet the target set.
 */
-- (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet;
+- (void)targetUpdated:(nonnull id<FBiOSTargetInfo>)targetInfo inTargetSet:(nonnull id<FBiOSTargetSet>)targetSet;
 
 @end
 
@@ -53,12 +51,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Delegate of the Target Set.
  Used to report updates out.
  */
-@property (nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
+@property (nullable, nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
 
 /**
  Obtains all current targets infos within a set.
  */
-@property (nonatomic, readonly, copy) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
+@property (nonnull, nonatomic, readonly, copy) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
 
 /**
  Fetches a Target with by a UDID.
@@ -66,8 +64,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param udid the UDID of the Device to Fetch.
  @return a Target with the specified UDID, if one exists.
  */
-- (nullable id<FBiOSTargetInfo>)targetWithUDID:(NSString *)udid;
+- (nullable id<FBiOSTargetInfo>)targetWithUDID:(nonnull NSString *)udid;
 
 @end
-
-NS_ASSUME_NONNULL_END

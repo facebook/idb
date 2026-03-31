@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A consumer of NSData.
  */
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param data the data to consume.
  */
-- (void)consumeData:(NSData *)data;
+- (void)consumeData:(nonnull NSData *)data;
 
 /**
  Consumes an end-of-file.
@@ -42,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param data the data to consume.
  */
-- (void)consumeData:(dispatch_data_t)data;
+- (void)consumeData:(nonnull dispatch_data_t)data;
 
 /**
  Consumes an end-of-file.
@@ -83,7 +81,7 @@ Number of submitted data that has not been consumed yet
  A Future that resolves when an there is no more data to write and any underlying resource managed by the consumer is released.
  At this point, consumers are safe to assume that any resource that the writer is wrapping is safe to use.
  */
-@property (nonatomic, readonly, strong) FBFuture<NSNull *> *finishedConsuming;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *finishedConsuming;
 
 @end
 
@@ -98,7 +96,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the consumer to adapt.
  @return a dispatch_data consumer.
  */
-+ (id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
++ (nonnull id<FBDispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
  Adapts a NSData consumer to a dispatch_data consumer.
@@ -106,7 +104,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the consumer to adapt.
  @return a NSData consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
 
 /**
  Converts dispatch_data to NSData.
@@ -115,7 +113,7 @@ Number of submitted data that has not been consumed yet
  @param dispatchData the data to adapt.
  @return NSData from the dispatchData.
  */
-+ (NSData *)adaptDispatchData:(dispatch_data_t)dispatchData;
++ (nonnull NSData *)adaptDispatchData:(nonnull dispatch_data_t)dispatchData;
 
 @end
 
@@ -131,7 +129,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -140,7 +138,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -150,7 +148,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -159,7 +157,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -168,7 +166,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -178,7 +176,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -188,7 +186,7 @@ Number of submitted data that has not been consumed yet
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer;
++ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 @end
 
@@ -202,12 +200,12 @@ Number of submitted data that has not been consumed yet
 /**
  The Designated Initializer
  */
-+ (instancetype)consumerWithLogger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)consumerWithLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  The wrapped logger.
  */
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -222,7 +220,7 @@ Number of submitted data that has not been consumed yet
  @param consumers the consumers to compose.
  @return a new consumer.
  */
-+ (instancetype)consumerWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers;
++ (nonnull instancetype)consumerWithConsumers:(nonnull NSArray<id<FBDataConsumer>> *)consumers;
 
 @end
 
@@ -232,5 +230,3 @@ Number of submitted data that has not been consumed yet
 @interface FBNullDataConsumer : NSObject <FBDataConsumer>
 
 @end
-
-NS_ASSUME_NONNULL_END

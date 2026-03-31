@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBDataConsumer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The non-mutating methods of a buffer.
  */
@@ -19,12 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Obtains a copy of the current output data.
  */
-- (NSData *)data;
+- (nonnull NSData *)data;
 
 /**
  Obtains a copy of the current output data.
  */
-- (NSArray<NSString *> *)lines;
+- (nonnull NSArray<NSString *> *)lines;
 
 @end
 
@@ -41,9 +39,9 @@ NS_ASSUME_NONNULL_BEGIN
  Consume the remainder of the buffer available, returning it as Data.
  This will flush the entirity of the buffer.
 
- @return all the current data in the buffer.
+ @return all the current data in the buffer (may be empty, but never nil).
  */
-- (nullable NSData *)consumeCurrentData;
+- (nonnull NSData *)consumeCurrentData;
 
 /**
  Consume the remainder of the buffer available, returning it as a String.
@@ -67,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param terminal the terminal.
  @return all the data before the separator if there is data to consume, nil otherwise.
  */
-- (nullable NSData *)consumeUntil:(NSData *)terminal;
+- (nullable NSData *)consumeUntil:(nonnull NSData *)terminal;
 
 /**
  Consume a line if one is available, returning it as Data.
@@ -102,7 +100,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error;
+- (BOOL)consume:(nonnull id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue untilTerminal:(nonnull NSData *)terminal error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Notifies when there has been consumption to a terminal
@@ -110,7 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param terminal the terminal.
  @return a future wrapping the read data.
  */
-- (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal;
+- (nonnull FBFuture<NSData *> *)consumeAndNotifyWhen:(nonnull NSData *)terminal;
 
 /**
  Consumes based upon a fixed-length header, that can be parsed.
@@ -120,7 +118,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param derivedLength the derived length of the payload
  @return a Future wrapping the payload, based on the derived length.
  */
-- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength;
+- (nonnull FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^_Nonnull)(NSData * _Nonnull))derivedLength;
 
 @end
 
@@ -135,7 +133,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a FBDataBuffer implementation.
  */
-+ (id<FBAccumulatingBuffer>)accumulatingBuffer;
++ (nonnull id<FBAccumulatingBuffer>)accumulatingBuffer;
 
 /**
  A data buffer that is only mutated through consuming data.
@@ -144,28 +142,28 @@ NS_ASSUME_NONNULL_BEGIN
  @param capacity the capacity in bytes of the buffer.
  @return a FBDataBuffer implementation.
  */
-+ (id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
++ (nonnull id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
 
 /**
  A data buffer that is only mutated through consuming data.
 
  @return a FBDataBuffer implementation.
  */
-+ (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data;
++ (nonnull id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(nonnull NSMutableData *)data;
 
 /**
  A data buffer that is appended to by consuming data and can be drained.
 
  @return a FBConsumableBuffer implementation.
  */
-+ (id<FBConsumableBuffer>)consumableBuffer;
++ (nonnull id<FBConsumableBuffer>)consumableBuffer;
 
 /**
  A data buffer that can forward and notify.
 
  @return a FBNotifyingBuffer implementation.
  */
-+ (id<FBNotifyingBuffer>)notifyingBuffer;
++ (nonnull id<FBNotifyingBuffer>)notifyingBuffer;
 
 /**
  A line buffer that is appended to by consuming data that will be automatically drained by forwarding to another consumer.
@@ -175,13 +173,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param terminal the terminal separator.
  @return a FBConsumableBuffer implementation.
  */
-+ (id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
++ (nonnull id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
 
 /**
  NSData for a newline.
  */
-+ (NSData *)newlineTerminal;
++ (nonnull NSData *)newlineTerminal;
 
 @end
-
-NS_ASSUME_NONNULL_END

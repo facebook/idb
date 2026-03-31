@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBXCTraceRecordConfiguration;
 @class FBXCTraceRecordOperation;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return A future that resolves with the `xctrace record` operation.
  */
-- (FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(FBXCTraceRecordConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(nonnull FBXCTraceRecordConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -36,8 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTraceRecordCommands : NSObject <FBXCTraceRecordCommands>
 
-@property (nonatomic, readonly, weak) id<FBiOSTarget> target;
+@property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
 
 @end
-
-NS_ASSUME_NONNULL_END

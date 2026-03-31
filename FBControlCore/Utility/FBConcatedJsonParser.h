@@ -7,16 +7,12 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  New crash log format is just concated json files that *not* follows json spec. This is not array of json objects
  delimited with comma, that is just several json files that glued together. We need to parse this to handle correctly
  */
 @interface FBConcatedJsonParser : NSObject
 
-+ (nullable NSDictionary<NSString *, id> *)parseConcatenatedJSONFromString:(NSString *)str error:(NSError **)error;
++ (nullable NSDictionary<NSString *, id> *)parseConcatenatedJSONFromString:(nonnull NSString *)str error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

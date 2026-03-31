@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBDeviceCommands;
 @protocol FBControlCoreLogger;
 
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param signature Signature of the mounted image.
  @return a disk image instance with an unknown path and version.
  */
-+ (FBDeveloperDiskImage *)unknownDiskImageWithSignature:(NSData *)signature;
++ (nonnull FBDeveloperDiskImage *)unknownDiskImageWithSignature:(nonnull NSData *)signature;
 
 /**
  Finds the Disk Image for the given device, if one can be found.
@@ -33,25 +31,25 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a disk image instance for the target version.
  */
-+ (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)developerDiskImage:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Returns all of the Developer Disk Images that are available.
  These Disk Images are found by inspecting the appropriate directories within the current installed Xcode.
  */
-+ (NSArray<FBDeveloperDiskImage *> *)allDiskImages;
++ (nonnull NSArray<FBDeveloperDiskImage *> *)allDiskImages;
 
 #pragma mark Properties
 
 /**
  The path of the disk image.
  */
-@property (nonatomic, readonly, copy) NSString *diskImagePath;
+@property (nonnull, nonatomic, readonly, copy) NSString *diskImagePath;
 
 /**
  The path of the signature.
  */
-@property (nonatomic, readonly, copy) NSData *signature;
+@property (nonnull, nonatomic, readonly, copy) NSData *signature;
 
 /**
  The OS Version that the Disk Image is intended for.
@@ -72,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  */
-+ (NSString *)pathForDeveloperSymbols:(NSString *)buildVersion logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable NSString *)pathForDeveloperSymbols:(nonnull NSString *)buildVersion logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Returns the best match for the provided image list.
@@ -83,8 +81,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a disk image, or nil if no suitable image could be found.
  */
-+ (nullable FBDeveloperDiskImage *)bestImageForImages:(NSArray<FBDeveloperDiskImage *> *)images targetVersion:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable FBDeveloperDiskImage *)bestImageForImages:(nonnull NSArray<FBDeveloperDiskImage *> *)images targetVersion:(NSOperatingSystemVersion)targetVersion logger:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

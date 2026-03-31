@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 
 /**
@@ -20,17 +18,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
-@property (class, nonatomic, readonly, copy) NSString *developerDirectory;
+@property (class, nonnull, nonatomic, readonly, copy) NSString *developerDirectory;
 
 /**
  The File Path to of Xcode's /Xcode.app/Contents directory.
  */
-@property (class, nonatomic, readonly, copy) NSString *contentsDirectory;
+@property (class, nonnull, nonatomic, readonly, copy) NSString *contentsDirectory;
 
 /**
  The Version Number for the Xcode defined by the Developer Directory.
  */
-@property (class, nonatomic, readonly, copy) NSDecimalNumber *xcodeVersionNumber;
+@property (class, nonnull, nonatomic, readonly, copy) NSDecimalNumber *xcodeVersionNumber;
 
 /**
  The Version Number for the Xcode defined by the Developer Directory.
@@ -40,17 +38,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The SDK Version for the Xcode defined by the Developer Directory.
  */
-@property (class, nonatomic, readonly, copy) NSDecimalNumber *iosSDKVersionNumber;
+@property (class, nonnull, nonatomic, readonly, copy) NSDecimalNumber *iosSDKVersionNumber;
 
 /**
  Formatter for the SDK Version a string
  */
-@property (class, nonatomic, readonly, strong) NSDecimalNumber *iosSDKVersionNumberFormatter;
+@property (class, nonnull, nonatomic, readonly, strong) NSDecimalNumber *iosSDKVersionNumberFormatter;
 
 /**
  The SDK Version of the current Xcode Version as a String.
  */
-@property (class, nonatomic, readonly, copy) NSString *iosSDKVersion;
+@property (class, nonnull, nonatomic, readonly, copy) NSString *iosSDKVersion;
 
 /**
  YES if Xcode 12 or greater, NO Otherwise.
@@ -65,12 +63,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Description of the Current Configuration.
  */
-@property (class, nonatomic, readonly, copy) NSString *description;
+@property (class, nonnull, nonatomic, readonly, copy) NSString *description;
 
 /**
  A bundle descriptor representing SimulatorApp.
  */
-@property (class, nonatomic, readonly, copy) FBBundleDescriptor *simulatorApp;
+@property (class, nonnull, nonatomic, readonly, copy) FBBundleDescriptor *simulatorApp;
 
 /**
  Return Developer directory if exist or nil.
@@ -78,5 +76,3 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSString *)getDeveloperDirectoryIfExists;
 
 @end
-
-NS_ASSUME_NONNULL_END

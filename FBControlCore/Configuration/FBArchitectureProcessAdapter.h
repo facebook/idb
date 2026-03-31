@@ -10,8 +10,6 @@
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBProcessSpawnConfiguration;
 
 @interface FBArchitectureProcessAdapter : NSObject
@@ -19,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Force binaries to be launched in desired architectures.
 ///
 /// Convenience method for `-[FBArchitectureProcessAdapter adaptProcessConfiguration:toAnyArchitectureIn:hostArchitectures:queue:temporaryDirectory:]`
-- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
+- (nonnull FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(nonnull FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(nonnull NSSet<FBArchitecture> *)requestedArchitectures queue:(nonnull dispatch_queue_t)queue temporaryDirectory:(nonnull NSURL *)temporaryDirectory;
 
 /// Force binaries to be launched in desired architectures.
 ///
@@ -44,11 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///   - queue: Target Queue
 ///   - hostArchitectures: Set of architectures supported by the host machine
 ///   - temporaryDirectory: Target directory where we put lipoed binary
-- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)architectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
+- (nonnull FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(nonnull FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(nonnull NSSet<FBArchitecture> *)architectures hostArchitectures:(nonnull NSSet<FBArchitecture> *)hostArchitectures queue:(nonnull dispatch_queue_t)queue temporaryDirectory:(nonnull NSURL *)temporaryDirectory;
 
 /// Returns supported architectures based on companion launch architecture and launch under rosetta determination.
-+ (NSSet<FBArchitecture> *)hostMachineSupportedArchitectures;
++ (nonnull NSSet<FBArchitecture> *)hostMachineSupportedArchitectures;
 
 @end
-
-NS_ASSUME_NONNULL_END

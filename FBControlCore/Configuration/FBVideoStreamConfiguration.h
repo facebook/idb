@@ -7,32 +7,30 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The Encoding of the Video Stream.
  */
 typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingHEVC;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingH264;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingHEVC;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingBGRA;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMJPEG;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMinicap;
 
 /**
  The Video Codec for compressed video streams.
  */
 typedef NSString *FBVideoStreamCodec NS_STRING_ENUM;
-extern FBVideoStreamCodec const FBVideoStreamCodecH264;
-extern FBVideoStreamCodec const FBVideoStreamCodecHEVC;
+extern FBVideoStreamCodec _Nonnull const FBVideoStreamCodecH264;
+extern FBVideoStreamCodec _Nonnull const FBVideoStreamCodecHEVC;
 
 /**
  The Transport/Container format for compressed video streams.
  */
 typedef NSString *FBVideoStreamTransport NS_STRING_ENUM;
-extern FBVideoStreamTransport const FBVideoStreamTransportAnnexB;
-extern FBVideoStreamTransport const FBVideoStreamTransportMPEGTS;
-extern FBVideoStreamTransport const FBVideoStreamTransportFMP4;
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportAnnexB;
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportMPEGTS;
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportFMP4;
 
 /**
  The type of video stream format.
@@ -50,11 +48,11 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamFormatType) {
  MJPEG, Minicap, and BGRA are fixed presets with no transport axis.
  */
 @interface FBVideoStreamFormat : NSObject <NSCopying>
-+ (instancetype)compressedVideoWithCodec:(FBVideoStreamCodec)codec
-                               transport:(FBVideoStreamTransport)transport;
-+ (instancetype)mjpeg;
-+ (instancetype)minicap;
-+ (instancetype)bgra;
++ (nonnull instancetype)compressedVideoWithCodec:(nonnull FBVideoStreamCodec)codec
+                                       transport:(nonnull FBVideoStreamTransport)transport;
++ (nonnull instancetype)mjpeg;
++ (nonnull instancetype)minicap;
++ (nonnull instancetype)bgra;
 
 @property (nonatomic, readonly, assign) FBVideoStreamFormatType type;
 @property (nullable, nonatomic, readonly, copy) FBVideoStreamCodec codec;
@@ -80,14 +78,14 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 
  @param quality the quality value between 0 and 1.
  */
-+ (instancetype)quality:(NSNumber *)quality;
++ (nonnull instancetype)quality:(nonnull NSNumber *)quality;
 
 /**
  Create an average-bitrate rate control.
 
  @param bitrate the average bitrate in bytes per second.
  */
-+ (instancetype)bitrate:(NSNumber *)bitrate;
++ (nonnull instancetype)bitrate:(nonnull NSNumber *)bitrate;
 
 /**
  The rate-control mode.
@@ -97,7 +95,7 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 /**
  The value: quality (0-1) for constant-quality, bitrate (bytes/sec) for average-bitrate.
  */
-@property (nonatomic, readonly, copy) NSNumber *value;
+@property (nonnull, nonatomic, readonly, copy) NSNumber *value;
 
 @end
 
@@ -115,12 +113,12 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
  @param scaleFactor the scale factor, between 0-1. nil for no scaling.
  @param keyFrameRate key frame interval in seconds. nil for default (1s).
  */
-- (instancetype)initWithFormat:(FBVideoStreamFormat *)format framesPerSecond:(nullable NSNumber *)framesPerSecond rateControl:(nullable FBVideoStreamRateControl *)rateControl scaleFactor:(nullable NSNumber *)scaleFactor keyFrameRate:(nullable NSNumber *)keyFrameRate;
+- (nonnull instancetype)initWithFormat:(nonnull FBVideoStreamFormat *)format framesPerSecond:(nullable NSNumber *)framesPerSecond rateControl:(nullable FBVideoStreamRateControl *)rateControl scaleFactor:(nullable NSNumber *)scaleFactor keyFrameRate:(nullable NSNumber *)keyFrameRate;
 
 /**
  The format of the stream.
  */
-@property (nonatomic, readonly, copy) FBVideoStreamFormat *format;
+@property (nonnull, nonatomic, readonly, copy) FBVideoStreamFormat *format;
 
 /**
  The number of frames per second to use if using an eager stream.
@@ -132,7 +130,7 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
  The rate-control mode for VTCompression.
  Always non-nil; defaults to constant-quality at 0.2 if not provided.
  */
-@property (nonatomic, readonly, copy) FBVideoStreamRateControl *rateControl;
+@property (nonnull, nonatomic, readonly, copy) FBVideoStreamRateControl *rateControl;
 
 /**
  The scale factor between 0-1. nil for no scaling.
@@ -140,10 +138,8 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 @property (nullable, nonatomic, readonly, copy) NSNumber *scaleFactor;
 
 /**
- Send a key frame every N seconds.
+ Send a key frame every N seconds. Defaults to 1.0 if not provided at init.
  */
-@property (nullable, nonatomic, readonly, copy) NSNumber *keyFrameRate;
+@property (nonnull, nonatomic, readonly, copy) NSNumber *keyFrameRate;
 
 @end
-
-NS_ASSUME_NONNULL_END

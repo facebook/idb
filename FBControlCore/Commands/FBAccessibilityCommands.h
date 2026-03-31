@@ -10,54 +10,52 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Keys for accessibility element dictionaries.
  */
 typedef NSString *FBAXKeys NS_STRING_ENUM;
 
-extern FBAXKeys const FBAXKeysLabel;
-extern FBAXKeys const FBAXKeysFrame;
-extern FBAXKeys const FBAXKeysValue;
-extern FBAXKeys const FBAXKeysUniqueID;
-extern FBAXKeys const FBAXKeysType;
-extern FBAXKeys const FBAXKeysTitle;
-extern FBAXKeys const FBAXKeysFrameDict;
-extern FBAXKeys const FBAXKeysHelp;
-extern FBAXKeys const FBAXKeysEnabled;
-extern FBAXKeys const FBAXKeysCustomActions;
-extern FBAXKeys const FBAXKeysRole;
-extern FBAXKeys const FBAXKeysRoleDescription;
-extern FBAXKeys const FBAXKeysSubrole;
-extern FBAXKeys const FBAXKeysContentRequired;
-extern FBAXKeys const FBAXKeysPID;
-extern FBAXKeys const FBAXKeysTraits;
-extern FBAXKeys const FBAXKeysExpanded;
-extern FBAXKeys const FBAXKeysPlaceholder;
-extern FBAXKeys const FBAXKeysHidden;
-extern FBAXKeys const FBAXKeysFocused;
-extern FBAXKeys const FBAXKeysIsRemote;
+extern FBAXKeys _Nonnull const FBAXKeysLabel;
+extern FBAXKeys _Nonnull const FBAXKeysFrame;
+extern FBAXKeys _Nonnull const FBAXKeysValue;
+extern FBAXKeys _Nonnull const FBAXKeysUniqueID;
+extern FBAXKeys _Nonnull const FBAXKeysType;
+extern FBAXKeys _Nonnull const FBAXKeysTitle;
+extern FBAXKeys _Nonnull const FBAXKeysFrameDict;
+extern FBAXKeys _Nonnull const FBAXKeysHelp;
+extern FBAXKeys _Nonnull const FBAXKeysEnabled;
+extern FBAXKeys _Nonnull const FBAXKeysCustomActions;
+extern FBAXKeys _Nonnull const FBAXKeysRole;
+extern FBAXKeys _Nonnull const FBAXKeysRoleDescription;
+extern FBAXKeys _Nonnull const FBAXKeysSubrole;
+extern FBAXKeys _Nonnull const FBAXKeysContentRequired;
+extern FBAXKeys _Nonnull const FBAXKeysPID;
+extern FBAXKeys _Nonnull const FBAXKeysTraits;
+extern FBAXKeys _Nonnull const FBAXKeysExpanded;
+extern FBAXKeys _Nonnull const FBAXKeysPlaceholder;
+extern FBAXKeys _Nonnull const FBAXKeysHidden;
+extern FBAXKeys _Nonnull const FBAXKeysFocused;
+extern FBAXKeys _Nonnull const FBAXKeysIsRemote;
 
 /**
  Subset of FBAXKeys whose values are strings, suitable for element search matching.
  */
 typedef NSString *FBAXSearchableKey NS_STRING_ENUM;
 
-extern FBAXSearchableKey const FBAXSearchableKeyLabel;
-extern FBAXSearchableKey const FBAXSearchableKeyUniqueID;
-extern FBAXSearchableKey const FBAXSearchableKeyValue;
-extern FBAXSearchableKey const FBAXSearchableKeyTitle;
-extern FBAXSearchableKey const FBAXSearchableKeyRole;
-extern FBAXSearchableKey const FBAXSearchableKeyRoleDescription;
-extern FBAXSearchableKey const FBAXSearchableKeySubrole;
-extern FBAXSearchableKey const FBAXSearchableKeyHelp;
-extern FBAXSearchableKey const FBAXSearchableKeyPlaceholder;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyLabel;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyUniqueID;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyValue;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyTitle;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyRole;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyRoleDescription;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeySubrole;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyHelp;
+extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyPlaceholder;
 
 /**
  Default set of keys returned when no specific keys are requested.
  */
-extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
+extern NSSet<FBAXKeys> *_Nonnull FBAXKeysDefaultSet(void);
 
 /**
  Options for fetching remote process elements (e.g., WebView content).
@@ -84,7 +82,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  Creates options with default values.
  */
-+ (instancetype)defaultOptions;
++ (nonnull instancetype)defaultOptions;
 
 @end
 
@@ -136,7 +134,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  Creates options with default values.
  */
-+ (instancetype)defaultOptions;
++ (nonnull instancetype)defaultOptions;
 
 @end
 
@@ -186,25 +184,25 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  The set of keys that were fetched during serialization.
  Useful for tests to verify which attributes were actually accessed.
  */
-@property (nonatomic, readonly, strong) NSSet<NSString *> *fetchedKeys;
+@property (nonnull, nonatomic, readonly, strong) NSSet<NSString *> *fetchedKeys;
 
 /**
  Designated initializer.
  */
-- (instancetype)initWithElementCount:(int64_t)elementCount
-                 attributeFetchCount:(int64_t)attributeFetchCount
-                        xpcCallCount:(int64_t)xpcCallCount
-                 translationDuration:(CFAbsoluteTime)translationDuration
-           elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
-               serializationDuration:(CFAbsoluteTime)serializationDuration
-                    totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
-                         fetchedKeys:(NSSet<NSString *> *)fetchedKeys;
+- (nonnull instancetype)initWithElementCount:(int64_t)elementCount
+                         attributeFetchCount:(int64_t)attributeFetchCount
+                                xpcCallCount:(int64_t)xpcCallCount
+                         translationDuration:(CFAbsoluteTime)translationDuration
+                   elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
+                       serializationDuration:(CFAbsoluteTime)serializationDuration
+                            totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
+                                 fetchedKeys:(nonnull NSSet<NSString *> *)fetchedKeys;
 
 /**
  Returns the profiling data as a JSON-serializable dictionary.
  Times are converted to milliseconds.
  */
-- (NSDictionary<NSString *, NSNumber *> *)asDictionary;
+- (nonnull NSDictionary<NSString *, NSNumber *> *)asDictionary;
 
 @end
 
@@ -216,7 +214,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  The accessibility elements. May be an NSArray (flat/nested) or NSDictionary (single element).
  */
-@property (nonatomic, readonly, strong) id elements;
+@property (nonnull, nonatomic, readonly, strong) id elements;
 
 /**
  Profiling data collected during the operation, if profiling was enabled.
@@ -240,10 +238,10 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  Designated initializer.
  */
-- (instancetype)initWithElements:(id)elements
-                   profilingData:(nullable FBAccessibilityProfilingData *)profilingData
-                   frameCoverage:(nullable NSNumber *)frameCoverage
-         additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage;
+- (nonnull instancetype)initWithElements:(nonnull id)elements
+                           profilingData:(nullable FBAccessibilityProfilingData *)profilingData
+                           frameCoverage:(nullable NSNumber *)frameCoverage
+                 additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage;
 
 /**
  Returns a JSON-serializable dictionary with elements always embedded.
@@ -251,7 +249,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  Profile and coverage keys are included only when the corresponding data is present.
  Use this when you need a single serializable object. Use `elements` when you need raw element data.
  */
-- (NSDictionary<NSString *, id> *)asDictionary;
+- (nonnull NSDictionary<NSString *, id> *)asDictionary;
 
 @end
 
@@ -282,8 +280,8 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param error an error out parameter.
  @return the serialized response, or nil on failure.
  */
-- (nullable FBAccessibilityElementsResponse *)serializeWithOptions:(FBAccessibilityRequestOptions *)options
-                                                             error:(NSError **)error;
+- (nullable FBAccessibilityElementsResponse *)serializeWithOptions:(nonnull FBAccessibilityRequestOptions *)options
+                                                             error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Perform an unconditional accessibility tap (AXPress) without any label verification.
@@ -291,7 +289,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param error an error out parameter.
  @return YES on success, NO on failure.
  */
-- (BOOL)tapWithError:(NSError **)error;
+- (BOOL)tapWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Read the string value of a searchable accessibility key from this element.
@@ -300,7 +298,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param error an error out parameter.
  @return the string value, or nil if the key has no string value or on failure.
  */
-- (nullable NSString *)stringValueForSearchableKey:(FBAXSearchableKey)key error:(NSError **)error;
+- (nullable NSString *)stringValueForSearchableKey:(nonnull FBAXSearchableKey)key error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Perform an accessibility scroll on the element.
@@ -309,7 +307,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param error an error out parameter.
  @return YES on success, NO on failure.
  */
-- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError **)error;
+- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Set the accessibility value of the element (e.g., text field content, slider position).
@@ -318,7 +316,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param error an error out parameter.
  @return YES on success, NO on failure.
  */
-- (BOOL)setValue:(id)value error:(NSError **)error;
+- (BOOL)setValue:(nonnull id)value error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Close the element, deregistering the token. Called automatically on dealloc as a safety net.
@@ -341,7 +339,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param point the coordinate at which to obtain the accessibility element.
  @return a future wrapping the element.
  */
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
+- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
 
 /**
  Obtain an opaque element for the frontmost application.
@@ -350,7 +348,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
 
  @return a future wrapping the element.
  */
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
+- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
 
 /**
  Obtain an opaque element by searching the frontmost application's element tree for the first
@@ -363,9 +361,9 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
  @param depth maximum tree depth to search.
  @return a future wrapping the found element, or an error if not found.
  */
-- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(NSString *)value
-                                                                   forKey:(FBAXSearchableKey)key
-                                                                    depth:(NSUInteger)depth;
+- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(nonnull NSString *)value
+                                                                           forKey:(nonnull FBAXSearchableKey)key
+                                                                            depth:(NSUInteger)depth;
 
 @end
 
@@ -375,5 +373,3 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
 @protocol FBAccessibilityCommands <NSObject, FBiOSTargetCommand, FBAccessibilityOperations>
 
 @end
-
-NS_ASSUME_NONNULL_END

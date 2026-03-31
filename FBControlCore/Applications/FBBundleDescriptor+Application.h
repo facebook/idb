@@ -10,8 +10,6 @@
 #import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Operations on FBBundleDescriptor, for applications.
  */
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return an FBBundleDescriptor for the application bundle, or nil on error.
  */
-+ (nullable FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable FBBundleDescriptor *)findAppPathFromDirectory:(nonnull NSURL *)directory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Check if given path is an application path.
@@ -35,8 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param path the path to check.
  @return if the path is an application path.
  */
-+ (BOOL)isApplicationAtPath:(NSString *)path;
++ (BOOL)isApplicationAtPath:(nonnull NSString *)path;
 
 @end
-
-NS_ASSUME_NONNULL_END

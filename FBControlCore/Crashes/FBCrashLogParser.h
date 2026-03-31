@@ -7,10 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBCrashLogParser <NSObject>
-- (void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error;
+- (void)parseCrashLogFromString:(nonnull NSString *)str executablePathOut:(NSString * _Nonnull * _Nonnull)executablePathOut identifierOut:(NSString * _Nonnull * _Nonnull)identifierOut processNameOut:(NSString * _Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString * _Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(nonnull pid_t *)processIdentifierOut parentProcessIdentifierOut:(nonnull pid_t *)parentProcessIdentifierOut dateOut:(NSDate * _Nonnull * _Nonnull)dateOut exceptionDescription:(NSString * _Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString * _Nonnull * _Nonnull)crashedThreadDescription error:(NSError * _Nullable * _Nullable)error;
 @end
 
 /**
@@ -29,5 +27,3 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBPlainTextCrashLogParser : NSObject <FBCrashLogParser>
 @end
-
-NS_ASSUME_NONNULL_END

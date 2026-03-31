@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBApplicationLaunchConfiguration;
 
 /**
@@ -21,17 +19,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
  */
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle;
+- (nonnull instancetype)initWithTestBundle:(nonnull FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(nonnull FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle;
 
 /**
  XCTest bundle used for testing
  */
-@property (nullable, nonatomic, readonly, retain) FBBundleDescriptor *testBundle;
+@property (nonnull, nonatomic, readonly, retain) FBBundleDescriptor *testBundle;
 
 /**
  Configuration used to launch test runner application.
  */
-@property (nonatomic, readonly, copy) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
+@property (nonnull, nonatomic, readonly, copy) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 
 /**
  Host app bundle.
@@ -104,5 +102,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, assign) BOOL reportResultBundle;
 
 @end
-
-NS_ASSUME_NONNULL_END

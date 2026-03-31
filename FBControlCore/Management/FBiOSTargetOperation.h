@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
 /**
  A protocol that represents an operation of indeterminate length.
  */
@@ -18,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Optional Future that resolves when the operation has completed.
  */
-@property (nonatomic, readonly, strong) FBFuture<NSNull *> *completed;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *completed;
 
 @end
 
@@ -28,6 +27,4 @@ NS_ASSUME_NONNULL_BEGIN
  @param completed the completion future
  @return an Operation wrapping the Future
  */
-extern id<FBiOSTargetOperation> FBiOSTargetOperationFromFuture(FBFuture<NSNull *> *completed);
-
-NS_ASSUME_NONNULL_END
+extern id<FBiOSTargetOperation> _Nonnull FBiOSTargetOperationFromFuture(FBFuture<NSNull *> * _Nonnull completed);
