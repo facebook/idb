@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 @protocol FBSimulatorFileCommands <NSObject>
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a container if the application exists, nil on error.
  */
-- (nullable id<FBContainedFile>)containedFileForApplication:(NSString *)bundleID error:(NSError **)error;
+- (nullable id<FBContainedFile>)containedFileForApplication:(nonnull NSString *)bundleID error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Returns a Contained File instance for group containers.
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a FBContainedFile Instance
  */
-- (nullable id<FBContainedFile>)containedFileForGroupContainersWithError:(NSError **)error;
+- (nullable id<FBContainedFile>)containedFileForGroupContainersWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Returns a Contained File instance for application containers
@@ -38,14 +36,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a FBContainedFile Instance
  */
-- (nullable id<FBContainedFile>)containedFileForApplicationContainersWithError:(NSError **)error;
+- (nullable id<FBContainedFile>)containedFileForApplicationContainersWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Returns the File Container for the root of the simulator
 
  @return a file container
  */
-- (id<FBContainedFile>)containedFileForRootFilesystem;
+- (nonnull id<FBContainedFile>)containedFileForRootFilesystem;
 
 @end
 
@@ -55,5 +53,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBSimulatorFileCommands, FBiOSTargetCommand>
 
 @end
-
-NS_ASSUME_NONNULL_END

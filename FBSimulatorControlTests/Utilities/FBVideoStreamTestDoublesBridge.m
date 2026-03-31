@@ -97,8 +97,7 @@ FBSimulatorSet *CreateSimulatorSetWithFakeDeviceSet(FBSimulatorControlConfigurat
                                     deviceSet:(SimDeviceSet *)fakeDeviceSet
                                      delegate:nil
                                        logger:nil
-                                     reporter:nil
-                                        error:nil];
+                                     reporter:nil];
 }
 
 #pragma mark - CheckRuntimeRequirements

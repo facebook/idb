@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 /**
@@ -29,8 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator.
  @return a Future that resolves when the Simulator is booted to the home screen.
  */
-+ (FBFuture<NSNull *> *)verifySimulatorIsBooted:(FBSimulator *)simulator;
++ (nonnull FBFuture<NSNull *> *)verifySimulatorIsBooted:(nonnull FBSimulator *)simulator;
 
 @end
-
-NS_ASSUME_NONNULL_END

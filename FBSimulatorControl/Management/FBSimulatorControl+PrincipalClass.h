@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
@@ -30,25 +28,23 @@ NS_ASSUME_NONNULL_BEGIN
  @param error any error that occurred during instantiation.
  @return a new FBSimulatorControl instance.
  */
-+ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
++ (nullable instancetype)withConfiguration:(nonnull FBSimulatorControlConfiguration *)configuration error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Properties
 
 /**
  The Set of Simulators managed by FBSimulatorControl.
  */
-@property (nonatomic, readonly, strong) FBSimulatorSet *set;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  The Service Context.
  */
-@property (nonatomic, readonly, strong) FBSimulatorServiceContext *serviceContext;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorServiceContext *serviceContext;
 
 /**
  The Configuration that FBSimulatorControl was instantiated with.
  */
-@property (nonatomic, readwrite, copy) FBSimulatorControlConfiguration *configuration;
+@property (nonnull, nonatomic, readwrite, copy) FBSimulatorControlConfiguration *configuration;
 
 @end
-
-NS_ASSUME_NONNULL_END

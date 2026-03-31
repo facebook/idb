@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorSet;
 @class SimDevice;
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param set the Simulator Set to insert into.
  @return a new Simulator Inflation Strategy Instance.
  */
-+ (instancetype)strategyForSet:(FBSimulatorSet *)set;
++ (nonnull instancetype)strategyForSet:(nonnull FBSimulatorSet *)set;
 
 /**
  Creates the Array of Simulators matching the Array of SimDevices passed in.
@@ -34,8 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulators the existing Simulators (if any).
  @return an array of FBSimulator instances matching the SimDevices.
  */
-- (NSArray<FBSimulator *> *)inflateFromDevices:(NSArray<SimDevice *> *)simDevices exitingSimulators:(NSArray<FBSimulator *> *)simulators;
+- (nonnull NSArray<FBSimulator *> *)inflateFromDevices:(nonnull NSArray<SimDevice *> *)simDevices exitingSimulators:(nonnull NSArray<FBSimulator *> *)simulators;
 
 @end
-
-NS_ASSUME_NONNULL_END

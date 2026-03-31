@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorSet;
 
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the simulator to execute on
  @return a new command executor
  */
-+ (instancetype)executorForSimulator:(FBSimulator *)simulator;
++ (nonnull instancetype)executorForSimulator:(nonnull FBSimulator *)simulator;
 
 /**
  Constructs an Executor for a given simulator set.
@@ -38,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param set the simulator to execute against.
  @return a new command executor
  */
-+ (instancetype)executorForDeviceSet:(FBSimulatorSet *)set;
++ (nonnull instancetype)executorForDeviceSet:(nonnull FBSimulatorSet *)set;
 
 #pragma mark Public Methods
 
@@ -48,8 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param command the command name.
  @param arguments the arguments of the command.
  */
-- (FBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(NSString *)command arguments:(NSArray<NSString *> *)arguments;
+- (nonnull FBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(nonnull NSString *)command arguments:(nonnull NSArray<NSString *> *)arguments;
 
 @end
-
-NS_ASSUME_NONNULL_END

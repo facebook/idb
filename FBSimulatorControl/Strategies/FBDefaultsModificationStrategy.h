@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 /**
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to use.
  @return a new strategy for the Simulator.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
++ (nonnull instancetype)strategyWithSimulator:(nonnull FBSimulator *)simulator;
 
 /**
  Modifies the defaults in a given domain or path.
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param defaults key value pair of defaults to set.
  @return a future that resolves when completed.
  */
-- (FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults;
+- (nonnull FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(nonnull NSDictionary<NSString *, id> *)defaults;
 
 @end
 
@@ -51,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
+- (nonnull FBFuture<NSNull *> *)setPreference:(nonnull NSString *)name value:(nonnull NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
 
@@ -59,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param domain domain to search - optional
  @return a Future that resolves with the current preference value
  */
-- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;
+- (nonnull FBFuture<NSString *> *)getCurrentPreference:(nonnull NSString *)name domain:(nullable NSString *)domain;
 
 @end
 
@@ -74,7 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
  @return a future that resolves when completed.
  */
-- (FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
+- (nonnull FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(nonnull NSArray<NSString *> *)bundleIDs;
 
 /**
  Revokes Location Services for Applications.
@@ -82,8 +80,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs an NSArray<NSString> of bundle IDs to to revoke location settings for.
  @return a future that resolves when completed.
  */
-- (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs;
+- (nonnull FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(nonnull NSArray<NSString *> *)bundleIDs;
 
 @end
-
-NS_ASSUME_NONNULL_END

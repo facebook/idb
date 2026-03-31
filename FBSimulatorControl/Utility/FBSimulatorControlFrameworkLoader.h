@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Class for handling Framework Loading of Private Frameworks that FBSimulatorControl depends on.
  */
@@ -19,18 +17,16 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Frameworks needed for most operations.
  */
-@property (class, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *essentialFrameworks;
+@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *essentialFrameworks;
 
 /**
  The frameworks needed for Accessibility operations.
  */
-@property (class, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *accessibilityFrameworks;
+@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *accessibilityFrameworks;
 
 /**
  All of the Frameworks for operations involving the HID and Framebuffer.
  */
-@property (class, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *xcodeFrameworks;
+@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorControlFrameworkLoader *xcodeFrameworks;
 
 @end
-
-NS_ASSUME_NONNULL_END

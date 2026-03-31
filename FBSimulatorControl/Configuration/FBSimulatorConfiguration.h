@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Value object that represents the Configuration of a iPhone, iPad, Watch or TV Simulator.
 
@@ -29,18 +27,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device Configuration.
  */
-@property (nonatomic, readonly, strong) FBDeviceType *device;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceType *device;
 
 /**
  The OS Configuration.
  */
-@property (nonatomic, readonly, strong) FBOSVersion *os;
+@property (nonnull, nonatomic, readonly, strong) FBOSVersion *os;
 
 /**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
-@property (class, nonatomic, readonly, copy) FBSimulatorConfiguration *defaultConfiguration;
+@property (class, nonnull, nonatomic, readonly, copy) FBSimulatorConfiguration *defaultConfiguration;
 
 #pragma mark Models
 
@@ -50,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param model the model to apply
  @return a new configuration
  */
-- (instancetype)withDeviceModel:(FBDeviceModel)model;
+- (nonnull instancetype)withDeviceModel:(nonnull FBDeviceModel)model;
 
 #pragma mark OS Versions
 
@@ -60,8 +58,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param osName the OS Name.
  @return a new configuration.
  */
-- (instancetype)withOSNamed:(FBOSVersionName)osName;
+- (nonnull instancetype)withOSNamed:(nonnull FBOSVersionName)osName;
 
 @end
-
-NS_ASSUME_NONNULL_END

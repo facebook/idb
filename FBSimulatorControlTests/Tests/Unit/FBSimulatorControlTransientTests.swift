@@ -30,7 +30,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   func testDefaultConfigurationHasEmptyEnvironment() {
     let config = FBSimulatorBootConfiguration.default
     XCTAssertNotNil(config.environment)
-    XCTAssertEqual(config.environment?.count, 0)
+    XCTAssertEqual(config.environment.count, 0)
   }
 
   func testDefaultConfigurationIsSingleton() {
@@ -46,7 +46,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     )
     XCTAssertTrue(config.options.contains(.tieToProcessLifecycle))
     XCTAssertFalse(config.options.contains(.verifyUsable))
-    XCTAssertEqual(config.environment?["DYLD_INSERT_LIBRARIES"], "/tmp/lib.dylib")
+    XCTAssertEqual(config.environment["DYLD_INSERT_LIBRARIES"], "/tmp/lib.dylib")
   }
 
   func testBootConfigurationInitWithCombinedOptions() {

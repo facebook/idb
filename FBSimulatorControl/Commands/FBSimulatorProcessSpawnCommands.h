@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBProcessSpawnCommands for Simulators.
  */
@@ -26,8 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param waitForDebugger YES if the Application should be launched waiting for a debugger to attach. NO otherwise.
  @return a Dictionary of the Launch Options.
  */
-+ (NSDictionary<NSString *, id> *)launchOptionsWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger;
++ (nonnull NSDictionary<NSString *, id> *)launchOptionsWithArguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,8 +9,6 @@
 
 #import <FBSimulatorControl/FBFramebuffer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBFramebuffer;
 
 /**
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBSimulatorImage instance.
  */
-+ (instancetype)imageWithFramebuffer:(FBFramebuffer *)framebuffer logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)imageWithFramebuffer:(nonnull FBFramebuffer *)framebuffer logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -43,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the data if successful, nil otherwise.
  */
-- (nullable NSData *)jpegImageDataWithError:(NSError **)error;
+- (nullable NSData *)jpegImageDataWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get a PNG encoded representation of the Image.
@@ -51,8 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the data if successful, nil otherwise.
  */
-- (nullable NSData *)pngImageDataWithError:(NSError **)error;
+- (nullable NSData *)pngImageDataWithError:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

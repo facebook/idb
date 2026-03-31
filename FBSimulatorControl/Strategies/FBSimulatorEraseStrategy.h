@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorSet;
 
@@ -27,8 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to Erase.
  @return A future that resolves when the Simulator is erased.
  */
-+ (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator;
++ (nonnull FBFuture<NSNull *> *)erase:(nonnull FBSimulator *)simulator;
 
 @end
-
-NS_ASSUME_NONNULL_END

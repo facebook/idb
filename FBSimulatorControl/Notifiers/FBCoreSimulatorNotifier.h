@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorSet;
 @class SimDevice;
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
-+ (instancetype)notifierForSet:(FBSimulatorSet *)set queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary<NSString *, id> *info))block;
++ (nonnull instancetype)notifierForSet:(nonnull FBSimulatorSet *)set queue:(nonnull dispatch_queue_t)queue block:(nonnull void (^)(NSDictionary<NSString *, id> * _Nonnull info))block;
 
 /**
  Waits for the state to leave the state on the provided SimDevice.
@@ -39,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the SimDevice to resolve state on.
  @return a future that resolves when the state resolves.
  */
-+ (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state forSimDevice:(SimDevice *)device;
++ (nonnull FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state forSimDevice:(nonnull SimDevice *)device;
 
 #pragma mark Public Methods
 
@@ -49,5 +47,3 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)terminate;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 @protocol FBSimulatorKeychainCommands <NSObject>
@@ -20,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when the keychain has been cleared.
  */
-- (FBFuture<NSNull *> *)clearKeychain;
+- (nonnull FBFuture<NSNull *> *)clearKeychain;
 
 @end
 
@@ -31,5 +29,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorKeychainCommands : NSObject <FBSimulatorKeychainCommands, FBiOSTargetCommand>
 
 @end
-
-NS_ASSUME_NONNULL_END

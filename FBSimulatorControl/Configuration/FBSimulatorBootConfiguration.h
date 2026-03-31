@@ -16,8 +16,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
   FBSimulatorBootOptionsVerifyUsable = 1 << 3, /** A Simulator can be report that it is 'Booted' very quickly but is not in Usable. Setting this option requires that the Simulator is 'Usable' before the boot API completes */
 };
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Value Object for defining how to launch a Simulator.
  */
@@ -35,14 +33,14 @@ NS_ASSUME_NONNULL_BEGIN
  Boot environment is passed down to all launched processes in the Simulator.
  This is useful for injecting a dylib through `DYLD_` environment variables.
  */
-@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 #pragma mark Default Instance
 
 /**
  The Default Configuration.
  */
-@property (class, nonatomic, readonly, strong) FBSimulatorBootConfiguration *defaultConfiguration;
+@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorBootConfiguration *defaultConfiguration;
 
 /**
  The Designated Initializer.
@@ -51,8 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment the boot environment to use.
  @return a FBSimulatorBootConfiguration instance.
  */
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(NSDictionary<NSString *, NSString *> *)environment;
+- (nonnull instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(nonnull NSDictionary<NSString *, NSString *> *)environment;
 
 @end
-
-NS_ASSUME_NONNULL_END

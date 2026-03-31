@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBLocationCommands for Simulators.
  */
 @interface FBSimulatorLocationCommands : NSObject <FBLocationCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

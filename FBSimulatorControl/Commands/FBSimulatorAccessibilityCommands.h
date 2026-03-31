@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBSimulatorAccessibilityCommands.
  */
 @interface FBSimulatorAccessibilityCommands : NSObject <FBAccessibilityCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

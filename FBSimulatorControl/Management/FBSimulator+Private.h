@@ -7,19 +7,15 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 @protocol FBEventReporter;
 
 @interface FBSimulator ()
 
-@property (nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
-@property (nonatomic, readonly, strong) id forwarder;
+@property (nonnull, nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, strong) id forwarder;
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set;
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
-- (instancetype)initWithDevice:(id)device logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
++ (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;
+- (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
+- (nonnull instancetype)initWithDevice:(nonnull id)device logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
 @end
-
-NS_ASSUME_NONNULL_END

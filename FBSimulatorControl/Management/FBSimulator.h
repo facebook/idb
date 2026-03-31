@@ -19,8 +19,6 @@
 #import <FBSimulatorControl/FBSimulatorNotificationCommands.h>
 #import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 
 @class FBAppleSimctlCommandExecutor;
@@ -66,17 +64,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBSimulatorConfiguration representing this Simulator.
  */
-@property (nullable, nonatomic, readonly, copy) FBSimulatorConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, copy) FBSimulatorConfiguration *configuration;
 
 /**
  A command executor for simctl
  */
-@property (nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
+@property (nonnull, nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
 
 /**
  The directory path of the expected location of the CoreSimulator logs directory.
  */
-@property (nonatomic, readonly, copy) NSString *coreSimulatorLogsDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *coreSimulatorLogsDirectory;
 
 @end
 
@@ -93,7 +91,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param translator The AXPTranslator (or mock) to use for the dispatcher.
  @return A new dispatcher instance.
  */
-+ (id)createAccessibilityTranslationDispatcherWithTranslator:(id)translator;
++ (nonnull id)createAccessibilityTranslationDispatcherWithTranslator:(nonnull id)translator;
 
 /**
  Returns the translation dispatcher for accessibility operations.
@@ -101,8 +99,6 @@ NS_ASSUME_NONNULL_BEGIN
  Test doubles can override this to return a mock dispatcher.
  @return The translation dispatcher.
  */
-- (id)accessibilityTranslationDispatcher;
+- (nonnull id)accessibilityTranslationDispatcher;
 
 @end
-
-NS_ASSUME_NONNULL_END

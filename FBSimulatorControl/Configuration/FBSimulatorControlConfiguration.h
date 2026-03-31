@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Value object with the information required to create a Simulator Pool.
  */
@@ -24,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the reporter to report to.
  @return a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
++ (nonnull instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
 
 /**
  The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Logger to use for logging.
  */
-@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Event Reporter to use for reporting events.
@@ -51,8 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Location of the Default SimDeviceSet
  */
-+ (NSString *)defaultDeviceSetPath;
++ (nonnull NSString *)defaultDeviceSetPath;
 
 @end
-
-NS_ASSUME_NONNULL_END

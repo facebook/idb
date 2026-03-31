@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The implementation of the FBSimulatorXCTestCommands instance.
  */
 @interface FBSimulatorXCTestCommands : NSObject <FBXCTestExtendedCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

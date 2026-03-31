@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulatorSet;
 
 /**
@@ -24,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param set the Simulator Set to use.
  @return a new Strategy
  */
-+ (instancetype)strategyWithSet:(FBSimulatorSet *)set;
++ (nonnull instancetype)strategyWithSet:(nonnull FBSimulatorSet *)set;
 
 @end
-
-NS_ASSUME_NONNULL_END

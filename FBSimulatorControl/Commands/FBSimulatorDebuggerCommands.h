@@ -9,10 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBSimulatorDebuggerCommands : NSObject <FBDebuggerCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

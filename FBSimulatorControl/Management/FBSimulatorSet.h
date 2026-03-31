@@ -19,8 +19,6 @@
 @protocol FBControlCoreLogger;
 @protocol FBiOSTargetSetDelegate;
 
-NS_ASSUME_NONNULL_BEGIN
-
 #pragma mark - FBSimulatorSet
 
 /**
@@ -39,10 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param delegate the delegate notifies of any changes to the state of the simulators in the set
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param reporter the event reporter to report to.
- @param error any error that occurred during the creation of the pool.
  @return a new FBSimulatorSet.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(nullable id<FBiOSTargetSetDelegate>)delegate logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter error:(NSError **)error;
++ (nonnull instancetype)setWithConfiguration:(nonnull FBSimulatorControlConfiguration *)configuration deviceSet:(nonnull SimDeviceSet *)deviceSet delegate:(nullable id<FBiOSTargetSetDelegate>)delegate logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
 
 #pragma mark Querying
 
@@ -52,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param udid the UDID of the Simulator to fetch.
  @return an FBSimulator instance if one matches the provided udid, else nil
  */
-- (nullable FBSimulator *)simulatorWithUDID:(NSString *)udid;
+- (nullable FBSimulator *)simulatorWithUDID:(nonnull NSString *)udid;
 
 #pragma mark Creation Methods
 
@@ -62,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Configuration of the Device to Allocate. Must not be nil.
  @return a Future wrapping a created FBSimulator if one could be created.
  */
-- (FBFuture<FBSimulator *> *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
+- (nonnull FBFuture<FBSimulator *> *)createSimulatorWithConfiguration:(nonnull FBSimulatorConfiguration *)configuration;
 
 /**
  Clones and returns an FBSimulator that is cloned from an existing simulator.
@@ -71,12 +68,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param destinationSet the destination simulator set for the simulator. May be self.
  @return a Future wrapping a created FBSimulator if one could be cloned.
  */
-- (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator toDeviceSet:(FBSimulatorSet *)destinationSet;
+- (nonnull FBFuture<FBSimulator *> *)cloneSimulator:(nonnull FBSimulator *)simulator toDeviceSet:(nonnull FBSimulatorSet *)destinationSet;
 
 /**
  Finds and creates the Configurations for the missing 'Default Simulators' in the receiver.
  */
-- (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators;
+- (nonnull NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators;
 
 #pragma mark Desctructive Methods
 
@@ -87,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to shutdown. Must not be nil.
  @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
+- (nonnull FBFuture<NSNull *> *)shutdown:(nonnull FBSimulator *)simulator;
 
 /**
  Erases a Simulator in the Set.
@@ -96,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to erase. Must not be nil.
  @return an Future that resolves when the operation has completed.
  */
-- (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator;
+- (nonnull FBFuture<NSNull *> *)erase:(nonnull FBSimulator *)simulator;
 
 /**
  Deletes a Simulator in the Set.
@@ -105,21 +102,21 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to delete. Must not be nil.
  @return A future wrapping the delegate simulators.
  */
-- (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator;
+- (nonnull FBFuture<NSNull *> *)delete:(nonnull FBSimulator *)simulator;
 
 /**
  Performs a shutdown all of the Simulators that belong to the receiver.
 
  @return an Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)shutdownAll;
+- (nonnull FBFuture<NSNull *> *)shutdownAll;
 
 /**
  Delete all of the Simulators that belong to the receiver.
 
  @return A future wrapping the erased simulators udids.
  */
-- (FBFuture<NSNull *> *)deleteAll;
+- (nonnull FBFuture<NSNull *> *)deleteAll;
 
 /**
  The Logger to use.
@@ -134,28 +131,26 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns the configuration for the receiver.
  */
-@property (nonatomic, readonly, copy) FBSimulatorControlConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, copy) FBSimulatorControlConfiguration *configuration;
 
 /**
  The SimDeviceSet to that is owned by the receiver.
  */
-@property (nonatomic, readonly, strong) SimDeviceSet *deviceSet;
+@property (nonnull, nonatomic, readonly, strong) SimDeviceSet *deviceSet;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.
 */
-@property (nonatomic, readonly, copy) NSArray<FBSimulator *> *allSimulators;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBSimulator *> *allSimulators;
 
 /**
  The work queue that will be used by all simulators within the set.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  The async queue that will be used by all simulators within the set.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 @end
-
-NS_ASSUME_NONNULL_END

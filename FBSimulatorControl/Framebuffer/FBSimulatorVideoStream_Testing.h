@@ -10,24 +10,22 @@
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulatorVideoStream.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBVideoStreamConfiguration;
 
-typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
+typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef _Nonnull sampleBuffer, id _Nullable context, id<FBDataConsumer> _Nonnull consumer, id<FBControlCoreLogger> _Nonnull logger, NSError * _Nullable * _Nullable error);
 
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
 
-- (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration
-         compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties
-                           videoCodec:(CMVideoCodecType)videoCodec
-                             consumer:(id<FBDataConsumer>)consumer
-                   compressorCallback:(VTCompressionOutputCallback)compressorCallback
-                          frameWriter:(FBCompressedFrameWriter)frameWriter
-                   frameWriterContext:(id _Nullable)frameWriterContext
-                               logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithConfiguration:(nonnull FBVideoStreamConfiguration *)configuration
+                 compressionSessionProperties:(nonnull NSDictionary<NSString *, id> *)compressionSessionProperties
+                                   videoCodec:(CMVideoCodecType)videoCodec
+                                     consumer:(nonnull id<FBDataConsumer>)consumer
+                           compressorCallback:(VTCompressionOutputCallback _Nonnull)compressorCallback
+                                  frameWriter:(FBCompressedFrameWriter _Nonnull)frameWriter
+                           frameWriterContext:(id _Nullable)frameWriterContext
+                                       logger:(nonnull id<FBControlCoreLogger>)logger;
 
-- (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
+- (void)handleCompressedSampleBuffer:(CMSampleBufferRef _Nonnull)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
                            infoFlags:(VTEncodeInfoFlags)infoFlags;
 
@@ -37,11 +35,9 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 @property (nonatomic, assign) FBVideoEncoderStats stats;
 @property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
 @property (nonatomic, assign) FBPeriodicStatsTimer statsTimer;
-@property (nonatomic, readonly, assign) FBCompressedFrameWriter frameWriter;
+@property (nonnull, nonatomic, readonly, assign) FBCompressedFrameWriter frameWriter;
 @property (nullable, nonatomic, readonly, strong) id frameWriterContext;
-@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

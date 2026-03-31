@@ -43,11 +43,7 @@
                                                    deviceSet:deviceSet
                                                     delegate:nil
                                                       logger:[configuration.logger withName:@"simulator_set"]
-                                                    reporter:configuration.reporter
-                                                       error:&innerError];
-  if (!set) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
+                                                    reporter:configuration.reporter];
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration serviceContext:serviceContext set:set logger:configuration.logger];
 }
 

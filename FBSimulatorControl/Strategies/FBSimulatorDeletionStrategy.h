@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorSet;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to Delete.
  @return a future wrapping the array of deleted simulator uuids.
  */
-+ (FBFuture<NSNull *> *)delete:(FBSimulator *)simulator;
++ (nonnull FBFuture<NSNull *> *)delete:(nonnull FBSimulator *)simulator;
 
 /**
  Batch operation for deleting multipole simulators.
@@ -35,8 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulators the Simulators to Delete.
  @return a future wrapping the array of deleted simulator uuids.
  */
-+ (FBFuture<NSNull *> *)deleteAll:(NSArray<FBSimulator *> *)simulators;
++ (nonnull FBFuture<NSNull *> *)deleteAll:(nonnull NSArray<FBSimulator *> *)simulators;
 
 @end
-
-NS_ASSUME_NONNULL_END

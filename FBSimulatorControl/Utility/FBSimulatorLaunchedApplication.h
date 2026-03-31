@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBApplicationLaunchConfiguration;
 @class FBSimulator;
 
@@ -28,14 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param processIdentifier the process identifier to monitor.
  @return a Future that resolves when the process has exited. Exit status is unknown.
  */
-+ (FBFuture<NSNull *> *)terminationFutureForSimulator:(FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier;
++ (nonnull FBFuture<NSNull *> *)terminationFutureForSimulator:(nonnull FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier;
 
 #pragma mark Properties
 
 /**
  The Configuration Launched with.
  */
-@property (nonatomic, readonly, copy) FBApplicationLaunchConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, copy) FBApplicationLaunchConfiguration *configuration;
 
 @end
 
@@ -53,8 +51,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchFuture a future that resolves when the Application has finished launching.
  @return a new Application Operation.
  */
-+ (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture;
++ (nonnull FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(nonnull FBSimulator *)simulator configuration:(nonnull FBApplicationLaunchConfiguration *)configuration attachment:(nonnull FBProcessFileAttachment *)attachment launchFuture:(nonnull FBFuture<NSNumber *> *)launchFuture;
 
 @end
-
-NS_ASSUME_NONNULL_END
