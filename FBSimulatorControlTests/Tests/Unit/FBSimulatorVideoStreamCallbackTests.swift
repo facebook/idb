@@ -12,18 +12,18 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
   // MARK: - Helpers
 
   private func makeReadySampleBuffer() -> CMSampleBuffer {
-    CreateH264SampleBuffer().takeRetainedValue()
+    createH264SampleBuffer()
   }
 
   private func makeNotReadySampleBuffer() -> CMSampleBuffer {
-    CreateNotReadySampleBuffer().takeRetainedValue()
+    createNotReadySampleBuffer()
   }
 
   // MARK: - Tests
 
   func testWarmupFramesSuppressed() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send 5 not-ready buffers (simulates warmup)
     for _ in 0..<5 {
@@ -53,7 +53,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testStarvationDetectedDuringWarmup() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send 20 not-ready buffers without any success
     for _ in 0..<20 {
@@ -73,7 +73,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testPostWarmupStarvation() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // First, complete warmup with a ready buffer
     let ready = makeReadySampleBuffer()
@@ -98,7 +98,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testEncodeErrorLogged() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     HandleCompressedSampleBufferNullable(pusher, nil, -12345, VTEncodeInfoFlags())
 
@@ -114,7 +114,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testFrameDroppedCountedAsFailure() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     HandleCompressedSampleBufferNullable(pusher, nil, noErr, .frameDropped)
 
@@ -126,7 +126,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testDroppedFramesTriggersStarvationWarning() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send 20 dropped frames — should trigger starvation warning
     for _ in 0..<20 {
@@ -145,7 +145,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testNoWarmupMessageWhenFirstFrameSucceeds() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send a ready buffer immediately
     let ready = makeReadySampleBuffer()
@@ -161,7 +161,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testPeriodicStatsNotLoggedBeforeInterval() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send a few successful frames — stats interval hasn't elapsed
     for _ in 0..<3 {
@@ -176,7 +176,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testPeriodicStatsLoggedAfterInterval() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send one frame to initialize timing
     var ready = makeReadySampleBuffer()
@@ -201,7 +201,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testPeriodicStatsCountersAccurate() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // 3 successful writes
     for _ in 0..<3 {
@@ -247,7 +247,7 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
   func testPeriodicStatsDuringWarmup() {
     let logger = FBCapturingLogger()
-    let pusher = CreateTestVideoStreamPusher(logger)
+    let pusher = createTestVideoStreamPusher(logger)
 
     // Send 10 not-ready buffers (write failures during warmup)
     for _ in 0..<10 {

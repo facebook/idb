@@ -6,6 +6,9 @@
  */
 
 import Foundation
+import XCTest
+
+@testable import FBControlCore
 
 private class BundleFinder {}
 
@@ -35,5 +38,16 @@ enum TestFixtures {
   static let simulatorSystemLogPath = Bundle(for: BundleFinder.self)
     .path(forResource: "simulator_system", ofType: "log")!
 
+  static let treeJSONPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "tree", ofType: "json")!
+
   static let bundleResource = Bundle(for: BundleFinder.self).resourcePath!
+}
+
+extension XCTestCase {
+
+  /// Returns the process info for the current process (equivalent to launchctl).
+  func launchCtlProcess() -> FBProcessInfo? {
+    return FBProcessFetcher().processInfo(for: ProcessInfo.processInfo.processIdentifier)
+  }
 }
