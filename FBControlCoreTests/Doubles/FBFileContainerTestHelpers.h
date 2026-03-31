@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFileContainer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Helper to work around Swift's inability to handle ObjC classes and protocols
  that share the same name (FBFileContainer).
@@ -19,16 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBFileContainerTestHelpers : NSObject
 
-+ (FBFileContainerTestHelpers *)containerForBasePath:(NSString *)basePath;
-+ (FBFileContainerTestHelpers *)containerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping;
++ (nonnull FBFileContainerTestHelpers *)containerForBasePath:(nonnull NSString *)basePath;
++ (nonnull FBFileContainerTestHelpers *)containerForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
 
-- (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath;
-- (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath;
-- (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath;
-- (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath;
-- (FBFuture<NSNull *> *)remove:(NSString *)path;
-- (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path;
+- (nonnull FBFuture<NSNull *> *)copyFromHost:(nonnull NSString *)sourcePath toContainer:(nonnull NSString *)destinationPath;
+- (nonnull FBFuture<NSString *> *)copyFromContainer:(nonnull NSString *)sourcePath toHost:(nonnull NSString *)destinationPath;
+- (nonnull FBFuture<NSNull *> *)createDirectory:(nonnull NSString *)directoryPath;
+- (nonnull FBFuture<NSNull *> *)moveFrom:(nonnull NSString *)sourcePath to:(nonnull NSString *)destinationPath;
+- (nonnull FBFuture<NSNull *> *)remove:(nonnull NSString *)path;
+- (nonnull FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(nonnull NSString *)path;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -11,8 +11,6 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBDataConsumer;
 
 /**
@@ -26,15 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the filePath to write to.
  @return A Future, wrapping the recording session.
  */
-- (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath;
+- (nonnull FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(nonnull NSString *)filePath;
 
 /**
  Stops the Recording of Video.
 
  @return A Future, resolved when recording has stopped
  */
-- (FBFuture<NSNull *> *)stopRecording;
+- (nonnull FBFuture<NSNull *> *)stopRecording;
 
 @end
-
-NS_ASSUME_NONNULL_END

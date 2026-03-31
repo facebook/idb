@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 
 /**
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param requiredClassNames list of class names used to determin if framework load was successful
  @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
  */
-+ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
++ (nonnull instancetype)xcodeFrameworkWithRelativePath:(nonnull NSString *)relativePath requiredClassNames:(nonnull NSArray<NSString *> *)requiredClassNames;
 
 /**
   Creates and returns FBWeakFramework with the provided absolute path
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
   @param rootPermitted YES if this Framework can be loaded from the root user, NO otherwise.
   @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
 */
-+ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted;
++ (nonnull instancetype)frameworkWithPath:(nonnull NSString *)absolutePath requiredClassNames:(nonnull NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted;
 
 /**
  Loads framework by:
@@ -48,8 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)loadWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (BOOL)loadWithLogger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

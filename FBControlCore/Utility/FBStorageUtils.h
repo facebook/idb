@@ -11,8 +11,6 @@
 
 @class FBBundleDescriptor;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Group of conveince methods for dealing with directories
  */
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error Error set if there was not exactly one matching file
  @return A mapping of extensions to found files.
  */
-+ (nullable NSDictionary<NSString *, NSSet<NSURL *> *> *)bucketFilesWithExtensions:(NSSet<NSString *> *)extensions inDirectory:(NSURL *)directory error:(NSError **)error;
++ (nullable NSDictionary<NSString *, NSSet<NSURL *> *> *)bucketFilesWithExtensions:(nonnull NSSet<NSString *> *)extensions inDirectory:(nonnull NSURL *)directory error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Find a file with a given extension in the given directory.
@@ -41,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error Error set if there was not exactly one matching file
  @return NSURL * of the selected file
  */
-+ (nullable NSURL *)findFileWithExtension:(NSString *)extension atURL:(NSURL *)url error:(NSError **)error;
++ (nullable NSURL *)findFileWithExtension:(nonnull NSString *)extension atURL:(nonnull NSURL *)url error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Find files with a given extension in the given directory.
@@ -52,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error Error set if we couldnt read this directory
  @return Set of NSURL's to these files
  */
-+ (nullable NSSet<NSURL *> *)findFilesWithExtension:(NSString *)extension atURL:(NSURL *)url error:(NSError **)error;
++ (nullable NSSet<NSURL *> *)findFilesWithExtension:(nonnull NSString *)extension atURL:(nonnull NSURL *)url error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Finds a unique file within a directory.
@@ -60,14 +58,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param directory the directory to search in.
  @return a the URL if a unique file could be foudn.
  */
-+ (nullable NSURL *)findUniqueFileInDirectory:(NSURL *)directory error:(NSError **)error;
++ (nullable NSURL *)findUniqueFileInDirectory:(nonnull NSURL *)directory error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Obtains all files within a directory
 
  @return the list of file URLs in the directory, or nil on error.
  */
-+ (nullable NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error;
++ (nullable NSArray<NSURL *> *)filesInDirectory:(nonnull NSURL *)directory error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Attempt to find a bundle in a directory.
@@ -75,8 +73,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param directory the directory to search.
  @param error an error out for any error that occurs.
  */
-+ (nullable FBBundleDescriptor *)bundleInDirectory:(NSURL *)directory error:(NSError **)error;
++ (nullable FBBundleDescriptor *)bundleInDirectory:(nonnull NSURL *)directory error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

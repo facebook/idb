@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The Log Level.
  The Multiple Level exists so that composite loggers can decide whether to log individually.
@@ -35,7 +33,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param message the message to log.
  @return the receiver, for chaining.
  */
-- (id<FBControlCoreLogger>)log:(NSString *)message;
+- (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
 
 /**
  Logs a Message with the provided Format String.
@@ -43,22 +41,22 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param format the Format String for the Logger.
  @return the receiver, for chaining.
  */
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
+- (nonnull id<FBControlCoreLogger>)logFormat:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Returns the Info Logger variant.
  */
-- (id<FBControlCoreLogger>)info;
+- (nonnull id<FBControlCoreLogger>)info;
 
 /**
  Returns the Debug Logger variant.
  */
-- (id<FBControlCoreLogger>)debug;
+- (nonnull id<FBControlCoreLogger>)debug;
 
 /**
  Returns the Error Logger variant.
  */
-- (id<FBControlCoreLogger>)error;
+- (nonnull id<FBControlCoreLogger>)error;
 
 /**
  Returns a Logger for a named 'facility' or 'tag'.
@@ -66,7 +64,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param name the name to apply to all messages.
  @return a new Logger that will allows logging of messages on the provided queue.
  */
-- (id<FBControlCoreLogger>)withName:(NSString *)name;
+- (nonnull id<FBControlCoreLogger>)withName:(nonnull NSString *)name;
 
 /**
  Enables or Disables date formatting in the logger.
@@ -74,7 +72,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param enabled YES to enable date formatting, NO otherwise.
  @return a new Logger with the date formatting applied.
  */
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
+- (nonnull id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
 
 #pragma mark Properties
 
@@ -103,14 +101,14 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param loggers the loggers to log to.
  @return a composite logger.
  */
-- (instancetype)initWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
+- (nonnull instancetype)initWithLoggers:(nonnull NSArray<id<FBControlCoreLogger>> *)loggers;
 
 #pragma mark Properties
 
 /**
   The loggers to log to.
  */
-@property (nonatomic, readonly, strong) NSArray<id<FBControlCoreLogger>> *loggers;
+@property (nonnull, nonatomic, readonly, strong) NSArray<id<FBControlCoreLogger>> *loggers;
 
 @end
 
@@ -127,7 +125,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
  @return an FBControlCoreLogger instance.
  */
-+ (id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
++ (nonnull id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
 /**
  Compose multiple loggers into one.
@@ -135,7 +133,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param loggers the loggers to compose.
  @return the composite logger.
  */
-+ (FBCompositeLogger *)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
++ (nonnull FBCompositeLogger *)compositeLoggerWithLoggers:(nonnull NSArray<id<FBControlCoreLogger>> *)loggers;
 
 /**
  Log to a Consumer.
@@ -143,7 +141,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param consumer the consumer to write data to.
  @return a logger instance.
  */
-+ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer;
++ (nonnull id<FBControlCoreLogger>)loggerToConsumer:(nonnull id<FBDataConsumer>)consumer;
 
 /**
  Log to a File Descriptor.
@@ -152,7 +150,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a logger instance.
  */
-+ (id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
++ (nonnull id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Strips the newline and returns a nullable string if the string shouldn't be logged.
@@ -163,5 +161,3 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 + (nullable NSString *)loggableStringLine:(nullable NSString *)string;
 
 @end
-
-NS_ASSUME_NONNULL_END

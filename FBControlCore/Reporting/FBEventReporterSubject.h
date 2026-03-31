@@ -7,15 +7,13 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 typedef NSString *FBEventType NS_STRING_ENUM;
 
-extern FBEventType const FBEventTypeStarted;
-extern FBEventType const FBEventTypeEnded;
-extern FBEventType const FBEventTypeDiscrete;
-extern FBEventType const FBEventTypeSuccess;
-extern FBEventType const FBEventTypeFailure;
+extern FBEventType _Nonnull const FBEventTypeStarted;
+extern FBEventType _Nonnull const FBEventTypeEnded;
+extern FBEventType _Nonnull const FBEventTypeDiscrete;
+extern FBEventType _Nonnull const FBEventTypeSuccess;
+extern FBEventType _Nonnull const FBEventTypeFailure;
 
 /**
  A value type that holds data about a discrete event in time.
@@ -29,7 +27,7 @@ extern FBEventType const FBEventTypeFailure;
  @param eventName the event name
  @return a scuba sample
  */
-+ (instancetype)subjectForEvent:(NSString *)eventName;
++ (nonnull instancetype)subjectForEvent:(nonnull NSString *)eventName;
 
 /**
  Construct a sample for a started call.
@@ -38,7 +36,7 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call
  @return a scuba sample
  */
-+ (instancetype)subjectForStartedCall:(NSString *)call arguments:(NSArray<NSString *> *)arguments;
++ (nonnull instancetype)subjectForStartedCall:(nonnull NSString *)call arguments:(nonnull NSArray<NSString *> *)arguments;
 
 /**
  Construct a sample for a successful call.
@@ -49,7 +47,7 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call.
  @return a scuba sample
  */
-+ (instancetype)subjectForSuccessfulCall:(NSString *)call duration:(NSTimeInterval)duration size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments;
++ (nonnull instancetype)subjectForSuccessfulCall:(nonnull NSString *)call duration:(NSTimeInterval)duration size:(nullable NSNumber *)size arguments:(nonnull NSArray<NSString *> *)arguments;
 
 /**
  Construct a sample for a failing call.
@@ -61,19 +59,19 @@ extern FBEventType const FBEventTypeFailure;
  @param arguments the arguments to the invoked call
  @return a scuba sample
  */
-+ (instancetype)subjectForFailingCall:(NSString *)call duration:(NSTimeInterval)duration message:(NSString *)message size:(nullable NSNumber *)size arguments:(NSArray<NSString *> *)arguments;
++ (nonnull instancetype)subjectForFailingCall:(nonnull NSString *)call duration:(NSTimeInterval)duration message:(nonnull NSString *)message size:(nullable NSNumber *)size arguments:(nonnull NSArray<NSString *> *)arguments;
 
 #pragma mark Properties
 
 /**
- The Event Name, if present
+ The Event Name.
  */
-@property (nullable, nonatomic, readonly, copy) NSString *eventName;
+@property (nonnull, nonatomic, readonly, copy) NSString *eventName;
 
 /**
- The Event Type, if present
+ The Event Type.
  */
-@property (nullable, nonatomic, readonly, copy) FBEventType eventType;
+@property (nonnull, nonatomic, readonly, copy) FBEventType eventType;
 
 /**
  A JSON Serializable form of the arguments
@@ -96,5 +94,3 @@ extern FBEventType const FBEventTypeFailure;
 @property (nullable, nonatomic, readonly, copy) NSString *message;
 
 @end
-
-NS_ASSUME_NONNULL_END

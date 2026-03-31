@@ -239,7 +239,7 @@
 
 #pragma mark FBConsumableBuffer
 
-- (nullable NSData *)consumeCurrentData
+- (nonnull NSData *)consumeCurrentData
 {
   @synchronized(self) {
     NSData *data = self.data;

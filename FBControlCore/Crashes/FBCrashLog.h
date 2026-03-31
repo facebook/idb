@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBCrashLog;
 
 @protocol FBControlCoreLogger;
@@ -34,27 +32,27 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  The "Unique" name of the crash log.
  This is taken to be the the last path component of the crash log path.
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
 
 /**
  The Path of the Crash Log.
  */
-@property (nonatomic, readonly, copy) NSString *crashPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *crashPath;
 
 /**
  The identifier of the Crash Log.
  */
-@property (nonatomic, readonly, copy) NSString *identifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *identifier;
 
 /**
  The Path of the Executable Image.
  */
-@property (nonatomic, readonly, copy) NSString *executablePath;
+@property (nonnull, nonatomic, readonly, copy) NSString *executablePath;
 
 /**
  The Name of the Crashed Process.
  */
-@property (nonatomic, readonly, copy) NSString *processName;
+@property (nonnull, nonatomic, readonly, copy) NSString *processName;
 
 /**
  The Process Identifier of the Crashed Process/
@@ -64,7 +62,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  The Process Name of the Crashed Process's parent.
  */
-@property (nonatomic, readonly, copy) NSString *parentProcessName;
+@property (nonnull, nonatomic, readonly, copy) NSString *parentProcessName;
 
 /**
  The Process Identifier of the Crashed Process's parent.
@@ -74,7 +72,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  The date of the crash
  */
-@property (nonatomic, readonly, copy) NSDate *date;
+@property (nonnull, nonatomic, readonly, copy) NSDate *date;
 
 /**
  The Process Type of the Crash Log
@@ -96,7 +94,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  The Diagnostics Report Paths for the User.
  */
-@property (class, nonatomic, readonly, copy) NSArray<NSString *> *diagnosticReportsPaths;
+@property (class, nonnull, nonatomic, readonly, copy) NSArray<NSString *> *diagnosticReportsPaths;
 
 #pragma mark Initializers
 
@@ -108,7 +106,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param error an error out for any error that occurs.
  @return a Crash Log Info on success, nil otherwise.
  */
-+ (nullable instancetype)fromCrashLogAtPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)fromCrashLogAtPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Public Methods
 
@@ -118,7 +116,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param data the data to attempt to parse.
  @return YES if it is parsable, NO otherwise.
  */
-+ (BOOL)isParsableCrashLog:(NSData *)data;
++ (BOOL)isParsableCrashLog:(nonnull NSData *)data;
 
 #pragma mark Bulk Collection
 
@@ -128,7 +126,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param date the first date to search from.
  @return an Array of all found Crash Log info.
  */
-+ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(nonnull NSDate *)date logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Contents
 
@@ -138,12 +136,12 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param error an error out for any error that occurs.
  @return the crash log if one could be read.
  */
-- (nullable FBCrashLog *)obtainCrashLogWithError:(NSError **)error;
+- (nullable FBCrashLog *)obtainCrashLogWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Reads the contents of the crash log on disk, as a string.
  */
-- (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
+- (nullable NSString *)loadRawCrashLogStringWithError:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Predicates
 
@@ -153,7 +151,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param processID the Process ID of the Crash to Collect.
  @return a NSPredicate.
  */
-+ (NSPredicate *)predicateForCrashLogsWithProcessID:(pid_t)processID;
++ (nonnull NSPredicate *)predicateForCrashLogsWithProcessID:(pid_t)processID;
 
 /**
  A Predicate for FBCrashLogInfo that passes for all Crash Logs that are newer than the given date.
@@ -161,7 +159,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param date the date.
  @return a NSPredicate.
  */
-+ (NSPredicate *)predicateNewerThanDate:(NSDate *)date;
++ (nonnull NSPredicate *)predicateNewerThanDate:(nonnull NSDate *)date;
 
 /**
  A Predicate for FBCrashLogInfo that passes for all Crash Logs that are older than the given date.
@@ -169,7 +167,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param date the date.
  @return a NSPredicate.
  */
-+ (NSPredicate *)predicateOlderThanDate:(NSDate *)date;
++ (nonnull NSPredicate *)predicateOlderThanDate:(nonnull NSDate *)date;
 
 /**
  A Predicate for FBCrashLogInfo that matches a identifier.
@@ -177,7 +175,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param identifier the identifier to use.
  @return an NSPredicate
  */
-+ (NSPredicate *)predicateForIdentifier:(NSString *)identifier;
++ (nonnull NSPredicate *)predicateForIdentifier:(nonnull NSString *)identifier;
 
 /**
  A Predicate for FBCrashLogInfo that matches a name.
@@ -185,7 +183,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param name the names use.
  @return an NSPredicate
  */
-+ (NSPredicate *)predicateForName:(NSString *)name;
++ (nonnull NSPredicate *)predicateForName:(nonnull NSString *)name;
 
 /**
  A Predicate that searches for a substring in the executable path.
@@ -193,7 +191,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param contains the substring to search for.
  @return an NSPredicate
  */
-+ (NSPredicate *)predicateForExecutablePathContains:(NSString *)contains;
++ (nonnull NSPredicate *)predicateForExecutablePathContains:(nonnull NSString *)contains;
 
 @end
 
@@ -207,16 +205,14 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  Crash info.
  */
-@property (nonatomic, readonly, copy) FBCrashLogInfo *info;
+@property (nonnull, nonatomic, readonly, copy) FBCrashLogInfo *info;
 
 /**
  Crash contents.
  */
-@property (nonatomic, readonly, copy) NSString *contents;
+@property (nonnull, nonatomic, readonly, copy) NSString *contents;
 
 /// Provides date formatted to parse date strings from Apple crash logs
-+ (NSDateFormatter *)dateFormatter;
++ (nonnull NSDateFormatter *)dateFormatter;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -11,8 +11,6 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Defines an interface for lifecycle state-related commands.
  */
@@ -26,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param state the state to wait on
  @return A future that resolves when it has transitioned to the given state.
  */
-- (FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state;
+- (nonnull FBFuture<NSNull *> *)resolveState:(FBiOSTargetState)state;
 
 /**
  Asynchronously waits to leave the provided state.
@@ -34,8 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param state the state to wait to leave
  @return A future that resolves when it has transitioned away from the given state.
  */
-- (FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state;
+- (nonnull FBFuture<NSNull *> *)resolveLeavesState:(FBiOSTargetState)state;
 
 @end
-
-NS_ASSUME_NONNULL_END

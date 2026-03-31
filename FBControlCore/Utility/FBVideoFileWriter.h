@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class AVCaptureSession;
 
 /**
@@ -28,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @param error an error out for any error that occurs.
  */
-+ (nullable instancetype)writerWithSession:(AVCaptureSession *)session filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)writerWithSession:(nonnull AVCaptureSession *)session filePath:(nonnull NSString *)filePath logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Public Methods
 
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when encoding has started.
  */
-- (FBFuture<NSNull *> *)startRecording;
+- (nonnull FBFuture<NSNull *> *)startRecording;
 
 /**
  Stops the Video Encoder.
@@ -45,15 +43,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when encoding has stopped.
  */
-- (FBFuture<NSNull *> *)stopRecording;
+- (nonnull FBFuture<NSNull *> *)stopRecording;
 
 /**
  A Future that resolves when the recording has completed.
 
  @return A future that resolves when encoding has stopped.
  */
-- (FBFuture<NSNull *> *)completed;
+- (nonnull FBFuture<NSNull *> *)completed;
 
 @end
-
-NS_ASSUME_NONNULL_END

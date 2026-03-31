@@ -590,8 +590,8 @@ final class FBControlCoreTransientTests: XCTestCase {
 
     let copy = config.copy() as! FBTestLaunchConfiguration
 
-    XCTAssertEqual(copy.testBundle?.name, config.testBundle?.name)
-    XCTAssertEqual(copy.testBundle?.identifier, config.testBundle?.identifier)
+    XCTAssertEqual(copy.testBundle.name, config.testBundle.name)
+    XCTAssertEqual(copy.testBundle.identifier, config.testBundle.identifier)
     XCTAssertEqual(copy.timeout, config.timeout)
     XCTAssertEqual(copy.shouldInitializeUITesting, config.shouldInitializeUITesting)
   }

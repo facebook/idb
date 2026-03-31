@@ -10,14 +10,12 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An enum for Screenshot Formats.
  */
 typedef NSString *FBScreenshotFormat NS_STRING_ENUM;
-extern FBScreenshotFormat const FBScreenshotFormatJPEG;
-extern FBScreenshotFormat const FBScreenshotFormatPNG;
+extern FBScreenshotFormat _Nonnull const FBScreenshotFormatJPEG;
+extern FBScreenshotFormat _Nonnull const FBScreenshotFormatPNG;
 
 /**
  Defines the protocol for taking screenshots.
@@ -30,8 +28,6 @@ extern FBScreenshotFormat const FBScreenshotFormatPNG;
  @param format the format of the data.
  @return A Future, wrapping Data of the provided format.
  */
-- (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format;
+- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format;
 
 @end
-
-NS_ASSUME_NONNULL_END

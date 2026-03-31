@@ -9,12 +9,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The environment key for an override of the test shims directory.
  */
-extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
+extern NSString * _Nonnull const FBXCTestShimDirectoryEnvironmentOverride;
 
 /**
  A Configuration object for the location of the Test Shims.
@@ -27,7 +25,7 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  @param logger to use for logging.
  @return a future wrapping the Shim Configuration.
  */
-+ (FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs a Shim Configuration from the default base directory.
@@ -35,7 +33,7 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  @param logger to use for logging.
  @return a future wrapping the Shim Configuration.
  */
-+ (FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBXCTestShimConfiguration *> *)defaultShimConfigurationWithLogger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Constructs a Shim Configuration from the given base directory.
@@ -44,7 +42,7 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  @param logger to use for logging.
  @return a future wrapping the Shim Configuration.
  */
-+ (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(nonnull NSString *)directory logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  The Designated Intializer.
@@ -52,7 +50,7 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  @param iosSimulatorTestShim The Path to he iOS Simulator Test Shim.
  @param macOSTestShimPath The Path to the macOS Test Shim.
  */
-- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath;
+- (nonnull instancetype)initWithiOSSimulatorTestShimPath:(nonnull NSString *)iosSimulatorTestShim macOSTestShimPath:(nonnull NSString *)macOSTestShimPath;
 
 #pragma mark Helpers
 
@@ -63,20 +61,18 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
  @param logger to use for logging.
  @return a Path to the Shim Configuration.
  */
-+ (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSString *> *)findShimDirectoryOnQueue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
 /**
  The location of the shim used to run & list iOS Simulator Tests.
  */
-@property (nonatomic, readonly, copy) NSString *iOSSimulatorTestShimPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *iOSSimulatorTestShimPath;
 
 /**
  The location of the shim used to run & list macOS Tests.
  */
-@property (nonatomic, readonly, copy) NSString *macOSTestShimPath;
+@property (nonnull, nonatomic, readonly, copy) NSString *macOSTestShimPath;
 
 @end
-
-NS_ASSUME_NONNULL_END

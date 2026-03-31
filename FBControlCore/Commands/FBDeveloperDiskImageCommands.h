@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDeveloperDiskImage;
 
 @protocol FBDeveloperDiskImageCommands <NSObject, FBiOSTargetCommand>
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future wrapping list of disk images..
  */
-- (FBFuture<NSArray<FBDeveloperDiskImage *> *> *)mountedDiskImages;
+- (nonnull FBFuture<NSArray<FBDeveloperDiskImage *> *> *)mountedDiskImages;
 
 /**
  Mounts the provided disk image.
@@ -31,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param diskImage the image to mount
  @return a Future wrapping the mounted image.
  */
-- (FBFuture<FBDeveloperDiskImage *> *)mountDiskImage:(FBDeveloperDiskImage *)diskImage;
+- (nonnull FBFuture<FBDeveloperDiskImage *> *)mountDiskImage:(nonnull FBDeveloperDiskImage *)diskImage;
 
 /**
  Unmounts the provided disk image.
@@ -39,14 +37,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param diskImage the image to unmount.
  @return a Future when the image is unmounted.
  */
-- (FBFuture<NSNull *> *)unmountDiskImage:(FBDeveloperDiskImage *)diskImage;
+- (nonnull FBFuture<NSNull *> *)unmountDiskImage:(nonnull FBDeveloperDiskImage *)diskImage;
 
 /**
  Returns all of the found, mountable disk images for the target.
 
  @return the array of disk images.
  */
-- (NSArray<FBDeveloperDiskImage *> *)mountableDiskImages;
+- (nonnull NSArray<FBDeveloperDiskImage *> *)mountableDiskImages;
 
 #pragma mark Developer Disk Images
 
@@ -55,8 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future wrapping the mounted image.
  */
-- (FBFuture<FBDeveloperDiskImage *> *)ensureDeveloperDiskImageIsMounted;
+- (nonnull FBFuture<FBDeveloperDiskImage *> *)ensureDeveloperDiskImageIsMounted;
 
 @end
-
-NS_ASSUME_NONNULL_END

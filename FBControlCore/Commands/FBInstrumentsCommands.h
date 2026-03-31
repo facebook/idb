@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBInstrumentsConfiguration;
 @class FBInstrumentsOperation;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return A future that resolves with the instruments operation.
  */
-- (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<FBInstrumentsOperation *> *)startInstruments:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -36,8 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBInstrumentsCommands : NSObject <FBInstrumentsCommands>
 
-@property (nonatomic, readonly, weak) id<FBiOSTarget> target;
+@property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
 
 @end
-
-NS_ASSUME_NONNULL_END

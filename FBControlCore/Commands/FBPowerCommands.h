@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Defines an interface for power related commands.
  */
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the target has shut down.
  */
-- (FBFuture<NSNull *> *)shutdown;
+- (nonnull FBFuture<NSNull *> *)shutdown;
 
 /**
  Reboots the target.
@@ -31,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when the target has shut rebooted.
  */
-- (FBFuture<NSNull *> *)reboot;
+- (nonnull FBFuture<NSNull *> *)reboot;
 
 @end
-
-NS_ASSUME_NONNULL_END

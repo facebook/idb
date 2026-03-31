@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBXCTestShimConfiguration;
 
 /**
@@ -21,43 +19,43 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Create and return a new `xctrace record` configuration with the provided parameters
  */
-+ (instancetype)RecordWithTemplateName:(NSString *)templateName
-                             timeLimit:(NSTimeInterval)timeLimit
-                               package:(nullable NSString *)package
-                          allProcesses:(BOOL)allProcesses
-                       processToAttach:(nullable NSString *)processToAttach
-                       processToLaunch:(nullable NSString *)processToLaunch
-                            launchArgs:(nullable NSArray<NSString *> *)launchArgs
-                           targetStdin:(nullable NSString *)targetStdin
-                          targetStdout:(nullable NSString *)targetStdout
-                            processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
-                                  shim:(nullable FBXCTestShimConfiguration *)shim;
++ (nonnull instancetype)RecordWithTemplateName:(nonnull NSString *)templateName
+                                     timeLimit:(NSTimeInterval)timeLimit
+                                       package:(nullable NSString *)package
+                                  allProcesses:(BOOL)allProcesses
+                               processToAttach:(nullable NSString *)processToAttach
+                               processToLaunch:(nullable NSString *)processToLaunch
+                                    launchArgs:(nullable NSArray<NSString *> *)launchArgs
+                                   targetStdin:(nullable NSString *)targetStdin
+                                  targetStdout:(nullable NSString *)targetStdout
+                                    processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
+                                          shim:(nullable FBXCTestShimConfiguration *)shim;
 
-- (instancetype)initWithTemplateName:(NSString *)templateName
-                           timeLimit:(NSTimeInterval)timeLimit
-                             package:(nullable NSString *)package
-                        allProcesses:(BOOL)allProcesses
-                     processToAttach:(nullable NSString *)processToAttach
-                     processToLaunch:(nullable NSString *)processToLaunch
-                          launchArgs:(nullable NSArray<NSString *> *)launchArgs
-                         targetStdin:(nullable NSString *)targetStdin
-                        targetStdout:(nullable NSString *)targetStdout
-                          processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
-                                shim:(nullable FBXCTestShimConfiguration *)shim;
+- (nonnull instancetype)initWithTemplateName:(nonnull NSString *)templateName
+                                   timeLimit:(NSTimeInterval)timeLimit
+                                     package:(nullable NSString *)package
+                                allProcesses:(BOOL)allProcesses
+                             processToAttach:(nullable NSString *)processToAttach
+                             processToLaunch:(nullable NSString *)processToLaunch
+                                  launchArgs:(nullable NSArray<NSString *> *)launchArgs
+                                 targetStdin:(nullable NSString *)targetStdin
+                                targetStdout:(nullable NSString *)targetStdout
+                                  processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
+                                        shim:(nullable FBXCTestShimConfiguration *)shim;
 /**
  Add shim to xctrace
 
  @param shim shim to be applied to xctrace
  @return new xctrace record config with shim added
  */
-- (instancetype)withShim:(FBXCTestShimConfiguration *)shim;
+- (nonnull instancetype)withShim:(nonnull FBXCTestShimConfiguration *)shim;
 
 #pragma mark Properties
 
 /**
  Trace template name or path for recording
  */
-@property (nonatomic, readonly, copy) NSString *templateName;
+@property (nonnull, nonatomic, readonly, copy) NSString *templateName;
 
 /**
  Limit recording time to the specified value
@@ -110,5 +108,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly, copy) FBXCTestShimConfiguration *shim;
 
 @end
-
-NS_ASSUME_NONNULL_END

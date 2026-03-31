@@ -11,8 +11,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBCrashLogInfo;
 @class FBCrashLogStore;
 
@@ -28,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param useCache YES to use the cached crash logs, NO to re-fetch. Pass YES when significant events have happened.
  @return a Future that resolves with crash logs.
  */
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(NSPredicate *)predicate useCache:(BOOL)useCache;
+- (nonnull FBFuture<NSArray<FBCrashLogInfo *> *> *)crashes:(nonnull NSPredicate *)predicate useCache:(BOOL)useCache;
 
 /**
  Notifies when a Crash Log becomes available for a given predicate.
@@ -36,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to match against.
  @return a Future that will resolve when the first predicate matching the crash becomes available.
  */
-- (FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(NSPredicate *)predicate;
+- (nonnull FBFuture<FBCrashLogInfo *> *)notifyOfCrash:(nonnull NSPredicate *)predicate;
 
 /**
  Prunes all of the crashes that may be cached that match the given predicate.
@@ -44,15 +42,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to match against.
  @return a Future that will resolve with the pruned crash logs.
  */
-- (FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(NSPredicate *)predicate;
+- (nonnull FBFuture<NSArray<FBCrashLogInfo *> *> *)pruneCrashes:(nonnull NSPredicate *)predicate;
 
 /**
  Returns a "File View" of the crash logs.
 
  @return a Future context that resolves with the file commands.
  */
-- (FBFutureContext<id<FBFileContainer>> *)crashLogFiles;
+- (nonnull FBFutureContext<id<FBFileContainer>> *)crashLogFiles;
 
 @end
-
-NS_ASSUME_NONNULL_END

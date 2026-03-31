@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBEventReporter;
 
 /**
@@ -31,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger FBControlCoreLogger to use.
  @return wrapper instance, that proxies the underlying wrapped object.
  */
-+ (id)wrap:(id)wrappedObject simplifiedNaming:(BOOL)simplifiedNaming eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull id)wrap:(nonnull id)wrappedObject simplifiedNaming:(BOOL)simplifiedNaming eventReporter:(nullable id<FBEventReporter>)eventReporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

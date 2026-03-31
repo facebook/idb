@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBEventReporterSubject;
 
 /**
@@ -21,20 +19,18 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param subject the subject to report.
  */
-- (void)report:(FBEventReporterSubject *)subject;
+- (void)report:(nonnull FBEventReporterSubject *)subject;
 
 /**
  Add metadata to attach to each report.
 
  @param metadata Metadata to append
  */
-- (void)addMetadata:(NSDictionary<NSString *, NSString *> *)metadata;
+- (void)addMetadata:(nonnull NSDictionary<NSString *, NSString *> *)metadata;
 
 /**
  Gets the total metadata.
  */
-@property (nonatomic, readonly, strong) NSDictionary<NSString *, NSString *> *metadata;
+@property (nonnull, nonatomic, readonly, strong) NSDictionary<NSString *, NSString *> *metadata;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBVideoStreamConfiguration;
 @protocol FBVideoStream;
 
@@ -23,8 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the stream configuration.
  @return A future that resolves with the Video Stream.
  */
-- (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration;
+- (nonnull FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(nonnull FBVideoStreamConfiguration *)configuration;
 
 @end
-
-NS_ASSUME_NONNULL_END

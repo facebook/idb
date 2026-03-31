@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An enum representing states. The values here are not guaranteed to be stable over time and should not be serialized.
  FBiOSTargetStateString is guaranteed to be stable over time.
@@ -39,14 +37,12 @@ typedef NS_ENUM(NSUInteger, FBiOSTargetType) {
  String representations of FBiOSTargetState.
  */
 typedef NSString *FBiOSTargetStateString NS_STRING_ENUM;
-extern FBiOSTargetStateString const FBiOSTargetStateStringCreating;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShutdown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooting;
-extern FBiOSTargetStateString const FBiOSTargetStateStringBooted;
-extern FBiOSTargetStateString const FBiOSTargetStateStringShuttingDown;
-extern FBiOSTargetStateString const FBiOSTargetStateStringDFU;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRecovery;
-extern FBiOSTargetStateString const FBiOSTargetStateStringRestoreOS;
-extern FBiOSTargetStateString const FBiOSTargetStateStringUnknown;
-
-NS_ASSUME_NONNULL_END
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringCreating;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringShutdown;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringBooting;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringBooted;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringShuttingDown;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringDFU;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringRecovery;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringRestoreOS;
+extern FBiOSTargetStateString _Nonnull const FBiOSTargetStateStringUnknown;

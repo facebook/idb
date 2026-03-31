@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands for simulating memory events.
  */
@@ -22,8 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)simulateMemoryWarning;
+- (nonnull FBFuture<NSNull *> *)simulateMemoryWarning;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -12,8 +12,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBSocketServerDelegate;
 
 /**
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param delegate the delegate to use.
  @return a new socket reader.
  */
-+ (instancetype)socketServerOnPort:(in_port_t)port delegate:(id<FBSocketServerDelegate>)delegate;
++ (nonnull instancetype)socketServerOnPort:(in_port_t)port delegate:(nonnull id<FBSocketServerDelegate>)delegate;
 
 #pragma mark Properties
 
@@ -46,21 +44,21 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when listening has started.
  */
-- (FBFuture<NSNull *> *)startListening;
+- (nonnull FBFuture<NSNull *> *)startListening;
 
 /**
  Stop listening to the socket
 
  @return A future that resolves when listening has ended.
  */
-- (FBFuture<NSNull *> *)stopListening;
+- (nonnull FBFuture<NSNull *> *)stopListening;
 
 /**
  Starts the socket server, managed by a context manager
 
  @return a FBFutureContext that will stop listening when the context is torn down.
  */
-- (FBFutureContext<NSNull *> *)startListeningContext;
+- (nonnull FBFutureContext<NSNull *> *)startListeningContext;
 
 @end
 
@@ -78,14 +76,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param address the IP Address of the connected client.
  @param fileDescriptor the file descriptor of the connected socket.
  */
-- (void)socketServer:(FBSocketServer *)server clientConnected:(struct in6_addr)address fileDescriptor:(int)fileDescriptor;
+- (void)socketServer:(nonnull FBSocketServer *)server clientConnected:(struct in6_addr)address fileDescriptor:(int)fileDescriptor;
 
 /**
  The Queue on which the Delegate will be called.
  This may be a serial or a concurrent queue.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
-
-NS_ASSUME_NONNULL_END

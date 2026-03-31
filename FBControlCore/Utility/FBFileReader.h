@@ -10,8 +10,6 @@
 #import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The File Reader States
  */
@@ -36,7 +34,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
  @return a Future that resolves when the channel is setup.
  */
-- (FBFuture<NSNull *> *)startReading;
+- (nonnull FBFuture<NSNull *> *)startReading;
 
 /**
  Stops reading the file.
@@ -47,7 +45,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
  @return a Future that resolves when the consumption of the file has finished. The value of the future is a zero error code on success, or an non-zero code on some read error.
  */
-- (FBFuture<NSNumber *> *)stopReading;
+- (nonnull FBFuture<NSNumber *> *)stopReading;
 
 /**
  Waits for the reader to finish reading, backing off to a forcing of stopping reading in the event of a timeout.
@@ -55,7 +53,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
  @param timeout the timeout to wait before calling `stopReading`
  */
-- (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout;
+- (nonnull FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout;
 
 #pragma mark Properties
 
@@ -71,7 +69,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  This will not cancel any in-flight reading and can instead be used to observe when reading has finished.
  Cancelling the future will cause reading to be cancelled.
  */
-@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *finishedReading;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *finishedReading;
 
 @end
 
@@ -92,7 +90,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param logger the logger to use.
  @return a file reader.
  */
-+ (instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(nonnull id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a reader of dispatch data from a file descriptor.
@@ -103,7 +101,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param logger the logger to use.
  @return a File Reader.
  */
-+ (instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(nonnull id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Creates a reader of NSData from a file at a path on the filesystem.
@@ -114,8 +112,6 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  @param logger the logger to use.
  @return a File Reader, that is available when the underlying file handle has been opened.
  */
-+ (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBFileReader *> *)readerWithFilePath:(nonnull NSString *)filePath consumer:(nonnull id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

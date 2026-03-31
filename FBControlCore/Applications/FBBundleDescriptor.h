@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBinaryDescriptor;
 @class FBCodesignProvider;
 
@@ -32,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param binary the executable image contained within the bundle. May be be nil.
  @return a new FBBundleDescriptor instance.
  */
-- (instancetype)initWithName:(NSString *)name identifier:(NSString *)identifier path:(NSString *)path binary:(nullable FBBinaryDescriptor *)binary;
+- (nonnull instancetype)initWithName:(nonnull NSString *)name identifier:(nonnull NSString *)identifier path:(nonnull NSString *)path binary:(nullable FBBinaryDescriptor *)binary;
 
 /**
  An initializer for FBBundleDescriptor that obtains information by inflating via NSBundle.
@@ -42,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a new FBBundleDescriptor instance if one could be constructed, nil otherwise.
  */
-+ (nullable instancetype)bundleFromPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)bundleFromPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 /**
  An initializer for FBBundleDescriptor that obtains information by inflating via NSBundle.
@@ -52,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a new FBBundleDescriptor instance if one could be constructed, nil otherwise.
  */
-+ (nullable instancetype)bundleWithFallbackIdentifierFromPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)bundleWithFallbackIdentifierFromPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Public Methods
 
@@ -67,24 +65,24 @@ NS_ASSUME_NONNULL_BEGIN
  @param queue the queue to do work on.
  @return a Future that resolves with the relocation replacements.
  */
-- (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(FBCodesignProvider *)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
+- (nonnull FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(nonnull FBCodesignProvider *)codesign logger:(nonnull id<FBControlCoreLogger>)logger queue:(nonnull dispatch_queue_t)queue;
 
 #pragma mark Properties
 
 /**
  The name of the bundle (CFBundleName).
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
 
 /**
  The identifier of the bundle (CFBundleIdentifier).
  */
-@property (nonatomic, readonly, copy) NSString *identifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *identifier;
 
 /**
  The path of the bundle on the filesystem.
  */
-@property (nonatomic, readonly, copy) NSString *path;
+@property (nonnull, nonatomic, readonly, copy) NSString *path;
 
 /**
  The executable image contained within the bundle.
@@ -92,5 +90,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly, copy) FBBinaryDescriptor *binary;
 
 @end
-
-NS_ASSUME_NONNULL_END

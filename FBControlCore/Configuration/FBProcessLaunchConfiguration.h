@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBProcessIO.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An abstract value object for launching both regular and applications processes.
  */
@@ -19,17 +17,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *arguments;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  A NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Will not be nil.
  */
-@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 /**
  The Process Output Configuration.
  */
-@property (nonatomic, readonly, strong) FBProcessIO<StdInType, StdOutType, StdErrType> *io;
+@property (nonnull, nonatomic, readonly, strong) FBProcessIO<StdInType, StdOutType, StdErrType> *io;
 
 /**
  The Designated Initializer.
@@ -39,8 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param io the IO object.
  @return a new FBProcessLaunchConfiguration Instance.
  */
-- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO<StdInType, StdOutType, StdErrType> *)io;
+- (nonnull instancetype)initWithArguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment io:(nonnull FBProcessIO<StdInType, StdOutType, StdErrType> *)io;
 
 @end
-
-NS_ASSUME_NONNULL_END

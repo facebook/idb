@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Helpers for information about of Collections.
  */
@@ -19,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param array the Array to construct a description for.
  */
-+ (NSString *)oneLineDescriptionFromArray:(NSArray *)array;
++ (nonnull NSString *)oneLineDescriptionFromArray:(nonnull NSArray *)array;
 
 /**
  Creates a One-Line Array description from the array, with a given keyPath.
@@ -27,14 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param array the Array to construct a description for.
  @param keyPath the Key Path, to obtain a String description from.
  */
-+ (NSString *)oneLineDescriptionFromArray:(NSArray *)array atKeyPath:(NSString *)keyPath;
++ (nonnull NSString *)oneLineDescriptionFromArray:(nonnull NSArray *)array atKeyPath:(nonnull NSString *)keyPath;
 
 /**
  Creates a One-Line Array description from the Dictionary.
 
  @param dictionary the Dictionary to construct a description for.
  */
-+ (NSString *)oneLineDescriptionFromDictionary:(NSDictionary *)dictionary;
++ (nonnull NSString *)oneLineDescriptionFromDictionary:(nonnull NSDictionary *)dictionary;
 
 /**
  Confirms that the array is homogeneous, with all elements being of a given class.
@@ -43,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param cls the class that all elements in the array should belong to.
  @return YES if homogeneous, NO otherwise.
  */
-+ (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls;
++ (BOOL)isArrayHeterogeneous:(nonnull NSArray *)array withClass:(nonnull Class)cls;
 
 /**
  Confirms that the dictionary is homogeneous, with all keys and values being of the given classes.
@@ -53,8 +51,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param valueCls the class that all values in the dictionary should be belong to.
  @return YES if homogeneous, NO otherwise.
  */
-+ (BOOL)isDictionaryHeterogeneous:(NSDictionary *)dictionary keyClass:(Class)keyCls valueClass:(Class)valueCls;
++ (BOOL)isDictionaryHeterogeneous:(nonnull NSDictionary *)dictionary keyClass:(nonnull Class)keyCls valueClass:(nonnull Class)valueCls;
 
 @end
-
-NS_ASSUME_NONNULL_END

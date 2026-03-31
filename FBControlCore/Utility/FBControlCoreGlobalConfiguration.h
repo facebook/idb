@@ -9,17 +9,15 @@
 
 @protocol FBControlCoreLogger;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Environment Variable: 'FBCONTROLCORE_LOGGING' to enable logging of Informational Messages to stderr.
  */
-extern NSString *const FBControlCoreStderrLogging;
+extern NSString * _Nonnull const FBControlCoreStderrLogging;
 
 /**
  An Environment Variable: 'FBCONTROLCORE_DEBUG_LOGGING' to enable logging of Debug Messages to stderr.
  */
-extern NSString *const FBControlCoreDebugLogging;
+extern NSString * _Nonnull const FBControlCoreDebugLogging;
 
 /**
  Environment Globals & other derived constants.
@@ -45,12 +43,12 @@ extern NSString *const FBControlCoreDebugLogging;
 /**
  A Description of the Current Configuration.
  */
-@property (class, nonatomic, readonly, copy) NSString *description;
+@property (class, nonnull, nonatomic, readonly, copy) NSString *description;
 
 /**
  The default logger to send log messages to.
  */
-@property (class, nonatomic, readwrite, strong) id<FBControlCoreLogger> defaultLogger;
+@property (class, nonnull, nonatomic, readwrite, strong) id<FBControlCoreLogger> defaultLogger;
 
 /**
  Confirm the existence of code signatures, where relevant.
@@ -60,8 +58,6 @@ extern NSString *const FBControlCoreDebugLogging;
 /**
  Environment in this process that should be passed down to child processes.
  */
-@property (class, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *safeSubprocessEnvironment;
+@property (class, nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *safeSubprocessEnvironment;
 
 @end
-
-NS_ASSUME_NONNULL_END

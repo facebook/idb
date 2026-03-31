@@ -11,8 +11,6 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetOperation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 
 /**
@@ -23,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The commands to execute within lldb to start a debug server.
  */
-@property (nonatomic, readonly, copy) NSArray<NSString *> *lldbBootstrapCommands;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *lldbBootstrapCommands;
 
 @end
 
@@ -40,8 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param port the TCP port to bind on the debug server on.
  @return a future that resolves with a debug server.
  */
-- (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port;
+- (nonnull FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(nonnull FBBundleDescriptor *)application port:(in_port_t)port;
 
 @end
-
-NS_ASSUME_NONNULL_END

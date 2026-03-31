@@ -10,8 +10,6 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands for simulating push notifications.
  */
@@ -24,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param jsonPayload notification data, see reference https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)sendPushNotificationForBundleID:(NSString *)bundleID jsonPayload:(NSString *)jsonPayload;
+- (nonnull FBFuture<NSNull *> *)sendPushNotificationForBundleID:(nonnull NSString *)bundleID jsonPayload:(nonnull NSString *)jsonPayload;
 
 @end
-
-NS_ASSUME_NONNULL_END

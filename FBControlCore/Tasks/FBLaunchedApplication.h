@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An in-memory representation of a launched application.
  This is distinct from FBSubprocess, as exit codes for the process are not available.
@@ -21,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Bundle Idenfifer of the Launched Application.
  */
-@property (nonatomic, readonly, copy) NSString *bundleID;
+@property (nonnull, nonatomic, readonly, copy) NSString *bundleID;
 
 /**
  The Process Idenfifer of the Launched Application.
@@ -33,8 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
  Cancelling this Future will cause the application to terminate.
  Exit code/Signal status of the launched process is not available.
  */
-@property (nonatomic, readonly, strong) FBFuture<NSNull *> *applicationTerminated;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *applicationTerminated;
 
 @end
-
-NS_ASSUME_NONNULL_END

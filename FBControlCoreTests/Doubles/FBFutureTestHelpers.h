@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Helpers to work around Swift limitations with ObjC APIs.
  - futureWithFutures: is NS_SWIFT_UNAVAILABLE
@@ -18,9 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBFutureTestHelpers : NSObject
 
-+ (FBFuture<NSArray *> *)combineFutures:(NSArray *)futures;
-+ (FBFuture *)applyTimeout:(NSTimeInterval)timeout description:(NSString *)description toFuture:(FBFuture *)future;
++ (nonnull FBFuture<NSArray *> *)combineFutures:(nonnull NSArray *)futures;
++ (nonnull FBFuture *)applyTimeout:(NSTimeInterval)timeout description:(nonnull NSString *)description toFuture:(nonnull FBFuture *)future;
 
 @end
-
-NS_ASSUME_NONNULL_END

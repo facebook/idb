@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBProcessStream.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A result of "attaching" to an IO object, realized as file descriptors.
  */
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  Detach from all the streams.
  This may be called multiple times, the underlying streams will only detach once per instance.
  */
-- (FBFuture<NSNull *> *)detach;
+- (nonnull FBFuture<NSNull *> *)detach;
 
 @end
 
@@ -60,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
  Detach from all the streams.
  This may be called multiple times, the underlying streams will only detach once per instance.
  */
-- (FBFuture<NSNull *> *)detach;
+- (nonnull FBFuture<NSNull *> *)detach;
 
 @end
 
@@ -79,12 +77,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErr the stderr.
  @return a new FBProcessIO instance.
  */
-- (instancetype)initWithStdIn:(nullable FBProcessInput<StdInType> *)stdIn stdOut:(nullable FBProcessOutput<StdOutType> *)stdOut stdErr:(nullable FBProcessOutput<StdErrType> *)stdErr;
+- (nonnull instancetype)initWithStdIn:(nullable FBProcessInput<StdInType> *)stdIn stdOut:(nullable FBProcessOutput<StdOutType> *)stdOut stdErr:(nullable FBProcessOutput<StdErrType> *)stdErr;
 
 /**
  An IO object that accepts no input and returns no output.
  */
-+ (instancetype)outputToDevNull;
++ (nonnull instancetype)outputToDevNull;
 
 #pragma mark Properties
 
@@ -106,7 +104,7 @@ The FBProcessOutput for stdout.
 /**
  The queue to use.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 #pragma mark Methods
 
@@ -116,15 +114,13 @@ The FBProcessOutput for stdout.
  If any of the stream attachments error, then any succeeding attachments will detach.
  This should only be called once. Calling attach more than once per instance will fail.
  */
-- (FBFuture<FBProcessIOAttachment *> *)attach;
+- (nonnull FBFuture<FBProcessIOAttachment *> *)attach;
 
 /**
  Attach to all the streams, returning the composite attachment for file paths.
  Will error if any of the stream attachments error.
  If any of the stream attachments error, then any succeeding attachments will detach.
  */
-- (FBFuture<FBProcessFileAttachment *> *)attachViaFile;
+- (nonnull FBFuture<FBProcessFileAttachment *> *)attachViaFile;
 
 @end
-
-NS_ASSUME_NONNULL_END

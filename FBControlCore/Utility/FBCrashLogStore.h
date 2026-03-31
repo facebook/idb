@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBCrashLogInfo;
 @protocol FBControlCoreLogger;
 
@@ -28,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a store for the device.
  */
-+ (instancetype)storeForDirectories:(NSArray<NSString *> *)directories logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)storeForDirectories:(nonnull NSArray<NSString *> *)directories logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Ingestion
 
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return all the crash logs that have just been ingested.
  */
-- (NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory;
+- (nonnull NSArray<FBCrashLogInfo *> *)ingestAllExistingInDirectory;
 
 /**
  Ingest the given path.
@@ -45,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param path the path to ingest.
  @return the crash log info if it exists.
  */
-- (nullable FBCrashLogInfo *)ingestCrashLogAtPath:(NSString *)path;
+- (nullable FBCrashLogInfo *)ingestCrashLogAtPath:(nonnull NSString *)path;
 
 /**
  Ingest the given data.
@@ -54,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name the name of the crash log.
  @return the crash log info if it exists.
  */
-- (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name;
+- (nullable FBCrashLogInfo *)ingestCrashLogData:(nonnull NSData *)data name:(nonnull NSString *)name;
 
 /**
  Removes the crash log at at a given path.
@@ -62,7 +60,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param path the path of the crash log to remove
  @return the crash log info if one exists.
  */
-- (nullable FBCrashLogInfo *)removeCrashLogAtPath:(NSString *)path;
+- (nullable FBCrashLogInfo *)removeCrashLogAtPath:(nonnull NSString *)path;
 
 #pragma mark Fetching
 
@@ -72,14 +70,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param name the name of the crash log.
  @return the Crash Log Info, if present.
  */
-- (nullable FBCrashLogInfo *)ingestedCrashLogWithName:(NSString *)name;
+- (nullable FBCrashLogInfo *)ingestedCrashLogWithName:(nonnull NSString *)name;
 
 /**
  Returns all of the ingested crash logs.
 
  @return all of the ingested crash logs.
  */
-- (NSArray<FBCrashLogInfo *> *)allIngestedCrashLogs;
+- (nonnull NSArray<FBCrashLogInfo *> *)allIngestedCrashLogs;
 
 /**
  A future that resolves the next time a crash log becomes available that matches the given predicate.
@@ -87,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to use.
  @return a Future that resolves when the first crash log matching the predicate becomes available.
  */
-- (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate;
+- (nonnull FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(nonnull NSPredicate *)predicate;
 
 /**
  Obtains all of the ingested logs that match the given predicate.
@@ -95,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to use.
  @return an array of all the ingested crash logs.
  */
-- (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate;
+- (nonnull NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(nonnull NSPredicate *)predicate;
 
 /**
  Prunes all of the ingested logs that match the given predicate.
@@ -103,8 +101,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param predicate the predicate to use.
  @return an array of all the pruned crash logs.
  */
-- (NSArray<FBCrashLogInfo *> *)pruneCrashLogsMatchingPredicate:(NSPredicate *)predicate;
+- (nonnull NSArray<FBCrashLogInfo *> *)pruneCrashLogsMatchingPredicate:(nonnull NSPredicate *)predicate;
 
 @end
-
-NS_ASSUME_NONNULL_END

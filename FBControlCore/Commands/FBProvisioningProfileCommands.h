@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands Related to Provisioning Profiles.
  */
@@ -19,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves with an array of provisioning profile information.
  */
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)allProvisioningProfiles;
+- (nonnull FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)allProvisioningProfiles;
 
 /**
  Removes a Provisioning Profile.
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param uuid the uuid of the profile to remove.
  @return A future that resolves the details of the removed profile
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)removeProvisioningProfile:(NSString *)uuid;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)removeProvisioningProfile:(nonnull NSString *)uuid;
 
 /**
  Installs a provisioning profile.
@@ -35,8 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param profileData the data of the provisioning profile to install
  @return A future that resolves with installed provisioning profile.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)installProvisioningProfile:(NSData *)profileData;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)installProvisioningProfile:(nonnull NSData *)profileData;
 
 @end
-
-NS_ASSUME_NONNULL_END

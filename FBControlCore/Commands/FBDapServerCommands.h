@@ -10,15 +10,12 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBSubprocess.h>
 
-NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInput;
 
 @protocol FBDataConsumer;
 
 @protocol FBDapServerCommand <NSObject, FBiOSTargetCommand>
 
-- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *)launchDapServer:dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
+- (nonnull FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *)launchDapServer:dapPath stdIn:(nonnull FBProcessInput *)stdIn stdOut:(nonnull id<FBDataConsumer>)stdOut;
 
 @end
-
-NS_ASSUME_NONNULL_END
