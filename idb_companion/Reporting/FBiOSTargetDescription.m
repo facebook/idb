@@ -9,7 +9,7 @@
 
 @interface FBiOSTargetDescription ()
 
-@property (nonatomic, readonly, copy) FBDeviceModel model;
+@property (nullable, nonatomic, readonly, copy) FBDeviceModel model;
 @end
 
 @implementation FBiOSTargetDescription
@@ -24,7 +24,7 @@
 @synthesize uniqueIdentifier = _uniqueIdentifier;
 @synthesize architectures = _architectures;
 
-- (instancetype)initWithTarget:(id<FBiOSTargetInfo>)target
+- (nullable instancetype)initWithTarget:(nonnull id<FBiOSTargetInfo>)target
 {
   self = [super init];
   if (!self) {
@@ -42,7 +42,7 @@
   return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone
+- (nonnull id)copyWithZone:(nullable NSZone *)zone
 {
   return self;
 }
