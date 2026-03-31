@@ -41,8 +41,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
             return [[FBApplicationLaunchConfiguration alloc]
                     initWithBundleID:bundleID
                     bundleName:nil
-                    arguments:arguments ?: @[]
-                    environment:environment ?: @{}
+                    arguments:arguments
+                    environment:environment
                     waitForDebugger:waitForDebugger
                     io:io
                     launchMode:FBApplicationLaunchModeRelaunchIfRunning];
@@ -284,8 +284,8 @@ static FBFuture<FBApplicationLaunchConfiguration *> *BuildAppLaunchConfig(NSStri
   FBApplicationLaunchConfiguration *launchConfig = [[FBApplicationLaunchConfiguration alloc]
                                                     initWithBundleID:@"not.used.bundleId"
                                                     bundleName:nil
-                                                    arguments:request.arguments ?: @[]
-                                                    environment:request.environment ?: @{}
+                                                    arguments:request.arguments
+                                                    environment:request.environment
                                                     waitForDebugger:request.waitForDebugger
                                                     io:[[FBProcessIO alloc] initWithStdIn:nil stdOut:nil stdErr:nil]
                                                     launchMode:FBApplicationLaunchModeFailIfRunning];

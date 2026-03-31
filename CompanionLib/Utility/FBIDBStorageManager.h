@@ -290,7 +290,7 @@ extern NSString *const IdbFrameworksFolder;
  @param arguments the arguments to interpolate.
  @return an array with the replacement defined
  */
-- (nullable NSArray<NSString *> *)interpolateArgumentReplacements:(nullable NSArray<NSString *> *)arguments;
+- (NSArray<NSString *> *)interpolateArgumentReplacements:(nullable NSArray<NSString *> *)arguments;
 
 /**
  Cleans all storage

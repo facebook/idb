@@ -33,7 +33,7 @@ extension IDBXCTestReporter {
       self.resultBundlePath = legacy.resultBundlePath ?? ""
       self.coverageConfiguration = legacy.coverageConfiguration
       self.logDirectoryPath = legacy.logDirectoryPath
-      self.binariesPath = legacy.binariesPaths ?? []
+      self.binariesPath = legacy.binariesPaths
       self.reportAttachments = legacy.reportAttachments
       self.reportResultBundle = legacy.reportResultBundle
     }
