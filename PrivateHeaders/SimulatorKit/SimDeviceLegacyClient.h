@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 #import <SimulatorApp/Indigo.h>
 

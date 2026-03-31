@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <AccessibilityPlatformTranslation/CDStructures.h>
+
 @class NSData, NSString;
 
 @interface AXPTranslationObject : NSObject <NSCopying, NSSecureCoding>

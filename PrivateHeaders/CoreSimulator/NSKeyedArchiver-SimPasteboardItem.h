@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSKeyedArchiver.h>
+#import <Foundation/Foundation.h>
 
 @interface NSKeyedArchiver (SimPasteboardItem)
 + (id)sim_securelyArchivedDataWithRootObject:(id)arg1;

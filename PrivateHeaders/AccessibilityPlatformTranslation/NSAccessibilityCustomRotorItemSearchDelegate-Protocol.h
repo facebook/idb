@@ -5,10 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <AccessibilityPlatformTranslation/NSObject.h>
-
-@class NSAccessibilityCustomRotor, NSAccessibilityCustomRotorItemResult, NSAccessibilityCustomRotorSearchParameters;
-
-@protocol NSAccessibilityCustomRotorItemSearchDelegate <NSObject>
-- (NSAccessibilityCustomRotorItemResult *)rotor:(NSAccessibilityCustomRotor *)arg1 resultForSearchParameters:(NSAccessibilityCustomRotorSearchParameters *)arg2;
-@end
+#import <AppKit/AppKit.h>

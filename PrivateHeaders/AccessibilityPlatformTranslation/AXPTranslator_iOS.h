@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <AccessibilityPlatformTranslation/AXPTranslator.h>
+@protocol OS_dispatch_queue;
 
 @class AXUIElement;
 

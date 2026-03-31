@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <AccessibilityPlatformTranslation/CDStructures.h>
 #import <AccessibilityPlatformTranslation/NSCopying.h>
 #import <AccessibilityPlatformTranslation/NSObject.h>
 

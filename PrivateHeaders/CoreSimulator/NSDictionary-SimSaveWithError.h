@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSDictionary.h>
+#import <Foundation/Foundation.h>
 
 @interface NSDictionary (SimSaveWithError)
 - (BOOL)sim_writeAtomicallyToFile:(id)arg1 error:(id *)arg2;

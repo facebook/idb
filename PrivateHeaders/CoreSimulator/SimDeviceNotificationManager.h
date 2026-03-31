@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
+@protocol OS_dispatch_queue;
 
 __attribute__((visibility("hidden")))
 @interface SimDeviceNotificationManager : NSObject <SimDeviceNotifier>

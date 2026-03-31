@@ -5,8 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreSimulator/NSCoding-Protocol.h>
-
-@protocol NSSecureCoding <NSCoding>
-+ (BOOL)supportsSecureCoding;
-@end
+#import <Foundation/Foundation.h>

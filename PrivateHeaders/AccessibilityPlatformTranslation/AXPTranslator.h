@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <AccessibilityPlatformTranslation/CDStructures.h>
+
 @class AXPTranslationObject;
 @class AXPTranslatorResponse;
 @class AXPTranslatorRequest;

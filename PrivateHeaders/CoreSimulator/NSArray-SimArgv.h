@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSArray.h>
+#import <Foundation/Foundation.h>
 
 @interface NSArray (SimArgv)
 - (void)sim_freeArgv:(char **)arg1;
