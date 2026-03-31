@@ -9,9 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorDapServerCommand : NSObject <FBDapServerCommand, FBiOSTargetCommand>
 
 @end
-
-NS_ASSUME_NONNULL_END

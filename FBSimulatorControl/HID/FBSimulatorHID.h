@@ -12,8 +12,6 @@
 
 @class FBSimulator;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
  The IndigoHIDRegistrationPort is essential for backboard, otherwise UI events aren't synthesized properly.
@@ -30,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to create a IndigoHIDRegistrationPort for.
  @return a FBSimulatorHID if successful, nil otherwise.
  */
-+ (FBFuture<FBSimulatorHID *> *)hidForSimulator:(FBSimulator *)simulator;
++ (nonnull FBFuture<FBSimulatorHID *> *)hidForSimulator:(nonnull FBSimulator *)simulator;
 
 #pragma mark Lifecycle
 
@@ -41,14 +39,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when connected.
  */
-- (FBFuture<NSNull *> *)connect;
+- (nonnull FBFuture<NSNull *> *)connect;
 
 /**
  Disconnects from the remote HID.
 
  @return A future that resolves when disconnected
  */
-- (FBFuture<NSNull *> *)disconnect;
+- (nonnull FBFuture<NSNull *> *)disconnect;
 
 #pragma mark HID Manipulation
 
@@ -58,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param data the payload data
  @return A future that resolves when the event has been sent.
  */
-- (FBFuture<NSNull *> *)sendEvent:(NSData *)data;
+- (nonnull FBFuture<NSNull *> *)sendEvent:(nonnull NSData *)data;
 
 /**
  Sends the event payload, synchronously.
@@ -68,19 +66,19 @@ NS_ASSUME_NONNULL_BEGIN
  @param completionQueue the queue to call back on
  @param completion the completion block to invoke
  */
-- (void)sendIndigoMessageData:(NSData *)data completionQueue:(dispatch_queue_t)completionQueue completion:(void (^)(NSError * _Nullable))completion;
+- (void)sendIndigoMessageData:(nonnull NSData *)data completionQueue:(nonnull dispatch_queue_t)completionQueue completion:(nonnull void (^)(NSError * _Nullable))completion;
 
 #pragma mark Properties
 
 /**
  The Queue on which messages are sent to the HID Server.
  */
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  The Indigo event translator.
  */
-@property (nonatomic, readonly, strong) FBSimulatorIndigoHID *indigo;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorIndigoHID *indigo;
 
 /**
  The dimensions of the main screen.
@@ -93,5 +91,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, assign) float mainScreenScale;
 
 @end
-
-NS_ASSUME_NONNULL_END

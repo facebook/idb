@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBFramebuffer;
 @class FBVideoStreamConfiguration;
 @protocol FBDataConsumer;
@@ -61,9 +59,9 @@ typedef struct {
  @param framebuffer the framebuffer to get frames from.
  @param configuration the configuration to use.
  @param logger the logger to log to.
- @return a new Bitmap Stream object, nil on failure
+ @return a new Bitmap Stream object.
  */
-+ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)streamWithFramebuffer:(nonnull FBFramebuffer *)framebuffer configuration:(nonnull FBVideoStreamConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Constructs a Bitmap Stream with edge insets for overlay content.
@@ -73,9 +71,9 @@ typedef struct {
  @param configuration the configuration to use.
  @param edgeInsets the number of output pixels to add on each edge for overlay content.
  @param logger the logger to log to.
- @return a new Bitmap Stream object, nil on failure
+ @return a new Bitmap Stream object.
  */
-+ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)streamWithFramebuffer:(nonnull FBFramebuffer *)framebuffer configuration:(nonnull FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Builds the compression session properties dictionary for a given configuration and caller-provided properties.
@@ -85,7 +83,7 @@ typedef struct {
  @param callerProperties additional properties from the stream subclass (e.g. FPS-related keys for eager streams).
  @return an immutable dictionary of compression session properties.
  */
-+ (NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(FBVideoStreamConfiguration *)configuration callerProperties:(NSDictionary<NSString *, id> *)callerProperties;
++ (nonnull NSDictionary<NSString *, id> *)compressionSessionPropertiesForConfiguration:(nonnull FBVideoStreamConfiguration *)configuration callerProperties:(nonnull NSDictionary<NSString *, id> *)callerProperties;
 
 #pragma mark Overlay
 
@@ -111,7 +109,7 @@ typedef struct {
 
  @param text the chapter/marker label text.
  */
-- (void)writeTimedMetadata:(NSString *)text;
+- (void)writeTimedMetadata:(nonnull NSString *)text;
 
 #pragma mark Screenshot
 
@@ -121,7 +119,7 @@ typedef struct {
  @param error an error out for any error that occurs.
  @return PNG data if successful, nil otherwise.
  */
-- (nullable NSData *)captureCompositedScreenshotWithError:(NSError **)error;
+- (nullable NSData *)captureCompositedScreenshotWithError:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Stats
 
@@ -152,5 +150,3 @@ typedef struct {
 @property (nonatomic, readonly) CFTimeInterval framebufferStatsStartTime;
 
 @end
-
-NS_ASSUME_NONNULL_END

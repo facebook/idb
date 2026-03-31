@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBBundleDescriptor;
 @class FBSimulator;
 
@@ -25,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param enabled YES if enabled, NO if disabled.
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
+- (nonnull FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
 
 /**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
@@ -36,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param domain preference domain - optional
  @return a Future that resolves when successful.
  */
-- (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
+- (nonnull FBFuture<NSNull *> *)setPreference:(nonnull NSString *)name value:(nonnull NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
 
 /**
  Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
@@ -45,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param domain domain to search - optional
  @return a Future that resolves with the current preference value
  */
-- (FBFuture<NSString *> *)getCurrentPreference:(NSString *)name domain:(nullable NSString *)domain;
+- (nonnull FBFuture<NSString *> *)getCurrentPreference:(nonnull NSString *)name domain:(nullable NSString *)domain;
 
 /**
  Grants access to the provided services.
@@ -53,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs the bundle ids to provide access to.
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
+- (nonnull FBFuture<NSNull *> *)grantAccess:(nonnull NSSet<NSString *> *)bundleIDs toServices:(nonnull NSSet<FBTargetSettingsService> *)services;
 
 /**
  Revokes access to the provided services.
@@ -61,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleIDs the bundle ids to revoke access to.
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
+- (nonnull FBFuture<NSNull *> *)revokeAccess:(nonnull NSSet<NSString *> *)bundleIDs toServices:(nonnull NSSet<FBTargetSettingsService> *)services;
 
 /**
  Grants access to the provided deeplink scheme.
@@ -70,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param scheme the deeplink scheme to allow
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme;
+- (nonnull FBFuture<NSNull *> *)grantAccess:(nonnull NSSet<NSString *> *)bundleIDs toDeeplink:(nonnull NSString *)scheme;
 
 /**
  Revokes access to the provided deeplink scheme.
@@ -79,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param scheme the deeplink scheme
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme;
+- (nonnull FBFuture<NSNull *> *)revokeAccess:(nonnull NSSet<NSString *> *)bundleIDs toDeeplink:(nonnull NSString *)scheme;
 
 /**
  Updates the contacts on the target, using the provided local databases.
@@ -88,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param databaseDirectory the directory containing AddressBook.sqlitedb and AddressBookImages.sqlitedb paths.
  */
-- (FBFuture<NSNull *> *)updateContacts:(NSString *)databaseDirectory;
+- (nonnull FBFuture<NSNull *> *)updateContacts:(nonnull NSString *)databaseDirectory;
 
 /**
  Clears all contacts from the simulator using the CNContacts framework.
@@ -96,7 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when all contacts have been deleted.
  */
-- (FBFuture<NSNull *> *)clearContacts;
+- (nonnull FBFuture<NSNull *> *)clearContacts;
 
 /**
  Clears all photos from the simulator using the Photos framework.
@@ -104,7 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when all photos have been deleted.
  */
-- (FBFuture<NSNull *> *)clearPhotos;
+- (nonnull FBFuture<NSNull *> *)clearPhotos;
 
 @end
 
@@ -114,5 +112,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorSettingsCommands : NSObject <FBSimulatorSettingsCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

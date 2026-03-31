@@ -12,12 +12,10 @@
 
 @class FBSimulator;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The Error Domain for FBSimulatorControl.
  */
-extern NSString *const FBSimulatorControlErrorDomain;
+extern NSString * _Nonnull const FBSimulatorControlErrorDomain;
 
 /**
  Helpers for constructing Errors representing errors in FBSimulatorControl & adding additional diagnosis.
@@ -25,5 +23,3 @@ extern NSString *const FBSimulatorControlErrorDomain;
 @interface FBSimulatorError : FBControlCoreError
 
 @end
-
-NS_ASSUME_NONNULL_END

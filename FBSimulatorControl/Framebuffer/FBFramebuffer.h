@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class IOSurface;
 
 /**
@@ -57,7 +55,7 @@ typedef struct {
  @param error an error out for any error that occurs.
  @return a new FBFramebuffer if one could be constructed, nil on error.
  */
-+ (nullable instancetype)mainScreenSurfaceForSimulator:(FBSimulator *)simulator logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)mainScreenSurfaceForSimulator:(nonnull FBSimulator *)simulator logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 #pragma mark Public Methods
 
@@ -69,7 +67,7 @@ typedef struct {
  @param queue the queue to notify the consumer on.
  @return A Surface is one is *immediately* available. This is not mutually exclusive the consumer being called on a queue.
  */
-- (nullable IOSurface *)attachConsumer:(id<FBFramebufferConsumer>)consumer onQueue:(dispatch_queue_t)queue;
+- (nullable IOSurface *)attachConsumer:(nonnull id<FBFramebufferConsumer>)consumer onQueue:(nonnull dispatch_queue_t)queue;
 
 /**
  Detaches a Consumer.
@@ -77,7 +75,7 @@ typedef struct {
 
  @param consumer the consumer to attach.
  */
-- (void)detachConsumer:(id<FBFramebufferConsumer>)consumer;
+- (void)detachConsumer:(nonnull id<FBFramebufferConsumer>)consumer;
 
 /**
  Queries if the consumer is attached.
@@ -85,7 +83,7 @@ typedef struct {
  @param consumer the consumer to use.
  @return YES if attached, NO otherwise.
  */
-- (BOOL)isConsumerAttached:(id<FBFramebufferConsumer>)consumer;
+- (BOOL)isConsumerAttached:(nonnull id<FBFramebufferConsumer>)consumer;
 
 #pragma mark Stats
 
@@ -100,5 +98,3 @@ typedef struct {
 @property (nonatomic, readonly) CFTimeInterval statsStartTime;
 
 @end
-
-NS_ASSUME_NONNULL_END

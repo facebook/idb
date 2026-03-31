@@ -8,8 +8,6 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Enumeration for the Direction of the Event.
  */
@@ -40,7 +38,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param error an error out for any error that occurs in construction.
  @return a new FBSimulatorIndigoHID instance if successful, nil otherwise.
  */
-+ (nullable instancetype)simulatorKitHIDWithError:(NSError **)error;
++ (nullable instancetype)simulatorKitHIDWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  A Keyboard Event.
@@ -49,7 +47,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param keycode the Key Code to send. The keycodes are 'Hardware Independent' as described in <HIToolbox/Events.h>.
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode;
+- (nonnull NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode;
 
 /**
  A Button Event.
@@ -58,7 +56,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param button the button.
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
+- (nonnull NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
 
 /**
  A Touch Event.
@@ -69,8 +67,6 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param y the Y-Coordinate pixels
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
+- (nonnull NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
 
 @end
-
-NS_ASSUME_NONNULL_END

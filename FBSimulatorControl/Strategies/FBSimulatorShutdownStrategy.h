@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 /**
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when successful.
  */
-+ (FBFuture<NSNull *> *)shutdown:(FBSimulator *)simulator;
++ (nonnull FBFuture<NSNull *> *)shutdown:(nonnull FBSimulator *)simulator;
 
 /**
  Batch operation for shutting down multiple simulators
@@ -45,8 +43,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulators the simulators to shutdown.
  @return A future that resolves when successful.
  */
-+ (FBFuture<NSNull *> *)shutdownAll:(NSArray<FBSimulator *> *)simulators;
++ (nonnull FBFuture<NSNull *> *)shutdownAll:(nonnull NSArray<FBSimulator *> *)simulators;
 
 @end
-
-NS_ASSUME_NONNULL_END

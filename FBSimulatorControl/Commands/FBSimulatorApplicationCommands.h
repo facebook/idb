@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 
 @protocol FBSimulatorApplicationCommands <NSObject>
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurws
  @return the FBInstalledApplication if successful, nil on failure
  */
-- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(nonnull NSString *)bundleID error:(NSError * _Nullable * _Nullable)error;
 
 @end
 
@@ -32,5 +30,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands, FBSimulatorApplicationCommands, FBiOSTargetCommand>
 
 @end
-
-NS_ASSUME_NONNULL_END

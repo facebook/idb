@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAppleSimctlCommandExecutor;
 @protocol FBControlCoreLogger;
 
@@ -27,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger object to log events to, may be nil.
  @return a new FBSimulatorVideo instance.
  */
-+ (instancetype)videoWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)videoWithSimctlExecutor:(nonnull FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(nonnull NSString *)filePath logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -36,15 +34,13 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A Future that resolves when recording has started.
  */
-- (FBFuture<NSNull *> *)startRecording;
+- (nonnull FBFuture<NSNull *> *)startRecording;
 
 /**
  Stops recording video.
 
  @return A Future that resolves when recording has stopped.
  */
-- (FBFuture<NSNull *> *)stopRecording;
+- (nonnull FBFuture<NSNull *> *)stopRecording;
 
 @end
-
-NS_ASSUME_NONNULL_END

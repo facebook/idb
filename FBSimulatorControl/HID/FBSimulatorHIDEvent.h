@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 extern double const DEFAULT_SWIPE_DELTA;
 
 @class FBSimulatorHID;
@@ -27,7 +25,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param hid the hid to perform on.
  @return A future that resolves when the event has been sent.
  */
-- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid NS_SWIFT_NAME(sendOn(hid:));
+- (nonnull FBFuture<NSNull *> *)performOnHID:(nonnull FBSimulatorHID *)hid NS_SWIFT_NAME(sendOn(hid:));
 
 @end
 
@@ -42,7 +40,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param hid the hid to perform on.
  @return the data produced by the reciever.
  */
-- (NSData *)payloadForHID:(FBSimulatorHID *)hid;
+- (nonnull NSData *)payloadForHID:(nonnull FBSimulatorHID *)hid;
 
 @end
 
@@ -66,7 +64,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  The subevents, may be a FBSimulatorHIDEventPayload or a FBSimulatorHIDEventDelay.
  */
-@property (nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEvent>> *events;
+@property (nonnull, nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEvent>> *events;
 
 @end
 
@@ -86,7 +84,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param y the y-coordinate from the top left.
  @return a new HID event.
  */
-+ (id<FBSimulatorHIDEventPayload>)touchDownAtX:(double)x y:(double)y;
++ (nonnull id<FBSimulatorHIDEventPayload>)touchDownAtX:(double)x y:(double)y;
 
 /**
  A HID touch up event.
@@ -95,7 +93,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param y the y-coordinate from the top left.
  @return a new HID event.
  */
-+ (id<FBSimulatorHIDEventPayload>)touchUpAtX:(double)x y:(double)y;
++ (nonnull id<FBSimulatorHIDEventPayload>)touchUpAtX:(double)x y:(double)y;
 
 /**
  A HID Event that press the button down.
@@ -103,7 +101,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param button the button to use.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventPayload>)buttonDown:(FBSimulatorHIDButton)button;
++ (nonnull id<FBSimulatorHIDEventPayload>)buttonDown:(FBSimulatorHIDButton)button;
 
 /**
  A HID Event that press the button up.
@@ -111,7 +109,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param button the button to use.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventPayload>)buttonUp:(FBSimulatorHIDButton)button;
++ (nonnull id<FBSimulatorHIDEventPayload>)buttonUp:(FBSimulatorHIDButton)button;
 
 /**
  A HID Event from the keyboard that press the key up.
@@ -119,7 +117,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param keyCode the Key Code to send.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventPayload>)keyUp:(unsigned int)keyCode;
++ (nonnull id<FBSimulatorHIDEventPayload>)keyUp:(unsigned int)keyCode;
 
 /**
  A HID Event from the keyboard that press the key down.
@@ -127,7 +125,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param keyCode the Key Code to send.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode;
++ (nonnull id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode;
 
 #pragma mark Multiple Payload Events
 
@@ -138,7 +136,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param y the y-coordinate from the top left.
  @return a new HID event.
  */
-+ (id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y;
++ (nonnull id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y;
 
 /**
  A HID Event that is a touch-down with a touch up after some delay.
@@ -148,7 +146,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param duration the duration of the touch down.
  @return a new HID event.
  **/
-+ (id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y duration:(double)duration;
++ (nonnull id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y duration:(double)duration;
 
 /**
  A HID Event that is a down followed by an immediate up.
@@ -156,7 +154,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param button the button to use.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventComposite>)shortButtonPress:(FBSimulatorHIDButton)button;
++ (nonnull id<FBSimulatorHIDEventComposite>)shortButtonPress:(FBSimulatorHIDButton)button;
 
 /**
  A HID Event for the keyboard is a down followed by an immediate up.
@@ -164,7 +162,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param keyCode the Key Code to send.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventComposite>)shortKeyPress:(unsigned int)keyCode;
++ (nonnull id<FBSimulatorHIDEventComposite>)shortKeyPress:(unsigned int)keyCode;
 
 /**
  A HID Event for sequence of shortKeyPress events.
@@ -172,7 +170,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param sequence a sequence of Key Codes to send.
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventComposite>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence;
++ (nonnull id<FBSimulatorHIDEventComposite>)shortKeyPressSequence:(nonnull NSArray<NSNumber *> *)sequence;
 
 /**
  A HID Event for performing swipe from one point to another point. swipe is a series of tap down events along the line between the starting point and the ending point with delta pixels between points.
@@ -184,7 +182,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param delta distance between tap down events
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventComposite>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration;
++ (nonnull id<FBSimulatorHIDEventComposite>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration;
 
 /**
  A HID Event consisting of multiple events
@@ -192,7 +190,7 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param events an array of events
  @return a composite event
  */
-+ (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events NS_SWIFT_NAME(with(events:));
++ (nonnull id<FBSimulatorHIDEventComposite>)eventWithEvents:(nonnull NSArray<id<FBSimulatorHIDEvent>> *)events NS_SWIFT_NAME(with(events:));
 
 /**
  A HID Event that delays the next event by a set duration
@@ -200,8 +198,6 @@ extern double const DEFAULT_SWIPE_DELTA;
  @param duration Amount of time to delay the next event by in seconds
  @return a new HID Event.
  */
-+ (id<FBSimulatorHIDEventDelay>)delay:(double)duration;
++ (nonnull id<FBSimulatorHIDEventDelay>)delay:(double)duration;
 
 @end
-
-NS_ASSUME_NONNULL_END

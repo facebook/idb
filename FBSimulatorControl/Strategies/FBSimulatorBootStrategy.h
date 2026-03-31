@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBSimulator;
 @class FBSimulatorBootConfiguration;
 
@@ -28,8 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use.
  @return a new FBSimulatorBootStrategy instance.
  */
-+ (FBFuture<NSNull *> *)boot:(FBSimulator *)simulator withConfiguration:(FBSimulatorBootConfiguration *)configuration;
++ (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulator *)simulator withConfiguration:(nonnull FBSimulatorBootConfiguration *)configuration;
 
 @end
-
-NS_ASSUME_NONNULL_END

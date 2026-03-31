@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBFramebuffer;
 @class FBProcessInfo;
 @class FBSimulator;
@@ -34,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to boot with.
  @return a Future that resolves when the Simulator is booted.
  */
-- (FBFuture<NSNull *> *)boot:(FBSimulatorBootConfiguration *)configuration;
+- (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulatorBootConfiguration *)configuration;
 
 #pragma mark Focus
 
@@ -43,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A future that resolves when successful
  */
-- (FBFuture<NSNull *> *)focus;
+- (nonnull FBFuture<NSNull *> *)focus;
 
 #pragma mark Connection
 
@@ -55,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger a logger to log to
  @return YES if successful, NO otherwise.
  */
-- (FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Bridge
 
@@ -64,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future Wrapping the Simulator Bridge.
  */
-- (FBFuture<FBSimulatorBridge *> *)connectToBridge;
+- (nonnull FBFuture<FBSimulatorBridge *> *)connectToBridge;
 
 #pragma mark Framebuffer
 
@@ -73,7 +71,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the Future wrapping the Framebuffer.
  */
-- (FBFuture<FBFramebuffer *> *)connectToFramebuffer;
+- (nonnull FBFuture<FBFramebuffer *> *)connectToFramebuffer;
 
 #pragma mark Bridge
 
@@ -82,7 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a Future Wrapping the Simulator Bridge.
  */
-- (FBFuture<FBSimulatorHID *> *)connectToHID;
+- (nonnull FBFuture<FBSimulatorHID *> *)connectToHID;
 
 #pragma mark URLs
 
@@ -92,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param url the URL to open.
  @return Future that resolves when the url is opened
  */
-- (FBFuture<NSNull *> *)openURL:(NSURL *)url;
+- (nonnull FBFuture<NSNull *> *)openURL:(nonnull NSURL *)url;
 
 @end
 
@@ -102,5 +100,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorLifecycleCommands : NSObject <FBSimulatorLifecycleCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -9,13 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Implementation of FBNotificationCommands for Simulators.
  */
 @interface FBSimulatorNotificationCommands : NSObject <FBNotificationCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

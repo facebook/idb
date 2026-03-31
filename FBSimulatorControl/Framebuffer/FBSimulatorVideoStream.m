@@ -715,13 +715,13 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   return dispatch_queue_create("com.facebook.FBSimulatorControl.BitmapStream", DISPATCH_QUEUE_SERIAL);
 }
 
-+ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {
   FBVideoStreamEdgeInsets zeroInsets = {0, 0, 0, 0};
   return [self streamWithFramebuffer:framebuffer configuration:configuration edgeInsets:zeroInsets logger:logger];
 }
 
-+ (nullable instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(id<FBControlCoreLogger>)logger
++ (instancetype)streamWithFramebuffer:(FBFramebuffer *)framebuffer configuration:(FBVideoStreamConfiguration *)configuration edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets logger:(id<FBControlCoreLogger>)logger
 {
   NSNumber *framesPerSecondNumber = configuration.framesPerSecond;
   NSUInteger framesPerSecond = framesPerSecondNumber.unsignedIntegerValue;

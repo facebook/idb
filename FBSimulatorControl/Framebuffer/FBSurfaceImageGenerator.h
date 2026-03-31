@@ -9,8 +9,6 @@
 
 #import <FBSimulatorControl/FBFramebuffer.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 
 /**
@@ -26,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Image Generator.
  */
-+ (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale purpose:(NSString *)purpose logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)imageGeneratorWithScale:(nonnull NSDecimalNumber *)scale purpose:(nonnull NSString *)purpose logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Return a CGImageRef.
@@ -46,5 +44,3 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable CGImageRef)image;
 
 @end
-
-NS_ASSUME_NONNULL_END

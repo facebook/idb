@@ -15,8 +15,6 @@
 
 @protocol FBControlCoreLogger;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An FBSimulatorControl wrapper for SimServiceContext.
  */
@@ -30,31 +28,31 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return the shared context.
  */
-+ (instancetype)sharedServiceContextWithLogger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)sharedServiceContextWithLogger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Returns the shared Service Context instance.
 
  @return the shared context.
  */
-+ (instancetype)sharedServiceContext;
++ (nonnull instancetype)sharedServiceContext;
 
 #pragma mark Public Methods
 
 /**
  Return the paths to all of the device sets.
  */
-- (NSArray<NSString *> *)pathsOfAllDeviceSets;
+- (nonnull NSArray<NSString *> *)pathsOfAllDeviceSets;
 
 /**
  Returns all of the supported runtimes.
  */
-- (NSArray<SimRuntime *> *)supportedRuntimes;
+- (nonnull NSArray<SimRuntime *> *)supportedRuntimes;
 
 /**
  Returns all of the supported device types.
  */
-- (NSArray<SimDeviceType *> *)supportedDeviceTypes;
+- (nonnull NSArray<SimDeviceType *> *)supportedDeviceTypes;
 
 /**
  Obtains the SimDeviceSet for a given configuration.
@@ -63,8 +61,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the Device Set if present. nil otherwise.
  */
-- (nullable SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
+- (nullable SimDeviceSet *)createDeviceSetWithConfiguration:(nonnull FBSimulatorControlConfiguration *)configuration error:(NSError * _Nullable * _Nullable)error;
 
 @end
-
-NS_ASSUME_NONNULL_END

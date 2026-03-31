@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Commands to perform on a Simulator, related to photos/videos on the device
  */
@@ -22,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param mediaFileURLs local paths to the media files to add
  @return A future that resolves when the media has been added.
  */
-- (FBFuture<NSNull *> *)addMedia:(NSArray<NSURL *> *)mediaFileURLs;
+- (nonnull FBFuture<NSNull *> *)addMedia:(nonnull NSArray<NSURL *> *)mediaFileURLs;
 
 @end
 
@@ -32,5 +30,3 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorMediaCommands : NSObject <FBSimulatorMediaCommands>
 
 @end
-
-NS_ASSUME_NONNULL_END

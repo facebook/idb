@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBProcessInfo;
 @class FBSimulator;
 
@@ -28,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param pid the process identifier to obtain the name for.
  @return A Future, wrapping the Service Name.
  */
-- (FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)pid;
+- (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)pid;
 
 /**
  Finds the Service Name for a provided process.
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param process the process to obtain the name for.
  @return A Future, wrapping the Service Name.
  */
-- (FBFuture<NSString *> *)serviceNameForProcess:(FBProcessInfo *)process;
+- (nonnull FBFuture<NSString *> *)serviceNameForProcess:(nonnull FBProcessInfo *)process;
 
 /**
  Finds the Service Name and Process Identifier for all services matching the given search pattern.
@@ -45,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param regex a regular expression used to match.
  @return A Future, wrapping a mapping of Service Names to Process Identifiers.
  */
-- (FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersMatching:(NSRegularExpression *)regex;
+- (nonnull FBFuture<NSDictionary<NSString *, NSNumber *> *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
 
 /**
  Finds the Service Name and Process Identifier for the first service matching the given search pattern.
@@ -53,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param regex a Substring of the Service to fetch.
  @return A Future, wrapping a tuple of String Service Name & NSNumber Process Identifier.
  */
-- (FBFuture<NSArray<id> *> *)firstServiceNameAndProcessIdentifierMatching:(NSRegularExpression *)regex;
+- (nonnull FBFuture<NSArray<id> *> *)firstServiceNameAndProcessIdentifierMatching:(nonnull NSRegularExpression *)regex;
 
 /**
  Consults the Simulator's launchctl to determine the existence of a given process.
@@ -61,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param process the process to look for.
  @return A Future, YES if the process exists. NO otherwise.
  */
-- (FBFuture<NSNumber *> *)processIsRunningOnSimulator:(FBProcessInfo *)process;
+- (nonnull FBFuture<NSNumber *> *)processIsRunningOnSimulator:(nonnull FBProcessInfo *)process;
 
 /**
  Returns the currently running launchctl services.
@@ -70,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return A Future, wrapping a Mapping of Service Name to Process identifier.
  */
-- (FBFuture<NSDictionary<NSString *, id> *> *)listServices;
+- (nonnull FBFuture<NSDictionary<NSString *, id> *> *)listServices;
 
 #pragma mark Manipulating Services
 
@@ -80,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceName the name of the Process to Stop.
  @return A Future, wrapping the Service Name of the Stopped process, or nil if the process does not exist.
  */
-- (FBFuture<NSString *> *)stopServiceWithName:(NSString *)serviceName;
+- (nonnull FBFuture<NSString *> *)stopServiceWithName:(nonnull NSString *)serviceName;
 
 /**
  Starts the Provided Process, by Service Name.
@@ -88,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceName the name of the Process to Stop.
  @return A Future, wrapping the Service Name of the Stopped process, or nil if the process does not exist.
  */
-- (FBFuture<NSString *> *)startServiceWithName:(NSString *)serviceName;
+- (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
 
 @end
 
@@ -105,8 +103,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceName the service name to extract from
  @return the Bundle ID, if found.
  */
-+ (nullable NSString *)extractApplicationBundleIdentifierFromServiceName:(NSString *)serviceName;
++ (nullable NSString *)extractApplicationBundleIdentifierFromServiceName:(nonnull NSString *)serviceName;
 
 @end
-
-NS_ASSUME_NONNULL_END
