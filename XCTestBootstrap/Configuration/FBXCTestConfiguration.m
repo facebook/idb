@@ -29,7 +29,7 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
     return nil;
   }
 
-  _processUnderTestEnvironment = environment ?: @{};
+  _processUnderTestEnvironment = environment;
   _workingDirectory = workingDirectory;
   _testBundlePath = testBundlePath;
   _waitForDebugger = waitForDebugger;

@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBTestLaunchConfiguration;
 
 @protocol FBiOSTarget;
@@ -35,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a future that resolves when the task has launched.
  */
-+ (FBFuture<FBSubprocess *> *)operationWithUDID:(NSString *)udid configuration:(FBTestLaunchConfiguration *)configuration xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath macOSTestShimPath:(nullable NSString *)macOSTestShimPath queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)operationWithUDID:(nonnull NSString *)udid configuration:(nonnull FBTestLaunchConfiguration *)configuration xcodeBuildPath:(nonnull NSString *)xcodeBuildPath testRunFilePath:(nonnull NSString *)testRunFilePath simDeviceSet:(nullable NSString *)simDeviceSetPath macOSTestShimPath:(nullable NSString *)macOSTestShimPath queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -45,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param testLaunch the test launch to base off.
  @return the xctest.xctestrun properties.
  */
-+ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
++ (nonnull NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(nonnull FBTestLaunchConfiguration *)testLaunch;
 
 /**
  Create a xctestrun file from a test launch.
@@ -55,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the path of the xctestrun file created.
  */
-+ (nullable NSString *)createXCTestRunFileAt:(NSString *)directory fromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error;
++ (nullable NSString *)createXCTestRunFileAt:(nonnull NSString *)directory fromConfiguration:(nonnull FBTestLaunchConfiguration *)configuration error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Get the xcodebuild path.
@@ -63,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return xcodebuild path
  */
-+ (NSString *)xcodeBuildPathWithError:(NSError **)error;
++ (nullable NSString *)xcodeBuildPathWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  Terminates all reparented xcodebuild processes.
@@ -74,7 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger a logger to log to.
  @return a Future that resolves when processes have exited.
  */
-+ (FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(NSString *)udid processFetcher:(FBProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSArray<FBProcessInfo *> *> *)terminateAbandonedXcodebuildProcessesForUDID:(nonnull NSString *)udid processFetcher:(nonnull FBProcessFetcher *)processFetcher queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  A helper method for overwriting xcTestRunProperties.
@@ -87,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param newProperties base properties will be overwritten with newProperties
  @returns a new xcTestRunProperites with
  */
-+ (NSDictionary *)overwriteXCTestRunPropertiesWithBaseProperties:(NSDictionary<NSString *, id> *)baseProperties newProperties:(NSDictionary<NSString *, id> *)newProperties;
++ (nonnull NSDictionary *)overwriteXCTestRunPropertiesWithBaseProperties:(nonnull NSDictionary<NSString *, id> *)baseProperties newProperties:(nonnull NSDictionary<NSString *, id> *)newProperties;
 
 /**
  Confirms the proper exit of the provided xcodebuild operation.
@@ -99,8 +97,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a checked exit of the task.
  */
-+ (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBSubprocess *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(nonnull FBSubprocess *)task configuration:(nonnull FBTestLaunchConfiguration *)configuration reporter:(nonnull id<FBXCTestReporter>)reporter target:(nonnull id<FBiOSTarget>)target logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

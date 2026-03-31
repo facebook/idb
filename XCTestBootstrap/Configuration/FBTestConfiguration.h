@@ -9,8 +9,6 @@
 
 @class XCTestConfiguration;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Represents XCTestConfiguration class used by Apple to configure tests (aka .xctestconfiguration)
  */
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a test configuration after it has been written out to disk.
  */
-+ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error;
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(nonnull NSUUID *)sessionIdentifier moduleName:(nonnull NSString *)moduleName testBundlePath:(nonnull NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Creates a Test Configuration.
@@ -44,40 +42,33 @@ NS_ASSUME_NONNULL_BEGIN
  @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
  @param xcTestConfiguration underlying XCTestConfiguration object
  */
-+ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(XCTestConfiguration *)xcTestConfiguration;
++ (nonnull instancetype)configurationWithSessionIdentifier:(nonnull NSUUID *)sessionIdentifier moduleName:(nonnull NSString *)moduleName testBundlePath:(nonnull NSString *)testBundlePath path:(nonnull NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(nonnull XCTestConfiguration *)xcTestConfiguration;
 
 /**
  The session identifier
  */
-@property (nonatomic, readonly, copy) NSUUID *sessionIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSUUID *sessionIdentifier;
 
 /**
  The name of the test module
  */
-@property (nonatomic, readonly, copy) NSString *moduleName;
+@property (nonnull, nonatomic, readonly, copy) NSString *moduleName;
 
 /**
  The path to test bundle
  */
-@property (nonatomic, readonly, copy) NSString *testBundlePath;
+@property (nonnull, nonatomic, readonly, copy) NSString *testBundlePath;
 
 /**
- The path to test configuration, if saved
+ The path to test configuration
  */
-@property (nullable, nonatomic, readonly, copy) NSString *path;
-
-/**
- The path to automation framework
- */
-@property (nullable, nonatomic, readonly, copy) NSString *automationFramework;
+@property (nonnull, nonatomic, readonly, copy) NSString *path;
 
 /**
  Determines whether should initialize for UITesting
  */
 @property (nonatomic, readonly, assign) BOOL shouldInitializeForUITesting;
 
-@property (nonatomic, readonly, strong) XCTestConfiguration *xcTestConfiguration;
+@property (nonnull, nonatomic, readonly, strong) XCTestConfiguration *xcTestConfiguration;
 
 @end
-
-NS_ASSUME_NONNULL_END

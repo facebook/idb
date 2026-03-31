@@ -62,7 +62,7 @@
                                                                                               }];
 }
 
-+ (NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError **)error
++ (NSArray<NSURL *> *)filesInDirectory:(NSURL *)directory error:(NSError * _Nullable * _Nullable)error
 {
   NSError *innerError;
   NSArray<NSURL *> *filesInDirectory = [NSFileManager.defaultManager contentsOfDirectoryAtURL:directory includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:0 error:&innerError];

@@ -10,8 +10,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBDataConsumer;
 @protocol FBControlCoreLogger;
 
@@ -28,8 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log out-of-band information to.
  @param dataConsumer the consumer of the output.
  */
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(nullable id<FBControlCoreLogger>)logger dataConsumer:(id<FBDataConsumer>)dataConsumer;
+- (nonnull instancetype)initWithTestBundlePath:(nonnull NSString *)testBundlePath testType:(nonnull NSString *)testType logger:(nullable id<FBControlCoreLogger>)logger dataConsumer:(nonnull id<FBDataConsumer>)dataConsumer;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Enumerated Type for Test Report Results.
  */
@@ -26,15 +24,15 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
 /**
  Constructs a Result Summary from Test Delegate Arguments.
  */
-+ (instancetype)fromTestSuite:(NSString *)testSuite finishingAt:(NSString *)finishTime runCount:(NSNumber *)runCount failures:(NSNumber *)failuresCount unexpected:(NSNumber *)unexpectedFailureCount testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration;
++ (nonnull instancetype)fromTestSuite:(nonnull NSString *)testSuite finishingAt:(nonnull NSString *)finishTime runCount:(nonnull NSNumber *)runCount failures:(nonnull NSNumber *)failuresCount unexpected:(nonnull NSNumber *)unexpectedFailureCount testDuration:(nonnull NSNumber *)testDuration totalDuration:(nonnull NSNumber *)totalDuration;
 
 /**
  Default initializer
  */
-- (instancetype)initWithTestSuite:(NSString *)testSuite finishTime:(NSDate *)finishTime runCount:(NSInteger)runCount failureCount:(NSInteger)failureCount unexpected:(NSInteger)unexpected testDuration:(NSTimeInterval)testDuration totalDuration:(NSTimeInterval)totalDuration;
+- (nonnull instancetype)initWithTestSuite:(nonnull NSString *)testSuite finishTime:(nonnull NSDate *)finishTime runCount:(NSInteger)runCount failureCount:(NSInteger)failureCount unexpected:(NSInteger)unexpected testDuration:(NSTimeInterval)testDuration totalDuration:(NSTimeInterval)totalDuration;
 
-@property (nonatomic, readonly, copy) NSString *testSuite;
-@property (nonatomic, readonly, copy) NSDate *finishTime;
+@property (nonnull, nonatomic, readonly, copy) NSString *testSuite;
+@property (nonnull, nonatomic, readonly, copy) NSDate *finishTime;
 @property (nonatomic, readonly, assign) NSInteger runCount;
 @property (nonatomic, readonly, assign) NSInteger failureCount;
 @property (nonatomic, readonly, assign) NSInteger unexpected;
@@ -47,7 +45,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param statusString the status string.
  @return the status enum value.
  */
-+ (FBTestReportStatus)statusForStatusString:(NSString *)statusString;
++ (FBTestReportStatus)statusForStatusString:(nonnull NSString *)statusString;
 
 /**
  Returns a status string for the given status enum value.
@@ -55,8 +53,6 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param status the status enum value.
  @return the status string.
 */
-+ (NSString *)statusStringForStatus:(FBTestReportStatus)status;
++ (nonnull NSString *)statusStringForStatus:(FBTestReportStatus)status;
 
 @end
-
-NS_ASSUME_NONNULL_END

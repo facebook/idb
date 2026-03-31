@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBTestManagerContext;
 
 @protocol FBControlCoreLogger;
@@ -42,8 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the (optional) logger to events to.
  @return A future that resolves when test execution has fully completed, or an error occured with the execution.
  */
-+ (FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

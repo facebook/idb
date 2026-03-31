@@ -9,8 +9,6 @@
 
 @class FBTestConfiguration;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Helper for FBTestConfigurationTests that wraps XCTestConfiguration interactions.
  This is needed because XCTestPrivate cannot be imported from Swift due to module
@@ -18,18 +16,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBTestConfigurationTestHelper : NSObject
 
-+ (id)createXCTestConfiguration;
++ (nonnull id)createXCTestConfiguration;
 
-+ (FBTestConfiguration *)createTestConfigurationWithSessionIdentifier:(NSUUID *)sessionIdentifier
-                                                           moduleName:(NSString *)moduleName
-                                                       testBundlePath:(NSString *)testBundlePath
-                                                                 path:(NSString *)path
-                                                            uiTesting:(BOOL)uiTesting
-                                                  xcTestConfiguration:(id)xcTestConfiguration;
++ (nonnull FBTestConfiguration *)createTestConfigurationWithSessionIdentifier:(nonnull NSUUID *)sessionIdentifier
+                                                                   moduleName:(nonnull NSString *)moduleName
+                                                               testBundlePath:(nonnull NSString *)testBundlePath
+                                                                         path:(nonnull NSString *)path
+                                                                    uiTesting:(BOOL)uiTesting
+                                                          xcTestConfiguration:(nonnull id)xcTestConfiguration;
 
-+ (nullable FBTestConfiguration *)createTestConfigurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier
-                                                                                   moduleName:(NSString *)moduleName
-                                                                               testBundlePath:(NSString *)testBundlePath
++ (nullable FBTestConfiguration *)createTestConfigurationByWritingToFileWithSessionIdentifier:(nonnull NSUUID *)sessionIdentifier
+                                                                                   moduleName:(nonnull NSString *)moduleName
+                                                                               testBundlePath:(nonnull NSString *)testBundlePath
                                                                                     uiTesting:(BOOL)uiTesting
                                                                                    testsToRun:(nullable NSSet<NSString *> *)testsToRun
                                                                                   testsToSkip:(nullable NSSet<NSString *> *)testsToSkip
@@ -38,17 +36,15 @@ NS_ASSUME_NONNULL_BEGIN
                                                                   testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies
                                                                       automationFrameworkPath:(nullable NSString *)automationFrameworkPath
                                                                              reportActivities:(BOOL)reportActivities
-                                                                                        error:(NSError **)error;
+                                                                                        error:(NSError * _Nullable * _Nullable)error;
 
-+ (nullable NSString *)productModuleName:(id)xcTestConfig;
-+ (nullable NSURL *)testBundleURL:(id)xcTestConfig;
-+ (BOOL)initializeForUITesting:(id)xcTestConfig;
-+ (nullable NSString *)targetApplicationPath:(id)xcTestConfig;
-+ (nullable NSString *)targetApplicationBundleID:(id)xcTestConfig;
-+ (BOOL)reportActivities:(id)xcTestConfig;
-+ (BOOL)reportResultsToIDE:(id)xcTestConfig;
-+ (nullable NSDictionary *)ideCapabilitiesDictionary:(id)xcTestConfig;
++ (nullable NSString *)productModuleName:(nonnull id)xcTestConfig;
++ (nullable NSURL *)testBundleURL:(nonnull id)xcTestConfig;
++ (BOOL)initializeForUITesting:(nonnull id)xcTestConfig;
++ (nullable NSString *)targetApplicationPath:(nonnull id)xcTestConfig;
++ (nullable NSString *)targetApplicationBundleID:(nonnull id)xcTestConfig;
++ (BOOL)reportActivities:(nonnull id)xcTestConfig;
++ (BOOL)reportResultsToIDE:(nonnull id)xcTestConfig;
++ (nullable NSDictionary *)ideCapabilitiesDictionary:(nonnull id)xcTestConfig;
 
 @end
-
-NS_ASSUME_NONNULL_END

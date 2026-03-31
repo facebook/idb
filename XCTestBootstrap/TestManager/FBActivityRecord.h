@@ -10,28 +10,24 @@
 @class FBAttachment;
 @class XCActivityRecord;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A summary of an activity.
  */
 @interface FBActivityRecord : NSObject
 
-@property (nonatomic, readonly, copy) NSString *title;
-@property (nonatomic, readonly, copy) NSString *activityType;
-@property (nonatomic, readonly, copy) NSUUID *uuid;
-@property (nonatomic, readonly, copy) NSDate *start;
-@property (nonatomic, readonly, copy) NSDate *finish;
-@property (nonatomic, readonly) NSArray<FBAttachment *> *attachments;
+@property (nonnull, nonatomic, readonly, copy) NSString *title;
+@property (nonnull, nonatomic, readonly, copy) NSString *activityType;
+@property (nonnull, nonatomic, readonly, copy) NSUUID *uuid;
+@property (nonnull, nonatomic, readonly, copy) NSDate *start;
+@property (nonnull, nonatomic, readonly, copy) NSDate *finish;
+@property (nonnull, nonatomic, readonly) NSArray<FBAttachment *> *attachments;
 @property (nonatomic, readonly, assign) double duration;
-@property (nonatomic, readonly, copy) NSString *name;
-@property (nonatomic, copy) NSMutableArray<FBActivityRecord *> *subactivities;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, copy) NSMutableArray<FBActivityRecord *> *subactivities;
 
 /**
  Constructs a activity summary from a XCActivityRecord
  */
-+ (instancetype)from:(XCActivityRecord *)record;
++ (nonnull instancetype)from:(nonnull XCActivityRecord *)record;
 
 @end
-
-NS_ASSUME_NONNULL_END

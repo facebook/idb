@@ -11,8 +11,6 @@
 
 @protocol FBXCTestReporter;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Converts Low-Level XCTestManager_IDEInterface Messages to their counterparts in FBXCTestReporter.
  */
@@ -24,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the reporter to report to.
  @return a new adapter.
  */
-+ (instancetype)withReporter:(id<FBXCTestReporter>)reporter;
++ (nonnull instancetype)withReporter:(nonnull id<FBXCTestReporter>)reporter;
 
 @end
-
-NS_ASSUME_NONNULL_END

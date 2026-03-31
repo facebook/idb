@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A logger for FBXCTest that accumilates messages, but can be used for logging in the event a failure occurs.
  */
@@ -21,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a new FBXCTestLogger Instance
  */
-+ (instancetype)defaultLoggerInDefaultDirectory;
++ (nonnull instancetype)defaultLoggerInDefaultDirectory;
 
 /**
  A Test Logger that will write to a default directory.
@@ -29,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name a unique name for the logger.
  @return a new FBXCTestLogger Instance
  */
-+ (instancetype)loggerInDefaultDirectory:(NSString *)name;
++ (nonnull instancetype)loggerInDefaultDirectory:(nonnull NSString *)name;
 
 /**
  A Test Logger that will write to a specified directory.
@@ -37,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param directory the directory to log into.
  @return a new FBXCTestLogger Instance
  */
-+ (instancetype)defaultLoggerInDirectory:(NSString *)directory;
++ (nonnull instancetype)defaultLoggerInDirectory:(nonnull NSString *)directory;
 
 /**
  A Test Logger with the specified name and directory.
@@ -46,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name a unique name for the logger.
  @return a new FBXCTestLogger Instance
  */
-+ (instancetype)loggerInDirectory:(NSString *)directory name:(NSString *)name;
++ (nonnull instancetype)loggerInDirectory:(nonnull NSString *)directory name:(nonnull NSString *)name;
 
 /**
  Logs the Consumption of the consumer to a file
@@ -56,8 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log the mirrored path to.
  @return a Future that resolves with the new consumer.
  */
-- (FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionOf:(id<FBDataConsumer>)consumer toFileNamed:(NSString *)fileName logger:(id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<id<FBDataConsumer, FBDataConsumerLifecycle>> *)logConsumptionOf:(nonnull id<FBDataConsumer>)consumer toFileNamed:(nonnull NSString *)fileName logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

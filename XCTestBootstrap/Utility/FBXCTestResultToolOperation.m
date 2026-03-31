@@ -7,8 +7,6 @@
 
 #import "FBXCTestResultToolOperation.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 NSString *const XcrunPath = @"/usr/bin/xcrun";
 NSString *const SipsPath = @"/usr/bin/sips";
 NSString *const HEIC = @"public.heic";
@@ -109,5 +107,3 @@ NSString *const JPEG = @"public.jpeg";
 }
 
 @end
-
-NS_ASSUME_NONNULL_END

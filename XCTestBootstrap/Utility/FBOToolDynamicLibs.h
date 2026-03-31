@@ -9,12 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBOToolDynamicLibs : NSObject
 
-+ (FBFuture<NSArray *> *)findFullPathForSanitiserDyldInBundle:(NSString *)bundlePath onQueue:(nonnull dispatch_queue_t)queue;
++ (nonnull FBFuture<NSArray *> *)findFullPathForSanitiserDyldInBundle:(nonnull NSString *)bundlePath onQueue:(nonnull dispatch_queue_t)queue;
 
 @end
-
-NS_ASSUME_NONNULL_END

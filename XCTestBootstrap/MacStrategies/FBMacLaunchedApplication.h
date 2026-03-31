@@ -9,16 +9,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBMacDevice;
 
 @interface FBMacLaunchedApplication : NSObject <FBLaunchedApplication>
 
-- (instancetype)initWithBundleID:(NSString *)bundleID
-               processIdentifier:(pid_t)processIdentifier
-                          device:(FBMacDevice *)device
-                           queue:(dispatch_queue_t)queue;
+- (nonnull instancetype)initWithBundleID:(nonnull NSString *)bundleID
+                       processIdentifier:(pid_t)processIdentifier
+                                  device:(nonnull FBMacDevice *)device
+                                   queue:(nonnull dispatch_queue_t)queue;
 @end
-
-NS_ASSUME_NONNULL_END

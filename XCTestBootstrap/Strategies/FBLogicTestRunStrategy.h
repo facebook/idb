@@ -9,8 +9,6 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBLogicTestConfiguration;
 
 @protocol FBiOSTarget;
@@ -31,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Logic Test Strategy.
  */
-- (instancetype)initWithTarget:(id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBLogicXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithTarget:(nonnull id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands>)target configuration:(nonnull FBLogicTestConfiguration *)configuration reporter:(nonnull id<FBLogicXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

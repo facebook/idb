@@ -10,14 +10,10 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBiOSTarget;
 
 @interface FBXCTestResultBundleParser : NSObject
 
-+ (FBFuture<NSNull *> *)parse:(NSString *)resultBundlePath target:(id<FBiOSTarget>)target reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger extractScreenshots:(BOOL)extractScreenshots;
++ (nonnull FBFuture<NSNull *> *)parse:(nonnull NSString *)resultBundlePath target:(nonnull id<FBiOSTarget>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger extractScreenshots:(BOOL)extractScreenshots;
 
 @end
-
-NS_ASSUME_NONNULL_END

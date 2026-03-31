@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Builds an xcresulttool invocation as a subprocess.
  */
@@ -25,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a future that wraps the extracted JSON object.
  */
-+ (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)getJSONFrom:(NSString *)path forId:(nullable NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)getJSONFrom:(nonnull NSString *)path forId:(nullable NSString *)bundleObjectId queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Export file from the XCTest result bundle
@@ -37,7 +35,7 @@ Export file from the XCTest result bundle
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBSubprocess *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)exportFileFrom:(nonnull NSString *)path to:(nonnull NSString *)destination forId:(nonnull NSString *)bundleObjectId queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Export a JPEG image from the XCTest result bundle.
@@ -51,7 +49,7 @@ Export a JPEG image from the XCTest result bundle.
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBSubprocess *> *)exportJPEGFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId type:(NSString *)encodeType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)exportJPEGFrom:(nonnull NSString *)path to:(nonnull NSString *)destination forId:(nonnull NSString *)bundleObjectId type:(nonnull NSString *)encodeType queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Export directory from the XCTest result bundle
@@ -63,7 +61,7 @@ Export directory from the XCTest result bundle
 @param logger the logger to log to.
 @return a future that resolves when the task has finished.
 */
-+ (FBFuture<FBSubprocess *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)exportDirectoryFrom:(nonnull NSString *)path to:(nonnull NSString *)destination forId:(nonnull NSString *)bundleObjectId queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
 Describe the format of the result bundle
@@ -72,8 +70,6 @@ Describe the format of the result bundle
 @param logger the logger to log to.
 @return a future that wraps the format description in JSON.
 */
-+ (FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)describeFormat:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *)describeFormat:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

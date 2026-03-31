@@ -9,21 +9,17 @@
 
 @class XCTAttachment;
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface FBAttachment : NSObject
 
 @property (nullable, nonatomic, readonly, copy) NSData *payload;
-@property (nonatomic, readonly, copy) NSDate *timestamp;
-@property (nonatomic, readonly, copy) NSString *name;
-@property (nonatomic, readonly, copy) NSString *uniformTypeIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSDate *timestamp;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, copy) NSString *uniformTypeIdentifier;
 @property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *userInfo;
 
 /**
  Constructs a attachment  from a XCTAttachment
  */
-+ (instancetype)from:(XCTAttachment *)record;
++ (nonnull instancetype)from:(nonnull XCTAttachment *)record;
 
 @end
-
-NS_ASSUME_NONNULL_END

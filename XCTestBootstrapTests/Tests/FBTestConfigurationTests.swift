@@ -49,7 +49,7 @@ final class FBTestConfigurationTests: XCTestCase {
       reportActivities: false
     )
 
-    XCTAssertTrue(FileManager.default.fileExists(atPath: testConfiguration.path!))
+    XCTAssertTrue(FileManager.default.fileExists(atPath: testConfiguration.path))
 
     let xcTestConfig = testConfiguration.xcTestConfiguration
 

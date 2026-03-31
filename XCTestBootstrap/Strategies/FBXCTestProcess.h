@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @protocol FBControlCoreLogger;
 @protocol FBCrashLogCommands;
 
@@ -33,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to log to.
  @return a future that resolves with the exit code.
  */
-+ (FBFuture<NSNumber *> *)ensureProcess:(FBSubprocess *)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(nullable id<FBCrashLogCommands>)crashLogCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNumber *> *)ensureProcess:(nonnull FBSubprocess *)process completesWithin:(NSTimeInterval)timeout crashLogCommands:(nullable id<FBCrashLogCommands>)crashLogCommands queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  Describe the exit code, if an error.
@@ -44,5 +42,3 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSString *)describeFailingExitCode:(int)exitCode;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -53,7 +53,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, readonly, strong) id<FBLaunchedApplication> testHostApplication;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
-@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleDisconnected;
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleReadyFuture;
@@ -87,7 +87,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -131,7 +131,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
 
 #pragma mark Public
 
-+ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
++ (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
   return [connection connectAndRunToCompletion];

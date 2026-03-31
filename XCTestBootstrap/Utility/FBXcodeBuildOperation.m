@@ -100,7 +100,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   };
 }
 
-+ (nullable NSString *)createXCTestRunFileAt:(NSString *)directory fromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
++ (nullable NSString *)createXCTestRunFileAt:(NSString *)directory fromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError * _Nullable * _Nullable)error
 {
   NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
   NSString *path = [directory stringByAppendingPathComponent:fileName];
@@ -136,7 +136,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   return [FBFuture futureWithFutures:futures];
 }
 
-+ (NSString *)xcodeBuildPathWithError:(NSError **)error
++ (NSString *)xcodeBuildPathWithError:(NSError * _Nullable * _Nullable)error
 {
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
