@@ -54,9 +54,10 @@
 
 - (void)testSetOrientationFactory
 {
-  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent setOrientation:FBSimulatorHIDDeviceOrientationPortraitUpsideDown];
+  id<FBSimulatorHIDEventPayload> event = [FBSimulatorHIDEvent setOrientation:FBSimulatorHIDDeviceOrientationPortraitUpsideDown];
   XCTAssertNotNil(event);
   XCTAssertTrue([event conformsToProtocol:@protocol(FBSimulatorHIDEvent)]);
+  XCTAssertTrue([event conformsToProtocol:@protocol(FBSimulatorHIDEventPayload)]);
 }
 
 - (void)testAllOrientationsCreateDistinctEvents

@@ -411,7 +411,7 @@ static NSString *const KeyDuration = @"duration";
 
 @end
 
-@interface FBSimulatorHIDEvent_DeviceOrientation : NSObject <FBSimulatorHIDEvent>
+@interface FBSimulatorHIDEvent_DeviceOrientation : NSObject <FBSimulatorHIDEventPayload>
 
 @property (nonatomic, assign, readonly) FBSimulatorHIDDeviceOrientation orientation;
 
@@ -433,10 +433,15 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return self;
 }
 
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return [hid.purple orientationEvent:self.orientation];
+}
+
 - (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
 {
   return [FBFuture onQueue:hid.queue resolve:^ FBFuture<NSNull *> * {
-    NSData *payload = [hid.purple orientationEvent:self.orientation];
+    NSData *payload = [self payloadForHID:hid];
     NSError *error = nil;
     if (![hid sendPurpleEvent:payload error:&error]) {
       return [FBFuture futureWithError:error];
@@ -531,7 +536,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return [[FBSimulatorHIDEvent_Keyboard alloc] initWithDirection:FBSimulatorHIDDirectionUp keyCode:keyCode];
 }
 
-+ (id<FBSimulatorHIDEvent>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation
++ (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation
 {
   return [[FBSimulatorHIDEvent_DeviceOrientation alloc] initWithOrientation:orientation];
 }
