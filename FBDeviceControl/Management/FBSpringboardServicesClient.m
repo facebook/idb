@@ -275,7 +275,7 @@ static size_t IconLayoutSize = 4;
       if (![self.connection sendMessage:@{@"command": @"setIconState", @"iconState": iconLayout} error:error]) {
         return nil;
       }
-      // Recieve some data to know that it reached the other side, in the event of a failure we will receive no bytes. 
+      // Receive some data to know that it reached the other side, in the event of a failure we will receive no bytes. 
       NSData *data = [self.connection receive:IconLayoutSize error:error];
       if (!data) {
         return nil;
