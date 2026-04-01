@@ -130,6 +130,14 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode;
 
+/**
+ A HID Event that sets the device orientation.
+ Sent via PurpleWorkspacePort as a GSEvent type 50, not through Indigo.
+
+ @param orientation the desired device orientation.
+ @return a new HID Event.
+ */
++ (id<FBSimulatorHIDEvent>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation;
 
 #pragma mark Multiple Payload Events
 
