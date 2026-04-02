@@ -18,11 +18,11 @@ import XCTestBootstrap
   @objc public let reportAttachments: Bool
   @objc public let reportResultBundle: Bool
 
-  @objc public init(resultBundlePath: String?, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, binariesPaths: [String], reportAttachments: Bool, reportResultBundle: Bool) {
+  @objc public init(resultBundlePath: String?, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, binariesPaths: [String]?, reportAttachments: Bool, reportResultBundle: Bool) {
     self.resultBundlePath = resultBundlePath
     self.coverageConfiguration = coverageConfiguration
     self.logDirectoryPath = logDirectoryPath
-    self.binariesPaths = binariesPaths
+    self.binariesPaths = binariesPaths ?? []
     self.reportAttachments = reportAttachments
     self.reportResultBundle = reportResultBundle
     super.init()

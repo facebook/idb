@@ -21,7 +21,7 @@ import XCTestBootstrap
     guard fileManager.fileExists(atPath: idbAppStoragePath) else {
       throw FBXCTestError.describe("IDB app storage folder does not exist at: \(idbAppStoragePath)").build()
     }
-    guard let xctestrunContents = try? NSDictionary(contentsOf: xctestrunURL, error: ()) as? [String: Any] else {
+    guard let xctestrunContents = try NSDictionary(contentsOf: xctestrunURL, error: ()) as? [String: Any] else {
       throw FBXCTestError.describe("Failed to read xctestrun file at \(xctestrunURL)").build()
     }
     var mutableContents: [String: Any] = [:]

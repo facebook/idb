@@ -870,7 +870,9 @@ import XCTestBootstrap
       .onQueue(
         target.asyncQueue,
         pop: { bundle in
-          let appBundle = bundle as! FBBundleDescriptor
+          guard let appBundle = bundle as? FBBundleDescriptor else {
+            return FBIDBError.describe("No app bundle could be extracted").failFuture() as FBFuture<AnyObject>
+          }
           do {
             try self.storageManager.application.checkArchitecture(appBundle)
           } catch {
@@ -879,15 +881,17 @@ import XCTestBootstrap
           return self.target.installApplication(withPath: appBundle.path)
             .onQueue(
               self.target.asyncQueue,
-              fmap: { _ in
+              fmap: { installed in
                 (self.storageManager.application.saveBundle(appBundle) as! FBFuture<AnyObject>)
                   .onQueue(
                     self.target.asyncQueue,
-                    map: { _ -> AnyObject in
+                    fmap: { _ -> FBFuture<AnyObject> in
                       if makeDebuggable && userDevelopmentAppIsRequired {
-                        // Note: original code checked installType here
+                        if installed.installType != .userDevelopment {
+                          return FBIDBError.describe("\(appBundle.identifier) is not a user-development signed app and cannot be debugged on this device").failFuture() as FBFuture<AnyObject>
+                        }
                       }
-                      return FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: appBundle.path))
+                      return FBFuture(result: FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: appBundle.path)) as AnyObject)
                     })
               })
         }) as! FBFuture<FBInstalledArtifact>

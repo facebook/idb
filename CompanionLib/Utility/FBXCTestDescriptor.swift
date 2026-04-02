@@ -51,20 +51,20 @@ import XCTestBootstrap
   // MARK: - Private
 
   private static func killAllRunningApplications(_ target: FBiOSTarget) -> FBFuture<NSNull> {
-    let commands = target as FBApplicationCommands
-    return commands.runningApplications()
+    return target.runningApplications()
       .onQueue(
         target.workQueue,
         fmap: { runningApplications in
           let runningApps = runningApplications as! [String: FBProcessInfo]
-          let bundleIDs = Array(runningApps.keys)
-          return bundleIDs.reduce(FBFuture(result: NSNull() as AnyObject)) { result, bundleID in
-            result.onQueue(
-              target.workQueue,
-              fmap: { _ in
-                commands.killApplication(withBundleID: bundleID) as! FBFuture<AnyObject>
-              })
+          let killFutures: [FBFuture<AnyObject>] = runningApps.keys.map { bundleID in
+            target.killApplication(withBundleID: bundleID) as! FBFuture<AnyObject>
           }
+          if killFutures.isEmpty {
+            return FBFuture(result: NSNull() as AnyObject)
+          }
+          let cls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)
+          let sel = NSSelectorFromString("futureWithFutures:")
+          return cls.perform(sel, with: killFutures)!.takeUnretainedValue() as! FBFuture<AnyObject>
         }
       )
       .mapReplace(NSNull()) as! FBFuture<NSNull>
@@ -127,6 +127,11 @@ import XCTestBootstrap
     if request.coverageRequest.collect {
       let coverageDirName = "coverage_\(UUID().uuidString)"
       let coverageDirPath = (targetAuxillaryDirectory as NSString).appendingPathComponent(coverageDirName)
+      do {
+        try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
+      } catch {
+        return FBFuture(error: error as NSError)
+      }
       coverageConfig = FBCodeCoverageConfiguration(
         directory: coverageDirPath,
         format: request.coverageRequest.format,
@@ -262,26 +267,28 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
     stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger) as! FBFuture<AnyObject>
   }
 
-  return stdOutFuture.onQueue(
+  let futureCls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)
+  let futuresSel = NSSelectorFromString("futureWithFutures:")
+  let combined = futureCls.perform(futuresSel, with: [stdOutFuture, stdErrFuture])!.takeUnretainedValue() as! FBFuture<AnyObject>
+  return combined.onQueue(
     queue,
-    fmap: { stdOutResult in
-      stdErrFuture.onQueue(
-        queue,
-        map: { stdErrResult -> AnyObject in
-          let outputCls = unsafeBitCast(NSClassFromString("FBProcessOutput")!, to: NSObject.Type.self)
-          let sel = NSSelectorFromString("outputForDataConsumer:")
-          let stdOut = outputCls.perform(sel, with: stdOutResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
-          let stdErr = outputCls.perform(sel, with: stdErrResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
-          let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-          return FBApplicationLaunchConfiguration(
-            bundleID: bundleID,
-            bundleName: nil,
-            arguments: arguments,
-            environment: environment,
-            waitForDebugger: waitForDebugger,
-            io: io,
-            launchMode: .relaunchIfRunning
-          )
-        })
+    map: { results -> AnyObject in
+      let resultsArray = results as! [AnyObject]
+      let stdOutResult = resultsArray[0]
+      let stdErrResult = resultsArray[1]
+      let outputCls = unsafeBitCast(FBProcessOutput<AnyObject>.self, to: NSObject.Type.self)
+      let sel = NSSelectorFromString("outputForDataConsumer:")
+      let stdOut = outputCls.perform(sel, with: stdOutResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
+      let stdErr = outputCls.perform(sel, with: stdErrResult)!.takeUnretainedValue() as! FBProcessOutput<AnyObject>
+      let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
+      return FBApplicationLaunchConfiguration(
+        bundleID: bundleID,
+        bundleName: nil,
+        arguments: arguments,
+        environment: environment,
+        waitForDebugger: waitForDebugger,
+        io: io,
+        launchMode: .relaunchIfRunning
+      )
     })
 }
