@@ -46,7 +46,7 @@ struct DapMethodHandler {
 
     let tenMinutes: UInt64 = 600 * 1000000000
     let process = try await Task.timeout(nanoseconds: tenMinutes) {
-      try await BridgeFuture.value(commandExecutor.dapServer(withPath: lldbVSCode, stdIn: processInput, stdOut: stdOutConsumer))
+      try await BridgeFuture.value(commandExecutor.dapServer(withPath: lldbVSCode, stdIn: processInput, stdOut: stdOutConsumer)) as! FBSubprocess<AnyObject, FBDataConsumer, NSString>
     }
 
     targetLogger.debug().log("Dap server spawn with PID: \(process.processIdentifier)")

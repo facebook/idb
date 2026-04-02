@@ -24,6 +24,10 @@ FBFileContainerKind const FBFileContainerKindRoot = @"root";
 FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
 FBFileContainerKind const FBFileContainerKindSymbols = @"symbols";
 FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
+FBFileContainerKind const FBFileContainerKindXctest = @"xctest";
+FBFileContainerKind const FBFileContainerKindDylib = @"dylib";
+FBFileContainerKind const FBFileContainerKindDsym = @"dsym";
+FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 @interface FBContainedFile_Host : NSObject <FBContainedFile>
 

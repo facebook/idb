@@ -26,6 +26,10 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindRoot;
 extern FBFileContainerKind _Nonnull const FBFileContainerKindSpringboardIcons;
 extern FBFileContainerKind _Nonnull const FBFileContainerKindSymbols;
 extern FBFileContainerKind _Nonnull const FBFileContainerKindWallpaper;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindXctest;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindDylib;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindDsym;
+extern FBFileContainerKind _Nonnull const FBFileContainerKindFramework;
 
 @protocol FBDataConsumer;
 @protocol FBProvisioningProfileCommands;

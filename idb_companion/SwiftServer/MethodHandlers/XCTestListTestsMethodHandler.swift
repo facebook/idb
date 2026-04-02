@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC
@@ -17,7 +18,7 @@ struct XCTestListTestsMethodHandler {
 
   func handle(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {
     let tests: [String] = try await BridgeFuture.value(
-      commandExecutor.list_tests_(in_bundle: request.bundleName, with_app: request.appPath)
+      commandExecutor.list_tests_in_bundle(request.bundleName, with_app: request.appPath)
     )
     return .with {
       $0.names = tests

@@ -7,7 +7,7 @@
 
 #import "FBiOSTargetStateChangeNotifier.h"
 
-#import <CompanionLib/FBIDBError.h>
+#import <CompanionLib/CompanionLib-Swift.h>
 
 #import "FBiOSTargetDescription.h"
 

@@ -7,11 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CompanionLib/FBIDBCommandExecutor.h>
-#import <CompanionLib/FBIDBError.h>
-#import <CompanionLib/FBIDBLogger.h>
-#import <CompanionLib/FBIDBStorageManager.h>
-#import <CompanionLib/FBiOSTargetProvider.h>
+#import <CompanionLib/CompanionLib-Swift.h>
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>

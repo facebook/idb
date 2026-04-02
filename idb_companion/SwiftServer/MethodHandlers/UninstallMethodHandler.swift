@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 

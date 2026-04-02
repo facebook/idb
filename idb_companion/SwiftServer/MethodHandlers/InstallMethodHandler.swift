@@ -148,8 +148,8 @@ struct InstallMethodHandler {
       guard let url = URL(string: urlString) else {
         throw GRPCStatus(code: .invalidArgument, message: "Invalid url source")
       }
-      let download = FBDataDownloadInput.dataDownload(with: url, logger: targetLogger)
-      let input = download.input as! FBProcessInput<AnyObject>
+      let download = FBDataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
+      let input = download.input
 
       return try await installSource(dataStream: input, skipSigningBundles: skipSigningBundles)
 
