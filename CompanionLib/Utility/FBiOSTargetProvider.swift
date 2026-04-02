@@ -13,7 +13,7 @@ import XCTestBootstrap
 
 @objc public final class FBiOSTargetProvider: NSObject {
 
-  @objc public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
+  @objc public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     var error: NSError?
     if udid.lowercased() == "only" {
       guard let target = fetchSoleTarget(forTargetSets: targetSets, logger: logger, error: &error) else {
@@ -43,16 +43,16 @@ import XCTestBootstrap
 
   // MARK: - Private
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger?, error: NSErrorPointer) -> FBiOSTarget? {
+  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger, error: NSErrorPointer) -> FBiOSTarget? {
     if udid.lowercased() == "mac" {
-      return FBMacDevice(logger: logger!)
+      return FBMacDevice(logger: logger)
     }
     for targetSet in targetSets {
       guard let targetInfo = targetSet.target(withUDID: udid) else {
         continue
       }
       guard let target = targetInfo as? FBiOSTarget else {
-        error?.pointee = FBControlCoreError.describe("\(udid) exists, but the target is not usable \(targetInfo)").build() as NSError
+        error?.pointee = FBDeviceControlError.describe("\(udid) exists, but the target is not usable \(targetInfo)").build() as NSError
         return nil
       }
       return target
@@ -62,11 +62,13 @@ import XCTestBootstrap
     return nil
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger?, error: NSErrorPointer) -> FBiOSTarget? {
+  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger, error: NSErrorPointer) -> FBiOSTarget? {
     var targets: [FBiOSTarget] = []
     for targetSet in targetSets {
-      if let infos = targetSet.allTargetInfos as? [FBiOSTarget] {
-        targets.append(contentsOf: infos)
+      for info in targetSet.allTargetInfos {
+        if let target = info as? FBiOSTarget {
+          targets.append(target)
+        }
       }
     }
     if targets.count > 1 {

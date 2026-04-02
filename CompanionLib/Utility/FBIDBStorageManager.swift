@@ -269,7 +269,7 @@ private let XctestRunExtension = "xctestrun"
 
     for testURL in testURLs {
       do {
-        let bundle = try FBBundleDescriptor.bundle(fromPath: testURL.path)
+        let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testURL.path)
         let testDescriptor = FBXCTestBootstrapDescriptor(url: testURL, name: bundle.name, testBundle: bundle)
         testDescriptors.append(testDescriptor)
       } catch {
@@ -278,8 +278,12 @@ private let XctestRunExtension = "xctestrun"
     }
 
     for xcTestRunURL in xcTestRunURLs {
-      let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
-      testDescriptors.append(contentsOf: descriptors)
+      do {
+        let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
+        testDescriptors.append(contentsOf: descriptors)
+      } catch {
+        logger.error().log("\(error)")
+      }
     }
 
     return testDescriptors
@@ -404,7 +408,7 @@ private let XctestRunExtension = "xctestrun"
 
   private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
     do {
-      let bundle = try FBBundleDescriptor.bundle(fromPath: testBundleURL.path)
+      let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
       return saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
     } catch {
       return FBFuture(error: error as NSError)

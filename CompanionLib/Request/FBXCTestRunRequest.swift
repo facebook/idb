@@ -14,7 +14,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
 // MARK: - FBXCTestRunRequest
 
 @objc public class FBXCTestRunRequest: NSObject {
-  @objc public let testBundleID: String
+  @objc public let testBundleID: String?
   @objc public let testPath: URL?
   @objc public let testHostAppBundleID: String?
   @objc public let testTargetAppBundleID: String?
@@ -79,7 +79,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
   }
 
   init(testPath: URL, testHostAppBundleID: String?, testTargetAppBundleID: String?, environment: [String: String], arguments: [String], testsToRun: Set<String>?, testsToSkip: Set<String>, testTimeout: NSNumber?, reportActivities: Bool, reportAttachments: Bool, coverageRequest: FBCodeCoverageRequest, collectLogs: Bool, waitForDebugger: Bool, collectResultBundle: Bool) {
-    self.testBundleID = ""
+    self.testBundleID = nil
     self.testPath = testPath
     self.testHostAppBundleID = testHostAppBundleID
     self.testTargetAppBundleID = testTargetAppBundleID
@@ -148,8 +148,11 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
         }
       }
     } else {
+      guard let bundleID = testBundleID else {
+        return FBIDBError.describe("No test bundle ID provided").failFuture() as FBFuture
+      }
       do {
-        testDescriptor = try bundleStorage.testDescriptor(withID: testBundleID)
+        testDescriptor = try bundleStorage.testDescriptor(withID: bundleID)
       } catch {
         return FBFuture(error: error as NSError)
       }
