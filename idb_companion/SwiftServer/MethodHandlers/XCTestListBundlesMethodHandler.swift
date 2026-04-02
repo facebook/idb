@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC

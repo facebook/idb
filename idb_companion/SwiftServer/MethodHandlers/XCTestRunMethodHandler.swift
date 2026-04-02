@@ -6,10 +6,12 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC
 import IDBGRPCSwift
+import XCTestBootstrap
 
 struct XCTestRunMethodHandler {
 
