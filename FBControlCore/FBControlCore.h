@@ -97,3 +97,7 @@
 #import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBiOSTargetSet.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
+
+#if __has_include(<FBControlCore/FBControlCore-Swift.h>)
+ #import <FBControlCore/FBControlCore-Swift.h>
+#endif

@@ -5,16 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
+// NSPredicate+FBControlCore is now implemented in Swift.
+// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
 
-/**
- Additional Predicates for FBControlCore.
- */
-@interface NSPredicate (FBControlCore)
-
-/**
- Returns a that will filter out null/NSNull values.
- */
-+ (nonnull NSPredicate *)notNullPredicate;
-
-@end
+#import <FBControlCore/FBControlCore-SwiftImport.h>
