@@ -5,14 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
+// FBConcatedJsonParser is now implemented in Swift.
+// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
 
-/**
- New crash log format is just concated json files that *not* follows json spec. This is not array of json objects
- delimited with comma, that is just several json files that glued together. We need to parse this to handle correctly
- */
-@interface FBConcatedJsonParser : NSObject
-
-+ (nullable NSDictionary<NSString *, id> *)parseConcatenatedJSONFromString:(nonnull NSString *)str error:(NSError * _Nullable * _Nullable)error;
-
-@end
+#import <FBControlCore/FBControlCore-SwiftImport.h>

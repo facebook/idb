@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// FBCollectionOperations is now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
+import Foundation
 
-#import <FBControlCore/FBControlCore-SwiftImport.h>
+extension NSPredicate {
+  @objc public class func notNullPredicate() -> NSPredicate {
+    return NSPredicate(format: "self != nil")
+  }
+}

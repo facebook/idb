@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBBundleDescriptor;
-
 /**
  The Installed Type of the Application.
  */
@@ -31,53 +29,5 @@ extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyBun
 extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyPath;
 extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeySignerIdentity;
 
-/**
- A container for an Application Bundle and how it is installed.
- */
-@interface FBInstalledApplication : NSObject <NSCopying>
-
-#pragma mark Initializers
-
-/**
- The Designated Initializer.
-
- @param bundle the Application Bundle. This represents the bundle as-installed on the target, rather than pre-install.
- @param installType the Install Type.
- @param dataContainer the Data Container Path, may be nil.
- @return a new Installed Application Instance.
- */
-+ (nonnull instancetype)installedApplicationWithBundle:(nonnull FBBundleDescriptor *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
-
-/**
- The Designated Initializer.
-
- @param bundle the Application Bundle. This represents the bundle as-installed on the target, rather than pre-install.
- @param installTypeString the string representation of the install type.
- @param dataContainer the Data Container Path, may be nil.
- @return a new Installed Application Instance.
- */
-+ (nonnull instancetype)installedApplicationWithBundle:(nonnull FBBundleDescriptor *)bundle installTypeString:(nullable NSString *)installTypeString signerIdentity:(nullable NSString *)signerIdentity dataContainer:(nullable NSString *)dataContainer;
-
-#pragma mark Properties
-
-/**
- The Application Bundle as installed on the target. This may be missing information that is otherwise present from the installed bundle.
- */
-@property (nonnull, nonatomic, readonly, copy) FBBundleDescriptor *bundle;
-
-/**
- The "Install Type" enum of the Application.
- */
-@property (nonatomic, readonly, assign) FBApplicationInstallType installType;
-
-/**
- The "Install Type" enum of the Application, represented as a string.
- */
-@property (nonnull, nonatomic, readonly, copy) NSString *installTypeString;
-
-/**
- The data container path of the Application.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *dataContainer;
-
-@end
+// FBInstalledApplication class is now implemented in Swift.
+// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
