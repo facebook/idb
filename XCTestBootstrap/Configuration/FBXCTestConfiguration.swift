@@ -189,11 +189,11 @@ private let KeyWorkingDirectory = "working_directory"
   @objc public override func jsonSerializableRepresentation() -> [String: Any] {
     var json = super.jsonSerializableRepresentation()
     json[KeyRunnerAppPath] = runnerAppPath
-    json[KeyRunnerTargetPath] = testTargetAppPath ?? NSNull()
-    json[KeyTestFilter] = testFilter ?? NSNull()
-    json[KeyVideoRecordingPath] = videoRecordingPath ?? NSNull()
-    json[KeyTestArtifactsFilenameGlobs] = testArtifactsFilenameGlobs ?? NSNull()
-    json[KeyOSLogPath] = osLogPath ?? NSNull()
+    if let testTargetAppPath { json[KeyRunnerTargetPath] = testTargetAppPath }
+    if let testFilter { json[KeyTestFilter] = testFilter }
+    if let videoRecordingPath { json[KeyVideoRecordingPath] = videoRecordingPath }
+    if let testArtifactsFilenameGlobs { json[KeyTestArtifactsFilenameGlobs] = testArtifactsFilenameGlobs }
+    if let osLogPath { json[KeyOSLogPath] = osLogPath }
     return json
   }
 }

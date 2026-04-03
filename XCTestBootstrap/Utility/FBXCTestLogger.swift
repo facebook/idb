@@ -60,7 +60,11 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
     assert(success, "Expected to create directory at path \(directory)")
 
     let path = (directory as NSString).appendingPathComponent(name)
-    try? Data().write(to: URL(fileURLWithPath: path))
+    do {
+      try Data().write(to: URL(fileURLWithPath: path))
+    } catch {
+      NSLog("Failed to create log file at path %@: %@", path, error.localizedDescription)
+    }
     let fileHandle = FileHandle(forWritingAtPath: path)!
 
     let baseLogger = FBControlCoreLoggerFactory.compositeLogger(with: [

@@ -174,9 +174,16 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
           queue,
           fmap: { _ -> FBFuture<AnyObject> in
             let data = shimBuffer.data()
-            guard let tests = try? JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
+            let tests: [[String: String]]
+            do {
+              guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
+                NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
+                let error = NSError(domain: "FBListTestStrategy", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to parse test list JSON"])
+                return FBFuture(error: error) as! FBFuture<AnyObject>
+              }
+              tests = parsed
+            } catch {
               NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-              let error = NSError(domain: "FBListTestStrategy", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to parse test list JSON"])
               return FBFuture(error: error) as! FBFuture<AnyObject>
             }
             var testNames: [String] = []
@@ -237,8 +244,13 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
       env["DYLD_FALLBACK_FRAMEWORK_PATH"] = testFrameworkPaths.joined(separator: ":")
       env["DYLD_FALLBACK_LIBRARY_PATH"] = testFrameworkPaths.joined(separator: ":")
 
-      let appBundle = try? FBBundleDescriptor.bundle(fromPath: runnerAppPath)
-      launchPath = appBundle?.binary?.path ?? launchPath
+      let appBundle: FBBundleDescriptor
+      do {
+        appBundle = try FBBundleDescriptor.bundle(fromPath: runnerAppPath)
+      } catch {
+        return FBFuture(error: error) as! FBFuture<AnyObject>
+      }
+      launchPath = appBundle.binary?.path ?? launchPath
       let spawnConfiguration = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
       return FBListTestStrategy.listTestProcess(withSpawnConfiguration: spawnConfiguration, onTarget: target, timeout: configuration.testTimeout, logger: logger)
     } else {
