@@ -111,7 +111,7 @@ private let KillBackoffTimeout: TimeInterval = 1
   private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: FBCrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<FBCrashLogInfo> {
     let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
       FBCrashLogInfo.predicateForCrashLogs(withProcessID: process.processIdentifier),
-      FBCrashLogInfo.predicateNewerThanDate(sinceDate),
+      FBCrashLogInfo.predicateNewer(thanDate: sinceDate),
     ])
 
     return unsafeBitCast(

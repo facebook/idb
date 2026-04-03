@@ -13,10 +13,10 @@ enum CrashLogQueryValueTransformer {
   static func predicate(from request: Idb_CrashLogQuery) -> NSPredicate {
     var subpredicates: [NSPredicate] = []
     if request.since != 0 {
-      subpredicates.append(FBCrashLogInfo.predicateNewerThanDate(Date(timeIntervalSince1970: TimeInterval(request.since))))
+      subpredicates.append(FBCrashLogInfo.predicateNewer(thanDate: Date(timeIntervalSince1970: TimeInterval(request.since))))
     }
     if request.before != 0 {
-      subpredicates.append(FBCrashLogInfo.predicateOlderThanDate(Date(timeIntervalSince1970: TimeInterval(request.before))))
+      subpredicates.append(FBCrashLogInfo.predicateOlder(thanDate: Date(timeIntervalSince1970: TimeInterval(request.before))))
     }
     if !request.bundleID.isEmpty {
       subpredicates.append(FBCrashLogInfo.predicate(forIdentifier: request.bundleID))

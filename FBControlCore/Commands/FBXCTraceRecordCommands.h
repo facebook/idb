@@ -29,11 +29,4 @@
 
 @end
 
-/**
- A concrete implementation of FBXCTraceRecordCommandsProtocol.
- */
-@interface FBXCTraceRecordCommands : NSObject <FBXCTraceRecordCommandsProtocol>
-
-@property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
-
-@end
+// FBXCTraceRecordCommands is now implemented in Swift.

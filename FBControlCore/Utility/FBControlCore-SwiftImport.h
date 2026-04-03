@@ -12,9 +12,13 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBBundleDescriptor.h>
+#import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBInstalledApplication.h>
+#import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
+#import <FBControlCore/FBXCTraceRecordCommands.h>
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
  #import <FBControlCore/FBControlCore-Swift.h>
