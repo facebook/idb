@@ -15,6 +15,7 @@
 #import <DTXConnectionServices/DTXSocketTransport.h>
 #import <DTXConnectionServices/DTXTransport.h>
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCTIssue.h>
 #import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
 #import <XCTestPrivate/XCTTestIdentifier.h>

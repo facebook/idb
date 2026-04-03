@@ -146,11 +146,11 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
                                             timeout:timeout
                                             architectures:bundleDescriptor.binary.architectures];
 
-  return [[[FBListTestStrategy alloc]
-           initWithTarget:self.simulator
-           configuration:configuration
-           logger:self.simulator.logger]
-          listTests];
+  return (FBFuture<NSArray<NSString *> *> *)[[[FBListTestStrategy alloc]
+                                              initWithTarget:self.simulator
+                                              configuration:configuration
+                                              logger:self.simulator.logger]
+                                             listTests];
 }
 
 - (FBFuture<NSString *> *)extendedTestShim

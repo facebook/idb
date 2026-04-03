@@ -37,3 +37,7 @@
 #import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>
 
 // Note: FBTestReporterAdapter.h is intentionally excluded as it imports XCTestPrivate headers
+
+#if __has_include(<XCTestBootstrap/XCTestBootstrap-Swift.h>)
+ #import <XCTestBootstrap/XCTestBootstrap-Swift.h>
+#endif

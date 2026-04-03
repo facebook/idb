@@ -7,6 +7,8 @@
 
 #import "FBTestRunnerConfiguration.h"
 
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
+
 #import "FBTestConfiguration.h"
 #import "FBXCTestConstants.h"
 #import "XCTestBootstrapError.h"

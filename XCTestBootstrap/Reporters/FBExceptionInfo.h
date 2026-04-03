@@ -7,17 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-/**
- A summary of an exception.
- */
-@interface FBExceptionInfo : NSObject
-
-@property (nonnull, nonatomic, readonly, copy) NSString *message;
-@property (nullable, nonatomic, readonly, copy) NSString *file;
-@property (nonatomic, readonly, assign) NSUInteger line;
-
-- (instancetype _Nonnull)initWithMessage:(nonnull NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
-
-- (instancetype _Nonnull)initWithMessage:(nonnull NSString *)message;
-
-@end
+// Class is now defined in FBExceptionInfo.swift
+@class FBExceptionInfo;

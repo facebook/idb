@@ -7,10 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-@interface FBOToolDynamicLibs : NSObject
-
-+ (nonnull FBFuture<NSArray *> *)findFullPathForSanitiserDyldInBundle:(nonnull NSString *)bundlePath onQueue:(nonnull dispatch_queue_t)queue;
-
-@end
+// Class is now defined in FBOToolDynamicLibs.swift
+@class FBOToolDynamicLibs;

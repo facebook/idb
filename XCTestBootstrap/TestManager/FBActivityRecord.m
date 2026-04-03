@@ -7,6 +7,7 @@
 
 #import "FBActivityRecord.h"
 
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCActivityRecord.h>
 
 #import "FBAttachment.h"
