@@ -12,6 +12,10 @@
 #import "FBConcatedJsonParser.h"
 #import "FBCrashLog.h"
 
+#if __has_include(<FBControlCore/FBControlCore-Swift.h>)
+ #import <FBControlCore/FBControlCore-Swift.h>
+#endif
+
 @implementation FBConcatedJSONCrashLogParser
 
 - (void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error

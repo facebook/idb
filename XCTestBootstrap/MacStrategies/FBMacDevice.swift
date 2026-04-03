@@ -513,7 +513,7 @@ import IOKit
   }
 
   @objc public func notify(ofCrash predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    return FBCrashLogNotifier.sharedInstance.nextCrashLog(for: predicate)
+    return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
   @objc public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {

@@ -27,35 +27,7 @@
 
 @end
 
-/**
- A log operation that is contained within an FBSubprocess
- */
-@interface FBProcessLogOperation : NSObject <FBLogOperation>
-
-/**
- The wrapped launched process.
- */
-@property (nonnull, nonatomic, readonly, strong) FBSubprocess *process;
-
-/**
- The Designated Initializer
-
- @param process the wrapped process.
- @param consumer the wrapped consumer.
- @param queue the queue to perform work on.
- @return an initialized FBProcessLogOperation instance.
- */
-- (nonnull instancetype)initWithProcess:(nonnull FBSubprocess *)process consumer:(nonnull id<FBDataConsumer>)consumer queue:(nonnull dispatch_queue_t)queue;
-
-/**
- Inserts the base "stream" argument into the argument array for os_log, if a subcommand is not already present.
-
- @param arguments the existing arguments
- @return a new arguments array containing either the original subcommand, or a stream subcommand.
- */
-+ (nonnull NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(nonnull NSArray<NSString *> *)arguments;
-
-@end
+// FBProcessLogOperation is now implemented in Swift.
 
 /**
  Commands for obtaining logs.
