@@ -7,6 +7,7 @@
 
 #import "FBTestReporterAdapter.h"
 
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCActivityRecord.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 

@@ -263,8 +263,8 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
 
   if let processLogDirectory {
     let mirrorLogger = FBXCTestLogger.defaultLogger(inDirectory: processLogDirectory)
-    stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger) as! FBFuture<AnyObject>
-    stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger) as! FBFuture<AnyObject>
+    stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
+    stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
   }
 
   let futureCls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)

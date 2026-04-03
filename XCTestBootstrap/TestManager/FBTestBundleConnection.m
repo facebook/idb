@@ -24,6 +24,7 @@
 #import <DTXConnectionServices/DTXSocketTransport.h>
 #import <DTXConnectionServices/DTXTransport.h>
 #import <FBControlCore/FBCrashLogCommands.h>
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/DTXConnection-XCTestAdditions.h>
 #import <XCTestPrivate/DTXProxyChannel-XCTestAdditions.h>
 #import <XCTestPrivate/XCTMessagingChannel_IDEToRunner-Protocol.h>

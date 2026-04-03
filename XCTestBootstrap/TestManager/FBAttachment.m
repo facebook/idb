@@ -7,6 +7,7 @@
 
 #import "FBAttachment.h"
 
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCTAttachment.h>
 
 @implementation FBAttachment

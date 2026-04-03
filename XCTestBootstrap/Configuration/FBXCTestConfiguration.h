@@ -7,205 +7,25 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
 /**
  A String Enum for Test Types.
  */
 typedef NSString *FBXCTestType NS_STRING_ENUM;
 
-/**
- An UITest.
- */
 extern FBXCTestType const _Nonnull FBXCTestTypeUITest;
-
-/**
- An Application Test.
- */
 static NSString *_Nonnull const FBXCTestTypeApplicationTestValue = @"application-test";
 extern FBXCTestType const _Nonnull FBXCTestTypeApplicationTest;
-
-/**
- A Logic Test.
- */
 extern FBXCTestType const _Nonnull FBXCTestTypeLogicTest;
-
-/**
- The Listing of Testing of tests in a bundle.
- */
 extern FBXCTestType const _Nonnull FBXCTestTypeListTest;
 
-@class FBCodeCoverageConfiguration;
-@class FBXCTestDestination;
-@class FBXCTestShimConfiguration;
-
-/**
- The Base Configuration for all tests.
- */
-@interface FBXCTestConfiguration : NSObject <NSCopying>
-
-/**
- The Default Initializer.
- This should not be called directly.
- */
-- (nonnull instancetype)initWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
-
-/**
- The Environment Variables for the Process-Under-Test that is launched.
- */
-@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
-
-/**
- The Directory to use for files required during the execution of the test run.
- */
-@property (nonnull, nonatomic, readonly, copy) NSString *workingDirectory;
-
-/**
- The Test Bundle to Execute.
- */
-@property (nonnull, nonatomic, readonly, copy) NSString *testBundlePath;
-
-/**
- The Type of the Test Bundle.
- */
-@property (nonnull, nonatomic, readonly, copy) FBXCTestType testType;
-
-/**
- YES if the test execution should pause on launch, waiting for a debugger to attach.
- NO otherwise.
- */
-@property (nonatomic, readonly, assign) BOOL waitForDebugger;
-
-/**
- The Timeout to wait for the test execution to finish.
- */
-@property (nonatomic, readonly, assign) NSTimeInterval testTimeout;
-
-/**
- Gets the Environment for a Subprocess.
- Will extract the environment variables from the appropriately prefixed environment variables.
- Will strip out environment variables that will confuse subprocesses if this class is called inside an 'xctest' environment.
-
- @param entries the entries to add in
- @return the subprocess environment
- */
-- (nonnull NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(nonnull NSDictionary<NSString *, NSString *> *)entries;
-
-@end
-
-/**
- A Test Configuration, specialized to the listing of Test Bundles.
- */
-@interface FBListTestConfiguration : FBXCTestConfiguration
-
-/**
- The supported architectures of the test bundle.
- */
-@property (nonnull, nonatomic, readonly, strong) NSSet<NSString *> *architectures;
-
-/**
- The Designated Initializer.
- */
-+ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
-
-@property (nullable, nonatomic, readonly, copy) NSString *runnerAppPath;
-
-@end
-
-/**
- A Test Configuration, specialized in running of Tests.
- */
-@interface FBTestManagerTestConfiguration : FBXCTestConfiguration
-
-/**
- The Path to the Application Hosting the Test.
- */
-@property (nonnull, nonatomic, readonly, copy) NSString *runnerAppPath;
-
-/**
- The Path to the test target Application.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *testTargetAppPath;
-
-/**
- The test filter for which test to run.
- Format: <testClass>/<testMethod>
- */
-@property (nullable, nonatomic, readonly, copy) NSString *testFilter;
-
-/**
- The path of log file that we dump all os_log to.
- (os_log means Apple's unified logging system (https://developer.apple.com/documentation/os/logging),
- we use this name to avoid confusing between various logging systems)
- */
-@property (nullable, nonatomic, readonly, copy) NSString *osLogPath;
-
-/**
- The path of video recording file that record the whole test run.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *videoRecordingPath;
-
-/**
- A list of test artifcats filename globs (see https://en.wikipedia.org/wiki/Glob_(programming) ) that
- any files in app's container folder matching them will be copied out to a temporary path before
- simulator is cleaned up.
- */
-@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *testArtifactsFilenameGlobs;
-
-/**
- The Designated Initializer.
- */
-+ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(nonnull NSString *)runnerAppPath testTargetAppPath:(nullable NSString *)testTargetAppPath testFilter:(nullable NSString *)testFilter videoRecordingPath:(nullable NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath;
-
-@end
-
 typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
-  /* Does not mirror logs */
   FBLogicTestMirrorNoLogs = 0,
-  /* Mirrors logs to files */
   FBLogicTestMirrorFileLogs = 1 << 0,
-  /* Mirrors logs to logger */
   FBLogicTestMirrorLogger = 1 << 1,
 };
 
-/**
- A Test Configuration, specialized to the running of Logic Tests.
- */
-@interface FBLogicTestConfiguration : FBXCTestConfiguration
-
-/**
- The Filter for Logic Tests.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *testFilter;
-
-/**
- How the logic test logs will be mirrored
- */
-@property (nonatomic, readonly) FBLogicTestMirrorLogs mirroring;
-
-/**
- The configuration for code coverage collection
-*/
-@property (nullable, nonatomic, readonly, retain) FBCodeCoverageConfiguration *coverageConfiguration;
-
-/**
- The path to the test bundle binary
-*/
-@property (nullable, nonatomic, readonly, copy) NSString *binaryPath;
-
-/**
- The Directory to use for storing logs generated during the execution of the test run.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *logDirectoryPath;
-
-/**
- The supported architectures of the test bundle.
- */
-@property (nonnull, nonatomic, readonly, strong) NSSet<NSString *> *architectures;
-
-/**
- The Designated Initializer.
- */
-+ (nonnull instancetype)configurationWithEnvironment:(nonnull NSDictionary<NSString *, NSString *> *)environment workingDirectory:(nonnull NSString *)workingDirectory testBundlePath:(nonnull NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(nullable NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures;
-
-@end
+// Classes are now defined in FBXCTestConfiguration.swift
+@class FBListTestConfiguration;
+@class FBLogicTestConfiguration;
+@class FBTestManagerTestConfiguration;
+@class FBXCTestConfiguration;

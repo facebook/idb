@@ -7,16 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-/**
- Framework and Class Loading for XCTestBoostrap.
- */
-@interface XCTestBootstrapFrameworkLoader : FBControlCoreFrameworkLoader
-
-/**
- All of the Frameworks for XCTestBootstrap.
- */
-@property (class, nonatomic, readonly, strong) XCTestBootstrapFrameworkLoader *allDependentFrameworks;
-
-@end
+// Class is now defined in XCTestBootstrapFrameworkLoader.swift
+@class XCTestBootstrapFrameworkLoader;

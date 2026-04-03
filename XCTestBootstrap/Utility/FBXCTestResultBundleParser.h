@@ -7,13 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
-@protocol FBiOSTarget;
-
-@interface FBXCTestResultBundleParser : NSObject
-
-+ (nonnull FBFuture<NSNull *> *)parse:(nonnull NSString *)resultBundlePath target:(nonnull id<FBiOSTarget>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger extractScreenshots:(BOOL)extractScreenshots;
-
-@end
+// Class is now defined in FBXCTestResultBundleParser.swift
+@class FBXCTestResultBundleParser;

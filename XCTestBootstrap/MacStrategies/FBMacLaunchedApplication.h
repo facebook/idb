@@ -7,14 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-@class FBMacDevice;
-
-@interface FBMacLaunchedApplication : NSObject <FBLaunchedApplication>
-
-- (nonnull instancetype)initWithBundleID:(nonnull NSString *)bundleID
-                       processIdentifier:(pid_t)processIdentifier
-                                  device:(nonnull FBMacDevice *)device
-                                   queue:(nonnull dispatch_queue_t)queue;
-@end
+// Class is now defined in FBMacLaunchedApplication.swift
+@class FBMacLaunchedApplication;

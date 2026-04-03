@@ -7,22 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-/*
- Class that can be used for operating on local Mac device
- */
-@interface FBMacDevice : NSObject <FBiOSTarget, FBXCTestExtendedCommands, FBProcessSpawnCommands>
-
-- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger;
-
-- (nonnull instancetype)initWithLogger:(nonnull id<FBControlCoreLogger>)logger catalyst:(BOOL)catalyst;
-
-/*
- Restores primary device state by:
- - Killling all launched process/apps
- - Removing all installed applications
- */
-- (nonnull FBFuture<NSNull *> *)restorePrimaryDeviceState;
-
-@end
+// Class is now defined in FBMacDevice.swift
+@class FBMacDevice;

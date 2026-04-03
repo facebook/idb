@@ -10,6 +10,7 @@
 #import <objc/runtime.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/XCTCapabilitiesBuilder.h>
 #import <XCTestPrivate/XCTTestIdentifier.h>
 #import <XCTestPrivate/XCTTestIdentifierSet.h>

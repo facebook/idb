@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
 /**
  The Error Domain for XCTestBootstrap Errors.
  */
@@ -22,20 +20,6 @@ extern const NSInteger XCTestBootstrapErrorCodeLostConnection;
 extern const NSInteger XCTestBootstrapErrorCodeStartupTimeout;
 
 /**
- XCTestBootstrap Errors construction.
- */
-@interface XCTestBootstrapError : FBControlCoreError
-
-@end
-
-/**
  The Error Domain for FBTestErrorDomain Errors.
  */
 extern NSString * _Nonnull const FBTestErrorDomain;
-
-/**
- FBXCTest Errors construction.
- */
-@interface FBXCTestError : FBControlCoreError
-
-@end

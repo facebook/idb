@@ -7,10 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-@interface FBOToolOperation : NSObject
-
-+ (nonnull FBFuture<NSArray<NSString *> *> *)listSanitiserDylibsRequiredByBundle:(nonnull NSString *)testBundlePath onQueue:(nonnull dispatch_queue_t)queue;
-
-@end
+// Class is now defined in FBOToolOperation.swift
+@class FBOToolOperation;
