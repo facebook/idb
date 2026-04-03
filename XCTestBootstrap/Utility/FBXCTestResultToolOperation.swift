@@ -92,7 +92,7 @@ private let JPEG = "public.jpeg"
           } else if encodeType == JPEG {
             return FBFuture(result: task)
           } else {
-            return FBControlCoreError.describe("Unrecognized XCTest screenshot encoding: \(encodeType)").failFuture()
+            return XCTestBootstrapError.describe("Unrecognized XCTest screenshot encoding: \(encodeType)").failFuture()
           }
         }),
       to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self

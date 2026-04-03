@@ -114,15 +114,17 @@ import Foundation
   }
 
   private func reportTestFailure(forTestClass testClass: String, testName: String, endTestEvent jsonEvent: [String: Any]) {
-    guard let exceptionDicts = jsonEvent["exceptions"] as? [[String: Any]] else { return }
+    let exceptionDicts = jsonEvent["exceptions"] as? [[String: Any]]
     var parsedExceptions: [FBExceptionInfo] = []
 
-    for exceptionDict in exceptionDicts {
-      let message = exceptionDict["reason"] as? String ?? ""
-      let file = exceptionDict["filePathInProject"] as? String
-      let line = (exceptionDict["lineNumber"] as? NSNumber)?.uintValue ?? 0
-      let exception = FBExceptionInfo(message: message, file: file, line: line)
-      parsedExceptions.append(exception)
+    if let exceptionDicts {
+      for exceptionDict in exceptionDicts {
+        let message = exceptionDict["reason"] as? String ?? ""
+        let file = exceptionDict["filePathInProject"] as? String
+        let line = (exceptionDict["lineNumber"] as? NSNumber)?.uintValue ?? 0
+        let exception = FBExceptionInfo(message: message, file: file, line: line)
+        parsedExceptions.append(exception)
+      }
     }
 
     reporter.testCaseDidFail(forTestClass: testClass, method: testName, exceptions: parsedExceptions)
