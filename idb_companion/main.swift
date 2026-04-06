@@ -693,8 +693,15 @@ private func idbMain() -> Int32 {
     signalHandlerFuture(UInt(SIGTERM), exitMessage: "Signalled: SIGTERM", logger: logger),
   ])
   let companionCompletedFuture = unsafeBitCast(getCompanionCompletedFuture(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger), to: FBFuture<AnyObject>.self)
-  guard let companionCompleted = try? companionCompletedFuture.`await`() as? FBFuture<NSNull> else {
-    logger.error().log("Failed to get companion completed future")
+  let companionCompleted: FBFuture<NSNull>
+  do {
+    guard let result = try companionCompletedFuture.`await`() as? FBFuture<NSNull> else {
+      logger.error().log("Failed to get companion completed future")
+      return 1
+    }
+    companionCompleted = result
+  } catch {
+    logger.error().log(error.localizedDescription)
     return 1
   }
 
@@ -706,8 +713,11 @@ private func idbMain() -> Int32 {
     logger.error().log(completedError.localizedDescription)
     return 1
   }
-  guard let result = try? completed.`await`() else {
-    logger.error().log("Companion completed with error")
+  let result: AnyObject
+  do {
+    result = try completed.`await`()
+  } catch {
+    logger.error().log(error.localizedDescription)
     return 1
   }
   if companionCompleted.state == FBFutureState.cancelled {

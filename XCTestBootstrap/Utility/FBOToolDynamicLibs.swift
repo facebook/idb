@@ -15,18 +15,18 @@ import Foundation
       unsafeBitCast(FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath, onQueue: queue), to: FBFuture<AnyObject>.self)
         .onQueue(
           queue,
-          map: { result -> AnyObject in
+          fmap: { result -> FBFuture<AnyObject> in
             let libsList = result as! [String]
-            let clanLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
+            let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
             let fileList: [URL]
             do {
-              fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clanLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])
+              fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clangLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])
             } catch {
-              return FBControlCoreError.describe("Failed to list files in directory \(clanLocation)").caused(by: error as NSError).failFuture() as AnyObject
+              return FBControlCoreError.describe("Failed to list files in directory \(clangLocation)").caused(by: error as NSError).failFuture()
             }
 
             if fileList.isEmpty {
-              return FBControlCoreError.describe("No clang version found in \(clanLocation)").failFuture() as AnyObject
+              return FBControlCoreError.describe("No clang version found in \(clangLocation)").failFuture()
             }
 
             let libsFolder = NSString.path(withComponents: [fileList[0].path, "lib/darwin/"])
@@ -57,7 +57,7 @@ import Foundation
               libraries.append(libPath)
             }
 
-            return libraries as NSArray
+            return FBFuture<AnyObject>(result: libraries as NSArray)
           }),
       to: FBFuture<NSArray>.self
     )
