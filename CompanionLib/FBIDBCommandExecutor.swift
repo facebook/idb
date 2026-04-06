@@ -803,7 +803,7 @@ import XCTestBootstrap
   }
 
   private func mediaCommands() -> FBFuture<AnyObject> {
-    guard let commands = target as? FBSimulatorMediaCommands else {
+    guard let commands = target as? FBSimulatorMediaCommandsProtocol else {
       return FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)

@@ -17,6 +17,7 @@
 
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBSimulatorApplicationCommands.h"
+#import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"

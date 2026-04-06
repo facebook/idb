@@ -22,10 +22,8 @@
 
 @end
 
-/**
- A Strategy for clearing the system keychain.
- This is useful if you wish to restore the Simulator to a state where there are no login credentials in the keychain.
- */
-@interface FBSimulatorKeychainCommands : NSObject <FBSimulatorKeychainCommandsProtocol, FBiOSTargetCommand>
-
-@end
+// FBSimulatorKeychainCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

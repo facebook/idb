@@ -12,7 +12,7 @@
 /**
  Commands to perform on a Simulator, related to photos/videos on the device
  */
-@protocol FBSimulatorMediaCommands <NSObject, FBiOSTargetCommand>
+@protocol FBSimulatorMediaCommandsProtocol <NSObject, FBiOSTargetCommand>
 
 /**
  Add media files to the simulator
@@ -24,9 +24,8 @@
 
 @end
 
-/**
- The implementation of the FBSimulatorMediaCommands instance.
- */
-@interface FBSimulatorMediaCommands : NSObject <FBSimulatorMediaCommands>
-
-@end
+// FBSimulatorMediaCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

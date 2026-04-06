@@ -33,22 +33,24 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands
   @objc
   public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
     return connectToImage()
-      .onQueue(simulator.workQueue, fmap: { image -> FBFuture<AnyObject> in
-        do {
-          let data: Data
-          if format == .JPEG {
-            data = try image.jpegImageData()
-          } else if format == .PNG {
-            data = try image.pngImageData()
-          } else {
-            return FBSimulatorError.describe("\(format) is not a recognized screenshot format")
-              .failFuture()
+      .onQueue(
+        simulator.workQueue,
+        fmap: { image -> FBFuture<AnyObject> in
+          do {
+            let data: Data
+            if format == .JPEG {
+              data = try image.jpegImageData()
+            } else if format == .PNG {
+              data = try image.pngImageData()
+            } else {
+              return FBSimulatorError.describe("\(format) is not a recognized screenshot format")
+                .failFuture()
+            }
+            return FBFuture(result: data as NSData)
+          } catch {
+            return FBFuture(error: error)
           }
-          return FBFuture(result: data as NSData)
-        } catch {
-          return FBFuture(error: error)
-        }
-      }) as! FBFuture<NSData>
+        }) as! FBFuture<NSData>
   }
 
   // MARK: - Private
@@ -58,10 +60,12 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands
       return FBFuture(result: image)
     }
     return simulator.connectToFramebuffer()
-      .onQueue(simulator.workQueue, fmap: { [weak self] framebuffer -> FBFuture<AnyObject> in
-        let image = FBSimulatorImage(framebuffer: framebuffer, logger: self?.simulator.logger)
-        self?.image = image
-        return FBFuture(result: image)
-      }) as! FBFuture<FBSimulatorImage>
+      .onQueue(
+        simulator.workQueue,
+        fmap: { [weak self] framebuffer -> FBFuture<AnyObject> in
+          let image = FBSimulatorImage(framebuffer: framebuffer, logger: self?.simulator.logger)
+          self?.image = image
+          return FBFuture(result: image)
+        }) as! FBFuture<FBSimulatorImage>
   }
 }

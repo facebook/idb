@@ -13,7 +13,7 @@
 extern NSString * _Nonnull const FBSimulatorControlErrorDomain;
 
 // FBSimulatorError class is now implemented in Swift.
-// Import the Swift header to get the class declaration.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
  #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
 #endif

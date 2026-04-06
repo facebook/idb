@@ -9,38 +9,8 @@
 
 #import <FBSimulatorControl/FBFramebuffer.h>
 
-@protocol FBControlCoreLogger;
-
-/**
- An object-container for an IOSurface, that can generate Images.
- */
-@interface FBSurfaceImageGenerator : NSObject <FBFramebufferConsumer>
-
-/**
- Create and return a new Image Generator.
-
- @param scale the scale to use for the Image.
- @param purpose the pupose of the image generator.
- @param logger the logger to use.
- @return a new Image Generator.
- */
-+ (nonnull instancetype)imageGeneratorWithScale:(nonnull NSDecimalNumber *)scale purpose:(nonnull NSString *)purpose logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Return a CGImageRef.
- The Image returned is autoreleased, so the caller must retain it.
-
- If there is no new image since the last time this was called, NULL will be returned.
- When when this image is obtained, it will be considered 'consumed'
- */
-- (nullable CGImageRef)availableImage;
-
-/**
- Return a CGImageRef.
- The Image returned is autoreleased, so the caller must retain it.
-
- This will not 'consume' the Image and can be fetched regardless of the last image consumed.
- */
-- (nullable CGImageRef)image;
-
-@end
+// FBSurfaceImageGenerator class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

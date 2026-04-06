@@ -12,9 +12,8 @@
 @class FBSimulator;
 @class FBSimulatorVideoStream;
 
-/**
- An implementation of Video Recording Commands for Simulators.
- */
-@interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBVideoStreamCommands>
-
-@end
+// FBSimulatorVideoRecordingCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

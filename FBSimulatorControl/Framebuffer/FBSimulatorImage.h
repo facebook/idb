@@ -9,46 +9,8 @@
 
 #import <FBSimulatorControl/FBFramebuffer.h>
 
-@class FBFramebuffer;
-
-/**
- Provides access to an Image Representation of a Simulator's Framebuffer.
- */
-@interface FBSimulatorImage : NSObject
-
-#pragma mark Initializers
-
-/**
- Creates a new FBSimulatorImage instance using a Surface.
-
- @param framebuffer the framebuffer to obtain frames from.
- @param logger the logger to use.
- @return a new FBSimulatorImage instance.
- */
-+ (nonnull instancetype)imageWithFramebuffer:(nonnull FBFramebuffer *)framebuffer logger:(nullable id<FBControlCoreLogger>)logger;
-
-#pragma mark Public Methods
-
-/**
- The Latest Image from the Framebuffer.
- This will return an autorelease Image, so it should be retained by the caller.
- */
-- (nullable CGImageRef)image;
-
-/**
- Get a JPEG encoded representation of the Image.
-
- @param error an error out for any error that occurs.
- @return the data if successful, nil otherwise.
- */
-- (nullable NSData *)jpegImageDataWithError:(NSError * _Nullable * _Nullable)error;
-
-/**
- Get a PNG encoded representation of the Image.
-
- @param error an error out for any error that occurs.
- @return the data if successful, nil otherwise.
- */
-- (nullable NSData *)pngImageDataWithError:(NSError * _Nullable * _Nullable)error;
-
-@end
+// FBSimulatorImage class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

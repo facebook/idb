@@ -9,9 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- An Implementation of FBLocationCommands for Simulators.
- */
-@interface FBSimulatorLocationCommands : NSObject <FBLocationCommands>
-
-@end
+// FBSimulatorLocationCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

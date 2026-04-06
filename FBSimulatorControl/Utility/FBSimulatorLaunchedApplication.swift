@@ -44,20 +44,22 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     attachment: FBProcessFileAttachment,
     launchFuture: FBFuture<NSNumber>
   ) -> FBFuture<FBSimulatorLaunchedApplication> {
-    return launchFuture.onQueue(simulator.workQueue, map: { processIdentifierNumber -> FBSimulatorLaunchedApplication in
-      let processIdentifier = processIdentifierNumber.int32Value
-      let terminationFuture = Self.terminationFuture(
-        forSimulator: simulator,
-        processIdentifier: processIdentifier
-      )
-      return FBSimulatorLaunchedApplication(
-        simulator: simulator,
-        configuration: configuration,
-        attachment: attachment,
-        processIdentifier: processIdentifier,
-        terminationFuture: terminationFuture
-      )
-    }) as! FBFuture<FBSimulatorLaunchedApplication>
+    return launchFuture.onQueue(
+      simulator.workQueue,
+      map: { processIdentifierNumber -> FBSimulatorLaunchedApplication in
+        let processIdentifier = processIdentifierNumber.int32Value
+        let terminationFuture = Self.terminationFuture(
+          forSimulator: simulator,
+          processIdentifier: processIdentifier
+        )
+        return FBSimulatorLaunchedApplication(
+          simulator: simulator,
+          configuration: configuration,
+          attachment: attachment,
+          processIdentifier: processIdentifier,
+          terminationFuture: terminationFuture
+        )
+      }) as! FBFuture<FBSimulatorLaunchedApplication>
   }
 
   // MARK: - Helpers
@@ -67,14 +69,19 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     forSimulator simulator: FBSimulator,
     processIdentifier: pid_t
   ) -> FBFuture<NSNull> {
-    let notifierFuture = processTerminationFutureNotifier(forProcessIdentifier: processIdentifier)
+    let notifierFuture =
+      processTerminationFutureNotifier(forProcessIdentifier: processIdentifier)
       .mapReplace(NSNull()) as! FBFuture<NSNull>
-    return notifierFuture
-      .onQueue(simulator.workQueue, respondToCancellation: {
-        return FBProcessTerminationStrategy
-          .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger!)
-          .killProcessIdentifier(processIdentifier)
-      })
+    return
+      notifierFuture
+      .onQueue(
+        simulator.workQueue,
+        respondToCancellation: {
+          return
+            FBProcessTerminationStrategy
+            .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger!)
+            .killProcessIdentifier(processIdentifier)
+        })
   }
 
   // MARK: - Private Init
@@ -90,9 +97,12 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     self.configuration = configuration
     self.attachment = attachment
     self.processIdentifier = processIdentifier
-    self.applicationTerminated = terminationFuture.onQueue(simulator.workQueue, chain: { future in
-      return attachment.detach().chainReplace(future)
-    }) as! FBFuture<NSNull>
+    self.applicationTerminated =
+      terminationFuture.onQueue(
+        simulator.workQueue,
+        chain: { future in
+          return attachment.detach().chainReplace(future)
+        }) as! FBFuture<NSNull>
     super.init()
   }
 
@@ -109,10 +119,12 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     )
 
     let future = FBMutableFuture<NSNumber>()
-    _ = future.onQueue(queue, respondToCancellation: {
-      source.cancel()
-      return FBFuture<NSNull>.empty()
-    })
+    _ = future.onQueue(
+      queue,
+      respondToCancellation: {
+        source.cancel()
+        return FBFuture<NSNull>.empty()
+      })
     source.setEventHandler {
       future.resolve(withResult: NSNumber(value: processIdentifier))
       source.cancel()
