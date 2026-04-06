@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -63,7 +58,7 @@ public final class FBSimulatorNotificationCommands: NSObject, FBNotificationComm
         resolve: { () -> FBFuture<AnyObject> in
           var error: NSError?
           FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
-          if let error = error {
+          if let error {
             return FBFuture(error: error)
           }
           return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>

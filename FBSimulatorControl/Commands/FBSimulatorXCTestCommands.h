@@ -1,17 +1,8 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- The implementation of the FBSimulatorXCTestCommands instance.
- */
-@interface FBSimulatorXCTestCommands : NSObject <FBXCTestExtendedCommands>
-
-@end
+// FBSimulatorXCTestCommands class is now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

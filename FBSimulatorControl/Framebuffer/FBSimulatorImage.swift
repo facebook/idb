@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import CoreImage
 import FBControlCore
@@ -44,7 +39,7 @@ public final class FBSimulatorImage: NSObject {
     if !framebuffer.isConsumerAttached(imageGenerator) {
       logger.log("Image Generator \(imageGenerator) not attached, attaching")
       let surface: IOSurface? = framebuffer.attach(imageGenerator, on: writeQueue)
-      if let surface = surface {
+      if let surface {
         logger.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
         imageGenerator.didChange(surface)
       } else {
@@ -80,7 +75,7 @@ public final class FBSimulatorImage: NSObject {
   }
 
   private class func imageData(from image: CGImage?, type: CFString) throws -> Data {
-    guard let image = image else {
+    guard let image else {
       throw
         FBSimulatorError
         .describe("No Image available to encode")

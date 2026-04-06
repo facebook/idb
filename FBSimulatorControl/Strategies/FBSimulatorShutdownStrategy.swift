@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
@@ -68,7 +63,7 @@ public final class FBSimulatorShutdownStrategy: NSObject {
       if let error = error as NSError?, error.code == errorCode {
         logger?.log("Got Error Code \(error.code) from shutdown, simulator is already shutdown")
         future.resolve(withResult: NSNull())
-      } else if let error = error {
+      } else if let error {
         future.resolveWithError(error)
       } else {
         future.resolve(withResult: NSNull())
@@ -106,7 +101,7 @@ public final class FBSimulatorShutdownStrategy: NSObject {
 
     logger?.debug().log("Erasing Simulator \(simulator.udid)")
     simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.asyncQueue) { error in
-      if let error = error {
+      if let error {
         future.resolveWithError(error)
       } else {
         future.resolve(withResult: NSNull())

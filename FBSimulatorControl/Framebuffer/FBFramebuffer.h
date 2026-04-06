@@ -1,15 +1,9 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBSimulator;
 @class IOSurface;
 
 /**
@@ -41,61 +35,5 @@ typedef struct {
 
 @end
 
-/**
- Provides a Framebuffer to interested consumers, wrapping the underlying implementation.
- */
-@interface FBFramebuffer : NSObject
-
-#pragma mark Initializers
-
-/**
- Obtains an IOSurface from the SimDeviceIOClient.
-
- @param simulator the IOClient to attach to.
- @param logger the logger to log to.
- @param error an error out for any error that occurs.
- @return a new FBFramebuffer if one could be constructed, nil on error.
- */
-+ (nullable instancetype)mainScreenSurfaceForSimulator:(nonnull FBSimulator *)simulator logger:(nonnull id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
-
-#pragma mark Public Methods
-
-/**
- Attaches a Consumer.
- The Consumer will be called on the provided queue.
-
- @param consumer the consumer to attach.
- @param queue the queue to notify the consumer on.
- @return A Surface is one is *immediately* available. This is not mutually exclusive the consumer being called on a queue.
- */
-- (nullable IOSurface *)attachConsumer:(nonnull id<FBFramebufferConsumer>)consumer onQueue:(nonnull dispatch_queue_t)queue;
-
-/**
- Detaches a Consumer.
- The Consumer will be called on the provided queue.
-
- @param consumer the consumer to attach.
- */
-- (void)detachConsumer:(nonnull id<FBFramebufferConsumer>)consumer;
-
-/**
- Queries if the consumer is attached.
-
- @param consumer the consumer to use.
- @return YES if attached, NO otherwise.
- */
-- (BOOL)isConsumerAttached:(nonnull id<FBFramebufferConsumer>)consumer;
-
-#pragma mark Stats
-
-/**
- Returns a snapshot of the current framebuffer stats.
- */
-- (FBFramebufferStats)currentStats;
-
-/**
- Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
- */
-@property (nonatomic, readonly) CFTimeInterval statsStartTime;
-
-@end
+// FBFramebuffer class is now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -57,7 +52,7 @@ private class FBSimulatorHIDEvent_Composite: NSObject, FBSimulatorHIDEventCompos
       .onQueue(
         DispatchQueue.main,
         fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
           }
           return unsafeBitCast(self.performEvents(next, on: hid), to: FBFuture<AnyObject>.self)
