@@ -70,7 +70,11 @@ struct VideoStreamMethodHandler {
         }
       }
     } else {
-      consumer = try FBFileWriter.syncWriter(forFilePath: start.filePath)
+      var writeError: NSError?
+      guard let writer = FBFileWriter.syncWriter(forFilePath: start.filePath, error: &writeError) else {
+        throw writeError ?? NSError(domain: "FBFileWriter", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create sync writer for \(start.filePath)"])
+      }
+      consumer = writer
     }
 
     let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil

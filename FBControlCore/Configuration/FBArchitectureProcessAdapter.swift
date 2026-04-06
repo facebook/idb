@@ -65,38 +65,46 @@ public class FBArchitectureProcessAdapter: NSObject {
     temporaryDirectory: URL
   ) -> FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>> {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: Array(requestedArchitectures))) compatible with \(FBCollectionInformation.oneLineDescription(from: Array(hostArchitectures)))")
         .failFuture() as! FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>>
     }
 
     return unsafeBitCast(
       verifyArchitectureAvailable(processConfiguration.launchPath, architecture: architecture, queue: queue)
-      .onQueue(queue, fmap: { (_: AnyObject) -> FBFuture<AnyObject> in
-        let fileName = (processConfiguration.launchPath as NSString).lastPathComponent + UUID().uuidString + "." + (architecture.rawValue)
-        let filePath = temporaryDirectory.appendingPathComponent(fileName, isDirectory: false)
-        return self.extractArchitecture(architecture, processConfiguration: processConfiguration, queue: queue, outputPath: filePath)
-            .mapReplace(filePath.path as NSString)
-      })
-      .onQueue(queue, fmap: { (extractedBinaryObj: AnyObject) -> FBFuture<AnyObject> in
-        let extractedBinary = extractedBinaryObj as! String
-        return self.getFixedupDyldFrameworkPath(fromOriginalBinary: processConfiguration.launchPath, queue: queue)
-          .onQueue(queue, map: { (dyldFrameworkPathObj: AnyObject) -> AnyObject in
-            let dyldFrameworkPath = dyldFrameworkPathObj as! String
-            var updatedEnvironment = processConfiguration.environment as [String: String]
-            // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framework"s in binary
-            // DYLD_LIBRARY_PATH adds additional search paths for required "*.dylib"s in binary
-            updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
-            updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
-            return FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
-              launchPath: extractedBinary,
-              arguments: processConfiguration.arguments,
-              environment: updatedEnvironment as [String: String],
-              io: processConfiguration.io,
-              mode: processConfiguration.mode
-            )
-          })
-      }),
+        .onQueue(
+          queue,
+          fmap: { (_: AnyObject) -> FBFuture<AnyObject> in
+            let fileName = (processConfiguration.launchPath as NSString).lastPathComponent + UUID().uuidString + "." + (architecture.rawValue)
+            let filePath = temporaryDirectory.appendingPathComponent(fileName, isDirectory: false)
+            return self.extractArchitecture(architecture, processConfiguration: processConfiguration, queue: queue, outputPath: filePath)
+              .mapReplace(filePath.path as NSString)
+          }
+        )
+        .onQueue(
+          queue,
+          fmap: { (extractedBinaryObj: AnyObject) -> FBFuture<AnyObject> in
+            let extractedBinary = extractedBinaryObj as! String
+            return self.getFixedupDyldFrameworkPath(fromOriginalBinary: processConfiguration.launchPath, queue: queue)
+              .onQueue(
+                queue,
+                map: { (dyldFrameworkPathObj: AnyObject) -> AnyObject in
+                  let dyldFrameworkPath = dyldFrameworkPathObj as! String
+                  var updatedEnvironment = processConfiguration.environment as [String: String]
+                  // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framework"s in binary
+                  // DYLD_LIBRARY_PATH adds additional search paths for required "*.dylib"s in binary
+                  updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
+                  updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
+                  return FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+                    launchPath: extractedBinary,
+                    arguments: processConfiguration.arguments,
+                    environment: updatedEnvironment as [String: String],
+                    io: processConfiguration.io,
+                    mode: processConfiguration.mode
+                  )
+                })
+          }),
       to: FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>>.self
     )
   }
@@ -116,11 +124,14 @@ public class FBArchitectureProcessAdapter: NSObject {
         .runUntilCompletion(withAcceptableExitCodes: [0])
         .rephraseFailure("Desired architecture \(architecture) not found in \(binary) binary")
         .mapReplace(NSNull())
-        .onQueue(queue, timeout: 20, handler: {
-          return FBControlCoreError
-            .describe("Timed out after 20.0s waiting for \(timeoutDescription)")
-            .failFuture()
-        }),
+        .onQueue(
+          queue, timeout: 20,
+          handler: {
+            return
+              FBControlCoreError
+              .describe("Timed out after 20.0s waiting for \(timeoutDescription)")
+              .failFuture()
+          }),
       to: FBFuture<NSNull>.self
     )
   }
@@ -142,11 +153,14 @@ public class FBArchitectureProcessAdapter: NSObject {
         .runUntilCompletion(withAcceptableExitCodes: [0])
         .rephraseFailure("Failed to thin \(architecture) architecture out from \(processConfiguration.launchPath) binary")
         .mapReplace(NSNull())
-        .onQueue(queue, timeout: 10, handler: {
-          return FBControlCoreError
-            .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
-            .failFuture()
-        }),
+        .onQueue(
+          queue, timeout: 10,
+          handler: {
+            return
+              FBControlCoreError
+              .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
+              .failFuture()
+          }),
       to: FBFuture<NSNull>.self
     )
   }
@@ -165,20 +179,25 @@ public class FBArchitectureProcessAdapter: NSObject {
         getOtoolInfo(fromBinary: binary, queue: queue),
         to: FBFuture<AnyObject>.self
       )
-      .onQueue(queue, map: { (resultObj: AnyObject) -> AnyObject in
-        let result = resultObj as! String
-        return self.extractRpaths(fromOtoolOutput: result) as NSSet
-      })
-      .onQueue(queue, map: { (resultObj: AnyObject) -> AnyObject in
-        let result = resultObj as! Set<String>
-        var rpaths: [String] = []
-        for binaryRpath in result {
-          if binaryRpath.hasPrefix("@executable_path") {
-            rpaths.append(binaryRpath.replacingOccurrences(of: "@executable_path", with: binaryFolder))
-          }
+      .onQueue(
+        queue,
+        map: { (resultObj: AnyObject) -> AnyObject in
+          let result = resultObj as! String
+          return self.extractRpaths(fromOtoolOutput: result) as NSSet
         }
-        return rpaths.joined(separator: ":") as NSString
-      }),
+      )
+      .onQueue(
+        queue,
+        map: { (resultObj: AnyObject) -> AnyObject in
+          let result = resultObj as! Set<String>
+          var rpaths: [String] = []
+          for binaryRpath in result {
+            if binaryRpath.hasPrefix("@executable_path") {
+              rpaths.append(binaryRpath.replacingOccurrences(of: "@executable_path", with: binaryFolder))
+            }
+          }
+          return rpaths.joined(separator: ":") as NSString
+        }),
       to: FBFuture<NSString>.self
     )
   }
@@ -195,20 +214,27 @@ public class FBArchitectureProcessAdapter: NSObject {
         .withStdErrToDevNull()
         .runUntilCompletion(withAcceptableExitCodes: [0])
         .rephraseFailure("Failed query otool -l from \(binary)")
-        .onQueue(queue, fmap: { task -> FBFuture<AnyObject> in
-          let subprocess = task as! FBSubprocess<AnyObject, NSString, NSNull>
-          if let stdOut = subprocess.stdOut {
-            return FBFuture<AnyObject>(result: stdOut)
+        .onQueue(
+          queue,
+          fmap: { task -> FBFuture<AnyObject> in
+            let subprocess = task as! FBSubprocess<AnyObject, NSString, NSNull>
+            if let stdOut = subprocess.stdOut {
+              return FBFuture<AnyObject>(result: stdOut)
+            }
+            return
+              FBControlCoreError
+              .describe("Failed to call otool -l over \(binary)")
+              .failFuture()
           }
-          return FBControlCoreError
-            .describe("Failed to call otool -l over \(binary)")
-            .failFuture()
-        })
-      .onQueue(queue, timeout: 10, handler: {
-        return FBControlCoreError
-          .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
-          .failFuture()
-      }),
+        )
+        .onQueue(
+          queue, timeout: 10,
+          handler: {
+            return
+              FBControlCoreError
+              .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
+              .failFuture()
+          }),
       to: FBFuture<NSString>.self
     )
   }

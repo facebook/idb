@@ -16,7 +16,9 @@
 #import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBCrashLog.h>
 #import <FBControlCore/FBEventReporterSubject.h>
+#import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBInstalledApplication.h>
+#import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBProcessSpawnConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>

@@ -93,11 +93,13 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
       .withStdErr(to: logger)
       .withTaskLifecycleLogging(to: logger)
       .start()
-      .onQueue(target.asyncQueue, map: { task -> AnyObject in
-        logger.log("Started xctrace \(task)")
-        let typedTask = unsafeBitCast(task, to: FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
-        return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
-      })
+      .onQueue(
+        target.asyncQueue,
+        map: { task -> AnyObject in
+          logger.log("Started xctrace \(task)")
+          let typedTask = unsafeBitCast(task, to: FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
+          return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
+        })
     return unsafeBitCast(result, to: FBFuture<FBXCTraceRecordOperation>.self)
   }
 
@@ -105,18 +107,23 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
 
   @objc
   public func stop(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
-    let result = FBFuture<AnyObject>.onQueue(queue, resolve: {
-      self.logger.log("Terminating xctrace record \(self.task). Backoff Timeout \(timeout)")
-      return self.task.sendSignal(SIGINT, backingOffToKillWithTimeout: timeout, logger: self.logger) as! FBFuture<AnyObject>
-    }).chainReplace(
+    let result = FBFuture<AnyObject>.onQueue(
+      queue,
+      resolve: {
+        self.logger.log("Terminating xctrace record \(self.task). Backoff Timeout \(timeout)")
+        return self.task.sendSignal(SIGINT, backingOffToKillWithTimeout: timeout, logger: self.logger) as! FBFuture<AnyObject>
+      }
+    ).chainReplace(
       self.task.exitCode
-        .onQueue(self.queue, fmap: { exitCode -> FBFuture<AnyObject> in
-          if exitCode.isEqual(to: NSNumber(value: 0)) {
-            return FBFuture<AnyObject>(result: self.traceDir as NSURL)
-          } else {
-            return FBControlCoreError.describe("Xctrace record exited with failure - status: \(exitCode)").failFuture()
-          }
-        })
+        .onQueue(
+          self.queue,
+          fmap: { exitCode -> FBFuture<AnyObject> in
+            if exitCode.isEqual(to: NSNumber(value: 0)) {
+              return FBFuture<AnyObject>(result: self.traceDir as NSURL)
+            } else {
+              return FBControlCoreError.describe("Xctrace record exited with failure - status: \(exitCode)").failFuture()
+            }
+          })
     )
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
@@ -141,9 +148,11 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
       .withStdErr(to: logger!)
       .withTaskLifecycleLogging(to: logger)
       .runUntilCompletion(withAcceptableExitCodes: Set([NSNumber(value: 0)]))
-      .onQueue(queue, map: { _ -> AnyObject in
-        return outputTraceFile as NSURL
-      })
+      .onQueue(
+        queue,
+        map: { _ -> AnyObject in
+          return outputTraceFile as NSURL
+        })
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
 
@@ -161,9 +170,11 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
   @objc public var completed: FBFuture<NSNull> {
     let result = task.exited(withCodes: Set([NSNumber(value: 0)]))
       .mapReplace(NSNull())
-      .onQueue(queue, respondToCancellation: {
-        return self.stop(withTimeout: DefaultXCTraceRecordStopTimeout).mapReplace(NSNull()) as! FBFuture<NSNull>
-      })
+      .onQueue(
+        queue,
+        respondToCancellation: {
+          return self.stop(withTimeout: DefaultXCTraceRecordStopTimeout).mapReplace(NSNull()) as! FBFuture<NSNull>
+        })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
 }

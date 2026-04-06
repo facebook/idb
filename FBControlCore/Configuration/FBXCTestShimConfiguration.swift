@@ -76,41 +76,45 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
   @objc
   public class func findShimDirectory(onQueue queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSString> {
-    let future: FBFuture<AnyObject> = FBFuture.onQueue(queue, resolve: { () -> FBFuture<AnyObject> in
-      var searchPaths: [String] = []
-      let environmentDefinedDirectory = ProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride]
-      if let envDir = environmentDefinedDirectory {
-        searchPaths.append(envDir)
-      } else {
-        if let root = fbxctestInstallationRoot {
-          searchPaths.append((root as NSString).appendingPathComponent("lib"))
-          searchPaths.append((root as NSString).appendingPathComponent("bin"))
-          searchPaths.append((root as NSString).appendingPathComponent("idb"))
-          searchPaths.append((root as NSString).appendingPathComponent("idb/bin"))
-        }
-        if let resourcePath = Bundle(for: self).resourcePath {
-          searchPaths.append(resourcePath)
-        }
-      }
-
-      var futures: [FBFuture<AnyObject>] = []
-      for path in searchPaths {
-        let f: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: path, logger: logger)
-        futures.append(f.fallback("" as AnyObject))
-      }
-      let combined = combineFutures(futures)
-      return combined.onQueue(queue, fmap: { result -> FBFuture<AnyObject> in
-        let paths = result as! [String]
-        for path in paths {
-          if path.isEmpty {
-            continue
+    let future: FBFuture<AnyObject> = FBFuture.onQueue(
+      queue,
+      resolve: { () -> FBFuture<AnyObject> in
+        var searchPaths: [String] = []
+        let environmentDefinedDirectory = ProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride]
+        if let envDir = environmentDefinedDirectory {
+          searchPaths.append(envDir)
+        } else {
+          if let root = fbxctestInstallationRoot {
+            searchPaths.append((root as NSString).appendingPathComponent("lib"))
+            searchPaths.append((root as NSString).appendingPathComponent("bin"))
+            searchPaths.append((root as NSString).appendingPathComponent("idb"))
+            searchPaths.append((root as NSString).appendingPathComponent("idb/bin"))
           }
-          return FBFuture(result: path as AnyObject)
+          if let resourcePath = Bundle(for: self).resourcePath {
+            searchPaths.append(resourcePath)
+          }
         }
-        let shimNames = Array(self.canonicalShimNameToShimFilenames.values)
-        return FBControlCoreError.describe("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in any of the expected directories \(FBCollectionInformation.oneLineDescription(from: searchPaths))").failFuture()
+
+        var futures: [FBFuture<AnyObject>] = []
+        for path in searchPaths {
+          let f: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: path, logger: logger)
+          futures.append(f.fallback("" as AnyObject))
+        }
+        let combined = combineFutures(futures)
+        return combined.onQueue(
+          queue,
+          fmap: { result -> FBFuture<AnyObject> in
+            let paths = result as! [String]
+            for path in paths {
+              if path.isEmpty {
+                continue
+              }
+              return FBFuture(result: path as AnyObject)
+            }
+            let shimNames = Array(self.canonicalShimNameToShimFilenames.values)
+            return FBControlCoreError.describe("Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in any of the expected directories \(FBCollectionInformation.oneLineDescription(from: searchPaths))").failFuture()
+          })
       })
-    })
     return unsafeBitCast(future, to: FBFuture<NSString>.self)
   }
 
@@ -145,10 +149,12 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   public class func defaultShimConfiguration(with logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
     let future: FBFuture<AnyObject> = (findShimDirectory(onQueue: queue, logger: logger) as! FBFuture<AnyObject>)
-      .onQueue(queue, fmap: { result -> FBFuture<AnyObject> in
-        let directory = result as! String
-        return shimConfiguration(withDirectory: directory, logger: logger) as! FBFuture<AnyObject>
-      })
+      .onQueue(
+        queue,
+        fmap: { result -> FBFuture<AnyObject> in
+          let directory = result as! String
+          return shimConfiguration(withDirectory: directory, logger: logger) as! FBFuture<AnyObject>
+        })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }
 
@@ -156,18 +162,23 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   public class func shimConfiguration(withDirectory directory: String, logger: FBControlCoreLogger?) -> FBFuture<FBXCTestShimConfiguration> {
     let queue = createWorkQueue()
     let future: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: directory, logger: logger)
-      .onQueue(queue, fmap: { result -> FBFuture<AnyObject> in
-        let shimDirectory = result as! String
-        let futures: [FBFuture<AnyObject>] = [
-          pathForCanonicallyNamedShim(keySimulatorTestShim, inDirectory: shimDirectory, logger: logger),
-          pathForCanonicallyNamedShim(keyMacTestShim, inDirectory: shimDirectory, logger: logger),
-        ]
-        return combineFutures(futures)
-      })
-      .onQueue(queue, map: { result -> AnyObject in
-        let shims = result as! [String]
-        return FBXCTestShimConfiguration(iOSSimulatorTestShimPath: shims[0], macOSTestShimPath: shims[1])
-      })
+      .onQueue(
+        queue,
+        fmap: { result -> FBFuture<AnyObject> in
+          let shimDirectory = result as! String
+          let futures: [FBFuture<AnyObject>] = [
+            pathForCanonicallyNamedShim(keySimulatorTestShim, inDirectory: shimDirectory, logger: logger),
+            pathForCanonicallyNamedShim(keyMacTestShim, inDirectory: shimDirectory, logger: logger),
+          ]
+          return combineFutures(futures)
+        }
+      )
+      .onQueue(
+        queue,
+        map: { result -> AnyObject in
+          let shims = result as! [String]
+          return FBXCTestShimConfiguration(iOSSimulatorTestShimPath: shims[0], macOSTestShimPath: shims[1])
+        })
     return unsafeBitCast(future, to: FBFuture<FBXCTestShimConfiguration>.self)
   }
 
