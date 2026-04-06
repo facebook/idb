@@ -25,7 +25,8 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
 
   var completed: FBFuture<NSNull> {
     let task = self.task
-    return (task.statLoc
+    return
+      (task.statLoc
       .mapReplace(NSNull())
       .onQueue(
         DispatchQueue.global(qos: .userInitiated),
@@ -86,24 +87,30 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
       launchMode: .failIfRunning
     )
     let debugServerPath = self.debugServerPath
-    return (simulator.launchApplication(configuration)
-      .onQueue(simulator.workQueue, fmap: { [weak self] (process: Any) -> FBFuture<AnyObject> in
-        guard let self = self else {
-          return FBFuture(error: FBSimulatorError.describe("Commands deallocated").build())
+    return
+      (simulator.launchApplication(configuration)
+      .onQueue(
+        simulator.workQueue,
+        fmap: { [weak self] (process: Any) -> FBFuture<AnyObject> in
+          guard let self = self else {
+            return FBFuture(error: FBSimulatorError.describe("Commands deallocated").build())
+          }
+          let launchedApp = process as! FBLaunchedApplication
+          return self.debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)
         }
-        let launchedApp = process as! FBLaunchedApplication
-        return self.debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)
-      })
-      .onQueue(simulator.workQueue, map: { (task: Any) -> AnyObject in
-        let debugTask = task as! FBSubprocess<NSNull, AnyObject, AnyObject>
-        let lldbBootstrapCommands = [
-          "process connect connect://localhost:\(port)",
-        ]
-        return FBSimulatorDebugServer(
-          debugServerTask: debugTask,
-          lldbBootstrapCommands: lldbBootstrapCommands
-        )
-      })) as! FBFuture<any FBDebugServer>
+      )
+      .onQueue(
+        simulator.workQueue,
+        map: { (task: Any) -> AnyObject in
+          let debugTask = task as! FBSubprocess<NSNull, AnyObject, AnyObject>
+          let lldbBootstrapCommands = [
+            "process connect connect://localhost:\(port)"
+          ]
+          return FBSimulatorDebugServer(
+            debugServerTask: debugTask,
+            lldbBootstrapCommands: lldbBootstrapCommands
+          )
+        })) as! FBFuture<any FBDebugServer>
   }
 
   // MARK: - Private

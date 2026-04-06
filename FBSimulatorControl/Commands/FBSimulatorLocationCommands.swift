@@ -35,19 +35,24 @@ public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
       return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
     }
     if FBSimDeviceWrapper.deviceCanSetLocation(simulator.device) {
-      return FBFuture.onQueue(simulator.workQueue, resolve: { () -> FBFuture<AnyObject> in
-        do {
-          try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
-          return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-        } catch {
-          return FBFuture(error: error)
-        }
-      }) as! FBFuture<NSNull>
+      return FBFuture.onQueue(
+        simulator.workQueue,
+        resolve: { () -> FBFuture<AnyObject> in
+          do {
+            try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
+            return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
+          } catch {
+            return FBFuture(error: error)
+          }
+        }) as! FBFuture<NSNull>
     }
 
-    return (simulator.connectToBridge()
-      .onQueue(simulator.workQueue, fmap: { bridge -> FBFuture<AnyObject> in
-        return unsafeBitCast(bridge.setLocationWithLatitude(latitude, longitude: longitude), to: FBFuture<AnyObject>.self)
-      }) as! FBFuture<NSNull>)
+    return
+      (simulator.connectToBridge()
+      .onQueue(
+        simulator.workQueue,
+        fmap: { bridge -> FBFuture<AnyObject> in
+          return unsafeBitCast(bridge.setLocationWithLatitude(latitude, longitude: longitude), to: FBFuture<AnyObject>.self)
+        }) as! FBFuture<NSNull>)
   }
 }

@@ -34,18 +34,21 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
     guard let simulator = simulator else {
       return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
     }
-    return (unsafeBitCast(configuration.io.attach(), to: FBFuture<AnyObject>.self)
-      .onQueue(simulator.workQueue, fmap: { (attachmentObj: AnyObject) -> FBFuture<AnyObject> in
-        let attachment = attachmentObj as! FBProcessIOAttachment
-        return unsafeBitCast(
-          FBSimulatorProcessSpawnCommands.launchProcess(
-            withSimulator: simulator,
-            configuration: configuration,
-            attachment: attachment
-          ),
-          to: FBFuture<AnyObject>.self
-        )
-      })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+    return
+      (unsafeBitCast(configuration.io.attach(), to: FBFuture<AnyObject>.self)
+      .onQueue(
+        simulator.workQueue,
+        fmap: { (attachmentObj: AnyObject) -> FBFuture<AnyObject> in
+          let attachment = attachmentObj as! FBProcessIOAttachment
+          return unsafeBitCast(
+            FBSimulatorProcessSpawnCommands.launchProcess(
+              withSimulator: simulator,
+              configuration: configuration,
+              attachment: attachment
+            ),
+            to: FBFuture<AnyObject>.self
+          )
+        })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
   }
 
   // MARK: - Public
@@ -111,18 +114,21 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
       }
     )
 
-    return ((launchFuture as FBFuture<AnyObject>)
-      .onQueue(simulator.workQueue, map: { (processIdentifierNumber: AnyObject) -> AnyObject in
-        let processIdentifier = (processIdentifierNumber as! NSNumber).int32Value
-        return FBSubprocess<AnyObject, AnyObject, AnyObject>(
-          processIdentifier: processIdentifier,
-          statLoc: unsafeBitCast(statLoc, to: FBFuture<NSNumber>.self),
-          exitCode: unsafeBitCast(exitCode, to: FBFuture<NSNumber>.self),
-          signal: unsafeBitCast(signal, to: FBFuture<NSNumber>.self),
-          configuration: configuration,
-          queue: simulator.workQueue
-        )
-      })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+    return
+      ((launchFuture as FBFuture<AnyObject>)
+      .onQueue(
+        simulator.workQueue,
+        map: { (processIdentifierNumber: AnyObject) -> AnyObject in
+          let processIdentifier = (processIdentifierNumber as! NSNumber).int32Value
+          return FBSubprocess<AnyObject, AnyObject, AnyObject>(
+            processIdentifier: processIdentifier,
+            statLoc: unsafeBitCast(statLoc, to: FBFuture<NSNumber>.self),
+            exitCode: unsafeBitCast(exitCode, to: FBFuture<NSNumber>.self),
+            signal: unsafeBitCast(signal, to: FBFuture<NSNumber>.self),
+            configuration: configuration,
+            queue: simulator.workQueue
+          )
+        })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
   }
 
   private class func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {

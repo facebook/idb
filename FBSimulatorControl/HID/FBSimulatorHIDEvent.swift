@@ -52,13 +52,16 @@ private class FBSimulatorHIDEvent_Composite: NSObject, FBSimulatorHIDEventCompos
     }
     let event = events[0]
     let next = events.count == 1 ? [] : Array(events[1...])
-    return (event.sendOn(hid: hid)
-      .onQueue(DispatchQueue.main, fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-        guard let self = self else {
-          return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-        }
-        return unsafeBitCast(self.performEvents(next, on: hid), to: FBFuture<AnyObject>.self)
-      })) as! FBFuture<NSNull>
+    return
+      (event.sendOn(hid: hid)
+      .onQueue(
+        DispatchQueue.main,
+        fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
+          guard let self = self else {
+            return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
+          }
+          return unsafeBitCast(self.performEvents(next, on: hid), to: FBFuture<AnyObject>.self)
+        })) as! FBFuture<NSNull>
   }
 
   override var description: String {

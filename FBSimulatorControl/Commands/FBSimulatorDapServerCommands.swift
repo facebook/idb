@@ -36,7 +36,8 @@ public final class FBSimulatorDapServerCommand: NSObject, FBDapServerCommand, FB
     do {
       try FileManager.default.createDirectory(atPath: dapLogDir, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("Dap Command: Failed to create log director on path \(dapLogDir). Error: \(error.localizedDescription)")
         .failFuture() as! FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>>
     }
@@ -44,17 +45,19 @@ public final class FBSimulatorDapServerCommand: NSObject, FBDapServerCommand, FB
     let logString = (dapLogDir as NSString).appendingPathComponent(UUID().uuidString + ".log")
     let createdLogFile = FileManager.default.createFile(atPath: logString, contents: nil, attributes: nil)
     if !createdLogFile {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("Failed to create log file on path \(logString)")
         .failFuture() as! FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>>
     }
 
     simulator.logger?.debug().log("Dap Command: Launching dap server logging at path \(logString)")
     let envs: [String: String] = [
-      "LLDBVSCODE_LOG": logString,
+      "LLDBVSCODE_LOG": logString
     ]
     guard let dataDirectory = simulator.dataDirectory else {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("Simulator has no data directory")
         .failFuture() as! FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>>
     }

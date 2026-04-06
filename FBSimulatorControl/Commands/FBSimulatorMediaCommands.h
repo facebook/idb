@@ -25,7 +25,4 @@
 @end
 
 // FBSimulatorMediaCommands class is now implemented in Swift.
-#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
-#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
- #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
-#endif
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

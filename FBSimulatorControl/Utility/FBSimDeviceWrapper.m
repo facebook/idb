@@ -91,7 +91,13 @@
 
 + (void)spawnAsyncOnDevice:(id)device path:(NSString *)path options:(NSDictionary<NSString *, id> *)options terminationQueue:(dispatch_queue_t)terminationQueue terminationHandler:(void (^)(int))terminationHandler completionQueue:(dispatch_queue_t)completionQueue completionHandler:(void (^)(NSError *_Nullable, pid_t))completionHandler
 {
-  [(SimDevice *)device spawnAsyncWithPath:path options:options terminationQueue:terminationQueue terminationHandler:terminationHandler completionQueue:completionQueue completionHandler:completionHandler];
+  [(SimDevice *)device
+   spawnAsyncWithPath:path
+   options:options
+   terminationQueue:terminationQueue
+   terminationHandler:terminationHandler
+   completionQueue:completionQueue
+   completionHandler:completionHandler];
 }
 
 #pragma mark - Media

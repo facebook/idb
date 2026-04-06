@@ -15,100 +15,20 @@
 /**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
-@protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
+@protocol FBSimulatorSettingsCommandsProtocol <NSObject, FBiOSTargetCommand>
 
-/**
- Enables or disables the hardware keyboard.
-
- @param enabled YES if enabled, NO if disabled.
- @return a Future that resolves when successful.
- */
 - (nonnull FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
-
-/**
- Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
-
- @param name preference name
- @param value preference value
- @param type preverence value type. If null defaults to `string`.
- @param domain preference domain - optional
- @return a Future that resolves when successful.
- */
 - (nonnull FBFuture<NSNull *> *)setPreference:(nonnull NSString *)name value:(nonnull NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
-
-/**
- Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
-
- @param name preference name
- @param domain domain to search - optional
- @return a Future that resolves with the current preference value
- */
 - (nonnull FBFuture<NSString *> *)getCurrentPreference:(nonnull NSString *)name domain:(nullable NSString *)domain;
-
-/**
- Grants access to the provided services.
-
- @param bundleIDs the bundle ids to provide access to.
- @return A future that resolves when the setting change is complete.
- */
 - (nonnull FBFuture<NSNull *> *)grantAccess:(nonnull NSSet<NSString *> *)bundleIDs toServices:(nonnull NSSet<FBTargetSettingsService> *)services;
-
-/**
- Revokes access to the provided services.
-
- @param bundleIDs the bundle ids to revoke access to.
- @return A future that resolves when the setting change is complete.
- */
 - (nonnull FBFuture<NSNull *> *)revokeAccess:(nonnull NSSet<NSString *> *)bundleIDs toServices:(nonnull NSSet<FBTargetSettingsService> *)services;
-
-/**
- Grants access to the provided deeplink scheme.
-
- @param bundleIDs the bundle ids to provide access to.
- @param scheme the deeplink scheme to allow
- @return A future that resolves when the setting change is complete.
- */
 - (nonnull FBFuture<NSNull *> *)grantAccess:(nonnull NSSet<NSString *> *)bundleIDs toDeeplink:(nonnull NSString *)scheme;
-
-/**
- Revokes access to the provided deeplink scheme.
-
- @param bundleIDs the bundle ids to revoke access to.
- @param scheme the deeplink scheme
- @return A future that resolves when the setting change is complete.
- */
 - (nonnull FBFuture<NSNull *> *)revokeAccess:(nonnull NSSet<NSString *> *)bundleIDs toDeeplink:(nonnull NSString *)scheme;
-
-/**
- Updates the contacts on the target, using the provided local databases.
- Takes local paths to AddressBook Databases. These replace the existing databases for the Address Book.
- Only sqlitedb paths should be provided, journaling files will be ignored.
-
- @param databaseDirectory the directory containing AddressBook.sqlitedb and AddressBookImages.sqlitedb paths.
- */
 - (nonnull FBFuture<NSNull *> *)updateContacts:(nonnull NSString *)databaseDirectory;
-
-/**
- Clears all contacts from the simulator using the CNContacts framework.
- This spawns a helper binary inside the simulator that uses native Contacts APIs to delete all contacts.
-
- @return A future that resolves when all contacts have been deleted.
- */
 - (nonnull FBFuture<NSNull *> *)clearContacts;
-
-/**
- Clears all photos from the simulator using the Photos framework.
- This spawns a helper binary inside the simulator that uses native Photos APIs to delete all photos.
-
- @return A future that resolves when all photos have been deleted.
- */
 - (nonnull FBFuture<NSNull *> *)clearPhotos;
 
 @end
 
-/**
- Modifies the Settings, Preferences & Defaults of a Simulator.
- */
-@interface FBSimulatorSettingsCommands : NSObject <FBSimulatorSettingsCommands>
-
-@end
+// FBSimulatorSettingsCommands class is now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

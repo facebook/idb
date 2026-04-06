@@ -20,6 +20,7 @@
 #import <FBControlCore/FBAccessibilityTraits.h>
 
 #import "FBSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"
 

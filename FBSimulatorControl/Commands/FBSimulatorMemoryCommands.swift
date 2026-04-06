@@ -35,13 +35,16 @@ public final class FBSimulatorMemoryCommands: NSObject, FBMemoryCommands {
       return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
     }
     if FBSimDeviceWrapper.deviceCanSimulateMemoryWarning(simulator.device) {
-      return FBFuture.onQueue(simulator.workQueue, resolve: { () -> FBFuture<AnyObject> in
-        FBSimDeviceWrapper.simulateMemoryWarning(onDevice: simulator.device)
-        return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+      return FBFuture.onQueue(
+        simulator.workQueue,
+        resolve: { () -> FBFuture<AnyObject> in
+          FBSimDeviceWrapper.simulateMemoryWarning(onDevice: simulator.device)
+          return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
+        }) as! FBFuture<NSNull>
     }
 
-    return FBSimulatorError
+    return
+      FBSimulatorError
       .describe("SimDevice doesn't have simulateMemoryWarning selector")
       .failFuture() as! FBFuture<NSNull>
   }

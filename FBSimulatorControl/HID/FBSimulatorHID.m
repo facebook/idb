@@ -19,6 +19,7 @@
 #import <SimulatorKit/SimDeviceLegacyClient.h>
 
 #import "FBSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorHID ()

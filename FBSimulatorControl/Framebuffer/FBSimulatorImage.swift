@@ -81,20 +81,23 @@ public final class FBSimulatorImage: NSObject {
 
   private class func imageData(from image: CGImage?, type: CFString) throws -> Data {
     guard let image = image else {
-      throw FBSimulatorError
+      throw
+        FBSimulatorError
         .describe("No Image available to encode")
         .build()
     }
 
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, type, 1, nil) else {
-      throw FBSimulatorError
+      throw
+        FBSimulatorError
         .describe("Could not create image destination")
         .build()
     }
     CGImageDestinationAddImage(destination, image, nil)
     if !CGImageDestinationFinalize(destination) {
-      throw FBSimulatorError
+      throw
+        FBSimulatorError
         .describe("Could not finalize the creation of the Image")
         .build()
     }

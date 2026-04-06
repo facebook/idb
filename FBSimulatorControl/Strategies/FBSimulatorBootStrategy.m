@@ -13,6 +13,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootVerificationStrategy.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 
 @implementation FBSimulatorBootStrategy

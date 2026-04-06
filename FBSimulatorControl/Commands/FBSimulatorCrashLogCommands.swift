@@ -63,7 +63,8 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
 
   @objc
   public func crashLogFiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("crashLogFiles not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
