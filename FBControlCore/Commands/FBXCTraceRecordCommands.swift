@@ -30,10 +30,12 @@ public class FBXCTraceRecordCommands: NSObject, FBXCTraceRecordCommandsProtocol 
 
   public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
     let result = FBXCTestShimConfiguration.sharedShimConfiguration(with: logger)
-      .onQueue(target.workQueue, fmap: { shim in
-        let op = FBXCTraceRecordOperation.operation(with: self.target, configuration: configuration.withShim(shim), logger: logger)
-        return unsafeBitCast(op, to: FBFuture<AnyObject>.self)
-      })
+      .onQueue(
+        target.workQueue,
+        fmap: { shim in
+          let op = FBXCTraceRecordOperation.operation(with: self.target, configuration: configuration.withShim(shim), logger: logger)
+          return unsafeBitCast(op, to: FBFuture<AnyObject>.self)
+        })
     return unsafeBitCast(result, to: FBFuture<FBXCTraceRecordOperation>.self)
   }
 }

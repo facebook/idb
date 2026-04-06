@@ -31,9 +31,11 @@ public class FBProcessLogOperation: NSObject, FBLogOperation {
     let process = self.process
     let result = process.exited(withCodes: Set([NSNumber(value: 0)]))
       .mapReplace(NSNull())
-      .onQueue(queue, respondToCancellation: {
-        return unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
-      })
+      .onQueue(
+        queue,
+        respondToCancellation: {
+          return unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
+        })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
 
