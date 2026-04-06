@@ -12,6 +12,7 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
 #import "FBSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 
 #pragma GCC diagnostic push

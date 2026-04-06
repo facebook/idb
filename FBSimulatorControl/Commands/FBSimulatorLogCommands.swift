@@ -53,10 +53,13 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
       io: processIO,
       mode: .default
     )
-    return (simulator.launchProcess(configuration)
-      .onQueue(simulator.workQueue, map: { process -> AnyObject in
-        return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
-      }) as! FBFuture<FBLogOperation>)
+    return
+      (simulator.launchProcess(configuration)
+      .onQueue(
+        simulator.workQueue,
+        map: { process -> AnyObject in
+          return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
+        }) as! FBFuture<FBLogOperation>)
   }
 
   // MARK: - Private
@@ -68,7 +71,8 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
     guard let root = FBSimDeviceWrapper.runtimeRoot(forDevice: simulator.device) else {
       throw FBSimulatorError.describe("Could not obtain runtime root for simulator").build()
     }
-    let path = (((root as NSString)
+    let path =
+      (((root as NSString)
       .appendingPathComponent("usr") as NSString)
       .appendingPathComponent("bin") as NSString)
       .appendingPathComponent("log")

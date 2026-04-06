@@ -23,6 +23,7 @@
 
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 
 @interface FBFramebuffer ()

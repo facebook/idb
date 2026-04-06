@@ -36,19 +36,25 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBVideoRecording
       return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
     }
     if video != nil {
-      return FBSimulatorError
+      return
+        FBSimulatorError
         .describe("Cannot create a new video recording session, one is already active")
         .failFuture() as! FBFuture<any FBiOSTargetOperation>
     }
-    return (FBSimulatorVideoRecordingCommands.videoImplementation(for: simulator, filePath: filePath)
-      .onQueue(simulator.workQueue, fmap: { [weak self] (video: Any) -> FBFuture<AnyObject> in
-        let video = video as! FBSimulatorVideo
-        return video.startRecording()
-          .onQueue(simulator.workQueue, map: { (_: Any) -> AnyObject in
-            self?.video = video
-            return video
-          })
-      })) as! FBFuture<any FBiOSTargetOperation>
+    return
+      (FBSimulatorVideoRecordingCommands.videoImplementation(for: simulator, filePath: filePath)
+      .onQueue(
+        simulator.workQueue,
+        fmap: { [weak self] (video: Any) -> FBFuture<AnyObject> in
+          let video = video as! FBSimulatorVideo
+          return video.startRecording()
+            .onQueue(
+              simulator.workQueue,
+              map: { (_: Any) -> AnyObject in
+                self?.video = video
+                return video
+              })
+        })) as! FBFuture<any FBiOSTargetOperation>
   }
 
   @objc
@@ -56,7 +62,8 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBVideoRecording
     let video = self.video
     self.video = nil
     guard let video = video else {
-      return FBSimulatorError
+      return
+        FBSimulatorError
         .describe("There was no existing video instance for \(self.simulator?.description ?? "unknown")")
         .failFuture() as! FBFuture<NSNull>
     }
@@ -71,11 +78,14 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBVideoRecording
       return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
     }
     let logger = simulator.logger
-    return (simulator.connectToFramebuffer()
-      .onQueue(simulator.workQueue, map: { (framebuffer: Any) -> AnyObject in
-        let framebuffer = framebuffer as! FBFramebuffer
-        return FBSimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, logger: logger!)
-      })) as! FBFuture<any FBVideoStream>
+    return
+      (simulator.connectToFramebuffer()
+      .onQueue(
+        simulator.workQueue,
+        map: { (framebuffer: Any) -> AnyObject in
+          let framebuffer = framebuffer as! FBFramebuffer
+          return FBSimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, logger: logger!)
+        })) as! FBFuture<any FBVideoStream>
   }
 
   // MARK: - Private

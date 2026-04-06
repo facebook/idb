@@ -30,7 +30,7 @@
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBFileCommands, FBLocationCommands, FBNotificationCommands, FBProcessSpawnCommands, FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorMediaCommandsProtocol, FBXCTestExtendedCommands, FBDapServerCommand, FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol>
+@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBFileCommands, FBLocationCommands, FBNotificationCommands, FBProcessSpawnCommands, FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol, FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorMediaCommandsProtocol, FBXCTestExtendedCommands, FBDapServerCommand, FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol>
 
 #pragma mark Properties
 

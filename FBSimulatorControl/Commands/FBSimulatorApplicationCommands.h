@@ -24,9 +24,5 @@
 
 @end
 
-/**
- Implementation of FBApplicationCommands for Simulators.
- */
-@interface FBSimulatorApplicationCommands : NSObject <FBApplicationCommands, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand>
-
-@end
+// FBSimulatorApplicationCommands class is now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

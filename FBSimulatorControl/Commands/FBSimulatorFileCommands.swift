@@ -31,20 +31,26 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
 
   @objc
   public func fileCommands(forContainerApplication bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
-    return (FBFuture<AnyObject>
-      .onQueue(simulator.asyncQueue, resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-        guard let self = self else { return nil }
-        do {
-          let containedFile = try self.containedFile(forApplication: bundleID)
-          return FBFileContainer.fileContainer(for: containedFile)
-        } catch {
-          errorPtr?.pointee = error as NSError
-          return nil
+    return
+      (FBFuture<AnyObject>
+      .onQueue(
+        simulator.asyncQueue,
+        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
+          guard let self = self else { return nil }
+          do {
+            let containedFile = try self.containedFile(forApplication: bundleID)
+            return FBFileContainer.fileContainer(for: containedFile)
+          } catch {
+            errorPtr?.pointee = error as NSError
+            return nil
+          }
         }
-      })
-      .onQueue(simulator.asyncQueue, contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-        return FBFuture<NSNull>.empty()
-      })) as! FBFutureContext<any FBFileContainerProtocol>
+      )
+      .onQueue(
+        simulator.asyncQueue,
+        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
+          return FBFuture<NSNull>.empty()
+        })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
@@ -54,38 +60,50 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
 
   @objc
   public func fileCommandsForApplicationContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    return (FBFuture<AnyObject>
-      .onQueue(simulator.workQueue, resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-        guard let self = self else { return nil }
-        do {
-          let containedFile = try self.containedFileForApplicationContainers()
-          return FBFileContainer.fileContainer(for: containedFile)
-        } catch {
-          errorPtr?.pointee = error as NSError
-          return nil
+    return
+      (FBFuture<AnyObject>
+      .onQueue(
+        simulator.workQueue,
+        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
+          guard let self = self else { return nil }
+          do {
+            let containedFile = try self.containedFileForApplicationContainers()
+            return FBFileContainer.fileContainer(for: containedFile)
+          } catch {
+            errorPtr?.pointee = error as NSError
+            return nil
+          }
         }
-      })
-      .onQueue(simulator.asyncQueue, contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-        return FBFuture<NSNull>.empty()
-      })) as! FBFutureContext<any FBFileContainerProtocol>
+      )
+      .onQueue(
+        simulator.asyncQueue,
+        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
+          return FBFuture<NSNull>.empty()
+        })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForGroupContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    return (FBFuture<AnyObject>
-      .onQueue(simulator.workQueue, resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-        guard let self = self else { return nil }
-        do {
-          let containedFile = try self.containedFileForGroupContainers()
-          return FBFileContainer.fileContainer(for: containedFile)
-        } catch {
-          errorPtr?.pointee = error as NSError
-          return nil
+    return
+      (FBFuture<AnyObject>
+      .onQueue(
+        simulator.workQueue,
+        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
+          guard let self = self else { return nil }
+          do {
+            let containedFile = try self.containedFileForGroupContainers()
+            return FBFileContainer.fileContainer(for: containedFile)
+          } catch {
+            errorPtr?.pointee = error as NSError
+            return nil
+          }
         }
-      })
-      .onQueue(simulator.asyncQueue, contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-        return FBFuture<NSNull>.empty()
-      })) as! FBFutureContext<any FBFileContainerProtocol>
+      )
+      .onQueue(
+        simulator.asyncQueue,
+        contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
+          return FBFuture<NSNull>.empty()
+        })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
@@ -103,42 +121,48 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
 
   @objc
   public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForMDMProfiles not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForProvisioningProfiles not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForSpringboardIconLayout not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForWallpaper() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForWallpaper not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForDiskImages() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForDiskImages not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError
+    return
+      FBControlCoreError
       .describe("fileCommandsForSymbols not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
@@ -160,7 +184,8 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
     var mapping: [String: String] = [:]
     for (bundleID, appInfo) in installedApps {
       guard let info = appInfo as? [String: Any],
-            let dataContainer = info["DataContainer"] as? URL else {
+        let dataContainer = info["DataContainer"] as? URL
+      else {
         continue
       }
       mapping[bundleID] = dataContainer.path
@@ -174,7 +199,8 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
     var bundleIDToURL: [String: URL] = [:]
     for (_, appInfo) in installedApps {
       guard let info = appInfo as? [String: Any],
-            let appContainers = info["GroupContainers"] as? [String: URL] else {
+        let appContainers = info["GroupContainers"] as? [String: URL]
+      else {
         continue
       }
       for (key, value) in appContainers {

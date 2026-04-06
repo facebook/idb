@@ -14,6 +14,7 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 
 static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";

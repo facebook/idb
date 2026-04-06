@@ -42,7 +42,8 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
     }
     var stopServiceFuture = FBFuture<NSNull>.empty()
     if simulator.state == .booted {
-      stopServiceFuture = (simulator.stopService(withName: FBSimulatorKeychainCommands.securitydServiceName)
+      stopServiceFuture =
+        (simulator.stopService(withName: FBSimulatorKeychainCommands.securitydServiceName)
         .mapReplace(NSNull())
         .timeout(
           FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout,
@@ -51,25 +52,27 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
     }
     return unsafeBitCast(
       stopServiceFuture
-        .onQueue(simulator.workQueue, fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self, let simulator = self.simulator else {
-            return FBSimulatorError.describe("Simulator deallocated").failFuture()
-          }
-          do {
-            try self.removeKeychainContents(logger: simulator.logger)
-          } catch {
-            return FBFuture(error: error)
-          }
-          if simulator.state == .booted {
-            return simulator.startService(withName: FBSimulatorKeychainCommands.securitydServiceName)
-              .mapReplace(NSNull())
-              .timeout(
-                FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout,
-                waitingFor: "\(FBSimulatorKeychainCommands.securitydServiceName) service to restart"
-              )
-          }
-          return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-        }),
+        .onQueue(
+          simulator.workQueue,
+          fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
+            guard let self = self, let simulator = self.simulator else {
+              return FBSimulatorError.describe("Simulator deallocated").failFuture()
+            }
+            do {
+              try self.removeKeychainContents(logger: simulator.logger)
+            } catch {
+              return FBFuture(error: error)
+            }
+            if simulator.state == .booted {
+              return simulator.startService(withName: FBSimulatorKeychainCommands.securitydServiceName)
+                .mapReplace(NSNull())
+                .timeout(
+                  FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout,
+                  waitingFor: "\(FBSimulatorKeychainCommands.securitydServiceName) service to restart"
+                )
+            }
+            return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
+          }),
       to: FBFuture<NSNull>.self
     )
   }
@@ -83,7 +86,8 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
     guard let dataDirectory = simulator.dataDirectory else {
       throw FBSimulatorError.describe("Simulator has no data directory").build()
     }
-    let keychainDirectory = ((dataDirectory as NSString)
+    let keychainDirectory =
+      ((dataDirectory as NSString)
       .appendingPathComponent("Library") as NSString)
       .appendingPathComponent("Keychains")
 
@@ -93,7 +97,8 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
       return
     }
     if !isDirectory.boolValue {
-      throw FBSimulatorError
+      throw
+        FBSimulatorError
         .describe("Keychain path \(keychainDirectory) is not a directory")
         .build()
     }

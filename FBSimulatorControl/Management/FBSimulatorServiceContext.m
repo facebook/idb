@@ -19,6 +19,7 @@
 #import <CoreSimulator/SimServiceContext.h>
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 

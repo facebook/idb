@@ -20,6 +20,7 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorCrashLogCommands.h"
 #import "FBSimulatorDapServerCommands.h"

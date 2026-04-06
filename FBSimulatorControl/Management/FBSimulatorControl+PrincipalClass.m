@@ -16,6 +16,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorConfiguration.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 #import "FBSimulatorError.h"

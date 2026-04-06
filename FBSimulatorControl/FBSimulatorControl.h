@@ -28,15 +28,12 @@
 #import <FBSimulatorControl/FBSimulatorCrashLogCommands.h>
 #import <FBSimulatorControl/FBSimulatorDapServerCommands.h>
 #import <FBSimulatorControl/FBSimulatorDebuggerCommands.h>
-#import <FBSimulatorControl/FBSimulatorDeletionStrategy.h>
-#import <FBSimulatorControl/FBSimulatorEraseStrategy.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorFileCommands.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
 #import <FBSimulatorControl/FBSimulatorHIDEvent.h>
 #import <FBSimulatorControl/FBSimulatorImage.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
-#import <FBSimulatorControl/FBSimulatorInflationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLaunchedApplication.h>
@@ -52,7 +49,6 @@
 #import <FBSimulatorControl/FBSimulatorServiceContext.h>
 #import <FBSimulatorControl/FBSimulatorSet.h>
 #import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-#import <FBSimulatorControl/FBSimulatorShutdownStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideo.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>

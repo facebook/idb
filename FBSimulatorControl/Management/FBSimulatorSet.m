@@ -18,13 +18,10 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulatorControl.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlFrameworkLoader.h"
-#import "FBSimulatorDeletionStrategy.h"
-#import "FBSimulatorEraseStrategy.h"
-#import "FBSimulatorInflationStrategy.h"
 #import "FBSimulatorNotificationUpdateStrategy.h"
-#import "FBSimulatorShutdownStrategy.h"
 
 @implementation FBSimulatorSet
 

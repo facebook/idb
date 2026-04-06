@@ -817,7 +817,7 @@ import XCTestBootstrap
   }
 
   private func settingsCommands() -> FBFuture<AnyObject> {
-    guard let commands = target as? FBSimulatorSettingsCommands else {
+    guard let commands = target as? (any FBSimulatorSettingsCommandsProtocol) else {
       return FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)

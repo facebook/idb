@@ -36,36 +36,42 @@ public final class FBSimulatorNotificationCommands: NSObject, FBNotificationComm
     }
 
     guard let data = jsonPayload.data(using: .utf8) else {
-      return FBSimulatorError
+      return
+        FBSimulatorError
         .describe("Failed to encode notification json as UTF-8")
         .failFuture() as! FBFuture<NSNull>
     }
     let jsonObj: [String: Any]
     do {
       guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        return FBSimulatorError
+        return
+          FBSimulatorError
           .describe("Failed to deserialize notification json: not a dictionary")
           .failFuture() as! FBFuture<NSNull>
       }
       jsonObj = parsed
     } catch {
-      return FBSimulatorError
+      return
+        FBSimulatorError
         .describe("Failed to deserialize notification json: \(error)")
         .failFuture() as! FBFuture<NSNull>
     }
 
     if FBSimDeviceWrapper.deviceCanSendPushNotification(simulator.device) {
-      return FBFuture.onQueue(simulator.workQueue, resolve: { () -> FBFuture<AnyObject> in
-        var error: NSError?
-        FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
-        if let error = error {
-          return FBFuture(error: error)
-        }
-        return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+      return FBFuture.onQueue(
+        simulator.workQueue,
+        resolve: { () -> FBFuture<AnyObject> in
+          var error: NSError?
+          FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
+          if let error = error {
+            return FBFuture(error: error)
+          }
+          return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
+        }) as! FBFuture<NSNull>
     }
 
-    return FBSimulatorError
+    return
+      FBSimulatorError
       .describe("SimDevice doesn't have sendPushNotificationForBundleID selector")
       .failFuture() as! FBFuture<NSNull>
   }
