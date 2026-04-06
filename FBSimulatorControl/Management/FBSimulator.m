@@ -10,31 +10,17 @@
 #import <CoreSimulator/SimRuntime.h>
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBAppleSimctlCommandExecutor.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBootConfiguration.h"
-#import "FBSimulatorConfiguration.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl-Swift.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorCrashLogCommands.h"
-#import "FBSimulatorDapServerCommands.h"
-#import "FBSimulatorDebuggerCommands.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
-#import "FBSimulatorLocationCommands.h"
-#import "FBSimulatorLogCommands.h"
 #import "FBSimulatorMediaCommands.h"
-#import "FBSimulatorMemoryCommands.h"
-#import "FBSimulatorNotificationCommands.h"
-#import "FBSimulatorProcessSpawnCommands.h"
-#import "FBSimulatorScreenshotCommands.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
-#import "FBSimulatorVideoRecordingCommands.h"
-#import "FBSimulatorXCTestCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"

@@ -7,12 +7,11 @@
 
 #import "FBInstrumentsOperation.h"
 
-#import "FBCollectionInformation.h"
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
-#import "FBInstrumentsConfiguration.h"
 #import "FBProcessBuilder.h"
 #import "FBiOSTarget.h"
 

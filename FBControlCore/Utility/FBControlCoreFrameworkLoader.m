@@ -9,7 +9,7 @@
 
 #include <dlfcn.h>
 
-#import "FBCollectionInformation.h"
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"

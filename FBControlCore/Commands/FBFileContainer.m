@@ -7,7 +7,7 @@
 
 #import "FBFileContainer.h"
 
-#import "FBCollectionInformation.h"
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBProcessBuilder.h"
 #import "FBProvisioningProfileCommands.h"

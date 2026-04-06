@@ -12,10 +12,10 @@
 #include <string.h>
 #include <sys/sysctl.h>
 
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBFuture.h"
 #import "FBProcessBuilder.h"
-#import "FBProcessInfo.h"
 
 static NSTimeInterval const SampleDuration = 1;
 

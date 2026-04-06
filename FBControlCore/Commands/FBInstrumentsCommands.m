@@ -7,7 +7,7 @@
 
 #import "FBInstrumentsCommands.h"
 
-#import "FBInstrumentsConfiguration.h"
+#import "FBControlCore-Swift.h"
 #import "FBInstrumentsOperation.h"
 #import "FBiOSTarget.h"
 
