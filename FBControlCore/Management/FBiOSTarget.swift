@@ -135,15 +135,19 @@ func FBiOSTargetPredicateForUDIDs(_ udids: NSArray) -> NSPredicate {
 /// Constructs a future that resolves when the target resolves to a provided state.
 @_cdecl("FBiOSTargetResolveState")
 func FBiOSTargetResolveState(_ target: FBiOSTarget, _ state: FBiOSTargetState) -> FBFuture<NSNull> {
-  return FBFuture<AnyObject>.onQueue(target.workQueue, resolveWhen: {
-    return target.state == state
-  })
+  return FBFuture<AnyObject>.onQueue(
+    target.workQueue,
+    resolveWhen: {
+      return target.state == state
+    })
 }
 
 /// Constructs a future that resolves when the target leaves a provided state.
 @_cdecl("FBiOSTargetResolveLeavesState")
 func FBiOSTargetResolveLeavesState(_ target: FBiOSTarget, _ state: FBiOSTargetState) -> FBFuture<NSNull> {
-  return FBFuture<AnyObject>.onQueue(target.workQueue, resolveWhen: {
-    return target.state != state
-  })
+  return FBFuture<AnyObject>.onQueue(
+    target.workQueue,
+    resolveWhen: {
+      return target.state != state
+    })
 }

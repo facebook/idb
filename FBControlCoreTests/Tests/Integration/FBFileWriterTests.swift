@@ -14,7 +14,10 @@ final class FBFileWriterTests: XCTestCase {
 
   func testNonBlockingCloseOfPipe() throws {
     let pipe = Pipe()
-    let writer = try FBFileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true)
+    var writeError: NSError?
+    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+      throw writeError!
+    }
 
     let expected = "Foo Bar Baz".data(using: .utf8)!
     writer.consumeData(expected)
@@ -34,7 +37,10 @@ final class FBFileWriterTests: XCTestCase {
     XCTAssertTrue(FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil))
     let fileHandle = FileHandle(forWritingAtPath: filePath)
     XCTAssertNotNil(fileHandle)
-    let writer = try FBFileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true)
+    var writeError: NSError?
+    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+      throw writeError!
+    }
 
     let data = "Foo Bar Baz".data(using: .utf8)!
     writer.consumeData(data)

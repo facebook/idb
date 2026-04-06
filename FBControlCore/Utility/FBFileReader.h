@@ -73,45 +73,4 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 
 @end
 
-/**
- Reads a file in the background, forwarding to a consumer.
- Closing of a file descriptor when reading has finished is also provided, where relevant.
- */
-@interface FBFileReader : NSObject <FBFileReaderProtocol>
-
-#pragma mark Initializers
-
-/**
- Creates a reader of NSData from a file descriptor.
-
- @param fileDescriptor the file descriptor to read from.
- @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a file reader.
- */
-+ (nonnull instancetype)readerWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(nonnull id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Creates a reader of dispatch data from a file descriptor.
-
- @param fileDescriptor the file descriptor to read from.
- @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a File Reader.
- */
-+ (nonnull instancetype)dispatchDataReaderWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(nonnull id<FBDispatchDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-/**
- Creates a reader of NSData from a file at a path on the filesystem.
- A file handle will be internally created, and closed when reading has finished.
-
- @param filePath the file path to read from.
- @param consumer the consumer to forward to.
- @param logger the logger to use.
- @return a File Reader, that is available when the underlying file handle has been opened.
- */
-+ (nonnull FBFuture<FBFileReader *> *)readerWithFilePath:(nonnull NSString *)filePath consumer:(nonnull id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
-
-@end
+// FBFileReader is now implemented in Swift.

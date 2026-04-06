@@ -221,4 +221,3 @@ extension FBControlCoreError {
     return FBFuture<AnyObject>(error: error)
   }
 }
-

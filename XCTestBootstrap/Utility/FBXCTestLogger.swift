@@ -123,7 +123,7 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
         logger.info().log("Mirroring output to \(filePath)")
         return FBCompositeDataConsumer(consumers: [
           consumer,
-          writer,
+          writer as! FBDataConsumer,
           FBLoggingDataConsumer(logger: logger),
         ])
       })

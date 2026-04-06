@@ -31,23 +31,26 @@ public final class FBXcodeDirectory: NSObject {
       .withStdOutInMemoryAsString()
       .withStdErrInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber]))
-      .onQueue(queue, fmap: { taskObj -> FBFuture<AnyObject> in
-        let task = taskObj as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-        let directory = task.stdOut as? String ?? ""
-        if directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-          let stdErr = task.stdErr as? String ?? ""
-          return FBControlCoreError
-            .describe("Empty output for xcode directory returned from `xcode-select -p`: \(stdErr)\(HelpText)")
-            .failFuture()
-        }
-        let resolved = (directory as NSString).resolvingSymlinksInPath
+      .onQueue(
+        queue,
+        fmap: { taskObj -> FBFuture<AnyObject> in
+          let task = taskObj as! FBSubprocess<AnyObject, AnyObject, AnyObject>
+          let directory = task.stdOut as? String ?? ""
+          if directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let stdErr = task.stdErr as? String ?? ""
+            return
+              FBControlCoreError
+              .describe("Empty output for xcode directory returned from `xcode-select -p`: \(stdErr)\(HelpText)")
+              .failFuture()
+          }
+          let resolved = (directory as NSString).resolvingSymlinksInPath
 
-        var error: NSError?
-        if !isValidXcodeDirectory(resolved, error: &error) {
-          return FBFuture<AnyObject>(error: error!)
-        }
-        return FBFuture<AnyObject>(result: resolved as NSString)
-      }) as! FBFuture<NSString>
+          var error: NSError?
+          if !isValidXcodeDirectory(resolved, error: &error) {
+            return FBFuture<AnyObject>(error: error!)
+          }
+          return FBFuture<AnyObject>(result: resolved as NSString)
+        }) as! FBFuture<NSString>
   }
 
   @objc public class func symlinkedDeveloperDirectory() throws -> String {
@@ -63,22 +66,26 @@ public final class FBXcodeDirectory: NSObject {
 
   private class func isValidXcodeDirectory(_ directory: String?, error: NSErrorPointer) -> Bool {
     guard let directory = directory else {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("Xcode Path is nil")
         .failBool(error)
     }
     if directory == "/Library/Developer/CommandLineTools" {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install.\(HelpText)")
         .failBool(error)
     }
     if !FileManager.default.fileExists(atPath: directory) {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("`xcode-select -p` returned \(directory) which doesn't exist\(HelpText)")
         .failBool(error)
     }
     if directory == "/" {
-      return FBControlCoreError
+      return
+        FBControlCoreError
         .describe("`xcode-select -p` returned / which isn't valid.\(HelpText)")
         .failBool(error)
     }

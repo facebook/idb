@@ -22,7 +22,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   func testConsumesData() throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader(fileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -45,7 +45,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
 
   func testConsumesEOFAfterStoppedReading() throws {
     let pipe = Pipe()
-    let reader = FBFileReader(fileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: self, logger: nil)
+    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -91,7 +91,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader(fileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -116,7 +116,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   func testPipeClosingBehindBackOfConsumer() throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader(fileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -244,7 +244,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testAttemptingToReadAGarbageFileDescriptor() throws {
-    let reader = FBFileReader(fileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
+    let reader = FBFileReader.reader(withFileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()

@@ -8,6 +8,8 @@
 #import "FBControlCoreLogger.h"
 #import "FBControlCoreLogger+OSLog.h"
 
+#import <FBControlCore/FBControlCore-Swift.h>
+
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
 
