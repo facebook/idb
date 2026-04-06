@@ -9,9 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- An Implementation of FBNotificationCommands for Simulators.
- */
-@interface FBSimulatorNotificationCommands : NSObject <FBNotificationCommands>
-
-@end
+// FBSimulatorNotificationCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

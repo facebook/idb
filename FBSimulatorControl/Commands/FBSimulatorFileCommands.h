@@ -47,9 +47,8 @@
 
 @end
 
-/**
- An implementation of FBFileCommands for Simulators
- */
-@interface FBSimulatorFileCommands : NSObject <FBFileCommands, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand>
-
-@end
+// FBSimulatorFileCommands class is now implemented in Swift.
+// Note: We intentionally do NOT import the Swift header here because FBSimulator.h
+// imports this header before FBSimulatorKeychainCommands.h, and the generated Swift
+// header references FBSimulatorKeychainCommandsProtocol. The Swift class is accessible
+// through the umbrella header FBSimulatorControl.h instead.

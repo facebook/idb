@@ -9,9 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- An Implementation of FBMemoryCommands for Simulators.
- */
-@interface FBSimulatorMemoryCommands : NSObject <FBMemoryCommands>
-
-@end
+// FBSimulatorMemoryCommands class is now implemented in Swift.
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

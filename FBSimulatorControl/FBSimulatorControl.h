@@ -5,10 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Headers with C type definitions must come before any header that imports
+// FBSimulatorControl-Swift.h, because the generated Swift header may reference
+// these types (e.g. FBSimulatorBootOptions).
 #import <FBSimulatorControl/FBAppleSimctlCommandExecutor.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBDefaultsModificationStrategy.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
+#import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
