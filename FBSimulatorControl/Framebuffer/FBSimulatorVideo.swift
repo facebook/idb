@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -55,7 +50,7 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
       completedFuture.onQueue(
         queue,
         respondToCancellation: { [weak self] in
-          guard let self = self else {
+          guard let self else {
             return FBFuture<NSNull>.empty()
           }
           return self.stopRecording()
@@ -92,7 +87,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
       .onQueue(
         queue,
         fmap: { [weak self] (simctlVersion: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBFuture(error: FBSimulatorError.describe("Deallocated").build())
           }
           let version = simctlVersion as! NSDecimalNumber
@@ -144,7 +139,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
       .onQueue(
         queue,
         fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBFuture(result: NSNull())
           }
           self.recordingStarted = nil

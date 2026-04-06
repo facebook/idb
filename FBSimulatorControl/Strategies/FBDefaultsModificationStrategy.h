@@ -1,85 +1,9 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBSimulator;
-
-/**
- A class for modifying defaults that reside on a Simulator.
- */
-@interface FBDefaultsModificationStrategy : NSObject
-
-/**
- A Strategy for modifying a plist.
-
- @param simulator the Simulator to use.
- @return a new strategy for the Simulator.
- */
-+ (nonnull instancetype)strategyWithSimulator:(nonnull FBSimulator *)simulator;
-
-/**
- Modifies the defaults in a given domain or path.
-
- @param domainOrPath the domain or path to modify.
- @param defaults key value pair of defaults to set.
- @return a future that resolves when completed.
- */
-- (nonnull FBFuture<NSNull *> *)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(nonnull NSDictionary<NSString *, id> *)defaults;
-
-@end
-
-/**
- Modifies a preference used by Applications
- */
-@interface FBPreferenceModificationStrategy : FBDefaultsModificationStrategy
-
-/**
- Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
-
- @param name preference name
- @param value preference value
- @param type preference value type. If null defaults to `string`.
- @param domain preference domain - optional
- @return a Future that resolves when successful.
- */
-- (nonnull FBFuture<NSNull *> *)setPreference:(nonnull NSString *)name value:(nonnull NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
-/**
- Gets a preference value by its name and domain. If domain not specified assumed to be Apple Global Domain
-
- @param name preference name
- @param domain domain to search - optional
- @return a Future that resolves with the current preference value
- */
-- (nonnull FBFuture<NSString *> *)getCurrentPreference:(nonnull NSString *)name domain:(nullable NSString *)domain;
-
-@end
-
-/**
- Modifies the defaults for the locationd daemon.
- */
-@interface FBLocationServicesModificationStrategy : FBDefaultsModificationStrategy
-
-/**
- Approves Location Services for Applications.
-
- @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
- @return a future that resolves when completed.
- */
-- (nonnull FBFuture<NSNull *> *)approveLocationServicesForBundleIDs:(nonnull NSArray<NSString *> *)bundleIDs;
-
-/**
- Revokes Location Services for Applications.
-
- @param bundleIDs an NSArray<NSString> of bundle IDs to to revoke location settings for.
- @return a future that resolves when completed.
- */
-- (nonnull FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(nonnull NSArray<NSString *> *)bundleIDs;
-
-@end
+// FBDefaultsModificationStrategy, FBPreferenceModificationStrategy, and
+// FBLocationServicesModificationStrategy classes are now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

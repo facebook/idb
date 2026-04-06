@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import AppKit
 @preconcurrency import CoreSimulator
@@ -69,7 +64,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
       .onQueue(
         simulator!.workQueue,
         fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBSimulatorError.describe("Simulator deallocated").failFuture()
           }
           return unsafeBitCast(self.boot(FBSimulatorBootConfiguration.default), to: FBFuture<AnyObject>.self)
@@ -149,7 +144,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     let configuration = NSWorkspace.OpenConfiguration()
     configuration.activates = true
     NSWorkspace.shared.openApplication(at: applicationURL, configuration: configuration) { _, error in
-      if let error = error {
+      if let error {
         future.resolveWithError(error)
       } else {
         future.resolve(withResult: NSNull())

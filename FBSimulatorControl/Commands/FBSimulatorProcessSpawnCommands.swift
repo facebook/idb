@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 @preconcurrency import FBControlCore
 import Foundation
@@ -31,7 +26,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
 
   @objc
   public func launchProcess(_ configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    guard let simulator = simulator else {
+    guard let simulator else {
       return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
     }
     return
@@ -106,7 +101,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
       },
       completionQueue: simulator.workQueue,
       completionHandler: { (error: Error?, processIdentifier: Int32) in
-        if let error = error {
+        if let error {
           launchFuture.resolveWithError(error)
         } else {
           launchFuture.resolve(withResult: NSNumber(value: processIdentifier))
@@ -135,10 +130,10 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
-    if let stdOut = stdOut {
+    if let stdOut {
       options["stdout"] = NSNumber(value: stdOut.fileDescriptor)
     }
-    if let stdErr = stdErr {
+    if let stdErr {
       options["stderr"] = NSNumber(value: stdErr.fileDescriptor)
     }
     options["standalone"] = NSNumber(value: shouldLaunchStandalone(onSimulator: simulator, mode: mode))

@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
@@ -46,7 +41,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       .onQueue(
         simulator!.workQueue,
         fmap: { [weak self] (appBundleObj: Any) -> FBFuture<AnyObject> in
-          guard let self = self, let simulator = self.simulator else {
+          guard let self, let simulator = self.simulator else {
             return FBSimulatorError.describe("Simulator deallocated").failFuture()
           }
           let appBundle = appBundleObj as! FBBundleDescriptor
@@ -94,7 +89,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       .onQueue(
         simulator.workQueue,
         fmap: { [weak self] (attachmentObj: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBSimulatorError.describe("Simulator deallocated").failFuture()
           }
           let attachment = attachmentObj as! FBProcessFileAttachment
@@ -330,7 +325,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
             return FBSimulatorError.describe("App '\(bundleID)' can't be launched as it is already running (PID=\(processID!))")
               .failFuture()
           } else if launchMode == .relaunchIfRunning {
-            guard let self = self else {
+            guard let self else {
               return FBSimulatorError.describe("Simulator deallocated").failFuture()
             }
             return unsafeBitCast(self.killApplication(withBundleID: bundleID), to: FBFuture<AnyObject>.self)
@@ -387,7 +382,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
 
     logger?.log("Launching Application \(configuration.bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
     simulator.device.launchApplicationAsync(withID: configuration.bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
-      if let error = error {
+      if let error {
         logger?.log("Failed to launch Application \(configuration.bundleID) \(error)")
         future.resolveWithError(error)
       } else {
@@ -399,7 +394,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
   }
 
   private func translateAbsolutePath(_ absolutePath: String?, toPathRelativeTo referencePath: String) -> String? {
-    guard let absolutePath = absolutePath else { return nil }
+    guard let absolutePath else { return nil }
     if !absolutePath.hasPrefix("/") {
       return absolutePath
     }
@@ -415,10 +410,10 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       withArguments: configuration.arguments,
       environment: configuration.environment,
       waitForDebugger: configuration.waitForDebugger)
-    if let stdOutPath = stdOutPath {
+    if let stdOutPath {
       options["stdout"] = stdOutPath
     }
-    if let stdErrPath = stdErrPath {
+    if let stdErrPath {
       options["stderr"] = stdErrPath
     }
     return options
@@ -444,7 +439,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       return nil
     }
     let dataContainer = appInfo[keyDataContainer]
-    if let dataContainer = dataContainer, !(dataContainer is URL) {
+    if let dataContainer, !(dataContainer is URL) {
       FBControlCoreError.describe("Data Container \(dataContainer) is not a NSURL for \(keyDataContainer) in \(appInfo)").fail(error)
       return nil
     }
@@ -453,7 +448,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       return nil
     }
 
-    let _ = appName // used for validation only
+    _ = appName // used for validation only
     return FBInstalledApplication.installedApplication(
       withBundle: bundle,
       installTypeString: typeString,
@@ -477,7 +472,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
         simulator.workQueue,
         chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
           let installed = future.result as? FBInstalledApplication
-          if let installed = installed, installed.installType == .system {
+          if let installed, installed.installType == .system {
             return FBSimulatorError.describe("Cannot install app as it is a system app \(installed)")
               .failFuture()
           }

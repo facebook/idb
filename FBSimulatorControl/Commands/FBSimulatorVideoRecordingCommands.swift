@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -61,7 +56,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBVideoRecording
   public func stopRecording() -> FBFuture<NSNull> {
     let video = self.video
     self.video = nil
-    guard let video = video else {
+    guard let video else {
       return
         FBSimulatorError
         .describe("There was no existing video instance for \(self.simulator?.description ?? "unknown")")

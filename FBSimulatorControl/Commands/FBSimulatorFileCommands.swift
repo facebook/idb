@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -36,7 +31,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       .onQueue(
         simulator.asyncQueue,
         resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self = self else { return nil }
+          guard let self else { return nil }
           do {
             let containedFile = try self.containedFile(forApplication: bundleID)
             return FBFileContainer.fileContainer(for: containedFile)
@@ -65,7 +60,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       .onQueue(
         simulator.workQueue,
         resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self = self else { return nil }
+          guard let self else { return nil }
           do {
             let containedFile = try self.containedFileForApplicationContainers()
             return FBFileContainer.fileContainer(for: containedFile)
@@ -89,7 +84,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       .onQueue(
         simulator.workQueue,
         resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self = self else { return nil }
+          guard let self else { return nil }
           do {
             let containedFile = try self.containedFileForGroupContainers()
             return FBFileContainer.fileContainer(for: containedFile)

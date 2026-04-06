@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 import FBControlCore
 import Foundation
@@ -55,7 +50,7 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
         .onQueue(
           simulator.workQueue,
           fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-            guard let self = self, let simulator = self.simulator else {
+            guard let self, let simulator = self.simulator else {
               return FBSimulatorError.describe("Simulator deallocated").failFuture()
             }
             do {

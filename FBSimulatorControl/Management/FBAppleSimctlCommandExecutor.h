@@ -1,51 +1,8 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBSimulator;
-@class FBSimulatorSet;
-
-@protocol FBControlCoreLogger;
-@protocol FBDataConsumer;
-
-/**
- A command executor for 'simctl'
- */
-@interface FBAppleSimctlCommandExecutor : NSObject
-
-#pragma mark Initializers
-
-/**
- Constructs an Executor for a given simulator.
-
- @param simulator the simulator to execute on
- @return a new command executor
- */
-+ (nonnull instancetype)executorForSimulator:(nonnull FBSimulator *)simulator;
-
-/**
- Constructs an Executor for a given simulator set.
-
- @param set the simulator to execute against.
- @return a new command executor
- */
-+ (nonnull instancetype)executorForDeviceSet:(nonnull FBSimulatorSet *)set;
-
-#pragma mark Public Methods
-
-/**
- Constructs a task builder.
-
- @param command the command name.
- @param arguments the arguments of the command.
- */
-- (nonnull FBProcessBuilder<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *)taskBuilderWithCommand:(nonnull NSString *)command arguments:(nonnull NSArray<NSString *> *)arguments;
-
-@end
+// FBAppleSimctlCommandExecutor class is now implemented in Swift.
+// The Swift header is imported by the umbrella header FBSimulatorControl.h.

@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
@@ -185,11 +180,11 @@ extension FBSimulatorConfiguration {
   }
 
   private class func supportedRuntimes() -> [SimRuntime] {
-    return FBSimulatorServiceContext.shared().supportedRuntimes()
+    return FBSimulatorServiceContext.sharedServiceContext().supportedRuntimes()
   }
 
   private class func supportedDeviceTypes() -> [SimDeviceType] {
-    return FBSimulatorServiceContext.shared().supportedDeviceTypes()
+    return FBSimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
   }
 
   private class func supportedRuntimes(forDevice device: FBDeviceType) -> [SimRuntime] {
