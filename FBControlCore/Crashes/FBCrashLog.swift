@@ -115,7 +115,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     do {
       crashFileData = try Data(contentsOf: URL(fileURLWithPath: crashPath))
     } catch {
-      throw FBControlCoreError.describe("Could not read data from \(crashPath)").caused(by:error as NSError).build()
+      throw FBControlCoreError.describe("Could not read data from \(crashPath)").caused(by: error as NSError).build()
     }
     if crashFileData.isEmpty {
       throw FBControlCoreError.describe("Crash file at \(crashPath) is empty").build()
@@ -206,7 +206,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     do {
       contents = try loadRawCrashLogString()
     } catch {
-      throw FBControlCoreError.describe("Failed to read crash log at path \(crashPath)").caused(by:error as NSError).build()
+      throw FBControlCoreError.describe("Failed to read crash log at path \(crashPath)").caused(by: error as NSError).build()
     }
     return FBCrashLog(info: self, contents: contents)
   }
@@ -367,7 +367,8 @@ public class FBCrashLogInfo: NSObject, NSCopying {
       guard let fileName = evaluatedObject as? String else { return false }
       let path = (basePath as NSString).appendingPathComponent(fileName)
       guard let attributes = try? fileManager.attributesOfItem(atPath: path),
-            let modDate = attributes[.modificationDate] as? Date else {
+        let modDate = attributes[.modificationDate] as? Date
+      else {
         return false
       }
       return modDate.compare(date) != .orderedAscending

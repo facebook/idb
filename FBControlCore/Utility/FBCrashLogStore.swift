@@ -103,9 +103,11 @@ public class FBCrashLogStore: NSObject {
 
   @objc(nextCrashLogForMatchingPredicate:)
   public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    let result = FBFuture<AnyObject>.onQueue(queue, resolve: {
-      return FBCrashLogStore.oneshotCrashLogNotification(forPredicate: predicate, queue: self.queue)
-    })
+    let result = FBFuture<AnyObject>.onQueue(
+      queue,
+      resolve: {
+        return FBCrashLogStore.oneshotCrashLogNotification(forPredicate: predicate, queue: self.queue)
+      })
     return unsafeBitCast(result, to: FBFuture<FBCrashLogInfo>.self)
   }
 
@@ -167,12 +169,14 @@ public class FBCrashLogStore: NSObject {
       }
     }
 
-    return future.onQueue(queue, respondToCancellation: {
-      if let obs = holder.observer {
-        notificationCenter.removeObserver(obs)
-      }
-      return FBFuture<AnyObject>.empty()
-    })
+    return future.onQueue(
+      queue,
+      respondToCancellation: {
+        if let obs = holder.observer {
+          notificationCenter.removeObserver(obs)
+        }
+        return FBFuture<AnyObject>.empty()
+      })
   }
 
   private func ingestCrashLogInDirectory(_ directory: String) -> [FBCrashLogInfo] {

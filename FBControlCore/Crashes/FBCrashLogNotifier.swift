@@ -43,16 +43,19 @@ public class FBCrashLogNotifier: NSObject {
     _ = startListening(true)
 
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.crashlogfetch")
-    let result = FBFuture<AnyObject>.onQueue(queue, resolveUntil: {
-      let crashInfo = (FBCrashLogInfo.crashInfo(afterDate: FBCrashLogNotifier.sharedInstance.sinceDate, logger: nil) as NSArray)
-        .filtered(using: predicate)
-        .first as? FBCrashLogInfo
-      guard let crashInfo = crashInfo else {
-        return FBControlCoreError.describe("Crash Log Info for \(predicate) could not be obtained").failFuture()
-      }
-      _ = self.store.ingestCrashLog(atPath: crashInfo.crashPath)
-      return FBFuture(result: crashInfo)
-    })
+    let result = FBFuture<AnyObject>.onQueue(
+      queue,
+      resolveUntil: {
+        let crashInfo =
+          (FBCrashLogInfo.crashInfo(afterDate: FBCrashLogNotifier.sharedInstance.sinceDate, logger: nil) as NSArray)
+          .filtered(using: predicate)
+          .first as? FBCrashLogInfo
+        guard let crashInfo = crashInfo else {
+          return FBControlCoreError.describe("Crash Log Info for \(predicate) could not be obtained").failFuture()
+        }
+        _ = self.store.ingestCrashLog(atPath: crashInfo.crashPath)
+        return FBFuture(result: crashInfo)
+      })
     return unsafeBitCast(result, to: FBFuture<FBCrashLogInfo>.self)
   }
 }
