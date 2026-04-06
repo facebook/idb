@@ -31,6 +31,7 @@ public final class FBXcodeDirectory: NSObject {
       .withStdOutInMemoryAsString()
       .withStdErrInMemoryAsString()
       .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber]))
+      .timeout(10, waitingFor: "xcode-select to return the developer directory")
       .onQueue(
         queue,
         fmap: { taskObj -> FBFuture<AnyObject> in

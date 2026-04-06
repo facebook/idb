@@ -28,7 +28,7 @@ import Foundation
   ) -> FBTestManagerResultSummary {
     return FBTestManagerResultSummary(
       testSuite: testSuite,
-      finishTime: FBTestManagerResultSummary.dateFormatter.date(from: finishTime)!,
+      finishTime: FBTestManagerResultSummary.dateFormatter.date(from: finishTime) ?? Date(timeIntervalSince1970: 0),
       runCount: runCount.intValue,
       failureCount: failuresCount.intValue,
       unexpected: unexpectedFailureCount.intValue,
