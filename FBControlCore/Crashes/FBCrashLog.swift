@@ -317,7 +317,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
     }
     let parentProcessNameStr = parentProcessName as String
     if parentProcessNameStr.isEmpty {
-      throw FBControlCoreError.describe("Missing process name in crash log").build()
+      throw FBControlCoreError.describe("Missing parent process name in crash log").build()
     }
     let executablePathStr = executablePath as String
     if executablePathStr.isEmpty {

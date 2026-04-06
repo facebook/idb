@@ -76,7 +76,7 @@ struct InstrumentsRunMethodHandler {
     let processed = try await BridgeFuture.value(
       FBInstrumentsOperation.postProcess(
         postProcessArguments,
-        traceDir: operation.traceDir,
+        traceFile: operation.traceFile,
         queue: BridgeQueues.futureSerialFullfillmentQueue,
         logger: logger))
     guard let processedPath = processed.path else {
