@@ -9,46 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- A Value object with the information required to create a Simulator Pool.
- */
-@interface FBSimulatorControlConfiguration : NSObject <NSCopying>
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
- @param logger the logger to use.
- @param reporter the reporter to report to.
- @return a new Configuration Object with the arguments applied.
- */
-+ (nonnull instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath logger:(nullable id<FBControlCoreLogger>)logger reporter:(nullable id<FBEventReporter>)reporter;
-
-/**
- The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *deviceSetPath;
-
-/**
- The Logger to use for logging.
- */
-@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
-
-/**
- The Event Reporter to use for reporting events.
- */
-@property (nullable, nonatomic, readonly, strong) id<FBEventReporter> reporter;
-
-@end
-
-/**
- Global CoreSimulatorConfiguration
- */
-@interface FBSimulatorControlConfiguration (Helpers)
-
-/**
- The Location of the Default SimDeviceSet
- */
-+ (nonnull NSString *)defaultDeviceSetPath;
-
-@end
+// FBSimulatorControlConfiguration class is now implemented in Swift.
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif
