@@ -50,8 +50,8 @@ final class FBControlCoreTransientTests: XCTestCase {
     let a = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: nil)
     let b = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: nil)
 
-    // ObjC isEqual sends [nil isEqual:nil] which returns NO
-    XCTAssertNotEqual(a, b)
+    // Two bundles with nil binaries should be equal
+    XCTAssertEqual(a, b)
   }
 
   func testBundleDescriptorWithBinaryEquality() throws {

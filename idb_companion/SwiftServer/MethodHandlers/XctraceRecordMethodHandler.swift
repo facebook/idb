@@ -76,7 +76,7 @@ struct XctraceRecordMethodHandler {
     let processed = try await BridgeFuture.value(
       FBInstrumentsOperation.postProcess(
         stop.args,
-        traceDir: operation.traceDir,
+        traceFile: operation.traceDir,
         queue: BridgeQueues.miscEventReaderQueue,
         logger: logger)
     )

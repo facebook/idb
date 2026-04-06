@@ -26,15 +26,6 @@
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 
-// Pre-define SWIFT_CLASS macros without objc_subclassing_restricted
-// to allow ObjC subclassing of open Swift classes (e.g. FBControlCoreError).
-// The -Swift.h header guards these with #if !defined(SWIFT_CLASS).
-#if !defined(SWIFT_CLASS)
- # define SWIFT_CLASS_EXTRA
- # define SWIFT_CLASS(SWIFT_NAME) SWIFT_RUNTIME_NAME(SWIFT_NAME) SWIFT_CLASS_EXTRA
- # define SWIFT_CLASS_NAMED(SWIFT_NAME) SWIFT_COMPILE_NAME(SWIFT_NAME) SWIFT_CLASS_EXTRA
-#endif
-
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
  #import <FBControlCore/FBControlCore-Swift.h>
 #endif

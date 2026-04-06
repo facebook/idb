@@ -51,7 +51,7 @@ public class FBBundleDescriptor: NSObject, NSCopying {
     return other.name == name
       && other.path == path
       && other.identifier == identifier
-      && (other.binary?.isEqual(binary) ?? false)
+      && (other.binary?.isEqual(binary) ?? (binary == nil))
   }
 
   public override var hash: Int {

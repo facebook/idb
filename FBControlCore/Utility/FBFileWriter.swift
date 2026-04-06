@@ -28,7 +28,7 @@ public class FBFileWriter: NSObject {
 
   private static func fileDescriptor(forPath filePath: String, error: NSErrorPointer) -> Int32 {
     let fd = open(filePath, O_WRONLY | O_CREAT, 0o644)
-    if fd == 0 {
+    if fd == -1 {
       return
         FBControlCoreError
         .describe("A file handle for path \(filePath) could not be opened: \(String(cString: strerror(errno)))")

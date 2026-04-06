@@ -37,7 +37,7 @@ extern const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout; // Fail instru
  */
 + (nonnull FBFuture<FBInstrumentsOperation *> *)operationWithTarget:(nonnull id<FBiOSTarget>)target configuration:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
-- (nonnull instancetype)initWithTask:(nonnull FBSubprocess *)task traceDir:(nonnull NSURL *)traceDir configuration:(nonnull FBInstrumentsConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithTask:(nonnull FBSubprocess *)task traceFile:(nonnull NSURL *)traceFile configuration:(nonnull FBInstrumentsConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Properties
 
@@ -45,9 +45,9 @@ extern const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout; // Fail instru
 @property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
- Trace output directory.
+ Trace output file path.
  */
-@property (nonnull, nonatomic, readonly, copy) NSURL *traceDir;
+@property (nonnull, nonatomic, readonly, copy) NSURL *traceFile;
 
 /**
  The configuration of the operation.
@@ -73,11 +73,11 @@ extern const NSTimeInterval DefaultInstrumentsLaunchErrorTimeout; // Fail instru
  Post-process an instruments trace.
 
  @param arguments the arguments to post-process with, if relevant.
- @param traceDir Locaiton to place trace files.
+ @param traceFile Location of the trace file.
  @param queue the queue to serialize on.
  @param logger the logger to log to.
  @return a delta that post-processes.
  */
-+ (nonnull FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceDir:(nonnull NSURL *)traceDir queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSURL *> *)postProcess:(nullable NSArray<NSString *> *)arguments traceFile:(nonnull NSURL *)traceFile queue:(nonnull dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
