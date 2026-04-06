@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
 /**
  An Option Set for Direct Launching.
  */
@@ -16,39 +15,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
   FBSimulatorBootOptionsVerifyUsable = 1 << 3, /** A Simulator can be report that it is 'Booted' very quickly but is not in Usable. Setting this option requires that the Simulator is 'Usable' before the boot API completes */
 };
 
-/**
- A Value Object for defining how to launch a Simulator.
- */
-@interface FBSimulatorBootConfiguration : NSObject <NSCopying>
-
-#pragma mark Properties
-
-/**
- Options for how the Simulator should be launched.
- */
-@property (nonatomic, readonly, assign) FBSimulatorBootOptions options;
-
-/**
- The environment used on boot.
- Boot environment is passed down to all launched processes in the Simulator.
- This is useful for injecting a dylib through `DYLD_` environment variables.
- */
-@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
-
-#pragma mark Default Instance
-
-/**
- The Default Configuration.
- */
-@property (class, nonnull, nonatomic, readonly, strong) FBSimulatorBootConfiguration *defaultConfiguration;
-
-/**
- The Designated Initializer.
-
- @param options the options to use.
- @param environment the boot environment to use.
- @return a FBSimulatorBootConfiguration instance.
- */
-- (nonnull instancetype)initWithOptions:(FBSimulatorBootOptions)options environment:(nonnull NSDictionary<NSString *, NSString *> *)environment;
-
-@end
+// FBSimulatorBootConfiguration class is now implemented in Swift.
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

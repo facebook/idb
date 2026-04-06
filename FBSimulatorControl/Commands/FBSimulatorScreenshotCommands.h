@@ -9,9 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-/**
- An implementation of Screenshot Commands for Simulators
- */
-@interface FBSimulatorScreenshotCommands : NSObject <FBScreenshotCommands>
-
-@end
+// FBSimulatorScreenshotCommands class is now implemented in Swift.
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif
