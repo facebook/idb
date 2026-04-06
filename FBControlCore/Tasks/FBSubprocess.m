@@ -9,12 +9,11 @@
 
 #include <spawn.h>
 
-#import "FBCollectionInformation.h"
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
-#import "FBFileWriter.h"
 #import "FBProcessIO.h"
 #import "FBProcessSpawnCommands.h"
 #import "FBProcessSpawnConfiguration.h"

@@ -10,8 +10,6 @@
 #import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorMemoryCommands.h>
-#import <FBSimulatorControl/FBSimulatorNotificationCommands.h>
 #import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 
 @protocol FBControlCoreLogger;

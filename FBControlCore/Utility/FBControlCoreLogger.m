@@ -11,7 +11,6 @@
 #import <FBControlCore/FBControlCore-Swift.h>
 
 #import "FBDataConsumer.h"
-#import "FBFileWriter.h"
 
 @interface FBControlCoreLogger_NSLog : NSObject <FBControlCoreLogger>
 

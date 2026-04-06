@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBConcatedJsonParser.h"
+#import "FBControlCore-Swift.h"
 #import "FBCrashLog.h"
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)

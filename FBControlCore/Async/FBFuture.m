@@ -7,7 +7,6 @@
 
 #import "FBFuture.h"
 
-#import "FBCollectionOperations.h"
 #import "FBControlCore.h"
 
 @class FBFutureContext_Teardown;

@@ -14,7 +14,7 @@
 #include <mach-o/loader.h>
 #include <mach-o/swap.h>
 
-#import "FBCollectionInformation.h"
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 

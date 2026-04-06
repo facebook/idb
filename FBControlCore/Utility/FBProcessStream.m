@@ -10,10 +10,10 @@
 #import <sys/stat.h>
 #import <sys/types.h>
 
+#import "FBControlCore-Swift.h"
 #import "FBControlCoreError.h"
 #import "FBDataBuffer.h"
 #import "FBFileReader.h"
-#import "FBFileWriter.h"
 #import "FBFuture+Sync.h"
 #import "FBProcessBuilder.h"
 #import "FBSubprocess.h"
