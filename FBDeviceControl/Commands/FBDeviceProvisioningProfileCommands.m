@@ -65,9 +65,9 @@
             int status = device.calls.RemoveProvisioningProfile(device.amDeviceRef, (__bridge CFStringRef)(uuid));
             if (status != 0) {
               NSString *errorDescription = CFBridgingRelease(device.calls.ProvisioningProfileCopyErrorStringForCode(status));
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Failed to remove profile %@: %@", uuid, errorDescription]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Failed to remove profile %@: %@", uuid, errorDescription]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:@{}];
           }];
@@ -81,23 +81,23 @@
           pop:^(id<FBDeviceCommands> device) {
             MISProfileRef profile = device.calls.ProvisioningProfileCreateWithData((__bridge CFDataRef)(profileData));
             if (!profile) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Could not construct profile from data %@", profileData]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Could not construct profile from data %@", profileData]]
+                                  failFuture];
             }
             int status = device.calls.InstallProvisioningProfile(device.amDeviceRef, profile);
             if (status != 0) {
               NSString *errorDescription = CFBridgingRelease(device.calls.ProvisioningProfileCopyErrorStringForCode(status));
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Failed to install profile %@: %@", profile, errorDescription]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Failed to install profile %@: %@", profile, errorDescription]]
+                                  failFuture];
             }
             NSDictionary<NSString *, id> *payload = CFBridgingRelease(device.calls.ProvisioningProfileCopyPayload(profile));
             payload = [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:payload];
             if (!payload) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Failed to get payload of %@", profile]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Failed to get payload of %@", profile]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:payload];
           }];
@@ -113,9 +113,9 @@
           pend:^(id<FBDeviceCommands> device) {
             NSArray<id> *profiles = CFBridgingRelease(device.calls.CopyProvisioningProfiles(device.amDeviceRef));
             if (!profiles) {
-              return [[FBControlCoreError
-                       describe:@"Failed to copy provisioning profiles"]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:@"Failed to copy provisioning profiles"]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:[@[device] arrayByAddingObjectsFromArray:profiles]];
           }];

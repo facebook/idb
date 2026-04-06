@@ -167,9 +167,9 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
                       queue:queue]
                      onQueue:queue
                      fmap:^FBFuture<id> *(NSString *stackshot) {
-                       return [[FBXCTestError
-                                describe:[NSString stringWithFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]]
-                               failFuture];
+                       return (FBFuture *)[[FBXCTestError
+                                            describe:[NSString stringWithFormat:@"Waited %f seconds for process %d to terminate, but the host application process stalled: %@", timeout, launchedApplication.processIdentifier, stackshot]]
+                                           failFuture];
                      }]
                     onQueue:queue
                     chain:^FBFuture *(FBFuture *future) {
@@ -191,9 +191,9 @@ static const NSTimeInterval DefaultTestTimeout = (60 * 60);  // 1 hour.
 - (FBFuture<id<FBLaunchedApplication>> *)installAndLaunchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path
 {
   if (!path) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Could not install App-Under-Test %@ as it is not installed and no path was provided", configuration]]
+                        failFuture];
   }
   return [[[[self
              isApplicationInstalledWithBundleID:configuration.bundleID]

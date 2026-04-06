@@ -49,9 +49,9 @@
 
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBiOSTargetStateUnknown) {
-    return [[FBSimulatorError
-             describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
+                        failFuture];
   }
 
   // Calling shutdown when already shutdown should be avoided (if detected).

@@ -55,9 +55,9 @@
             } else if ([format isEqualToString:FBScreenshotFormatPNG]) {
               data = [image pngImageDataWithError:&error];
             } else {
-              return [[FBSimulatorError
-                       describe:[NSString stringWithFormat:@"%@ is not a recognized screenshot format", format]]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:[NSString stringWithFormat:@"%@ is not a recognized screenshot format", format]]
+                                  failFuture];
             }
             return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
           }];

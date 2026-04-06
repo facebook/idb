@@ -387,10 +387,10 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
             runUntilCompletionWithAcceptableExitCodes:nil]
            onQueue:queue
            handleError:^(NSError *error) {
-             return [[[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Failed to obtain a stack sample of process %d", processIdentifier]]
-                      causedBy:error]
-                     failFuture];
+             return (FBFuture *)[[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Failed to obtain a stack sample of process %d", processIdentifier]]
+                                  causedBy:error]
+                                 failFuture];
            }]
           onQueue:queue
           map:^(FBSubprocess<NSNull *, NSData *, NSData *> *task) {

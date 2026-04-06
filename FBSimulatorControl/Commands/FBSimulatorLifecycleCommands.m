@@ -102,9 +102,9 @@ const int OPEN_URL_RETRIES = 2;
   // We cannot 'focus' a SimulatorApp for the non-default device set.
   NSString *deviceSetPath = self.simulator.customDeviceSetPath;
   if (deviceSetPath) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]]
+                        failFuture];
   }
 
   // Find the running instances of SimulatorApp.
@@ -126,17 +126,17 @@ const int OPEN_URL_RETRIES = 2;
 
   // Multiple apps, we don't know which to select.
   if (simulatorApps.count > 1) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]]
+                        failFuture];
   }
 
   // Otherwise we have a single Simulator App to activate.
   NSRunningApplication *simulatorApp = simulatorApps.firstObject;
   if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Failed to focus %@", simulatorApp]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Failed to focus %@", simulatorApp]]
+                        failFuture];
   }
 
   return FBFuture.empty;
@@ -261,10 +261,10 @@ const int OPEN_URL_RETRIES = 2;
     retry++;
   } while (retry <= OPEN_URL_RETRIES);
 
-  return [[[FBSimulatorError
-            describe:[NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]]
-           causedBy:error]
-          failFuture];
+  return (FBFuture *)[[[FBSimulatorError
+                        describe:[NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]]
+                       causedBy:error]
+                      failFuture];
 }
 
 @end

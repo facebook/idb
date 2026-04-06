@@ -101,7 +101,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   NSString *traceDir = [target.auxillaryDirectory stringByAppendingPathComponent:[@"instruments-" stringByAppendingString:[[NSUUID UUID] UUIDString]]];
   NSError *innerError = nil;
   if (![[NSFileManager defaultManager] createDirectoryAtPath:traceDir withIntermediateDirectories:NO attributes:nil error:&innerError]) {
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to create instruments trace output directory: %@", innerError]] failFuture];
+    return (FBFuture *)[[FBControlCoreError describe:[NSString stringWithFormat:@"Failed to create instruments trace output directory: %@", innerError]] failFuture];
   }
   NSString *traceFile = [traceDir stringByAppendingPathComponent:@"trace.trace"];
 
@@ -188,9 +188,9 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
                             onQueue:self.queue
                             fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
                               if ([exitCode isEqualToNumber:@0]) {
-                                return [FBFuture futureWithResult:self.traceDir];
+                                return (FBFuture *)[FBFuture futureWithResult:self.traceDir];
                               } else {
-                                return [[FBControlCoreError describe:[NSString stringWithFormat:@"Instruments exited with failure - status: %@", exitCode]] failFuture];
+                                return (FBFuture *)[[FBControlCoreError describe:[NSString stringWithFormat:@"Instruments exited with failure - status: %@", exitCode]] failFuture];
                               }
                             }]
   ];

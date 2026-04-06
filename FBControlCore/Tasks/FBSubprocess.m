@@ -174,9 +174,9 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if ([acceptableExitCodes containsObject:@(exitCode)]) {
     return FBFuture.empty;
   }
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
-          failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
+                      failFuture];
 }
 
 + (FBSubprocess *)processWithConfiguration:(FBProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error

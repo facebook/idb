@@ -36,9 +36,9 @@
            resolveUntil:^{
              AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
              if (!captureDevice) {
-               return [[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Capture Device %@ not available", device.udid]]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Capture Device %@ not available", device.udid]]
+                                   failFuture];
              }
              return [FBFuture futureWithResult:captureDevice];
            }]
@@ -88,17 +88,17 @@
             NSError *innerError = nil;
             AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
             if (!deviceInput) {
-              return [[[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Failed to create Device Input for %@", captureDevice]]
-                       causedBy:innerError]
-                      failFuture];
+              return (FBFuture *)[[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Failed to create Device Input for %@", captureDevice]]
+                                   causedBy:innerError]
+                                  failFuture];
             }
             // Add the Input to a new Session.
             AVCaptureSession *session = [[AVCaptureSession alloc] init];
             if (![session canAddInput:deviceInput]) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Cannot add Device Input to session for %@", captureDevice]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Cannot add Device Input to session for %@", captureDevice]]
+                                  failFuture];
             }
             [session addInput:deviceInput];
 

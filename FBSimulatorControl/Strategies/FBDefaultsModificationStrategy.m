@@ -55,15 +55,15 @@
   NSError *innerError = nil;
   NSString *file = [self.simulator.auxillaryDirectory stringByAppendingPathComponent:@"temporary.plist"];
   if (![NSFileManager.defaultManager createDirectoryAtPath:[file stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-    return [[[FBSimulatorError
-              describe:[NSString stringWithFormat:@"Could not create intermediate directories for temporary plist %@", file]]
-             causedBy:innerError]
-            failFuture];
+    return (FBFuture *)[[[FBSimulatorError
+                          describe:[NSString stringWithFormat:@"Could not create intermediate directories for temporary plist %@", file]]
+                         causedBy:innerError]
+                        failFuture];
   }
   if (![defaults writeToFile:file atomically:YES]) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Failed to write out defaults to temporary file %@", file]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Failed to write out defaults to temporary file %@", file]]
+                        failFuture];
   }
 
   // Build the arguments
@@ -124,9 +124,9 @@
   FBSimulator *simulator = self.simulator;
   FBiOSTargetState state = simulator.state;
   if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
+                        failFuture];
   }
 
   // Stop the service, if booted.
@@ -207,9 +207,9 @@ static NSString *const AppleGlobalDomain = @"Apple Global Domain";
   FBSimulator *simulator = self.simulator;
   FBiOSTargetState state = simulator.state;
   if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]]
+                        failFuture];
   }
 
   NSString *serviceName = @"locationd";

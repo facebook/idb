@@ -54,9 +54,9 @@
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
   if (self.runningXcodeBuildOperation) {
-    return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
+                        failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
   return [[[[FBXcodeBuildOperation
@@ -90,13 +90,13 @@
   // Create the .xctestrun file
   NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.workingDirectory fromConfiguration:configuration error:&error];
   if (!filePath) {
-    return [FBDeviceControlError failFutureWithError:error];
+    return (FBFuture *)[FBDeviceControlError failFutureWithError:error];
   }
 
   // Find the path to xcodebuild
   NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
   if (!xcodeBuildPath) {
-    return [FBDeviceControlError failFutureWithError:error];
+    return (FBFuture *)[FBDeviceControlError failFutureWithError:error];
   }
 
   // This is to walk around a bug in xcodebuild. The UDID inside xcodebuild does not match

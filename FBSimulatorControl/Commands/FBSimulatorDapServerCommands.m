@@ -46,9 +46,9 @@
                                                                     error:&error];
 
   if (!createdDir) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Dap Command: Failed to create log director on path %@. Error: %@", dap_log_dir, error.localizedDescription]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Dap Command: Failed to create log director on path %@. Error: %@", dap_log_dir, error.localizedDescription]]
+                        failFuture];
   }
 
   NSString *log_string = [dap_log_dir stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".log"]];
@@ -56,9 +56,9 @@
                                                                 contents:nil
                                                               attributes:nil];
   if (!createdLogFile) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Failed to create log file on path %@", log_string]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to create log file on path %@", log_string]]
+                        failFuture];
   }
 
   [self.simulator.logger.debug log:[NSString stringWithFormat:@"Dap Command: Launching dap server logging at path %@", log_string]];

@@ -55,9 +55,9 @@ static NSString *const ScreenShotDataKey = @"ScreenShotData";
           fmap:^(NSDictionary<id, id> *response) {
             NSData *screenshotData = response[ScreenShotDataKey];
             if (![screenshotData isKindOfClass:NSData.class]) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"%@ is not an NSData for %@", screenshotData, ScreenShotDataKey]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"%@ is not an NSData for %@", screenshotData, ScreenShotDataKey]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:screenshotData];
           }];

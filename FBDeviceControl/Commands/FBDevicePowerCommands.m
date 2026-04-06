@@ -60,12 +60,12 @@
             NSError *error = nil;
             NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request" : request} error:&error];
             if (!result) {
-              return [FBFuture futureWithError:error];
+              return (FBFuture *)[FBFuture futureWithError:error];
             }
             if (![result[@"Status"] isEqualToString:@"Success"]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Not successful %@", result]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Not successful %@", result]]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];

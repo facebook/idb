@@ -12,7 +12,7 @@ public let FBIDBErrorDomain: String = "com.facebook.idb"
 
 @objc public final class FBIDBError: FBControlCoreError {
 
-  public override init() {
+  public required init() {
     super.init()
     self.inDomain(FBIDBErrorDomain)
   }

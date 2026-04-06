@@ -123,7 +123,7 @@ private let XcodebuildDestinationTimeoutSecs = "180"
       return FBFuture(result: NSArray())
     }
     logger.log("Terminating abandoned xcodebuild processes \(FBCollectionInformation.oneLineDescription(from: processes))")
-    let strategy = FBProcessTerminationStrategy(processFetcher: processFetcher, work: queue, logger: logger)
+    let strategy = FBProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
     var futures: [AnyObject] = []
     for process in processes {
       let termination = unsafeBitCast(strategy.killProcessIdentifier(process.processIdentifier), to: FBFuture<AnyObject>.self).mapReplace(process)

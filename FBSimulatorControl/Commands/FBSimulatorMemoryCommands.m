@@ -53,9 +53,9 @@
                      }];
   }
 
-  return [[FBSimulatorError
-           describe:@"SimDevice doesn't have simulateMemoryWarning selector"]
-          failFuture];
+  return (FBFuture *)[[FBSimulatorError
+                       describe:@"SimDevice doesn't have simulateMemoryWarning selector"]
+                      failFuture];
 }
 
 @end

@@ -48,9 +48,9 @@
 - (FBFuture<id<FBiOSTargetOperation>> *)startRecordingToFile:(NSString *)filePath
 {
   if (self.video) {
-    return [[FBSimulatorError
-             describe:@"Cannot create a new video recording session, one is already active"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Cannot create a new video recording session, one is already active"]
+                        failFuture];
   }
 
   return [[FBSimulatorVideoRecordingCommands
@@ -73,9 +73,9 @@
   FBSimulatorVideo *video = self.video;
   self.video = nil;
   if (!video) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.simulator]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.simulator]]
+                        failFuture];
   }
 
   return [video stopRecording];

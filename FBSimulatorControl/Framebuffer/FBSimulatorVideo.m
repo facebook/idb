@@ -105,9 +105,9 @@
 {
   // Fail early if there's a task running.
   if (self.recordingStarted) {
-    return [[FBSimulatorError
-             describe:@"Cannot Start Recording, there is already an recording task running"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Cannot Start Recording, there is already an recording task running"]
+                        failFuture];
   }
 
   self.recordingStarted = [[self
@@ -143,15 +143,15 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
   // Fail early if there's no task running.
   FBFuture<FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
   if (!recordingStarted) {
-    return [[FBSimulatorError
-             describe:@"Cannot Stop Recording, there is no recording task started"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Cannot Stop Recording, there is no recording task started"]
+                        failFuture];
   }
   FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *recordingTask = recordingStarted.result;
   if (!recordingTask) {
-    return [[FBSimulatorError
-             describe:@"Cannot Stop Recording, the recording task hasn't started"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Cannot Stop Recording, the recording task hasn't started"]
+                        failFuture];
   }
 
   // Grab the task and see if it died already.

@@ -79,9 +79,9 @@ static NSString *const CDHashPrefix = @"CDHash=";
           fmap:^FBFuture<NSNull *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
             NSNumber *exitCode = task.exitCode.result;
             if (![exitCode isEqualToNumber:@0]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
+                                  failFuture];
             }
             [logger log:[NSString stringWithFormat:@"Successfully signed bundle %@", task.stdErr]];
             return FBFuture.empty;
@@ -124,7 +124,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
       [pathsToSign addObject:[frameworksPath stringByAppendingString:frameworkPath]];
     }
     if (fileSystemError) {
-      return [FBControlCoreError failFutureWithError:fileSystemError];
+      return (FBFuture *)[FBControlCoreError failFutureWithError:fileSystemError];
     }
   }
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
@@ -149,16 +149,16 @@ static NSString *const CDHashPrefix = @"CDHash=";
           fmap:^FBFuture<NSString *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
             NSNumber *exitCode = task.exitCode.result;
             if (![exitCode isEqualToNumber:@0]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]]
+                                  failFuture];
             }
             NSString *output = task.stdErr;
             NSTextCheckingResult *result = [FBCodesignProvider.cdHashRegex firstMatchInString:task.stdErr options:0 range:NSMakeRange(0, output.length)];
             if (!result) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Could not find 'CDHash' in output: %@", output]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Could not find 'CDHash' in output: %@", output]]
+                                  failFuture];
             }
             NSString *cdHash = [output substringWithRange:[result rangeAtIndex:1]];
             [logger log:[NSString stringWithFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath]];

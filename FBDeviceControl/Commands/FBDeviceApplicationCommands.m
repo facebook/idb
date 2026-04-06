@@ -182,9 +182,9 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
              );
              if (status != 0) {
                NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-               return [[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Failed to install application %@ 0x%x (%@). %@", appURL.lastPathComponent, status, errorMessage, statistics.summaryOfRecentEvents]]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Failed to install application %@ 0x%x (%@). %@", appURL.lastPathComponent, status, errorMessage, statistics.summaryOfRecentEvents]]
+                                   failFuture];
              }
              [self.device.logger log:[NSString stringWithFormat:@"Installed Application %@", appURL]];
              return FBFuture.empty;
@@ -218,9 +218,9 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
             );
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to uninstall application '%@' with error 0x%x (%@). %@", bundleID, status, internalMessage, statistics.summaryOfRecentEvents]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to uninstall application '%@' with error 0x%x (%@). %@", bundleID, status, internalMessage, statistics.summaryOfRecentEvents]]
+                                  failFuture];
             }
             [self.device.logger log:[NSString stringWithFormat:@"Uninstalled Application %@", bundleID]];
             return FBFuture.empty;
@@ -254,9 +254,9 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           fmap:^FBFuture *(NSDictionary<NSString *, NSDictionary<NSString *, id> *> *applicationData) {
             NSDictionary<NSString *, id> *app = applicationData[bundleID];
             if (!app) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Application with bundle ID: %@ is not installed. Installed apps %@ ", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:applicationData.allKeys]]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Application with bundle ID: %@ is not installed. Installed apps %@ ", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:applicationData.allKeys]]]
+                                  failFuture];
             }
             FBInstalledApplication *application = [FBDeviceApplicationCommands installedApplicationFromDictionary:app];
             return [FBFuture futureWithResult:application];
@@ -310,9 +310,9 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
           fmap:^(NSDictionary<NSString *, NSNumber *> *result) {
             NSNumber *pid = result[bundleID];
             if (!pid) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"No pid for %@", bundleID]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"No pid for %@", bundleID]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:pid];
           }];
@@ -388,9 +388,9 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
             );
             if (status != 0) {
               NSString *errorMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to get list of applications 0x%x (%@)", status, errorMessage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to get list of applications 0x%x (%@)", status, errorMessage]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:CFBridgingRelease(applications)];
           }];
@@ -422,27 +422,27 @@ static void WorkflowCallback(NSDictionary<NSString *, id> *callbackDictionary, F
             NSError *error = nil;
             BOOL success = [connection sendMessage:@{@"Request" : @"PidList"} error:&error];
             if (!success) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to request PidList %@", error]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to request PidList %@", error]]
+                                  failFuture];
             }
             NSData *data = [connection receive:1 error:&error];
             if (!data) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to receive 1 byte after PidList %@", error]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to receive 1 byte after PidList %@", error]]
+                                  failFuture];
             }
             NSDictionary<NSString *, id> *response = [connection receiveMessageWithError:&error];
             if (!response) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to receive PidList response %@", error]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to receive PidList response %@", error]]
+                                  failFuture];
             }
             NSString *status = response[@"Status"];
             if (![status isEqualToString:@"RequestSuccessful"]) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Request to PidList is not RequestSuccessful %@", error]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Request to PidList is not RequestSuccessful %@", error]]
+                                  failFuture];
             }
             NSDictionary<NSNumber *, id> *payload = response[@"Payload"];
             NSMutableDictionary<NSNumber *, NSString *> *pidToRunningProcessName = NSMutableDictionary.dictionary;

@@ -167,7 +167,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
               // Sometimes when an application crashes very early (e.g. during dylib loading) iOS retries launching the
               // app with none of the settings idb added in the original launch configuration.
               // idb can't work with this 'vanilla' app process, resulting in errors connecting to the bundle (there won't be a bundle to connect to).
-              return [[[FBXCTestError describe:msg] causedBy:error] failFuture];
+              return (FBFuture *)[[[FBXCTestError describe:msg] causedBy:error] failFuture];
             }
 
             // Application process still running.
@@ -182,9 +182,9 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
                      }]
                     onQueue:self.requestQueue
                     fmap:^FBFuture<id> *(NSString *stackshot) {
-                      return [[FBXCTestError
-                               describe:[NSString stringWithFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]]
-                              failFuture];
+                      return (FBFuture *)[[FBXCTestError
+                                           describe:[NSString stringWithFormat:@"Could not connect to test bundle, but host application process %d is still alive and busy/stalled: %@", self.testHostApplication.processIdentifier, stackshot]]
+                                          failFuture];
                     }];
           }];
 }
@@ -344,14 +344,14 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
            chain:^FBFuture<NSNull *> *(FBFuture<FBCrashLog *> *future) {
              FBCrashLog *crashLog = future.result;
              if (!crashLog) {
-               return [[[FBXCTestError
-                         describe:notFoundErrorDescription]
-                        code:XCTestBootstrapErrorCodeLostConnection]
-                       failFuture];
+               return (FBFuture *)[[[FBXCTestError
+                                     describe:notFoundErrorDescription]
+                                    code:XCTestBootstrapErrorCodeLostConnection]
+                                   failFuture];
              }
-             return [[FBXCTestError
-                      describe:[NSString stringWithFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]]
-                     failFuture];
+             return (FBFuture *)[[FBXCTestError
+                                  describe:[NSString stringWithFormat:@"Test Bundle/HostApp Crashed: %@", crashLog]]
+                                 failFuture];
            }] mapReplace:NSNull.null];
 }
 
@@ -364,16 +364,16 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
            onQueue:self.target.workQueue
            chain:^FBFuture<FBCrashLogInfo *> *(FBFuture<NSNumber *> *processIdentifierFuture) {
              if (processIdentifierFuture.result) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"The Process for %@ is not crashed as it is running", processIdentifierFuture.result]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"The Process for %@ is not crashed as it is running", processIdentifierFuture.result]]
+                                   failFuture];
              }
 
              id<FBCrashLogCommands> crashLog = (id<FBCrashLogCommands>) self.target;
              if (![crashLog conformsToProtocol:@protocol(FBCrashLogCommands)]) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"%@ does not conform to %@", self.target, NSStringFromProtocol(@protocol(FBCrashLogCommands))]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"%@ does not conform to %@", self.target, NSStringFromProtocol(@protocol(FBCrashLogCommands))]]
+                                   failFuture];
              }
 
              NSTimeInterval crashWaitTimeout = CrashCheckWaitLimit;

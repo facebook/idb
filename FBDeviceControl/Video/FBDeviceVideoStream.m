@@ -171,9 +171,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (FBFuture<NSNull *> *)startStreaming:(id<FBDataConsumer>)consumer
 {
   if (self.consumer) {
-    return [[FBDeviceControlError
-             describe:@"Cannot start streaming, a consumer is already attached"]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:@"Cannot start streaming, a consumer is already attached"]
+                        failFuture];
   }
   self.consumer = consumer;
   [self.output setSampleBufferDelegate:self queue:self.writeQueue];
@@ -184,9 +184,9 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (FBFuture<NSNull *> *)stopStreaming
 {
   if (!self.consumer) {
-    return [[FBDeviceControlError
-             describe:@"Cannot stop streaming, no consumer attached"]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:@"Cannot stop streaming, no consumer attached"]
+                        failFuture];
   }
   [self.session stopRunning];
   [self.stopFuture resolveWithResult:NSNull.null];

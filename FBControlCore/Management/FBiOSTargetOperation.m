@@ -5,36 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBiOSTargetOperation.h"
-
-@interface FBiOSTargetOperation_Wrapper : NSObject <FBiOSTargetOperation>
-
-@end
-
-@implementation FBiOSTargetOperation_Wrapper
-
-@synthesize completed = _completed;
-
-- (instancetype)initWithCompleted:(FBFuture<NSNull *> *)completed
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _completed = completed;
-
-  return self;
-}
-
-- (FBFuture<NSNull *> *)completed
-{
-  return _completed;
-}
-
-@end
-
-id<FBiOSTargetOperation> FBiOSTargetOperationFromFuture(FBFuture<NSNull *> *completed)
-{
-  return [[FBiOSTargetOperation_Wrapper alloc] initWithCompleted:completed];
-}
+// FBiOSTargetOperation_Wrapper and FBiOSTargetOperationFromFuture are now implemented in Swift.

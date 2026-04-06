@@ -7,24 +7,4 @@
 
 #import "FBSimulatorError.h"
 
-#import <FBControlCore/FBControlCore.h>
-
-#import "FBSimulator.h"
-
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
-
-@implementation FBSimulatorError
-
-- (instancetype)init
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  [self inDomain:FBSimulatorControlErrorDomain];
-
-  return self;
-}
-
-@end

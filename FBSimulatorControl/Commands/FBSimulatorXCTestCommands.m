@@ -56,9 +56,9 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
   }
 
   if (self.isRunningXcodeBuildOperation) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]]
+                        failFuture];
   }
   return [[[[FBXcodeBuildOperation
              terminateAbandonedXcodebuildProcessesForUDID:self.simulator.udid
@@ -89,23 +89,23 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
            fmap:^FBFuture<NSNumber *> *(NSString *testManagerSocketString) {
              int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
              if (socketFD == -1) {
-               return [[FBSimulatorError
-                        describe:@"Unable to create a unix domain socket"]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:@"Unable to create a unix domain socket"]
+                                   failFuture];
              }
              if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
                close(socketFD);
-               return [[FBSimulatorError
-                        describe:[NSString stringWithFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:[NSString stringWithFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]]
+                                   failFuture];
              }
 
              const char *testManagerSocketPath = testManagerSocketString.UTF8String;
              if (strlen(testManagerSocketPath) >= 0x68) {
                close(socketFD);
-               return [[FBSimulatorError
-                        describe:[NSString stringWithFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:[NSString stringWithFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]]
+                                   failFuture];
              }
 
              struct sockaddr_un remote;
@@ -114,9 +114,9 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
              socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
              if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
                close(socketFD);
-               return [[FBSimulatorError
-                        describe:@"Failed to connect to testmangerd socket"]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:@"Failed to connect to testmangerd socket"]
+                                   failFuture];
              }
              return [FBFuture futureWithResult:@(socketFD)];
            }]
@@ -174,9 +174,9 @@ static NSString *const DefaultSimDeviceSet = @"~/Library/Developer/CoreSimulator
 - (FBFuture<NSNull *> *)runTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger workingDirectory:(nullable NSString *)workingDirectory
 {
   if (self.simulator.state != FBiOSTargetStateBooted) {
-    return [[FBSimulatorError
-             describe:@"Simulator must be booted to run tests"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Simulator must be booted to run tests"]
+                        failFuture];
   }
   return [FBManagedTestRunStrategy
           runToCompletionWithTarget:self.simulator
@@ -198,10 +198,10 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
              NSError *error = nil;
              NSString *socketPath = [self.simulator.device getenv:SimSockEnvKey error:&error];
              if (socketPath.length == 0) {
-               return [[[FBSimulatorError
-                         describe:[NSString stringWithFormat:@"Failed to get %@ from simulator environment", SimSockEnvKey]]
-                        causedBy:error]
-                       failFuture];
+               return (FBFuture *)[[[FBSimulatorError
+                                     describe:[NSString stringWithFormat:@"Failed to get %@ from simulator environment", SimSockEnvKey]]
+                                    causedBy:error]
+                                   failFuture];
              }
              return [FBFuture futureWithResult:socketPath];
            }]
@@ -214,12 +214,12 @@ static NSString *const SimSockEnvKey = @"TESTMANAGERD_SIM_SOCK";
   NSError *error = nil;
   NSString *filePath = [FBXcodeBuildOperation createXCTestRunFileAt:self.simulator.auxillaryDirectory fromConfiguration:configuration error:&error];
   if (!filePath) {
-    return [FBSimulatorError failFutureWithError:error];
+    return (FBFuture *)[FBSimulatorError failFutureWithError:error];
   }
 
   NSString *xcodeBuildPath = [FBXcodeBuildOperation xcodeBuildPathWithError:&error];
   if (!xcodeBuildPath) {
-    return [FBSimulatorError failFutureWithError:error];
+    return (FBFuture *)[FBSimulatorError failFutureWithError:error];
   }
 
   return [[FBXCTestShimConfiguration

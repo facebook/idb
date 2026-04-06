@@ -158,9 +158,9 @@ static NSString *StateStringFromState(FBFileReaderState state)
 - (FBFuture<NSNull *> *)startReadingNow
 {
   if (self.state != FBFileReaderStateNotStarted) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]]
+                        failFuture];
   }
   NSAssert(!self.io, @"IO Channel should not exist when not started");
 
@@ -179,9 +179,9 @@ static NSString *StateStringFromState(FBFileReaderState state)
       [self ioChannelHasRelinquishedControlWithErrorCode:(createErrorCode ?: readErrorCode)];
     });
   if (!self.io) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"A IO Channel could not be created for %@", self.description]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"A IO Channel could not be created for %@", self.description]]
+                        failFuture];
   }
 
   // Report partial results with as little as 1 byte read.
@@ -206,9 +206,9 @@ static NSString *StateStringFromState(FBFileReaderState state)
 {
   // The only error condition is that we haven't yet started reading
   if (self.state == FBFileReaderStateNotStarted) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]]
+                        failFuture];
   }
   // All states other than reading mean that we don't need to close the channel.
   if (self.state != FBFileReaderStateReading) {

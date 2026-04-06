@@ -26,9 +26,9 @@
     return FBFuture.empty;
   }
   if (simulator.state != FBiOSTargetStateShutdown) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]]
+                        failFuture];
   }
 
   // Boot via CoreSimulator.

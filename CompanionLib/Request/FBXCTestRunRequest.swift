@@ -140,7 +140,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
         do {
           let descriptors = try bundleStorage.getXCTestRunDescriptors(from: filePath)
           if descriptors.count != 1 {
-            return FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").failFuture() as FBFuture
+            return FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").failFuture()
           }
           testDescriptor = descriptors[0]
         } catch {
@@ -149,7 +149,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
       }
     } else {
       guard let bundleID = testBundleID else {
-        return FBIDBError.describe("No test bundle ID provided").failFuture() as FBFuture
+        return FBIDBError.describe("No test bundle ID provided").failFuture()
       }
       do {
         testDescriptor = try bundleStorage.testDescriptor(withID: bundleID)
@@ -159,7 +159,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
     }
 
     guard let descriptor = testDescriptor else {
-      return FBIDBError.describe("Could not find test descriptor").failFuture() as FBFuture
+      return FBIDBError.describe("Could not find test descriptor").failFuture()
     }
 
     return descriptor.setup(with: self, target: target).mapReplace(descriptor as AnyObject) as FBFuture

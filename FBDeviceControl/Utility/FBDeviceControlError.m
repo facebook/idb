@@ -8,19 +8,3 @@
 #import "FBDeviceControlError.h"
 
 NSString *const FBDeviceControlErrorDomain = @"com.facebook.FBDeviceControl";
-
-@implementation FBDeviceControlError
-
-- (instancetype)init
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  [self inDomain:FBDeviceControlErrorDomain];
-
-  return self;
-}
-
-@end

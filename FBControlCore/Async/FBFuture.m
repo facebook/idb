@@ -911,10 +911,10 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
                    if (!error) {
                      return future;
                    }
-                   return [[[FBControlCoreError
-                             describe:description]
-                            causedBy:error]
-                           failFuture];
+                   return (FBFuture *)[[[FBControlCoreError
+                                         describe:description]
+                                        causedBy:error]
+                                       failFuture];
                  }];
 }
 

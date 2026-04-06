@@ -177,17 +177,17 @@ static NSString *const PingSuccess = @"ping";
             NSError *error = nil;
             NSData *data = [connection receive:4 error:&error];
             if (!data) {
-              return [[[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Failed to get pingback from %@", CrashReportMoverService]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Failed to get pingback from %@", CrashReportMoverService]]
+                                   causedBy:error]
+                                  failFuture];
             }
             NSString *response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
             if (![response isEqualToString:PingSuccess]) {
-              return [[[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Pingback from %@ is '%@' not '%@'", CrashReportMoverService, response, PingSuccess]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Pingback from %@ is '%@' not '%@'", CrashReportMoverService, response, PingSuccess]]
+                                   causedBy:error]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:response];
           }];
