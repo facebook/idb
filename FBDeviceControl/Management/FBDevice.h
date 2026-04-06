@@ -22,6 +22,10 @@
 @class FBiOSTargetCommandForwarder;
 @protocol FBControlCoreLogger;
 
+#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
+ #import <FBDeviceControl/FBDeviceControl-Swift.h>
+#endif
+
 /**
  A class that represents an iOS Device.
  */

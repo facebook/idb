@@ -8,12 +8,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBDeviceControl/FBDeviceCommands.h>
-
-@class FBDevice;
 
 /**
- The Protocol for defining Device Activations.
+ Defines commands for device activation.
  */
 @protocol FBDeviceActivationCommandsProtocol <FBiOSTargetCommand>
 
@@ -25,13 +22,5 @@
  @return A future that resolves when the device activates.
  */
 - (nonnull FBFuture<NSNull *> *)activate;
-
-@end
-
-/**
- An Implementation of FBDeviceActivationCommands.
- URLs used in the activation process can be overriden via IDB_DRM_HANDSHAKE_URL & IDB_ACTIVATION_URL environment variables.
- */
-@interface FBDeviceActivationCommands : NSObject <FBDeviceActivationCommandsProtocol>
 
 @end

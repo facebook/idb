@@ -10,16 +10,15 @@
 #include <dlfcn.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAFCConnection.h"
 #import "FBAMDServiceConnection.h"
 #import "FBAMDeviceManager.h"
-#import "FBAMDeviceServiceManager.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceActivationCommands.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBDeviceLinkClient.h"
 
 #pragma mark - FBAMDevice Implementation
 
