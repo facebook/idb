@@ -9,7 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
-#import <FBDeviceControl/FBDeviceStorage.h>
+
+@class FBDeviceStorage;
 
 typedef CFTypeRef PrivateDevice;
 
@@ -108,6 +109,6 @@ typedef CFTypeRef PrivateDevice;
 /**
  The Storage of Device instances.
  */
-@property (nonnull, nonatomic, readonly, strong) FBDeviceStorage<PublicDevice> *storage;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceStorage *storage;
 
 @end

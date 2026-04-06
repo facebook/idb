@@ -8,24 +8,12 @@
 #import "FBDevice.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceApplicationCommands.h"
 #import "FBDeviceControlError.h"
-#import "FBDeviceCrashLogCommands.h"
-#import "FBDeviceDebuggerCommands.h"
-#import "FBDeviceDeveloperDiskImageCommands.h"
-#import "FBDeviceDiagnosticInformationCommands.h"
 #import "FBDeviceEraseCommands.h"
-#import "FBDeviceFileCommands.h"
-#import "FBDeviceLifecycleCommands.h"
-#import "FBDeviceLocationCommands.h"
-#import "FBDeviceLogCommands.h"
-#import "FBDevicePowerCommands.h"
-#import "FBDeviceScreenshotCommands.h"
-#import "FBDeviceVideoRecordingCommands.h"
-#import "FBDeviceXCTestCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
