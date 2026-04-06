@@ -140,10 +140,10 @@
   NSUUID *sessionIdentifier = [NSUUID UUID];
   FBBundleDescriptor *testBundle = [FBBundleDescriptor bundleFromPath:testLaunchConfiguration.testBundle.path error:&error];
   if (!testBundle) {
-    return [[[XCTestBootstrapError
-              describe:@"Failed to prepare test bundle"]
-             causedBy:error]
-            failFuture];
+    return (FBFuture *)[[[XCTestBootstrapError
+                          describe:@"Failed to prepare test bundle"]
+                         causedBy:error]
+                        failFuture];
   }
 
   // Prepare the test configuration
@@ -161,10 +161,10 @@
                                             reportActivities:testLaunchConfiguration.reportActivities
                                             error:&error];
   if (!testConfiguration) {
-    return [[[XCTestBootstrapError
-              describe:@"Failed to prepare test configuration"]
-             causedBy:error]
-            failFuture];
+    return (FBFuture *)[[[XCTestBootstrapError
+                          describe:@"Failed to prepare test configuration"]
+                         causedBy:error]
+                        failFuture];
   }
 
   return [[FBFuture

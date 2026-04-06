@@ -52,9 +52,9 @@ static void AFCConnectionCallback(void *connectionRefPtr, void *arg1, void *afcO
            resolve:^{
              FBAFCConnection *connection = [serviceConnection asAFCConnectionWithCalls:calls callback:AFCConnectionCallback logger:logger];
              if (![connection connectionIsValid]) {
-               return [[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Created AFC Connection %@ is not valid", connection]]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Created AFC Connection %@ is not valid", connection]]
+                                   failFuture];
              }
              return [FBFuture futureWithResult:connection];
            }]

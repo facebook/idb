@@ -9,14 +9,14 @@ import FBControlCore
 import Foundation
 
 @objc public final class XCTestBootstrapError: FBControlCoreError {
-  public override init() {
+  public required init() {
     super.init()
     self.inDomain(XCTestBootstrapErrorDomain)
   }
 }
 
 @objc public final class FBXCTestError: FBControlCoreError {
-  public override init() {
+  public required init() {
     super.init()
     self.inDomain(FBTestErrorDomain)
   }

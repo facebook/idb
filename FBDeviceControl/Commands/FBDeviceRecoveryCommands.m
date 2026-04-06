@@ -49,9 +49,9 @@
             int status = device.calls.EnterRecovery(device.amDeviceRef);
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed have device enter recovery %@", internalMessage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed have device enter recovery %@", internalMessage]]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -65,23 +65,23 @@
           resolve:^FBFuture<NSNull *> * {
             AMRecoveryModeDeviceRef recoveryDevice = device.recoveryModeDeviceRef;
             if (recoveryDevice == NULL) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Device %@ is not in recovery mode", device]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Device %@ is not in recovery mode", device]]
+                                  failFuture];
             }
             int status = device.calls.RecoveryModeDeviceSetAutoBoot(recoveryDevice, 1);
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]]
+                                  failFuture];
             }
             status = device.calls.RecoveryDeviceReboot(recoveryDevice);
             if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];

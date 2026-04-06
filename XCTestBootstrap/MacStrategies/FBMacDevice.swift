@@ -89,7 +89,7 @@ import IOKit
     name = Host.current().localizedName ?? ""
     self.logger = nil
     self.catalyst = false
-    temporaryDirectory = FBTemporaryDirectory()
+    temporaryDirectory = FBTemporaryDirectory(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     super.init()
   }
 

@@ -67,9 +67,9 @@
   NSString *pattern = [NSString stringWithFormat:@"^%@\t", [NSRegularExpression escapedPatternForString:@(pid).stringValue]];
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
   if (error) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Couldn't build search pattern for '%@'", @(pid)]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Couldn't build search pattern for '%@'", @(pid)]]
+                        failFuture];
   }
 
   return [[self
@@ -101,7 +101,7 @@
               pid_t processIdentifier = 0;
               NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
               if (!serviceName) {
-                return [FBControlCoreError failFutureWithError:error];
+                return (FBFuture *)[FBControlCoreError failFutureWithError:error];
               }
               mapping[serviceName] = @(processIdentifier);
             }
@@ -116,14 +116,14 @@
           onQueue:self.simulator.asyncQueue
           fmap:^(NSDictionary<NSString *, NSNumber *> *serviceNameToProcessIdentifier) {
             if (serviceNameToProcessIdentifier.count == 0) {
-              return [[FBSimulatorError
-                       describe:[NSString stringWithFormat:@"No Matching processes for '%@'", regex.pattern]]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:[NSString stringWithFormat:@"No Matching processes for '%@'", regex.pattern]]
+                                  failFuture];
             }
             if (serviceNameToProcessIdentifier.count > 1) {
-              return [[FBSimulatorError
-                       describe:[NSString stringWithFormat:@"Multiple Matching processes for '%@' %@", regex.pattern, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:[NSString stringWithFormat:@"Multiple Matching processes for '%@' %@", regex.pattern, [FBCollectionInformation oneLineDescriptionFromDictionary:serviceNameToProcessIdentifier]]]
+                                  failFuture];
             }
             NSString *serviceName = serviceNameToProcessIdentifier.allKeys.firstObject;
             NSNumber *processIdentifier = serviceNameToProcessIdentifier.allValues.firstObject;
@@ -149,9 +149,9 @@
           fmap:^(NSString *text) {
             NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
             if (lines.count < 2) {
-              return [[FBSimulatorError
-                       describe:[NSString stringWithFormat:@"Insufficient number of lines from output '%@'", text]]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:[NSString stringWithFormat:@"Insufficient number of lines from output '%@'", text]]
+                                  failFuture];
             }
             lines = [lines subarrayWithRange:NSMakeRange(1, lines.count - 1)];
 
@@ -164,7 +164,7 @@
               NSError *error = nil;
               NSString *serviceName = [FBSimulatorLaunchCtlCommands extractServiceNameFromListLine:line processIdentifierOut:&processIdentifier error:&error];
               if (!serviceName) {
-                return [FBSimulatorError failFutureWithError:error];
+                return (FBFuture *)[FBSimulatorError failFutureWithError:error];
               }
               services[serviceName] = processIdentifier > 0 ? @(processIdentifier) : NSNull.null;
             }

@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+@class FBSimulator;
 @class IOSurface;
 
 /**

@@ -60,7 +60,7 @@
   NSError *error = nil;
   NSString *launchPath = [self logExecutablePathWithError:&error];
   if (!launchPath) {
-    return [FBSimulatorError failFutureWithError:error];
+    return (FBFuture *)[FBSimulatorError failFutureWithError:error];
   }
   FBProcessIO *processIO = [[FBProcessIO alloc]
                             initWithStdIn:nil

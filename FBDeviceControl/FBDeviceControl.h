@@ -46,3 +46,7 @@
 #import <FBDeviceControl/FBInstrumentsClient.h>
 #import <FBDeviceControl/FBManagedConfigClient.h>
 #import <FBDeviceControl/FBSpringboardServicesClient.h>
+
+#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
+ #import <FBDeviceControl/FBDeviceControl-Swift.h>
+#endif

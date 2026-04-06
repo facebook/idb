@@ -46,9 +46,9 @@
 - (FBFuture<NSNull *> *)startListening
 {
   if (self.acceptSource) {
-    return [[FBControlCoreError
-             describe:@"Cannot start listening, socket is already listening"]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:@"Cannot start listening, socket is already listening"]
+                        failFuture];
   }
   return [self createSocketWithPort:self.port];
 }
@@ -56,9 +56,9 @@
 - (FBFuture<NSNull *> *)stopListening
 {
   if (!self.acceptSource) {
-    return [[FBControlCoreError
-             describe:@"Cannot stop listening, there is no active socket"]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:@"Cannot stop listening, there is no active socket"]
+                        failFuture];
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
@@ -83,9 +83,9 @@
   // Get the Socket, set some options
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if (socketDescriptor <= 0) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
+                        failFuture];
   }
   int flagTrue = 1;
   setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &flagTrue, sizeof(flagTrue));
@@ -99,17 +99,17 @@
   address.sin6_addr = in6addr_any;
   int result = bind(socketDescriptor, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]]
+                        failFuture];
   }
 
   // Start Listening
   result = listen(socketDescriptor, 10);
   if (result != 0) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]]
+                        failFuture];
   }
 
   // Prepare the Accept Source.

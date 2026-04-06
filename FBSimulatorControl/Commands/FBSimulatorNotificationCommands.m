@@ -50,7 +50,7 @@
                                            options:0
                                            error:&jsonError];
   if (jsonError) {
-    return [[FBSimulatorError describe:[NSString stringWithFormat:@"Failed to deserialize notification json: %@", jsonError]] failFuture];
+    return (FBFuture *)[[FBSimulatorError describe:[NSString stringWithFormat:@"Failed to deserialize notification json: %@", jsonError]] failFuture];
   }
 
   if ([self.simulator.device respondsToSelector:(@selector(sendPushNotificationForBundleID:jsonPayload:error:))]) {
@@ -66,9 +66,9 @@
                      }];
   }
 
-  return [[FBSimulatorError
-           describe:@"SimDevice doesn't have sendPushNotificationForBundleID selector"]
-          failFuture];
+  return (FBFuture *)[[FBSimulatorError
+                       describe:@"SimDevice doesn't have sendPushNotificationForBundleID selector"]
+                      failFuture];
 }
 
 @end

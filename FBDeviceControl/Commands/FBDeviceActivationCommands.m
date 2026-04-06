@@ -55,11 +55,11 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
             }
             if ([activationState isEqualToString:FBDeviceActivationStateUnactivated]) {
               [logger log:@"Device is not activated, starting activation"];
-              return [self performActivation];
+              return (FBFuture *)[self performActivation];
             }
-            return [[FBControlCoreError
-                     describe:[NSString stringWithFormat:@"%@ is not a valid activation state", activationState]]
-                    failFuture];
+            return (FBFuture *)[[FBControlCoreError
+                                 describe:[NSString stringWithFormat:@"%@ is not a valid activation state", activationState]]
+                                failFuture];
           }];
 }
 
@@ -72,9 +72,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
           onQueue:self.device.asyncQueue
           fmap:^FBFuture<NSNull *> *(FBDeviceActivationState actualActivationState) {
             if (![activationState isEqualToString:actualActivationState]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Activation State %@ is not equal to actual activation state %@", activationState, actualActivationState]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Activation State %@ is not equal to actual activation state %@", activationState, actualActivationState]]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -125,9 +125,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
             }
             NSString *activationState = response[@"Value"];
             if (![activationState isKindOfClass:NSString.class]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"No Activation State in %@", response]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"No Activation State in %@", response]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:FBDeviceActivationStateCoerceFromString(activationState)];
           }];
@@ -146,9 +146,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
             }
             id responsePayload = response[@"Value"];
             if (!responsePayload) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"No 'Value' in %@", response]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"No 'Value' in %@", response]]
+                                  failFuture];
             }
             return [FBDeviceActivationCommands mobileActivationRequestForRequestPayload:responsePayload queue:self.device.workQueue];
           }];
@@ -167,9 +167,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
             }
             NSDictionary<NSString *, id> *responsePayload = response[@"Value"];
             if (!responsePayload) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"No 'Value' in %@", response]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"No 'Value' in %@", response]]
+                                  failFuture];
             }
             return [FBDeviceActivationCommands mobileActivationActivateForRequestPayload:responsePayload queue:self.device.workQueue];
           }];
@@ -212,9 +212,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
           fmap:^(NSArray<id> *result) {
             NSHTTPURLResponse *httpResponse = result[0];
             if (httpResponse.statusCode != 200) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"%@ no 200", httpResponse]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"%@ no 200", httpResponse]]
+                                  failFuture];
             }
             NSData *responseData = result[1];
             NSError *innerError = nil;
@@ -251,9 +251,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
           fmap:^(NSArray<id> *result) {
             NSHTTPURLResponse *httpResponse = result[0];
             if (httpResponse.statusCode != 200) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"%@ no 200", httpResponse]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"%@ no 200", httpResponse]]
+                                  failFuture];
             }
             NSData *responseData = result[1];
             NSError *innerError = nil;
@@ -263,9 +263,9 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
             }
             id activationRecord = response[@"ActivationRecord"];
             if (!activationRecord) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"No 'ActivationRecord' in %@", activationRecord]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"No 'ActivationRecord' in %@", activationRecord]]
+                                  failFuture];
             }
             NSData *activationRecordData = [NSPropertyListSerialization dataWithPropertyList:activationRecord format:NSPropertyListXMLFormat_v1_0 options:0 error:&innerError];
             if (!activationRecordData) {

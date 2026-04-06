@@ -55,9 +55,9 @@ static size_t ReadBufferSize = 1024 * 4;
 - (FBFuture<NSNull *> *)startReading
 {
   if (self.state != FBFileReaderStateNotStarted) {
-    return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"Cannot start reading in state %lu", (unsigned long)self.state]]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"Cannot start reading in state %lu", (unsigned long)self.state]]
+                        failFuture];
   }
 
   FBAMDServiceConnection *connection = self.connection;
@@ -83,9 +83,9 @@ static size_t ReadBufferSize = 1024 * 4;
 - (FBFuture<NSNumber *> *)stopReading
 {
   if (self.state == FBFileReaderStateNotStarted) {
-    return [[FBDeviceControlError
-             describe:@"Cannot stop reading when reading has not started"]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:@"Cannot stop reading when reading has not started"]
+                        failFuture];
   }
   if (self.state != FBFileReaderStateReading) {
     return self.finishedReadingMutable;

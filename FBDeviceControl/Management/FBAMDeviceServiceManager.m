@@ -49,9 +49,9 @@
   );
   if (status != 0) {
     NSString *internalMessage = CFBridgingRelease(self.device.calls.CopyErrorText(status));
-    return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]]
+                        failFuture];
   }
   FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:self.calls logger:logger];
   return [FBFuture futureWithResult:connection];

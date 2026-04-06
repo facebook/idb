@@ -75,9 +75,9 @@
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)crashLogFiles
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 @end

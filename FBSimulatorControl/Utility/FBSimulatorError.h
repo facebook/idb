@@ -5,21 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
-
-#import <FBControlCore/FBControlCoreError.h>
-
-@class FBSimulator;
 
 /**
  The Error Domain for FBSimulatorControl.
  */
 extern NSString * _Nonnull const FBSimulatorControlErrorDomain;
 
-/**
- Helpers for constructing Errors representing errors in FBSimulatorControl & adding additional diagnosis.
- */
-@interface FBSimulatorError : FBControlCoreError
-
-@end
+// FBSimulatorError class is now implemented in Swift.
+// Import the Swift header to get the class declaration.
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

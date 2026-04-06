@@ -108,7 +108,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
   @objc public func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
     let binaryArchitectures = Set(bundle.binary!.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
-    let supportedArchitectures = Set(FBiOSTargetConfiguration.baseArchs(toCompatibleArch: targetArchs).map { $0.rawValue })
+    let supportedArchitectures = Set(FBiOSTargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
 
     let containsExactArch = !binaryArchitectures.isDisjoint(with: supportedArchitectures)
     let arm64eEquivalent = targetArchs.contains(FBArchitecture(rawValue: "arm64e")) && binaryArchitectures.contains("arm64")

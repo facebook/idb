@@ -343,10 +343,10 @@ import XCTestBootstrap
         fmap: { crashes in
           let crashArray = crashes as! [FBCrashLogInfo]
           if crashArray.count > 1 {
-            return FBIDBError.describe("More than one crash log matching \(predicate)").failFuture() as FBFuture
+            return FBIDBError.describe("More than one crash log matching \(predicate)").failFuture()
           }
           if crashArray.isEmpty {
-            return FBIDBError.describe("No crashes matching \(predicate)").failFuture() as FBFuture
+            return FBIDBError.describe("No crashes matching \(predicate)").failFuture()
           }
           do {
             let log = try crashArray.first!.obtainCrashLog()
@@ -372,7 +372,7 @@ import XCTestBootstrap
 
   @objc public func debugserver_start(_ bundleID: String) -> FBFuture<AnyObject> {
     guard let commands = target as? FBDebuggerCommands else {
-      return FBControlCoreError.describe("Target doesn't conform to FBDebuggerCommands protocol \(target)").failFuture() as FBFuture
+      return FBControlCoreError.describe("Target doesn't conform to FBDebuggerCommands protocol \(target)").failFuture()
     }
 
     return debugserver_prepare(bundleID)
@@ -395,7 +395,7 @@ import XCTestBootstrap
       target.workQueue,
       resolve: {
         guard let debugServer = self.debugServer else {
-          return FBControlCoreError.describe("No debug server running").failFuture() as FBFuture
+          return FBControlCoreError.describe("No debug server running").failFuture()
         }
         return FBFuture(result: debugServer as AnyObject)
       })
@@ -633,7 +633,7 @@ import XCTestBootstrap
 
   @objc public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: FBDataConsumer) -> FBFuture<AnyObject> {
     guard let commands = target as? FBDapServerCommand else {
-      return FBControlCoreError.describe("Target doesn't conform to FBDapServerCommand protocol \(target)").failFuture() as FBFuture
+      return FBControlCoreError.describe("Target doesn't conform to FBDapServerCommand protocol \(target)").failFuture()
     }
     return commands.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut) as! FBFuture<AnyObject>
   }
@@ -722,11 +722,11 @@ import XCTestBootstrap
       target.workQueue,
       resolve: {
         if self.debugServer != nil {
-          return FBControlCoreError.describe("Debug server is already running").failFuture() as FBFuture
+          return FBControlCoreError.describe("Debug server is already running").failFuture()
         }
         let persisted = self.storageManager.application.persistedBundles
         guard let bundle = persisted[bundleID] else {
-          return FBIDBError.describe("\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(FBCollectionInformation.oneLineDescription(from: Array(persisted.keys)))").failFuture() as FBFuture
+          return FBIDBError.describe("\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(FBCollectionInformation.oneLineDescription(from: Array(persisted.keys)))").failFuture()
         }
         return FBFuture(result: bundle as AnyObject)
       })
@@ -737,7 +737,7 @@ import XCTestBootstrap
       return target.crashLogFiles() as! FBFutureContext<AnyObject>
     }
     guard let commands = target as? FBFileCommands else {
-      return FBControlCoreError.describe("Target doesn't conform to FBFileCommands protocol \(target)").failFutureContext() as FBFutureContext
+      return FBControlCoreError.describe("Target doesn't conform to FBFileCommands protocol \(target)").failFutureContext()
     }
     if containerType == FBFileContainerKind.application.rawValue {
       return commands.fileCommandsForApplicationContainers() as! FBFutureContext<AnyObject>
@@ -797,35 +797,35 @@ import XCTestBootstrap
 
   private func lifecycleCommands() -> FBFuture<AnyObject> {
     guard let commands = target as? FBSimulatorLifecycleCommandsProtocol else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorLifecycleCommands protocol \(target)").failFuture() as FBFuture
+      return FBIDBError.describe("Target doesn't conform to FBSimulatorLifecycleCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)
   }
 
   private func mediaCommands() -> FBFuture<AnyObject> {
     guard let commands = target as? FBSimulatorMediaCommands else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").failFuture() as FBFuture
+      return FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)
   }
 
   private func keychainCommands() -> FBFuture<AnyObject> {
     guard let commands = target as? FBSimulatorKeychainCommandsProtocol else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorKeychainCommands protocol \(target)").failFuture() as FBFuture
+      return FBIDBError.describe("Target doesn't conform to FBSimulatorKeychainCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)
   }
 
   private func settingsCommands() -> FBFuture<AnyObject> {
     guard let commands = target as? FBSimulatorSettingsCommands else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").failFuture() as FBFuture
+      return FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)
   }
 
   private func accessibilityCommands() -> FBFuture<AnyObject> {
     guard let commands = target as? FBAccessibilityCommands else {
-      return FBIDBError.describe("Target doesn't conform to FBAccessibilityCommands protocol \(target)").failFuture() as FBFuture
+      return FBIDBError.describe("Target doesn't conform to FBAccessibilityCommands protocol \(target)").failFuture()
     }
     return FBFuture(result: commands as AnyObject)
   }
@@ -871,7 +871,7 @@ import XCTestBootstrap
         target.asyncQueue,
         pop: { bundle in
           guard let appBundle = bundle as? FBBundleDescriptor else {
-            return FBIDBError.describe("No app bundle could be extracted").failFuture() as FBFuture<AnyObject>
+            return FBIDBError.describe("No app bundle could be extracted").failFuture()
           }
           do {
             try self.storageManager.application.checkArchitecture(appBundle)
@@ -888,7 +888,7 @@ import XCTestBootstrap
                     fmap: { _ -> FBFuture<AnyObject> in
                       if makeDebuggable && userDevelopmentAppIsRequired {
                         if installed.installType != .userDevelopment {
-                          return FBIDBError.describe("\(appBundle.identifier) is not a user-development signed app and cannot be debugged on this device").failFuture() as FBFuture<AnyObject>
+                          return FBIDBError.describe("\(appBundle.identifier) is not a user-development signed app and cannot be debugged on this device").failFuture()
                         }
                       }
                       return FBFuture(result: FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: appBundle.path)) as AnyObject)

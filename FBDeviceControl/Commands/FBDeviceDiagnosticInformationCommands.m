@@ -72,12 +72,12 @@ static NSString *const DiagnosticsRelayService = @"com.apple.mobile.diagnostics_
             NSError *error = nil;
             NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request" : @"All"} error:&error];
             if (!result) {
-              return [FBFuture futureWithError:error];
+              return (FBFuture *)[FBFuture futureWithError:error];
             }
             if (![result[@"Status"] isEqualToString:@"Success"]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Not successful %@", result]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Not successful %@", result]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:[FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result[@"Diagnostics"]]];
           }];

@@ -762,14 +762,14 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
            onQueue:self.writeQueue
            resolve:^FBFuture<NSNull *> * {
              if (self.startedFuture.hasCompleted) {
-               return [[FBSimulatorError
-                        describe:@"Cannot start streaming, since streaming is stopped"]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:@"Cannot start streaming, since streaming is stopped"]
+                                   failFuture];
              }
              if (self.consumer) {
-               return [[FBSimulatorError
-                        describe:@"Cannot start streaming, since streaming has already has started"]
-                       failFuture];
+               return (FBFuture *)[[FBSimulatorError
+                                    describe:@"Cannot start streaming, since streaming has already has started"]
+                                   failFuture];
              }
              self.consumer = consumer;
              return [self attachConsumerIfNeeded];
@@ -790,14 +790,14 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
             }
             id<FBDataConsumer> consumer = self.consumer;
             if (!consumer) {
-              return [[FBSimulatorError
-                       describe:@"Cannot stop streaming, no consumer attached"]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:@"Cannot stop streaming, no consumer attached"]
+                                  failFuture];
             }
             if (![self.framebuffer isConsumerAttached:self]) {
-              return [[FBSimulatorError
-                       describe:@"Cannot stop streaming, is not attached to a surface"]
-                      failFuture];
+              return (FBFuture *)[[FBSimulatorError
+                                   describe:@"Cannot stop streaming, is not attached to a surface"]
+                                  failFuture];
             }
             self.consumer = nil;
             [self.framebuffer detachConsumer:self];
@@ -805,9 +805,9 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
             if (self.framePusher) {
               NSError *error = nil;
               if (![self.framePusher tearDown:&error]) {
-                return [[FBSimulatorError
-                         describe:[NSString stringWithFormat:@"Failed to tear down frame pusher: %@", error]]
-                        failFuture];
+                return (FBFuture *)[[FBSimulatorError
+                                     describe:[NSString stringWithFormat:@"Failed to tear down frame pusher: %@", error]]
+                                    failFuture];
               }
             }
             self.frameWriterContext = nil;

@@ -54,3 +54,7 @@
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>
 #import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
+
+#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
+ #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
+#endif

@@ -47,10 +47,10 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   NSError *error = nil;
   SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&error];
   if (!client) {
-    return [[[FBSimulatorError
-              describe:[NSString stringWithFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]]
-             causedBy:error]
-            failFuture];
+    return (FBFuture *)[[[FBSimulatorError
+                          describe:[NSString stringWithFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]]
+                         causedBy:error]
+                        failFuture];
   }
   FBSimulatorIndigoHID *indigo = [FBSimulatorIndigoHID simulatorKitHIDWithError:&error];
   if (!indigo) {
@@ -121,9 +121,9 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 - (FBFuture<NSNull *> *)connect
 {
   if (!self.client) {
-    return [[FBSimulatorError
-             describe:@"Cannot Connect, HID client has already been disposed of"]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:@"Cannot Connect, HID client has already been disposed of"]
+                        failFuture];
   }
   return FBFuture.empty;
 }

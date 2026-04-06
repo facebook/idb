@@ -141,9 +141,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            onQueue:self.queue
            resolve:^FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
              if (self.task) {
-               return [[FBControlCoreError
-                        describe:@"Cannot start reading, already reading"]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:@"Cannot start reading, already reading"]
+                                   failFuture];
              }
              return [[[[FBProcessBuilder
                         withLaunchPath:@"/bin/cat"
@@ -167,9 +167,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
              FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
              self.task = nil;
              if (!task) {
-               return [[FBControlCoreError
-                        describe:@"Cannot stop reading, not reading"]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:@"Cannot stop reading, not reading"]
+                                   failFuture];
              }
              return [task sendSignal:SIGTERM];
            }]
@@ -213,9 +213,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
               onQueue:self.queue
               resolve:^FBFuture<FBProcessStreamAttachment *> * {
                 if (self.writer || self.nested) {
-                  return [[FBControlCoreError
-                           describe:@"Cannot call startReading twice"]
-                          failFuture];
+                  return (FBFuture *)[[FBControlCoreError
+                                       describe:@"Cannot call startReading twice"]
+                                      failFuture];
                 }
                 return [self.output attach];
               }]
@@ -243,9 +243,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
             onQueue:self.queue
             resolve:^FBFuture<NSNull *> * {
               if (!self.writer || !self.nested) {
-                return [[FBControlCoreError
-                         describe:@"No active reader for fifo"]
-                        failFuture];
+                return (FBFuture *)[[FBControlCoreError
+                                     describe:@"No active reader for fifo"]
+                                    failFuture];
               }
               return [self.nested stopReading];
             }]
@@ -450,10 +450,10 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 {
   NSString *fifoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
   if (mkfifo(fifoPath.UTF8String, S_IWUSR | S_IRUSR) != 0) {
-    return [[[FBControlCoreError
-              describe:[NSString stringWithFormat:@"Failed to create a named pipe for fifo %@ with error '%s'", fifoPath, strerror(errno)]]
-             inDomain:NSPOSIXErrorDomain]
-            failFuture];
+    return (FBFuture *)[[[FBControlCoreError
+                          describe:[NSString stringWithFormat:@"Failed to create a named pipe for fifo %@ with error '%s'", fifoPath, strerror(errno)]]
+                         inDomain:NSPOSIXErrorDomain]
+                        failFuture];
   }
   return [FBFuture futureWithResult:fifoPath];
 }
@@ -510,16 +510,16 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           onQueue:self.workQueue
           resolve:^{
             if (self.readEnd != 0 || self.writeEnd != 0) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Cannot attach when already attached to %d:%d", self.readEnd, self.writeEnd]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Cannot attach when already attached to %d:%d", self.readEnd, self.writeEnd]]
+                                  failFuture];
             }
 
             int fileDescriptors[2] = {0, 0};
             if (pipe(fileDescriptors) != 0) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
+                                  failFuture];
             }
             self.readEnd = fileDescriptors[0];
             self.writeEnd = fileDescriptors[1];
@@ -543,9 +543,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            onQueue:self.workQueue
            resolve:^FBFuture<NSNull *> * {
              if (!self.writeEnd) {
-               return [[FBControlCoreError
-                        describe:@"Cannot detach when not attached"]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:@"Cannot detach when not attached"]
+                                   failFuture];
              }
 
              // Close the write end, but leave the read end open.
@@ -676,9 +676,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           onQueue:self.workQueue
           fmap:^(FBProcessStreamAttachment *attachment) {
             if (self.reader) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Cannot attach to %@ twice", self]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Cannot attach to %@ twice", self]]
+                                  failFuture];
             }
 
             // FBFileReader consumes the read end, the write end is passed out in the attachment.
@@ -709,9 +709,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
             fmap:^FBFuture<NSNumber *> *(id _) {
               FBFileReader *reader = self.reader;
               if (!reader) {
-                return [[FBControlCoreError
-                         describe:[NSString stringWithFormat:@"Cannot detach from %@, no active reader", self]]
-                        failFuture];
+                return (FBFuture *)[[FBControlCoreError
+                                     describe:[NSString stringWithFormat:@"Cannot detach from %@, no active reader", self]]
+                                    failFuture];
               }
               // Since detach may be called before the reader has finished reading asynchronously,
               // we should attempt to wait for this to happen naturally and then use the backoff API.
@@ -813,16 +813,16 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            resolve:^{
              int fileDescriptor = self.fileDescriptor;
              if (fileDescriptor) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Cannot attach when already attached to file %@: %d", self.filePath, fileDescriptor]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Cannot attach when already attached to file %@: %d", self.filePath, fileDescriptor]]
+                                   failFuture];
              }
 
              fileDescriptor = open(self.filePath.UTF8String, O_WRONLY | O_CREAT);
              if (!fileDescriptor) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Cannot create file descriptor for %@: %s", self.filePath, strerror(errno)]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Cannot create file descriptor for %@: %s", self.filePath, strerror(errno)]]
+                                   failFuture];
              }
              self.fileDescriptor = fileDescriptor;
              return [FBFuture futureWithResult:[[FBProcessStreamAttachment alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES mode:FBProcessStreamAttachmentModeOutput]];
@@ -837,9 +837,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            resolve:^FBFuture<NSNull *> * {
              int fileDescriptor = self.fileDescriptor;
              if (fileDescriptor == 0) {
-               return [[FBControlCoreError
-                        describe:@"Cannot Detach Twice"]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:@"Cannot Detach Twice"]
+                                   failFuture];
              }
              close(fileDescriptor);
              self.fileDescriptor = 0;
@@ -1022,16 +1022,16 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            onQueue:self.workQueue
            resolve:^{
              if (self.readEnd || self.writeEnd) {
-               return [[FBControlCoreError
-                        describe:@"Cannot Attach Twice"]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:@"Cannot Attach Twice"]
+                                   failFuture];
              }
 
              int fileDescriptors[2] = {0, 0};
              if (pipe(fileDescriptors) != 0) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Failed to create a pipe: %s", strerror(errno)]]
+                                   failFuture];
              }
              self.readEnd = fileDescriptors[0];
              self.writeEnd = fileDescriptors[1];
@@ -1050,9 +1050,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            resolve:^FBFuture<NSNull *> * {
              int readEnd = self.readEnd;
              if (!readEnd) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Nothing is attached to %@", self]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Nothing is attached to %@", self]]
+                                   failFuture];
              }
 
              // Close the read end of the descriptor since the input it no-longer consuming it
@@ -1099,9 +1099,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
              // The read end is closed in the superclassess detach.
              id<FBDataConsumer> writer = [FBFileWriter asyncWriterWithFileDescriptor:self.writeEnd closeOnEndOfFile:YES error:&error];
              if (!writer) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Failed to create a writer for pipe %@", error]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Failed to create a writer for pipe %@", error]]
+                                   failFuture];
              }
              self.writer = writer;
              return [FBFuture futureWithResult:attachment];

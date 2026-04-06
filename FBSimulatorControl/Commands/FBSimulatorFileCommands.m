@@ -113,44 +113,44 @@
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForMDMProfiles
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForProvisioningProfiles
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSpringboardIconLayout
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForWallpaper
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForDiskImages
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainerProtocol>> *)fileCommandsForSymbols
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBControlCoreError
+                              describe:[NSString stringWithFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 #pragma mark FBSimulatorFileCommandsProtocol Implementation

@@ -7,16 +7,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
 /**
  The Error Domain for FBDeviceControl Errors.
  */
-extern NSString *const FBDeviceControlErrorDomain;
+extern NSString * _Nonnull const FBDeviceControlErrorDomain;
 
-/**
- An Error Builder for FBDeviceControl Errors.
- */
-@interface FBDeviceControlError : FBControlCoreError
-
-@end
+// FBDeviceControlError class is now implemented in Swift.
+// Import the Swift header to get the class declaration.
+#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
+ #import <FBDeviceControl/FBDeviceControl-Swift.h>
+#endif

@@ -246,55 +246,55 @@
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice connectToDeviceWithPurpose:purpose];
+    return (FBFutureContext *)[amDevice connectToDeviceWithPurpose:purpose];
   }
-  return [[FBDeviceControlError
-           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startService:service];
+    return (FBFutureContext *)[amDevice startService:service];
   }
-  return [[FBDeviceControlError
-           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startDeviceLinkService:service];
+    return (FBFutureContext *)[amDevice startDeviceLinkService:service];
   }
-  return [[FBDeviceControlError
-           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice startAFCService:service];
+    return (FBFutureContext *)[amDevice startAFCService:service];
   }
-  return [[FBDeviceControlError
-           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   FBAMDevice *amDevice = self.amDevice;
   if (amDevice) {
-    return [amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
+    return (FBFutureContext *)[amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
   }
-  return [[FBDeviceControlError
-           describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
-          failFutureContext];
+  return (FBFutureContext *)[[FBDeviceControlError
+                              describe:[NSString stringWithFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]]
+                             failFutureContext];
 }
 
 #pragma mark Forwarding

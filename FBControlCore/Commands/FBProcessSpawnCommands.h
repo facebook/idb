@@ -11,10 +11,7 @@
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 @class FBSubprocess;
-@class FBProcessIOAttachment;
 @class FBProcessSpawnConfiguration;
-
-@protocol FBControlCoreLogger;
 
 /**
  Commands relating to the launching of processes on a target.
@@ -31,45 +28,5 @@
 
 @end
 
-/**
- More convenience.
- */
-@interface FBProcessSpawnCommandHelpers : NSObject
-
-#pragma mark Short-Running Processes
-
-/**
- Launches a short-running process with the given configuration.
-
- @param configuration the configuration of the process to spawn.
- @param commands the command implementation to use.
- @return the stat_loc exit of the process, wrapped in a Future.
- */
-+ (nonnull FBFuture<NSNumber *> *)launchAndNotifyOfCompletion:(nonnull FBProcessSpawnConfiguration *)configuration withCommands:(nonnull id<FBProcessSpawnCommands>)commands;
-
-/**
- Launches an process, consuming it's output and returning it as a String.
-
- @param configuration the configuration of the process to spawn.
- @param commands the command implementation to use.
- @return A future that wraps the stdout of the launched process.
- */
-+ (nonnull FBFuture<NSString *> *)launchConsumingStdout:(nonnull FBProcessSpawnConfiguration *)configuration withCommands:(nonnull id<FBProcessSpawnCommands>)commands;
-
-/**
- Resolves an exitCode future from a statLoc.
- Performs the necessary unwapping of the statLoc bitmask.
-
- @param statLoc the stat_loc value.
- @param attachment the IO attachment of the process.
- @param statLocFuture the statLoc future to resolve.
- @param exitCodeFuture the exitCode future to resolve.
- @param signalFuture the signal future to resolve.
- @param processIdentifier the pid of the finished process.
- @param queue a queue to use for chaining
- @param configuration the configuration of the finished process.
- @param logger the logger to log to.
- */
-+ (void)resolveProcessFinishedWithStatLoc:(int)statLoc inTeardownOfIOAttachment:(nonnull FBProcessIOAttachment *)attachment statLocFuture:(nonnull FBMutableFuture<NSNumber *> *)statLocFuture exitCodeFuture:(nonnull FBMutableFuture<NSNumber *> *)exitCodeFuture signalFuture:(nonnull FBMutableFuture<NSNumber *> *)signalFuture processIdentifier:(pid_t)processIdentifier configuration:(nonnull FBProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
-
-@end
+// FBProcessSpawnCommandHelpers class is now implemented in Swift.
+#import <FBControlCore/FBControlCore-SwiftImport.h>

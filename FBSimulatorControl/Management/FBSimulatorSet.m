@@ -87,17 +87,17 @@
   NSError *innerError = nil;
   SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
-    return [[[FBSimulatorError
-              describe:[NSString stringWithFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]]
-             causedBy:innerError]
-            failFuture];
+    return (FBFuture *)[[[FBSimulatorError
+                          describe:[NSString stringWithFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]]
+                         causedBy:innerError]
+                        failFuture];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
-    return [[[FBSimulatorError
-              describe:[NSString stringWithFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]]
-             causedBy:innerError]
-            failFuture];
+    return (FBFuture *)[[[FBSimulatorError
+                          describe:[NSString stringWithFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]]
+                         causedBy:innerError]
+                        failFuture];
   }
 
   // First, create the device.
@@ -214,9 +214,9 @@
   // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
   FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   if (!simulator) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]]
+                        failFuture];
   }
   return [FBFuture futureWithResult:simulator];
 }

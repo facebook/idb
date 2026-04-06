@@ -82,11 +82,11 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
                 continue;
               }
               NSString *mountPath = mountEntry[MountPathKey];
-              return [self unmountDiskImageAtPath:mountPath];
+              return (FBFuture *)[self unmountDiskImageAtPath:mountPath];
             }
-            return [[FBDeviceControlError
-                     describe:[NSString stringWithFormat:@"%@ does not appear to be mounted", diskImage]]
-                    failFuture];
+            return (FBFuture *)[[FBDeviceControlError
+                                 describe:[NSString stringWithFormat:@"%@ does not appear to be mounted", diskImage]]
+                                failFuture];
           }];
 }
 
@@ -147,9 +147,9 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
             }
             NSString *errorString = response[@"Error"];
             if (errorString) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Could not get mounted image info: %@", errorString]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Could not get mounted image info: %@", errorString]]
+                                  failFuture];
             }
             NSArray<NSDictionary<NSString *, id> *> *entries = response[@"EntryList"];
             return [FBFuture futureWithResult:entries];
@@ -203,14 +203,14 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
               (__bridge void *) (device)
             );
             if (status == DiskImageMountingError) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]]
+                                  failFuture];
             } else if (status != 0) {
               NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:diskImage];
           }];

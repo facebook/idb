@@ -47,9 +47,9 @@
 {
   NSParameterAssert(filePath);
   if (self.video) {
-    return [[FBDeviceControlError
-             describe:@"Cannot create a new video recording session, one is already active"]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:@"Cannot create a new video recording session, one is already active"]
+                        failFuture];
   }
 
   return [[FBDeviceVideo
@@ -65,9 +65,9 @@
 - (FBFuture<NSNull *> *)stopRecording
 {
   if (!self.video) {
-    return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.device]]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"There was no existing video instance for %@", self.device]]
+                        failFuture];
   }
   FBDeviceVideo *video = self.video;
   self.video = nil;

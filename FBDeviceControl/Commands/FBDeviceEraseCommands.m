@@ -97,9 +97,9 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
            fmap:^FBFuture<NSNull *> *(NSNumber *eraseCallbackValueNumber) {
              const int eraseCallbackValue = eraseCallbackValueNumber.intValue;
              if (eraseCallbackValue != EraseCallbackValueGood) {
-               return [[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]]
+                                   failFuture];
              }
              [logger log:@"Device API call finished, waiting for device to go offline"];
              return [deviceWentAway timeout:OfflineTimeout waitingFor:@"Device to go offline"];

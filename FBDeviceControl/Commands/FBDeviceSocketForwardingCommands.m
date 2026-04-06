@@ -90,17 +90,17 @@
            pop:^(id<FBDeviceCommands> device) {
              int connectionID = device.calls.GetConnectionID(device.amDeviceRef);
              if (connectionID <= 0) {
-               return [[FBDeviceControlError
-                        describe:@"Failed to get ConnectionID from Device"]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:@"Failed to get ConnectionID from Device"]
+                                   failFuture];
              }
              [logger log:[NSString stringWithFormat:@"Got connection ID %d, for device. Connecting to remote port %d", connectionID, remotePort]];
              int localSocket = 0;
              int status = device.calls.USBMuxConnectByPort(connectionID, htons(remotePort), &localSocket);
              if (status != 0) {
-               return [[FBDeviceControlError
-                        describe:[NSString stringWithFormat:@"Failed to connect to remote port %d", remotePort]]
-                       failFuture];
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"Failed to connect to remote port %d", remotePort]]
+                                   failFuture];
              }
              [logger log:[NSString stringWithFormat:@"Got local socket %d for remote port %d", localSocket, remotePort]];
              return [FBFuture futureWithResult:@(localSocket)];

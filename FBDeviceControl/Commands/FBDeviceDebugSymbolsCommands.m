@@ -70,9 +70,9 @@ static const uint32_t GetFileAck = GetFileCommand;
 {
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtPath:destinationDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-    return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"Failed to create destination directory for symbol extraction: %@", error]]
-            failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"Failed to create destination directory for symbol extraction: %@", error]]
+                        failFuture];
   }
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[[self
@@ -160,9 +160,9 @@ static const uint32_t GetFileAck = GetFileCommand;
             }
             NSUInteger index = [files indexOfObject:fileName];
             if (index == NSNotFound) {
-              return [[FBDeviceControlError
-                       describe:[NSString stringWithFormat:@"Could not find %@ within %@", fileName, [FBCollectionInformation oneLineDescriptionFromArray:files]]]
-                      failFuture];
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Could not find %@ within %@", fileName, [FBCollectionInformation oneLineDescriptionFromArray:files]]]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:@(index)];
           }];

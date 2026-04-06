@@ -309,10 +309,10 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
             }
             [destination removeItemWithError:nil];
             if (![destination populateWithContentsOfHostPath:sourcePath error:&error]) {
-              return [[[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]]
+                                   causedBy:error]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -326,18 +326,18 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
           fmap:^FBFuture<NSString *> *(id<FBContainedFile> source) {
             BOOL sourceIsDirectory = NO;
             if (![source fileExistsIsDirectory:&sourceIsDirectory]) {
-              return [[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Source path does not exist: %@", source]]
-                      failFuture];
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Source path does not exist: %@", source]]
+                                  failFuture];
             }
             NSString *dstPath = destinationPath;
             if (!sourceIsDirectory) {
               NSError *createDirectoryError;
               if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:@{} error:&createDirectoryError]) {
-                return [[[FBControlCoreError
-                          describe:[NSString stringWithFormat:@"Could not create temporary directory: %@", createDirectoryError]]
-                         causedBy:createDirectoryError]
-                        failFuture];
+                return (FBFuture *)[[[FBControlCoreError
+                                      describe:[NSString stringWithFormat:@"Could not create temporary directory: %@", createDirectoryError]]
+                                     causedBy:createDirectoryError]
+                                    failFuture];
               }
               dstPath = [dstPath stringByAppendingPathComponent:[sourcePath lastPathComponent]];
             }
@@ -346,19 +346,19 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
             if ([NSFileManager.defaultManager fileExistsAtPath:dstPath isDirectory:&destinationIsDirectory]) {
               NSError *removeError;
               if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
-                return [[[FBControlCoreError
-                          describe:[NSString stringWithFormat:@"Could not remove %@", dstPath]]
-                         causedBy:removeError]
-                        failFuture];
+                return (FBFuture *)[[[FBControlCoreError
+                                      describe:[NSString stringWithFormat:@"Could not remove %@", dstPath]]
+                                     causedBy:removeError]
+                                    failFuture];
               }
             }
 
             NSError *copyError;
             if (![source populateHostPathWithContents:dstPath error:&copyError]) {
-              return [[[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]]
-                       causedBy:copyError]
-                      failFuture];
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]]
+                                   causedBy:copyError]
+                                  failFuture];
             }
             return [FBFuture futureWithResult:destinationPath];
           }];
@@ -372,9 +372,9 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
            fmap:^FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSData *> *> *(id<FBContainedFile> fileToTail) {
              NSString *pathOnHostFileSystem = fileToTail.pathOnHostFileSystem;
              if (!pathOnHostFileSystem) {
-               return [[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]]
-                       failFuture];
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]]
+                                   failFuture];
              }
              return [[[[FBProcessBuilder
                         withLaunchPath:@"/usr/bin/tail"]
@@ -400,10 +400,10 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
           fmap:^FBFuture<NSNull *> *(id<FBContainedFile> directory) {
             NSError *error;
             if (![directory createDirectoryWithError:&error]) {
-              return [[[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Could not create directory %@: %@", directory, error]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not create directory %@: %@", directory, error]]
+                                   causedBy:error]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -423,10 +423,10 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
             id<FBContainedFile> destination = providedFiles[1];
             NSError *error = nil;
             if (![source moveTo:destination error:&error]) {
-              return [[[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Could not move item at %@ to %@: %@", source, destination, error]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not move item at %@ to %@: %@", source, destination, error]]
+                                   causedBy:error]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -440,10 +440,10 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
           fmap:^FBFuture<NSNull *> *(id<FBContainedFile> file) {
             NSError *error;
             if (![file removeItemWithError:&error]) {
-              return [[[FBControlCoreError
-                        describe:[NSString stringWithFormat:@"Could not remove item at path %@: %@", file, error]]
-                       causedBy:error]
-                      failFuture];
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not remove item at path %@: %@", file, error]]
+                                   causedBy:error]
+                                  failFuture];
             }
             return FBFuture.empty;
           }];
@@ -518,30 +518,30 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
-          failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
-          failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
-          failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)originPath to:(NSString *)destinationPath
 {
-  return [[FBControlCoreError
-           describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
-          failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path

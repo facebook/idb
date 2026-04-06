@@ -62,9 +62,9 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
 {
   NSNumber *whereNumber = FBManagedConfigClient.wallpaperWhereForName[name];
   if (!whereNumber) {
-    return [[FBControlCoreError
-             describe:[NSString stringWithFormat:@"%@ is not a valid Wallpaper Name", name]]
-            failFuture];
+    return (FBFuture *)[[FBControlCoreError
+                         describe:[NSString stringWithFormat:@"%@ is not a valid Wallpaper Name", name]]
+                        failFuture];
   }
   return [self changeSettings:@[
     @{@"Item" : @"Wallpaper", @"Image" : data, @"Where" : whereNumber}

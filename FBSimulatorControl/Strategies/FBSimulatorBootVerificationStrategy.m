@@ -69,15 +69,15 @@ static NSTimeInterval const BootVerificationStallInterval = 1.5; // 1.5s
 {
   SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
   if (!bootInfo) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"No bootInfo for %@", self.simulator]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"No bootInfo for %@", self.simulator]]
+                        failFuture];
   }
   [self updateBootInfo:bootInfo];
   if (bootInfo.isTerminalStatus == NO) {
-    return [[FBSimulatorError
-             describe:[NSString stringWithFormat:@"Not terminal status, status is %@", bootInfo]]
-            failFuture];
+    return (FBFuture *)[[FBSimulatorError
+                         describe:[NSString stringWithFormat:@"Not terminal status, status is %@", bootInfo]]
+                        failFuture];
   }
   return FBFuture.empty;
 }

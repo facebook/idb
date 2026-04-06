@@ -7,12 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-@protocol FBControlCoreLogger;
-@class FBProcessFetcher;
-@class FBProcessInfo;
-
 /**
  An Option Set for Process Termination.
  */
@@ -30,42 +24,7 @@ typedef struct {
   FBProcessTerminationStrategyOptions options;
 } FBProcessTerminationStrategyConfiguration;
 
-/**
- A Strategy that defines how to terminate Processes.
- */
-@interface FBProcessTerminationStrategy : NSObject
+// FBProcessTerminationStrategy is now implemented in Swift.
+// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
 
-#pragma mark Initializers
-
-/**
- Creates and returns a strategy for the given configuration.
-
- @param configuration the configuration to use in the strategy.
- @param processFetcher the Process Fetcher to use.
- @param workQueue the queue to perform work on.
- @param logger the logger to use.
- @return a new Process Termination Strategy instance.
- */
-+ (nonnull instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(nonnull FBProcessFetcher *)processFetcher workQueue:(nonnull dispatch_queue_t)workQueue logger:(nonnull id<FBControlCoreLogger>)logger;
-
-/**
- Creates and returns a Strategy strategyWith the default configuration.
-
- @param processFetcher the Process Fetcher to use.
- @param workQueue the queue to perform work on.
- @param logger the logger to use.
- @return a new Process Termination Strategy instance.
- */
-+ (nonnull instancetype)strategyWithProcessFetcher:(nonnull FBProcessFetcher *)processFetcher workQueue:(nonnull dispatch_queue_t)workQueue logger:(nonnull id<FBControlCoreLogger>)logger;
-
-#pragma mark Public Methods
-
-/**
- Terminates a Process of the provided pid
-
- @param processIdentifier the pid of the process to kill.
- @return a Future that resolves when the process was killed.
- */
-- (nonnull FBFuture<NSNull *> *)killProcessIdentifier:(pid_t)processIdentifier;
-
-@end
+#import <FBControlCore/FBControlCore-SwiftImport.h>
