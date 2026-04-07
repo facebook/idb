@@ -13,7 +13,6 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBWeakFramework.h"
 
 void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
