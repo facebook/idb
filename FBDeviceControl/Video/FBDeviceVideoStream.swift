@@ -137,9 +137,11 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
   // MARK: FBiOSTargetOperation
 
   @objc public var completed: FBFuture<NSNull> {
-    return unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(writeQueue, respondToCancellation: {
-      return self.stopStreaming()
-    })
+    return unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(
+      writeQueue,
+      respondToCancellation: {
+        return self.stopStreaming()
+      })
   }
 }
 
@@ -190,7 +192,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
   override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
     output.videoSettings = [
-      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
   }
 }
@@ -230,7 +232,7 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream {
     output.videoSettings = [
       AVVideoCodecKey: AVVideoCodecType.jpeg.rawValue,
       AVVideoCompressionPropertiesKey: [
-        AVVideoQualityKey: 0.2,
+        AVVideoQualityKey: 0.2
       ],
     ]
   }
