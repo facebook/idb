@@ -63,7 +63,7 @@ public class FBDefaultsModificationStrategy: NSObject {
 
     // Build the arguments
     var arguments = ["import"]
-    if let domainOrPath = domainOrPath {
+    if let domainOrPath {
       arguments.append(domainOrPath)
     }
     arguments.append(file)
@@ -139,7 +139,7 @@ public class FBDefaultsModificationStrategy: NSObject {
       .onQueue(
         simulator.workQueue,
         fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBFuture(result: NSNull())
           }
           return unsafeBitCast(self.modifyDefaults(inDomainOrPath: fullPath, defaults: defaults), to: FBFuture<AnyObject>.self)
@@ -258,7 +258,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
       .onQueue(
         simulator.workQueue,
         fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self = self else {
+          guard let self else {
             return FBFuture(result: NSNull())
           }
           // Re-start the Service if booted.

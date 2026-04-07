@@ -21,7 +21,7 @@ final class FBSubprocessTests: XCTestCase {
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
     let erasedFuture = unsafeBitCast(future, to: FBFuture<AnyObject>.self)
     let timedFuture = FBFutureTestHelpers.applyTimeout(FBControlCoreGlobalConfiguration.regularTimeout, description: "FBTask to complete", to: erasedFuture)
-    let _ = try? timedFuture.`await`()
+    _ = try? timedFuture.`await`()
     return future.result!
   }
 
@@ -148,7 +148,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertTrue((process.stdOut as AnyObject).conforms(to: FBDataConsumer.self))
     XCTAssertGreaterThan(process.processIdentifier, 1)
 
-    let _ = try? FBFuture<AnyObject>.empty().delay(2).`await`()
+    _ = try? FBFuture<AnyObject>.empty().delay(2).`await`()
     XCTAssertEqual(lines.count, 8)
     XCTAssertEqual(lines[0] as! String, "0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180")
   }

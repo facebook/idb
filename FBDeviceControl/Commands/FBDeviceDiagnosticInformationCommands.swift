@@ -23,7 +23,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
   // MARK: - FBDiagnosticInformationCommands
 
   public func fetchDiagnosticInformation() -> FBFuture<NSDictionary> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     let relay = fetchInformationFromDiagnosticsRelay()
@@ -53,7 +53,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
   // MARK: - Private
 
   private func fetchInformationFromDiagnosticsRelay() -> FBFuture<AnyObject> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -80,7 +80,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
   }
 
   private func fetchInformationFromSpringboard() -> FBFuture<AnyObject> {
-    guard let device = device, let logger = device.logger else {
+    guard let device, let logger = device.logger else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -95,7 +95,7 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
   }
 
   private func fetchInformationFromMobileConfiguration() -> FBFuture<AnyObject> {
-    guard let device = device, let logger = device.logger else {
+    guard let device, let logger = device.logger else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

@@ -23,7 +23,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
   // MARK: - FBVideoRecordingCommands
 
   public func startRecording(toFile filePath: String) -> FBFuture<any FBiOSTargetOperation> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     if video != nil {
@@ -40,10 +40,10 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
   }
 
   public func stopRecording() -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
-    guard let video = video else {
+    guard let video else {
       return FBDeviceControlError().describe("There was no existing video instance for \(device)").failFuture() as! FBFuture<NSNull>
     }
     self.video = nil
@@ -53,7 +53,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
   // MARK: - FBVideoStreamCommands
 
   public func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<any FBVideoStream> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

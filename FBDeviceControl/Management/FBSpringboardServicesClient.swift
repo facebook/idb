@@ -134,7 +134,7 @@ public class FBSpringboardServicesClient: NSObject {
   }
 }
 
-fileprivate typealias IconLayoutJSONType = [[String]]
+private typealias IconLayoutJSONType = [[String]]
 
 class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol {
   private var client: FBSpringboardServicesClient

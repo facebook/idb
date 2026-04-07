@@ -10,8 +10,8 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
-@class FBSubprocess;
 @class FBProcessSpawnConfiguration;
+@class FBSubprocess;
 
 /**
  Commands relating to the launching of processes on a target.

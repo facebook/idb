@@ -35,7 +35,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -48,7 +48,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   public func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     let logger = device.logger?.withName("crash_remove")
@@ -65,7 +65,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   public func crashLogFiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    guard let device = device else {
+    guard let device else {
       return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
     }
     return
@@ -85,7 +85,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
       return FBFuture(result: NSArray())
     }
 
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
 
@@ -124,7 +124,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) -> FBFuture<NSArray> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -160,7 +160,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   private func moveCrashReports() -> FBFuture<NSString> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -192,7 +192,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 
   private func crashReportFileConnection() -> FBFutureContext<FBAFCConnection> {
-    guard let device = device else {
+    guard let device else {
       return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBAFCConnection>
     }
     return

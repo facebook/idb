@@ -58,7 +58,7 @@ public final class FBSimulatorBootStrategy: NSObject {
 
     let future = FBMutableFuture<NSNull>()
     simulator.device.bootAsync(withOptions: options, completionQueue: simulator.workQueue) { error in
-      if let error = error {
+      if let error {
         future.resolveWithError(error)
       } else {
         future.resolve(withResult: NSNull())

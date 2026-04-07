@@ -303,7 +303,7 @@ public class FBCrashLogInfo: NSObject, NSCopying {
       error: &parseError
     )
 
-    if let parseError = parseError {
+    if let parseError {
       throw FBControlCoreError.describe("Could not parse crash string \(parseError)").build()
     }
 

@@ -22,15 +22,15 @@ private class FBDeviceWorkflowStatistics: NSObject {
   }
 
   var summaryOfRecentEvents: String {
-    guard let lastEvent = lastEvent else {
-      return "No events from \(String(describing: lastEvent))"
+    guard let lastEvent else {
+      return "No events recorded"
     }
     return "Last event \(FBCollectionInformation.oneLineDescription(from: lastEvent))"
   }
 }
 
 private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: UnsafeMutableRawPointer?) {
-  guard let context = context, let callbackDictionary = callbackDictionary else { return }
+  guard let context, let callbackDictionary else { return }
   let statistics = Unmanaged<FBDeviceWorkflowStatistics>.fromOpaque(context).takeUnretainedValue()
   statistics.pushProgress(callbackDictionary)
 }
@@ -347,7 +347,7 @@ public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
           return FBDeviceControlError.describe("Failed to request PidList \(error)").failFuture()
         }
         do {
-          let _ = try conn.receive(1)
+          _ = try conn.receive(1)
         } catch {
           return FBDeviceControlError.describe("Failed to receive 1 byte after PidList \(error)").failFuture()
         }

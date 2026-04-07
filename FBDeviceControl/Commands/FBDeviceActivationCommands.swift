@@ -24,7 +24,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   // MARK: - FBDeviceActivationCommands Implementation
 
   public func activate() -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     let logger = device.logger
@@ -48,7 +48,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   // MARK: - Private
 
   private func confirmActivationState(_ activationState: FBDeviceActivationState) -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -64,7 +64,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private func performActivation() -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     let logger = device.logger
@@ -100,14 +100,14 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private func mobileActivationService() -> FBFutureContext<FBAMDServiceConnection> {
-    guard let device = device else {
+    guard let device else {
       return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBAMDServiceConnection>
     }
     return device.startService("com.apple.mobileactivationd")
   }
 
   private func activationState() -> FBFuture<AnyObject> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -130,7 +130,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private func buildDRMHandshakePayload() -> FBFuture<NSData> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -153,7 +153,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private func activationRecordFromDRMHandshakePayload(_ handshakePayload: Data) -> FBFuture<NSData> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -176,7 +176,7 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private func activateFromActivationRecord(_ activationRecord: Data) -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -281,13 +281,13 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
   }
 
   private static func response(for request: URLRequest) -> FBFuture<AnyObject> {
-    let future = FBMutableFuture<AnyObject>.init()
+    let future = FBMutableFuture<AnyObject>()
     let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
-      if let error = error {
+      if let error {
         future.resolveWithError(error)
         return
       }
-      guard let responseData = responseData else {
+      guard let responseData else {
         future.resolveWithError(FBControlCoreError.describe("No response data in response \(String(describing: response))").build())
         return
       }

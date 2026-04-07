@@ -31,7 +31,7 @@ public class FBDevicePowerCommands: NSObject, FBPowerCommands {
   // MARK: - Private
 
   private func sendRelayCommand(_ request: String) -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

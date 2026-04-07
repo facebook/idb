@@ -170,7 +170,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
 
     let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
     let size = CVPixelBufferGetDataSize(pixelBuffer)
-    if let baseAddress = baseAddress {
+    if let baseAddress {
       if consumer.conforms(to: FBDataConsumerSync.self) {
         let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
         consumer.consumeData(data)

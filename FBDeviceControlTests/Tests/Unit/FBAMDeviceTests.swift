@@ -48,7 +48,7 @@ final class FBAMDeviceTests: XCTestCase {
     }
 
     calls.CopyValue = { _, _, name in
-      guard let name = name else { return nil }
+      guard let name else { return nil }
       return Unmanaged.passUnretained(name)
     }
 

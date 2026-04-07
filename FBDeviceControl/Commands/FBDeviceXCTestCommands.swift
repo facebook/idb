@@ -1,19 +1,14 @@
 /*
- * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * @converted_turbine -- created by fbobjc/tools/Turbine version 0.1.3
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 @preconcurrency import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
 @objc(FBDeviceXCTestCommands)
 public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?

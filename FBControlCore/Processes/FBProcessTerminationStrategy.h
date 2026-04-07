@@ -26,5 +26,3 @@ typedef struct {
 
 // FBProcessTerminationStrategy is now implemented in Swift.
 // Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
-
-#import <FBControlCore/FBControlCore-SwiftImport.h>

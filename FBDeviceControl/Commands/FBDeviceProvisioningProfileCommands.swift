@@ -32,7 +32,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
         if let p = payload {
           payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
         }
-        if let payload = payload {
+        if let payload {
           allProfiles.append(payload)
         }
       }
@@ -75,7 +75,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
       if let p = payload {
         payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
       }
-      guard let payload = payload else {
+      guard let payload else {
         return FBControlCoreError.describe("Failed to get payload of \(profile)").failFuture()
       }
       return FBFuture(result: payload as NSDictionary as AnyObject)

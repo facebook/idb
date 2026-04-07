@@ -50,7 +50,7 @@ public class FBCrashLogNotifier: NSObject {
           (FBCrashLogInfo.crashInfo(afterDate: FBCrashLogNotifier.sharedInstance.sinceDate, logger: nil) as NSArray)
           .filtered(using: predicate)
           .first as? FBCrashLogInfo
-        guard let crashInfo = crashInfo else {
+        guard let crashInfo else {
           return FBControlCoreError.describe("Crash Log Info for \(predicate) could not be obtained").failFuture()
         }
         _ = self.store.ingestCrashLog(atPath: crashInfo.crashPath)

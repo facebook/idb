@@ -154,12 +154,12 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   }
 
   func consumeData(_ data: __DispatchData) {
-    guard let io = io else { return }
+    guard let io else { return }
     io.write(offset: 0, data: data as DispatchData, queue: writeQueue) { _, _, _ in }
   }
 
   func consumeEndOfFile() {
-    guard let io = io else { return }
+    guard let io else { return }
     // We can't close the file handle right now since there may still be pending IO operations on the channel.
     // The safe place to do this is within the dispatch_io_create cleanup_handler callback.
     // We also want to ensure that there are no pending write operations on the channel.

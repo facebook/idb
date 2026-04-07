@@ -231,7 +231,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
       (FBFuture<AnyObject>.onQueue(
         simulator.asyncQueue,
         resolveUntil: { [weak self] () -> FBFuture<AnyObject> in
-          guard let self = self, let simulator = self.simulator else {
+          guard let self, let simulator = self.simulator else {
             return FBSimulatorError.describe("Simulator is deallocated").failFuture()
           }
           var getenvError: AnyObject?

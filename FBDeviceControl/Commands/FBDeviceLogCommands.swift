@@ -51,7 +51,7 @@ public class FBDeviceLogCommands: NSObject, FBLogCommands {
   // MARK: - FBLogCommands
 
   public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<any FBLogOperation> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     if !arguments.isEmpty {

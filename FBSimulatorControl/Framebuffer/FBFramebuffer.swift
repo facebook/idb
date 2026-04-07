@@ -30,7 +30,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> FBFramebuffer {
     let ioClient = simulator.device.io!
     let ports: [Any]? = ioClient.ioPorts()
-    guard let ports = ports else {
+    guard let ports else {
       throw FBSimulatorError.describe("No IO ports available on \(ioClient)").build()
     }
     for port in ports {
@@ -132,7 +132,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
     nonisolated(unsafe) let consumerRef = consumer
 
     let ioSurfaceChanged: (Any) -> Void = { [weak self] surfaceArg in
-      guard let self = self else { return }
+      guard let self else { return }
       self.stats.ioSurfaceChangeCount += 1
       if self.stats.ioSurfaceChangeCount == 1 {
         self.logger.info().log("First IOSurface change callback, surface=\(surfaceArg)")
@@ -148,7 +148,7 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
     let displayRenderable = surface as! SimDisplayRenderable
     displayRenderable.registerCallback(with: uuid as UUID) { [weak self] (frames: Any) in
-      guard let self = self else { return }
+      guard let self else { return }
       let frameArray = frames as? [Any] ?? []
       self.stats.damageCallbackCount += 1
       self.stats.damageRectCount += UInt(frameArray.count)

@@ -197,7 +197,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   private func fetchNewlyMadeSimulator(_ device: SimDevice) -> FBFuture<FBSimulator> {
     let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString]
-    guard let simulator = simulator else {
+    guard let simulator else {
       return
         FBSimulatorError
         .describe("Expected simulator with UDID \(device.udid.uuidString) to be inflated")
@@ -209,7 +209,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   private class func onDeviceSet(_ deviceSet: SimDeviceSet, createDeviceWithType deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) -> FBFuture<SimDevice> {
     let future = FBMutableFuture<SimDevice>()
     deviceSet.createDeviceAsync(withType: deviceType, runtime: runtime, name: name, completionQueue: queue) { error, device in
-      if let device = device {
+      if let device {
         future.resolve(withResult: device)
       } else {
         future.resolveWithError(error!)
@@ -221,7 +221,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   private class func onDeviceSet(_ deviceSet: SimDeviceSet, cloneDevice device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) -> FBFuture<SimDevice> {
     let future = FBMutableFuture<SimDevice>()
     deviceSet.cloneDeviceAsync(device, name: device.name, to: destinationSet, completionQueue: queue) { error, created in
-      if let created = created {
+      if let created {
         future.resolve(withResult: created)
       } else {
         future.resolveWithError(error!)

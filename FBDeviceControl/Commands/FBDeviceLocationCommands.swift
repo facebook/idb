@@ -23,7 +23,7 @@ public class FBDeviceLocationCommands: NSObject, FBLocationCommands {
   // MARK: - FBLocationCommands
 
   public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

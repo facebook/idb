@@ -14,7 +14,7 @@ private let ImageMounterService = "com.apple.mobile.mobile_image_mounter"
 private let DiskImageMountingError: Int32 = -402653066 // 0xe8000076
 
 private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: UnsafeMutableRawPointer?) {
-  guard let context = context, let callbackDictionary = callbackDictionary else { return }
+  guard let context, let callbackDictionary else { return }
   let device = Unmanaged<AnyObject>.fromOpaque(context).takeUnretainedValue()
   if let logger = (device as? (any FBDeviceCommands))?.logger {
     logger.log("Mount Progress: \(FBCollectionInformation.oneLineDescription(from: callbackDictionary))")
@@ -196,7 +196,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBDeveloperDiskImageC
           MountPathKey: mountPath,
         ]
         do {
-          let _ = try conn.sendAndReceiveMessage(request)
+          _ = try conn.sendAndReceiveMessage(request)
           return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
         } catch {
           return FBFuture(error: error)
