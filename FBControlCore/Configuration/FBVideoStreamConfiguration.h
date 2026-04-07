@@ -49,7 +49,3 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
   FBVideoStreamRateControlModeConstantQuality,
   FBVideoStreamRateControlModeAverageBitrate,
 };
-
-// FBVideoStreamFormat, FBVideoStreamRateControl, and FBVideoStreamConfiguration classes
-// are now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access them.

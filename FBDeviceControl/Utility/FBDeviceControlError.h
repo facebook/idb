@@ -12,8 +12,6 @@
  */
 extern NSString * _Nonnull const FBDeviceControlErrorDomain;
 
-// FBDeviceControlError class is now implemented in Swift.
-// Import the Swift header to get the class declaration.
 #if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
  #import <FBDeviceControl/FBDeviceControl-Swift.h>
 #endif

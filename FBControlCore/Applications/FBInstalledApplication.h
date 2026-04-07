@@ -28,6 +28,3 @@ extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyBun
 extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyBundleName;
 extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeyPath;
 extern FBApplicationInstallInfoKey _Nonnull const FBApplicationInstallInfoKeySignerIdentity;
-
-// FBInstalledApplication class is now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.

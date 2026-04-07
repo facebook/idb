@@ -12,5 +12,4 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
   FBCodeCoverageRaw,
 };
 
-// Class is now defined in FBCodeCoverageConfiguration.swift
 @class FBCodeCoverageConfiguration;

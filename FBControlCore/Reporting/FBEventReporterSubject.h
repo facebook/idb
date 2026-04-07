@@ -14,5 +14,3 @@ extern FBEventType _Nonnull const FBEventTypeEnded;
 extern FBEventType _Nonnull const FBEventTypeDiscrete;
 extern FBEventType _Nonnull const FBEventTypeSuccess;
 extern FBEventType _Nonnull const FBEventTypeFailure;
-
-// FBEventReporterSubject class is now implemented in Swift.

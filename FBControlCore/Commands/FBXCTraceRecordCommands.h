@@ -28,5 +28,3 @@
 - (nonnull FBFuture<FBXCTraceRecordOperation *> *)startXctraceRecord:(nonnull FBXCTraceRecordConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-// FBXCTraceRecordCommands is now implemented in Swift.

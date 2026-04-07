@@ -23,6 +23,3 @@ typedef struct {
   int signo;
   FBProcessTerminationStrategyOptions options;
 } FBProcessTerminationStrategyConfiguration;
-
-// FBProcessTerminationStrategy is now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.

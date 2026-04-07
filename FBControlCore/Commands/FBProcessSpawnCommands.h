@@ -28,5 +28,4 @@
 
 @end
 
-// FBProcessSpawnCommandHelpers class is now implemented in Swift.
 #import <FBControlCore/FBControlCore-SwiftImport.h>

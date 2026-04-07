@@ -16,5 +16,4 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
   FBTestReportStatusFailed = 2,
 };
 
-// Class is now defined in FBTestManagerResultSummary.swift
 @class FBTestManagerResultSummary;

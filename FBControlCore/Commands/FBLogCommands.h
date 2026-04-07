@@ -27,8 +27,6 @@
 
 @end
 
-// FBProcessLogOperation is now implemented in Swift.
-
 /**
  Commands for obtaining logs.
  */
