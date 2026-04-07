@@ -12,14 +12,12 @@
 
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBootConfiguration.h"
-#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorMediaCommands.h"
-#import "FBSimulatorSet.h"
 #import "FBSimulatorSettingsCommands.h"
 
 #pragma clang diagnostic push

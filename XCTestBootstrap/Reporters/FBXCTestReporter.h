@@ -9,8 +9,9 @@
 
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
-#import <XCTestBootstrap/FBExceptionInfo.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
+
+@class FBExceptionInfo;
 
 /**
  fbxtest's reporting protocol.

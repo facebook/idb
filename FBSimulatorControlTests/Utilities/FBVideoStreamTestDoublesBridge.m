@@ -10,7 +10,6 @@
 #import <VideoToolbox/VideoToolbox.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorConfiguration+CoreSimulator.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream_Testing.h>
 

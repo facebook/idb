@@ -24,10 +24,8 @@
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBTestBundleConnection.h"
-#import "FBTestManagerContext.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestReporterAdapter.h"
-#import "FBXCTestProcess.h"
 #import "FBXCTestReporter.h"
 #import "XCTestBootstrapError.h"
 
