@@ -72,5 +72,3 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 @property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *finishedReading;
 
 @end
-
-// FBFileReader is now implemented in Swift.

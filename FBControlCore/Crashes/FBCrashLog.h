@@ -18,6 +18,3 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
   FBCrashLogInfoProcessTypeApplication = 1 << 1, /** A process that is an application **/
   FBCrashLogInfoProcessTypeCustom = 1 << 2, /** A process that not an application nor part of the operating system runtime **/
 };
-
-// FBCrashLogInfo and FBCrashLog are now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access them.

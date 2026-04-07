@@ -24,7 +24,6 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
   FBLogicTestMirrorLogger = 1 << 1,
 };
 
-// Classes are now defined in FBXCTestConfiguration.swift
 @class FBListTestConfiguration;
 @class FBLogicTestConfiguration;
 @class FBTestManagerTestConfiguration;

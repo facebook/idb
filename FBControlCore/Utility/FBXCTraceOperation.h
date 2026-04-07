@@ -10,5 +10,4 @@
 extern const NSTimeInterval DefaultXCTraceRecordOperationTimeLimit;
 extern const NSTimeInterval DefaultXCTraceRecordStopTimeout;
 
-// FBXCTraceRecordOperation is now implemented in Swift.
 #import <FBControlCore/FBControlCore-SwiftImport.h>

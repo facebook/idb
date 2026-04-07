@@ -12,7 +12,4 @@
  */
 extern NSString * _Nonnull const FBXCTestShimDirectoryEnvironmentOverride;
 
-// FBXCTestShimConfiguration is now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access it.
-
 #import <FBControlCore/FBControlCore-SwiftImport.h>

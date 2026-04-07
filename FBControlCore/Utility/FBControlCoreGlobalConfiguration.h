@@ -11,5 +11,3 @@
 
 extern NSString * _Nonnull const FBControlCoreStderrLogging;
 extern NSString * _Nonnull const FBControlCoreDebugLogging;
-
-// FBControlCoreGlobalConfiguration is now implemented in Swift.

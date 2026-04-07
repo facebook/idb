@@ -319,8 +319,4 @@ extern FBOSVersionName _Nonnull const FBOSVersionNamewatchOS_26_4;
 
 extern FBOSVersionName _Nonnull const FBOSVersionNamemac;
 
-// FBiOSTargetScreenInfo, FBDeviceType, FBOSVersion, and FBiOSTargetConfiguration
-// are now implemented in Swift.
-// Import FBControlCore/FBControlCore.h or FBControlCore-Swift.h to access them.
-
 #import <FBControlCore/FBControlCore-SwiftImport.h>

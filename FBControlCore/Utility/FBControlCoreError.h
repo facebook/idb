@@ -12,5 +12,4 @@
  */
 extern NSString * _Nonnull const FBControlCoreErrorDomain;
 
-// FBControlCoreError class is now implemented in Swift.
 #import <FBControlCore/FBControlCore-SwiftImport.h>

@@ -28,5 +28,3 @@
  @return an Operation wrapping the Future
  */
 extern id<FBiOSTargetOperation> _Nonnull FBiOSTargetOperationFromFuture(FBFuture<NSNull *> * _Nonnull completed);
-
-// FBiOSTargetOperation_Wrapper is now implemented in Swift.
