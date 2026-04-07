@@ -166,7 +166,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
     io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: readQueue) { createErrorCode in
       self.ioChannelHasRelinquishedControl(withErrorCode: createErrorCode != 0 ? createErrorCode : readErrorCode)
     }
-    guard let io = io else {
+    guard let io else {
       return
         FBControlCoreError
         .describe("A IO Channel could not be created for \(self.description)")
@@ -176,7 +176,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
     // Report partial results with as little as 1 byte read.
     io.setLimit(lowWater: 1)
     io.read(offset: 0, length: Int.max, queue: readQueue) { done, data, errorCode in
-      if let data = data, data.count > 0 {
+      if let data, data.count > 0 {
         consumer.consumeData(data as __DispatchData)
       }
       if done {
@@ -212,7 +212,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
 
     // Closing is necessary when a read has finished, since a "Read Operation" terminating *does not* mean
     // that the channel control has been relinquished.
-    guard let io = io else { return }
+    guard let io else { return }
     io.close()
   }
 

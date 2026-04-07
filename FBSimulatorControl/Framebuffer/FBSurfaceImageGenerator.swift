@@ -89,7 +89,7 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
       oldSurface.decrementUseCount()
       self.surface = nil
     }
-    if let surface = surface {
+    if let surface {
       surface.incrementUseCount()
       logger?.info().log("Received IOSurface from Framebuffer Service \(surface)")
       self.surface = surface

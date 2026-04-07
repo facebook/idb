@@ -131,12 +131,12 @@ open class FBControlCoreError: NSObject {
 
   @objc open func build() -> NSError {
     // If there's just a cause, there's no error to build
-    if let cause = cause, describedAs == nil, additionalInfo.isEmpty {
+    if let cause, describedAs == nil, additionalInfo.isEmpty {
       return cause
     }
 
     var userInfo: [String: Any] = [:]
-    if let describedAs = describedAs {
+    if let describedAs {
       userInfo[NSLocalizedDescriptionKey] = describedAs
     }
     if cause != nil {

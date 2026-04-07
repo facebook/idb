@@ -59,7 +59,7 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
 
   private func performBootVerification() -> FBFuture<NSNull> {
     let bootInfo: SimDeviceBootInfo? = simulator.device.bootStatus()
-    guard let bootInfo = bootInfo else {
+    guard let bootInfo else {
       return FBSimulatorError.describe("No bootInfo for \(simulator)")
         .failFuture() as! FBFuture<NSNull>
     }

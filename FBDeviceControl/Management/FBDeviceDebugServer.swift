@@ -204,7 +204,7 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
   // MARK: - FBiOSTargetOperation
 
   @objc public var completed: FBFuture<NSNull> {
-    if let teardown = teardown {
+    if let teardown {
       return unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
     }
     return unsafeBitCast(FBMutableFuture<NSNull>(), to: FBFuture<NSNull>.self)

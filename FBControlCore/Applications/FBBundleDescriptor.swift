@@ -119,7 +119,7 @@ public class FBBundleDescriptor: NSObject, NSCopying {
   private func replacementsForBinary() -> FBFuture<AnyObject> {
     do {
       let rpaths = try binary?.rpaths()
-      guard let rpaths = rpaths else {
+      guard let rpaths else {
         return FBFuture(result: NSDictionary())
       }
       return FBFuture(result: FBBundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths) as NSDictionary)
@@ -135,7 +135,7 @@ public class FBBundleDescriptor: NSObject, NSCopying {
     var replacements: [String: String] = [:]
     for rpath in rpaths {
       let result = regex.firstMatch(in: rpath, options: [], range: NSRange(location: 0, length: (rpath as NSString).length))
-      guard let result = result else {
+      guard let result else {
         continue
       }
       let oldXcodePath = (rpath as NSString).substring(with: result.range(at: 1))

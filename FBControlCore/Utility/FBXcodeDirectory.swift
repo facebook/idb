@@ -66,7 +66,7 @@ public final class FBXcodeDirectory: NSObject {
   // MARK: Private
 
   private class func isValidXcodeDirectory(_ directory: String?, error: NSErrorPointer) -> Bool {
-    guard let directory = directory else {
+    guard let directory else {
       return
         FBControlCoreError
         .describe("Xcode Path is nil")

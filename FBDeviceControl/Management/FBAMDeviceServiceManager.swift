@@ -18,7 +18,7 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
   }
 
   func prepare(_ logger: any FBControlCoreLogger) -> FBFuture<AnyObject> {
-    guard let device = device else {
+    guard let device else {
       return FBDeviceControlError.describe("Device is nil").failFuture()
     }
     var afcConnection: Unmanaged<AnyObject>?
@@ -87,8 +87,8 @@ public class FBAMDeviceServiceManager: NSObject {
     if let manager = houseArrestManagers[bundleID] {
       return manager
     }
-    guard let device = device else {
-      fatalError("Device is nil when creating house arrest connection")
+    guard let device else {
+      preconditionFailure("Device is nil when creating house arrest connection for '\(bundleID)'")
     }
     let delegate = FBAMDeviceServiceManager_HouseArrest(device: device, bundleID: bundleID, calls: afcCalls, serviceTimeout: serviceTimeout)
     let manager = FBFutureContextManager<FBAFCConnection>(queue: device.workQueue, delegate: delegate, logger: device.logger)

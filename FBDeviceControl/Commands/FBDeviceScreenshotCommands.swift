@@ -23,7 +23,7 @@ public class FBDeviceScreenshotCommands: NSObject, FBScreenshotCommands {
   // MARK: - FBScreenshotCommands
 
   public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

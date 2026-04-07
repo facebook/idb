@@ -35,7 +35,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
   // MARK: - FBDebuggerCommands
 
   public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<any FBDebugServer> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     if device.osVersion.version.majorVersion >= 17 {
@@ -68,7 +68,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
    @return a future context with the service connection to the debug server.
    */
   public func connectToDebugServer() -> FBFutureContext<FBAMDServiceConnection> {
-    guard let device = device else {
+    guard let device else {
       return FBFutureContext(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -98,7 +98,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
   }
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) -> FBFuture<NSArray> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -132,7 +132,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
   }
 
   private func platformSelectCommand() -> FBFuture<NSString> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return FBFuture.onQueue(
@@ -158,7 +158,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
   }
 
   private func remoteTarget(forBundleID bundleID: String) -> FBFuture<NSString> {
-    guard let device = device else {
+    guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return

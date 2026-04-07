@@ -131,7 +131,6 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
     }
     source.resume()
 
-    // swiftlint:disable:next force_cast
     return unsafeBitCast(future, to: FBFuture<NSNumber>.self)
   }
 

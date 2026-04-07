@@ -191,7 +191,7 @@ typealias FBAccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Vo
 @objcMembers
 class FBSimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
   var name: String = ""
-  @objc var UDID: NSUUID = NSUUID()
+  var UDID: NSUUID = NSUUID()
   var state: UInt64 = 0
   var accessibilityResponseHandler: FBAccessibilityResponseHandler?
   private(set) var accessibilityRequests = NSMutableArray()
@@ -310,7 +310,7 @@ class FBAccessibilityTestElementBuilder: NSObject {
   }
 
   class func rootElement(withChildren children: [FBSimulatorControlTests_AXPMacPlatformElement_Double]) -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    return application(withLabel: "Root", frame: NSMakeRect(0, 0, 390, 844), children: children)
+    return application(withLabel: "Root", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: children)
   }
 
   class func application(withLabel label: String, frame: NSRect, children: [FBSimulatorControlTests_AXPMacPlatformElement_Double]) -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
@@ -383,7 +383,7 @@ class FBAccessibilityTestFixture: NSObject {
     translator.frontmostApplicationResult = translation
     translator.objectAtPointResult = translation
 
-    if let rootElement = rootElement {
+    if let rootElement {
       translator.macPlatformElementResult = rootElement
     } else {
       translator.macPlatformElementResult = FBAccessibilityTestElementBuilder.rootElement(withChildren: [])

@@ -130,7 +130,7 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
 
   @objc(postProcess:traceDir:queue:logger:)
   public class func postProcess(_ arguments: [String]?, traceDir: URL, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSURL> {
-    guard let arguments = arguments, !arguments.isEmpty else {
+    guard let arguments, !arguments.isEmpty else {
       return FBFuture<NSURL>(result: traceDir as NSURL)
     }
     let outputTraceFile = traceDir.deletingLastPathComponent().appendingPathComponent(arguments[2])

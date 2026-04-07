@@ -1544,7 +1544,7 @@ final class FBFutureTests: XCTestCase {
       keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
     ]
 
-    if let expectationKeyPath = expectationKeyPath {
+    if let expectationKeyPath {
       expectations.append(keyValueObservingExpectation(for: future, keyPath: expectationKeyPath, expectedValue: expectationValue))
     }
 

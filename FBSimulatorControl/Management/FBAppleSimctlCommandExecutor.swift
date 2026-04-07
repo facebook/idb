@@ -55,7 +55,7 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
       deviceSetPath,
       command,
     ]
-    if let deviceUUID = deviceUUID {
+    if let deviceUUID {
       derived.append(deviceUUID)
     }
     derived.append(contentsOf: arguments)
