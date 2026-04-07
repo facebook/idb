@@ -33,16 +33,19 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
     if FBDeviceFileContainer.isDirectory(destinationPath) {
       destination = (destinationPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
     }
-    return (readFileFromPath(inContainer: sourcePath)
-      .onQueue(queue, fmap: { (fileData: AnyObject) -> FBFuture<AnyObject> in
-        let data = fileData as! Data
-        do {
-          try data.write(to: URL(fileURLWithPath: destination))
-          return FBFuture(result: destination as NSString as AnyObject)
-        } catch {
-          return FBFuture(error: error)
-        }
-      })) as! FBFuture<NSString>
+    return
+      (readFileFromPath(inContainer: sourcePath)
+      .onQueue(
+        queue,
+        fmap: { (fileData: AnyObject) -> FBFuture<AnyObject> in
+          let data = fileData as! Data
+          do {
+            try data.write(to: URL(fileURLWithPath: destination))
+            return FBFuture(result: destination as NSString as AnyObject)
+          } catch {
+            return FBFuture(error: error)
+          }
+        })) as! FBFuture<NSString>
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -85,14 +88,16 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
   }
 
   private func handleAFCOperation<T: AnyObject>(_ operation: @escaping (FBAFCConnection) throws -> T) -> FBFuture<T> {
-    return FBFuture.onQueue(queue, resolveValue: { errorPtr in
-      do {
-        return try operation(self.connection)
-      } catch {
-        errorPtr?.pointee = error as NSError
-        return nil
-      }
-    }) as! FBFuture<T>
+    return FBFuture.onQueue(
+      queue,
+      resolveValue: { errorPtr in
+        do {
+          return try operation(self.connection)
+        } catch {
+          errorPtr?.pointee = error as NSError
+          return nil
+        }
+      }) as! FBFuture<T>
   }
 
   private static func isDirectory(_ path: String) -> Bool {
@@ -120,27 +125,33 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    return (springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
-      .onQueue(queue, fmap: { (data: AnyObject) -> FBFuture<AnyObject> in
-        let imageData = data as! Data
-        do {
-          try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
-          return FBFuture(result: destinationPath as NSString as AnyObject)
-        } catch {
-          return FBFuture(error: error)
-        }
-      })) as! FBFuture<NSString>
+    return
+      (springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
+      .onQueue(
+        queue,
+        fmap: { (data: AnyObject) -> FBFuture<AnyObject> in
+          let imageData = data as! Data
+          do {
+            try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
+            return FBFuture(result: destinationPath as NSString as AnyObject)
+          } catch {
+            return FBFuture(error: error)
+          }
+        })) as! FBFuture<NSString>
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return unsafeBitCast(FBFuture<AnyObject>.onQueue(queue, resolve: { () -> FBFuture<AnyObject> in
-      do {
-        let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-        return self.managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data) as! FBFuture<AnyObject>
-      } catch {
-        return FBFuture(error: error)
-      }
-    }), to: FBFuture<NSNull>.self)
+    return unsafeBitCast(
+      FBFuture<AnyObject>.onQueue(
+        queue,
+        resolve: { () -> FBFuture<AnyObject> in
+          do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+            return self.managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data) as! FBFuture<AnyObject>
+          } catch {
+            return FBFuture(error: error)
+          }
+        }), to: FBFuture<NSNull>.self)
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -181,14 +192,17 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return unsafeBitCast(FBFuture<AnyObject>.onQueue(queue, resolve: { () -> FBFuture<AnyObject> in
-      do {
-        let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-        return self.managedConfig.installProfile(data) as! FBFuture<AnyObject>
-      } catch {
-        return FBFuture(error: error)
-      }
-    }), to: FBFuture<NSNull>.self)
+    return unsafeBitCast(
+      FBFuture<AnyObject>.onQueue(
+        queue,
+        resolve: { () -> FBFuture<AnyObject> in
+          do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+            return self.managedConfig.installProfile(data) as! FBFuture<AnyObject>
+          } catch {
+            return FBFuture(error: error)
+          }
+        }), to: FBFuture<NSNull>.self)
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -251,23 +265,29 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
     if !path.hasPrefix(MountRootPath) {
       return FBDeviceControlError.describe("\(path) cannot be removed, only mounts can be removed").failFuture() as! FBFuture<NSNull>
     }
-    return (mountedDiskImages()
-      .onQueue(queue, fmap: { (mountedImagesObj: AnyObject) -> FBFuture<AnyObject> in
-        let mountedImages = mountedImagesObj as! [String: FBDeveloperDiskImage]
-        guard let image = mountedImages[path] else {
-          return FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").failFuture()
-        }
-        return self.commands.unmountDiskImage(image) as! FBFuture<AnyObject>
-      })) as! FBFuture<NSNull>
+    return
+      (mountedDiskImages()
+      .onQueue(
+        queue,
+        fmap: { (mountedImagesObj: AnyObject) -> FBFuture<AnyObject> in
+          let mountedImages = mountedImagesObj as! [String: FBDeveloperDiskImage]
+          guard let image = mountedImages[path] else {
+            return FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").failFuture()
+          }
+          return self.commands.unmountDiskImage(image) as! FBFuture<AnyObject>
+        })) as! FBFuture<NSNull>
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return (allDiskImagePaths()
-      .onQueue(queue, map: { (diskImagePathsObj: AnyObject) -> AnyObject in
-        let diskImagePaths = diskImagePathsObj as! [String]
-        let traversedPaths = FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
-        return traversedPaths as NSArray as AnyObject
-      })) as! FBFuture<NSArray>
+    return
+      (allDiskImagePaths()
+      .onQueue(
+        queue,
+        map: { (diskImagePathsObj: AnyObject) -> AnyObject in
+          let diskImagePaths = diskImagePathsObj as! [String]
+          let traversedPaths = FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
+          return traversedPaths as NSArray as AnyObject
+        })) as! FBFuture<NSArray>
   }
 
   // MARK: Private
@@ -282,34 +302,40 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   private func mountedDiskImages() -> FBFuture<NSDictionary> {
-    return (commands.mountedDiskImages()
-      .onQueue(queue, map: { (mountedImagesObj: AnyObject) -> AnyObject in
-        let mountedImages = mountedImagesObj as! [FBDeveloperDiskImage]
-        var imagesByPath: [String: FBDeveloperDiskImage] = [:]
-        for image in mountedImages {
-          let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
-          imagesByPath[mountedFilePath] = image
-        }
-        return imagesByPath as NSDictionary as AnyObject
-      })) as! FBFuture<NSDictionary>
+    return
+      (commands.mountedDiskImages()
+      .onQueue(
+        queue,
+        map: { (mountedImagesObj: AnyObject) -> AnyObject in
+          let mountedImages = mountedImagesObj as! [FBDeveloperDiskImage]
+          var imagesByPath: [String: FBDeveloperDiskImage] = [:]
+          for image in mountedImages {
+            let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
+            imagesByPath[mountedFilePath] = image
+          }
+          return imagesByPath as NSDictionary as AnyObject
+        })) as! FBFuture<NSDictionary>
   }
 
   private func allDiskImagePaths() -> FBFuture<NSArray> {
-    return (mountedDiskImages()
-      .onQueue(queue, map: { (mountedDiskImagesObj: AnyObject) -> AnyObject in
-        let mountedDiskImages = mountedDiskImagesObj as! [String: FBDeveloperDiskImage]
-        var paths: [String] = []
-        let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
-          let v1 = pair1.value.version
-          let v2 = pair2.value.version
-          if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
-          return v1.minorVersion < v2.minorVersion
-        }.map { $0.key }
-        paths.append(contentsOf: sortedKeys)
-        paths.append(MountRootPath)
-        paths.append(contentsOf: mountedDiskImages.keys)
-        return paths as NSArray as AnyObject
-      })) as! FBFuture<NSArray>
+    return
+      (mountedDiskImages()
+      .onQueue(
+        queue,
+        map: { (mountedDiskImagesObj: AnyObject) -> AnyObject in
+          let mountedDiskImages = mountedDiskImagesObj as! [String: FBDeveloperDiskImage]
+          var paths: [String] = []
+          let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
+            let v1 = pair1.value.version
+            let v2 = pair2.value.version
+            if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
+            return v1.minorVersion < v2.minorVersion
+          }.map { $0.key }
+          paths.append(contentsOf: sortedKeys)
+          paths.append(MountRootPath)
+          paths.append(contentsOf: mountedDiskImages.keys)
+          return paths as NSArray as AnyObject
+        })) as! FBFuture<NSArray>
   }
 
   static func traverseAndDescendPaths(_ paths: [String], path: String) -> [String] {
@@ -377,11 +403,14 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return (commands.listSymbols()
-      .onQueue(queue, map: { (listedSymbolsObj: AnyObject) -> AnyObject in
-        let listedSymbols = listedSymbolsObj as! [String]
-        return (listedSymbols + [ExtractedSymbolsDirectory]) as NSArray as AnyObject
-      })) as! FBFuture<NSArray>
+    return
+      (commands.listSymbols()
+      .onQueue(
+        queue,
+        map: { (listedSymbolsObj: AnyObject) -> AnyObject in
+          let listedSymbols = listedSymbolsObj as! [String]
+          return (listedSymbols + [ExtractedSymbolsDirectory]) as NSArray as AnyObject
+        })) as! FBFuture<NSArray>
   }
 }
 
@@ -412,10 +441,12 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
 
   public func fileCommands(forContainerApplication bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
     return device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
-      .onQueue(device!.asyncQueue, pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-        let conn = connection as! FBAFCConnection
-        return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-      }) as! FBFutureContext<any FBFileContainerProtocol>
+      .onQueue(
+        device!.asyncQueue,
+        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
+          let conn = connection as! FBAFCConnection
+          return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
+        }) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
@@ -436,10 +467,12 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
 
   public func fileCommandsForMediaDirectory() -> FBFutureContext<any FBFileContainerProtocol> {
     return device!.startAFCService("com.apple.afc")
-      .onQueue(device!.asyncQueue, pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-        let conn = connection as! FBAFCConnection
-        return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-      }) as! FBFutureContext<any FBFileContainerProtocol>
+      .onQueue(
+        device!.asyncQueue,
+        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
+          let conn = connection as! FBAFCConnection
+          return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
+        }) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
@@ -448,27 +481,33 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
 
   public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
     return device!.startService(FBManagedConfigClient.serviceName)
-      .onQueue(device!.asyncQueue, pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-        let conn = connection as! FBAMDServiceConnection
-        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger!)
-        return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
-      }) as! FBFutureContext<any FBFileContainerProtocol>
+      .onQueue(
+        device!.asyncQueue,
+        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
+          let conn = connection as! FBAMDServiceConnection
+          let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger!)
+          return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
+        }) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<any FBFileContainerProtocol> {
     return device!.startService(FBSpringboardServicesClient.serviceName)
-      .onQueue(device!.asyncQueue, pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-        let conn = connection as! FBAMDServiceConnection
-        return FBFuture(result: FBSpringboardServicesClient.springboardServicesClient(connection: conn, logger: self.device!.logger!).iconContainer() as AnyObject)
-      }) as! FBFutureContext<any FBFileContainerProtocol>
+      .onQueue(
+        device!.asyncQueue,
+        pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
+          let conn = connection as! FBAMDServiceConnection
+          return FBFuture(result: FBSpringboardServicesClient.springboardServicesClient(connection: conn, logger: self.device!.logger!).iconContainer() as AnyObject)
+        }) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForWallpaper() -> FBFutureContext<any FBFileContainerProtocol> {
     return FBFutureContext(futureContexts: [
-        unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
-        unsafeBitCast(device!.startService(FBManagedConfigClient.serviceName), to: FBFutureContext<AnyObject>.self),
-      ])
-      .onQueue(device!.asyncQueue, pend: { (connections: AnyObject) -> FBFuture<AnyObject> in
+      unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
+      unsafeBitCast(device!.startService(FBManagedConfigClient.serviceName), to: FBFutureContext<AnyObject>.self),
+    ])
+    .onQueue(
+      device!.asyncQueue,
+      pend: { (connections: AnyObject) -> FBFuture<AnyObject> in
         let conns = connections as! NSArray
         let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger!)
         let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger!)

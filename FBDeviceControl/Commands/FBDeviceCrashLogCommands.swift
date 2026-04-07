@@ -95,7 +95,8 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
       .onQueue(
         device.workQueue,
         fmap: { _ -> FBFuture<AnyObject> in
-          return (self.crashReportFileConnection()
+          return
+            (self.crashReportFileConnection()
             .onQueue(
               device.workQueue,
               pop: { afc -> FBFuture<AnyObject> in

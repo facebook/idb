@@ -23,12 +23,13 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
     }
     var afcConnection: Unmanaged<AnyObject>?
     logger.log("Starting house arrest for '\(bundleID)'")
-    let status = device.calls.CreateHouseArrestService?(
-      device.amDeviceRef,
-      bundleID as CFString,
-      nil,
-      &afcConnection
-    ) ?? -1
+    let status =
+      device.calls.CreateHouseArrestService?(
+        device.amDeviceRef,
+        bundleID as CFString,
+        nil,
+        &afcConnection
+      ) ?? -1
     if status != 0 {
       let internalMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "unknown"
       return FBDeviceControlError.describe("Failed to start house_arrest service for '\(bundleID)' with error 0x\(String(status, radix: 16)) (\(internalMessage))").failFuture()
