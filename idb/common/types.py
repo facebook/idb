@@ -8,7 +8,7 @@
 
 import asyncio
 import json
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mapping
 from contextlib import asynccontextmanager
@@ -840,6 +840,7 @@ class Server(ABC):
     async def wait_closed(self) -> None:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def ports(self) -> dict[str, str]:
         pass
