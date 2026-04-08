@@ -129,7 +129,6 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  Creates a gzipped tar archive, returning an the data of the tar.
 
  @param path the path to archive.
- @param queue the queue to do work on
  @param logger the logger to log to.
  @return a Future containing the tar output.
  */
