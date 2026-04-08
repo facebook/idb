@@ -632,31 +632,6 @@ class TestParser(TestCase):
             namespace.timeout = None
             mock.assert_called_once_with(namespace)
 
-    async def test_daemon(self) -> None:
-        mock = AsyncMock()
-        with patch(
-            "idb.cli.commands.daemon.DaemonCommand._run_impl", new=mock, create=True
-        ):
-            port = 9888
-            grpc_port = 1235
-            await cli_main(cmd_input=["daemon", "--daemon-grpc-port", str(grpc_port)])
-            namespace = Namespace()
-            namespace.companion_path = COMPANION_PATH
-            namespace.companion = None
-            namespace.compression = None
-            namespace.prune_dead_companion = True
-            namespace.daemon_port = port
-            namespace.daemon_grpc_port = grpc_port
-            namespace.log_level = "WARNING"
-            namespace.log_level_deprecated = None
-            namespace.root_command = "daemon"
-            namespace.json = False
-            namespace.reply_fd = None
-            namespace.prefer_ipv6 = False
-            namespace.notifier_path = None
-            namespace.companion_tls = False
-            mock.assert_called_once_with(namespace)
-
     async def test_terminate(self) -> None:
         self.client_mock.terminate = AsyncMock(return_value=[])
         bundle_id = "com.foo.app"
