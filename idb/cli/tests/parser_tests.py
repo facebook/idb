@@ -41,6 +41,7 @@ class AsyncGeneratorMock(AsyncMock):
 
     def __init__(self, iter_list: tuple[T, ...] = ()) -> None:
         super().__init__()
+        # pyrefly: ignore [invalid-type-var]
         self.iter_list = iter_list
         self.iter_pos: int = -1
 
