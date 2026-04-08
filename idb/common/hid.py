@@ -39,7 +39,9 @@ def multi_tap_to_events(
     for i in range(count):
         if i > 0:
             events.append(HIDDelay(duration=pause))
+        # pyrefly: ignore [bad-argument-type]
         events.extend(tap_to_events(x, y, duration))
+    # pyrefly: ignore [bad-return]
     return events
 
 
@@ -59,8 +61,10 @@ def _press_with_duration(
     events = []
     events.append(HIDPress(action=action, direction=HIDDirection.DOWN))
     if duration:
+        # pyrefly: ignore [bad-argument-type]
         events.append(HIDDelay(duration=duration))
     events.append(HIDPress(action=action, direction=HIDDirection.UP))
+    # pyrefly: ignore [bad-return]
     return events
 
 
