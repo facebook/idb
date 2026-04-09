@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBOToolOperation : NSObject
 
-+(FBFuture<NSArray<NSString*>*>*)listSanitiserDylibsRequiredByBundle:(NSString*)testBundlePath onQueue:(dispatch_queue_t)queue;
++ (FBFuture<NSArray<NSString *> *> *)listSanitiserDylibsRequiredByBundle:(NSString *)testBundlePath onQueue:(dispatch_queue_t)queue;
 
 @end
 

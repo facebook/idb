@@ -83,7 +83,7 @@ Number of submitted data that has not been consumed yet
  A Future that resolves when an there is no more data to write and any underlying resource managed by the consumer is released.
  At this point, consumers are safe to assume that any resource that the writer is wrapping is safe to use.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *finishedConsuming;
+@property (nonatomic, readonly, strong) FBFuture<NSNull *> *finishedConsuming;
 
 @end
 
@@ -207,7 +207,7 @@ Number of submitted data that has not been consumed yet
 /**
  The wrapped logger.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 

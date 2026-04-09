@@ -13,11 +13,11 @@
 
 @interface FBDeviceDebugServer_TwistedPairFiles : NSObject
 
-@property (nonatomic, assign, readonly) int socket;
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t socketToConnectionQueue;
-@property (nonatomic, strong, readonly) dispatch_queue_t connectionToSocketQueue;
+@property (nonatomic, readonly, assign) int socket;
+@property (nonatomic, readonly, strong) FBAMDServiceConnection *connection;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t socketToConnectionQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t connectionToSocketQueue;
 
 @end
 
@@ -84,14 +84,15 @@ static size_t const ConnectionReadSizeLimit = 1024;
       [connectionReadCompleted resolveWithResult:NSNull.null];
     });
     return [[FBFuture
-      futureWithFutures:@[
-        socketReadCompleted,
-        connectionReadCompleted,
-      ]]
-      onQueue:self.connectionToSocketQueue notifyOfCompletion:^(id _) {
-        [logger logFormat:@"Closing socket file descriptor %d", socket];
-        close(socket);
-      }];
+             futureWithFutures:@[
+               socketReadCompleted,
+               connectionReadCompleted,
+             ]]
+            onQueue:self.connectionToSocketQueue
+            notifyOfCompletion:^(id _) {
+              [logger logFormat:@"Closing socket file descriptor %d", socket];
+              close(socket);
+            }];
   }
   return nil;
 }
@@ -100,12 +101,12 @@ static size_t const ConnectionReadSizeLimit = 1024;
 
 @interface FBDeviceDebugServer () <FBSocketServerDelegate>
 
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *serviceConnection;
-@property (nonatomic, strong, readonly) FBSocketServer *tcpServer;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) FBAMDServiceConnection *serviceConnection;
+@property (nonatomic, readonly, strong) FBSocketServer *tcpServer;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
-@property (nonatomic, strong, readwrite) FBMutableFuture<NSNull *> *teardown;
-@property (nonatomic, strong, nullable, readwrite) FBDeviceDebugServer_TwistedPairFiles *twistedPair;
+@property (nonatomic, readwrite, strong) FBMutableFuture<NSNull *> *teardown;
+@property (nullable, nonatomic, readwrite, strong) FBDeviceDebugServer_TwistedPairFiles *twistedPair;
 
 @end
 
@@ -119,14 +120,16 @@ static size_t const ConnectionReadSizeLimit = 1024;
 + (FBFuture<FBDeviceDebugServer *> *)debugServerForServiceConnection:(FBFutureContext<FBAMDServiceConnection *> *)service port:(in_port_t)port lldbBootstrapCommands:(NSArray<NSString *> *)lldbBootstrapCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[service
-    onQueue:queue push:^(FBAMDServiceConnection *serviceConnection) {
-      FBDeviceDebugServer *server = [[FBDeviceDebugServer alloc] initWithServiceConnection:serviceConnection port:port lldbBootstrapCommands:lldbBootstrapCommands queue:queue logger:logger];
-      return [server startListening];
-    }]
-    onQueue:queue enter:^(FBDeviceDebugServer *server, FBMutableFuture<NSNull *> *teardown) {
-      server.teardown = teardown;
-      return server;
-    }];
+           onQueue:queue
+           push:^(FBAMDServiceConnection *serviceConnection) {
+             FBDeviceDebugServer *server = [[FBDeviceDebugServer alloc] initWithServiceConnection:serviceConnection port:port lldbBootstrapCommands:lldbBootstrapCommands queue:queue logger:logger];
+             return [server startListening];
+           }]
+          onQueue:queue
+          enter:^(FBDeviceDebugServer *server, FBMutableFuture<NSNull *> *teardown) {
+            server.teardown = teardown;
+            return server;
+          }];
 }
 
 - (instancetype)initWithServiceConnection:(FBAMDServiceConnection *)serviceConnection port:(in_port_t)port lldbBootstrapCommands:(NSArray<NSString *> *)lldbBootstrapCommands queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -164,10 +167,11 @@ static size_t const ConnectionReadSizeLimit = 1024;
     [self.logger logFormat:@"Failed to start connection %@", error];
     return;
   }
-  [completed onQueue:self.queue notifyOfCompletion:^(id _) {
-    [self.logger log:@"Client Disconnected"];
-    self.twistedPair = nil;
-  }];
+  [completed onQueue:self.queue
+   notifyOfCompletion:^(id _) {
+     [self.logger log:@"Client Disconnected"];
+     self.twistedPair = nil;
+   }];
   [self.teardown resolveFromFuture:completed];
   self.twistedPair = twistedPair;
 }
@@ -184,12 +188,12 @@ static size_t const ConnectionReadSizeLimit = 1024;
 - (FBFutureContext<FBDeviceDebugServer *> *)startListening
 {
   return [[self.tcpServer
-    startListeningContext]
-    onQueue:self.queue pend:^(NSNull *_) {
-      [self.logger logFormat:@"TCP Server now running, boostrap commands for lldb are %@", [self.lldbBootstrapCommands componentsJoinedByString:@"\n"]];
-      return [FBFuture futureWithResult:self];
-    }];
+           startListeningContext]
+          onQueue:self.queue
+          pend:^(NSNull *_) {
+            [self.logger logFormat:@"TCP Server now running, boostrap commands for lldb are %@", [self.lldbBootstrapCommands componentsJoinedByString:@"\n"]];
+            return [FBFuture futureWithResult:self];
+          }];
 }
-
 
 @end

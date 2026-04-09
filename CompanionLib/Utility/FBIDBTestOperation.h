@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -22,7 +23,7 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
   //Test has terminated before completing. probably crashed
   FBIDBTestOperationStateTerminatedAbnormally,
   //Test is running
-  FBIDBTestOperationStateRunning
+  FBIDBTestOperationStateRunning,
 };
 
 /**
@@ -35,27 +36,27 @@ typedef NS_ENUM(NSUInteger, FBIDBTestOperationState) {
 /**
  The Execution State.
  */
-@property (nonatomic, assign, readonly) FBIDBTestOperationState state;
+@property (nonatomic, readonly, assign) FBIDBTestOperationState state;
 
 /**
  The logger to log to during the test operation.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The queue to serialize on
 */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  The reporter to report to.
 */
-@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
+@property (nonatomic, readonly, strong) id<FBXCTestReporter> reporter;
 
 /**
  The configuration of the reporter.
 */
-@property (nonatomic, strong, readonly) FBXCTestReporterConfiguration *reporterConfiguration;
+@property (nonatomic, readonly, strong) FBXCTestReporterConfiguration *reporterConfiguration;
 
 @end
 

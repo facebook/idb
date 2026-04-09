@@ -16,7 +16,8 @@
 
 static NSInteger const MaxAllowedUnprocessedDataCounts = 2;
 
-BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger) {
+BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger)
+{
   if ([consumer conformsToProtocol:@protocol(FBDataConsumerAsync)]) {
     id<FBDataConsumerAsync> asyncConsumer = (id<FBDataConsumerAsync>)consumer;
     NSInteger framesInProcess = asyncConsumer.unprocessedDataCount;
@@ -47,8 +48,8 @@ static BOOL WriteBlockBufferToConsumer(CMBlockBufferRef blockBuffer, id<FBDataCo
     OSStatus status = CMBlockBufferGetDataPointer(blockBuffer, offset, &lengthAtOffset, NULL, &dataPointer);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to get Data Pointer at offset %zu: %d", offset, status]
-        failBool:error];
+               describeFormat:@"Failed to get Data Pointer at offset %zu: %d", offset, status]
+              failBool:error];
     }
     if (isSyncConsumer) {
       [consumer consumeData:[NSData dataWithBytesNoCopy:dataPointer length:lengthAtOffset freeWhenDone:NO]];
@@ -72,8 +73,8 @@ static BOOL ConvertAVCCToAnnexBInPlace(CMSampleBufferRef sampleBuffer, NSError *
     OSStatus status = CMBlockBufferAccessDataBytes(dataBuffer, offset, AVCCHeaderLength, nalLengthBuf, &nalLengthPtr);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to access block buffer data at offset %zu: %d", offset, status]
-        failBool:error];
+               describeFormat:@"Failed to access block buffer data at offset %zu: %d", offset, status]
+              failBool:error];
     }
     uint32_t nalLength = 0;
     memcpy(&nalLength, nalLengthPtr, AVCCHeaderLength);
@@ -81,8 +82,8 @@ static BOOL ConvertAVCCToAnnexBInPlace(CMSampleBufferRef sampleBuffer, NSError *
     status = CMBlockBufferReplaceDataBytes(AnnexBStartCode, dataBuffer, offset, AVCCHeaderLength);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to replace block buffer data at offset %zu: %d", offset, status]
-        failBool:error];
+               describeFormat:@"Failed to replace block buffer data at offset %zu: %d", offset, status]
+              failBool:error];
     }
     offset += AVCCHeaderLength + nalLength;
   }
@@ -96,13 +97,13 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
-      describeFormat:@"Sample Buffer is not ready"]
-      failBool:error];
+             describeFormat:@"Sample Buffer is not ready"]
+            failBool:error];
   }
 
   bool isKeyFrame = false;
   CFArrayRef attachments =
-      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
   if (CFArrayGetCount(attachments)) {
     CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
     isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
@@ -123,8 +124,8 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
     OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
-        failBool:error];
+               describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
+              failBool:error];
     }
     for (size_t i = 0; i < parameterSetCount; i++) {
       size_t paramSize;
@@ -132,8 +133,8 @@ static BOOL WriteCodecFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, FBVide
       status = paramSetGetter(format, i, &parameterSet, &paramSize, NULL, NULL);
       if (status != noErr) {
         return [[FBControlCoreError
-          describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
-          failBool:error];
+                 describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
+                failBool:error];
       }
       uint8_t paramHeader[AVCCHeaderLength + paramSize];
       memcpy(paramHeader, AnnexBStartCode, AVCCHeaderLength);
@@ -288,10 +289,13 @@ NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t streamType)
 // Forward declaration of metadata state used by FBMPEGTSPacketizePES
 static BOOL metadataStreamEnabled = NO;
 
-NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
-                                   uint64_t pts90k,
-                                   uint8_t *videoContinuityCounter,
-                                   uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter)
+NSData *FBMPEGTSPacketizePES(NSData *pesData,
+                             BOOL isKeyFrame,
+                             uint8_t streamType,
+                             uint64_t pts90k,
+                             uint8_t *videoContinuityCounter,
+                             uint8_t *patContinuityCounter,
+                             uint8_t *pmtContinuityCounter)
 {
   // First packet carries at most 176 bytes (PCR adaptation field uses 8 bytes),
   // remaining packets carry 184 bytes each.
@@ -331,10 +335,10 @@ NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamTyp
       packet[5] = 0x10; // flags: PCR present
       // PCR encoding: 33-bit base (90kHz) + 6 reserved bits (all 1) + 9-bit extension (0)
       uint64_t pcrBase = pts90k;
-      packet[6]  = (uint8_t)(pcrBase >> 25);
-      packet[7]  = (uint8_t)(pcrBase >> 17);
-      packet[8]  = (uint8_t)(pcrBase >> 9);
-      packet[9]  = (uint8_t)(pcrBase >> 1);
+      packet[6] = (uint8_t)(pcrBase >> 25);
+      packet[7] = (uint8_t)(pcrBase >> 17);
+      packet[8] = (uint8_t)(pcrBase >> 9);
+      packet[9] = (uint8_t)(pcrBase >> 1);
       packet[10] = (uint8_t)(((pcrBase & 1) << 7) | 0x7E); // base LSB + 6 reserved bits
       packet[11] = 0x00; // extension = 0
       headerSize = 12;
@@ -466,7 +470,7 @@ NSData *FBMPEGTSCreateTimedMetadataPackets(NSString *text, uint64_t pts90k, uint
     0x00,        // flags
     (uint8_t)((id3PayloadLen >> 21) & 0x7F),
     (uint8_t)((id3PayloadLen >> 14) & 0x7F),
-    (uint8_t)((id3PayloadLen >> 7)  & 0x7F),
+    (uint8_t)((id3PayloadLen >> 7) & 0x7F),
     (uint8_t)(id3PayloadLen & 0x7F),
   };
   [id3Tag appendBytes:id3Header length:10];
@@ -476,7 +480,7 @@ NSData *FBMPEGTSCreateTimedMetadataPackets(NSString *text, uint64_t pts90k, uint
     'T', 'X', 'X', 'X',
     (uint8_t)((txxxPayloadLen >> 24) & 0xFF),
     (uint8_t)((txxxPayloadLen >> 16) & 0xFF),
-    (uint8_t)((txxxPayloadLen >> 8)  & 0xFF),
+    (uint8_t)((txxxPayloadLen >> 8) & 0xFF),
     (uint8_t)(txxxPayloadLen & 0xFF),
     0x00, 0x00,  // flags
   };
@@ -502,7 +506,7 @@ NSData *FBMPEGTSCreateTimedMetadataPackets(NSString *text, uint64_t pts90k, uint
   pesHeader[7] = 0x80; // PTS present, no DTS
   pesHeader[8] = 0x05; // PES header data length (5 bytes for PTS)
   // PTS encoding (indicator nibble 0x2 when PTS only)
-  pesHeader[9]  = 0x21 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  pesHeader[9] = 0x21 | (uint8_t)(((pts90k >> 29) & 0x0E));
   pesHeader[10] = (uint8_t)((pts90k >> 22) & 0xFF);
   pesHeader[11] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
   pesHeader[12] = (uint8_t)((pts90k >> 7) & 0xFF);
@@ -597,8 +601,8 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 {
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     return [[FBControlCoreError
-      describeFormat:@"Sample Buffer is not ready"]
-      failBool:error];
+             describeFormat:@"Sample Buffer is not ready"]
+            failBool:error];
   }
 
   // Continuity counters persist across calls via static variables
@@ -608,7 +612,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
 
   bool isKeyFrame = false;
   CFArrayRef attachments =
-      CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
+  CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, true);
   if (CFArrayGetCount(attachments)) {
     CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
     isKeyFrame = !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
@@ -632,16 +636,16 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
     OSStatus status = paramSetGetter(format, 0, NULL, NULL, &parameterSetCount, NULL);
     if (status != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
-        failBool:error];
+               describeFormat:@"Failed to get %@ parameter set count %d", codecName, status]
+              failBool:error];
     }
     for (size_t i = 0; i < parameterSetCount; i++) {
       size_t paramSize;
       status = paramSetGetter(format, i, NULL, &paramSize, NULL, NULL);
       if (status != noErr) {
         return [[FBControlCoreError
-          describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
-          failBool:error];
+                 describeFormat:@"Failed to get %@ parameter set at index %zu: %d", codecName, i, status]
+                failBool:error];
       }
       parameterSetSize += AVCCHeaderLength + paramSize;
     }
@@ -682,7 +686,7 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
   pesHeader[8] = 0x0A; // PES header data length (10 bytes for PTS + DTS)
 
   // PTS encoding (33-bit value in 5 bytes, indicator nibble 0x3 when DTS present)
-  pesHeader[9]  = 0x31 | (uint8_t)(((pts90k >> 29) & 0x0E));
+  pesHeader[9] = 0x31 | (uint8_t)(((pts90k >> 29) & 0x0E));
   pesHeader[10] = (uint8_t)((pts90k >> 22) & 0xFF);
   pesHeader[11] = (uint8_t)(((pts90k >> 14) & 0xFE) | 0x01);
   pesHeader[12] = (uint8_t)((pts90k >> 7) & 0xFF);
@@ -715,15 +719,20 @@ static BOOL WriteCodecFrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, FBVide
   OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, nalDest);
   if (copyStatus != noErr) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
-      failBool:error];
+             describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+            failBool:error];
   }
 
   // Packetize into MPEG-TS and write to consumer
-  NSData *tsData = FBMPEGTSPacketizePES(pesPacket, isKeyFrame, mpegtsStreamType,
-                                         pts90k,
-                                         &videoContinuityCounter,
-                                         &patContinuityCounter, &pmtContinuityCounter);
+  NSData *tsData = FBMPEGTSPacketizePES(
+    pesPacket,
+    isKeyFrame,
+    mpegtsStreamType,
+    pts90k,
+    &videoContinuityCounter,
+    &patContinuityCounter,
+    &pmtContinuityCounter
+  );
   [consumer consumeData:tsData];
 
   return YES;
@@ -853,7 +862,9 @@ static void FBFMP4WriteZeros(NSMutableData *data, NSUInteger count)
 static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription, BOOL isHEVC)
 {
   NSDictionary *atoms = (__bridge NSDictionary *)CMFormatDescriptionGetExtension(
-    formatDescription, kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms);
+    formatDescription,
+    kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms
+  );
   if (atoms) {
     NSString *key = isHEVC ? @"hvcC" : @"avcC";
     NSData *configData = atoms[key];
@@ -868,14 +879,28 @@ static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription
     size_t spsSize = 0;
     size_t paramCount = 0;
     OSStatus status = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-      formatDescription, 0, &sps, &spsSize, &paramCount, NULL);
-    if (status != noErr || spsSize < 4) return nil;
+      formatDescription,
+      0,
+      &sps,
+      &spsSize,
+      &paramCount,
+      NULL
+    );
+    if (status != noErr || spsSize < 4) {
+      return nil;
+    }
 
     const uint8_t *pps = NULL;
     size_t ppsSize = 0;
     if (paramCount > 1) {
       CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-        formatDescription, 1, &pps, &ppsSize, NULL, NULL);
+        formatDescription,
+        1,
+        &pps,
+        &ppsSize,
+        NULL,
+        NULL
+      );
     }
 
     FBFMP4Write8(config, 1);
@@ -894,8 +919,16 @@ static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription
   } else {
     size_t paramCount = 0;
     OSStatus status = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
-      formatDescription, 0, NULL, NULL, &paramCount, NULL);
-    if (status != noErr) return nil;
+      formatDescription,
+      0,
+      NULL,
+      NULL,
+      &paramCount,
+      NULL
+    );
+    if (status != noErr) {
+      return nil;
+    }
 
     NSMutableArray<NSData *> *paramSets = [NSMutableArray new];
     NSMutableArray<NSNumber *> *paramTypes = [NSMutableArray new];
@@ -903,7 +936,13 @@ static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription
       const uint8_t *ps = NULL;
       size_t psSize = 0;
       CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
-        formatDescription, i, &ps, &psSize, NULL, NULL);
+        formatDescription,
+        i,
+        &ps,
+        &psSize,
+        NULL,
+        NULL
+      );
       if (ps && psSize > 0) {
         [paramSets addObject:[NSData dataWithBytes:ps length:psSize]];
         uint8_t nalType = (ps[0] >> 1) & 0x3F;
@@ -928,7 +967,9 @@ static NSData *FBFMP4GetCodecConfigAtom(CMFormatDescriptionRef formatDescription
     NSMutableDictionary<NSNumber *, NSMutableArray<NSData *> *> *grouped = [NSMutableDictionary new];
     for (NSUInteger i = 0; i < paramSets.count; i++) {
       NSNumber *type = paramTypes[i];
-      if (!grouped[type]) grouped[type] = [NSMutableArray new];
+      if (!grouped[type]) {
+        grouped[type] = [NSMutableArray new];
+      }
       [grouped[type] addObject:paramSets[i]];
     }
 
@@ -963,8 +1004,11 @@ static NSData *FBFMP4CreateFtypBox(BOOL isHEVC)
   return data;
 }
 
-static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription, BOOL isHEVC,
-                                    uint32_t width, uint32_t height, uint32_t timescale)
+static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription,
+                                   BOOL isHEVC,
+                                   uint32_t width,
+                                   uint32_t height,
+                                   uint32_t timescale)
 {
   NSMutableData *data = [NSMutableData dataWithCapacity:512];
 
@@ -986,7 +1030,9 @@ static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription, BOO
     FBFMP4Write16(data, 0x0100);
     FBFMP4WriteZeros(data, 10);
     uint32_t matrix[] = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
-    for (int i = 0; i < 9; i++) FBFMP4Write32(data, matrix[i]);
+    for (int i = 0; i < 9; i++) {
+      FBFMP4Write32(data, matrix[i]);
+    }
     FBFMP4WriteZeros(data, 24);
     FBFMP4Write32(data, 2);
     FBFMP4EndBox(data, off);
@@ -1011,7 +1057,9 @@ static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription, BOO
       FBFMP4Write16(data, 0);
       FBFMP4Write16(data, 0);
       uint32_t matrix[] = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
-      for (int i = 0; i < 9; i++) FBFMP4Write32(data, matrix[i]);
+      for (int i = 0; i < 9; i++) {
+        FBFMP4Write32(data, matrix[i]);
+      }
       FBFMP4Write32(data, width << 16);
       FBFMP4Write32(data, height << 16);
       FBFMP4EndBox(data, off);
@@ -1170,8 +1218,11 @@ static NSData *FBFMP4CreateMoovBox(CMFormatDescriptionRef formatDescription, BOO
 // to avoid a redundant copy of the (potentially large) video frame payload.
 // The returned NSData ends just after the mdat box header; the caller must
 // append exactly `sampleSize` bytes of sample data, then the fragment is complete.
-static NSData *FBFMP4CreateFragmentHeader(uint32_t sequenceNumber, uint64_t baseDecodeTime,
-                                           uint32_t duration, uint32_t sampleSize, BOOL isKeyFrame)
+static NSData *FBFMP4CreateFragmentHeader(uint32_t sequenceNumber,
+                                          uint64_t baseDecodeTime,
+                                          uint32_t duration,
+                                          uint32_t sampleSize,
+                                          BOOL isKeyFrame)
 {
   uint32_t trunFlags = 0x000701;
   // trun: header(12) + data_offset(4) + 1 sample entry (duration(4) + size(4) + flags(4))
@@ -1249,7 +1300,9 @@ static NSData *FBFMP4CreateFragmentHeader(uint32_t sequenceNumber, uint64_t base
 - (instancetype)initWithHEVC:(BOOL)isHEVC
 {
   self = [super init];
-  if (!self) return nil;
+  if (!self) {
+    return nil;
+  }
 
   _isHEVC = isHEVC;
   _initWritten = NO;
@@ -1264,9 +1317,11 @@ static NSData *FBFMP4CreateFragmentHeader(uint32_t sequenceNumber, uint64_t base
 
 // Per-frame fMP4 writer: each frame is immediately emitted as a single-sample moof+mdat fragment.
 
-static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
-                                         id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
-                                         NSError **error)
+static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
+                                        id _Nullable context,
+                                        id<FBDataConsumer> consumer,
+                                        id<FBControlCoreLogger> logger,
+                                        NSError **error)
 {
   FBFMP4MuxerContext *ctx = (FBFMP4MuxerContext *)context;
   if (!ctx) {
@@ -1301,8 +1356,13 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Null
     CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(formatDesc);
 
     NSData *ftyp = FBFMP4CreateFtypBox(ctx.isHEVC);
-    NSData *moov = FBFMP4CreateMoovBox(formatDesc, ctx.isHEVC,
-                                        (uint32_t)dims.width, (uint32_t)dims.height, 90000);
+    NSData *moov = FBFMP4CreateMoovBox(
+      formatDesc,
+      ctx.isHEVC,
+      (uint32_t)dims.width,
+      (uint32_t)dims.height,
+      90000
+    );
 
     [consumer consumeData:ftyp];
     [consumer consumeData:moov];
@@ -1310,7 +1370,7 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Null
     ctx.initWritten = YES;
     ctx.baseDecodeTime = pts90k;
     [logger logFormat:@"fMP4 init segment written (%dx%d, %s)",
-      dims.width, dims.height, ctx.isHEVC ? "HEVC" : "H264"];
+     dims.width, dims.height, ctx.isHEVC ? "HEVC" : "H264"];
   }
 
   // Compute duration.
@@ -1333,7 +1393,9 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Null
   NSData *header = FBFMP4CreateFragmentHeader(
     ctx.sequenceNumber,
     ctx.baseDecodeTime,
-    duration90k, (uint32_t)dataLength, isKeyFrame
+    duration90k,
+    (uint32_t)dataLength,
+    isKeyFrame
   );
   [consumer consumeData:header];
 
@@ -1349,8 +1411,8 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Null
     OSStatus copyStatus = CMBlockBufferCopyDataBytes(dataBuffer, 0, dataLength, sampleData.mutableBytes);
     if (copyStatus != noErr) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
-        failBool:error];
+               describeFormat:@"Failed to copy block buffer data: %d", copyStatus]
+              failBool:error];
     }
     [consumer consumeData:sampleData];
   }
@@ -1360,16 +1422,20 @@ static BOOL WriteCodecFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Null
   return YES;
 }
 
-BOOL WriteH264FrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
-                                 id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
-                                 NSError **error)
+BOOL WriteH264FrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
+                                id _Nullable context,
+                                id<FBDataConsumer> consumer,
+                                id<FBControlCoreLogger> logger,
+                                NSError **error)
 {
   return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error);
 }
 
-BOOL WriteHEVCFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable context,
-                                  id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger,
-                                  NSError **error)
+BOOL WriteHEVCFrameToFMP4Stream(CMSampleBufferRef sampleBuffer,
+                                id _Nullable context,
+                                id<FBDataConsumer> consumer,
+                                id<FBControlCoreLogger> logger,
+                                NSError **error)
 {
   return WriteCodecFrameToFMP4Stream(sampleBuffer, context, consumer, logger, error);
 }
@@ -1377,7 +1443,9 @@ BOOL WriteHEVCFrameToFMP4Stream(CMSampleBufferRef sampleBuffer, id _Nullable con
 void FBFMP4WriteEmsgBox(FBFMP4MuxerContext *context, NSString *text, id<FBDataConsumer> consumer)
 {
   NSData *textData = [text dataUsingEncoding:NSUTF8StringEncoding];
-  if (!textData) return;
+  if (!textData) {
+    return;
+  }
 
   NSMutableData *data = [NSMutableData dataWithCapacity:64 + textData.length];
 

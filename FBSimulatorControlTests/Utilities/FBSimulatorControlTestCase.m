@@ -48,9 +48,9 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   if (!_control) {
     FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-      configurationWithDeviceSetPath:self.deviceSetPath
-      logger:nil
-      reporter:nil];
+                                                      configurationWithDeviceSetPath:self.deviceSetPath
+                                                      logger:nil
+                                                      reporter:nil];
 
     NSError *error;
     FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];

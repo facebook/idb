@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTraceRecordCommands : NSObject <FBXCTraceRecordCommands>
 
-@property (nonatomic, weak, readonly) id<FBiOSTarget> target;
+@property (nonatomic, readonly, weak) id<FBiOSTarget> target;
 
 @end
 

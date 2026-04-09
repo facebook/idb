@@ -12,10 +12,10 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
 @interface FBXCTestLogger ()
 
-@property (nonatomic, copy, readonly) NSString *logDirectory;
-@property (nonatomic, copy, readonly) NSString *filePath;
-@property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> baseLogger;
+@property (nonatomic, readonly, copy) NSString *logDirectory;
+@property (nonatomic, readonly, copy) NSString *filePath;
+@property (nonatomic, readonly, strong) NSFileHandle *fileHandle;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> baseLogger;
 
 @end
 
@@ -75,7 +75,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   id<FBControlCoreLogger> baseLogger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[
     [[FBControlCoreLoggerFactory systemLoggerWritingToStderr:YES withDebugLogging:YES] withDateFormatEnabled:YES],
     [[FBControlCoreLoggerFactory loggerToFileDescriptor:fileHandle.fileDescriptor closeOnEndOfFile:NO] withDateFormatEnabled:YES],
-  ]];
+                                        ]];
 
   return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];
 }
@@ -101,7 +101,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2)
+- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2)
 {
   va_list args;
   va_start(args, format);
@@ -114,36 +114,36 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 - (id<FBControlCoreLogger>)info
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger info]
-    logDirectory:self.logDirectory];
+          initWithBaseLogger:[self.baseLogger info]
+          logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)debug
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger debug]
-    logDirectory:self.logDirectory];
+          initWithBaseLogger:[self.baseLogger debug]
+          logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)error
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger error]
-    logDirectory:self.logDirectory];
+          initWithBaseLogger:[self.baseLogger error]
+          logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)withName:(NSString *)prefix
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger withName:prefix]
-    logDirectory:self.logDirectory];
+          initWithBaseLogger:[self.baseLogger withName:prefix]
+          logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled
 {
   return [[self.class alloc]
-    initWithBaseLogger:[self.baseLogger withDateFormatEnabled:enabled]
-    logDirectory:self.logDirectory];
+          initWithBaseLogger:[self.baseLogger withDateFormatEnabled:enabled]
+          logDirectory:self.logDirectory];
 }
 
 - (NSString *)name
@@ -162,15 +162,16 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   NSString *filePath = [self.logDirectory stringByAppendingPathComponent:fileName];
 
   return [[FBFileWriter
-    asyncWriterForFilePath:filePath]
-    onQueue:queue map:^(id<FBDataConsumer, FBDataConsumerLifecycle> writer) {
-      [logger.info logFormat:@"Mirroring output to %@", filePath];
-      return [FBCompositeDataConsumer consumerWithConsumers:@[
-        consumer,
-        writer,
-        [FBLoggingDataConsumer consumerWithLogger:logger],
-      ]];
-    }];
+           asyncWriterForFilePath:filePath]
+          onQueue:queue
+          map:^(id<FBDataConsumer, FBDataConsumerLifecycle> writer) {
+            [logger.info logFormat:@"Mirroring output to %@", filePath];
+            return [FBCompositeDataConsumer consumerWithConsumers:@[
+              consumer,
+              writer,
+              [FBLoggingDataConsumer consumerWithLogger:logger],
+                    ]];
+          }];
 }
 
 @end

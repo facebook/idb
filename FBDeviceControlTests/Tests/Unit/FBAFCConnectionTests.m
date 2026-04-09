@@ -72,7 +72,7 @@ static CFDictionaryRef connectionCopyLastErrorInfo(AFCConnectionRef connection)
 
 static int fileRefOpen(AFCConnectionRef connection, const char *path, FBAFCReadMode mode, CFTypeRef *fileRefOut)
 {
-  if (sVirtualizedFilesAndAttributes){
+  if (sVirtualizedFilesAndAttributes) {
     NSString *filePath = [NSString stringWithCString:path encoding:NSASCIIStringEncoding];
     NSString *fileContents = sVirtualizedFilesAndAttributes[filePath][FileContentsKey];
     if (!fileContents) {
@@ -205,10 +205,10 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
 
 @interface FBAFCConnectionTests : XCTestCase
 
-@property (nonatomic, copy, readonly) NSString *rootHostDirectory;
-@property (nonatomic, copy, readonly) NSString *fooHostFilePath;
-@property (nonatomic, copy, readonly) NSString *barHostDirectory;
-@property (nonatomic, copy, readonly) NSString *bazHostFilePath;
+@property (nonatomic, readonly, copy) NSString *rootHostDirectory;
+@property (nonatomic, readonly, copy) NSString *fooHostFilePath;
+@property (nonatomic, readonly, copy) NSString *barHostDirectory;
+@property (nonatomic, readonly, copy) NSString *bazHostFilePath;
 
 @end
 
@@ -250,11 +250,11 @@ static CFTypeRef operationGetResultObject(CFTypeRef operation)
 - (void)addVirtualizedRemoteFiles
 {
   sVirtualizedFilesAndAttributes = @{
-    @"remote_foo.txt": @{FileContentsKey: @"some foo"},
-    @"remote_empty": @{FileContentsKey: @""},
-    @"remote_bar": @{@"st_ifmt": @"S_IFDIR"},
-    @"remote_bar/some.txt": @{FileContentsKey: @"more nested text"},
-    @"remote_bar/other.txt": @{FileContentsKey: @"more other text"},
+    @"remote_foo.txt" : @{FileContentsKey : @"some foo"},
+    @"remote_empty" : @{FileContentsKey : @""},
+    @"remote_bar" : @{@"st_ifmt" : @"S_IFDIR"},
+    @"remote_bar/some.txt" : @{FileContentsKey : @"more nested text"},
+    @"remote_bar/other.txt" : @{FileContentsKey : @"more other text"},
   };
 }
 
@@ -395,7 +395,7 @@ static NSString *const FooFileContents = @"FooContents";
   [self assertExpectedDirectoryCreate:@[]];
   [self assertExpectedFiles:@[
     @"foo.txt",
-  ]];
+   ]];
 }
 
 - (void)testCopyFileToContainerPath
@@ -409,7 +409,7 @@ static NSString *const FooFileContents = @"FooContents";
   [self assertExpectedDirectoryCreate:@[]];
   [self assertExpectedFiles:@[
     @"bing/foo.txt",
-  ]];
+   ]];
 }
 
 - (void)testCopyItemsFromHostDirectory
@@ -423,11 +423,11 @@ static NSString *const FooFileContents = @"FooContents";
   [self assertExpectedDirectoryCreate:@[
     self.rootHostDirectory.lastPathComponent,
     [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"bar"],
-  ]];
+   ]];
   [self assertExpectedFiles:@[
     [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"foo.txt"],
     [self.rootHostDirectory.lastPathComponent stringByAppendingPathComponent:@"bar/baz.empty"],
-  ]];
+   ]];
 }
 
 - (void)testCreateDirectoryAtRoot

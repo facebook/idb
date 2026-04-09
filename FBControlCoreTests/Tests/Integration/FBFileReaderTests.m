@@ -5,16 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <sys/stat.h>
+#import <sys/types.h>
+
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <sys/types.h>
-#import <sys/stat.h>
-
 @interface FBFileReaderTests : XCTestCase <FBDataConsumer>
 
-@property (atomic, assign, readwrite) BOOL didRecieveEOF;
+@property (atomic, readwrite, assign) BOOL didRecieveEOF;
 
 @end
 
@@ -44,7 +44,7 @@
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
   [pipe.fileHandleForWriting writeData:expected];
   [pipe.fileHandleForWriting closeFile];
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (id _, id __) {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL (id _, id __) {
     return [expected isEqualToData:consumer.data];
   }];
   XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
@@ -97,11 +97,11 @@
 
   NSError *error = nil;
   NSArray<id> *writerAndReader = [[FBFuture
-    futureWithFutures:@[
-      [FBFileWriter asyncWriterForFilePath:fifoPath],
-      [FBFileReader readerWithFilePath:fifoPath consumer:self logger:nil],
-    ]]
-    await:&error];
+                                   futureWithFutures:@[
+                                     [FBFileWriter asyncWriterForFilePath:fifoPath],
+                                     [FBFileReader readerWithFilePath:fifoPath consumer:self logger:nil],
+                                   ]]
+                                  await:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(writerAndReader);
 
@@ -143,7 +143,7 @@
   // Write some data and confirm that it is as expected.
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
   [pipe.fileHandleForWriting writeData:expected];
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (id _, id __) {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL (id _, id __) {
     return [expected isEqualToData:consumer.data];
   }];
   XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
@@ -179,7 +179,7 @@
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
   [pipe.fileHandleForWriting writeData:expected];
   [pipe.fileHandleForWriting closeFile];
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (id _, id __) {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL (id _, id __) {
     return [expected isEqualToData:consumer.data];
   }];
   XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
@@ -318,15 +318,18 @@
   __block FBFuture<NSNull *> *secondAttempt = nil;
   __block FBFuture<NSNull *> *thirdAttempt = nil;
 
-  dispatch_group_async(group, concurrentQueue, ^{
-    firstAttempt = [reader startReading];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    secondAttempt = [reader startReading];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    thirdAttempt = [reader startReading];
-  });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      firstAttempt = [reader startReading];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      secondAttempt = [reader startReading];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      thirdAttempt = [reader startReading];
+    });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
   [firstAttempt await:nil];
@@ -376,7 +379,6 @@
 }
 
 - (void)consumeData:(NSData *)data
-{
-}
+{}
 
 @end

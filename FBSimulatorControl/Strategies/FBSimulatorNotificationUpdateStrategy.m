@@ -12,13 +12,13 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
-#import "FBSimulatorSet.h"
 #import "FBSimulator+Private.h"
+#import "FBSimulatorSet.h"
 
 @interface FBSimulatorNotificationUpdateStrategy ()
 
-@property (nonatomic, weak, readonly) FBSimulatorSet *set;
-@property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *notifier;
+@property (nonatomic, readonly, weak) FBSimulatorSet *set;
+@property (nonatomic, readwrite, strong) FBCoreSimulatorNotifier *notifier;
 
 @end
 
@@ -56,17 +56,19 @@
 - (void)startNotifyingOfStateChanges
 {
   __weak typeof(self) weakSelf = self;
-  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set queue:self.set.workQueue block:^(NSDictionary *info) {
-    SimDevice *device = info[@"device"];
-    if (!device) {
-      return;
-    }
-    NSNumber *newStateNumber = info[@"new_state"];
-    if (!newStateNumber) {
-      return;
-    }
-    [weakSelf device:device didChangeState:newStateNumber.unsignedIntegerValue];
-  }];
+  self.notifier = [FBCoreSimulatorNotifier notifierForSet:self.set
+                                                    queue:self.set.workQueue
+                                                    block:^(NSDictionary *info) {
+                                                      SimDevice *device = info[@"device"];
+                                                      if (!device) {
+                                                        return;
+                                                      }
+                                                      NSNumber *newStateNumber = info[@"new_state"];
+                                                      if (!newStateNumber) {
+                                                        return;
+                                                      }
+                                                      [weakSelf device:device didChangeState:newStateNumber.unsignedIntegerValue];
+                                                    }];
 }
 
 - (void)device:(SimDevice *)device didChangeState:(FBiOSTargetState)state

@@ -7,7 +7,5 @@
         <string>kTCCServiceAddressBook</string>
         <string>kTCCServicePhotos</string>
     </array>
-    <key>com.apple.bulletinboard.settings</key>
-    <true/>
 </dict>
 </plist>

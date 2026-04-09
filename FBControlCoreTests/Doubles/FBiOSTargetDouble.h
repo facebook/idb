@@ -11,24 +11,24 @@
 
 @interface FBiOSTargetDouble : NSObject <FBiOSTarget>
 
-@property (nonatomic, copy, readwrite) NSString *uniqueIdentifier;
+@property (nonatomic, readwrite, copy) NSString *uniqueIdentifier;
 
-@property (nonatomic, copy, readwrite) NSString *udid;
+@property (nonatomic, readwrite, copy) NSString *udid;
 
-@property (nonatomic, copy, readwrite) NSString *name;
+@property (nonatomic, readwrite, copy) NSString *name;
 
-@property (nonatomic, copy, readwrite) NSString *auxillaryDirectory;
+@property (nonatomic, readwrite, copy) NSString *auxillaryDirectory;
 
-@property (nonatomic, copy, readwrite) NSString *customDeviceSetPath;
+@property (nonatomic, readwrite, copy) NSString *customDeviceSetPath;
 
-@property (nonatomic, strong, readwrite) FBiOSTargetDiagnostics *diagnostics;
+@property (nonatomic, readwrite, strong) FBiOSTargetDiagnostics *diagnostics;
 
-@property (nonatomic, assign, readwrite) FBiOSTargetState state;
+@property (nonatomic, readwrite, assign) FBiOSTargetState state;
 
-@property (nonatomic, assign, readwrite) FBiOSTargetType targetType;
+@property (nonatomic, readwrite, assign) FBiOSTargetType targetType;
 
-@property (nonatomic, copy, readwrite) FBDeviceType *deviceType;
+@property (nonatomic, readwrite, copy) FBDeviceType *deviceType;
 
-@property (nonatomic, copy, readwrite) FBOSVersion *osVersion;
+@property (nonatomic, readwrite, copy) FBOSVersion *osVersion;
 
 @end

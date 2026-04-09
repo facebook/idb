@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return a File Reader.
  */
-@property (nonatomic, strong, readonly, class) id<FBDataConsumer> nullWriter;
+@property (class, nonatomic, readonly, strong) id<FBDataConsumer> nullWriter;
 
 /**
  Creates a synchronous data consumer from a file handle.

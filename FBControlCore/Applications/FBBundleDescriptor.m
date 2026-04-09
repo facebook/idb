@@ -52,22 +52,22 @@
 {
   if (!path) {
     return [[FBControlCoreError
-      describe:@"Nil file path provided for bundle path"]
-      fail:error];
+             describe:@"Nil file path provided for bundle path"]
+            fail:error];
   }
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to load bundle at path %@", path]
-      fail:error];
+             describeFormat:@"Failed to load bundle at path %@", path]
+            fail:error];
   }
   NSString *bundleName = [self bundleNameForBundle:bundle];
   NSString *identifier = [bundle bundleIdentifier];
   if (!identifier) {
     if (!fallbackIdentifier) {
       return [[FBControlCoreError
-        describeFormat:@"Could not obtain Bundle ID for bundle '%@' at %@", path.lastPathComponent, path]
-        fail:error];
+               describeFormat:@"Could not obtain Bundle ID for bundle '%@' at %@", path.lastPathComponent, path]
+              fail:error];
     }
     identifier = bundleName;
   }
@@ -93,10 +93,10 @@
   if (![object isMemberOfClass:self.class]) {
     return NO;
   }
-  return [object.name isEqual:self.name] &&
-         [object.path isEqual:self.path] &&
-         [object.identifier isEqual:self.identifier] &&
-         [object.binary isEqual:self.binary];
+  return [object.name isEqual:self.name]
+  && [object.path isEqual:self.path]
+  && [object.identifier isEqual:self.identifier]
+  && [object.binary isEqual:self.binary];
 }
 
 - (NSUInteger)hash
@@ -107,9 +107,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Name: %@ | ID: %@",
-    self.name,
-    self.identifier
+          @"Name: %@ | ID: %@",
+          self.name,
+          self.identifier
   ];
 }
 
@@ -118,29 +118,32 @@
 - (FBFuture<NSDictionary<NSString *, NSString *> *> *)updatePathsForRelocationWithCodesign:(FBCodesignProvider *)codesign logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue
 {
   return [[[self
-    replacementsForBinary]
-    onQueue:queue fmap:^ FBFuture * (NSDictionary<NSString *, NSString *> *replacements) {
-      if (replacements.count == 0) {
-        return [FBFuture futureWithResult:replacements];
-      }
-      NSMutableArray<NSString *> *arguments = NSMutableArray.array;
-      for (NSString *key in replacements.allKeys) {
-        [arguments addObject:@"-rpath"];
-        [arguments addObject:key];
-        [arguments addObject:replacements[key]];
-      }
-      [arguments addObject:self.binary.path];
-      [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
-      return [[[[FBProcessBuilder
-        withLaunchPath:@"/usr/bin/install_name_tool" arguments:arguments]
-        withStdErrToLogger:logger]
-        runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-        mapReplace:replacements];
-    }]
-    onQueue:queue fmap:^(NSDictionary<NSString *, NSString *> *replacements) {
-      [logger logFormat:@"Re-Codesigning after rpath update %@", self.path];
-      return [[codesign signBundleAtPath:self.path] mapReplace:replacements];
-    }];
+            replacementsForBinary]
+           onQueue:queue
+           fmap:^FBFuture *(NSDictionary<NSString *, NSString *> *replacements) {
+             if (replacements.count == 0) {
+               return [FBFuture futureWithResult:replacements];
+             }
+             NSMutableArray<NSString *> *arguments = NSMutableArray.array;
+             for (NSString *key in replacements.allKeys) {
+               [arguments addObject:@"-rpath"];
+               [arguments addObject:key];
+               [arguments addObject:replacements[key]];
+             }
+             [arguments addObject:self.binary.path];
+             [logger logFormat:@"Updating rpaths for binary %@", [FBCollectionInformation oneLineDescriptionFromDictionary:replacements]];
+             return [[[[FBProcessBuilder
+                        withLaunchPath:@"/usr/bin/install_name_tool"
+                        arguments:arguments]
+                       withStdErrToLogger:logger]
+                      runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+                     mapReplace:replacements];
+           }]
+          onQueue:queue
+          fmap:^(NSDictionary<NSString *, NSString *> *replacements) {
+            [logger logFormat:@"Re-Codesigning after rpath update %@", self.path];
+            return [[codesign signBundleAtPath:self.path] mapReplace:replacements];
+          }];
 }
 
 #pragma mark Private
@@ -150,8 +153,8 @@
   NSString *binaryPath = [bundle executablePath];
   if (!binaryPath) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain binary path for bundle %@", bundle.bundlePath]
-      fail:error];
+             describeFormat:@"Could not obtain binary path for bundle %@", bundle.bundlePath]
+            fail:error];
   }
 
   return [FBBinaryDescriptor binaryWithPath:binaryPath error:error];

@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <netinet/in.h>
+#import <sys/socket.h>
+
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-
-#import <sys/socket.h>
-#import <netinet/in.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Port the Server is Bound on
  */
-@property (nonatomic, assign, readonly) in_port_t port;
+@property (nonatomic, readonly, assign) in_port_t port;
 
 #pragma mark Public Methods
 
@@ -84,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Queue on which the Delegate will be called.
  This may be a serial or a concurrent queue.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 

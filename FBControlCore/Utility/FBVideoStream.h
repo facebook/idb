@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
+#import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBiOSTargetOperation.h>
 
@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Returns true if consumer is ready to process another frame, false if consumer buffered data exceedes allowed limit
- 
+
  @param consumer consumer
  @return True if next frame should be pushed; False if frame should be dropped
  */
@@ -113,7 +113,7 @@ extern BOOL WriteH264FrameToMPEGTSStream(CMSampleBufferRef sampleBuffer, id _Nul
  */
 - (instancetype)initWithHEVC:(BOOL)isHEVC;
 
-@property (nonatomic, assign, readonly) BOOL isHEVC;
+@property (nonatomic, readonly, assign) BOOL isHEVC;
 @property (nonatomic, assign) BOOL initWritten;
 @property (nonatomic, assign) uint32_t sequenceNumber;
 @property (nonatomic, assign) uint64_t baseDecodeTime;
@@ -229,10 +229,13 @@ extern NSData *FBMPEGTSCreatePMTPacket(uint8_t *continuityCounter, uint8_t strea
  @param pmtContinuityCounter pointer to the PMT continuity counter.
  @return the concatenated TS packets.
  */
-extern NSData *FBMPEGTSPacketizePES(NSData *pesData, BOOL isKeyFrame, uint8_t streamType,
-                                     uint64_t pts90k,
-                                     uint8_t *videoContinuityCounter,
-                                     uint8_t *patContinuityCounter, uint8_t *pmtContinuityCounter);
+extern NSData *FBMPEGTSPacketizePES(NSData *pesData,
+                                    BOOL isKeyFrame,
+                                    uint8_t streamType,
+                                    uint64_t pts90k,
+                                    uint8_t *videoContinuityCounter,
+                                    uint8_t *patContinuityCounter,
+                                    uint8_t *pmtContinuityCounter);
 
 /**
  PID for the timed metadata elementary stream (ID3).

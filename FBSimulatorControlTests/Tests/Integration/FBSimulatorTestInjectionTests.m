@@ -7,19 +7,18 @@
 
 #import <XCTest/XCTest.h>
 
+#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
-
 #import "CoreSimulatorDoubles.h"
-#import "FBSimulatorControlTestCase.h"
-#import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorTestInjection : FBSimulatorControlTestCase <FBXCTestReporter>
 
-@property (nonatomic, strong, readwrite) NSMutableSet *passedMethods;
-@property (nonatomic, strong, readwrite) NSMutableSet *failedMethods;
+@property (nonatomic, readwrite, strong) NSMutableSet *passedMethods;
+@property (nonatomic, readwrite, strong) NSMutableSet *failedMethods;
 
 @end
 
@@ -60,34 +59,34 @@
   NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
   FBProcessIO *io = [[FBProcessIO alloc]
-    initWithStdIn:nil
-    stdOut:[FBProcessOutput outputForFilePath:stdOutPath]
-    stdErr:[FBProcessOutput outputForFilePath:stdErrPath]];
+                     initWithStdIn:nil
+                     stdOut:[FBProcessOutput outputForFilePath:stdOutPath]
+                     stdErr:[FBProcessOutput outputForFilePath:stdErrPath]];
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:self.safariAppLaunch.bundleID
-    bundleName:self.safariAppLaunch.bundleName
-    arguments:self.safariAppLaunch.arguments
-    environment:self.safariAppLaunch.environment
-    waitForDebugger:NO
-    io:io
-    launchMode:self.safariAppLaunch.launchMode];
+                                                                      initWithBundleID:self.safariAppLaunch.bundleID
+                                                                      bundleName:self.safariAppLaunch.bundleName
+                                                                      arguments:self.safariAppLaunch.arguments
+                                                                      environment:self.safariAppLaunch.environment
+                                                                      waitForDebugger:NO
+                                                                      io:io
+                                                                      launchMode:self.safariAppLaunch.launchMode];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundle:self.testLaunchSafari.testBundle
-    applicationLaunchConfiguration:applicationLaunchConfiguration
-    testHostBundle:nil
-    timeout:0
-    initializeUITesting:NO
-    useXcodebuild:NO
-    testsToRun:nil
-    testsToSkip:nil
-    targetApplicationBundle:nil
-    xcTestRunProperties:nil
-    resultBundlePath:nil
-    reportActivities:NO
-    coverageDirectoryPath:nil
-    enableContinuousCoverageCollection:NO
-    logDirectoryPath:nil
-    reportResultBundle:NO];
+                                           initWithTestBundle:self.testLaunchSafari.testBundle
+                                           applicationLaunchConfiguration:applicationLaunchConfiguration
+                                           testHostBundle:nil
+                                           timeout:0
+                                           initializeUITesting:NO
+                                           useXcodebuild:NO
+                                           testsToRun:nil
+                                           testsToSkip:nil
+                                           targetApplicationBundle:nil
+                                           xcTestRunProperties:nil
+                                           resultBundlePath:nil
+                                           reportActivities:NO
+                                           coverageDirectoryPath:nil
+                                           enableContinuousCoverageCollection:NO
+                                           logDirectoryPath:nil
+                                           reportResultBundle:NO];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
@@ -110,22 +109,22 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundle:self.testLaunchSafari.testBundle
-    applicationLaunchConfiguration:self.safariAppLaunch
-    testHostBundle:nil
-    timeout:0
-    initializeUITesting:NO
-    useXcodebuild:NO
-    testsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
-    testsToSkip:nil
-    targetApplicationBundle:nil
-    xcTestRunProperties:nil
-    resultBundlePath:nil
-    reportActivities:NO
-    coverageDirectoryPath:nil
-    enableContinuousCoverageCollection:NO
-    logDirectoryPath:nil
-    reportResultBundle:NO];
+                                           initWithTestBundle:self.testLaunchSafari.testBundle
+                                           applicationLaunchConfiguration:self.safariAppLaunch
+                                           testHostBundle:nil
+                                           timeout:0
+                                           initializeUITesting:NO
+                                           useXcodebuild:NO
+                                           testsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]
+                                           testsToSkip:nil
+                                           targetApplicationBundle:nil
+                                           xcTestRunProperties:nil
+                                           resultBundlePath:nil
+                                           reportActivities:NO
+                                           coverageDirectoryPath:nil
+                                           enableContinuousCoverageCollection:NO
+                                           logDirectoryPath:nil
+                                           reportResultBundle:NO];
 
   [self assertLaunchesTestWithConfiguration:testLaunch reporter:self simulator:simulator];
   [self assertPassed:@[@"testIsRunningOnIOS"]
@@ -135,14 +134,10 @@
 #pragma mark FBXCTestReporter
 
 - (void)didBeginExecutingTestPlan
-{
-
-}
+{}
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
-{
-
-}
+{}
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
@@ -158,14 +153,10 @@
 }
 
 - (void)testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion
-{
-
-}
+{}
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
-{
-
-}
+{}
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
@@ -174,26 +165,16 @@
 }
 
 - (void)didFinishExecutingTestPlan
-{
-
-}
+{}
 
 - (void)processUnderTestDidExit
-{
-
-}
+{}
 
 - (void)didCrashDuringTest:(NSError *)error
-{
-
-}
-
+{}
 
 - (void)handleExternalEvent:(NSString *)event
-{
-
-}
-
+{}
 
 - (BOOL)printReportWithError:(NSError **)error
 {
@@ -201,19 +182,12 @@
 }
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
-{
-
-}
+{}
 
 - (void)testHadOutput:(NSString *)output
-{
-
-}
+{}
 
 - (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
-{
-
-}
-
+{}
 
 @end

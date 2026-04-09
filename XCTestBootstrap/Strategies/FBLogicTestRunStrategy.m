@@ -6,25 +6,25 @@
  */
 
 #import "FBLogicTestRunStrategy.h"
-#import "FBLogicXCTestReporter.h"
 
-#import <sys/types.h>
 #import <sys/stat.h>
+#import <sys/types.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBLogicXCTestReporter.h"
 #import "FBXCTestConstants.h"
 
 static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 @interface FBLogicTestRunOutputs : NSObject
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> stdOutConsumer;
-@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> stdErrConsumer;
-@property (nonatomic, strong, readonly) id<FBConsumableBuffer> stdErrBuffer;
-@property (nonatomic, strong, readonly) id<FBDataConsumer, FBDataConsumerLifecycle> shimConsumer;
-@property (nonatomic, strong, readonly) id<FBProcessFileOutput> shimOutput;
+@property (nonatomic, readonly, strong) id<FBDataConsumer, FBDataConsumerLifecycle> stdOutConsumer;
+@property (nonatomic, readonly, strong) id<FBDataConsumer, FBDataConsumerLifecycle> stdErrConsumer;
+@property (nonatomic, readonly, strong) id<FBConsumableBuffer> stdErrBuffer;
+@property (nonatomic, readonly, strong) id<FBDataConsumer, FBDataConsumerLifecycle> shimConsumer;
+@property (nonatomic, readonly, strong) id<FBProcessFileOutput> shimOutput;
 
 @end
 
@@ -34,7 +34,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 {
   self = [super init];
   if (!self) {
-      return nil;
+    return nil;
   }
 
   _stdOutConsumer = stdOutConsumer;
@@ -50,10 +50,10 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 
 @interface FBLogicTestRunStrategy ()
 
-@property (nonatomic, strong, readonly) id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands> target;
-@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) id<FBLogicXCTestReporter> reporter;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBiOSTarget, FBProcessSpawnCommands, FBXCTestExtendedCommands> target;
+@property (nonatomic, readonly, strong) FBLogicTestConfiguration *configuration;
+@property (nonatomic, readonly, strong) id<FBLogicXCTestReporter> reporter;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -65,7 +65,7 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
 {
   self = [super init];
   if (!self) {
-      return nil;
+    return nil;
   }
 
   _target = target;
@@ -88,13 +88,14 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSUUID *uuid = NSUUID.UUID;
 
   return [[FBFuture
-    futureWithFutures:@[
-      [self buildOutputsForUUID:uuid],
-      [self.target extendedTestShim],
-    ]]
-    onQueue:self.target.workQueue fmap:^(NSArray<id> *tuple) {
-      return [self testFutureWithOutputs:tuple[0] shimPath:tuple[1] uuid:uuid];
-    }];
+           futureWithFutures:@[
+             [self buildOutputsForUUID:uuid],
+             [self.target extendedTestShim],
+           ]]
+          onQueue:self.target.workQueue
+          fmap:^(NSArray<id> *tuple) {
+            return [self testFutureWithOutputs:tuple[0] shimPath:tuple[1] uuid:uuid];
+          }];
 }
 
 #pragma mark Private
@@ -113,27 +114,35 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
   return [[[FBTemporaryDirectory temporaryDirectoryWithLogger:self.logger] withTemporaryDirectory]
-          onQueue:self.target.workQueue pop:^FBFuture *(NSURL *temporaryDirectory) {
-    return [[FBOToolDynamicLibs
-             findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath onQueue:self.target.workQueue]
-            onQueue:self.target.workQueue fmap:^FBFuture<NSNull *> * (NSArray<NSString *> *libraries) {
-      NSDictionary<NSString *, NSString *> *environment = [FBLogicTestRunStrategy
-                                                           setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
-                                                           withLibraries:libraries
-                                                           shimOutputFilePath:outputs.shimOutput.filePath
-                                                           shimPath:shimPath
-                                                           bundlePath:self.configuration.testBundlePath
-                                                           coverageConfiguration:self.configuration.coverageConfiguration
-                                                           logDirectoryPath:self.configuration.logDirectoryPath
-                                                           waitForDebugger:self.configuration.waitForDebugger
-                                                           target:self.target];
-      return [[self
-               startTestProcessWithLaunchPath:launchPath arguments:arguments environment:environment outputs:outputs temporaryDirectory:temporaryDirectory]
-              onQueue:self.target.workQueue fmap:^(FBFuture<NSNumber *> *exitCode) {
-        return [self completeLaunchedProcess:exitCode outputs:outputs];
-      }];
-    }];
-  }];
+          onQueue:self.target.workQueue
+          pop:^FBFuture *(NSURL *temporaryDirectory) {
+            return [[FBOToolDynamicLibs
+                     findFullPathForSanitiserDyldInBundle:self.configuration.testBundlePath
+                     onQueue:self.target.workQueue]
+                    onQueue:self.target.workQueue
+                    fmap:^FBFuture<NSNull *> *(NSArray<NSString *> *libraries) {
+                      NSDictionary<NSString *, NSString *> *environment = [FBLogicTestRunStrategy
+                                                                           setupEnvironmentWithDylibs:self.configuration.processUnderTestEnvironment
+                                                                           withLibraries:libraries
+                                                                           shimOutputFilePath:outputs.shimOutput.filePath
+                                                                           shimPath:shimPath
+                                                                           bundlePath:self.configuration.testBundlePath
+                                                                           coverageConfiguration:self.configuration.coverageConfiguration
+                                                                           logDirectoryPath:self.configuration.logDirectoryPath
+                                                                           waitForDebugger:self.configuration.waitForDebugger
+                                                                           target:self.target];
+                      return [[self
+                               startTestProcessWithLaunchPath:launchPath
+                               arguments:arguments
+                               environment:environment
+                               outputs:outputs
+                               temporaryDirectory:temporaryDirectory]
+                              onQueue:self.target.workQueue
+                              fmap:^(FBFuture<NSNumber *> *exitCode) {
+                                return [self completeLaunchedProcess:exitCode outputs:outputs];
+                              }];
+                    }];
+          }];
 }
 
 + (NSDictionary<NSString *, NSString *> *)setupEnvironmentWithDylibs:(NSDictionary<NSString *, NSString *> *)environment withLibraries:(NSArray *)libraries shimOutputFilePath:(NSString *)shimOutputFilePath shimPath:(NSString *)shimPath bundlePath:(NSString *)bundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath waitForDebugger:(BOOL)waitForDebugger target:(id<FBiOSTarget>)target
@@ -142,11 +151,11 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   [librariesWithShim addObjectsFromArray:libraries];
 
   NSMutableDictionary<NSString *, NSString *> *environmentAdditions = [NSMutableDictionary dictionaryWithDictionary:@{
-    @"DYLD_INSERT_LIBRARIES": [librariesWithShim componentsJoinedByString:@":"],
-    @"TEST_SHIM_STDOUT_PATH": shimOutputFilePath,
-    @"TEST_SHIM_BUNDLE_PATH": bundlePath,
-    kEnv_WaitForDebugger: waitForDebugger ? @"YES" : @"NO",
-  }];
+                                                                         @"DYLD_INSERT_LIBRARIES" : [librariesWithShim componentsJoinedByString:@":"],
+                                                                         @"TEST_SHIM_STDOUT_PATH" : shimOutputFilePath,
+                                                                         @"TEST_SHIM_BUNDLE_PATH" : bundlePath,
+                                                                         kEnv_WaitForDebugger : waitForDebugger ? @"YES" : @"NO",
+                                                                       }];
 
   if (coverageConfiguration) {
     NSString *continuousCoverageCollectionMode = coverageConfiguration.shouldEnableContinuousCoverageCollection ? @"%c" : @"";
@@ -175,21 +184,24 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   [logger logFormat:@"Starting to read shim output from location %@", outputs.shimOutput.filePath];
 
   return [[[[outputs.shimOutput
-    startReading]
-    onQueue:queue fmap:^(id _) {
-      [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", outputs.shimOutput.filePath];
-      return [self waitForSuccessfulCompletion:exitCode closingOutputs:outputs];
-    }]
-    onQueue:queue map:^(id _) {
-      [logger log:@"Normal exit of xctest process"];
-      [reporter didFinishExecutingTestPlan];
-      return NSNull.null;
-    }]
-    onQueue:queue handleError:^(NSError *error) {
-      [logger logFormat:@"Abnormal exit of xctest process %@", error];
-      [reporter didCrashDuringTest:error];
-      return [FBFuture futureWithError:error];
-    }];
+             startReading]
+            onQueue:queue
+            fmap:^(id _) {
+              [logger logFormat:@"Shim output at %@ has been opened for reading, waiting for xctest process to exit", outputs.shimOutput.filePath];
+              return [self waitForSuccessfulCompletion:exitCode closingOutputs:outputs];
+            }]
+           onQueue:queue
+           map:^(id _) {
+             [logger log:@"Normal exit of xctest process"];
+             [reporter didFinishExecutingTestPlan];
+             return NSNull.null;
+           }]
+          onQueue:queue
+          handleError:^(NSError *error) {
+            [logger logFormat:@"Abnormal exit of xctest process %@", error];
+            [reporter didCrashDuringTest:error];
+            return [FBFuture futureWithError:error];
+          }];
 }
 
 - (FBFuture<NSNumber *> *)waitForSuccessfulCompletion:(FBFuture<NSNumber *> *)exitCode closingOutputs:(FBLogicTestRunOutputs *)outputs
@@ -197,34 +209,37 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   id<FBControlCoreLogger> logger = self.logger;
   dispatch_queue_t queue = self.target.workQueue;
   return [[exitCode
-    onQueue:queue chain:^(id _) {
-      // Since there's no guarantee that the xctest process has closed the writing end of the fifo, we can't rely on getting and end-of-file naturally
-      // This means that we have to stop reading manually instead.
-      // However, we want to ensure that we've read all the way to the end of the file so that no test results are missing, since the reading is asynchronous.
-      // The stopReading will cause the end-of-file to be sent to the consumer, this is a guarantee that the FBFileReader API makes.
-      // To prevent this from hanging indefinately, we also wrap this in a reasonable timeout so we have a better message in the worst-case scenario.
-      // This teardown is performed unconditionally once the exit code future has resolved so that we clean up from error states.
-      [logger log:@"xctest process terminated, Tearing down IO."];
-      return [[[FBFuture
-        futureWithFutures:@[
-          [outputs.shimOutput stopReading],
-          [outputs.shimConsumer finishedConsuming],
-        ]]
-        timeout:EndOfFileFromStopReadingTimeout waitingFor:@"receive and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode]
-        chainReplace:exitCode];
-    }]
-    onQueue:queue fmap:^ FBFuture<NSNull *> * (NSNumber *exitCodeNumber) {
-      [logger logFormat:@"xctest process terminated, exited with %@, checking status code", exitCodeNumber];
-      int exitCodeValue = exitCodeNumber.intValue;
-      NSString *descriptionOfExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
-      if (descriptionOfExit) {
-        NSString *stdErrReversed = [outputs.stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
-        return [[FBControlCoreError
-          describeFormat:@"xctest process exited in failure (%d): %@ %@", exitCodeValue, descriptionOfExit, stdErrReversed]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:exitCodeNumber];
-    }];
+           onQueue:queue
+           chain:^(id _) {
+             // Since there's no guarantee that the xctest process has closed the writing end of the fifo, we can't rely on getting and end-of-file naturally
+             // This means that we have to stop reading manually instead.
+             // However, we want to ensure that we've read all the way to the end of the file so that no test results are missing, since the reading is asynchronous.
+             // The stopReading will cause the end-of-file to be sent to the consumer, this is a guarantee that the FBFileReader API makes.
+             // To prevent this from hanging indefinately, we also wrap this in a reasonable timeout so we have a better message in the worst-case scenario.
+             // This teardown is performed unconditionally once the exit code future has resolved so that we clean up from error states.
+             [logger log:@"xctest process terminated, Tearing down IO."];
+             return [[[FBFuture
+                       futureWithFutures:@[
+                         [outputs.shimOutput stopReading],
+                         [outputs.shimConsumer finishedConsuming],
+                       ]]
+                      timeout:EndOfFileFromStopReadingTimeout
+                      waitingFor:@"receive and end-of-file after fifo has been stopped, as the process has already exited with code %@", exitCode]
+                     chainReplace:exitCode];
+           }]
+          onQueue:queue
+          fmap:^FBFuture<NSNull *> *(NSNumber *exitCodeNumber) {
+            [logger logFormat:@"xctest process terminated, exited with %@, checking status code", exitCodeNumber];
+            int exitCodeValue = exitCodeNumber.intValue;
+            NSString *descriptionOfExit = [FBXCTestProcess describeFailingExitCode:exitCodeValue];
+            if (descriptionOfExit) {
+              NSString *stdErrReversed = [outputs.stdErrBuffer.lines.reverseObjectEnumerator.allObjects componentsJoinedByString:@"\n"];
+              return [[FBControlCoreError
+                       describeFormat:@"xctest process exited in failure (%d): %@ %@", exitCodeValue, descriptionOfExit, stdErrReversed]
+                      failFuture];
+            }
+            return [FBFuture futureWithResult:exitCodeNumber];
+          }];
 }
 
 + (FBFuture<NSNull *> *)fromQueue:(dispatch_queue_t)queue reportWaitForDebugger:(BOOL)waitFor forProcessIdentifier:(pid_t)processIdentifier reporter:(id<FBLogicXCTestReporter>)reporter
@@ -235,15 +250,16 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   // Report from the current queue, but wait in a special queue.
   dispatch_queue_t waitQueue = dispatch_queue_create("com.facebook.xctestbootstrap.debugger_wait", DISPATCH_QUEUE_SERIAL);
 
-  return [[FBProcessFetcher waitStopSignalForProcess:processIdentifier] onQueue:waitQueue chain:^FBFuture *(FBFuture *future) {
-    if (future.error){
-      return [[XCTestBootstrapError
-         describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]
-       failFuture];
-    }
-    [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
-    return FBFuture.empty;
-  }];
+  return [[FBProcessFetcher waitStopSignalForProcess:processIdentifier] onQueue:waitQueue
+                                                                          chain:^FBFuture *(FBFuture *future) {
+                                                                            if (future.error) {
+                                                                              return [[XCTestBootstrapError
+                                                                                       describeFormat:@"Failed to wait test process (pid %d) to receive a SIGSTOP: '%@'", processIdentifier, future.error.localizedDescription]
+                                                                                      failFuture];
+                                                                            }
+                                                                            [reporter processWaitingForDebuggerWithProcessIdentifier:processIdentifier];
+                                                                            return FBFuture.empty;
+                                                                          }];
 }
 
 - (FBFuture<FBLogicTestRunOutputs *> *)buildOutputsForUUID:(NSUUID *)udid
@@ -258,19 +274,22 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSMutableArray<id<FBDataConsumer>> *stdOutConsumers = [NSMutableArray array];
   NSMutableArray<id<FBDataConsumer>> *stdErrConsumers = [NSMutableArray array];
 
-  id<FBDataConsumer> shimReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue dataConsumer:^(NSData *line) {
-    [reporter handleEventJSONData:line];
-  }];
+  id<FBDataConsumer> shimReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue
+                                                                                       dataConsumer:^(NSData *line) {
+                                                                                         [reporter handleEventJSONData:line];
+                                                                                       }];
   [shimConsumers addObject:shimReportingConsumer];
 
-  id<FBDataConsumer> stdOutReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue consumer:^(NSString *line){
-    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
-  }];
+  id<FBDataConsumer> stdOutReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue
+                                                                                             consumer:^(NSString *line) {
+                                                                                               [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+                                                                                             }];
   [stdOutConsumers addObject:stdOutReportingConsumer];
 
-  id<FBDataConsumer> stdErrReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue consumer:^(NSString *line){
-    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
-  }];
+  id<FBDataConsumer> stdErrReportingConsumer = [FBBlockDataConsumer asynchronousLineConsumerWithQueue:queue
+                                                                                             consumer:^(NSString *line) {
+                                                                                               [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+                                                                                             }];
   [stdErrConsumers addObject:stdErrReportingConsumer];
   id<FBConsumableBuffer> stdErrBuffer = FBDataBuffer.consumableBuffer;
   [stdErrConsumers addObject:stdErrBuffer];
@@ -295,17 +314,19 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
     shimFuture = [mirrorLogger logConsumptionOf:shimConsumer toFileNamed:@"shimulator_logs.shim" logger:logger];
   }
   return [[FBFuture
-    futureWithFutures:@[
-      stdOutFuture, stdErrFuture, shimFuture
-    ]]
-    onQueue:self.target.workQueue fmap:^(NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
-      return [[[FBProcessOutput
-        outputForDataConsumer:outputs[2]]
-        providedThroughFile]
-        onQueue:self.target.workQueue map:^(id<FBProcessFileOutput> shimOutput) {
-          return [[FBLogicTestRunOutputs alloc] initWithStdOutConsumer:outputs[0] stdErrConsumer:outputs[1] stdErrBuffer:stdErrBuffer shimConsumer:outputs[2] shimOutput:shimOutput];
-        }];
-    }];
+           futureWithFutures:@[
+             stdOutFuture, stdErrFuture, shimFuture
+           ]]
+          onQueue:self.target.workQueue
+          fmap:^(NSArray<id<FBDataConsumer, FBDataConsumerLifecycle>> *outputs) {
+            return [[[FBProcessOutput
+                      outputForDataConsumer:outputs[2]]
+                     providedThroughFile]
+                    onQueue:self.target.workQueue
+                    map:^(id<FBProcessFileOutput> shimOutput) {
+                      return [[FBLogicTestRunOutputs alloc] initWithStdOutConsumer:outputs[0] stdErrConsumer:outputs[1] stdErrBuffer:stdErrBuffer shimConsumer:outputs[2] shimOutput:shimOutput];
+                    }];
+          }];
 }
 
 - (FBFuture<FBFuture<NSNumber *> *> *)startTestProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment outputs:(FBLogicTestRunOutputs *)outputs temporaryDirectory:(NSURL *)temporaryDirectory
@@ -316,9 +337,9 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   NSTimeInterval timeout = self.configuration.testTimeout;
 
   [logger logFormat:
-    @"Launching xctest process with arguments %@, environment %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[@[launchPath] arrayByAddingObjectsFromArray:arguments]],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
+   @"Launching xctest process with arguments %@, environment %@",
+   [FBCollectionInformation oneLineDescriptionFromArray:[@[launchPath] arrayByAddingObjectsFromArray:arguments]],
+   [FBCollectionInformation oneLineDescriptionFromDictionary:environment]
   ];
   FBProcessIO *io = [[FBProcessIO alloc] initWithStdIn:nil stdOut:[FBProcessOutput outputForDataConsumer:outputs.stdOutConsumer] stdErr:[FBProcessOutput outputForDataConsumer:outputs.stdErrConsumer]];
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment io:io mode:FBProcessSpawnModePosixSpawn];
@@ -327,14 +348,21 @@ static NSTimeInterval EndOfFileFromStopReadingTimeout = 5;
   // Note process adapter may change process configuration launch binary path if it decided to isolate desired arch.
   // For more information look at `FBArchitectureProcessAdapter` docs.
   return [[[adapter adaptProcessConfiguration:configuration toAnyArchitectureIn:self.configuration.architectures queue:queue temporaryDirectory:temporaryDirectory]
-           onQueue:queue fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
-    return [self.target launchProcess:mappedConfiguration];
-  }]
-          onQueue:queue map:^ FBFuture<NSNumber *> * (FBSubprocess *process) {
-    return [[FBLogicTestRunStrategy fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter] onQueue:queue fmap:^(id _) {
-      return [FBXCTestProcess ensureProcess:process completesWithin:timeout crashLogCommands:self.target queue:queue logger:logger];
-    }];
-  }];
+           onQueue:queue
+           fmap:^FBFuture *(FBProcessSpawnConfiguration *mappedConfiguration) {
+             return [self.target launchProcess:mappedConfiguration];
+           }]
+          onQueue:queue
+          map:^FBFuture<NSNumber *> *(FBSubprocess *process) {
+            return [[FBLogicTestRunStrategy fromQueue:queue reportWaitForDebugger:self.configuration.waitForDebugger forProcessIdentifier:process.processIdentifier reporter:reporter] onQueue:queue
+                                                                                                                                                                                          fmap:^(id _) {
+                                                                                                                                                                                            return [FBXCTestProcess ensureProcess:process
+                                                                                                                                                                                                                  completesWithin:timeout
+                                                                                                                                                                                                                 crashLogCommands:self.target
+                                                                                                                                                                                                                            queue:queue
+                                                                                                                                                                                                                           logger:logger];
+                                                                                                                                                                                          }];
+          }];
 }
 
 @end

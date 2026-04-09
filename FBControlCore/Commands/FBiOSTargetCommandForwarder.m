@@ -7,20 +7,20 @@
 
 #import "FBiOSTargetCommandForwarder.h"
 
-#import <FBControlCore/FBControlCore.h>
-
 #import <objc/runtime.h>
+
+#import <FBControlCore/FBControlCore.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
 @interface FBiOSTargetCommandForwarder ()
 
-@property (nonatomic, weak, readonly) id<FBiOSTarget> target;
-@property (nonatomic, copy, readonly) NSArray<Class> *commandClasses;
-@property (nonatomic, strong, readonly) NSSet<Class> *statefulCommands; // Stateful command objects that need to be memoized.
+@property (nonatomic, readonly, weak) id<FBiOSTarget> target;
+@property (nonatomic, readonly, copy) NSArray<Class> *commandClasses;
+@property (nonatomic, readonly, strong) NSSet<Class> *statefulCommands; // Stateful command objects that need to be memoized.
 
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *memoizedCommands;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, id> *memoizedCommands;
 
 @end
 
@@ -34,7 +34,6 @@
 }
 
 - (instancetype)initWithTarget:(id<FBiOSTarget>)target commandClasses:(NSArray<Class> *)commandClasses statefulCommands:(NSSet<Class> *)statefulCommands
-
 {
   self = [super init];
   if (!self) {
@@ -75,7 +74,7 @@
 - (id<FBiOSTargetCommand>)obtainCommandForClass:(Class)class
 {
   NSString *key = NSStringFromClass(class);
-  if (self.memoizedCommands[key]){
+  if (self.memoizedCommands[key]) {
     return self.memoizedCommands[key];
   }
 

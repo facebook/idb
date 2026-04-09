@@ -56,9 +56,9 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamFormatType) {
 + (instancetype)minicap;
 + (instancetype)bgra;
 
-@property (nonatomic, assign, readonly) FBVideoStreamFormatType type;
-@property (nonatomic, copy, nullable, readonly) FBVideoStreamCodec codec;
-@property (nonatomic, copy, nullable, readonly) FBVideoStreamTransport transport;
+@property (nonatomic, readonly, assign) FBVideoStreamFormatType type;
+@property (nullable, nonatomic, readonly, copy) FBVideoStreamCodec codec;
+@property (nullable, nonatomic, readonly, copy) FBVideoStreamTransport transport;
 @end
 
 /**
@@ -92,12 +92,12 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 /**
  The rate-control mode.
  */
-@property (nonatomic, assign, readonly) FBVideoStreamRateControlMode mode;
+@property (nonatomic, readonly, assign) FBVideoStreamRateControlMode mode;
 
 /**
  The value: quality (0-1) for constant-quality, bitrate (bytes/sec) for average-bitrate.
  */
-@property (nonatomic, copy, readonly) NSNumber *value;
+@property (nonatomic, readonly, copy) NSNumber *value;
 
 @end
 
@@ -120,29 +120,29 @@ typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
 /**
  The format of the stream.
  */
-@property (nonatomic, copy, readonly) FBVideoStreamFormat *format;
+@property (nonatomic, readonly, copy) FBVideoStreamFormat *format;
 
 /**
  The number of frames per second to use if using an eager stream.
  nil if lazy streaming should be used.
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *framesPerSecond;
+@property (nullable, nonatomic, readonly, copy) NSNumber *framesPerSecond;
 
 /**
  The rate-control mode for VTCompression.
  Always non-nil; defaults to constant-quality at 0.2 if not provided.
  */
-@property (nonatomic, copy, readonly) FBVideoStreamRateControl *rateControl;
+@property (nonatomic, readonly, copy) FBVideoStreamRateControl *rateControl;
 
 /**
  The scale factor between 0-1. nil for no scaling.
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
+@property (nullable, nonatomic, readonly, copy) NSNumber *scaleFactor;
 
 /**
  Send a key frame every N seconds.
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *keyFrameRate;
+@property (nullable, nonatomic, readonly, copy) NSNumber *keyFrameRate;
 
 @end
 

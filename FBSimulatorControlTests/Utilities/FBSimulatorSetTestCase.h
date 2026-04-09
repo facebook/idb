@@ -19,7 +19,7 @@
 /**
  The Set created after 'createSetWithExistingSimDeviceSpecs:' is called.
  */
-@property (nonatomic, strong, readonly) FBSimulatorSet *set;
+@property (nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  Creates a Simulator Pool with an array of Specs for SimDevices.

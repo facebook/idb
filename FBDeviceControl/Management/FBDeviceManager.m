@@ -39,24 +39,24 @@
 - (BOOL)startListeningWithError:(NSError **)error
 {
   return [[FBDeviceControlError
-    describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failBool:error];
+           describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+          failBool:error];
 }
 
 - (BOOL)stopListeningWithError:(NSError **)error
 {
   return [[FBDeviceControlError
-    describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failBool:error];
+           describeFormat:@"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+          failBool:error];
 }
 
-- (id)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
+- (id)constructPublic:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-+ (void)updatePublicReference:(id)publicDevice privateDevice:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
++ (void)updatePublicReference:(id)publicDevice privateDevice:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self), NSStringFromSelector(_cmd));
 }
@@ -69,7 +69,7 @@
 
 #pragma mark Called in Subclasses
 
-- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
+- (void)deviceConnected:(PrivateDevice)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
   [self.logger logFormat:@"Device Connected %@", privateDevice];
 

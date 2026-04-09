@@ -9,16 +9,16 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBDeviceVideo.h"
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
+#import "FBDeviceVideo.h"
 #import "FBDeviceVideoStream.h"
 
 @interface FBDeviceVideoRecordingCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
-@property (nonatomic, strong, nullable, readwrite) FBDeviceVideo *video;
+@property (nonatomic, readonly, weak) FBDevice *device;
+@property (nullable, nonatomic, readwrite, strong) FBDeviceVideo *video;
 
 @end
 
@@ -49,24 +49,26 @@
   NSParameterAssert(filePath);
   if (self.video) {
     return [[FBDeviceControlError
-      describe:@"Cannot create a new video recording session, one is already active"]
-      failFuture];
+             describe:@"Cannot create a new video recording session, one is already active"]
+            failFuture];
   }
 
   return [[FBDeviceVideo
-    videoForDevice:self.device filePath:filePath]
-    onQueue:self.device.workQueue fmap:^(FBDeviceVideo *video) {
-      self.video = video;
-      return [[video startRecording] mapReplace:video];
-    }];
+           videoForDevice:self.device
+           filePath:filePath]
+          onQueue:self.device.workQueue
+          fmap:^(FBDeviceVideo *video) {
+            self.video = video;
+            return [[video startRecording] mapReplace:video];
+          }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
 {
   if (!self.video) {
     return [[FBDeviceControlError
-      describeFormat:@"There was no existing video instance for %@", self.device]
-      failFuture];
+             describeFormat:@"There was no existing video instance for %@", self.device]
+            failFuture];
   }
   FBDeviceVideo *video = self.video;
   self.video = nil;
@@ -78,15 +80,16 @@
 - (FBFuture<id<FBVideoStream>> *)createStreamWithConfiguration:(FBVideoStreamConfiguration *)configuration
 {
   return [[FBDeviceVideo
-    captureSessionForDevice:self.device]
-    onQueue:self.device.workQueue fmap:^(AVCaptureSession *session) {
-      NSError *error = nil;
-      FBDeviceVideoStream *stream = [FBDeviceVideoStream streamWithSession:session configuration:configuration logger:self.device.logger error:&error];
-      if (!stream) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:stream];
-    }];
+           captureSessionForDevice:self.device]
+          onQueue:self.device.workQueue
+          fmap:^(AVCaptureSession *session) {
+            NSError *error = nil;
+            FBDeviceVideoStream *stream = [FBDeviceVideoStream streamWithSession:session configuration:configuration logger:self.device.logger error:&error];
+            if (!stream) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:stream];
+          }];
 }
 
 @end

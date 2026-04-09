@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTest.h>
 #import <CoreMedia/CoreMedia.h>
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -27,6 +27,7 @@
 @implementation FBOverflownConsumerDouble
 
 - (void)consumeData:(NSData *)data {}
+
 - (void)consumeEndOfFile {}
 
 @end
@@ -43,7 +44,13 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
 
   CMFormatDescriptionRef formatDesc = NULL;
   OSStatus status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
-    NULL, 2, paramSets, paramSizes, 4, &formatDesc);
+    NULL,
+    2,
+    paramSets,
+    paramSizes,
+    4,
+    &formatDesc
+  );
   NSCAssert(status == noErr, @"Failed to create H264 format description: %d", (int)status);
 
   // AVCC NAL data: [4-byte big-endian length][NAL bytes]
@@ -54,8 +61,16 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
 
   CMBlockBufferRef blockBuf = NULL;
   status = CMBlockBufferCreateWithMemoryBlock(
-    NULL, avccData, sizeof(avccData), kCFAllocatorNull,
-    NULL, 0, sizeof(avccData), 0, &blockBuf);
+    NULL,
+    avccData,
+    sizeof(avccData),
+    kCFAllocatorNull,
+    NULL,
+    0,
+    sizeof(avccData),
+    0,
+    &blockBuf
+  );
   NSCAssert(status == noErr, @"Failed to create block buffer: %d", (int)status);
 
   CMSampleBufferRef sampleBuf = NULL;
@@ -66,19 +81,35 @@ static CMSampleBufferRef CreateH264SampleBuffer(BOOL isKeyFrame)
     .decodeTimeStamp = kCMTimeInvalid
   };
   status = CMSampleBufferCreate(
-    NULL, blockBuf, true, NULL, NULL, formatDesc,
-    1, 1, &timing, 1, &sampleSize, &sampleBuf);
+    NULL,
+    blockBuf,
+    true,
+    NULL,
+    NULL,
+    formatDesc,
+    1,
+    1,
+    &timing,
+    1,
+    &sampleSize,
+    &sampleBuf
+  );
   NSCAssert(status == noErr, @"Failed to create sample buffer: %d", (int)status);
 
   // Set attachments for keyframe/non-keyframe.
   // For keyframes: NotSync is absent (modern VideoToolbox pattern).
   // For non-keyframes: NotSync = kCFBooleanTrue.
   CFMutableDictionaryRef attachments = (CFMutableDictionaryRef)
-    CFArrayGetValueAtIndex(
-      CMSampleBufferGetSampleAttachmentsArray(sampleBuf, true), 0);
+  CFArrayGetValueAtIndex(
+    CMSampleBufferGetSampleAttachmentsArray(sampleBuf, true),
+    0
+  );
   if (!isKeyFrame) {
-    CFDictionarySetValue(attachments,
-      kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
+    CFDictionarySetValue(
+      attachments,
+      kCMSampleAttachmentKey_NotSync,
+      kCFBooleanTrue
+    );
   }
 
   CFRelease(formatDesc);
@@ -97,7 +128,13 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   CMFormatDescriptionRef formatDesc = NULL;
   OSStatus status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
-    NULL, 2, paramSets, paramSizes, 4, &formatDesc);
+    NULL,
+    2,
+    paramSets,
+    paramSizes,
+    4,
+    &formatDesc
+  );
   NSCAssert(status == noErr, @"Failed to create H264 format description: %d", (int)status);
 
   // AVCC NAL data: [4-byte big-endian length][NAL bytes]
@@ -108,8 +145,16 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   CMBlockBufferRef blockBuf = NULL;
   status = CMBlockBufferCreateWithMemoryBlock(
-    NULL, avccData, sizeof(avccData), kCFAllocatorNull,
-    NULL, 0, sizeof(avccData), 0, &blockBuf);
+    NULL,
+    avccData,
+    sizeof(avccData),
+    kCFAllocatorNull,
+    NULL,
+    0,
+    sizeof(avccData),
+    0,
+    &blockBuf
+  );
   NSCAssert(status == noErr, @"Failed to create block buffer: %d", (int)status);
 
   CMSampleBufferRef sampleBuf = NULL;
@@ -121,8 +166,19 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   };
   // Pass false for dataReady to create a not-ready buffer
   status = CMSampleBufferCreate(
-    NULL, blockBuf, false, NULL, NULL, formatDesc,
-    1, 1, &timing, 1, &sampleSize, &sampleBuf);
+    NULL,
+    blockBuf,
+    false,
+    NULL,
+    NULL,
+    formatDesc,
+    1,
+    1,
+    &timing,
+    1,
+    &sampleSize,
+    &sampleBuf
+  );
   NSCAssert(status == noErr, @"Failed to create sample buffer: %d", (int)status);
 
   CFRelease(formatDesc);
@@ -634,17 +690,17 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   XCTAssertEqual(counter, 1);
 
   // Find PES start code with private_stream_1 (0xBD)
-  NSData *pesStartCode = [NSData dataWithBytes:(uint8_t[]){0x00, 0x00, 0x01, 0xBD} length:4];
+  NSData *pesStartCode = [NSData dataWithBytes:(uint8_t[]) {0x00, 0x00, 0x01, 0xBD} length:4];
   NSRange pesRange = [output rangeOfData:pesStartCode options:0 range:NSMakeRange(0, output.length)];
   XCTAssertNotEqual(pesRange.location, (NSUInteger)NSNotFound, @"PES start code with private_stream_1 should be present");
 
   // Find ID3 header
-  NSData *id3Header = [NSData dataWithBytes:(uint8_t[]){'I', 'D', '3'} length:3];
+  NSData *id3Header = [NSData dataWithBytes:(uint8_t[]) {'I', 'D', '3'} length:3];
   NSRange id3Range = [output rangeOfData:id3Header options:0 range:NSMakeRange(0, output.length)];
   XCTAssertNotEqual(id3Range.location, (NSUInteger)NSNotFound, @"ID3 header should be present");
 
   // Find TXXX frame
-  NSData *txxxFrame = [NSData dataWithBytes:(uint8_t[]){'T', 'X', 'X', 'X'} length:4];
+  NSData *txxxFrame = [NSData dataWithBytes:(uint8_t[]) {'T', 'X', 'X', 'X'} length:4];
   NSRange txxxRange = [output rangeOfData:txxxFrame options:0 range:NSMakeRange(0, output.length)];
   XCTAssertNotEqual(txxxRange.location, (NSUInteger)NSNotFound, @"TXXX frame should be present");
 

@@ -18,4 +18,3 @@
 - (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7;
 - (id)_XCT_testSuite:(NSString *)arg1 didStartAt:(NSString *)arg2;
 @end
-

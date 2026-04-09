@@ -31,8 +31,8 @@ extern NSString *const FBControlCoreErrorDomain;
  */
 + (instancetype)describe:(NSString *)description;
 - (instancetype)describe:(NSString *)description;
-+ (instancetype)describeFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
-- (instancetype)describeFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
++ (instancetype)describeFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
+- (instancetype)describeFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /*
  Adds the Cause of the Error.
@@ -96,7 +96,7 @@ extern NSString *const FBControlCoreErrorDomain;
 /**
  Construct an error from a format string.
  */
-+ (NSError *)errorForFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
++ (NSError *)errorForFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Return NO, wrapping `failureCause` in the FBControlCore domain.
@@ -130,7 +130,7 @@ extern NSString *const FBControlCoreErrorDomain;
 
 /**
  Return A Future that wraps the error.
- 
+
  @param error the error to wrap.
  */
 + (FBFuture *)failFutureWithError:(NSError *)error;

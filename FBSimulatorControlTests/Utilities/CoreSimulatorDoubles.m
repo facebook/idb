@@ -28,8 +28,8 @@
 {
   if (!_dataPath) {
     _dataPath = [[NSTemporaryDirectory()
-      stringByAppendingPathComponent:@"SimDevice_Double"]
-      stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_Data", self.UDID.UUIDString]];
+                  stringByAppendingPathComponent:@"SimDevice_Double"]
+                 stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_Data", self.UDID.UUIDString]];
     [NSFileManager.defaultManager createDirectoryAtPath:_dataPath withIntermediateDirectories:YES attributes:nil error:nil];
   }
   return _dataPath;

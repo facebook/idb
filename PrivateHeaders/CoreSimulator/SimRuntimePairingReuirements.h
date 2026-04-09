@@ -11,14 +11,13 @@
 
 @interface SimRuntimePairingReuirements : NSObject
 {
-    unsigned int _minOSVersion;
-    NSArray *_supportedProductFamilies;
-    unsigned long long _maxPairs;
+  unsigned int _minOSVersion;
+  NSArray *_supportedProductFamilies;
+  unsigned long long _maxPairs;
 }
 
 @property (nonatomic, assign) unsigned long long maxPairs;
-@property (copy, nonatomic) NSArray *supportedProductFamilies;
+@property (nonatomic, copy) NSArray *supportedProductFamilies;
 @property (nonatomic, assign) unsigned int minOSVersion;
-
 
 @end

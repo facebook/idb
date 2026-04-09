@@ -8,7 +8,6 @@
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBDeviceControl/FBDeviceControl.h>
 
 @interface FBDeviceControlFrameworkLoaderTests : XCTestCase

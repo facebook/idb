@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -27,17 +28,17 @@ extern NSString *const IdbFrameworksFolder;
 /**
  The name of the installed artifact.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The UDID of the installed artifact (if present).
  */
-@property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
+@property (nullable, nonatomic, readonly, copy) NSUUID *uuid;
 
 /**
  The absolute path to the artifact
  */
-@property (nonatomic, copy, readonly) NSURL *path;
+@property (nonatomic, readonly, copy) NSURL *path;
 
 /**
  The designated initializer.
@@ -60,27 +61,27 @@ extern NSString *const IdbFrameworksFolder;
 /**
  The target that is being stored against.
  */
-@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+@property (nonatomic, readonly, strong) id<FBiOSTarget> target;
 
 /**
  The base path of the storage.
  */
-@property (nonatomic, strong, readonly) NSURL *basePath;
+@property (nonatomic, readonly, strong) NSURL *basePath;
 
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The queue to use.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  A mapping of storage name to local path replacement.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *replacementMapping;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *replacementMapping;
 
 /**
  Exposes the receiver as an FBFileContainer instance.
@@ -155,7 +156,7 @@ extern NSString *const IdbFrameworksFolder;
 /**
  The Bundle IDs of all installed bundles.
  */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *persistedBundleIDs;
+@property (nonatomic, readonly, copy) NSSet<NSString *> *persistedBundleIDs;
 
 /**
  A mapping of keys that identify bundles, to the bundle descriptors.
@@ -163,12 +164,12 @@ extern NSString *const IdbFrameworksFolder;
  - The LC_UUID of the Bundle.
  - The Bundle ID of the Bundle.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, FBBundleDescriptor *> *persistedBundles;
 
 /**
  Whether or not to perform manual relocation of libraries.
  */
-@property (nonatomic, assign, readonly) BOOL relocateLibraries;
+@property (nonatomic, readonly, assign) BOOL relocateLibraries;
 
 @end
 
@@ -247,32 +248,32 @@ extern NSString *const IdbFrameworksFolder;
 /**
  The xctest bundle storage
  */
-@property (nonatomic, strong, readonly) FBXCTestBundleStorage *xctest;
+@property (nonatomic, readonly, strong) FBXCTestBundleStorage *xctest;
 
 /**
  The application bundle storage
  */
-@property (nonatomic, strong, readonly) FBBundleStorage *application;
+@property (nonatomic, readonly, strong) FBBundleStorage *application;
 
 /**
  The dylib storage.
  */
-@property (nonatomic, strong, readonly) FBFileStorage *dylib;
+@property (nonatomic, readonly, strong) FBFileStorage *dylib;
 
 /**
  The dSYM storage.
  */
-@property (nonatomic, strong, readonly) FBFileStorage *dsym;
+@property (nonatomic, readonly, strong) FBFileStorage *dsym;
 
 /**
  The Frameworks storage.
  */
-@property (nonatomic, strong, readonly) FBBundleStorage *framework;
+@property (nonatomic, readonly, strong) FBBundleStorage *framework;
 
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 #pragma mark Public Methods
 

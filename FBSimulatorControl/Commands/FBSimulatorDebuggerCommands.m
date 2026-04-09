@@ -11,7 +11,7 @@
 
 @interface FBSimulatorDebugServer : NSObject <FBDebugServer>
 
-@property (nonatomic, strong, readonly) FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task;
+@property (nonatomic, readonly, strong) FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task;
 
 @end
 
@@ -42,11 +42,12 @@
 {
   FBSubprocess *task = self.task;
   return [[[task
-    statLoc]
-    mapReplace:NSNull.null]
-    onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0) respondToCancellation:^{
-      return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
-    }];
+            statLoc]
+           mapReplace:NSNull.null]
+          onQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)
+          respondToCancellation:^{
+            return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
+          }];
 }
 
 #pragma clang diagnostic pop
@@ -55,8 +56,8 @@
 
 @interface FBSimulatorDebuggerCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, copy, readonly) NSString *debugServerPath;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
+@property (nonatomic, readonly, copy) NSString *debugServerPath;
 
 @end
 
@@ -67,8 +68,8 @@
 + (NSString *)debugServerPath
 {
   return [[FBXcodeConfiguration
-    contentsDirectory]
-    stringByAppendingPathComponent:@"SharedFrameworks/LLDB.framework/Resources/debugserver"];
+           contentsDirectory]
+          stringByAppendingPathComponent:@"SharedFrameworks/LLDB.framework/Resources/debugserver"];
 }
 
 + (instancetype)commandsWithTarget:(FBSimulator *)target
@@ -94,24 +95,26 @@
 - (FBFuture<id<FBDebugServer>> *)launchDebugServerForHostApplication:(FBBundleDescriptor *)application port:(in_port_t)port
 {
   FBApplicationLaunchConfiguration *configuration = [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:application.identifier
-    bundleName:application.name
-    arguments:@[]
-    environment:@{}
-    waitForDebugger:YES
-    io:FBProcessIO.outputToDevNull
-    launchMode:FBApplicationLaunchModeFailIfRunning];
+                                                     initWithBundleID:application.identifier
+                                                     bundleName:application.name
+                                                     arguments:@[]
+                                                     environment:@{}
+                                                     waitForDebugger:YES
+                                                     io:FBProcessIO.outputToDevNull
+                                                     launchMode:FBApplicationLaunchModeFailIfRunning];
   return [[[self.simulator
-    launchApplication:configuration]
-    onQueue:self.simulator.workQueue fmap:^(id<FBLaunchedApplication> process) {
-      return [self debugServerTaskForPort:port processIdentifier:process.processIdentifier];
-    }]
-    onQueue:self.simulator.workQueue map:^(FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {
-      NSArray<NSString *> *lldbBootstrapCommands = @[
-        [NSString stringWithFormat:@"process connect connect://localhost:%d", port]
-      ];
-      return [[FBSimulatorDebugServer alloc] initWithDebugServerTask:task lldbBootstrapCommands:lldbBootstrapCommands];
-    }];
+            launchApplication:configuration]
+           onQueue:self.simulator.workQueue
+           fmap:^(id<FBLaunchedApplication> process) {
+             return [self debugServerTaskForPort:port processIdentifier:process.processIdentifier];
+           }]
+          onQueue:self.simulator.workQueue
+          map:^(FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *task) {
+            NSArray<NSString *> *lldbBootstrapCommands = @[
+              [NSString stringWithFormat:@"process connect connect://localhost:%d", port]
+            ];
+            return [[FBSimulatorDebugServer alloc] initWithDebugServerTask:task lldbBootstrapCommands:lldbBootstrapCommands];
+          }];
 }
 
 #pragma mark Private
@@ -119,11 +122,11 @@
 - (FBFuture<FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *)debugServerTaskForPort:(in_port_t)port processIdentifier:(pid_t)processIdentifier
 {
   return [[[[[FBProcessBuilder
-    withLaunchPath:self.debugServerPath]
-    withArguments:@[[NSString stringWithFormat:@"localhost:%d", port], @"--attach", [NSString stringWithFormat:@"%d", processIdentifier]]]
-    withStdOutToLogger:self.simulator.logger]
-    withStdErrToLogger:self.simulator.logger]
-    start];
+              withLaunchPath:self.debugServerPath]
+             withArguments:@[[NSString stringWithFormat:@"localhost:%d", port], @"--attach", [NSString stringWithFormat:@"%d", processIdentifier]]]
+            withStdOutToLogger:self.simulator.logger]
+           withStdErrToLogger:self.simulator.logger]
+          start];
 }
 
 @end

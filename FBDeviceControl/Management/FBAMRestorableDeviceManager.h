@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBDeviceControl/FBDeviceManager.h>
 #import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/FBDeviceManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Class for obtaining FBAMRestorableDevice instances.
  */
-@interface FBAMRestorableDeviceManager : FBDeviceManager<FBAMRestorableDevice *>
+@interface FBAMRestorableDeviceManager : FBDeviceManager <FBAMRestorableDevice *>
 
 /**
  The Designated Initializer

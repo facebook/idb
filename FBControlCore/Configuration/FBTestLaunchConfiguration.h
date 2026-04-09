@@ -21,87 +21,87 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
  */
-- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip  targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle;
+- (instancetype)initWithTestBundle:(FBBundleDescriptor *)testBundle applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostBundle:(nullable FBBundleDescriptor *)testHostBundle timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting useXcodebuild:(BOOL)useXcodebuild testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationBundle:(nullable FBBundleDescriptor *)targetApplicationBundle xcTestRunProperties:(nullable NSDictionary *)xcTestRunProperties resultBundlePath:(nullable NSString *)resultBundlePath reportActivities:(BOOL)reportActivities coverageDirectoryPath:(nullable NSString *)coverageDirectoryPath enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection logDirectoryPath:(nullable NSString *)logDirectoryPath reportResultBundle:(BOOL)reportResultBundle;
 
 /**
  XCTest bundle used for testing
  */
-@property (nonatomic, retain, readonly, nullable) FBBundleDescriptor *testBundle;
+@property (nullable, nonatomic, readonly, retain) FBBundleDescriptor *testBundle;
 
 /**
  Configuration used to launch test runner application.
  */
-@property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
+@property (nonatomic, readonly, copy) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 
 /**
  Host app bundle.
  */
-@property (nonatomic, copy, readonly, nullable) FBBundleDescriptor *testHostBundle;
+@property (nullable, nonatomic, readonly, copy) FBBundleDescriptor *testHostBundle;
 
 /**
  Timeout for the Test Launch.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+@property (nonatomic, readonly, assign) NSTimeInterval timeout;
 
 /**
  Determines whether should initialize for UITesting
  */
-@property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
+@property (nonatomic, readonly, assign) BOOL shouldInitializeUITesting;
 
 /**
  Determines whether should use xcodebuild to run the test
  */
-@property (nonatomic, assign, readonly) BOOL shouldUseXcodebuild;
+@property (nonatomic, readonly, assign) BOOL shouldUseXcodebuild;
 
 /*
  Run only these tests. Format: "className/methodName"
  */
-@property (nonatomic, copy, readonly, nullable) NSSet<NSString *> *testsToRun;
+@property (nullable, nonatomic, readonly, copy) NSSet<NSString *> *testsToRun;
 
 /*
  Skip these tests. Format: "className/methodName"
  */
-@property (nonatomic, copy, readonly, nullable) NSSet<NSString *> *testsToSkip;
+@property (nullable, nonatomic, readonly, copy) NSSet<NSString *> *testsToSkip;
 
 /*
  Bundle of the target application for UI tests
  */
-@property (nonatomic, strong, readonly, nullable) FBBundleDescriptor *targetApplicationBundle;
+@property (nullable, nonatomic, readonly, strong) FBBundleDescriptor *targetApplicationBundle;
 
 /*
  A dictionary with xctestrun file contents to use.
  */
-@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *xcTestRunProperties;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *xcTestRunProperties;
 
 /*
  Path to the result bundle.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *resultBundlePath;
+@property (nullable, nonatomic, readonly, copy) NSString *resultBundlePath;
 
 /**
  Determines whether xctest should report activity data
  */
-@property (nonatomic, assign, readonly) BOOL reportActivities;
+@property (nonatomic, readonly, assign) BOOL reportActivities;
 
 /**
  Path to coverage file
  */
-@property (nonatomic, copy, readonly, nullable) NSString *coverageDirectoryPath;
+@property (nullable, nonatomic, readonly, copy) NSString *coverageDirectoryPath;
 
 /**
  Determines whether should enable continuous coverage collection
  */
-@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+@property (nonatomic, readonly, assign) BOOL shouldEnableContinuousCoverageCollection;
 
 /**
  The Directory to use for storing logs generated during the execution of the test run.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
+@property (nullable, nonatomic, readonly, copy) NSString *logDirectoryPath;
 
 /*
  Path to the result bundle.
  */
-@property (nonatomic, assign, readonly) BOOL reportResultBundle;
+@property (nonatomic, readonly, assign) BOOL reportResultBundle;
 
 @end
 

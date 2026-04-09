@@ -15,7 +15,7 @@
 
 @interface FBSimulatorLogCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -45,10 +45,12 @@
 - (FBFuture<id<FBLogOperation>> *)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBDataConsumer>)consumer
 {
   return [[self
-    startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments] consumer:consumer]
-    onQueue:self.simulator.workQueue map:^(FBSubprocess *process) {
-      return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer queue:self.simulator.asyncQueue];
-    }];
+           startLogCommand:[FBProcessLogOperation osLogArgumentsInsertStreamIfNeeded:arguments]
+           consumer:consumer]
+          onQueue:self.simulator.workQueue
+          map:^(FBSubprocess *process) {
+            return [[FBProcessLogOperation alloc] initWithProcess:process consumer:consumer queue:self.simulator.asyncQueue];
+          }];
 }
 
 #pragma mark Private
@@ -61,16 +63,16 @@
     return [FBSimulatorError failFutureWithError:error];
   }
   FBProcessIO *processIO = [[FBProcessIO alloc]
-    initWithStdIn:nil
-    stdOut:[FBProcessOutput outputForDataConsumer:consumer]
-    stdErr:nil];
+                            initWithStdIn:nil
+                            stdOut:[FBProcessOutput outputForDataConsumer:consumer]
+                            stdErr:nil];
 
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
-    initWithLaunchPath:launchPath
-    arguments:arguments
-    environment:@{}
-    io:processIO
-    mode:FBProcessSpawnModeDefault];
+                                                initWithLaunchPath:launchPath
+                                                arguments:arguments
+                                                environment:@{}
+                                                io:processIO
+                                                mode:FBProcessSpawnModeDefault];
 
   return [self.simulator launchProcess:configuration];
 }
@@ -78,9 +80,9 @@
 - (NSString *)logExecutablePathWithError:(NSError **)error
 {
   NSString *path = [[[self.simulator.device.runtime.root
-    stringByAppendingPathComponent:@"usr"]
-    stringByAppendingPathComponent:@"bin"]
-    stringByAppendingPathComponent:@"log"];
+                      stringByAppendingPathComponent:@"usr"]
+                     stringByAppendingPathComponent:@"bin"]
+                    stringByAppendingPathComponent:@"log"];
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:error];
   if (!binary) {
     return nil;

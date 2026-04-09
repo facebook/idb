@@ -9,8 +9,8 @@
 #import <CoreSimulator/SimDeviceIOPortDescriptorState-Protocol.h>
 
 @protocol SimDisplayDescriptorState <FoundationXPCProtocolProxyable, SimDeviceIOPortDescriptorState>
-@property (readonly, nonatomic) unsigned int defaultPixelFormat;
-@property (readonly, nonatomic) unsigned int defaultHeightForDisplay;
-@property (readonly, nonatomic) unsigned int defaultWidthForDisplay;
-@property (readonly, nonatomic) unsigned short displayClass;
+@property (nonatomic, readonly) unsigned int defaultPixelFormat;
+@property (nonatomic, readonly) unsigned int defaultHeightForDisplay;
+@property (nonatomic, readonly) unsigned int defaultWidthForDisplay;
+@property (nonatomic, readonly) unsigned short displayClass;
 @end

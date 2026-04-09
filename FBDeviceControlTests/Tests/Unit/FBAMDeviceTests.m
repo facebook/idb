@@ -11,19 +11,17 @@
 
 @interface FBAMDeviceTests : XCTestCase
 
-@property (nonatomic, strong, readwrite, class) NSMutableArray<NSString *> *events;
-@property (nonatomic, strong, readonly) FBAMDevice *device;
+@property (class, nonatomic, readwrite, strong) NSMutableArray<NSString *> *events;
+@property (nonatomic, readonly, strong) FBAMDevice *device;
 
 @end
 
 static void Retain(AMDeviceRef ref)
 {
-
 }
 
 static void Release(AMDeviceRef ref)
 {
-
 }
 
 static int Connect(AMDeviceRef ref)
@@ -101,7 +99,7 @@ static NSMutableArray<NSString *> *sEvents;
 
 + (NSMutableArray<NSString *> *)events
 {
-  if (!sEvents){
+  if (!sEvents) {
     sEvents = [NSMutableArray array];
   }
   return sEvents;
@@ -148,7 +146,13 @@ static NSMutableArray<NSString *> *sEvents;
   NSArray<NSString *> *events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);
 
-  FBAMDevice *device = [[FBAMDevice alloc] initWithAllValues:@{@"UniqueDeviceID": @"foo"} calls:self.stubbedCalls connectionReuseTimeout:connectionReuseTimeout serviceReuseTimeout:serviceReuseTimeout workQueue:dispatch_get_main_queue() asyncQueue:dispatch_get_main_queue() logger:FBControlCoreGlobalConfiguration.defaultLogger];
+  FBAMDevice *device = [[FBAMDevice alloc] initWithAllValues:@{@"UniqueDeviceID" : @"foo"}
+                                                       calls:self.stubbedCalls
+                                      connectionReuseTimeout:connectionReuseTimeout
+                                         serviceReuseTimeout:serviceReuseTimeout
+                                                   workQueue:dispatch_get_main_queue()
+                                                  asyncQueue:dispatch_get_main_queue()
+                                                      logger:FBControlCoreGlobalConfiguration.defaultLogger];
   device.amDeviceRef = self.amDeviceRef;
   events = [FBAMDeviceTests.events copy];
   XCTAssertEqualObjects(events, @[]);
@@ -166,9 +170,10 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithSuccess
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(id<FBDeviceCommands> result) {
-    return FBFuture.empty;
-  }];
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue()
+                                                                                     pop:^(id<FBDeviceCommands> result) {
+                                                                                       return FBFuture.empty;
+                                                                                     }];
 
   NSError *error = nil;
   id value = [future await:&error];
@@ -190,9 +195,10 @@ static NSMutableArray<NSString *> *sEvents;
 
 - (void)testConnectToDeviceWithFailure
 {
-  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue() pop:^(id<FBDeviceCommands> result) {
-    return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
-  }];
+  FBFuture<NSNull *> *future = [[self.device connectToDeviceWithPurpose:@"test"] onQueue:dispatch_get_main_queue()
+                                                                                     pop:^(id<FBDeviceCommands> result) {
+                                                                                       return [[FBDeviceControlError describeFormat:@"A bad thing"] failFuture];
+                                                                                     }];
 
   NSError *error = nil;
   id value = [future await:&error];
@@ -226,21 +232,24 @@ static NSMutableArray<NSString *> *sEvents;
   FBMutableFuture<NSNumber *> *future2 = FBMutableFuture.future;
 
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
-      return [FBFuture futureWithResult:@0];
-    }];
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map
+                                                                                                                   pop:^(FBAFCConnection *result) {
+                                                                                                                     return [FBFuture futureWithResult:@0];
+                                                                                                                   }];
     [future0 resolveFromFuture:inner];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
-      return [FBFuture futureWithResult:@1];
-    }];
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map
+                                                                                                                   pop:^(FBAFCConnection *result) {
+                                                                                                                     return [FBFuture futureWithResult:@1];
+                                                                                                                   }];
     [future1 resolveFromFuture:inner];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map pop:^(FBAFCConnection *result) {
-      return [FBFuture futureWithResult:@2];
-    }];
+    FBFuture<NSNull *> *inner = [[device houseArrestAFCConnectionForBundleID:@"com.foo.bar" afcCalls:afcCalls] onQueue:map
+                                                                                                                   pop:^(FBAFCConnection *result) {
+                                                                                                                     return [FBFuture futureWithResult:@2];
+                                                                                                                   }];
     [future2 resolveFromFuture:inner];
   });
 
@@ -285,24 +294,26 @@ static NSMutableArray<NSString *> *sEvents;
   FBAMDevice *device = self.device;
 
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
-      return [FBFuture futureWithResult:@0];
-    }];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map
+                                                                                    pop:^(id<FBDeviceCommands> result) {
+                                                                                      return [FBFuture futureWithResult:@0];
+                                                                                    }];
     [future0 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
-      return [FBFuture futureWithResult:@1];
-    }];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map
+                                                                                    pop:^(id<FBDeviceCommands> result) {
+                                                                                      return [FBFuture futureWithResult:@1];
+                                                                                    }];
     [future1 resolveFromFuture:future];
   });
   dispatch_async(schedule, ^{
-    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map pop:^(id<FBDeviceCommands> result) {
-      return [FBFuture futureWithResult:@2];
-    }];
+    FBFuture<NSNumber *> *future = [[device connectToDeviceWithPurpose:@"test"] onQueue:map
+                                                                                    pop:^(id<FBDeviceCommands> result) {
+                                                                                      return [FBFuture futureWithResult:@2];
+                                                                                    }];
     [future2 resolveFromFuture:future];
   });
-
 
   NSError *error = nil;
   NSArray<NSNumber *> *value = [[FBFuture futureWithFutures:@[future0, future1, future2]] await:&error];

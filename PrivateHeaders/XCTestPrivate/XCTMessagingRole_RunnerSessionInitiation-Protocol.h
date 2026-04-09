@@ -13,4 +13,3 @@
 - (id)_IDE_initiateSessionWithIdentifier:(NSUUID *)arg1 forClient:(NSString *)arg2 atPath:(NSString *)arg3 protocolVersion:(NSNumber *)arg4;
 - (id)_IDE_initiateSessionWithIdentifier:(NSUUID *)arg1 capabilities:(XCTCapabilities *)arg2;
 @end
-

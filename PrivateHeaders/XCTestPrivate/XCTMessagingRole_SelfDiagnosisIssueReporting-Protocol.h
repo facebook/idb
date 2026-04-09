@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_SelfDiagnosisIssueReporting
 - (id)_XCT_reportSelfDiagnosisIssue:(NSString *)arg1 description:(NSString *)arg2;
 @end
-

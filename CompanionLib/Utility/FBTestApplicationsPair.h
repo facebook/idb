@@ -21,14 +21,14 @@ NS_ASSUME_NONNULL_BEGIN
  The Application Under Test.
  Only relevant for UI Tests.
  */
-@property (nonatomic, strong, nullable, readonly) FBInstalledApplication *applicationUnderTest;
+@property (nullable, nonatomic, readonly, strong) FBInstalledApplication *applicationUnderTest;
 
 /**
  The Test Host App.
  The Application that Hosts a test bundle.
  Relevant for UI and Application Tests.
  */
-@property (nonatomic, strong, nullable, readonly) FBInstalledApplication *testHostApp;
+@property (nullable, nonatomic, readonly, strong) FBInstalledApplication *testHostApp;
 
 /**
  The Designated Initializer.

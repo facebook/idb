@@ -216,27 +216,27 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The name of of the service.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The Wrapped Connection.
  */
-@property (nonatomic, assign, readonly, nullable) AMDServiceConnectionRef connection;
+@property (nullable, nonatomic, readonly, assign) AMDServiceConnectionRef connection;
 
 /**
  The Device to use.
  */
-@property (nonatomic, assign, readonly) AMDeviceRef device;
+@property (nonatomic, readonly, assign) AMDeviceRef device;
 
 /**
  The Calls to use.
  */
-@property (nonatomic, assign, readonly) AMDCalls calls;
+@property (nonatomic, readonly, assign) AMDCalls calls;
 
 /**
  The Logger to use.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 

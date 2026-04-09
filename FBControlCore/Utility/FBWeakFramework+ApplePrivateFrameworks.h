@@ -19,36 +19,36 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  CoreSimulator is the foundational framework for managing Simulators.
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *CoreSimulator;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *CoreSimulator;
 
 /**
  SimulatorKit builds on top of CoreSimulator and is bundled with Xcode.
  It is used by Simulator.app for functionality involving touch interaction and framebuffers.
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *SimulatorKit;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *SimulatorKit;
 
 /**
  DTXConnectionServices is a client library of the 'testmanagerd' daemon.
  It is used by XCTestBoostrap for connecting to and arbitrating test sessions with a Simulator/Device.
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *DTXConnectionServices;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *DTXConnectionServices;
 
 /**
  The host-side Framework for XCTest. This is not the same as the XCTest Framework that is running on the iOS Simulator/Device.
  To avoid ambiguity with XCTest Framework naming, the classes that are used from this Framework are in the 'XCTestPrivate' PrivateHeader dump.
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *XCTest;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *XCTest;
 
 /**
  The main Framework that is used for talking to iOS Devices. Installed at the System level since macOS itself relies on it, not just Xcode.
  Heavily CoreFoundation based, likely because MobileDevice is also available on Windows (due to the porting of iTunes there).
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *MobileDevice;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *MobileDevice;
 
 /**
  A macOS Private Framework for transforming iOS Accessibility element definitions to their macOS equivalents.
  */
-@property (nonatomic, strong, readonly, class) FBWeakFramework *AccessibilityPlatformTranslation;
+@property (class, nonatomic, readonly, strong) FBWeakFramework *AccessibilityPlatformTranslation;
 
 @end
 

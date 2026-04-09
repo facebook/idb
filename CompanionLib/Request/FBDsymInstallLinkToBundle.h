@@ -24,12 +24,12 @@ typedef NS_ENUM(NSInteger, FBDsymBundleType) {
 /**
  ID of the bundle the dsym needs to link
  */
-@property (nonatomic, copy, readonly) NSString *bundle_id;
+@property (nonatomic, readonly, copy) NSString *bundle_id;
 
 /**
  Type of bundle
 */
-@property (nonatomic, assign, readonly) FBDsymBundleType bundle_type;
+@property (nonatomic, readonly, assign) FBDsymBundleType bundle_type;
 
 - (instancetype)initWith:(NSString *)bundle_id bundle_type:(FBDsymBundleType)bundle_type;
 

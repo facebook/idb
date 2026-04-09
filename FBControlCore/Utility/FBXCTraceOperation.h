@@ -20,7 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
 
-
 /**
  Represents an `xctrace record` operation.
  */
@@ -45,33 +44,33 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Task that wraps the operation
  */
-@property (nonatomic, strong, readonly) FBSubprocess *task;
+@property (nonatomic, readonly, strong) FBSubprocess *task;
 
 /**
  The queue to use
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  Trace output directory.
  */
-@property (nonatomic, copy, readonly) NSURL *traceDir;
+@property (nonatomic, readonly, copy) NSURL *traceDir;
 
 /**
  The configuration of the operation.
  */
-@property (nonatomic, strong, readonly) FBXCTraceRecordConfiguration *configuration;
+@property (nonatomic, readonly, strong) FBXCTraceRecordConfiguration *configuration;
 
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 #pragma mark Public Methods
 
 /**
  Stops the Operation. Waits for the trace file to be written out to disk.
- 
+
  @param timeout backoff timeout to stop the operation
  @return a Future that returns the trace file if successful.
  */

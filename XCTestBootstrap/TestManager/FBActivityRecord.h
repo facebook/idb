@@ -17,14 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBActivityRecord : NSObject
 
-@property (nonatomic, copy, readonly) NSString *title;
-@property (nonatomic, copy, readonly) NSString *activityType;
-@property (nonatomic, copy, readonly) NSUUID *uuid;
-@property (nonatomic, copy, readonly) NSDate *start;
-@property (nonatomic, copy, readonly) NSDate *finish;
+@property (nonatomic, readonly, copy) NSString *title;
+@property (nonatomic, readonly, copy) NSString *activityType;
+@property (nonatomic, readonly, copy) NSUUID *uuid;
+@property (nonatomic, readonly, copy) NSDate *start;
+@property (nonatomic, readonly, copy) NSDate *finish;
 @property (nonatomic, readonly) NSArray<FBAttachment *> *attachments;
-@property (nonatomic, assign, readonly) double duration;
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, assign) double duration;
+@property (nonatomic, readonly, copy) NSString *name;
 @property (nonatomic, copy) NSMutableArray<FBActivityRecord *> *subactivities;
 
 /**

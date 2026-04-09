@@ -43,7 +43,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param format the Format String for the Logger.
  @return the receiver, for chaining.
  */
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Returns the Info Logger variant.
@@ -81,12 +81,12 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 /**
  The Prefix for the Logger, if set.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *name;
+@property (nullable, nonatomic, readonly, copy) NSString *name;
 
 /**
  The Current Log Level
  */
-@property (nonatomic, assign, readonly) FBControlCoreLogLevel level;
+@property (nonatomic, readonly, assign) FBControlCoreLogLevel level;
 
 @end
 
@@ -110,7 +110,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 /**
   The loggers to log to.
  */
-@property (nonatomic, strong, readonly) NSArray<id<FBControlCoreLogger>> *loggers;
+@property (nonatomic, readonly, strong) NSArray<id<FBControlCoreLogger>> *loggers;
 
 @end
 
@@ -131,7 +131,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 
 /**
  Compose multiple loggers into one.
- 
+
  @param loggers the loggers to compose.
  @return the composite logger.
  */

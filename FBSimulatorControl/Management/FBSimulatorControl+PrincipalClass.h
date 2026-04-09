@@ -37,17 +37,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Set of Simulators managed by FBSimulatorControl.
  */
-@property (nonatomic, strong, readonly) FBSimulatorSet *set;
+@property (nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  The Service Context.
  */
-@property (nonatomic, strong, readonly) FBSimulatorServiceContext *serviceContext;
+@property (nonatomic, readonly, strong) FBSimulatorServiceContext *serviceContext;
 
 /**
  The Configuration that FBSimulatorControl was instantiated with.
  */
-@property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
+@property (nonatomic, readwrite, copy) FBSimulatorControlConfiguration *configuration;
 
 @end
 

@@ -7,8 +7,8 @@
 
 #import "FBDeviceDebuggerCommands.h"
 
-#import "FBDevice+Private.h"
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceDebugServer.h"
 
@@ -29,7 +29,7 @@ Much of the implementation here comes from:
 
 @interface FBDeviceDebuggerCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -60,14 +60,16 @@ Much of the implementation here comes from:
 {
   if (self.device.osVersion.version.majorVersion >= 17) {
     return [[FBDeviceControlError
-           describeFormat:@"Debugging is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
-        failFuture];
+             describeFormat:@"Debugging is not supported for devices running iOS 17 and higher. Device OS version: %@", self.device.osVersion.versionString]
+            failFuture];
   }
   return [[self
-    lldbBootstrapCommandsForApplicationAtPath:application.path port:port]
-    onQueue:self.device.workQueue fmap:^(NSArray<NSString *> *commands) {
-      return [FBDeviceDebugServer debugServerForServiceConnection:[self connectToDebugServer] port:port lldbBootstrapCommands:commands queue:self.device.workQueue logger:self.device.logger];
-    }];
+           lldbBootstrapCommandsForApplicationAtPath:application.path
+           port:port]
+          onQueue:self.device.workQueue
+          fmap:^(NSArray<NSString *> *commands) {
+            return [FBDeviceDebugServer debugServerForServiceConnection:[self connectToDebugServer] port:port lldbBootstrapCommands:commands queue:self.device.workQueue logger:self.device.logger];
+          }];
 }
 
 #pragma mark Public
@@ -75,11 +77,12 @@ Much of the implementation here comes from:
 - (FBFutureContext<FBAMDServiceConnection *> *)connectToDebugServer
 {
   return [[self.device
-    ensureDeveloperDiskImageIsMounted]
-    onQueue:self.device.workQueue pushTeardown:^(FBDeveloperDiskImage *diskImage) {
-      // Xcode 12 and after uses a different service name for the debugserver.
-      return [self.device startService:(diskImage.xcodeVersion.majorVersion >= 12 ? @"com.apple.debugserver.DVTSecureSocketProxy" : @"com.apple.debugserver")];
-    }];
+           ensureDeveloperDiskImageIsMounted]
+          onQueue:self.device.workQueue
+          pushTeardown:^(FBDeveloperDiskImage *diskImage) {
+            // Xcode 12 and after uses a different service name for the debugserver.
+            return [self.device startService:(diskImage.xcodeVersion.majorVersion >= 12 ? @"com.apple.debugserver.DVTSecureSocketProxy" : @"com.apple.debugserver")];
+          }];
 }
 
 #pragma mark Private
@@ -94,15 +97,16 @@ Much of the implementation here comes from:
 - (FBFuture<NSArray<NSString *> *> *)lldbBootstrapCommandsForApplicationAtPath:(NSString *)path port:(in_port_t)port
 {
   return [[self
-    applicationBundleForPath:path]
-    onQueue:self.device.workQueue fmap:^(FBBundleDescriptor *bundle) {
-      return [FBFuture futureWithFutures:@[
-        [self platformSelectCommand],
-        [FBDeviceDebuggerCommands localTargetForApplicationAtPath:path],
-        [self remoteTargetForBundleID:bundle.identifier],
-        [FBDeviceDebuggerCommands processConnectForPort:port],
-      ]];
-    }];
+           applicationBundleForPath:path]
+          onQueue:self.device.workQueue
+          fmap:^(FBBundleDescriptor *bundle) {
+            return [FBFuture futureWithFutures:@[
+              [self platformSelectCommand],
+              [FBDeviceDebuggerCommands localTargetForApplicationAtPath:path],
+              [self remoteTargetForBundleID:bundle.identifier],
+              [FBDeviceDebuggerCommands processConnectForPort:port],
+                    ]];
+          }];
 }
 
 - (FBFuture<NSString *> *)platformSelectCommand
@@ -110,16 +114,17 @@ Much of the implementation here comes from:
   FBDevice *device = self.device;
   id<FBControlCoreLogger> logger = self.device.logger;
   return [FBFuture
-    onQueue:self.device.asyncQueue resolveValue:^(NSError **error) {
-      NSError *innerError = nil;
-      NSString *developerSymbolsPath = [FBDeveloperDiskImage pathForDeveloperSymbols:device.buildVersion logger:logger error:&innerError];
-      NSString *platformSelectCommand = @"platform select remote-ios";
-      if (!developerSymbolsPath) {
-        [logger logFormat:@"Failed to get developer symbols for %@, no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: %@", device, innerError];
-        return platformSelectCommand;
-      }
-      return [platformSelectCommand stringByAppendingFormat:@" --sysroot '%@'", developerSymbolsPath];
-    }];
+          onQueue:self.device.asyncQueue
+          resolveValue:^(NSError **error) {
+            NSError *innerError = nil;
+            NSString *developerSymbolsPath = [FBDeveloperDiskImage pathForDeveloperSymbols:device.buildVersion logger:logger error:&innerError];
+            NSString *platformSelectCommand = @"platform select remote-ios";
+            if (!developerSymbolsPath) {
+              [logger logFormat:@"Failed to get developer symbols for %@, no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: %@", device, innerError];
+              return platformSelectCommand;
+            }
+            return [platformSelectCommand stringByAppendingFormat:@" --sysroot '%@'", developerSymbolsPath];
+          }];
 }
 
 + (FBFuture<NSString *> *)localTargetForApplicationAtPath:(NSString *)path
@@ -130,10 +135,11 @@ Much of the implementation here comes from:
 - (FBFuture<NSString *> *)remoteTargetForBundleID:(NSString *)bundleID
 {
   return [[self.device
-    installedApplicationWithBundleID:bundleID]
-    onQueue:self.device.asyncQueue map:^(FBInstalledApplication *installedApplication) {
-      return [NSString stringWithFormat:@"script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"%@\"))", installedApplication.bundle.path];
-    }];
+           installedApplicationWithBundleID:bundleID]
+          onQueue:self.device.asyncQueue
+          map:^(FBInstalledApplication *installedApplication) {
+            return [NSString stringWithFormat:@"script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"%@\"))", installedApplication.bundle.path];
+          }];
 }
 
 + (FBFuture<NSString *> *)processConnectForPort:(in_port_t)port

@@ -12,9 +12,9 @@
 
 @interface FBJSONTestReporterTests : XCTestCase
 
-@property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *lines;
-@property (nonatomic, strong, readwrite) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readwrite) FBJSONTestReporter *reporter;
+@property (nonatomic, readwrite, strong) NSMutableArray<NSString *> *lines;
+@property (nonatomic, readwrite, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readwrite, strong) FBJSONTestReporter *reporter;
 
 @end
 
@@ -142,13 +142,14 @@
   XCTAssertEqualObjects(self[count - 1][@"succeeded"], @1);
 }
 
-
 - (void)testReportTestFailure
 {
   [self.reporter didBeginExecutingTestPlan];
   [self.reporter testCaseDidStartForTestClass:@"FooTest" method:@"BarCase"];
-  [self.reporter testCaseDidFailForTestClass:@"FooTest" method:@"BarCase" exceptions:@[[[FBExceptionInfo alloc] initWithMessage:@"BadBar" file:@"BadFile" line:42
-  ]]];
+  [self.reporter testCaseDidFailForTestClass:@"FooTest"
+                                      method:@"BarCase"
+                                  exceptions:@[[[FBExceptionInfo alloc] initWithMessage:@"BadBar" file:@"BadFile" line:42
+                                               ]]];
   [self.reporter testCaseDidFinishForTestClass:@"FooTest" method:@"BarCase" withStatus:FBTestReportStatusFailed duration:1 logs:nil];
   [self.reporter didFinishExecutingTestPlan];
   NSError *error = nil;

@@ -68,32 +68,32 @@ extern FBEventType const FBEventTypeFailure;
 /**
  The Event Name, if present
  */
-@property (nonatomic, copy, nullable, readonly) NSString * eventName;
+@property (nullable, nonatomic, readonly, copy) NSString *eventName;
 
 /**
  The Event Type, if present
  */
-@property (nonatomic, copy, nullable, readonly) FBEventType eventType;
+@property (nullable, nonatomic, readonly, copy) FBEventType eventType;
 
 /**
  A JSON Serializable form of the arguments
  */
-@property (nonatomic, copy, nullable, readonly) NSArray<NSString *> *arguments;
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  A duration if present.
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *duration;
+@property (nullable, nonatomic, readonly, copy) NSNumber *duration;
 
 /**
  A size, if present
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *size;
+@property (nullable, nonatomic, readonly, copy) NSNumber *size;
 
 /**
  A message, if present
  */
-@property (nonatomic, copy, nullable, readonly) NSString *message;
+@property (nullable, nonatomic, readonly, copy) NSString *message;
 
 @end
 

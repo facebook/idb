@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBDeviceControl/FBAMDevice.h>
 #import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/FBAMDevice.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,22 +24,22 @@ NS_ASSUME_NONNULL_BEGIN
  The underyling AMDeviceRef.
  May be NULL.
  */
-@property (nonatomic, assign, readwrite) AMDeviceRef amDeviceRef;
+@property (nonatomic, readwrite, assign) AMDeviceRef amDeviceRef;
 
 /**
  All of the Device Values available.
  */
-@property (nonatomic, copy, readwrite) NSDictionary<NSString *, id> *allValues;
+@property (nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
 
 /**
  The Context Manager for the Connection
  */
-@property (nonatomic, strong, readonly) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
+@property (nonatomic, readonly, strong) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
 
 /**
  The Service Manager.
  */
-@property (nonatomic, strong, readonly) FBAMDeviceServiceManager *serviceManager;
+@property (nonatomic, readonly, strong) FBAMDeviceServiceManager *serviceManager;
 
 #pragma mark Private Methods
 

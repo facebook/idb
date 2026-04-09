@@ -62,17 +62,17 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name);
 /**
  The Named set of Frameworks.
  */
-@property (nonatomic, copy, readonly) NSString *frameworkName;
+@property (nonatomic, readonly, copy) NSString *frameworkName;
 
 /**
  The Frameworks to load.
  */
-@property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *frameworks;
+@property (nonatomic, readonly, copy) NSArray<FBWeakFramework *> *frameworks;
 
 /**
  YES if the Frameworks are loaded, NO otherwise.
  */
-@property (nonatomic, assign, readonly) BOOL hasLoadedFrameworks;
+@property (nonatomic, readonly, assign) BOOL hasLoadedFrameworks;
 
 #pragma mark Public Methods
 

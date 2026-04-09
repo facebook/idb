@@ -448,7 +448,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
 - (instancetype)initWithName:(FBOSVersionName)name families:(NSSet<NSNumber *> *)families
 {
   self = [super init];
-  if (!self){
+  if (!self) {
     return nil;
   }
 
@@ -486,7 +486,6 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   }
   return version;
 }
-
 
 #pragma mark NSObject
 
@@ -540,7 +539,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   NSSet *families = [NSSet setWithArray:@[
     @(FBControlCoreProductFamilyiPhone),
     @(FBControlCoreProductFamilyiPad),
-  ]];
+                     ]];
   return [[self alloc] initWithName:name families:families];
 }
 
@@ -639,7 +638,7 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
       [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_12_9nch_5thGeneration productTypes:@[@"iPad13,8", @"iPad13,9", @"iPad13,10", @"iPad13,11"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_2ndGeneration productTypes:@[@"iPad8,9", @"iPad8,10"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadPro_11_Inch_3ndGeneration productTypes:@[@"iPad13,4", @"iPad13,5", @"iPad13,6", @"iPad13,7"] deviceArchitecture:FBArchitectureArm64],
-      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_2 productTypes:@[@"iPad4,4", @"iPad4,5", @"iPad4,6",] deviceArchitecture:FBArchitectureArm64],
+      [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_2 productTypes:@[@"iPad4,4", @"iPad4,5", @"iPad4,6", ] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_3 productTypes:@[@"iPad4,7", @"iPad4,8", @"iPad4,9"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_4 productTypes:@[@"iPad5,1", @"iPad5,2"] deviceArchitecture:FBArchitectureArm64],
       [FBDeviceType iPadWithModel:FBDeviceModeliPadMini_5 productTypes:@[@"iPad11,1", @"iPad11,2"] deviceArchitecture:FBArchitectureArm64],
@@ -813,9 +812,8 @@ FBOSVersionName const FBOSVersionNamemac = @"macOS";
   return mapping;
 }
 
-+ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures
++ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture> *)architectures
 {
-
   NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *mapping = @{
     FBArchitectureArm64e : [NSSet setWithArray:@[FBArchitectureArm64e, FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
     FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],

@@ -7,13 +7,12 @@
 
 #import "FBSimulatorIndigoHID.h"
 
-#import <SimulatorApp/Indigo.h>
-#import <FBControlCore/FBControlCore.h>
-
+#include <dlfcn.h>
 #import <mach/mach.h>
 #import <mach/mach_time.h>
 
-#include <dlfcn.h>
+#import <FBControlCore/FBControlCore.h>
+#import <SimulatorApp/Indigo.h>
 #include <malloc/malloc.h>
 
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -26,7 +25,7 @@ typedef struct {
 
 @interface FBSimulatorIndigoHID ()
 
-@property (nonatomic, assign, readonly) IndigoCalls calls;
+@property (nonatomic, readonly, assign) IndigoCalls calls;
 
 - (instancetype)initWithCalls:(IndigoCalls)calls;
 
@@ -140,7 +139,7 @@ typedef struct {
     case FBSimulatorHIDDirectionDown:
       return ButtonEventTypeDown;
     case FBSimulatorHIDDirectionUp:
-      return  ButtonEventTypeUp;
+      return ButtonEventTypeUp;
     default:
       NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
       abort();
@@ -197,6 +196,5 @@ typedef struct {
 
   return message;
 }
-
 
 @end

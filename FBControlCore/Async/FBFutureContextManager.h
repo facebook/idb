@@ -39,24 +39,24 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Name of the Resource.
  */
-@property (nonatomic, copy, readonly) NSString *contextName;
+@property (nonatomic, readonly, copy) NSString *contextName;
 
 /**
  The amount of time to allow the resource to be held with no-one utilizing it.
  This is useful for ensuring that the same connection
  */
-@property (nonatomic, copy, readonly) NSNumber *contextPoolTimeout;
+@property (nonatomic, readonly, copy) NSNumber *contextPoolTimeout;
 /**
  Allows the context to be shared.
  */
-@property (nonatomic, assign, readonly) BOOL isContextSharable;
+@property (nonatomic, readonly, assign) BOOL isContextSharable;
 
 @end
 
 /**
  Manages an asynchronous context that can only be used by a single consumer
  */
-@interface FBFutureContextManager<ContextType : id> : NSObject
+@interface FBFutureContextManager <ContextType : id> : NSObject
 
 #pragma mark Initializers.
 

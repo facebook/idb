@@ -226,12 +226,12 @@
 
 - (void)testCompositeWithCompletion
 {
-  id<FBAccumulatingBuffer> accumilating =  FBDataBuffer.consumableBuffer;
-  id<FBConsumableBuffer> consumable =  FBDataBuffer.consumableBuffer;
+  id<FBAccumulatingBuffer> accumilating = FBDataBuffer.consumableBuffer;
+  id<FBConsumableBuffer> consumable = FBDataBuffer.consumableBuffer;
   id<FBDataConsumer, FBDataConsumerLifecycle> composite = [FBCompositeDataConsumer consumerWithConsumers:@[
     accumilating,
     consumable,
-  ]];
+                                                           ]];
 
   [composite consumeData:[@"FOO" dataUsingEncoding:NSUTF8StringEncoding]];
 
@@ -273,15 +273,17 @@
   XCTestExpectation *doneExpectation = [[XCTestExpectation alloc] initWithDescription:@"Resolved All"];
 
   [[[consumer
-    consumeAndNotifyWhen:[@"$$" dataUsingEncoding:NSUTF8StringEncoding]]
-    onQueue:queue fmap:^(NSData *result) {
+     consumeAndNotifyWhen:[@"$$" dataUsingEncoding:NSUTF8StringEncoding]]
+    onQueue:queue
+    fmap:^(NSData *result) {
       XCTAssertEqualObjects(result, [@"FOO" dataUsingEncoding:NSUTF8StringEncoding]);
       return [consumer consumeAndNotifyWhen:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
     }]
-    onQueue:queue doOnResolved:^(NSData *result) {
-      XCTAssertEqualObjects(result, [@"BAR" dataUsingEncoding:NSUTF8StringEncoding]);
-      [doneExpectation fulfill];
-    }];
+   onQueue:queue
+   doOnResolved:^(NSData *result) {
+     XCTAssertEqualObjects(result, [@"BAR" dataUsingEncoding:NSUTF8StringEncoding]);
+     [doneExpectation fulfill];
+   }];
 
   [consumer consumeData:[@"FOO$$BAR\nBAZ" dataUsingEncoding:NSUTF8StringEncoding]];
   [consumer consumeEndOfFile];
@@ -300,17 +302,19 @@
   NSData *headerData = [[NSData alloc] initWithBytes:&payloadLength length:sizeof(NSUInteger)];
 
   [[consumer
-    consumeHeaderLength:sizeof(NSUInteger) derivedLength:^(NSData *data) {
+    consumeHeaderLength:sizeof(NSUInteger)
+    derivedLength:^(NSData *data) {
       XCTAssertEqual(data.length, sizeof(NSUInteger));
       NSUInteger readPayloadLength = 0;
       [data getBytes:&readPayloadLength length:sizeof(NSUInteger)];
       XCTAssertEqual(readPayloadLength, payloadLength);
       return readPayloadLength;
     }]
-    onQueue:queue doOnResolved:^(NSData *result) {
-      XCTAssertEqualObjects(result, payloadData);
-      [doneExpectation fulfill];
-    }];
+   onQueue:queue
+   doOnResolved:^(NSData *result) {
+     XCTAssertEqualObjects(result, payloadData);
+     [doneExpectation fulfill];
+   }];
 
   [consumer consumeData:headerData];
   [consumer consumeData:payloadData];

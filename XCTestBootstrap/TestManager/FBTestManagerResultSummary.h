@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
   FBTestReportStatusUnknown = 0,
   FBTestReportStatusPassed = 1,
-  FBTestReportStatusFailed = 2
+  FBTestReportStatusFailed = 2,
 };
 
 /**
@@ -33,13 +33,13 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  */
 - (instancetype)initWithTestSuite:(NSString *)testSuite finishTime:(NSDate *)finishTime runCount:(NSInteger)runCount failureCount:(NSInteger)failureCount unexpected:(NSInteger)unexpected testDuration:(NSTimeInterval)testDuration totalDuration:(NSTimeInterval)totalDuration;
 
-@property (nonatomic, copy, readonly) NSString *testSuite;
-@property (nonatomic, copy, readonly) NSDate *finishTime;
-@property (nonatomic, assign, readonly) NSInteger runCount;
-@property (nonatomic, assign, readonly) NSInteger failureCount;
-@property (nonatomic, assign, readonly) NSInteger unexpected;
-@property (nonatomic, assign, readonly) NSTimeInterval testDuration;
-@property (nonatomic, assign, readonly) NSTimeInterval totalDuration;
+@property (nonatomic, readonly, copy) NSString *testSuite;
+@property (nonatomic, readonly, copy) NSDate *finishTime;
+@property (nonatomic, readonly, assign) NSInteger runCount;
+@property (nonatomic, readonly, assign) NSInteger failureCount;
+@property (nonatomic, readonly, assign) NSInteger unexpected;
+@property (nonatomic, readonly, assign) NSTimeInterval testDuration;
+@property (nonatomic, readonly, assign) NSTimeInterval totalDuration;
 
 /**
  Returns a status enum value for the given status string.

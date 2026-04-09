@@ -1,4 +1,3 @@
-
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -52,13 +51,13 @@ typedef NS_ENUM(NSInteger, XCTIssueType) {
 
 /// A detailed description of the issue designed to help diagnose the issue. May include transient data such as
 /// numbers, object identifiers, timestamps, etc.
-@property (readonly, copy, nullable) NSString *detailedDescription;
+@property (nullable, readonly, copy) NSString *detailedDescription;
 
 /// The source code location (file and line number) and the call stack associated with the issue.
 @property (readonly, strong) XCTSourceCodeContext *sourceCodeContext;
 
 /// Error associated with the issue.
-@property (readonly, strong, nullable) NSError *associatedError;
+@property (nullable, readonly, strong) NSError *associatedError;
 
 /// All attachments associated with the issue.
 @property (readonly, copy) NSArray<XCTAttachment *> *attachments;
@@ -73,9 +72,9 @@ typedef NS_ENUM(NSInteger, XCTIssueType) {
 
 @property (readwrite) XCTIssueType type;
 @property (readwrite, copy) NSString *compactDescription;
-@property (readwrite, copy, nullable) NSString *detailedDescription;
+@property (nullable, readwrite, copy) NSString *detailedDescription;
 @property (readwrite, strong) XCTSourceCodeContext *sourceCodeContext;
-@property (readwrite, strong, nullable) NSError *associatedError;
+@property (nullable, readwrite, strong) NSError *associatedError;
 @property (readwrite, copy) NSArray<XCTAttachment *> *attachments;
 
 /// Add an attachment to this issue.
@@ -84,7 +83,6 @@ typedef NS_ENUM(NSInteger, XCTIssueType) {
 @end
 
 NS_ASSUME_NONNULL_END
-
 
 #import <Foundation/Foundation.h>
 
@@ -124,7 +122,7 @@ __attribute__((objc_subclassing_restricted))
 
 @property (readonly, copy) NSString *imageName;
 @property (readonly, copy) NSString *symbolName;
-@property (readonly, nullable) XCTSourceCodeLocation *location;
+@property (nullable, readonly) XCTSourceCodeLocation *location;
 
 @end
 
@@ -143,10 +141,10 @@ __attribute__((objc_subclassing_restricted))
 
 @property (readonly) uint64_t address;
 
-@property (readonly, nullable) XCTSourceCodeSymbolInfo *symbolInfo;
+@property (nullable, readonly) XCTSourceCodeSymbolInfo *symbolInfo;
 
 /// Error previously returned for symbolication attempt. This is not serialized when the frame is encoded.
-@property (readonly, nullable) NSError *symbolicationError;
+@property (nullable, readonly) NSError *symbolicationError;
 
 /*!
  * method -symbolInfoWithError:
@@ -180,10 +178,8 @@ __attribute__((objc_subclassing_restricted))
 - (instancetype)init;
 
 @property (readonly, copy) NSArray<XCTSourceCodeFrame *> *callStack;
-@property (readonly, nullable) XCTSourceCodeLocation *location;
+@property (nullable, readonly) XCTSourceCodeLocation *location;
 
 @end
 
 NS_ASSUME_NONNULL_END
-
-

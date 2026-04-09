@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -45,12 +46,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  All of the Available Devices.
  */
-@property (nonatomic, copy, readonly) NSArray<FBDevice *> *allDevices;
+@property (nonatomic, readonly, copy) NSArray<FBDevice *> *allDevices;
 
 /**
  The Logger for the device set.
  */
-@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 

@@ -14,7 +14,7 @@
 
 @interface SimDeviceIO : NSObject <SimDeviceIOInterface, SimDeviceIOProtocol>
 {
-    SimDevice *_device;
+  SimDevice *_device;
 }
 
 + (id)ioForSimDevice:(id)arg1;
@@ -29,7 +29,7 @@
 - (id)initWithDevice:(id)arg1;
 
 // Remaining properties
-@property (atomic, copy, readonly) NSString *debugDescription;
+@property (atomic, readonly, copy) NSString *debugDescription;
 @property (atomic, readonly) NSUInteger hash;
 @property (atomic, readonly) Class superclass;
 

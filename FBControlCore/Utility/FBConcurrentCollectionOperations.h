@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to generate objects from.
  @return a Generated Array of Objects.
  */
-+ (NSArray *)generate:(NSUInteger)count withBlock:( id(^)(NSUInteger index) )block;
++ (NSArray *)generate:(NSUInteger)count withBlock:(id (^)(NSUInteger index) )block;
 
 /**
  Map an array of objects concurrently.
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to map objects with.
  @return a Mapped Array of Objects.
  */
-+ (NSArray *)map:(NSArray *)array withBlock:( id(^)(id object) )block;
++ (NSArray *)map:(NSArray *)array withBlock:(id (^)(id object) )block;
 
 /**
  Filter an array of objects concurrently.

@@ -60,7 +60,7 @@ NS_ASSUME_NONNULL_BEGIN
  When setting the icon layout via `setIconState`, the same format is expected.
  Entries should be round-tripped: preserve all original keys when moving icons between positions.
  */
-typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> * IconLayoutType;
+typedef NSArray<NSArray<NSDictionary<NSString *, id> *> *> *IconLayoutType;
 
 /**
  The Service Name for Managed Config.
@@ -73,7 +73,6 @@ extern NSString *const FBSpringboardServiceName;
 typedef NSString *FBWallpaperName NS_STRING_ENUM;
 extern FBWallpaperName const FBWallpaperNameHomescreen;
 extern FBWallpaperName const FBWallpaperNameLockscreen;
-
 
 /**
  A client for SpringBoardServices.

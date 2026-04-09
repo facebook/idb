@@ -7,8 +7,8 @@
 
 #import "FBTestReporterAdapter.h"
 
-#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 #import <XCTestPrivate/XCActivityRecord.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBActivityRecord.h"
 #import "FBTestManagerAPIMediator.h"
@@ -21,7 +21,7 @@
 
 @interface FBTestReporterAdapter ()
 
-@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
+@property (nonatomic, readonly, strong) id<FBXCTestReporter> reporter;
 
 @end
 
@@ -43,7 +43,6 @@
 
   return self;
 }
-
 
 #pragma mark Protocol Implementation
 
@@ -67,9 +66,11 @@
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-    [self.reporter testCaseDidFailForTestClass:testClass method:method exceptions:@[
-        [[FBExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
-        ]]];
+  [self.reporter testCaseDidFailForTestClass:testClass
+                                      method:method
+                                  exceptions:@[
+     [[FBExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
+     ]]];
   return nil;
 }
 
@@ -88,7 +89,13 @@
 
 - (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:testSuite finishingAt:time runCount:runCount failures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
+  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:testSuite
+                                                                      finishingAt:time
+                                                                         runCount:runCount
+                                                                         failures:failures
+                                                                       unexpected:unexpected
+                                                                     testDuration:testDuration
+                                                                    totalDuration:totalDuration];
   [self.reporter finishedWithSummary:summary];
   return nil;
 }

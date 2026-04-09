@@ -40,7 +40,6 @@ static NSUInteger bar2Called = 0;
   foo1Called++;
 }
 
-
 + (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
 {
   fooConstructed++;
@@ -109,7 +108,9 @@ static NSUInteger bar2Called = 0;
 
 - (void)testForwardsToFirstInArrayWithState
 {
-  id forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:FBiOSTargetDouble.new commandClasses:FBiOSTargetCommandForwarderTests.commandResponders statefulCommands:[NSSet setWithArray:FBiOSTargetCommandForwarderTests.commandResponders]];
+  id forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:FBiOSTargetDouble.new
+                                                   commandClasses:FBiOSTargetCommandForwarderTests.commandResponders
+                                                 statefulCommands:[NSSet setWithArray:FBiOSTargetCommandForwarderTests.commandResponders]];
   [forwarder doFoo];
   [forwarder doFoo];
   [forwarder doBar];

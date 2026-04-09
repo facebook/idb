@@ -6,12 +6,12 @@
  */
 
 #import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 
 #import <objc/runtime.h>
 
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 
-#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 
@@ -85,17 +85,16 @@
     return NO;
   }
 
-  return [self.deviceModel isEqualToString:object.deviceModel] &&
-         [self.osVersionString isEqualToString:object.osVersionString];
-
+  return [self.deviceModel isEqualToString:object.deviceModel]
+  && [self.osVersionString isEqualToString:object.osVersionString];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@'",
-    self.deviceModel,
-    self.osVersionString
+          @"Device '%@' | OS Version '%@'",
+          self.deviceModel,
+          self.osVersionString
   ];
 }
 
@@ -122,7 +121,7 @@
 - (instancetype)withOS:(FBOSVersion *)os
 {
   NSParameterAssert(os);
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os ];
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os];
 }
 
 - (instancetype)withDevice:(FBDeviceType *)device

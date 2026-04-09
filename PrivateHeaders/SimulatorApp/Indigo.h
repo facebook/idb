@@ -6,15 +6,8 @@
  */
 
 /**
- Indigo HID wire format — structures for the mach message protocol between
- SimDeviceLegacyHIDClient (host) and SimHIDVirtualServiceManager (guest).
-
- Messages are sent via SimDeviceLegacyHIDClient → IndigoHIDRegistrationPort mach port.
- The guest-side dispatcher (SimHIDVirtualServiceManager.serviceForIndigoHIDData:)
- routes messages based on IndigoPayload.eventKind and target ID.
-
- Originally class-dumped from Simulator.app, enriched via disassembly of
- SimulatorKit.framework and SimulatorHID.framework (Xcode 26.2).
+ Structures from class-dumping Simulator.app
+ The notions of what these fields are is from tracing the messages sent at runtime.
  */
 
 #import <SimulatorApp/Mach.h>
@@ -78,12 +71,6 @@ typedef struct {
 
 /**
  The Indigo Event for a button event.
-
- eventTarget identifies the guest-side HID service that handles the event.
- SimHIDVirtualServiceManager dispatches on this via allServices[@(target)].
- Known targets: 11, 12, 13, 14, 50, 51, 60, 100, 300, 301, 302.
- Target 0x40000000 is screen-based (IndigoHIDTargetForScreen(screenID) = screenID | 0x40000000),
- but requires SimDeviceScreen.register() to be called first.
  */
 typedef struct {
   unsigned int eventSource; // 0x20 + 0x10 + 0x0 = 0x30
@@ -139,23 +126,8 @@ typedef struct {
 } IndigoGameController;
 
 /**
- A Union of all possible Indigo event types.
- The active member is determined by IndigoPayload.eventKind.
-
- Full union from SimulatorKit ObjC type encoding (not all members are represented here):
-   _touch_event = IIIdddddIIIIIdddddI
-   _button_event = IIIIII
-   _pointer_event = dddII
-   _velocity_event = IdddI
-   _wheel_event = IdddIIII
-   _translation_event = dddI
-   _rotation_event = dddI (3 doubles + 1 uint — device motion, NOT screen rotation)
-   _scale_event = dddI
-   _dock_swipe_event = IIdddI
-   _pointer_button_event = IIII
-   _accelerometer_event = I[40C] (1 uint + 40 raw bytes)
-   _force_event = IdId
-   _gamecontroller_event = {dpad:dddd}{face:dddd}{shoulder:dddd}{joystick:dddd}
+ A Union of all possible event types.
+ The eventType to use is identified in the header.
  */
 typedef union {
   IndigoTouch touch;
@@ -167,28 +139,24 @@ typedef union {
 } IndigoEvent;
 
 /**
- The Payload embedded inside an IndigoMessage, below the mach_msg headers.
+ The Payload embedded inside an Message.
+ Embedded below the usual mach_msg headers.
  */
 typedef struct {
-  unsigned int field1; // 0x20 + 0x0 = 0x20: "eventKind" — identifies the event type for guest-side dispatch.
-                       // SimHIDVirtualServiceManager.serviceForIndigoHIDData: dispatches on this
-                       // via bitmask 0x20846 (accepted values: 1, 2, 6, 11, 17; special: 35=gamePad).
-                       // IndigoHIDMessageForButton sets this to 2.
-                       // IndigoHIDMessageForDeviceMotionLiteEvent sets this to the eventType param (typically 1).
-  unsigned long long timestamp; // 0x20 + 0x04 = 0x24: mach_absolute_time(), set by IndigoHID setTimestamp helper.
-  unsigned int field3; // 0x20 + 0x0c = 0x2c: Zeroed in all observed messages.
+  unsigned int field1; // 0x20 + 0x0 = 0x20:
+  unsigned long long timestamp; // 0x20 + 0x04 = 0x24: This is a mach_absolute_time (uint64_t).
+  unsigned int field3; // 0x20 + 0x10 = 0x2c
   IndigoEvent event; // 0x20 + 0x10 = 0x30
 } IndigoPayload;
 
 /**
- The Indigo Message sent over the wire via SimDeviceLegacyHIDClient → IndigoHIDRegistrationPort.
- Total allocation is 0xC0 (192) bytes (calloc'd by IndigoHIDMessageFor* functions).
+ The Indigo Message sent over the wire with mach_msg_send.
  */
 typedef struct {
-    MachMessageHeader header; // 0x0
-    unsigned int innerSize; // 0x18: Always 0xa0 (160) for all event types.
-    unsigned char eventType; // 0x1c: 0x01 for button/keyboard/motion, 0x02 for touch.
-    IndigoPayload payload; // 0x20
+  MachMessageHeader header; // 0x0
+  unsigned int innerSize; // 0x18
+  unsigned char eventType; // 0x1c
+  IndigoPayload payload; // 0x20
 } IndigoMessage;
 
 #define IndigoEventTypeButton 1

@@ -20,58 +20,57 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
-@property (nonatomic, copy, readonly, class) NSString *developerDirectory;
+@property (class, nonatomic, readonly, copy) NSString *developerDirectory;
 
 /**
  The File Path to of Xcode's /Xcode.app/Contents directory.
  */
-@property (nonatomic, copy, readonly, class) NSString *contentsDirectory;
+@property (class, nonatomic, readonly, copy) NSString *contentsDirectory;
 
 /**
  The Version Number for the Xcode defined by the Developer Directory.
  */
-@property (nonatomic, copy, readonly, class) NSDecimalNumber *xcodeVersionNumber;
+@property (class, nonatomic, readonly, copy) NSDecimalNumber *xcodeVersionNumber;
 
 /**
  The Version Number for the Xcode defined by the Developer Directory.
  */
-@property (nonatomic, assign, readonly, class) NSOperatingSystemVersion xcodeVersion;
+@property (class, nonatomic, readonly, assign) NSOperatingSystemVersion xcodeVersion;
 
 /**
  The SDK Version for the Xcode defined by the Developer Directory.
  */
-@property (nonatomic, copy, readonly, class) NSDecimalNumber *iosSDKVersionNumber;
+@property (class, nonatomic, readonly, copy) NSDecimalNumber *iosSDKVersionNumber;
 
 /**
  Formatter for the SDK Version a string
  */
-@property (nonatomic, strong, readonly, class) NSDecimalNumber *iosSDKVersionNumberFormatter;
+@property (class, nonatomic, readonly, strong) NSDecimalNumber *iosSDKVersionNumberFormatter;
 
 /**
  The SDK Version of the current Xcode Version as a String.
  */
-@property (nonatomic, copy, readonly, class) NSString *iosSDKVersion;
+@property (class, nonatomic, readonly, copy) NSString *iosSDKVersion;
 
 /**
  YES if Xcode 12 or greater, NO Otherwise.
  */
-@property (nonatomic, assign, readonly, class) BOOL isXcode12OrGreater;
+@property (class, nonatomic, readonly, assign) BOOL isXcode12OrGreater;
 
 /**
  YES if Xcode 12.5 or greater, NO Otherwise.
  */
-@property (nonatomic, assign, readonly, class) BOOL isXcode12_5OrGreater;
+@property (class, nonatomic, readonly, assign) BOOL isXcode12_5OrGreater;
 
 /**
  A Description of the Current Configuration.
  */
-@property (nonatomic, copy, readonly, class) NSString *description;
+@property (class, nonatomic, readonly, copy) NSString *description;
 
 /**
  A bundle descriptor representing SimulatorApp.
  */
-@property (nonatomic, copy, readonly, class) FBBundleDescriptor *simulatorApp;
-
+@property (class, nonatomic, readonly, copy) FBBundleDescriptor *simulatorApp;
 
 /**
  Return Developer directory if exist or nil.
@@ -79,6 +78,5 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSString *)getDeveloperDirectoryIfExists;
 
 @end
-
 
 NS_ASSUME_NONNULL_END

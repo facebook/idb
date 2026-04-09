@@ -9,17 +9,17 @@
 
 #import <stdio.h>
 
-#import "FBControlCoreGlobalConfiguration.h"
-#import "FBConcurrentCollectionOperations.h"
-#import "NSPredicate+FBControlCore.h"
-#import "FBControlCoreError.h"
-#import "FBControlCoreLogger.h"
-#import "FBConcatedJsonParser.h"
-#import "FBCrashLogParser.h"
 #import <Foundation/Foundation.h>
 
-@implementation FBCrashLog
+#import "FBConcatedJsonParser.h"
+#import "FBConcurrentCollectionOperations.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCoreLogger.h"
+#import "FBCrashLogParser.h"
+#import "NSPredicate+FBControlCore.h"
 
+@implementation FBCrashLog
 
 + (NSDateFormatter *)dateFormatter
 {
@@ -40,7 +40,7 @@
 {
   self = [super init];
   if (!self) {
-      return nil;
+    return nil;
   }
 
   _info = info;
@@ -58,8 +58,8 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-    // Is immutable
-    return self;
+  // Is immutable
+  return self;
 }
 
 @end
@@ -68,44 +68,46 @@
 
 #pragma mark Initializers
 
-+ (nullable instancetype)fromCrashLogAtPath:(NSString *)crashPath error:(NSError **)error {
++ (nullable instancetype)fromCrashLogAtPath:(NSString *)crashPath error:(NSError **)error
+{
   if (!crashPath) {
     return [[FBControlCoreError
-      describe:@"No crash path provided"]
-      fail:error];
+             describe:@"No crash path provided"]
+            fail:error];
   }
   if (![NSFileManager.defaultManager fileExistsAtPath:crashPath]) {
     return [[FBControlCoreError
-      describeFormat:@"File does not exist at given crash path: %@", crashPath]
-      fail:error];
+             describeFormat:@"File does not exist at given crash path: %@", crashPath]
+            fail:error];
   }
   if (![NSFileManager.defaultManager isReadableFileAtPath:crashPath]) {
     return [[FBControlCoreError
-      describeFormat:@"Crash file at %@ is not readable", crashPath]
-      fail:error];
+             describeFormat:@"Crash file at %@ is not readable", crashPath]
+            fail:error];
   }
   NSData *crashFileData = [NSData dataWithContentsOfFile:crashPath options:0 error:error];
   if (!crashFileData) {
     return [[FBControlCoreError
-      describeFormat:@"Could not read data from %@", crashPath]
-      fail:error];
+             describeFormat:@"Could not read data from %@", crashPath]
+            fail:error];
   } else if (crashFileData.length == 0) {
-      return [[FBControlCoreError
-        describeFormat:@"Crash file at %@ is empty", crashPath]
-        fail:error];
+    return [[FBControlCoreError
+             describeFormat:@"Crash file at %@ is empty", crashPath]
+            fail:error];
   }
 
   NSString *crashString = [[NSString alloc] initWithData:crashFileData encoding:NSUTF8StringEncoding];
   if (!crashString) {
     return [[FBControlCoreError
-      describeFormat:@"Could not extract string from %@", crashPath]
-      fail:error];
+             describeFormat:@"Could not extract string from %@", crashPath]
+            fail:error];
   }
 
   return [self fromCrashLogString:crashString crashPath:crashPath parser:[self getPreferredCrashLogParserForCrashString:crashString] error:error];
 }
 
-+ (id<FBCrashLogParser>)getPreferredCrashLogParserForCrashString:(NSString *)crashString {
++ (id<FBCrashLogParser>)getPreferredCrashLogParserForCrashString:(NSString *)crashString
+{
   if (crashString.length > 0 && [crashString characterAtIndex:0] == '{') {
     return [[FBConcatedJSONCrashLogParser alloc] init];
   } else {
@@ -113,8 +115,8 @@
   }
 }
 
-+ (nullable instancetype)fromCrashLogString:(NSString *)crashString crashPath:(NSString *)crashPath parser:(id<FBCrashLogParser>)parser error:(NSError **)error {
-
++ (nullable instancetype)fromCrashLogString:(NSString *)crashString crashPath:(NSString *)crashPath parser:(id<FBCrashLogParser>)parser error:(NSError **)error
+{
   NSString *executablePath = nil;
   NSString *identifier = nil;
   NSString *processName = nil;
@@ -127,16 +129,16 @@
 
   NSError *err;
   [parser parseCrashLogFromString:crashString
-    executablePathOut:&executablePath
-    identifierOut:&identifier
-    processNameOut:&processName
-    parentProcessNameOut:&parentProcessName
-    processIdentifierOut:&processIdentifier
-    parentProcessIdentifierOut:&parentProcessIdentifier
-    dateOut:&date
-    exceptionDescription:&exceptionDescription
-    crashedThreadDescription:&crashedThreadDescription
-    error:&err];
+                executablePathOut:&executablePath
+                    identifierOut:&identifier
+                   processNameOut:&processName
+             parentProcessNameOut:&parentProcessName
+             processIdentifierOut:&processIdentifier
+       parentProcessIdentifierOut:&parentProcessIdentifier
+                          dateOut:&date
+             exceptionDescription:&exceptionDescription
+         crashedThreadDescription:&crashedThreadDescription
+                            error:&err];
 
   if (err) {
     return [[FBControlCoreError
@@ -183,21 +185,21 @@
   FBCrashLogInfoProcessType processType = [self processTypeForExecutablePath:executablePath];
 
   return [[FBCrashLogInfo alloc]
-    initWithCrashPath:crashPath
-    executablePath:executablePath
-    identifier:identifier
-    processName:processName
-    processIdentifier:processIdentifier
-    parentProcessName:parentProcessName
-    parentProcessIdentifier:parentProcessIdentifier
-    date:date
-    processType:processType
-    exceptionDescription:exceptionDescription
-    crashedThreadDescription:crashedThreadDescription];
+          initWithCrashPath:crashPath
+          executablePath:executablePath
+          identifier:identifier
+          processName:processName
+          processIdentifier:processIdentifier
+          parentProcessName:parentProcessName
+          parentProcessIdentifier:parentProcessIdentifier
+          date:date
+          processType:processType
+          exceptionDescription:exceptionDescription
+          crashedThreadDescription:crashedThreadDescription];
 }
 
-
-- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType exceptionDescription:(NSString *)exceptionDescription crashedThreadDescription:(NSString *)crashedThreadDescription{
+- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath identifier:(NSString *)identifier processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier date:(NSDate *)date processType:(FBCrashLogInfoProcessType)processType exceptionDescription:(NSString *)exceptionDescription crashedThreadDescription:(NSString *)crashedThreadDescription
+{
   self = [super init];
   if (!self) {
     return nil;
@@ -236,17 +238,17 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@ | Exception: %@ | Trace: %@",
-    self.identifier,
-    self.executablePath,
-    self.processName,
-    self.processIdentifier,
-    self.parentProcessName,
-    self.parentProcessIdentifier,
-    self.date,
-    self.crashPath,
-    self.exceptionDescription,
-    self.crashedThreadDescription
+          @"Identifier %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d | Date %@ | Path %@ | Exception: %@ | Trace: %@",
+          self.identifier,
+          self.executablePath,
+          self.processName,
+          self.processIdentifier,
+          self.parentProcessName,
+          self.parentProcessIdentifier,
+          self.date,
+          self.crashPath,
+          self.exceptionDescription,
+          self.crashedThreadDescription
   ];
 }
 
@@ -278,18 +280,18 @@
 
   for (NSString *basePath in self.diagnosticReportsPaths) {
     NSArray<FBCrashLogInfo *> *crashInfos = [[FBConcurrentCollectionOperations
-      filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-      predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtensions:@[@"crash", @"ips"]]
-      map:^ FBCrashLogInfo * (NSString *fileName) {
-        NSString *path = [basePath stringByAppendingPathComponent:fileName];
-        NSError *error = nil;
-        FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
-        if (!info) {
-          [logger logFormat:@"Error parsing log %@", error];
-        }
-        return info;
-      }]
-      filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
+                                              filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
+                                              predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtensions:@[@"crash", @"ips"]]
+                                              map:^FBCrashLogInfo *(NSString *fileName) {
+                                                NSString *path = [basePath stringByAppendingPathComponent:fileName];
+                                                NSError *error = nil;
+                                                FBCrashLogInfo *info = [FBCrashLogInfo fromCrashLogAtPath:path error:&error];
+                                                if (!info) {
+                                                  [logger logFormat:@"Error parsing log %@", error];
+                                                }
+                                                return info;
+                                              }]
+                                             filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
 
     [allCrashInfos addObjectsFromArray:crashInfos];
   }
@@ -305,9 +307,9 @@
   NSString *contents = [self loadRawCrashLogStringWithError:&innerError];
   if (!contents) {
     return [[[FBControlCoreError
-      describeFormat:@"Failed to read crash log at path %@", self.crashPath]
-      causedBy:innerError]
-      fail:error];
+              describeFormat:@"Failed to read crash log at path %@", self.crashPath]
+             causedBy:innerError]
+            fail:error];
   }
   return [[FBCrashLog alloc] initWithInfo:self contents:contents];
 }
@@ -316,14 +318,14 @@
 
 + (NSPredicate *)predicateForCrashLogsWithProcessID:(pid_t)processID
 {
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+  return [NSPredicate predicateWithBlock:^BOOL (FBCrashLogInfo *crashLog, id _) {
     return crashLog.processIdentifier == processID;
   }];
 }
 
 + (NSPredicate *)predicateNewerThanDate:(NSDate *)date
 {
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+  return [NSPredicate predicateWithBlock:^BOOL (FBCrashLogInfo *crashLog, id _) {
     return [date compare:crashLog.date] == NSOrderedAscending;
   }];
 }
@@ -335,21 +337,21 @@
 
 + (NSPredicate *)predicateForIdentifier:(NSString *)identifier
 {
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+  return [NSPredicate predicateWithBlock:^BOOL (FBCrashLogInfo *crashLog, id _) {
     return [identifier isEqualToString:crashLog.identifier];
   }];
 }
 
 + (NSPredicate *)predicateForName:(NSString *)name
 {
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+  return [NSPredicate predicateWithBlock:^BOOL (FBCrashLogInfo *crashLog, id _) {
     return [name isEqualToString:crashLog.name];
   }];
 }
 
 + (NSPredicate *)predicateForExecutablePathContains:(NSString *)contains
 {
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+  return [NSPredicate predicateWithBlock:^BOOL (FBCrashLogInfo *crashLog, id _) {
     return [crashLog.executablePath containsString:contains];
   }];
 }
@@ -382,7 +384,7 @@
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
   if (date) {
-    datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *fileName, NSDictionary *_) {
+    datePredicate = [NSPredicate predicateWithBlock:^BOOL (NSString *fileName, NSDictionary *_) {
       NSString *path = [basePath stringByAppendingPathComponent:fileName];
       NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
       return [attributes.fileModificationDate compare:date] != NSOrderedAscending;
@@ -391,7 +393,7 @@
   return [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [NSPredicate predicateWithFormat:@"pathExtension in %@", extensions],
     datePredicate
-  ]];
+          ]];
 }
 
 @end

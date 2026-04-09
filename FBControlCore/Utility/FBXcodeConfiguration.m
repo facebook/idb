@@ -9,9 +9,9 @@
 
 #import "FBBundleDescriptor.h"
 #import "FBFuture+Sync.h"
-#import "FBiOSTargetConfiguration.h"
 #import "FBProcessBuilder.h"
 #import "FBXcodeDirectory.h"
+#import "FBiOSTargetConfiguration.h"
 
 @implementation FBXcodeConfiguration
 
@@ -36,8 +36,8 @@
   static NSDecimalNumber *versionNumber;
   dispatch_once(&onceToken, ^{
     NSString *versionNumberString = [FBXcodeConfiguration
-      readValueForKey:@"CFBundleShortVersionString"
-      fromPlistAtPath:FBXcodeConfiguration.xcodeInfoPlistPath];
+                                     readValueForKey:@"CFBundleShortVersionString"
+                                     fromPlistAtPath:FBXcodeConfiguration.xcodeInfoPlistPath];
     versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
   });
   return versionNumber;
@@ -59,8 +59,8 @@
   static NSString *sdkVersion;
   dispatch_once(&onceToken, ^{
     sdkVersion = [FBXcodeConfiguration
-      readValueForKey:@"Version"
-      fromPlistAtPath:FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath];
+                  readValueForKey:@"Version"
+                  fromPlistAtPath:FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath];
   });
   return sdkVersion;
 }
@@ -104,10 +104,10 @@
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@",
-    self.developerDirectory,
-    self.xcodeVersionNumber,
-    self.iosSDKVersionNumber
+          @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@",
+          self.developerDirectory,
+          self.xcodeVersionNumber,
+          self.iosSDKVersionNumber
   ];
 }
 
@@ -120,24 +120,24 @@
 
 + (NSString *)simulatorApplicationPath
 {
-  NSString *simulatorBinaryName =  @"Simulator";
+  NSString *simulatorBinaryName = @"Simulator";
   return [[self.developerDirectory
-    stringByAppendingPathComponent:@"Applications"]
-    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
+           stringByAppendingPathComponent:@"Applications"]
+          stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
 }
 
 + (NSString *)iPhoneSimulatorPlatformInfoPlistPath
 {
   return [[self.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-    stringByAppendingPathComponent:@"Info.plist"];
+           stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
+          stringByAppendingPathComponent:@"Info.plist"];
 }
 
 + (NSString *)xcodeInfoPlistPath
 {
   return [[self.developerDirectory
-    stringByDeletingLastPathComponent]
-    stringByAppendingPathComponent:@"Info.plist"];
+           stringByDeletingLastPathComponent]
+          stringByAppendingPathComponent:@"Info.plist"];
 }
 
 + (NSString *)findXcodeDeveloperDirectoryOrAssert

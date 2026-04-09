@@ -13,15 +13,15 @@
 
 @interface FBFutureContextManager ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, weak, readonly) id<FBFutureContextManagerDelegate> delegate;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, weak) id<FBFutureContextManagerDelegate> delegate;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
-@property (nonatomic, strong, readonly) NSMutableArray<NSUUID *> *pendingOrdering;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSUUID *, FBMutableFuture<NSUUID *> *> *pending;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSUUID *, FBFuture<NSUUID *> *> *using;
-@property (nonatomic, strong, nullable, readwrite) FBFuture<NSNull *> *teardownTimeout;
-@property (nonatomic, strong, nullable, readwrite) FBFuture<id> *context;
+@property (nonatomic, readonly, strong) NSMutableArray<NSUUID *> *pendingOrdering;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSUUID *, FBMutableFuture<NSUUID *> *> *pending;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSUUID *, FBFuture<NSUUID *> *> *using;
+@property (nullable, nonatomic, readwrite, strong) FBFuture<NSNull *> *teardownTimeout;
+@property (nullable, nonatomic, readwrite, strong) FBFuture<id> *context;
 
 @end
 
@@ -60,62 +60,66 @@
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   NSUUID *uuid = NSUUID.UUID;
   return [[[[self
-    resourceAvailableForUseWithUUID:uuid logger:logger]
-    onQueue:self.queue fmap:^ FBFuture<id> * (id _){
-      [self cancelTimer:logger];
-      FBFuture<id> *context = self.context;
-      if (context.hasCompleted) {
-        [logger logFormat:@"Re-Using existing context %@", context.result];
-        return [FBFuture futureWithResult:context.result];
-      }
-      if (context) {
-        [logger logFormat:@"Re-Using preparing context %@", context];
-        return context;
-      }
-      [logger log:@"No active context, preparing..."];
-      context = [self.delegate prepare:logger];
-      self.context = context;
-      return context;
-    }]
-    onQueue:self.queue handleError:^ FBFuture *(NSError *error) {
-      self.context = nil;
-      [self popPending:uuid];
-      return [FBFuture futureWithError:error];
-    }]
-    onQueue:self.queue contextualTeardown:^(id _, FBFutureState __) {
-      NSUInteger remainingConsumers = [self popPending:uuid];
-      if (remainingConsumers == 0) {
-        FBFuture<id> *context = self.context;
-        NSAssert(context, @"Expected a context preserved");
-        NSNumber *poolTimeout = self.delegate.contextPoolTimeout;
-        if (poolTimeout) {
-          NSTimeInterval timeout = poolTimeout.doubleValue;
-          [logger logFormat:@"No more consumers, but pooling the context, will wait for %f seconds of inactivity before tearing down", timeout];
-          [self teardownInFuture:timeout logger:logger];
-        } else {
-          [logger log:@"No more consumers, no timeout tearing down context now"];
-          [self teardownNow:logger];
-        }
-      } else {
-        [logger logFormat:@"%lu More consumers waiting or running, not tearing down", remainingConsumers];
-      }
-      return FBFuture.empty;
-    }];
+             resourceAvailableForUseWithUUID:uuid
+             logger:logger]
+            onQueue:self.queue
+            fmap:^FBFuture<id> *(id _) {
+              [self cancelTimer:logger];
+              FBFuture<id> *context = self.context;
+              if (context.hasCompleted) {
+                [logger logFormat:@"Re-Using existing context %@", context.result];
+                return [FBFuture futureWithResult:context.result];
+              }
+              if (context) {
+                [logger logFormat:@"Re-Using preparing context %@", context];
+                return context;
+              }
+              [logger log:@"No active context, preparing..."];
+              context = [self.delegate prepare:logger];
+              self.context = context;
+              return context;
+            }]
+           onQueue:self.queue
+           handleError:^FBFuture *(NSError *error) {
+             self.context = nil;
+             [self popPending:uuid];
+             return [FBFuture futureWithError:error];
+           }]
+          onQueue:self.queue
+          contextualTeardown:^(id _, FBFutureState __) {
+            NSUInteger remainingConsumers = [self popPending:uuid];
+            if (remainingConsumers == 0) {
+              FBFuture<id> *context = self.context;
+              NSAssert(context, @"Expected a context preserved");
+              NSNumber *poolTimeout = self.delegate.contextPoolTimeout;
+              if (poolTimeout) {
+                NSTimeInterval timeout = poolTimeout.doubleValue;
+                [logger logFormat:@"No more consumers, but pooling the context, will wait for %f seconds of inactivity before tearing down", timeout];
+                [self teardownInFuture:timeout logger:logger];
+              } else {
+                [logger log:@"No more consumers, no timeout tearing down context now"];
+                [self teardownNow:logger];
+              }
+            } else {
+              [logger logFormat:@"%lu More consumers waiting or running, not tearing down", remainingConsumers];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (id)utilizeNowWithPurpose:(NSString *)purpose error:(NSError **)error
 {
   if (self.pending.count > 0 || self.using.count > 0 || self.context) {
     return [[FBControlCoreError
-      describeFormat:@"Could not utilize context synchronously for %@ it is already in use", purpose]
-      fail:error];
+             describeFormat:@"Could not utilize context synchronously for %@ it is already in use", purpose]
+            fail:error];
   }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   FBFuture<id> *context = [self.delegate prepare:logger];
   if (!context.result) {
     return [[FBControlCoreError
-      describeFormat:@"Could not extract prepare synchronously in %@", context]
-      fail:error];
+             describeFormat:@"Could not extract prepare synchronously in %@", context]
+            fail:error];
   }
   self.context = context;
   return context.result;
@@ -126,15 +130,15 @@
   FBFuture<id> *context = self.context;
   if (!context) {
     return [[FBControlCoreError
-      describeFormat:@"Could not return context for '%@' as none exists", purpose]
-      failBool:error];
+             describeFormat:@"Could not return context for '%@' as none exists", purpose]
+            failBool:error];
   }
   id<FBControlCoreLogger> logger = [self loggerWithPurpose:purpose];
   FBFuture<NSNull *> *teardown = [self.delegate teardown:context.result logger:logger];
   if (!teardown.result) {
     return [[FBControlCoreError
-      describeFormat:@"Could not return context synchronously in %@", teardown]
-      failBool:error];
+             describeFormat:@"Could not return context synchronously in %@", teardown]
+            failBool:error];
   }
   self.context = nil;
   return YES;
@@ -150,23 +154,24 @@
 - (FBFuture<NSUUID *> *)resourceAvailableForUseWithUUID:(NSUUID *)uuid logger:(id<FBControlCoreLogger>)logger
 {
   return [FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSUUID *> * {
-      if (self.using.count > 0) {
-        if (self.delegate.isContextSharable) {
-          [logger logFormat:@"Context '%@' in use, but it can be shared", self.delegate.contextName];
-          return [self immedateResourceAvailable:uuid];
-        } else {
-          [logger logFormat:@"Context '%@' currently in use, waiting for it to be available", self.delegate.contextName];
-          return [self pushPending:uuid];
-        }
-      }
-      if (self.context) {
-        [logger logFormat:@"No user of context '%@' but we don't need to re-aquire it", self.delegate.contextName];
-        return [self immedateResourceAvailable:uuid];
-      }
-      [logger logFormat:@"Context '%@' not in use, time to aquire it", self.delegate.contextName];
-      return [self immedateResourceAvailable:uuid];
-    }];
+          onQueue:self.queue
+          resolve:^FBFuture<NSUUID *> * {
+            if (self.using.count > 0) {
+              if (self.delegate.isContextSharable) {
+                [logger logFormat:@"Context '%@' in use, but it can be shared", self.delegate.contextName];
+                return [self immedateResourceAvailable:uuid];
+              } else {
+                [logger logFormat:@"Context '%@' currently in use, waiting for it to be available", self.delegate.contextName];
+                return [self pushPending:uuid];
+              }
+            }
+            if (self.context) {
+              [logger logFormat:@"No user of context '%@' but we don't need to re-aquire it", self.delegate.contextName];
+              return [self immedateResourceAvailable:uuid];
+            }
+            [logger logFormat:@"Context '%@' not in use, time to aquire it", self.delegate.contextName];
+            return [self immedateResourceAvailable:uuid];
+          }];
 }
 
 - (FBFuture<NSUUID *> *)immedateResourceAvailable:(NSUUID *)uuid
@@ -214,18 +219,20 @@
 
   __weak typeof(self) weakSelf = self;
   self.teardownTimeout = [[FBFuture
-    futureWithDelay:timeout future:FBFuture.empty]
-    onQueue:self.queue notifyOfCompletion:^(FBFuture *future) {
-      if (!future.result) {
-        return;
-      }
-      if (weakSelf.using.count > 0) {
-        [logger logFormat:@"Not tearing down context after %f seconds as we have an existing consumer", timeout];
-      } else {
-        [logger logFormat:@"No-one else wants the context, tearing it down"];
-        [weakSelf teardownNow:logger];
-      }
-    }];
+                           futureWithDelay:timeout
+                           future:FBFuture.empty]
+                          onQueue:self.queue
+                          notifyOfCompletion:^(FBFuture *future) {
+                            if (!future.result) {
+                              return;
+                            }
+                            if (weakSelf.using.count > 0) {
+                              [logger logFormat:@"Not tearing down context after %f seconds as we have an existing consumer", timeout];
+                            } else {
+                              [logger logFormat:@"No-one else wants the context, tearing it down"];
+                              [weakSelf teardownNow:logger];
+                            }
+                          }];
 }
 
 - (void)cancelTimer:(id<FBControlCoreLogger>)logger

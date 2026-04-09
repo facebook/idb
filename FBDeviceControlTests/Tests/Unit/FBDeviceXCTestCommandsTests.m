@@ -6,6 +6,7 @@
  */
 
 #import <XCTest/XCTest.h>
+
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
@@ -16,8 +17,8 @@
 
 @interface FBTestManagerTestReporterDouble : NSObject <FBXCTestReporter>
 
-@property (nonatomic, assign, readwrite) BOOL testCaseDidStartForTestClassCalled;
-@property (nonatomic, assign, readwrite) BOOL testCaseDidFinishForTestClassCalled;
+@property (nonatomic, readwrite, assign) BOOL testCaseDidStartForTestClassCalled;
+@property (nonatomic, readwrite, assign) BOOL testCaseDidFinishForTestClassCalled;
 
 @end
 
@@ -50,33 +51,34 @@
 
 @implementation FBDeviceXCTestCommandsTests
 
-- (void)testOverwriteXCTestRunPropertiesWithBaseProperties {
+- (void)testOverwriteXCTestRunPropertiesWithBaseProperties
+{
   NSDictionary<NSString *, id> *baseProperties =
+  @{
+    @"BundleIDBase" :
     @{
-      @"BundleIDBase":
-        @{
-          @"NoOverwrite": @"Hello",
-          @"OverwriteMe": @"Hi",
-        }
-    };
+      @"NoOverwrite" : @"Hello",
+      @"OverwriteMe" : @"Hi",
+    }
+  };
 
   NSDictionary<NSString *, id> *newProperties =
   @{
-    @"StubBundleId":
-      @{
-        @"OverwriteMe": @"Hi overwrite!",
-        @"NoExist": @"It's not defined in base so it won't be used.",
-        }
-    };
+    @"StubBundleId" :
+    @{
+      @"OverwriteMe" : @"Hi overwrite!",
+      @"NoExist" : @"It's not defined in base so it won't be used.",
+    }
+  };
 
   NSDictionary<NSString *, id> *expectedProperties =
   @{
-    @"BundleIDBase":
-      @{
-        @"NoOverwrite": @"Hello",
-        @"OverwriteMe": @"Hi overwrite!",
-        }
-    };
+    @"BundleIDBase" :
+    @{
+      @"NoOverwrite" : @"Hello",
+      @"OverwriteMe" : @"Hi overwrite!",
+    }
+  };
 
   NSDictionary<NSString *, id> *realProperties = [FBXcodeBuildOperation
                                                   overwriteXCTestRunPropertiesWithBaseProperties:baseProperties

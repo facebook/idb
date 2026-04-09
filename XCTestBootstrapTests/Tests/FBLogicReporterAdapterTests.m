@@ -6,30 +6,34 @@
  */
 
 #import <XCTest/XCTest.h>
+
 #import <XCTestBootstrap/FBLogicReporterAdapter.h>
-#import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
+#import <XCTestBootstrap/FBXCTestReporter.h>
+
 #import "FBXCTestReporterDouble.h"
 
 @interface FBLogicReporterAdapterTests : XCTestCase
 
-@property (nonatomic, strong, nullable, readwrite) FBLogicReporterAdapter *adapter;
-@property (nonatomic, strong, nullable, readwrite) FBXCTestReporterDouble *reporterDouble;
+@property (nullable, nonatomic, readwrite, strong) FBLogicReporterAdapter *adapter;
+@property (nullable, nonatomic, readwrite, strong) FBXCTestReporterDouble *reporterDouble;
 
 @end
 
-static NSDictionary *beginTestSuiteDict(void) {
+static NSDictionary *beginTestSuiteDict(void)
+{
   return @{
-    @"event": @"begin-test-suite",
-    @"suite": @"NARANJA",
-    @"timestamp": @"1970",
+    @"event" : @"begin-test-suite",
+    @"suite" : @"NARANJA",
+    @"timestamp" : @"1970",
   };
 }
 
-static NSDictionary *testEventDict(void) {
+static NSDictionary *testEventDict(void)
+{
   return @{
-    @"className": @"OmniClass",
-    @"methodName": @"theMethod:toRule:themAll:",
+    @"className" : @"OmniClass",
+    @"methodName" : @"theMethod:toRule:themAll:",
   };
 }
 
@@ -45,7 +49,6 @@ static NSDictionary *testEventDict(void) {
 - (void)test_LogicReporter_testSuiteDidStart
 {
   NSData *data = [NSJSONSerialization dataWithJSONObject:beginTestSuiteDict() options:0 error:NULL];
-
 
   [self.adapter handleEventJSONData:data];
   XCTAssertEqualObjects(self.reporterDouble.startedSuites, @[@"NARANJA"]);
@@ -74,9 +77,9 @@ static NSDictionary *testEventDict(void) {
   NSUInteger line = 969;
   NSString *file = @"dasLiebstenFeile";
   event[@"exceptions"] = @[@{
-    @"reason": message,
-    @"lineNumber": @(line),
-    @"filePathInProject": file,
+                             @"reason" : message,
+                             @"lineNumber" : @(line),
+                             @"filePathInProject" : file,
   }];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
@@ -97,9 +100,9 @@ static NSDictionary *testEventDict(void) {
   NSUInteger line = 969;
   NSString *file = @"dasLiebstenFeile";
   event[@"exceptions"] = @[@{
-    @"reason": message,
-    @"lineNumber": @(line),
-    @"filePathInProject": file,
+                             @"reason" : message,
+                             @"lineNumber" : @(line),
+                             @"filePathInProject" : file,
   }];
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:NULL];
@@ -126,14 +129,14 @@ static NSDictionary *testEventDict(void) {
 - (void)test_LogicReporter_testSuiteDidEnd
 {
   NSDictionary *dict = @{
-    @"event": @"end-test-suite",
-    @"suite": @"Toplevel Test Suite",
-    @"testCaseCount": @10,
-    @"testDuration": @"0.148857057094574",
-    @"timestamp": @"1510917478.156559",
-    @"totalDuration": @"0.1503260135650635",
-    @"totalFailureCount": @4,
-    @"unexpectedExceptionCount": @0,
+    @"event" : @"end-test-suite",
+    @"suite" : @"Toplevel Test Suite",
+    @"testCaseCount" : @10,
+    @"testDuration" : @"0.148857057094574",
+    @"timestamp" : @"1510917478.156559",
+    @"totalDuration" : @"0.1503260135650635",
+    @"totalFailureCount" : @4,
+    @"unexpectedExceptionCount" : @0,
   };
 
   NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:0 error:NULL];

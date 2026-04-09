@@ -14,34 +14,34 @@
 
 @interface SimDevicePasteboard : NSObject <SimPasteboard>
 {
-    NSObject<OS_dispatch_queue> *_itemsQueue;
-    unsigned long long _changeCount;
-    NSArray *_items;
-    SimDevice *_device;
-    SimDevicePasteboardConnection *_pasteboardConnection;
-    SimMachPortServer *_notificationServer;
-    SimDeviceNotificationManager *_notificationManager;
-    unsigned long long _bootMonitorRegistrationID;
-    SimMachPortServer *_promisedDataServer;
-    NSObject<OS_dispatch_queue> *_subscriptionStateQueue;
-    NSDate *_lastConnectionTime;
-    NSObject<OS_dispatch_source> *_lifecycleSource;
-    NSArray *_stagedItems;
+  NSObject<OS_dispatch_queue> *_itemsQueue;
+  unsigned long long _changeCount;
+  NSArray *_items;
+  SimDevice *_device;
+  SimDevicePasteboardConnection *_pasteboardConnection;
+  SimMachPortServer *_notificationServer;
+  SimDeviceNotificationManager *_notificationManager;
+  unsigned long long _bootMonitorRegistrationID;
+  SimMachPortServer *_promisedDataServer;
+  NSObject<OS_dispatch_queue> *_subscriptionStateQueue;
+  NSDate *_lastConnectionTime;
+  NSObject<OS_dispatch_source> *_lifecycleSource;
+  NSArray *_stagedItems;
 }
 
 @property (atomic, copy) NSArray *stagedItems;
-@property (retain, nonatomic) NSObject<OS_dispatch_source> *lifecycleSource;
-@property (retain, nonatomic) NSDate *lastConnectionTime;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *subscriptionStateQueue;
-@property (retain, nonatomic) SimMachPortServer *promisedDataServer;
+@property (nonatomic, retain) NSObject<OS_dispatch_source> *lifecycleSource;
+@property (nonatomic, retain) NSDate *lastConnectionTime;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *subscriptionStateQueue;
+@property (nonatomic, retain) SimMachPortServer *promisedDataServer;
 @property (nonatomic, assign) unsigned long long bootMonitorRegistrationID;
-@property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
-@property (retain, nonatomic) SimMachPortServer *notificationServer;
-@property (retain, nonatomic) SimDevicePasteboardConnection *pasteboardConnection;
+@property (nonatomic, retain) SimDeviceNotificationManager *notificationManager;
+@property (nonatomic, retain) SimMachPortServer *notificationServer;
+@property (nonatomic, retain) SimDevicePasteboardConnection *pasteboardConnection;
 @property (nonatomic, weak) SimDevice *device;
 @property (atomic, copy) NSArray *items;
 @property (atomic, assign) unsigned long long changeCount; // @synthesize changeCount=_changeCount;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *itemsQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *itemsQueue;
 
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
 - (unsigned long long)registerNotificationHandlerOnQueue:(id)arg1 handler:(CDUnknownBlockType)arg2;

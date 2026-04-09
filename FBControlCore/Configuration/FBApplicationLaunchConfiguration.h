@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetOperation.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
+#import <FBControlCore/FBiOSTargetOperation.h>
 /**
  Launch Modes for an Applicaton
  */
@@ -46,22 +46,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
  */
-@property (nonnull, nonatomic, copy, readonly) NSString *bundleID;
+@property (nonnull, nonatomic, readonly, copy) NSString *bundleID;
 
 /**
  The Name (CFBundleName) of the the Application to Launch. May be nil.
  */
-@property (nullable, nonatomic, copy, readonly) NSString *bundleName;
+@property (nullable, nonatomic, readonly, copy) NSString *bundleName;
 
 /**
  An enum describing how to launch the application
  */
-@property (nonatomic, assign, readonly) FBApplicationLaunchMode launchMode;
+@property (nonatomic, readonly, assign) FBApplicationLaunchMode launchMode;
 
 /**
  A BOOL signalizing whether the application should wait for debugger to be attached immediately after launch.
  */
-@property (nonatomic, assign, readonly) BOOL waitForDebugger;
+@property (nonatomic, readonly, assign) BOOL waitForDebugger;
 
 @end
 

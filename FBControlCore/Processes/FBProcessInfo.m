@@ -45,17 +45,17 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return self.processIdentifier == object.processIdentifier &&
-         [self.launchPath isEqual:object.launchPath] &&
-         [self.arguments isEqual:object.arguments];
+  return self.processIdentifier == object.processIdentifier
+  && [self.launchPath isEqual:object.launchPath]
+  && [self.arguments isEqual:object.arguments];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Process %@ | PID %d",
-    self.processName,
-    self.processIdentifier
+          @"Process %@ | PID %d",
+          self.processName,
+          self.processIdentifier
   ];
 }
 

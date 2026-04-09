@@ -9,9 +9,9 @@
 
 @interface FBDeviceStorage ()
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *attachedDevices;
-@property (nonatomic, strong, readonly) NSMapTable<NSString *, id> *referencedDevices;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, id> *attachedDevices;
+@property (nonatomic, readonly, strong) NSMapTable<NSString *, id> *referencedDevices;
 
 @end
 

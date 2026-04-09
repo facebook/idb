@@ -25,22 +25,22 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The file descriptor to attach to.
  */
-@property (nonatomic, assign, readonly) int fileDescriptor;
+@property (nonatomic, readonly, assign) int fileDescriptor;
 
 /**
  Whether the implementor should close when it reaches the end of it's stream.
  */
-@property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
+@property (nonatomic, readonly, assign) BOOL closeOnEndOfFile;
 
 /**
  Whether the attachment represents an input or an output.
  */
-@property (nonatomic, assign, readonly) FBProcessStreamAttachmentMode mode;
+@property (nonatomic, readonly, assign) FBProcessStreamAttachmentMode mode;
 
 /**
  Checks fileDescriptor status and closes it if necessary;
  */
--(void)close;
+- (void)close;
 
 @end
 
@@ -73,12 +73,12 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The number of bytes transferred.
  */
-@property (nonatomic, assign, readonly) ssize_t bytesTransferred;
+@property (nonatomic, readonly, assign) ssize_t bytesTransferred;
 
 /**
  An error, if any has occured in the streaming of data to the input.
  */
-@property (nonatomic, strong, nullable, readonly) NSError *streamError;
+@property (nullable, nonatomic, readonly, strong) NSError *streamError;
 
 @end
 
@@ -90,7 +90,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The File Path to write to.
  */
-@property (nonatomic, copy, readonly) NSString *filePath;
+@property (nonatomic, readonly, copy) NSString *filePath;
 
 /**
  Should be called just after the the file path has been written to.
@@ -129,7 +129,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  A container object for the output of a process.
  */
-@interface FBProcessOutput<WrappedType> : NSObject <FBStandardStream, FBProcessOutput>
+@interface FBProcessOutput <WrappedType> : NSObject <FBStandardStream, FBProcessOutput>
 
 #pragma mark Initializers
 
@@ -201,14 +201,14 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The wrapped contents of the stream.
  */
-@property (nonatomic, strong, readonly) WrappedType contents;
+@property (nonatomic, readonly, strong) WrappedType contents;
 
 @end
 
 /**
  A container object for the input of a process.
  */
-@interface FBProcessInput<WrappedType> : NSObject <FBStandardStream>
+@interface FBProcessInput <WrappedType> : NSObject <FBStandardStream>
 
 #pragma mark Initializers
 
@@ -241,7 +241,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The wrapped contents of the stream.
  */
-@property (nonatomic, strong, readonly) WrappedType contents;
+@property (nonatomic, readonly, strong) WrappedType contents;
 
 @end
 

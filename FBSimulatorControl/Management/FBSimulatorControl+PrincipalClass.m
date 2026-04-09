@@ -11,17 +11,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <CoreSimulator/SimServiceContext.h>
 #import <CoreSimulator/SimDeviceSet.h>
-
+#import <CoreSimulator/SimServiceContext.h>
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorConfiguration.h"
-#import "FBSimulatorServiceContext.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorSet.h"
 #import "FBSimulatorControlFrameworkLoader.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorServiceContext.h"
+#import "FBSimulatorSet.h"
 
 @implementation FBSimulatorControl
 
@@ -40,7 +39,12 @@
   if (!deviceSet) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration deviceSet:deviceSet delegate:nil logger:[configuration.logger withName:@"simulator_set"] reporter:configuration.reporter error:&innerError];
+  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration
+                                                   deviceSet:deviceSet
+                                                    delegate:nil
+                                                      logger:[configuration.logger withName:@"simulator_set"]
+                                                    reporter:configuration.reporter
+                                                       error:&innerError];
   if (!set) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }

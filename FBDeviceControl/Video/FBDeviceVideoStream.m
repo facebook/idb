@@ -7,10 +7,11 @@
 
 #import "FBDeviceVideoStream.h"
 
-#import <FBControlCore/FBControlCore.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
+
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBDeviceControlError.h"
 
@@ -39,7 +40,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @interface FBDeviceVideoStream_H264 : FBDeviceVideoStream
 
-@property (nonatomic, assign, readwrite) BOOL sentH264SPSPPS;
+@property (nonatomic, readwrite, assign) BOOL sentH264SPSPPS;
 
 @end
 
@@ -53,21 +54,21 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @interface FBDeviceVideoStream_Minicap : FBDeviceVideoStream_MJPEG
 
-@property (nonatomic, assign, readwrite) BOOL hasSentHeader;
+@property (nonatomic, readwrite, assign) BOOL hasSentHeader;
 
 @end
 
 @interface FBDeviceVideoStream () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) AVCaptureSession *session;
-@property (nonatomic, strong, readonly) AVCaptureVideoDataOutput *output;
-@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *stopFuture;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) AVCaptureSession *session;
+@property (nonatomic, readonly, strong) AVCaptureVideoDataOutput *output;
+@property (nonatomic, readonly, strong) dispatch_queue_t writeQueue;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *startFuture;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *stopFuture;
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDataConsumer> consumer;
-@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
+@property (nullable, nonatomic, readwrite, strong) id<FBDataConsumer> consumer;
+@property (nullable, nonatomic, readwrite, copy) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
 @end
 
@@ -79,8 +80,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   Class streamClass = [self classForConfiguration:configuration];
   if (!streamClass) {
     return [[FBDeviceControlError
-      describeFormat:@"%@ is not a valid stream format", configuration.format]
-      fail:error];
+             describeFormat:@"%@ is not a valid stream format", configuration.format]
+            fail:error];
   }
   // Create the output.
   AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
@@ -89,8 +90,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
   if (![session canAddOutput:output]) {
     return [[FBDeviceControlError
-      describe:@"Cannot add Data Output to session"]
-      fail:error];
+             describe:@"Cannot add Data Output to session"]
+            fail:error];
   }
   [session addOutput:output];
 
@@ -100,15 +101,15 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
       AVCaptureConnection *connection = session.connections.firstObject;
       if (!connection) {
         return [[FBDeviceControlError
-          describe:@"No capture connection available!"]
-          fail:error];
+                 describe:@"No capture connection available!"]
+                fail:error];
       }
       Float64 frameTime = 1 / configuration.framesPerSecond.unsignedIntegerValue;
       connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, NSEC_PER_SEC);
     } else {
       return [[FBDeviceControlError
-        describeFormat:@"Cannot set FPS on an OS prior to 10.15"]
-        fail:error];
+               describeFormat:@"Cannot set FPS on an OS prior to 10.15"]
+              fail:error];
     }
   }
 
@@ -171,8 +172,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 {
   if (self.consumer) {
     return [[FBDeviceControlError
-      describe:@"Cannot start streaming, a consumer is already attached"]
-      failFuture];
+             describe:@"Cannot start streaming, a consumer is already attached"]
+            failFuture];
   }
   self.consumer = consumer;
   [self.output setSampleBufferDelegate:self queue:self.writeQueue];
@@ -184,8 +185,8 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 {
   if (!self.consumer) {
     return [[FBDeviceControlError
-      describe:@"Cannot stop streaming, no consumer attached"]
-      failFuture];
+             describe:@"Cannot stop streaming, no consumer attached"]
+            failFuture];
   }
   [self.session stopRunning];
   [self.stopFuture resolveWithResult:NSNull.null];
@@ -202,7 +203,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if (!checkConsumerBufferLimit(self.consumer, self.logger)) {
     return;
   }
-  
+
   [self.startFuture resolveWithResult:NSNull.null];
   [self consumeSampleBuffer:sampleBuffer];
 }
@@ -223,9 +224,10 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.stopFuture onQueue:self.writeQueue respondToCancellation:^{
-    return [self stopStreaming];
-  }];
+  return [self.stopFuture onQueue:self.writeQueue
+            respondToCancellation:^{
+              return [self stopStreaming];
+            }];
 }
 
 @end
@@ -247,7 +249,6 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
     [self.consumer consumeData:data];
   }
 
-
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 
   if (!self.pixelBufferAttributes) {
@@ -264,11 +265,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
   if (![output.availableVideoCVPixelFormatTypes containsObject:@(kCVPixelFormatType_32BGRA)]) {
     return [[FBDeviceControlError
-      describe:@"kCVPixelFormatType_32BGRA is not a supported output type"]
-      failBool:error];
+             describe:@"kCVPixelFormatType_32BGRA is not a supported output type"]
+            failBool:error];
   }
   output.videoSettings = @{
-    (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+    (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
   };
   return YES;
 }
@@ -309,13 +310,13 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   output.alwaysDiscardsLateVideoFrames = YES;
   if (![output.availableVideoCodecTypes containsObject:AVVideoCodecTypeJPEG]) {
     return [[FBDeviceControlError
-      describe:@"AVVideoCodecTypeJPEG is not a supported codec type"]
-      failBool:error];
+             describe:@"AVVideoCodecTypeJPEG is not a supported codec type"]
+            failBool:error];
   }
   output.videoSettings = @{
-    AVVideoCodecKey: AVVideoCodecTypeJPEG,
-    AVVideoCompressionPropertiesKey: @{
-      AVVideoQualityKey: @0.2,
+    AVVideoCodecKey : AVVideoCodecTypeJPEG,
+    AVVideoCompressionPropertiesKey : @{
+      AVVideoQualityKey : @0.2,
     },
   };
   return YES;

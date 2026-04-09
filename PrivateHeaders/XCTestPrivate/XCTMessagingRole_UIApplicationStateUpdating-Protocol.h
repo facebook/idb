@@ -10,4 +10,3 @@
 @protocol XCTMessagingRole_UIApplicationStateUpdating
 - (void)_XCT_applicationWithBundleID:(NSString *)arg1 didUpdatePID:(int)arg2 andState:(unsigned long long)arg3;
 @end
-

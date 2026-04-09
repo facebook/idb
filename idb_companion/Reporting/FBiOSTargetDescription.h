@@ -25,6 +25,6 @@
 /**
  A JSON Dictionary representing the target description.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *asJSON;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *asJSON;
 
 @end

@@ -43,23 +43,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Properties
 
-@property (nonatomic, strong, readonly) FBSubprocess *task;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) FBSubprocess *task;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  Trace output directory.
  */
-@property (nonatomic, copy, readonly) NSURL *traceDir;
+@property (nonatomic, readonly, copy) NSURL *traceDir;
 
 /**
  The configuration of the operation.
  */
-@property (nonatomic, strong, readonly) FBInstrumentsConfiguration *configuration;
+@property (nonatomic, readonly, strong) FBInstrumentsConfiguration *configuration;
 
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 #pragma mark Public Methods
 

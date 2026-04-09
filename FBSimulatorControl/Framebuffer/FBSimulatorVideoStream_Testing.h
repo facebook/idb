@@ -1,10 +1,12 @@
 // (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 // Test-only header exposing internal classes for unit testing.
 
-#import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
+#import <Foundation/Foundation.h>
 #import <VideoToolbox/VideoToolbox.h>
+
 #import <FBControlCore/FBControlCore.h>
+
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulatorVideoStream.h"
 
@@ -17,13 +19,13 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 @interface FBSimulatorVideoStreamFramePusher_VideoToolbox : NSObject
 
 - (instancetype)initWithConfiguration:(FBVideoStreamConfiguration *)configuration
-     compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties
-                       videoCodec:(CMVideoCodecType)videoCodec
-                         consumer:(id<FBDataConsumer>)consumer
-               compressorCallback:(VTCompressionOutputCallback)compressorCallback
-                      frameWriter:(FBCompressedFrameWriter)frameWriter
-               frameWriterContext:(id _Nullable)frameWriterContext
-                           logger:(id<FBControlCoreLogger>)logger;
+         compressionSessionProperties:(NSDictionary<NSString *, id> *)compressionSessionProperties
+                           videoCodec:(CMVideoCodecType)videoCodec
+                             consumer:(id<FBDataConsumer>)consumer
+                   compressorCallback:(VTCompressionOutputCallback)compressorCallback
+                          frameWriter:(FBCompressedFrameWriter)frameWriter
+                   frameWriterContext:(id _Nullable)frameWriterContext
+                               logger:(id<FBControlCoreLogger>)logger;
 
 - (void)handleCompressedSampleBuffer:(CMSampleBufferRef)sampleBuffer
                         encodeStatus:(OSStatus)encodeStatus
@@ -35,10 +37,10 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 @property (nonatomic, assign) FBVideoEncoderStats stats;
 @property (nonatomic, assign) FBVideoEncoderStats lastLoggedStats;
 @property (nonatomic, assign) FBPeriodicStatsTimer statsTimer;
-@property (nonatomic, assign, readonly) FBCompressedFrameWriter frameWriter;
-@property (nonatomic, strong, nullable, readonly) id frameWriterContext;
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, assign) FBCompressedFrameWriter frameWriter;
+@property (nullable, nonatomic, readonly, strong) id frameWriterContext;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 

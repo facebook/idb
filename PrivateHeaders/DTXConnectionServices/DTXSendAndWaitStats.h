@@ -9,16 +9,16 @@
 
 @interface DTXSendAndWaitStats : NSObject
 {
-    unsigned long long _totalSendBytes;
-    unsigned long long _previousSendBytes;
-    unsigned long long _lastStatTime;
-    dispatch_queue_t _statsQueue;
-    struct mach_timebase_info _timeBaseInfo;
-    double _microsecondsPerUnit;
-    unsigned long long _compressionTotalDataCompressed;
-    unsigned long long _compressionTotalDataUncompressed;
-    unsigned long long _compressionTotalNanosToCompress;
-    NSMutableSet *_compressionTypeSet;
+  unsigned long long _totalSendBytes;
+  unsigned long long _previousSendBytes;
+  unsigned long long _lastStatTime;
+  dispatch_queue_t _statsQueue;
+  struct mach_timebase_info _timeBaseInfo;
+  double _microsecondsPerUnit;
+  unsigned long long _compressionTotalDataCompressed;
+  unsigned long long _compressionTotalDataUncompressed;
+  unsigned long long _compressionTotalNanosToCompress;
+  NSMutableSet *_compressionTypeSet;
 }
 
 - (void)logStats:(id)arg1;
@@ -28,4 +28,3 @@
 - (id)initWithQueue:(id)arg1 andMicrosPerUnit:(double)arg2;
 
 @end
-

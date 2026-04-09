@@ -7,13 +7,13 @@
 
 #import "FBControlCoreFrameworkLoader.h"
 
+#include <dlfcn.h>
+
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBWeakFramework.h"
-
-#include <dlfcn.h>
 
 void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
@@ -95,8 +95,8 @@ void *FBGetSymbolFromHandleOptional(void *handle, const char *name)
 
   // We're done with loading Frameworks.
   [logger.debug logFormat:
-    @"Loaded All Private Frameworks %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]
+   @"Loaded All Private Frameworks %@",
+   [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]
   ];
 
   return YES;

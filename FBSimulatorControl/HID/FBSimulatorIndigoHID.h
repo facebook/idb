@@ -30,17 +30,6 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 };
 
 /**
- An Enumeration for device orientation.
- Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
- */
-typedef NS_ENUM(int, FBSimulatorHIDDeviceOrientation) {
-  FBSimulatorHIDDeviceOrientationPortrait = 1,
-  FBSimulatorHIDDeviceOrientationPortraitUpsideDown = 2,
-  FBSimulatorHIDDeviceOrientationLandscapeRight = 3,
-  FBSimulatorHIDDeviceOrientationLandscapeLeft = 4,
-};
-
-/**
  Translates FBSimulatorHID Events into Indigo Structs.
  */
 @interface FBSimulatorIndigoHID : NSObject
@@ -70,7 +59,6 @@ typedef NS_ENUM(int, FBSimulatorHIDDeviceOrientation) {
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
 - (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
-
 
 /**
  A Touch Event.

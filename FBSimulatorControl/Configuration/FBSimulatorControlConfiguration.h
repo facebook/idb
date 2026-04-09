@@ -29,17 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *deviceSetPath;
+@property (nullable, nonatomic, readonly, copy) NSString *deviceSetPath;
 
 /**
  The Logger to use for logging.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Event Reporter to use for reporting events.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBEventReporter> reporter;
+@property (nullable, nonatomic, readonly, strong) id<FBEventReporter> reporter;
 
 @end
 

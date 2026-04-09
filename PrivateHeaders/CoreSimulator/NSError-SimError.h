@@ -16,4 +16,3 @@
 + (id)errorWithSimErrno:(int)arg1 userInfo:(id)arg2;
 + (id)errorWithSimErrno:(int)arg1;
 @end
-

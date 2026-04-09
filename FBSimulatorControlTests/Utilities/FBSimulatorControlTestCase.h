@@ -39,22 +39,22 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 /**
  A default Simulator Configuration.
  */
-@property (nonatomic, strong, readwrite) FBSimulatorConfiguration *simulatorConfiguration;
+@property (nonatomic, readwrite, strong) FBSimulatorConfiguration *simulatorConfiguration;
 
 /**
  A default Simulator Launch Configuration.
  */
-@property (nonatomic, strong, readwrite) FBSimulatorBootConfiguration *bootConfiguration;
+@property (nonatomic, readwrite, strong) FBSimulatorBootConfiguration *bootConfiguration;
 
 /**
  The Per-Test-Case Device Set Path.
  */
-@property (nonatomic, copy, readwrite) NSString *deviceSetPath;
+@property (nonatomic, readwrite, copy) NSString *deviceSetPath;
 
 /**
  The Simulator Control instance that is lazily created from the defaults
  */
-@property (nonatomic, strong, readonly) FBSimulatorControl *control;
+@property (nonatomic, readonly, strong) FBSimulatorControl *control;
 
 /**
  Some tests are flakier on travis, this is a temporary way of disabling them until they are improved.

@@ -8,15 +8,14 @@
 #import "FBSimulatorSet.h"
 #import "FBSimulatorSet+Private.h"
 
+#import <objc/runtime.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 #import <CoreSimulator/SimServiceContext.h>
-
 #import <FBControlCore/FBControlCore.h>
-
-#import <objc/runtime.h>
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulatorControl.h"
@@ -90,46 +89,56 @@
   SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
-      causedBy:innerError]
-      failFuture];
+              describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
+             causedBy:innerError]
+            failFuture];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
-      causedBy:innerError]
-      failFuture];
+              describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
+             causedBy:innerError]
+            failFuture];
   }
 
   // First, create the device.
   [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
   return [[[FBSimulatorSet
-    onDeviceSet:self.deviceSet createDeviceWithType:deviceType runtime:runtime name:model queue:self.asyncQueue]
-    onQueue:self.workQueue fmap:^(SimDevice *device) {
-      return [self fetchNewlyMadeSimulator:device];
-    }]
-    onQueue:self.workQueue fmap:^(FBSimulator *simulator) {
-      simulator.configuration = configuration;
-      [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
+            onDeviceSet:self.deviceSet
+            createDeviceWithType:deviceType
+            runtime:runtime
+            name:model
+            queue:self.asyncQueue]
+           onQueue:self.workQueue
+           fmap:^(SimDevice *device) {
+             return [self fetchNewlyMadeSimulator:device];
+           }]
+          onQueue:self.workQueue
+          fmap:^(FBSimulator *simulator) {
+            simulator.configuration = configuration;
+            [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
 
-      // This step ensures that the Simulator is in a known-shutdown state after creation.
-      // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-      return [[[FBSimulatorShutdownStrategy
-        shutdown:simulator]
-        rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
-        mapReplace:simulator];
-    }];
+            // This step ensures that the Simulator is in a known-shutdown state after creation.
+            // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
+            return [[[FBSimulatorShutdownStrategy
+                      shutdown:simulator]
+                     rephraseFailure:@"Could not get newly-created simulator into a shutdown state"]
+                    mapReplace:simulator];
+          }];
 }
 
 - (FBFuture<FBSimulator *> *)cloneSimulator:(FBSimulator *)simulator toDeviceSet:(FBSimulatorSet *)destinationSet
 {
   NSParameterAssert(simulator.set == self);
   return [[FBSimulatorSet
-    onDeviceSet:self.deviceSet cloneDevice:simulator.device toDeviceSet:destinationSet.deviceSet queue:self.asyncQueue]
-    onQueue:self.workQueue fmap:^(SimDevice *device) {
-      return [destinationSet fetchNewlyMadeSimulator:device];
-    }];
+           onDeviceSet:self.deviceSet
+           cloneDevice:simulator.device
+           toDeviceSet:destinationSet.deviceSet
+           queue:self.asyncQueue]
+          onQueue:self.workQueue
+          fmap:^(SimDevice *device) {
+            return [destinationSet fetchNewlyMadeSimulator:device];
+          }];
 }
 
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
@@ -207,8 +216,8 @@
   FBSimulator *simulator = [FBSimulatorSet keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   if (!simulator) {
     return [[FBSimulatorError
-      describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
-      failFuture];
+             describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
+            failFuture];
   }
   return [FBFuture futureWithResult:simulator];
 }
@@ -218,8 +227,9 @@
 - (NSArray<FBSimulator *> *)allSimulators
 {
   _allSimulators = [[self.inflationStrategy
-    inflateFromDevices:self.deviceSet.availableDevices exitingSimulators:_allSimulators]
-    sortedArrayUsingSelector:@selector(compare:)];
+                     inflateFromDevices:self.deviceSet.availableDevices
+                     exitingSimulators:_allSimulators]
+                    sortedArrayUsingSelector:@selector(compare:)];
   return _allSimulators;
 }
 
@@ -235,26 +245,34 @@
 + (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet createDeviceWithType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime name:(NSString *)name queue:(dispatch_queue_t)queue
 {
   FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
-  [deviceSet createDeviceAsyncWithType:deviceType runtime:runtime name:name completionQueue:queue completionHandler:^(NSError *error, SimDevice *device) {
-    if (device) {
-      [future resolveWithResult:device];
-    } else {
-      [future resolveWithError:error];
-    }
-  }];
+  [deviceSet createDeviceAsyncWithType:deviceType
+                               runtime:runtime
+                                  name:name
+                       completionQueue:queue
+                     completionHandler:^(NSError *error, SimDevice *device) {
+                       if (device) {
+                         [future resolveWithResult:device];
+                       } else {
+                         [future resolveWithError:error];
+                       }
+                     }];
   return future;
 }
 
 + (FBFuture<SimDevice *> *)onDeviceSet:(SimDeviceSet *)deviceSet cloneDevice:(SimDevice *)device toDeviceSet:(SimDeviceSet *)destinationSet queue:(dispatch_queue_t)queue
 {
   FBMutableFuture<SimDevice *> *future = FBMutableFuture.future;
-  [deviceSet cloneDeviceAsync:device name:device.name toSet:destinationSet completionQueue:queue completionHandler:^(NSError *error, SimDevice *created) {
-    if (created) {
-      [future resolveWithResult:created];
-    } else {
-      [future resolveWithError:error];
-    }
-  }];
+  [deviceSet cloneDeviceAsync:device
+                         name:device.name
+                        toSet:destinationSet
+              completionQueue:queue
+            completionHandler:^(NSError *error, SimDevice *created) {
+              if (created) {
+                [future resolveWithResult:created];
+              } else {
+                [future resolveWithError:error];
+              }
+            }];
   return future;
 }
 

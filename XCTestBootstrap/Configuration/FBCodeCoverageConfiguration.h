@@ -22,17 +22,17 @@ typedef NS_ENUM(NSUInteger, FBCodeCoverageFormat) {
 /**
  The path to the coverage directory
 */
-@property (nonatomic, strong, readonly) NSString * coverageDirectory;
+@property (nonatomic, readonly, strong) NSString *coverageDirectory;
 
 /**
   Format in which code coverge data should be returned
 */
-@property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
+@property (nonatomic, readonly, assign) FBCodeCoverageFormat format;
 
 /**
  Determines whether should enable continuous coverage collection
  */
-@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+@property (nonatomic, readonly, assign) BOOL shouldEnableContinuousCoverageCollection;
 
 - (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 

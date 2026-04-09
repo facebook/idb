@@ -8,11 +8,12 @@
 #import "FBWeakFramework.h"
 
 #import <dlfcn.h>
+
 #import <Foundation/Foundation.h>
 
 #import "FBControlCoreError.h"
-#import "FBXcodeConfiguration.h"
 #import "FBControlCoreLogger.h"
+#import "FBXcodeConfiguration.h"
 
 typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   FBWeakFrameworkTypeFramework,
@@ -21,12 +22,11 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 
 @interface FBWeakFramework ()
 
-@property (nonatomic, copy, readonly) NSString *name;
-@property (nonatomic, copy, readonly) NSString *basePath;
-@property (nonatomic, copy, readonly) NSString *relativePath;
-@property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
-@property (nonatomic, assign, readonly) BOOL rootPermitted;
-
+@property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, copy) NSString *basePath;
+@property (nonatomic, readonly, copy) NSString *relativePath;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *requiredClassNames;
+@property (nonatomic, readonly, assign) BOOL rootPermitted;
 
 @end
 
@@ -37,19 +37,19 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
 + (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
 {
   return [[FBWeakFramework alloc]
-    initWithBasePath:FBXcodeConfiguration.developerDirectory
-    relativePath:relativePath
-    requiredClassNames:requiredClassNames
-    rootPermitted:NO];
+          initWithBasePath:FBXcodeConfiguration.developerDirectory
+          relativePath:relativePath
+          requiredClassNames:requiredClassNames
+          rootPermitted:NO];
 }
 
 + (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
 {
   return [[FBWeakFramework alloc]
-    initWithBasePath:absolutePath
-    relativePath:@""
-    requiredClassNames:requiredClassNames
-    rootPermitted:rootPermitted];
+          initWithBasePath:absolutePath
+          relativePath:@""
+          requiredClassNames:requiredClassNames
+          rootPermitted:rootPermitted];
 }
 
 - (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames rootPermitted:(BOOL)rootPermitted
@@ -84,8 +84,8 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   for (NSString *requiredClassName in self.requiredClassNames) {
     if (!NSClassFromString(requiredClassName)) {
       return [[FBControlCoreError
-        describeFormat:@"Missing %@ class from %@ framework", requiredClassName, self.name]
-        failBool:error];
+               describeFormat:@"Missing %@ class from %@ framework", requiredClassName, self.name]
+              failBool:error];
     }
   }
   return YES;
@@ -107,23 +107,23 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   // Check that the framework can be loaded as root if root.
   if ([NSUserName() isEqualToString:@"root"] && self.rootPermitted == NO) {
     return [[FBControlCoreError
-      describeFormat:@"%@ cannot be loaded from the root user. Don't run this as root.", self.relativePath]
-      failBool:error];
+             describeFormat:@"%@ cannot be loaded from the root user. Don't run this as root.", self.relativePath]
+            failBool:error];
   }
 
   // Load frameworks
   NSString *path = [[relativeDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:nil]) {
     return [[FBControlCoreError
-      describeFormat:@"Attempting to load a file at path '%@', but it does not exist", path]
-      failBool:error];
+             describeFormat:@"Attempting to load a file at path '%@', but it does not exist", path]
+            failBool:error];
   }
 
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to load the bundle for path %@", path]
-      failBool:error];
+             describeFormat:@"Failed to load the bundle for path %@", path]
+            failBool:error];
   }
 
   [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
@@ -165,8 +165,8 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
   if (!bundle) {
     return [[FBControlCoreError
-      describeFormat:@"Could not obtain Framework bundle for class named %@", className]
-      failBool:error];
+             describeFormat:@"Could not obtain Framework bundle for class named %@", className]
+            failBool:error];
   }
 
   // Developer Directory is: /Applications/Xcode.app/Contents/Developer
@@ -174,8 +174,8 @@ typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
   NSString *basePath = [[self.basePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
   if (![bundle.bundlePath hasPrefix:basePath]) {
     return [[FBControlCoreError
-      describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
-      failBool:error];
+             describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
+            failBool:error];
   }
   [logger.debug logFormat:@"%@: %@ has correct path of %@", self.name, className, basePath];
   return YES;

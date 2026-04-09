@@ -10,24 +10,26 @@
 #import <FBControlCore/FBControlCore.h>
 
 @interface FBProcessFetcherTests : XCTestCase
-  @property(nonatomic, retain)NSTask *task;
+@property (nonatomic, retain) NSTask *task;
 @end
 
 @implementation FBProcessFetcherTests
-- (void)setUp {
-  NSTask* task = [[NSTask alloc] init];
+- (void)setUp
+{
+  NSTask *task = [[NSTask alloc] init];
   task.launchPath = @"/bin/sleep";
   task.arguments = @[@"10"];
   self.task = task;
   [self.task launch];
 }
 
-- (void)tearDown {
+- (void)tearDown
+{
   if (self.task.running) {
     [self.task terminate];
     [self.task waitUntilExit];
   }
-  
+
   self.task = nil;
 }
 
@@ -37,7 +39,7 @@
   NSError *error;
 
   BOOL output = [fetcher isProcessRunning:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNil(error);
   XCTAssertTrue(output);
 }
@@ -46,11 +48,11 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   [self.task terminate];
   [self.task waitUntilExit];
   BOOL output = [fetcher isProcessRunning:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNotNil(error);
   XCTAssertFalse(output);
 }
@@ -59,14 +61,13 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   [self.task suspend];
   BOOL output = [fetcher isProcessRunning:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNil(error);
   XCTAssertFalse(output);
 }
-
 
 - (void)testIsProcessStoppedRunningProcess
 {
@@ -74,7 +75,7 @@
   NSError *error;
 
   BOOL output = [fetcher isProcessStopped:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNil(error);
   XCTAssertFalse(output);
 }
@@ -83,11 +84,11 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   [self.task terminate];
   [self.task waitUntilExit];
   BOOL output = [fetcher isProcessStopped:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNotNil(error);
   XCTAssertFalse(output);
 }
@@ -96,10 +97,10 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   [self.task suspend];
   BOOL output = [fetcher isProcessStopped:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNil(error);
   XCTAssertTrue(output);
 }
@@ -108,11 +109,11 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   [self.task terminate];
   [self.task waitUntilExit];
   BOOL output = [fetcher isDebuggerAttachedTo:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNotNil(error);
   XCTAssertFalse(output);
 }
@@ -121,9 +122,9 @@
 {
   FBProcessFetcher *fetcher = [[FBProcessFetcher alloc] init];
   NSError *error;
-  
+
   BOOL output = [fetcher isDebuggerAttachedTo:self.task.processIdentifier error:&error];
-  
+
   XCTAssertNil(error);
   XCTAssertFalse(output);
 }

@@ -13,8 +13,8 @@
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
 #import "FBInstrumentsConfiguration.h"
-#import "FBiOSTarget.h"
 #import "FBProcessBuilder.h"
+#import "FBiOSTarget.h"
 
 const NSTimeInterval DefaultInstrumentsOperationDuration = 60 * 60 * 4;
 const NSTimeInterval DefaultInstrumentsTerminateTimeout = 600.0;
@@ -23,10 +23,10 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 
 @interface FBInstrumentsConsumer : NSObject <FBDataConsumer>
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *hasStoppedRecording;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *hasStartedLoadingTemplate;
-@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *logs;
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *hasStoppedRecording;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *hasStartedLoadingTemplate;
+@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *logs;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
 
 @end
 
@@ -54,8 +54,8 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
     if ([logLine containsString:@"Instruments Trace Complete"]) {
       if (![self.hasStoppedRecording hasCompleted]) {
         FBFuture *failFuture = [[FBControlCoreError
-          describeFormat:@"Instruments did not start properly. Instruments logs:\n%@", [self.logs componentsJoinedByString:@"\n"]]
-          failFuture];
+                                 describeFormat:@"Instruments did not start properly. Instruments logs:\n%@", [self.logs componentsJoinedByString:@"\n"]]
+                                failFuture];
         [self.hasStoppedRecording resolveFromFuture:failFuture];
       }
     }
@@ -75,6 +75,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 {
   [self.consumer consumeEndOfFile];
 }
+
 @end
 
 @implementation FBInstrumentsOperation
@@ -86,10 +87,12 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   // The instruments cli is unreliable and sometimes stops recording right after starting
   // To make it reliable, we retry it until it either succeeds or we timeout
   return [[FBFuture
-    onQueue:target.asyncQueue resolveUntil:^ FBFuture * {
-      return [self operationWithTargetInternal:target configuration:configuration logger:logger];
-    }]
-    timeout:configuration.timings.launchRetryTimeout waitingFor:@"successful instruments startup"];
+           onQueue:target.asyncQueue
+           resolveUntil:^FBFuture * {
+             return [self operationWithTargetInternal:target configuration:configuration logger:logger];
+           }]
+          timeout:configuration.timings.launchRetryTimeout
+          waitingFor:@"successful instruments startup"];
 }
 
 + (FBFuture<FBInstrumentsOperation *> *)operationWithTargetInternal:(id<FBiOSTarget>)target configuration:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
@@ -107,7 +110,7 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   if ([[configuration toolArguments] count] > 0) {
     [arguments addObjectsFromArray:[configuration toolArguments]];
   }
-  [arguments addObjectsFromArray:@[@"-w", target.udid, @"-D", traceFile, @"-t", configuration.templateName, @"-l",  durationMilliseconds, @"-v"]];
+  [arguments addObjectsFromArray:@[@"-w", target.udid, @"-D", traceFile, @"-t", configuration.templateName, @"-l", durationMilliseconds, @"-v"]];
 
   if (configuration.targetApplication && [configuration.targetApplication length] > 0) {
     [arguments addObject:configuration.targetApplication];
@@ -122,34 +125,38 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   id<FBControlCoreLogger> compositeLogger = [FBControlCoreLoggerFactory compositeLoggerWithLoggers:@[logger, instrumentsLogger]];
 
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/instruments"]
-    withArguments:arguments]
-    withStdOutToLogger:compositeLogger]
-    withStdErrToLogger:compositeLogger]
-    withTaskLifecycleLoggingTo:logger]
-    start]
-    onQueue:target.asyncQueue fmap:^ FBFuture * (FBSubprocess *task) {
-      return [instrumentsConsumer.hasStartedLoadingTemplate
-        onQueue:target.asyncQueue fmap:^ FBFuture * (id _) {
-        [logger logFormat:@"Waiting for %f seconds for instruments to start properly", configuration.timings.launchErrorTimeout];
-        // Instruments profiling started correctly if timer expires before 'hasStoppedRecording' resolves.
-        // This is necessary because instruments doesn't print anything when profiling has begun.
-        // We detect a failure by checking for 'Instruments Trace Completed' output before launchErrorTimeout.
-        FBFuture *timerFuture = [FBFuture.empty delay:configuration.timings.launchErrorTimeout];
-        return [[[FBFuture
-          race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
-          onQueue:target.asyncQueue handleError:^ FBFuture * (NSError *error) {
-            return [[task sendSignal:SIGTERM] chainReplace:[FBFuture futureWithError:error]];
-          }]
-          mapReplace:task];
-        }];
-    }]
-    // Yay instruments started properly
-    onQueue:target.asyncQueue map:^ FBInstrumentsOperation * (FBSubprocess *task) {
-      [logger logFormat:@"Started instruments %@", task];
+                 withLaunchPath:@"/usr/bin/instruments"]
+                withArguments:arguments]
+               withStdOutToLogger:compositeLogger]
+              withStdErrToLogger:compositeLogger]
+             withTaskLifecycleLoggingTo:logger]
+            start]
+           onQueue:target.asyncQueue
+           fmap:^FBFuture *(FBSubprocess *task) {
+             return [instrumentsConsumer.hasStartedLoadingTemplate
+                     onQueue:target.asyncQueue
+                     fmap:^FBFuture *(id _) {
+                       [logger logFormat:@"Waiting for %f seconds for instruments to start properly", configuration.timings.launchErrorTimeout];
+                       // Instruments profiling started correctly if timer expires before 'hasStoppedRecording' resolves.
+                       // This is necessary because instruments doesn't print anything when profiling has begun.
+                       // We detect a failure by checking for 'Instruments Trace Completed' output before launchErrorTimeout.
+                       FBFuture *timerFuture = [FBFuture.empty delay:configuration.timings.launchErrorTimeout];
+                       return [[[FBFuture
+                                 race:@[instrumentsConsumer.hasStoppedRecording, timerFuture]]
+                                onQueue:target.asyncQueue
+                                handleError:^FBFuture *(NSError *error) {
+                                  return [[task sendSignal:SIGTERM] chainReplace:[FBFuture futureWithError:error]];
+                                }]
+                               mapReplace:task];
+                     }];
+           }]
+          // Yay instruments started properly
+          onQueue:target.asyncQueue
+          map:^FBInstrumentsOperation *(FBSubprocess *task) {
+            [logger logFormat:@"Started instruments %@", task];
 
-      return [[FBInstrumentsOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
-    }];
+            return [[FBInstrumentsOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
+          }];
 }
 
 - (instancetype)initWithTask:(FBSubprocess *)task traceDir:(NSURL *)traceDir configuration:(FBInstrumentsConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -173,17 +180,19 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
 - (FBFuture<NSURL *> *)stop
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^{
-      [self.logger logFormat:@"Terminating instruments %@. Backoff Timeout %f", self.task, self.configuration.timings.terminateTimeout];
-      return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:self.configuration.timings.terminateTimeout logger:self.logger];
-    }] chainReplace:[[self.task exitCode]
-    onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
-      if ([exitCode isEqualToNumber:@0]) {
-        return [FBFuture futureWithResult:self.traceDir];
-      } else {
-        return [[FBControlCoreError describeFormat:@"Instruments exited with failure - status: %@", exitCode] failFuture];
-      }
-    }]
+           onQueue:self.queue
+           resolve:^{
+             [self.logger logFormat:@"Terminating instruments %@. Backoff Timeout %f", self.task, self.configuration.timings.terminateTimeout];
+             return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:self.configuration.timings.terminateTimeout logger:self.logger];
+           }] chainReplace:[[self.task exitCode]
+                            onQueue:self.queue
+                            fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
+                              if ([exitCode isEqualToNumber:@0]) {
+                                return [FBFuture futureWithResult:self.traceDir];
+                              } else {
+                                return [[FBControlCoreError describeFormat:@"Instruments exited with failure - status: %@", exitCode] failFuture];
+                              }
+                            }]
   ];
 }
 
@@ -195,21 +204,22 @@ const NSTimeInterval DefaultInstrumentsLaunchRetryTimeout = 360.0;
   NSURL *outputTraceFile = [[traceDir URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
   NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceDir.path, @"-o", outputTraceFile.path] mutableCopy];
   if (arguments.count > 3) {
-    [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange){3, [arguments count] - 3}]];
+    [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange) {3, [arguments count] - 3}]];
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:arguments[0]]
-    withArguments:launchArguments]
-    withStdInConnected]
-    withStdOutToLogger:logger]
-    withStdErrToLogger:logger]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(id _) {
-      return outputTraceFile;
-    }];
+                 withLaunchPath:arguments[0]]
+                withArguments:launchArguments]
+               withStdInConnected]
+              withStdOutToLogger:logger]
+             withStdErrToLogger:logger]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          onQueue:queue
+          map:^(id _) {
+            return outputTraceFile;
+          }];
 }
 
 @end

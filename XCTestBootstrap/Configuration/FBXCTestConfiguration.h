@@ -55,33 +55,33 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Environment Variables for the Process-Under-Test that is launched.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 
 /**
  The Directory to use for files required during the execution of the test run.
  */
-@property (nonatomic, copy, readonly) NSString *workingDirectory;
+@property (nonatomic, readonly, copy) NSString *workingDirectory;
 
 /**
  The Test Bundle to Execute.
  */
-@property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, readonly, copy) NSString *testBundlePath;
 
 /**
  The Type of the Test Bundle.
  */
-@property (nonatomic, copy, readonly) FBXCTestType testType;
+@property (nonatomic, readonly, copy) FBXCTestType testType;
 
 /**
  YES if the test execution should pause on launch, waiting for a debugger to attach.
  NO otherwise.
  */
-@property (nonatomic, assign, readonly) BOOL waitForDebugger;
+@property (nonatomic, readonly, assign) BOOL waitForDebugger;
 
 /**
  The Timeout to wait for the test execution to finish.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
+@property (nonatomic, readonly, assign) NSTimeInterval testTimeout;
 
 /**
  Gets the Environment for a Subprocess.
@@ -103,14 +103,14 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The supported architectures of the test bundle.
  */
-@property (nonatomic, strong, readonly, nonnull) NSSet<NSString *> *architectures;
+@property (nonnull, nonatomic, readonly, strong) NSSet<NSString *> *architectures;
 
 /**
  The Designated Initializer.
  */
 + (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures;
 
-@property (nonatomic, copy, readonly) NSString *runnerAppPath;
+@property (nonatomic, readonly, copy) NSString *runnerAppPath;
 
 @end
 
@@ -122,37 +122,37 @@ extern FBXCTestType const FBXCTestTypeListTest;
 /**
  The Path to the Application Hosting the Test.
  */
-@property (nonatomic, copy, readonly) NSString *runnerAppPath;
+@property (nonatomic, readonly, copy) NSString *runnerAppPath;
 
 /**
  The Path to the test target Application.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testTargetAppPath;
+@property (nullable, nonatomic, readonly, copy) NSString *testTargetAppPath;
 
 /**
  The test filter for which test to run.
  Format: <testClass>/<testMethod>
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testFilter;
+@property (nullable, nonatomic, readonly, copy) NSString *testFilter;
 
 /**
  The path of log file that we dump all os_log to.
  (os_log means Apple's unified logging system (https://developer.apple.com/documentation/os/logging),
  we use this name to avoid confusing between various logging systems)
  */
-@property (nonatomic, copy, readonly, nullable) NSString *osLogPath;
+@property (nullable, nonatomic, readonly, copy) NSString *osLogPath;
 
 /**
  The path of video recording file that record the whole test run.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *videoRecordingPath;
+@property (nullable, nonatomic, readonly, copy) NSString *videoRecordingPath;
 
 /**
  A list of test artifcats filename globs (see https://en.wikipedia.org/wiki/Glob_(programming) ) that
  any files in app's container folder matching them will be copied out to a temporary path before
  simulator is cleaned up.
  */
-@property (nonatomic, copy, readonly, nullable) NSArray<NSString *> *testArtifactsFilenameGlobs;
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *testArtifactsFilenameGlobs;
 
 /**
  The Designated Initializer.
@@ -162,12 +162,12 @@ extern FBXCTestType const FBXCTestTypeListTest;
 @end
 
 typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
-    /* Does not mirror logs */
-    FBLogicTestMirrorNoLogs = 0,
-    /* Mirrors logs to files */
-    FBLogicTestMirrorFileLogs = 1 << 0,
-    /* Mirrors logs to logger */
-    FBLogicTestMirrorLogger = 1 << 1,
+  /* Does not mirror logs */
+  FBLogicTestMirrorNoLogs = 0,
+  /* Mirrors logs to files */
+  FBLogicTestMirrorFileLogs = 1 << 0,
+  /* Mirrors logs to logger */
+  FBLogicTestMirrorLogger = 1 << 1,
 };
 
 /**
@@ -178,7 +178,7 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The Filter for Logic Tests.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *testFilter;
+@property (nullable, nonatomic, readonly, copy) NSString *testFilter;
 
 /**
  How the logic test logs will be mirrored
@@ -188,22 +188,22 @@ typedef NS_OPTIONS(NSUInteger, FBLogicTestMirrorLogs) {
 /**
  The configuration for code coverage collection
 */
-@property (nonatomic, nullable, retain, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
+@property (nullable, nonatomic, readonly, retain) FBCodeCoverageConfiguration *coverageConfiguration;
 
 /**
  The path to the test bundle binary
 */
-@property (nonatomic, nullable, copy, readonly) NSString *binaryPath;
+@property (nullable, nonatomic, readonly, copy) NSString *binaryPath;
 
 /**
  The Directory to use for storing logs generated during the execution of the test run.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *logDirectoryPath;
+@property (nullable, nonatomic, readonly, copy) NSString *logDirectoryPath;
 
 /**
  The supported architectures of the test bundle.
  */
-@property (nonatomic, strong, readonly) NSSet<NSString *> *architectures;
+@property (nonatomic, readonly, strong) NSSet<NSString *> *architectures;
 
 /**
  The Designated Initializer.

@@ -9,9 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHID.h"
-#import "FBSimulator.h"
 
 static NSString *const KeyEventClass = @"class";
 static NSString *const KeyDirection = @"direction";
@@ -27,7 +27,7 @@ const double DEFAULT_SWIPE_DELTA = 10.0;
 static NSString *const DirectionDown = @"down";
 static NSString *const DirectionUp = @"up";
 
-static NSString * directionStringFromDirection(FBSimulatorHIDDirection direction)
+static NSString *directionStringFromDirection(FBSimulatorHIDDirection direction)
 {
   switch (direction) {
     case FBSimulatorHIDDirectionDown:
@@ -46,7 +46,7 @@ static BOOL shouldLogHIDEventDetails(void)
 
 @interface FBSimulatorHIDEvent_Composite : NSObject <FBSimulatorHIDEvent, FBSimulatorHIDEventComposite>
 
-@property (nonatomic, copy, readonly) NSArray<id<FBSimulatorHIDEvent>> *events;
+@property (nonatomic, readonly, copy) NSArray<id<FBSimulatorHIDEvent>> *events;
 
 @end
 
@@ -62,7 +62,7 @@ static NSString *const KeyEvents = @"events";
   }
 
   _events = events;
-  
+
   return self;
 }
 
@@ -79,10 +79,11 @@ static NSString *const KeyEvents = @"events";
   id<FBSimulatorHIDEvent> event = events.firstObject;
   NSArray<id<FBSimulatorHIDEvent>> *next = events.count == 1 ? @[] : [events subarrayWithRange:NSMakeRange(1, events.count - 1)];
   return [[event
-    performOnHID:hid]
-    onQueue:dispatch_get_main_queue() fmap:^(id _){
-      return [self performEvents:next onHid:hid];
-    }];
+           performOnHID:hid]
+          onQueue:dispatch_get_main_queue()
+          fmap:^(id _) {
+            return [self performEvents:next onHid:hid];
+          }];
 }
 
 - (NSString *)description
@@ -113,9 +114,9 @@ static NSString *const KeyEvents = @"events";
 
 @interface FBSimulatorHIDEvent_Touch : NSObject <FBSimulatorHIDEventPayload>
 
-@property (nonatomic, assign, readonly) FBSimulatorHIDDirection direction;
-@property (nonatomic, assign, readonly) double x;
-@property (nonatomic, assign, readonly) double y;
+@property (nonatomic, readonly, assign) FBSimulatorHIDDirection direction;
+@property (nonatomic, readonly, assign) double x;
+@property (nonatomic, readonly, assign) double y;
 
 @end
 
@@ -152,10 +153,10 @@ static NSString *const KeyY = @"y";
 {
   if (shouldLogHIDEventDetails()) {
     return [NSString stringWithFormat:
-      @"Touch %@ at (%lu,%lu)",
-      directionStringFromDirection(self.direction),
-      (unsigned long)self.x,
-      (unsigned long)self.y
+            @"Touch %@ at (%lu,%lu)",
+            directionStringFromDirection(self.direction),
+            (unsigned long)self.x,
+            (unsigned long)self.y
     ];
   }
   return @"Touch <hidden>";
@@ -191,8 +192,8 @@ static NSString *const ButtonSiri = @"siri";
 
 @interface FBSimulatorHIDEvent_Button : NSObject <FBSimulatorHIDEventPayload>
 
-@property (nonatomic, assign, readonly) FBSimulatorHIDDirection type;
-@property (nonatomic, assign, readonly) FBSimulatorHIDButton button;
+@property (nonatomic, readonly, assign) FBSimulatorHIDDirection type;
+@property (nonatomic, readonly, assign) FBSimulatorHIDButton button;
 
 @end
 
@@ -224,9 +225,9 @@ static NSString *const ButtonSiri = @"siri";
 {
   if (shouldLogHIDEventDetails()) {
     return [NSString stringWithFormat:
-      @"Button %@ %@",
-      [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
-      directionStringFromDirection(self.type)
+            @"Button %@ %@",
+            [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
+            directionStringFromDirection(self.type)
     ];
   }
   return @"Button <hidden>";
@@ -295,8 +296,8 @@ static NSString *const KeyKeycode = @"keycode";
 
 @interface FBSimulatorHIDEvent_Keyboard : NSObject <FBSimulatorHIDEventPayload>
 
-@property (nonatomic, assign, readonly) FBSimulatorHIDDirection direction;
-@property (nonatomic, assign, readonly) unsigned int keyCode;
+@property (nonatomic, readonly, assign) FBSimulatorHIDDirection direction;
+@property (nonatomic, readonly, assign) unsigned int keyCode;
 
 @end
 
@@ -329,9 +330,9 @@ static NSString *const KeyKeycode = @"keycode";
 {
   if (shouldLogHIDEventDetails()) {
     return [NSString stringWithFormat:
-      @"Keyboard Code=%d %@",
-      self.keyCode,
-      directionStringFromDirection(self.direction)
+            @"Keyboard Code=%d %@",
+            self.keyCode,
+            directionStringFromDirection(self.direction)
     ];
   }
   return @"Key <hidden>";
@@ -374,9 +375,9 @@ static NSString *const KeyDuration = @"duration";
   if (!self) {
     return nil;
   }
-  
+
   _duration = duration;
-  
+
   return self;
 }
 
@@ -407,95 +408,6 @@ static NSString *const KeyDuration = @"duration";
 - (NSUInteger)hash
 {
   return (NSUInteger) self.duration;
-}
-
-@end
-
-@interface FBSimulatorHIDEvent_DeviceOrientation : NSObject <FBSimulatorHIDEventPayload>
-
-@property (nonatomic, assign, readonly) FBSimulatorHIDDeviceOrientation orientation;
-
-@end
-
-@implementation FBSimulatorHIDEvent_DeviceOrientation
-
-static NSString *const EventClassStringOrientation = @"orientation";
-
-- (instancetype)initWithOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _orientation = orientation;
-
-  return self;
-}
-
-- (NSData *)payloadForHID:(FBSimulatorHID *)hid
-{
-  return [hid.purple orientationEvent:self.orientation];
-}
-
-- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
-{
-  return [FBFuture onQueue:hid.queue resolve:^ FBFuture<NSNull *> * {
-    NSData *payload = [self payloadForHID:hid];
-    NSError *error = nil;
-    if (![hid sendPurpleEvent:payload error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return FBFuture.empty;
-  }];
-}
-
-+ (NSString *)orientationStringFromOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  switch (orientation) {
-    case FBSimulatorHIDDeviceOrientationPortrait:
-      return @"portrait";
-    case FBSimulatorHIDDeviceOrientationPortraitUpsideDown:
-      return @"portrait_upside_down";
-    case FBSimulatorHIDDeviceOrientationLandscapeRight:
-      return @"landscape_right";
-    case FBSimulatorHIDDeviceOrientationLandscapeLeft:
-      return @"landscape_left";
-    default:
-      return @"unknown";
-  }
-}
-
-+ (FBSimulatorHIDDeviceOrientation)orientationFromString:(NSString *)string
-{
-  if ([string isEqualToString:@"portrait"]) return FBSimulatorHIDDeviceOrientationPortrait;
-  if ([string isEqualToString:@"portrait_upside_down"]) return FBSimulatorHIDDeviceOrientationPortraitUpsideDown;
-  if ([string isEqualToString:@"landscape_right"]) return FBSimulatorHIDDeviceOrientationLandscapeRight;
-  if ([string isEqualToString:@"landscape_left"]) return FBSimulatorHIDDeviceOrientationLandscapeLeft;
-  return FBSimulatorHIDDeviceOrientationPortrait;
-}
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"Set Orientation %@", [FBSimulatorHIDEvent_DeviceOrientation orientationStringFromOrientation:self.orientation]];
-}
-
-- (id)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-- (BOOL)isEqual:(FBSimulatorHIDEvent_DeviceOrientation *)event
-{
-  if (![event isKindOfClass:self.class]) {
-    return NO;
-  }
-  return self.orientation == event.orientation;
-}
-
-- (NSUInteger)hash
-{
-  return (NSUInteger)self.orientation;
 }
 
 @end
@@ -536,11 +448,6 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return [[FBSimulatorHIDEvent_Keyboard alloc] initWithDirection:FBSimulatorHIDDirectionUp keyCode:keyCode];
 }
 
-+ (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  return [[FBSimulatorHIDEvent_DeviceOrientation alloc] initWithOrientation:orientation];
-}
-
 #pragma mark Multiple Payload Events
 
 + (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
@@ -553,7 +460,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
     [self touchUpAtX:x y:y],
-  ]];
+          ]];
 }
 
 + (id<FBSimulatorHIDEventComposite>)tapAtX:(double)x y:(double)y duration:(double)duration
@@ -562,7 +469,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
     [self touchDownAtX:x y:y],
     [self delay:duration],
     [self touchUpAtX:x y:y],
-  ]];
+          ]];
 }
 
 + (id<FBSimulatorHIDEventComposite>)shortButtonPress:(FBSimulatorHIDButton)button
@@ -570,7 +477,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return [self eventWithEvents:@[
     [self buttonDown:button],
     [self buttonUp:button],
-  ]];
+          ]];
 }
 
 + (id<FBSimulatorHIDEventComposite>)shortKeyPress:(unsigned int)keyCode
@@ -578,7 +485,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
   return [self eventWithEvents:@[
     [self keyDown:keyCode],
     [self keyUp:keyCode],
-  ]];
+          ]];
 }
 
 + (id<FBSimulatorHIDEvent>)shortKeyPressSequence:(NSArray<NSNumber *> *)sequence
@@ -605,7 +512,7 @@ static NSString *const EventClassStringOrientation = @"orientation";
   double dx = (xEnd - xStart) / steps;
   double dy = (yEnd - yStart) / steps;
 
-  double stepDelay = duration/(steps + 2);
+  double stepDelay = duration / (steps + 2);
 
   for (int i = 0 ; i <= steps ; ++i) {
     [events addObject:[self touchDownAtX:(xStart + dx * i) y:(yStart + dy * i)]];
@@ -624,6 +531,5 @@ static NSString *const EventClassStringOrientation = @"orientation";
 {
   return [[FBSimulatorHIDEvent_Delay alloc] initWithDuration:duration];
 }
-
 
 @end

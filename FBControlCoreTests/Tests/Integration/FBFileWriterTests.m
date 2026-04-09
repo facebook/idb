@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <sys/stat.h>
+#import <sys/types.h>
+
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#import <sys/types.h>
-#import <sys/stat.h>
 
 @interface FBFileWriterTests : XCTestCase
 
@@ -73,7 +73,7 @@
   FBFuture<NSArray<id> *> *futures = [FBFuture futureWithFutures:@[
     [FBFileWriter asyncWriterForFilePath:fifoPath],
     [FBFileReader readerWithFilePath:fifoPath consumer:consumer logger:nil],
-  ]];
+                                      ]];
 
   NSError *error = nil;
   NSArray<id> *results = [futures await:&error];

@@ -8,9 +8,9 @@
 @class NSString, Protocol;
 
 @protocol NSObject
-@property(readonly, copy) NSString *description;
-@property(readonly) Class superclass;
-@property(readonly) unsigned long long hash;
+@property (readonly, copy) NSString *description;
+@property (readonly) Class superclass;
+@property (readonly) unsigned long long hash;
 - (struct _NSZone *)zone;
 - (unsigned long long)retainCount;
 - (id)autorelease;
@@ -29,6 +29,5 @@
 - (BOOL)isEqual:(id)arg1;
 
 @optional
-@property(readonly, copy) NSString *debugDescription;
+@property (readonly, copy) NSString *debugDescription;
 @end
-

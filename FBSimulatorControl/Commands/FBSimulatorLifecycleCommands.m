@@ -7,17 +7,16 @@
 
 #import "FBSimulatorLifecycleCommands.h"
 
-#import <CoreSimulator/SimDevice.h>
-
 #import <AppKit/AppKit.h>
+#import <CoreSimulator/SimDevice.h>
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
 #import "FBSimulatorBridge.h"
-#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
@@ -26,9 +25,9 @@ const int OPEN_URL_RETRIES = 2;
 
 @interface FBSimulatorLifecycleCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
-@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorHID *hid;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorBridge *bridge;
 
 @end
 
@@ -70,10 +69,11 @@ const int OPEN_URL_RETRIES = 2;
 - (FBFuture<NSNull *> *)reboot
 {
   return [[self
-    shutdown]
-    onQueue:self.simulator.workQueue fmap:^(id _) {
-      return [self boot:FBSimulatorBootConfiguration.defaultConfiguration];
-    }];
+           shutdown]
+          onQueue:self.simulator.workQueue
+          fmap:^(id _) {
+            return [self boot:FBSimulatorBootConfiguration.defaultConfiguration];
+          }];
 }
 
 #pragma mark Erase
@@ -103,13 +103,13 @@ const int OPEN_URL_RETRIES = 2;
   NSString *deviceSetPath = self.simulator.customDeviceSetPath;
   if (deviceSetPath) {
     return [[FBSimulatorError
-      describeFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]
-      failFuture];
+             describeFormat:@"Focusing on the Simulator App for a simulator in a custom device set (%@) is not supported", deviceSetPath]
+            failFuture];
   }
-  
+
   // Find the running instances of SimulatorApp.
   NSArray<NSRunningApplication *> *apps = NSWorkspace.sharedWorkspace.runningApplications;
-  NSPredicate *simulatorAppPredicate = [NSPredicate predicateWithBlock:^(NSRunningApplication *application, NSDictionary<NSString *,id> *__) {
+  NSPredicate *simulatorAppPredicate = [NSPredicate predicateWithBlock:^(NSRunningApplication *application, NSDictionary<NSString *, id> *__) {
     return [application.bundleIdentifier isEqualToString:@"com.apple.iphonesimulator"];
   }];
   NSArray<NSRunningApplication *> *simulatorApps = [apps filteredArrayUsingPredicate:simulatorAppPredicate];
@@ -127,16 +127,16 @@ const int OPEN_URL_RETRIES = 2;
   // Multiple apps, we don't know which to select.
   if (simulatorApps.count > 1) {
     return [[FBSimulatorError
-      describeFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]
-      failFuture];
+             describeFormat:@"More than one SimulatorApp %@ running, focus is ambiguous", [FBCollectionInformation oneLineDescriptionFromArray:simulatorApps]]
+            failFuture];
   }
-  
+
   // Otherwise we have a single Simulator App to activate.
   NSRunningApplication *simulatorApp = simulatorApps.firstObject;
   if (![simulatorApp activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
     return [[FBSimulatorError
-      describeFormat:@"Failed to focus %@", simulatorApp]
-      failFuture];
+             describeFormat:@"Failed to focus %@", simulatorApp]
+            failFuture];
   }
 
   return FBFuture.empty;
@@ -151,16 +151,16 @@ const int OPEN_URL_RETRIES = 2;
   // We only want to ever connect to the default SimulatorApp, including re-activating it rather than creating a new instance.
   NSError *innerError = nil;
   NSRunningApplication *application = [NSWorkspace.sharedWorkspace
-    launchApplicationAtURL:applicationURL
-    options:NSWorkspaceLaunchDefault
-    configuration:@{}
-    error:&innerError];
+                                       launchApplicationAtURL:applicationURL
+                                       options:NSWorkspaceLaunchDefault
+                                       configuration:@{}
+                                       error:&innerError];
 
   if (!application) {
     return [[[FBSimulatorError
-      describe:@"Failed to launch SimulatorApp"]
-      causedBy:innerError]
-      fail:error];
+              describe:@"Failed to launch SimulatorApp"]
+             causedBy:innerError]
+            fail:error];
   }
 
   return application;
@@ -172,12 +172,14 @@ const int OPEN_URL_RETRIES = 2;
 {
   NSDate *date = NSDate.date;
   return [[[self
-    terminateConnections]
-    timeout:timeout waitingFor:@"Simulator connections to teardown"]
-    onQueue:self.simulator.workQueue map:^(id _) {
-      [logger.debug logFormat:@"Simulator connections torn down in %f seconds", [NSDate.date timeIntervalSinceDate:date]];
-      return NSNull.null;
-    }];
+            terminateConnections]
+           timeout:timeout
+           waitingFor:@"Simulator connections to teardown"]
+          onQueue:self.simulator.workQueue
+          map:^(id _) {
+            [logger.debug logFormat:@"Simulator connections torn down in %f seconds", [NSDate.date timeIntervalSinceDate:date]];
+            return NSNull.null;
+          }];
 }
 
 - (FBFuture<NSNull *> *)terminateConnections
@@ -185,16 +187,17 @@ const int OPEN_URL_RETRIES = 2;
   FBSimulatorHID *hid = self.hid;
   FBSimulatorBridge *bridge = self.bridge;
   return [[FBFuture
-    futureWithFutures:@[
-      (hid ? [hid disconnect] : FBFuture.empty),
-      (bridge ? [bridge disconnect] : FBFuture.empty),
-    ]]
-    onQueue:self.simulator.workQueue chain:^(FBFuture *_) {
-      // Nullify
-      self.hid = nil;
-      self.bridge = nil;
-      return FBFuture.empty;
-    }];
+           futureWithFutures:@[
+             (hid ? [hid disconnect] : FBFuture.empty),
+             (bridge ? [bridge disconnect] : FBFuture.empty),
+           ]]
+          onQueue:self.simulator.workQueue
+          chain:^(FBFuture *_) {
+            // Nullify
+            self.hid = nil;
+            self.bridge = nil;
+            return FBFuture.empty;
+          }];
 }
 
 #pragma mark Bridge
@@ -206,11 +209,12 @@ const int OPEN_URL_RETRIES = 2;
   }
 
   return [[FBSimulatorBridge
-    bridgeForSimulator:self.simulator]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
-      self.bridge = bridge;
-      return bridge;
-    }];
+           bridgeForSimulator:self.simulator]
+          onQueue:self.simulator.workQueue
+          map:^(FBSimulatorBridge *bridge) {
+            self.bridge = bridge;
+            return bridge;
+          }];
 }
 
 #pragma mark Framebuffer
@@ -219,9 +223,10 @@ const int OPEN_URL_RETRIES = 2;
 {
   FBSimulator *simulator = self.simulator;
   return [FBFuture
-    onQueue:simulator.workQueue resolveValue:^(NSError **error) {
-      return [FBFramebuffer mainScreenSurfaceForSimulator:simulator logger:simulator.logger error:error];
-    }];
+          onQueue:simulator.workQueue
+          resolveValue:^(NSError **error) {
+            return [FBFramebuffer mainScreenSurfaceForSimulator:simulator logger:simulator.logger error:error];
+          }];
 }
 
 #pragma mark Bridge
@@ -232,11 +237,12 @@ const int OPEN_URL_RETRIES = 2;
     return [FBFuture futureWithResult:self.hid];
   }
   return [[FBSimulatorHID
-    hidForSimulator:self.simulator]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorHID *hid) {
-      self.hid = hid;
-      return hid;
-    }];
+           hidForSimulator:self.simulator]
+          onQueue:self.simulator.workQueue
+          map:^(FBSimulatorHID *hid) {
+            self.hid = hid;
+            return hid;
+          }];
 }
 
 #pragma mark URLs
@@ -256,9 +262,9 @@ const int OPEN_URL_RETRIES = 2;
   } while (retry <= OPEN_URL_RETRIES);
 
   return [[[FBSimulatorError
-    describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
-    causedBy:error]
-    failFuture];
+            describeFormat:@"Failed to open URL %@ on simulator %@", url, self.simulator]
+           causedBy:error]
+          failFuture];
 }
 
 @end

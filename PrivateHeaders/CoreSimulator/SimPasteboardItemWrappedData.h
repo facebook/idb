@@ -13,11 +13,11 @@
 
 @interface SimPasteboardItemWrappedData : NSObject <NSSecureCoding>
 {
-    NSData *_wrappedData;
+  NSData *_wrappedData;
 }
 
 + (BOOL)supportsSecureCoding;
-@property (retain, nonatomic) NSData *wrappedData;
+@property (nonatomic, retain) NSData *wrappedData;
 
 - (void)encodeWithCoder:(id)arg1;
 - (id)initWithCoder:(id)arg1;

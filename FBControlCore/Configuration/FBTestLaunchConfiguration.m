@@ -10,10 +10,10 @@
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
 #import "FBControlCoreError.h"
-#import "FBiOSTarget.h"
+#import "FBFuture+Sync.h"
 #import "FBXCTestCommands.h"
 #import "FBXCTestShimConfiguration.h"
-#import "FBFuture+Sync.h"
+#import "FBiOSTarget.h"
 
 @implementation FBTestLaunchConfiguration
 
@@ -44,7 +44,6 @@
   return self;
 }
 
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -60,21 +59,21 @@
     return NO;
   }
 
-  return (self.testBundle == configuration.testBundle || [self.testBundle isEqual:configuration.testBundle]) &&
-         (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration  || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration]) &&
-         (self.testHostBundle == configuration.testHostBundle || [self.testHostBundle isEqual:configuration.testHostBundle]) &&
-         (self.targetApplicationBundle == configuration.targetApplicationBundle || [self.targetApplicationBundle isEqual:configuration.targetApplicationBundle]) &&
-         (self.testsToRun == configuration.testsToRun || [self.testsToRun isEqual:configuration.testsToRun]) &&
-         (self.testsToSkip == configuration.testsToSkip || [self.testsToSkip isEqual:configuration.testsToSkip]) &&
-         self.timeout == configuration.timeout &&
-         self.shouldInitializeUITesting == configuration.shouldInitializeUITesting &&
-         self.shouldUseXcodebuild == configuration.shouldUseXcodebuild &&
-         (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties]) &&
-         (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath]) &&
-         (self.coverageDirectoryPath == configuration.coverageDirectoryPath || [self.coverageDirectoryPath isEqualToString:configuration.coverageDirectoryPath]) &&
-         (self.shouldEnableContinuousCoverageCollection == configuration.shouldEnableContinuousCoverageCollection) &&
-         (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath]) &&
-         self.reportResultBundle == configuration.reportResultBundle;
+  return (self.testBundle == configuration.testBundle || [self.testBundle isEqual:configuration.testBundle])
+  && (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration])
+  && (self.testHostBundle == configuration.testHostBundle || [self.testHostBundle isEqual:configuration.testHostBundle])
+  && (self.targetApplicationBundle == configuration.targetApplicationBundle || [self.targetApplicationBundle isEqual:configuration.targetApplicationBundle])
+  && (self.testsToRun == configuration.testsToRun || [self.testsToRun isEqual:configuration.testsToRun])
+  && (self.testsToSkip == configuration.testsToSkip || [self.testsToSkip isEqual:configuration.testsToSkip])
+  && self.timeout == configuration.timeout
+  && self.shouldInitializeUITesting == configuration.shouldInitializeUITesting
+  && self.shouldUseXcodebuild == configuration.shouldUseXcodebuild
+  && (self.xcTestRunProperties == configuration.xcTestRunProperties || [self.xcTestRunProperties isEqual:configuration.xcTestRunProperties])
+  && (self.resultBundlePath == configuration.resultBundlePath || [self.resultBundlePath isEqual:configuration.resultBundlePath])
+  && (self.coverageDirectoryPath == configuration.coverageDirectoryPath || [self.coverageDirectoryPath isEqualToString:configuration.coverageDirectoryPath])
+  && (self.shouldEnableContinuousCoverageCollection == configuration.shouldEnableContinuousCoverageCollection)
+  && (self.logDirectoryPath == configuration.logDirectoryPath || [self.logDirectoryPath isEqualToString:configuration.logDirectoryPath])
+  && self.reportResultBundle == configuration.reportResultBundle;
 }
 
 - (NSUInteger)hash
@@ -85,21 +84,21 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | EnableContinuousCoverageCollection %d | LogDirectoryPath %@ | ReportResultBundle %d" ,
-    self.testBundle,
-    self.applicationLaunchConfiguration,
-    self.testHostBundle,
-    self.shouldInitializeUITesting,
-    self.shouldUseXcodebuild,
-    self.testsToRun,
-    self.testsToSkip,
-    self.targetApplicationBundle,
-    self.xcTestRunProperties,
-    self.resultBundlePath,
-    self.coverageDirectoryPath,
-    self.shouldEnableContinuousCoverageCollection,
-    self.logDirectoryPath,
-    self.reportResultBundle
+          @"FBTestLaunchConfiguration TestBundle %@ | AppConfig %@ | HostBundle %@ | UITesting %d | UseXcodebuild %d | TestsToRun %@ | TestsToSkip %@ | Target application bundle %@ xcTestRunProperties %@ | ResultBundlePath %@ | CoverageDirPath %@ | EnableContinuousCoverageCollection %d | LogDirectoryPath %@ | ReportResultBundle %d",
+          self.testBundle,
+          self.applicationLaunchConfiguration,
+          self.testHostBundle,
+          self.shouldInitializeUITesting,
+          self.shouldUseXcodebuild,
+          self.testsToRun,
+          self.testsToSkip,
+          self.targetApplicationBundle,
+          self.xcTestRunProperties,
+          self.resultBundlePath,
+          self.coverageDirectoryPath,
+          self.shouldEnableContinuousCoverageCollection,
+          self.logDirectoryPath,
+          self.reportResultBundle
   ];
 }
 

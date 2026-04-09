@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorFileCommands.h>
@@ -40,44 +39,44 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Underlying SimDevice.
  */
-@property (nonatomic, strong, readonly, nonnull) SimDevice *device;
+@property (nonnull, nonatomic, readonly, strong) SimDevice *device;
 
 /**
  The Simulator Set that the Simulator belongs to.
  Reference to `FBSimulatorSet` results to a strong-strong reference cycle between `FBSimulatorSet` and `FBSimulator`.
  However, this cycle is explicitly broken by `FBSimulatorSet` when a `FBSimulator` is removed from the set that `FBSimulatorSet` wraps.
  */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorSet *set;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  The Product Family of the Simulator.
  */
-@property (nonatomic, assign, readonly) FBControlCoreProductFamily productFamily;
+@property (nonatomic, readonly, assign) FBControlCoreProductFamily productFamily;
 
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly, nonnull) FBiOSTargetStateString stateString;
+@property (nonnull, nonatomic, readonly, copy) FBiOSTargetStateString stateString;
 
 /**
  The Directory that Contains the Simulator's Data
  */
-@property (nonatomic, copy, readonly, nullable) NSString *dataDirectory;
+@property (nullable, nonatomic, readonly, copy) NSString *dataDirectory;
 
 /**
  The FBSimulatorConfiguration representing this Simulator.
  */
-@property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
+@property (nullable, nonatomic, readonly, copy) FBSimulatorConfiguration *configuration;
 
 /**
  A command executor for simctl
  */
-@property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
+@property (nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
 
 /**
  The directory path of the expected location of the CoreSimulator logs directory.
  */
-@property (nonatomic, copy, readonly) NSString *coreSimulatorLogsDirectory;
+@property (nonatomic, readonly, copy) NSString *coreSimulatorLogsDirectory;
 
 @end
 

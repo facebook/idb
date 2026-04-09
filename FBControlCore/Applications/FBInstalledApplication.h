@@ -65,22 +65,22 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdenti
 /**
  The Application Bundle as installed on the target. This may be missing information that is otherwise present from the installed bundle.
  */
-@property (nonatomic, copy, readonly) FBBundleDescriptor *bundle;
+@property (nonatomic, readonly, copy) FBBundleDescriptor *bundle;
 
 /**
  The "Install Type" enum of the Application.
  */
-@property (nonatomic, assign, readonly) FBApplicationInstallType installType;
+@property (nonatomic, readonly, assign) FBApplicationInstallType installType;
 
 /**
  The "Install Type" enum of the Application, represented as a string.
  */
-@property (nonatomic, copy, readonly) NSString *installTypeString;
+@property (nonatomic, readonly, copy) NSString *installTypeString;
 
 /**
  The data container path of the Application.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *dataContainer;
+@property (nullable, nonatomic, readonly, copy) NSString *dataContainer;
 
 @end
 

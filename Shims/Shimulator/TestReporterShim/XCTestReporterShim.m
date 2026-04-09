@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
-
 #import <dlfcn.h>
 #import <objc/message.h>
 #import <objc/runtime.h>
+
+#import <Foundation/Foundation.h>
 
 #import "FBXCTestConstants.h"
 #import "XCTestCaseHelpers.h"
@@ -33,13 +33,12 @@ static int __testSuiteDepth = 0;
 NSDictionary<NSString *, id> *EventDictionaryWithNameAndContent(NSString *name, NSDictionary *content)
 {
   NSMutableDictionary<NSString *, id> *eventJSON = [NSMutableDictionary dictionaryWithDictionary:@{
-    kReporter_Event_Key: name,
-    kReporter_TimestampKey: @([[NSDate date] timeIntervalSince1970])
-  }];
+                                                      kReporter_Event_Key : name,
+                                                      kReporter_TimestampKey : @([[NSDate date] timeIntervalSince1970])
+                                                    }];
   [eventJSON addEntriesFromDictionary:content];
   return eventJSON;
 }
-
 
 NSArray<XCTestCase *> *TestsFromSuite(id testSuite)
 {
@@ -51,8 +50,8 @@ NSArray<XCTestCase *> *TestsFromSuite(id testSuite)
     id test = [queue objectAtIndex:0];
     [queue removeObjectAtIndex:0];
 
-    if ([test isKindOfClass:[testSuite class]] ||
-        [test respondsToSelector:@selector(tests)]) {
+    if ([test isKindOfClass:[testSuite class]]
+        || [test respondsToSelector:@selector(tests)]) {
       // XCTestSuite keep a list of tests in an ivar called 'tests'.
       id testsInSuite = [test valueForKey:@"tests"];
       NSCAssert(testsInSuite != nil, @"Can't get tests for suite: %@", testSuite);
@@ -117,10 +116,12 @@ static void PrintJSON(id JSONObject)
   NSData *data = [NSJSONSerialization dataWithJSONObject:JSONObject options:0 error:&error];
 
   if (error) {
-    fprintf(__stderr,
-            "ERROR: Error generating JSON for object: %s: %s\n",
-            [[JSONObject description] UTF8String],
-            [[error localizedFailureReason] UTF8String]);
+    fprintf(
+      __stderr,
+      "ERROR: Error generating JSON for object: %s: %s\n",
+      [[JSONObject description] UTF8String],
+      [[error localizedFailureReason] UTF8String]
+    );
     exit(1);
   }
 
@@ -135,10 +136,12 @@ static void XCToolLog_testSuiteDidStart(NSString *name)
 {
   if (__testSuiteDepth > 0) {
     dispatch_sync(EventQueue(), ^{
-      PrintJSON(EventDictionaryWithNameAndContent(
-        kReporter_Events_BeginTestSuite,
-        @{kReporter_BeginTestSuite_SuiteKey : name}
-      ));
+      PrintJSON(
+        EventDictionaryWithNameAndContent(
+          kReporter_Events_BeginTestSuite,
+          @{kReporter_BeginTestSuite_SuiteKey : name}
+        )
+      );
     });
   }
   __testSuiteDepth++;
@@ -162,14 +165,14 @@ static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *
 
   if (__testSuiteDepth > 0) {
     NSDictionary<NSString *, id> *content =
-      @{
-        kReporter_EndTestSuite_SuiteKey : testSuiteName,
-        kReporter_EndTestSuite_TestCaseCountKey : @([run testCaseCount]),
-        kReporter_EndTestSuite_TotalFailureCountKey : @([run totalFailureCount]),
-        kReporter_EndTestSuite_UnexpectedExceptionCountKey : @([run unexpectedExceptionCount]),
-        kReporter_EndTestSuite_TestDurationKey: @([run testDuration]),
-        kReporter_EndTestSuite_TotalDurationKey : @([run totalDuration]),
-      };
+    @{
+      kReporter_EndTestSuite_SuiteKey : testSuiteName,
+      kReporter_EndTestSuite_TestCaseCountKey : @([run testCaseCount]),
+      kReporter_EndTestSuite_TotalFailureCountKey : @([run totalFailureCount]),
+      kReporter_EndTestSuite_UnexpectedExceptionCountKey : @([run unexpectedExceptionCount]),
+      kReporter_EndTestSuite_TestDurationKey : @([run testDuration]),
+      kReporter_EndTestSuite_TotalDurationKey : @([run totalDuration]),
+    };
     NSDictionary<NSString *, id> *json = EventDictionaryWithNameAndContent(kReporter_Events_EndTestSuite, content);
     dispatch_sync(EventQueue(), ^{
       PrintJSON(json);
@@ -197,13 +200,16 @@ static void XCToolLog_testCaseDidStart(XCTestCase *testCase)
     NSString *methodName;
     parseXCTestCase(testCase, &className, &methodName, &testKey);
 
-    PrintJSON(EventDictionaryWithNameAndContent(
-      kReporter_Events_BeginTest, @{
-        kReporter_BeginTest_TestKey : testKey,
-        kReporter_BeginTest_ClassNameKey : className,
-        kReporter_BeginTest_MethodNameKey : methodName,
-      }
-    ));
+    PrintJSON(
+      EventDictionaryWithNameAndContent(
+        kReporter_Events_BeginTest,
+        @{
+          kReporter_BeginTest_TestKey : testKey,
+          kReporter_BeginTest_ClassNameKey : className,
+          kReporter_BeginTest_MethodNameKey : methodName,
+        }
+      )
+    );
 
     __testExceptions = [[NSMutableArray alloc] init];
   });
@@ -246,15 +252,17 @@ static void XCToolLog_testCaseDidStop(XCTestCase *testCase, NSNumber *unexpected
     // report test results
     NSArray<NSDictionary<NSString *, id> *> *retExceptions = [__testExceptions copy];
     NSDictionary<NSString *, id> *json = EventDictionaryWithNameAndContent(
-      kReporter_Events_EndTest, @{
+      kReporter_Events_EndTest,
+      @{
         kReporter_EndTest_TestKey : testKey,
         kReporter_EndTest_ClassNameKey : className,
         kReporter_EndTest_MethodNameKey : methodName,
-        kReporter_EndTest_SucceededKey: @(succeeded),
+        kReporter_EndTest_SucceededKey : @(succeeded),
         kReporter_EndTest_ResultKey : result,
         kReporter_EndTest_TotalDurationKey : totalDuration,
         kReporter_EndTest_ExceptionsKey : retExceptions,
-    });
+      }
+    );
 
     PrintJSON(json);
   });
@@ -282,11 +290,13 @@ static void XCToolLog_testCaseDidFail(NSDictionary *exceptionInfo)
 
 static void XCTestLog_testCaseDidFail(id self, SEL sel, XCTestCaseRun *run, NSString *description, NSString *file, NSUInteger line)
 {
-  XCToolLog_testCaseDidFail(@{
-    kReporter_EndTest_Exception_FilePathInProjectKey : file ?: @"Unknown File",
-    kReporter_EndTest_Exception_LineNumberKey : @(line),
-    kReporter_EndTest_Exception_ReasonKey : description,
-  });
+  XCToolLog_testCaseDidFail(
+    @{
+      kReporter_EndTest_Exception_FilePathInProjectKey : file ?: @"Unknown File",
+      kReporter_EndTest_Exception_LineNumberKey : @(line),
+      kReporter_EndTest_Exception_ReasonKey : description,
+    }
+  );
 }
 
 static void XCTestLog_testCaseDidFailWithDescription(id self, SEL sel, XCTestCase *testCase, NSString *description, NSString *file, NSUInteger line)
@@ -313,32 +323,31 @@ static void XCPerformTestWithSuppressedExpectedAssertionFailures(id self, SEL or
     int64_t testCount = isSuite ? [[self tests] count] : 1;
     // When in a suite, add a second per test to help account for the time required to switch tests in a suite.
     int64_t fudgeFactor = isSuite ? MAX(testCount, 1) : 0;
-    int64_t interval = (timeout * testCount + fudgeFactor) * NSEC_PER_SEC ;
+    int64_t interval = (timeout * testCount + fudgeFactor) * NSEC_PER_SEC;
     NSString *queueName = [NSString stringWithFormat:@"test.timer.%p", self];
     dispatch_queue_t queue = dispatch_queue_create([queueName cStringUsingEncoding:NSASCIIStringEncoding], DISPATCH_QUEUE_SERIAL);
     dispatch_set_target_queue(queue, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0));
     dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
     dispatch_source_set_timer(source, dispatch_time(DISPATCH_TIME_NOW, interval), 0, 0);
     dispatch_source_set_event_handler(source, ^{
-        if (isSuite) {
-            NSString *additionalInformation = @"";
-            if ([self respondsToSelector:@selector(testRun)]) {
-                XCTestRun *run = [self testRun];
-                NSUInteger executedTests = [run executionCount];
-                if (executedTests == 0) {
-                    additionalInformation = [NSString stringWithFormat:@"(No tests ran, likely stalled in +[%@ setUp])", [self name]];
-                } else if (executedTests == testCount) {
-                    additionalInformation = [NSString stringWithFormat:@"(All tests ran, likely stalled in +[%@ tearDown])", [self name]];
-                }
-            }
-
-            [NSException raise:NSInternalInconsistencyException
-                        format:@"*** Suite %@ ran longer than combined test time limit: %lld second(s) %@", [self name], testCount * timeout, additionalInformation];
-
-        } else {
-            [NSException raise:NSInternalInconsistencyException
-                        format:@"*** Test %@ ran longer than specified test time limit: %d second(s)", self, timeout];
+      if (isSuite) {
+        NSString *additionalInformation = @"";
+        if ([self respondsToSelector:@selector(testRun)]) {
+          XCTestRun *run = [self testRun];
+          NSUInteger executedTests = [run executionCount];
+          if (executedTests == 0) {
+            additionalInformation = [NSString stringWithFormat:@"(No tests ran, likely stalled in +[%@ setUp])", [self name]];
+          } else if (executedTests == testCount) {
+            additionalInformation = [NSString stringWithFormat:@"(All tests ran, likely stalled in +[%@ tearDown])", [self name]];
+          }
         }
+
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"*** Suite %@ ran longer than combined test time limit: %lld second(s) %@", [self name], testCount * timeout, additionalInformation];
+      } else {
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"*** Test %@ ran longer than specified test time limit: %d second(s)", self, timeout];
+      }
     });
     dispatch_resume(source);
 
@@ -365,13 +374,15 @@ static void XCWaitForDebuggerIfNeeded()
       int pid = [[NSProcessInfo processInfo] processIdentifier];
       NSString *beginMessage = [NSString stringWithFormat:@"Waiting for debugger to be attached to pid '%d' ...", pid];
       dispatch_sync(EventQueue(), ^{
-        PrintJSON(EventDictionaryWithNameAndContent(
-          kReporter_Events_BeginStatus,
-          @{
-            kReporter_BeginStatus_MessageKey : beginMessage,
-            kReporter_BeginStatus_LevelKey : @"Info"
-          }
-        ));
+        PrintJSON(
+          EventDictionaryWithNameAndContent(
+            kReporter_Events_BeginStatus,
+            @{
+              kReporter_BeginStatus_MessageKey : beginMessage,
+              kReporter_BeginStatus_LevelKey : @"Info"
+            }
+          )
+        );
       });
 
       // Halt process execution until a debugger is attached
@@ -379,13 +390,15 @@ static void XCWaitForDebuggerIfNeeded()
 
       NSString *endMessage = [NSString stringWithFormat:@"Debugger was successfully attached to pid '%d'.", pid];
       dispatch_sync(EventQueue(), ^{
-        PrintJSON(EventDictionaryWithNameAndContent(
-          kReporter_Events_EndStatus,
-          @{
-            kReporter_BeginStatus_MessageKey : endMessage,
-            kReporter_BeginStatus_LevelKey : @"Info"
-          }
-        ));
+        PrintJSON(
+          EventDictionaryWithNameAndContent(
+            kReporter_Events_EndStatus,
+            @{
+              kReporter_BeginStatus_MessageKey : endMessage,
+              kReporter_BeginStatus_LevelKey : @"Info"
+            }
+          )
+        );
       });
     }
   });
@@ -616,15 +629,15 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
     NSString *legacyTestName = [NSString stringWithFormat:@"%@/%@", className, methodName];
     NSLog(@"Found test: %@", legacyTestName);
     [testsToReport addObject:@{
-      kReporter_ListTest_LegacyTestNameKey: legacyTestName,
-      kReporter_ListTest_ClassNameKey: className,
-      kReporter_ListTest_MethodNameKey: methodName,
-      kReporter_ListTest_TestKey: testKey,
-    }];
+       kReporter_ListTest_LegacyTestNameKey : legacyTestName,
+       kReporter_ListTest_ClassNameKey : className,
+       kReporter_ListTest_MethodNameKey : methodName,
+       kReporter_ListTest_TestKey : testKey,
+     }];
   }
 
   // Now write them out after sorting
-  [testsToReport sortUsingComparator:^ NSComparisonResult (NSDictionary<NSString *, NSString *> *left, NSDictionary<NSString *, NSString *> *right) {
+  [testsToReport sortUsingComparator:^NSComparisonResult (NSDictionary<NSString *, NSString *> *left, NSDictionary<NSString *, NSString *> *right) {
     return [left[kReporter_ListTest_LegacyTestNameKey] compare:right[kReporter_ListTest_LegacyTestNameKey]];
   }];
   NSError *error = nil;
@@ -723,8 +736,7 @@ __attribute__((constructor)) static void EntryPoint()
       return;
     }
 
-
-  // Install a signal handler to deal with tests crashing.
+    // Install a signal handler to deal with tests crashing.
     struct sigaction sa_abort;
     sa_abort.sa_handler = &handle_signal;
     sigaction(SIGABRT, &sa_abort, NULL);

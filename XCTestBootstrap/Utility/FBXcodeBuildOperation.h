@@ -91,7 +91,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Confirms the proper exit of the provided xcodebuild operation.
- 
+
  @param task the task to monitor.
  @param configuration the configuration of the launched process.
  @param reporter the reporter to report to

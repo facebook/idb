@@ -44,15 +44,15 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   NSString *diskImagePath = [path stringByAppendingPathComponent:@"DeveloperDiskImage.dmg"];
   if (![NSFileManager.defaultManager fileExistsAtPath:diskImagePath]) {
     return [[FBControlCoreError
-      describeFormat:@"Disk image does not exist at expected path %@", diskImagePath]
-      fail:error];
+             describeFormat:@"Disk image does not exist at expected path %@", diskImagePath]
+            fail:error];
   }
   NSString *signaturePath = [diskImagePath stringByAppendingString:@".signature"];
   NSData *signature = [NSData dataWithContentsOfFile:signaturePath];
   if (!signature) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to load signature at %@", signaturePath]
-      fail:error];
+             describeFormat:@"Failed to load signature at %@", signaturePath]
+            fail:error];
   }
   NSOperatingSystemVersion version = [FBOSVersion operatingSystemVersionFromName:path.lastPathComponent];
   return [[FBDeveloperDiskImage alloc] initWithDiskImagePath:diskImagePath signature:signature version:version xcodeVersion:xcodeVersion];
@@ -71,16 +71,20 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
   static dispatch_once_t onceToken;
   static NSArray<FBDeveloperDiskImage *> *images = nil;
   dispatch_once(&onceToken, ^{
-    images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+    images = [self allDiskImagesFromSearchPath:[FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/DeviceSupport"]
+                                  xcodeVersion:FBXcodeConfiguration.xcodeVersion
+                                        logger:FBControlCoreGlobalConfiguration.defaultLogger];
     if ([[NSProcessInfo.processInfo.environment allKeys] containsObject:ExtraDeviceSupportDirEnv]) {
-      NSArray<FBDeveloperDiskImage *> *extraImages = [self allDiskImagesFromSearchPath:NSProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] xcodeVersion:FBXcodeConfiguration.xcodeVersion logger:FBControlCoreGlobalConfiguration.defaultLogger];
+      NSArray<FBDeveloperDiskImage *> *extraImages = [self allDiskImagesFromSearchPath:NSProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv]
+                                                                          xcodeVersion:FBXcodeConfiguration.xcodeVersion
+                                                                                logger:FBControlCoreGlobalConfiguration.defaultLogger];
       images = [images arrayByAddingObjectsFromArray:extraImages];
     }
   });
   return images;
 }
 
-+ (FBDeveloperDiskImage *) unknownDiskImageWithSignature:(NSData *)signature
++ (FBDeveloperDiskImage *)unknownDiskImageWithSignature:(NSData *)signature
 {
   NSOperatingSystemVersion unknownVersion = {
     .majorVersion = 0,
@@ -147,20 +151,20 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     return path;
   }
   return [[FBControlCoreError
-    describeFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]
-    fail:error];
+           describeFormat:@"Could not find the Symbols for %@ in any of %@", buildVersion, [FBCollectionInformation oneLineDescriptionFromArray:paths]]
+          fail:error];
 }
 
 + (nullable FBDeveloperDiskImage *)bestImageForImages:(NSArray<FBDeveloperDiskImage *> *)images targetVersion:(NSOperatingSystemVersion)targetVersion logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   if (images.count == 0) {
     return [[FBControlCoreError
-      describe:@"No disk images provided"]
-      fail:error];
+             describe:@"No disk images provided"]
+            fail:error];
   }
 
   // Sort the array such that the best matching version appears at the top.
-  NSArray<FBDeveloperDiskImage *> *sorted = [images sortedArrayUsingComparator:^ NSComparisonResult (FBDeveloperDiskImage *left, FBDeveloperDiskImage *right) {
+  NSArray<FBDeveloperDiskImage *> *sorted = [images sortedArrayUsingComparator:^NSComparisonResult (FBDeveloperDiskImage *left, FBDeveloperDiskImage *right) {
     NSOperatingSystemVersion leftVersion = left.version;
     NSOperatingSystemVersion rightVersion = right.version;
     NSInteger leftDelta = ScoreVersions(leftVersion, targetVersion);
@@ -185,8 +189,8 @@ static NSInteger ScoreVersions(NSOperatingSystemVersion current, NSOperatingSyst
     return best;
   }
   return [[FBControlCoreError
-    describeFormat:@"The best match %@ is not suitable for %ld.%ld", best, targetVersion.majorVersion, targetVersion.minorVersion]
-    fail:error];
+           describeFormat:@"The best match %@ is not suitable for %ld.%ld", best, targetVersion.majorVersion, targetVersion.minorVersion]
+          fail:error];
 }
 
 - (NSString *)description

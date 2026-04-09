@@ -5,16 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreSimulator/SimDevice.h>
 #import "FBSimulatorMemoryCommands.h"
+
+#import <CoreSimulator/SimDevice.h>
+#import <FBControlCore/FBiOSTarget.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import <FBControlCore/FBiOSTarget.h>
 
 @interface FBSimulatorMemoryCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -44,16 +45,17 @@
 - (FBFuture<NSNull *> *)simulateMemoryWarning
 {
   if ([self.simulator.device respondsToSelector:(@selector(simulateMemoryWarning))]) {
-    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
-      [self.simulator.device simulateMemoryWarning];
+    return [FBFuture onQueue:self.simulator.workQueue
+                     resolve:^FBFuture<NSNull *> *() {
+                       [self.simulator.device simulateMemoryWarning];
 
-      return FBFuture.empty;
-    }];
+                       return FBFuture.empty;
+                     }];
   }
 
   return [[FBSimulatorError
-            describe:@"SimDevice doesn't have simulateMemoryWarning selector"]
-            failFuture];
+           describe:@"SimDevice doesn't have simulateMemoryWarning selector"]
+          failFuture];
 }
 
 @end

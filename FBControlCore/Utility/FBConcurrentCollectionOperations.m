@@ -31,38 +31,41 @@
 
 #pragma mark Public
 
-+ (NSArray *)generate:(NSUInteger)count withBlock:( id(^)(NSUInteger index) )block
++ (NSArray *)generate:(NSUInteger)count withBlock:(id (^)(NSUInteger index) )block
 {
   NSMutableArray *array = [NSMutableArray array];
   for (NSUInteger index = 0; index < count; index++) {
     [array addObject:NSNull.null];
   }
 
-  dispatch_apply((size_t) count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^ (size_t iteration) {
-    id object = block(iteration);
-    if (object) {
-      @synchronized(array) {
-        array[iteration] = object;
+  dispatch_apply((size_t) count,
+    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t iteration) {
+      id object = block(iteration);
+      if (object) {
+        @synchronized(array) {
+          array[iteration] = object;
+        }
       }
-    }
-  });
+    });
   return [array copy];
 }
 
-+ (NSArray *)map:(NSArray *)array withBlock:( id(^)(id object) )block
++ (NSArray *)map:(NSArray *)array withBlock:(id (^)(id object) )block
 {
   return [self
-    generate:array.count
-    withBlock:^ id (NSUInteger index) {
-      return block(array[index]);
-    }];
+          generate:array.count
+          withBlock:^id (NSUInteger index) {
+            return block(array[index]);
+          }];
 }
 
 + (NSArray *)filter:(NSArray *)array predicate:(NSPredicate *)predicate
 {
-  return [self filterMap:array predicate:predicate map:^ id (id object) {
-    return object;
-  }];
+  return [self filterMap:array
+               predicate:predicate
+                     map:^id (id object) {
+                       return object;
+                     }];
 }
 
 + (NSArray *)mapFilter:(NSArray *)array map:(id (^)(id))block predicate:(NSPredicate *)predicate
@@ -72,19 +75,19 @@
     [output addObject:NSNull.null];
   }
 
-  dispatch_apply(array.count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^ (size_t iteration) {
-    id object = block(array[iteration]);
-    BOOL pass = [predicate evaluateWithObject:object];
-    if (!pass) {
-      object = FBConcurrentCollectionOperations_FilterTerminal.terminal;
-    }
-    else if (!object) {
-      object = NSNull.null;
-    }
-    @synchronized(output) {
-      output[iteration] = object;
-    }
-  });
+  dispatch_apply(array.count,
+    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(size_t iteration) {
+      id object = block(array[iteration]);
+      BOOL pass = [predicate evaluateWithObject:object];
+      if (!pass) {
+        object = FBConcurrentCollectionOperations_FilterTerminal.terminal;
+      } else if (!object) {
+        object = NSNull.null;
+      }
+      @synchronized(output) {
+        output[iteration] = object;
+      }
+    });
 
   return [output filteredArrayUsingPredicate:self.nonTerminalPredicate];
 }
@@ -92,19 +95,19 @@
 + (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block
 {
   return [[self
-    map:array
-    withBlock:^ id (id object) {
-      BOOL pass = [predicate evaluateWithObject:object];
-      if (!pass) {
-        return FBConcurrentCollectionOperations_FilterTerminal.terminal;
-      }
-      object = block(object);
-      if (!object) {
-        return NSNull.null;
-      }
-      return object;
-    }]
-    filteredArrayUsingPredicate:self.nonTerminalPredicate];
+           map:array
+           withBlock:^id (id object) {
+             BOOL pass = [predicate evaluateWithObject:object];
+             if (!pass) {
+               return FBConcurrentCollectionOperations_FilterTerminal.terminal;
+             }
+             object = block(object);
+             if (!object) {
+               return NSNull.null;
+             }
+             return object;
+           }]
+          filteredArrayUsingPredicate:self.nonTerminalPredicate];
 }
 
 #pragma mark Private
@@ -114,7 +117,7 @@
   static dispatch_once_t onceToken;
   static NSPredicate *predicate;
   dispatch_once(&onceToken, ^{
-    predicate = [NSPredicate predicateWithBlock:^ BOOL (id evaluatedObject, NSDictionary *_) {
+    predicate = [NSPredicate predicateWithBlock:^BOOL (id evaluatedObject, NSDictionary *_) {
       return evaluatedObject != FBConcurrentCollectionOperations_FilterTerminal.terminal;
     }];
   });

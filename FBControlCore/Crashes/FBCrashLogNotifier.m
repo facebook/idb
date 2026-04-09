@@ -7,15 +7,15 @@
 
 #import "FBCrashLogNotifier.h"
 
-#import "FBCrashLog.h"
-#import "FBCrashLogStore.h"
+#import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBControlCoreError.h"
+#import "FBCrashLog.h"
+#import "FBCrashLogStore.h"
 
 @interface FBCrashLogNotifier ()
 
-@property (nonatomic, copy, readwrite) NSDate *sinceDate;
+@property (nonatomic, readwrite, copy) NSDate *sinceDate;
 
 @end
 
@@ -58,25 +58,27 @@
 {
   if (![self startListening:YES]) {
     return [[FBControlCoreError
-      describeFormat:@"Crash Log Info could not be obtained"]
-      failFuture];
+             describeFormat:@"Crash Log Info could not be obtained"]
+            failFuture];
   }
 
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.crashlogfetch", DISPATCH_QUEUE_SERIAL);
   return [FBFuture
-   onQueue:queue resolveUntil:^{
-     FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
-       crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate logger:nil]
-       filteredArrayUsingPredicate:predicate]
-       firstObject];
-     if (!crashInfo) {
-       return [[FBControlCoreError
-         describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
-         failFuture];
-     }
-     [self.store ingestCrashLogAtPath:crashInfo.crashPath];
-     return [FBFuture futureWithResult:crashInfo];
-   }];
+          onQueue:queue
+          resolveUntil:^{
+            FBCrashLogInfo *crashInfo = [[[FBCrashLogInfo
+                                           crashInfoAfterDate:FBCrashLogNotifier.sharedInstance.sinceDate
+                                           logger:nil]
+                                          filteredArrayUsingPredicate:predicate]
+                                         firstObject];
+            if (!crashInfo) {
+              return [[FBControlCoreError
+                       describeFormat:@"Crash Log Info for %@ could not be obtained", predicate]
+                      failFuture];
+            }
+            [self.store ingestCrashLogAtPath:crashInfo.crashPath];
+            return [FBFuture futureWithResult:crashInfo];
+          }];
 }
 
 @end

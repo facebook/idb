@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTest.h>
 #import <CoreMedia/CoreMedia.h>
 #import <VideoToolbox/VideoToolbox.h>
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream_Testing.h>
@@ -15,7 +15,7 @@
 #pragma mark - Test Doubles
 
 @interface FBCapturingLogger : NSObject <FBControlCoreLogger>
-@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *messages;
+@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *messages;
 @end
 
 @implementation FBCapturingLogger
@@ -46,11 +46,17 @@
 }
 
 - (id<FBControlCoreLogger>)info { return self; }
+
 - (id<FBControlCoreLogger>)debug { return self; }
+
 - (id<FBControlCoreLogger>)error { return self; }
+
 - (id<FBControlCoreLogger>)withName:(NSString *)prefix { return self; }
+
 - (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled { return self; }
+
 - (NSString *)name { return nil; }
+
 - (FBControlCoreLogLevel)level { return FBControlCoreLogLevelMultiple; }
 
 @end
@@ -66,7 +72,13 @@ static CMSampleBufferRef CreateH264SampleBuffer(void)
 
   CMFormatDescriptionRef formatDesc = NULL;
   OSStatus status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
-    NULL, 2, paramSets, paramSizes, 4, &formatDesc);
+    NULL,
+    2,
+    paramSets,
+    paramSizes,
+    4,
+    &formatDesc
+  );
   NSCAssert(status == noErr, @"Failed to create H264 format description: %d", (int)status);
 
   static uint8_t avccData[] = {
@@ -76,8 +88,16 @@ static CMSampleBufferRef CreateH264SampleBuffer(void)
 
   CMBlockBufferRef blockBuf = NULL;
   status = CMBlockBufferCreateWithMemoryBlock(
-    NULL, avccData, sizeof(avccData), kCFAllocatorNull,
-    NULL, 0, sizeof(avccData), 0, &blockBuf);
+    NULL,
+    avccData,
+    sizeof(avccData),
+    kCFAllocatorNull,
+    NULL,
+    0,
+    sizeof(avccData),
+    0,
+    &blockBuf
+  );
   NSCAssert(status == noErr, @"Failed to create block buffer: %d", (int)status);
 
   CMSampleBufferRef sampleBuf = NULL;
@@ -88,8 +108,19 @@ static CMSampleBufferRef CreateH264SampleBuffer(void)
     .decodeTimeStamp = kCMTimeInvalid
   };
   status = CMSampleBufferCreate(
-    NULL, blockBuf, true, NULL, NULL, formatDesc,
-    1, 1, &timing, 1, &sampleSize, &sampleBuf);
+    NULL,
+    blockBuf,
+    true,
+    NULL,
+    NULL,
+    formatDesc,
+    1,
+    1,
+    &timing,
+    1,
+    &sampleSize,
+    &sampleBuf
+  );
   NSCAssert(status == noErr, @"Failed to create sample buffer: %d", (int)status);
 
   CFRelease(formatDesc);
@@ -107,7 +138,13 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   CMFormatDescriptionRef formatDesc = NULL;
   OSStatus status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
-    NULL, 2, paramSets, paramSizes, 4, &formatDesc);
+    NULL,
+    2,
+    paramSets,
+    paramSizes,
+    4,
+    &formatDesc
+  );
   NSCAssert(status == noErr, @"Failed to create H264 format description: %d", (int)status);
 
   static uint8_t avccData[] = {
@@ -117,8 +154,16 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   CMBlockBufferRef blockBuf = NULL;
   status = CMBlockBufferCreateWithMemoryBlock(
-    NULL, avccData, sizeof(avccData), kCFAllocatorNull,
-    NULL, 0, sizeof(avccData), 0, &blockBuf);
+    NULL,
+    avccData,
+    sizeof(avccData),
+    kCFAllocatorNull,
+    NULL,
+    0,
+    sizeof(avccData),
+    0,
+    &blockBuf
+  );
   NSCAssert(status == noErr, @"Failed to create block buffer: %d", (int)status);
 
   CMSampleBufferRef sampleBuf = NULL;
@@ -130,8 +175,19 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
   };
   // Pass false for dataReady to create a not-ready buffer
   status = CMSampleBufferCreate(
-    NULL, blockBuf, false, NULL, NULL, formatDesc,
-    1, 1, &timing, 1, &sampleSize, &sampleBuf);
+    NULL,
+    blockBuf,
+    false,
+    NULL,
+    NULL,
+    formatDesc,
+    1,
+    1,
+    &timing,
+    1,
+    &sampleSize,
+    &sampleBuf
+  );
   NSCAssert(status == noErr, @"Failed to create sample buffer: %d", (int)status);
 
   CFRelease(formatDesc);
@@ -150,21 +206,21 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 - (FBSimulatorVideoStreamFramePusher_VideoToolbox *)createPusherWithLogger:(FBCapturingLogger *)logger
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:@30
-    rateControl:nil
-    scaleFactor:nil
-    keyFrameRate:@10.0];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:@30
+                                        rateControl:nil
+                                        scaleFactor:nil
+                                        keyFrameRate:@10.0];
   id<FBAccumulatingBuffer> consumer = FBDataBuffer.accumulatingBuffer;
   return [[FBSimulatorVideoStreamFramePusher_VideoToolbox alloc]
-    initWithConfiguration:config
-    compressionSessionProperties:@{}
-    videoCodec:kCMVideoCodecType_H264
-    consumer:consumer
-    compressorCallback:NULL
-    frameWriter:WriteFrameToAnnexBStream
-    frameWriterContext:nil
-    logger:logger];
+          initWithConfiguration:config
+          compressionSessionProperties:@{}
+          videoCodec:kCMVideoCodecType_H264
+          consumer:consumer
+          compressorCallback:NULL
+          frameWriter:WriteFrameToAnnexBStream
+          frameWriterContext:nil
+          logger:logger];
 }
 
 - (void)testWarmupFramesSuppressed
@@ -400,10 +456,10 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   BOOL foundStats = NO;
   for (NSString *msg in logger.messages) {
-    if ([msg containsString:@"Video stats"] &&
-        [msg containsString:@"4 written"] &&
-        [msg containsString:@"2 dropped"] &&
-        [msg containsString:@"1 encode errors"]) {
+    if ([msg containsString:@"Video stats"]
+        && [msg containsString:@"4 written"]
+        && [msg containsString:@"2 dropped"]
+        && [msg containsString:@"1 encode errors"]) {
       foundStats = YES;
     }
   }
@@ -434,9 +490,9 @@ static CMSampleBufferRef CreateNotReadySampleBuffer(void)
 
   BOOL foundStats = NO;
   for (NSString *msg in logger.messages) {
-    if ([msg containsString:@"Video stats"] &&
-        [msg containsString:@"0 written"] &&
-        [msg containsString:@"11 write failures"]) {
+    if ([msg containsString:@"Video stats"]
+        && [msg containsString:@"0 written"]
+        && [msg containsString:@"11 write failures"]) {
       foundStats = YES;
     }
   }

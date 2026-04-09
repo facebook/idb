@@ -12,16 +12,16 @@
 __attribute__((visibility("hidden")))
 @interface SimDeviceNotificationManager : NSObject <SimDeviceNotifier>
 {
-    NSObject<OS_dispatch_queue> *_handlersQueue;
-    NSMutableDictionary *_handlers;
-    unsigned long long _next_regID;
-    NSObject<OS_dispatch_queue> *_sendQueue;
+  NSObject<OS_dispatch_queue> *_handlersQueue;
+  NSMutableDictionary *_handlers;
+  unsigned long long _next_regID;
+  NSObject<OS_dispatch_queue> *_sendQueue;
 }
 
-@property(retain, nonatomic) NSObject<OS_dispatch_queue> *sendQueue; // @synthesize sendQueue=_sendQueue;
-@property(nonatomic) unsigned long long next_regID; // @synthesize next_regID=_next_regID;
-@property(retain, nonatomic) NSMutableDictionary *handlers; // @synthesize handlers=_handlers;
-@property(retain, nonatomic) NSObject<OS_dispatch_queue> *handlersQueue; // @synthesize handlersQueue=_handlersQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *sendQueue; // @synthesize sendQueue=_sendQueue;
+@property (nonatomic) unsigned long long next_regID; // @synthesize next_regID=_next_regID;
+@property (nonatomic, retain) NSMutableDictionary *handlers; // @synthesize handlers=_handlers;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *handlersQueue; // @synthesize handlersQueue=_handlersQueue;
 - (void)sendNotification:(id)arg1 completionQueue:(id)arg2 completionBlock:(CDUnknownBlockType)arg3;
 - (void)sendNotification:(id)arg1;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
@@ -29,4 +29,3 @@ __attribute__((visibility("hidden")))
 - (id)init;
 
 @end
-

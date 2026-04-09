@@ -10,4 +10,3 @@
 @protocol SimDisplayIOSurfaceRenderableDelegate <FoundationXPCProtocolProxyable>
 - (void)didChangeIOSurface:(id)arg1;
 @end
-

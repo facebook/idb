@@ -11,15 +11,15 @@
 
 @interface SimDeviceLegacyClient : NSObject
 {
-    // Error parsing type: , name: _io
-    // Error parsing type: , name: _performTargetRemapping
-    // Error parsing type: , name: _ioPort
-    // Error parsing type: , name: _descriptor
-    // Error parsing type: , name: _hidCallbackUUID
-    // Error parsing type: , name: _rwLock
-    // Error parsing type: , name: _isWatch
-    // Error parsing type: , name: _isTV
-    // Error parsing type: , name: _isHIDArbitraryMessageAvailable
+  // Error parsing type: , name: _io
+  // Error parsing type: , name: _performTargetRemapping
+  // Error parsing type: , name: _ioPort
+  // Error parsing type: , name: _descriptor
+  // Error parsing type: , name: _hidCallbackUUID
+  // Error parsing type: , name: _rwLock
+  // Error parsing type: , name: _isWatch
+  // Error parsing type: , name: _isTV
+  // Error parsing type: , name: _isHIDArbitraryMessageAvailable
 }
 
 - (id)init;
@@ -30,4 +30,3 @@
 - (id)initWithDevice:(id)arg1 error:(id *)arg2;
 
 @end
-

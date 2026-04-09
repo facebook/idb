@@ -78,17 +78,18 @@
   NSError *error = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&error]) {
     return [[FBSimulatorError
-      describeFormat:@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error]
-      failFuture];
+             describeFormat:@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error]
+            failFuture];
   }
   return [[self.control.set
-    createSimulatorWithConfiguration:configuration]
-    onQueue:dispatch_get_main_queue() chain:^(FBFuture *future) {
-      if (future.error) {
-        XCTFail(@"Error in device allocation %@", future.error);
-      }
-      return future;
-    }];
+           createSimulatorWithConfiguration:configuration]
+          onQueue:dispatch_get_main_queue()
+          chain:^(FBFuture *future) {
+            if (future.error) {
+              XCTFail(@"Error in device allocation %@", future.error);
+            }
+            return future;
+          }];
 }
 
 - (nullable FBSimulator *)assertObtainsSimulator

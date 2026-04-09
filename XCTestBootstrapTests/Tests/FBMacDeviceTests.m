@@ -8,10 +8,11 @@
 #import <XCTest/XCTest.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBXCTestBootstrapFixtures.h"
 
 @interface FBMacDeviceTests : XCTestCase
-@property (nonatomic, strong, nullable, readwrite) FBMacDevice *device;
+@property (nullable, nonatomic, readwrite, strong) FBMacDevice *device;
 @end
 
 @implementation FBMacDeviceTests
@@ -22,9 +23,8 @@
   self.device = [[FBMacDevice alloc] init];
 }
 
-- (BOOL)tearDownWithError:(NSError *__autoreleasing  _Nullable *)error
+- (BOOL)tearDownWithError:(NSError *__autoreleasing _Nullable *)error
 {
-  
   NSError *err = nil;
   [[self.device restorePrimaryDeviceState] awaitWithTimeout:5 error:&err];
   if (err) {
@@ -38,40 +38,49 @@
 {
   FBMacDevice *anotherDevice = [[FBMacDevice alloc] init];
   NSComparisonResult comparsionResult = [self.device compare:anotherDevice];
-  
-  XCTAssertEqual(comparsionResult, NSOrderedSame,
-                 @"We should have only one exemplar of FBMacDevice, so this is same");
+
+  XCTAssertEqual(
+    comparsionResult,
+    NSOrderedSame,
+    @"We should have only one exemplar of FBMacDevice, so this is same"
+  );
 }
 
 - (void)testMacStateRestorationWithEmptyTasks
 {
-  XCTAssertNotNil([[self.device restorePrimaryDeviceState] result],
-                  @"State restoration without launched task should complete immidiately");
+  XCTAssertNotNil(
+    [[self.device restorePrimaryDeviceState] result],
+    @"State restoration without launched task should complete immidiately"
+  );
 }
 
--(void)testInstallNotExistedApplicationAtPath
+- (void)testInstallNotExistedApplicationAtPath
 {
   __auto_type installTask = [self.device installApplicationWithPath:@"/not/existed/path"];
-  XCTAssertNotNil(installTask.error,
-                  @"Installing not existed app should fail immidiately");
+  XCTAssertNotNil(
+    installTask.error,
+    @"Installing not existed app should fail immidiately"
+  );
 }
 
--(void)testInstallExistedApplicationAtPath
+- (void)testInstallExistedApplicationAtPath
 {
   NSError *err = nil;
   __auto_type res = [self installDummyApplicationWithError:&err];
   XCTAssertNil(err, @"Failed to install application");
-  
-  XCTAssertTrue([res.bundle.identifier isEqualToString: @"com.facebook.MacCommonApp"],
-                @"Dummy application should install properly");
+
+  XCTAssertTrue(
+    [res.bundle.identifier isEqualToString:@"com.facebook.MacCommonApp"],
+    @"Dummy application should install properly"
+  );
 }
 
--(void)testUninstallApplicationByIncorrectBundleID
+- (void)testUninstallApplicationByIncorrectBundleID
 {
   XCTAssertNotNil([self.device uninstallApplicationWithBundleID:@"not.existed"].error);
 }
 
--(void)testLaunchingNotInstalledAppByBuntleID
+- (void)testLaunchingNotInstalledAppByBuntleID
 {
   FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:@"not.existed"
                                                                                              bundleName:@"not.existed"
@@ -81,18 +90,22 @@
                                                                                                      io:FBProcessIO.outputToDevNull
                                                                                              launchMode:FBApplicationLaunchModeRelaunchIfRunning];
   __auto_type launchAppFuture = [self.device launchApplication:config];
-  
-  XCTAssertNotNil([launchAppFuture error],
-                  @"Launhing not existed app should fail immidiately");
+
+  XCTAssertNotNil(
+    [launchAppFuture error],
+    @"Launhing not existed app should fail immidiately"
+  );
 }
 
--(void)testLaunchingExistedApp
+- (void)testLaunchingExistedApp
 {
   NSError *err = nil;
   __auto_type installResult = [self installDummyApplicationWithError:&err];
-  XCTAssertNil(err,
-               @"Precondition failure");
-  
+  XCTAssertNil(
+    err,
+    @"Precondition failure"
+  );
+
   FBApplicationLaunchConfiguration *config = [[FBApplicationLaunchConfiguration alloc] initWithBundleID:installResult.bundle.identifier
                                                                                              bundleName:installResult.bundle.name
                                                                                               arguments:@[]
@@ -100,14 +113,16 @@
                                                                                         waitForDebugger:NO
                                                                                                      io:FBProcessIO.outputToDevNull
                                                                                              launchMode:FBApplicationLaunchModeRelaunchIfRunning];
-  
+
   [[self.device launchApplication:config] awaitWithTimeout:5 error:&err];
-  
-  XCTAssertNil(err,
-               @"Failed to launch installed application");
+
+  XCTAssertNil(
+    err,
+    @"Failed to launch installed application"
+  );
 }
 
--(FBInstalledApplication *)installDummyApplicationWithError:(NSError **)error
+- (FBInstalledApplication *)installDummyApplicationWithError:(NSError **)error
 {
   NSError *err = nil;
   __auto_type descriptor = [FBMacDeviceTests macCommonApplicationWithError:&err];
@@ -115,9 +130,8 @@
     *error = err;
     return nil;
   }
-  __auto_type installTask = [self.device installApplicationWithPath: descriptor.path];
+  __auto_type installTask = [self.device installApplicationWithPath:descriptor.path];
   return [installTask awaitWithTimeout:5 error:error];
 }
-
 
 @end

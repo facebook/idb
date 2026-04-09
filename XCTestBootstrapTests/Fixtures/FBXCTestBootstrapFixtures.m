@@ -6,6 +6,7 @@
  */
 
 #import "FBXCTestBootstrapFixtures.h"
+
 #import <FBControlCore/FBControlCore.h>
 
 @implementation XCTestCase (FBXCTestBootstrapFixtures)

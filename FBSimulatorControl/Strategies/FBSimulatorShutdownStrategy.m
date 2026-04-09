@@ -16,7 +16,7 @@
 
 @interface FBSimulatorShutdownStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, strong) FBSimulator *simulator;
 
 @end
 
@@ -50,8 +50,8 @@
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBiOSTargetStateUnknown) {
     return [[FBSimulatorError
-      describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
-      failFuture];
+             describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
+            failFuture];
   }
 
   // Calling shutdown when already shutdown should be avoided (if detected).
@@ -95,33 +95,37 @@
 
   [logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
   [simulator.device
-    shutdownAsyncWithCompletionQueue:simulator.asyncQueue completionHandler:^(NSError *error){
-      if (error && error.code == errorCodeForShutdownWhenShuttingDown) {
-        [logger logFormat:@"Got Error Code %lu from shutdown, simulator is already shutdown", error.code];
-        [future resolveWithResult:NSNull.null];
-      } else if (error) {
-        [future resolveWithError:error];
-      } else {
-        [future resolveWithResult:NSNull.null];
-      }
-    }];
+   shutdownAsyncWithCompletionQueue:simulator.asyncQueue
+   completionHandler:^(NSError *error) {
+     if (error && error.code == errorCodeForShutdownWhenShuttingDown) {
+       [logger logFormat:@"Got Error Code %lu from shutdown, simulator is already shutdown", error.code];
+       [future resolveWithResult:NSNull.null];
+     } else if (error) {
+       [future resolveWithError:error];
+     } else {
+       [future resolveWithResult:NSNull.null];
+     }
+   }];
   return [future
-    onQueue:simulator.workQueue fmap:^(id _){
-      return [simulator resolveState:FBiOSTargetStateShutdown];
-    }];
+          onQueue:simulator.workQueue
+          fmap:^(id _) {
+            return [simulator resolveState:FBiOSTargetStateShutdown];
+          }];
 }
 
 + (FBFuture<NSNull *> *)transitionCreatingToShutdown:(FBSimulator *)simulator
 {
   return [[[simulator
-    resolveState:FBiOSTargetStateShutdown]
-    timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Simulator to resolve state %@", FBiOSTargetStateStringShutdown]
-    onQueue:simulator.workQueue chain:^FBFuture<NSNull *> *(FBFuture *future) {
-      if (future.result) {
-        return FBFuture.empty;
-      }
-      return [FBSimulatorShutdownStrategy eraseSimulator:simulator];
-    }];
+            resolveState:FBiOSTargetStateShutdown]
+           timeout:FBControlCoreGlobalConfiguration.regularTimeout
+           waitingFor:@"Simulator to resolve state %@", FBiOSTargetStateStringShutdown]
+          onQueue:simulator.workQueue
+          chain:^FBFuture<NSNull *> *(FBFuture *future) {
+            if (future.result) {
+              return FBFuture.empty;
+            }
+            return [FBSimulatorShutdownStrategy eraseSimulator:simulator];
+          }];
 }
 
 + (FBFuture<NSNull *> *)eraseSimulator:(FBSimulator *)simulator
@@ -131,20 +135,23 @@
 
   [logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
   [simulator.device
-    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.asyncQueue completionHandler:^(NSError *error) {
-      if (error) {
-        [future resolveWithError:error];
-      } else {
-        [future resolveWithResult:NSNull.null];
-      }
-    }];
+   eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.asyncQueue
+   completionHandler:^(NSError *error) {
+     if (error) {
+       [future resolveWithError:error];
+     } else {
+       [future resolveWithResult:NSNull.null];
+     }
+   }];
 
   return [future
-    onQueue:simulator.workQueue fmap:^(id _) {
-      return [[simulator
-        resolveState:FBiOSTargetStateShutdown]
-        timeout:FBControlCoreGlobalConfiguration.regularTimeout waitingFor:@"Timed out waiting for Simulator to transition from Creating -> Shutdown"];
-    }];
+          onQueue:simulator.workQueue
+          fmap:^(id _) {
+            return [[simulator
+                     resolveState:FBiOSTargetStateShutdown]
+                    timeout:FBControlCoreGlobalConfiguration.regularTimeout
+                    waitingFor:@"Timed out waiting for Simulator to transition from Creating -> Shutdown"];
+          }];
 }
 
 @end

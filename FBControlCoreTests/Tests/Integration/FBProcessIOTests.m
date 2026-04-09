@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <sys/stat.h>
+#import <sys/types.h>
+
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#import <sys/types.h>
-#import <sys/stat.h>
 
 @interface FBProcessIOTests : XCTestCase
 
@@ -36,18 +36,22 @@
   __block FBFuture<NSNull *> *third;
   __block FBFuture<NSNull *> *fourth;
 
-  dispatch_group_async(group, concurrentQueue, ^{
-    first = [attachment detach];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    second = [attachment detach];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    third = [attachment detach];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    fourth = [attachment detach];
-  });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      first = [attachment detach];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      second = [attachment detach];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      third = [attachment detach];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      fourth = [attachment detach];
+    });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
   for (FBFuture<NSNull *> *attempt in @[first, second, third, fourth]) {

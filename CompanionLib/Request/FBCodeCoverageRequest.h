@@ -20,17 +20,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Whether or not to collect code coverage
  */
-@property (nonatomic, assign, readonly) BOOL collect;
+@property (nonatomic, readonly, assign) BOOL collect;
 
 /**
   Format in which code coverge data should be returned
 */
-@property (nonatomic, assign, readonly) FBCodeCoverageFormat format;
+@property (nonatomic, readonly, assign) FBCodeCoverageFormat format;
 
 /**
  Determines whether should enable continuous coverage collection
  */
-@property (nonatomic, assign, readonly) BOOL shouldEnableContinuousCoverageCollection;
+@property (nonatomic, readonly, assign) BOOL shouldEnableContinuousCoverageCollection;
 
 - (instancetype)initWithCollect:(BOOL)collect format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection;
 

@@ -15,7 +15,7 @@
   if (!self) {
     return nil;
   }
-  
+
   _bundle_id = bundle_id;
   _bundle_type = bundle_type;
 

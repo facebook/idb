@@ -11,10 +11,10 @@
 
 @interface SimDevicePasteboardConnection : NSObject
 {
-    NSMachPort *_pasteboardSupportPort;
+  NSMachPort *_pasteboardSupportPort;
 }
 
-@property (retain, nonatomic) NSMachPort *pasteboardSupportPort;
+@property (nonatomic, retain) NSMachPort *pasteboardSupportPort;
 
 - (void)refreshPasteboard;
 - (id)convertDataWithType:(id)arg1 data:(id)arg2 toType:(id)arg3 error:(id *)arg4;

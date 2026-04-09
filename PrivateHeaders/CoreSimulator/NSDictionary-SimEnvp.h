@@ -9,5 +9,5 @@
 
 @interface NSDictionary (SimEnvp)
 - (void)sim_freeEnvp:(char **)arg1;
-@property (readonly, nonatomic) char **sim_envp;
+@property (nonatomic, readonly) char **sim_envp;
 @end

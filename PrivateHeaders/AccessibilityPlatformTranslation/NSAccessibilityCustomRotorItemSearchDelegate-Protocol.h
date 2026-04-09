@@ -12,4 +12,3 @@
 @protocol NSAccessibilityCustomRotorItemSearchDelegate <NSObject>
 - (NSAccessibilityCustomRotorItemResult *)rotor:(NSAccessibilityCustomRotor *)arg1 resultForSearchParameters:(NSAccessibilityCustomRotorSearchParameters *)arg2;
 @end
-

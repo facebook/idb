@@ -11,10 +11,10 @@
 
 @interface DefaultDisplayDescriptorState : NSObject <SimDisplayDescriptorState>
 {
-    int _powerState;
-    int _displayClass;
-    unsigned int _defaultWidthForDisplay;
-    unsigned int _defaultHeightForDisplay;
+  int _powerState;
+  int _displayClass;
+  unsigned int _defaultWidthForDisplay;
+  unsigned int _defaultHeightForDisplay;
 }
 
 + (id)defaultDisplayDescriptorStateWithPowerState:(int)arg1 displayClass:(int)arg2 width:(unsigned int)arg3 height:(unsigned int)arg4;

@@ -7,12 +7,12 @@
 
 #import "FBDevicePowerCommands.h"
 
-#import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
+#import "FBDevice.h"
 
 @interface FBDevicePowerCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -54,20 +54,21 @@
 - (FBFuture<NSNull *> *)sendRelayCommand:(NSString *)request
 {
   return [[self.device
-    startService:@"com.apple.mobile.diagnostics_relay"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request": request} error:&error];
-      if (!result) {
-        return [FBFuture futureWithError:error];
-      }
-      if (![result[@"Status"] isEqualToString:@"Success"]) {
-        return [[FBControlCoreError
-          describeFormat:@"Not successful %@", result]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           startService:@"com.apple.mobile.diagnostics_relay"]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSNull *> *(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            NSDictionary<NSString *, id> *result = [connection sendAndReceiveMessage:@{@"Request" : request} error:&error];
+            if (!result) {
+              return [FBFuture futureWithError:error];
+            }
+            if (![result[@"Status"] isEqualToString:@"Success"]) {
+              return [[FBControlCoreError
+                       describeFormat:@"Not successful %@", result]
+                      failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 @end

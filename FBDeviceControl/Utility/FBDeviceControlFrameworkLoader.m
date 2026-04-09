@@ -7,10 +7,10 @@
 
 #import "FBDeviceControlFrameworkLoader.h"
 
-#import <FBControlCore/FBControlCore.h>
-
-#import <objc/runtime.h>
 #import <asl.h>
+#import <objc/runtime.h>
+
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBDeviceControlError.h"
 
@@ -31,9 +31,9 @@ static asl_object_t FBDeviceControlFrameworkLoader_asl_open(const char *ident, c
 
 #ifndef DYLD_INTERPOSE
 
-#define DYLD_INTERPOSE(_replacment,_replacee) \
-   __attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
-            __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacment, (const void*)(unsigned long)&_replacee };
+ #define DYLD_INTERPOSE(_replacment, _replacee) \
+         __attribute__((used)) static struct {const void *replacment; const void *replacee;} _interpose_ ## _replacee \
+         __attribute__ ((section ("__DATA,__interpose"))) = { (const void *)(unsigned long)&_replacment, (const void *)(unsigned long)&_replacee };
 DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
 
 #endif
@@ -46,9 +46,10 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
 
 - (instancetype)init
 {
-  return [super initWithName:@"FBDeviceControl" frameworks:@[
-    FBWeakFramework.MobileDevice,
-  ]];
+  return [super initWithName:@"FBDeviceControl"
+                  frameworks:@[
+            FBWeakFramework.MobileDevice,
+          ]];
 }
 
 #pragma mark Public
@@ -146,7 +147,6 @@ DYLD_INTERPOSE(FBDeviceControlFrameworkLoader_asl_open, asl_open);
   calls->StopSession = FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
   calls->USBMuxConnectByPort = FBGetSymbolFromHandle(handle, "USBMuxConnectByPort");
   calls->ValidatePairing = FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
-
 }
 
 /**

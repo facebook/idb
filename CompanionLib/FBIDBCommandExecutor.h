@@ -53,17 +53,17 @@ extern FBFileContainerKind const FBFileContainerKindFramework;
 /**
  For storage of all bundles
  */
-@property (nonatomic, strong, readonly) FBIDBStorageManager *storageManager;
+@property (nonatomic, readonly, strong) FBIDBStorageManager *storageManager;
 
 /**
  The running debugserver
  */
-@property (nonatomic, strong, nullable, readwrite) id<FBDebugServer> debugServer;
+@property (nullable, nonatomic, readwrite, strong) id<FBDebugServer> debugServer;
 
 /**
  The Temporary Directory
  */
-@property (nonatomic, strong, readonly) FBTemporaryDirectory *temporaryDirectory;
+@property (nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
 
 #pragma mark Public Methods
 
@@ -565,7 +565,7 @@ This enables the permission popup the first time we open a deeplink
  @param stdOut where the dap process writes
  @return A Future that resolves when the dap server is spawned. Returns the dap server process.
  */
-- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *) dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
+- (FBFuture<FBSubprocess<id, id<FBDataConsumer>, NSString *> *> *)dapServerWithPath:(NSString *)dapPath stdIn:(FBProcessInput *)stdIn stdOut:(id<FBDataConsumer>)stdOut;
 
 /**
  Simulates a memory warning

@@ -74,22 +74,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The name of the bundle (CFBundleName).
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The identifier of the bundle (CFBundleIdentifier).
  */
-@property (nonatomic, copy, readonly) NSString *identifier;
+@property (nonatomic, readonly, copy) NSString *identifier;
 
 /**
  The path of the bundle on the filesystem.
  */
-@property (nonatomic, copy, readonly) NSString *path;
+@property (nonatomic, readonly, copy) NSString *path;
 
 /**
  The executable image contained within the bundle.
  */
-@property (nonatomic, copy, readonly, nullable) FBBinaryDescriptor *binary;
+@property (nullable, nonatomic, readonly, copy) FBBinaryDescriptor *binary;
 
 @end
 

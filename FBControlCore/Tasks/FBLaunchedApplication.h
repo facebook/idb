@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBFuture.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -20,19 +21,19 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Bundle Idenfifer of the Launched Application.
  */
-@property (nonatomic, copy, readonly) NSString *bundleID;
+@property (nonatomic, readonly, copy) NSString *bundleID;
 
 /**
  The Process Idenfifer of the Launched Application.
  */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
+@property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
  A future that resolves when the Application has terminated.
  Cancelling this Future will cause the application to terminate.
  Exit code/Signal status of the launched process is not available.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *applicationTerminated;
+@property (nonatomic, readonly, strong) FBFuture<NSNull *> *applicationTerminated;
 
 @end
 

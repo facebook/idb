@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a test configuration after it has been written out to disk.
  */
-+ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString*> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error;
++ (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError **)error;
 
 /**
  Creates a Test Configuration.
@@ -49,34 +49,34 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The session identifier
  */
-@property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
+@property (nonatomic, readonly, copy) NSUUID *sessionIdentifier;
 
 /**
  The name of the test module
  */
-@property (nonatomic, copy, readonly) NSString *moduleName;
+@property (nonatomic, readonly, copy) NSString *moduleName;
 
 /**
  The path to test bundle
  */
-@property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, readonly, copy) NSString *testBundlePath;
 
 /**
  The path to test configuration, if saved
  */
-@property (nonatomic, copy, readonly, nullable) NSString *path;
+@property (nullable, nonatomic, readonly, copy) NSString *path;
 
 /**
  The path to automation framework
  */
-@property (nonatomic, copy, readonly, nullable) NSString *automationFramework;
+@property (nullable, nonatomic, readonly, copy) NSString *automationFramework;
 
 /**
  Determines whether should initialize for UITesting
  */
-@property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
+@property (nonatomic, readonly, assign) BOOL shouldInitializeForUITesting;
 
-@property (nonatomic, strong, readonly) XCTestConfiguration *xcTestConfiguration;
+@property (nonatomic, readonly, strong) XCTestConfiguration *xcTestConfiguration;
 
 @end
 

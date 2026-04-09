@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Returns the File Container for the given container application
- 
+
  @param bundleID the bundle ID to obtain the container for.
  @param error an error out for any error that occurs
  @return a container if the application exists, nil on error.
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Returns the File Container for the root of the simulator
- 
+
  @return a file container
  */
 - (id<FBContainedFile>)containedFileForRootFilesystem;

@@ -12,9 +12,9 @@
  */
 @interface FBExceptionInfo : NSObject
 
-@property (nonnull, nonatomic, copy, readonly) NSString *message;
-@property (nullable, nonatomic, copy, readonly) NSString *file;
-@property (nonatomic, assign, readonly) NSUInteger line;
+@property (nonnull, nonatomic, readonly, copy) NSString *message;
+@property (nullable, nonatomic, readonly, copy) NSString *file;
+@property (nonatomic, readonly, assign) NSUInteger line;
 
 - (instancetype _Nonnull)initWithMessage:(nonnull NSString *)message file:(nullable NSString *)file line:(NSUInteger)line;
 

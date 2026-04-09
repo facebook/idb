@@ -17,4 +17,3 @@
 - (NSString *)accessibilityIdentifier;
 - (BOOL)isAccessibilityFocused;
 @end
-

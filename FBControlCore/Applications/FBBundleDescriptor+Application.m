@@ -13,8 +13,8 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBSubprocess.h"
 #import "FBProcessBuilder.h"
+#import "FBSubprocess.h"
 
 @implementation FBBundleDescriptor (Application)
 
@@ -23,10 +23,10 @@
 + (FBBundleDescriptor *)findAppPathFromDirectory:(NSURL *)directory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
-    enumeratorAtURL:directory
-    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
-    options:0
-    errorHandler:nil];
+                                                enumeratorAtURL:directory
+                                                includingPropertiesForKeys:@[NSURLIsDirectoryKey]
+                                                options:0
+                                                errorHandler:nil];
   NSMutableArray<NSString *> *applicationPaths = NSMutableArray.array;
   NSMutableArray<NSString *> *nonApplicationPaths = NSMutableArray.array;
   [logger logFormat:@"Finding Application Path from root directory %@", directory];
@@ -43,13 +43,13 @@
   }
   if (applicationPaths.count == 0) {
     return [[FBControlCoreError
-      describeFormat:@"Could not find an Application in IPA, present files %@", [FBCollectionInformation oneLineDescriptionFromArray:[nonApplicationPaths valueForKey:@"lastPathComponent"]]]
-      fail:error];
+             describeFormat:@"Could not find an Application in IPA, present files %@", [FBCollectionInformation oneLineDescriptionFromArray:[nonApplicationPaths valueForKey:@"lastPathComponent"]]]
+            fail:error];
   }
   if (applicationPaths.count > 1) {
     return [[FBControlCoreError
-      describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]
-      fail:error];
+             describeFormat:@"Expected only one Application in IPA, found %lu: %@", applicationPaths.count, [FBCollectionInformation oneLineDescriptionFromArray:[applicationPaths valueForKey:@"lastPathComponent"]]]
+            fail:error];
   }
   NSString *applicationPath = applicationPaths.firstObject;
   [logger logFormat:@"Using Application at path %@", applicationPath];
@@ -65,9 +65,9 @@
 {
   BOOL isDirectory = NO;
   return path != nil
-    && [path hasSuffix:@".app"]
-    && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
-    && isDirectory;
+  && [path hasSuffix:@".app"]
+  && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
+  && isDirectory;
 }
 
 @end

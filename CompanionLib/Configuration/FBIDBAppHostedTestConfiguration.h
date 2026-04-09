@@ -10,7 +10,6 @@
 @class FBCodeCoverageConfiguration;
 @class FBTestLaunchConfiguration;
 
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -18,9 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBIDBAppHostedTestConfiguration : NSObject
 
-@property(nonatomic, strong, retain, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
+@property (nonatomic, readonly, strong, retain) FBTestLaunchConfiguration *testLaunchConfiguration;
 
-@property(nonatomic, strong, retain, nullable, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
+@property (nullable, nonatomic, readonly, strong, retain) FBCodeCoverageConfiguration *coverageConfiguration;
 
 - (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfig;
 

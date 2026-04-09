@@ -199,8 +199,10 @@ NSString *const IdbFrameworksFolder = @"idb-frameworks";
   }
   FBCodesignProvider *provider = [FBCodesignProvider codeSignCommandWithAdHocIdentityWithLogger:self.logger];
   return [[bundle
-    updatePathsForRelocationWithCodesign:provider logger:self.logger queue:self.queue]
-    mapReplace:artifact];
+           updatePathsForRelocationWithCodesign:provider
+           logger:self.logger
+           queue:self.queue]
+          mapReplace:artifact];
 }
 
 #pragma mark Properties
@@ -283,20 +285,20 @@ static NSString *const XctestRunExtension = @"xctestrun";
   NSURL *xctestBundleURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
-      describeFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
-      failFuture];
+             describeFormat:@"Multiple files with .xctest extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+            failFuture];
   }
   bucket = buckets[XctestRunExtension].allObjects;
   NSURL *xctestrunURL = bucket.firstObject;
   if (bucket.count > 1) {
     return [[FBControlCoreError
-      describeFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
-      failFuture];
+             describeFormat:@"Multiple files with .xctestrun extension: %@", [FBCollectionInformation oneLineDescriptionFromArray:bucket]]
+            failFuture];
   }
   if (!xctestBundleURL && !xctestrunURL) {
     return [[FBIDBError
-      describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]
-      failFuture];
+             describeFormat:@"Neither a .xctest bundle or .xctestrun file provided: %@", [FBCollectionInformation oneLineDescriptionFromDictionary:buckets]]
+            failFuture];
   }
 
   if (xctestBundleURL) {
@@ -306,8 +308,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
     return [self saveTestRun:xctestrunURL];
   }
   return [[FBIDBError
-    describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
-    failFuture];
+           describeFormat:@".xctest bundle (%@) or .xctestrun (%@) file was not saved", xctestBundleURL, xctestrunURL]
+          failFuture];
 }
 
 - (FBFuture<FBInstalledArtifact *> *)saveBundleOrTestRun:(NSURL *)filePath skipSigningBundles:(BOOL)skipSigningBundles
@@ -320,8 +322,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
     return [self saveTestRun:filePath];
   }
   return [[FBControlCoreError
-    describeFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]
-    failFuture];
+           describeFormat:@"The path extension (%@) of the provided bundle (%@) is not .xctest or .xctestrun", filePath.pathExtension, filePath]
+          failFuture];
 }
 
 - (NSArray<id<FBXCTestDescriptor>> *)listTestDescriptorsWithError:(NSError **)error
@@ -374,7 +376,7 @@ static NSString *const XctestRunExtension = @"xctestrun";
 {
   NSArray<id<FBXCTestDescriptor>> *testDescriptors = [self listTestDescriptorsWithError:error];
   for (id<FBXCTestDescriptor> testDescriptor in testDescriptors) {
-    if ([[testDescriptor testBundleID] isEqualToString: bundleId]) {
+    if ([[testDescriptor testBundleID] isEqualToString:bundleId]) {
       return testDescriptor;
     }
   }
@@ -420,10 +422,10 @@ static NSString *const XctestRunExtension = @"xctestrun";
 - (NSSet<NSURL *> *)listXCTestContentsWithExtension:(NSString *)extention error:(NSError **)error
 {
   NSArray<NSURL *> *directories = [NSFileManager.defaultManager
-    contentsOfDirectoryAtURL:self.basePath
-    includingPropertiesForKeys:nil
-    options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
-    error:error];
+                                   contentsOfDirectoryAtURL:self.basePath
+                                   includingPropertiesForKeys:nil
+                                   options:NSDirectoryEnumerationSkipsSubdirectoryDescendants
+                                   error:error];
   if (!directories) {
     return [[FBIDBError describe:@"Error reading test bundle base directory"] fail:error];
   }
@@ -539,8 +541,8 @@ static NSString *const XctestRunExtension = @"xctestrun";
   }
   if (descriptors.count != 1) {
     return [[FBIDBError
-      describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
-      failFuture];
+             describeFormat:@"Expected exactly one test in the xctestrun file, got: %lu", descriptors.count]
+            failFuture];
   }
 
   id<FBXCTestDescriptor> descriptor = descriptors[0];
@@ -561,10 +563,10 @@ static NSString *const XctestRunExtension = @"xctestrun";
   // Get the directory containing the xctestrun file and its contents
   NSURL *dir = [XCTestRunURL URLByDeletingLastPathComponent];
   NSArray<NSURL *> *contents = [NSFileManager.defaultManager
-    contentsOfDirectoryAtURL:dir
-    includingPropertiesForKeys:nil
-    options:0
-    error:&error];
+                                contentsOfDirectoryAtURL:dir
+                                includingPropertiesForKeys:nil
+                                options:0
+                                error:&error];
   if (!contents) {
     return [FBFuture futureWithError:error];
   }
@@ -592,9 +594,9 @@ static NSString *const XctestRunExtension = @"xctestrun";
   NSURL *xctestBasePath = [[NSURL fileURLWithPath:target.auxillaryDirectory] URLByAppendingPathComponent:name];
   if (![NSFileManager.defaultManager createDirectoryAtURL:xctestBasePath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBIDBError
-      describeFormat:@"Failed to create xctest storage location %@", xctestBasePath]
-      causedBy:innerError]
-      fail:error];
+              describeFormat:@"Failed to create xctest storage location %@", xctestBasePath]
+             causedBy:innerError]
+            fail:error];
   }
   return xctestBasePath;
 }

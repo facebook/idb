@@ -88,7 +88,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param resolveOrFailWhen a block determining when the future should resolve. Future will resolve into a failure if `errorOut` is not nil.
  @return a new Future that resolves when the resolution block returns FBFutureLoopFinished or FBFutureLoopFailed.
  */
- + (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveOrFailWhen:(FBFutureLoopState (^)(NSError ** errorOut))resolveOrFailWhen;
++ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveOrFailWhen:(FBFutureLoopState (^)(NSError **errorOut))resolveOrFailWhen;
 
 /**
  Constructs a Future that resolves successfully when the resolveUntil block resolves a Future that resolves a value.
@@ -106,7 +106,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param resolve the the block to resolve the future.
  @return the receiver, for chaining.
  */
-+ (instancetype)resolveValue:( T(^)(NSError **) )resolve;
++ (instancetype)resolveValue:(T (^)(NSError **) )resolve;
 
 /**
  Resolve a future asynchronously, by value.
@@ -115,7 +115,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param resolve the the block to resolve the future.
  @return the receiver, for chaining.
  */
-+ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:( T(^)(NSError **) )resolve;
++ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(T (^)(NSError **) )resolve;
 
 /**
  Resolve a future asynchronously, by returning a future.
@@ -124,7 +124,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param resolve the the block to resolve the future.
  @return the receiver, for chaining.
  */
-+ (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve;
++ (instancetype)onQueue:(dispatch_queue_t)queue resolve:(FBFuture *(^)(void) )resolve;
 
 /**
  Constructs a future from an array of futures.
@@ -214,7 +214,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param chain the chaining handler, called on all completion events.
  @return a chained future
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(FBFuture *future))chain;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *future))chain;
 
 /**
  FlatMap a successful resolution of the receiver to a new Future.
@@ -223,7 +223,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param fmap the function to re-map the result to a new future, only called on success.
  @return a flatmapped future
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture * (^)(T result))fmap;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue fmap:(FBFuture *(^)(T result))fmap;
 
 /**
  Map a future's result to a new value, based on a successful resolution of the receiver.
@@ -233,7 +233,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return a mapped future
  */
 - (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
-
 
 /**
  Returns a copy of this future that'll resolve on a specific queue
@@ -250,7 +249,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param handler the block to invoke.
  @return a Future that will attempt to handle the error
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture * (^)(NSError *))handler;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue handleError:(FBFuture *(^)(NSError *))handler;
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
@@ -260,7 +259,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the description of the timeout.
  @return the current future with a timeout applied.
  */
-- (FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
+- (FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)format, ... NS_FORMAT_FUNCTION(2, 3);
 
 /**
  Cancels the receiver if it doesn't resolve within the timeout.
@@ -271,7 +270,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param handler the block that will be fired on timeout.
  @return the current future with a timeout applied.
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture * (^)(void))handler;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue timeout:(NSTimeInterval)timeout handler:(FBFuture *(^)(void))handler;
 
 /**
  Replaces the value on a successful future.
@@ -313,7 +312,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the format string to re-phrase the failure message.
  @return a future with the replacement.
  */
-- (FBFuture<T> *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFuture<T> *)rephraseFailure:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 #pragma mark Creating Context
 
@@ -328,7 +327,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
  @return a 'context object' that manages the tear-down of the receiver's value. This teardown can be asynchronous, and is indicated via the return-value of the contextualTeardown block,
  */
-- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(T, FBFutureState))action;
+- (FBFutureContext<T> *)onQueue:(dispatch_queue_t)queue contextualTeardown:(FBFuture<NSNull *> *(^)(T, FBFutureState))action;
 
 /**
  Creates an 'context object' from a block.
@@ -355,7 +354,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the format string for the Future's name.
  @return the receiver, for chaining.
  */
-- (FBFuture<T> *)nameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFuture<T> *)nameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  A helper to log completion of the future.
@@ -364,36 +363,36 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format a description of the future.
  @return the receiver, for chaining
  */
-- (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2,3);
+- (FBFuture<T> *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(2, 3);
 
 #pragma mark Properties
 
 /**
  YES if receiver has terminated, NO otherwise.
  */
-@property (atomic, assign, readonly) BOOL hasCompleted;
+@property (atomic, readonly, assign) BOOL hasCompleted;
 
 /**
  The Error if one is present.
  */
-@property (atomic, copy, nullable, readonly) NSError *error;
+@property (nullable, atomic, readonly, copy) NSError *error;
 
 /**
  The Result.
  */
-@property (atomic, copy, nullable, readonly) T result;
+@property (nullable, atomic, readonly, copy) T result;
 
 /**
  The State.
  */
-@property (atomic, assign, readonly) FBFutureState state;
+@property (atomic, readonly, assign) FBFutureState state;
 
 /**
  The name of the Future.
  This can be used to set contextual information about the work that the Future represents.
  Any name is incorporated into the description.
  */
-@property (atomic, copy, nullable, readonly) NSString *name;
+@property (nullable, atomic, readonly, copy) NSString *name;
 
 @end
 
@@ -426,7 +425,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param format the format string for the Future's name.
  @return a new Mutable Future.
  */
-+ (FBMutableFuture<T> *)futureWithNameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
++ (FBMutableFuture<T> *)futureWithNameFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 #pragma mark Mutation
 
@@ -527,7 +526,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param pop the function to re-map the result to a new future, only called on success.
  @return a Future derived from the fmap. The teardown of the context will occur *after* this future has resolved.
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue pop:(FBFuture * (^)(T result))pop;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue pop:(FBFuture *(^)(T result))pop;
 
 /**
  Continue to keep the context alive, but fmap a new future.
@@ -537,7 +536,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param fmap the function to re-map the result to a new future, only called on success.
  @return a Context derived from the fmap.
  */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pend:(FBFuture * (^)(T result))fmap;
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue pend:(FBFuture *(^)(T result))fmap;
 
 /**
  Pushes another context.
@@ -547,7 +546,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param fmap the block to produce more context.
  @return a Context derived from the fmap with the current context stacked below.
  */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext * (^)(T result))fmap;
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue push:(FBFutureContext *(^)(T result))fmap;
 
 /**
  Replaces the current context.
@@ -556,7 +555,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param replace the block to produce more context.
  @return a Context derived from the replace with the current context stacked below.
  */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext * (^)(T result))replace;
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue replace:(FBFutureContext *(^)(T result))replace;
 
 /**
  Continue to keep the context alive, but handleError: a new future.
@@ -576,7 +575,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param action the teardown action
  @return a context with the teardown applied.
  */
-- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:( FBFuture<NSNull *> * (^)(T, FBFutureState))action;
+- (FBFutureContext *)onQueue:(dispatch_queue_t)queue contextualTeardown:(FBFuture<NSNull *> *(^)(T, FBFutureState))action;
 
 /**
  Extracts the wrapped context, so that it can be torn-down at a later time.
@@ -594,7 +593,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  The future keeping the context alive.
  The context will not be torn down until this future resolves.
  */
-@property (nonatomic, strong, readonly) FBFuture<T> *future;
+@property (nonatomic, readonly, strong) FBFuture<T> *future;
 
 @end
 

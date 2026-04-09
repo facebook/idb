@@ -9,14 +9,14 @@
 
 @interface AXPTranslator_macOS : AXPTranslator
 {
-    CDUnknownBlockType _zoomTriggerTestingCallback;
-    CDUnknownBlockType _appNotificationTestingCallback;
+  CDUnknownBlockType _zoomTriggerTestingCallback;
+  CDUnknownBlockType _appNotificationTestingCallback;
 }
 
 + (id)sharedInstance;
 - (void).cxx_destruct;
-@property(copy, nonatomic) CDUnknownBlockType appNotificationTestingCallback; // @synthesize appNotificationTestingCallback=_appNotificationTestingCallback;
-@property(copy, nonatomic) CDUnknownBlockType zoomTriggerTestingCallback; // @synthesize zoomTriggerTestingCallback=_zoomTriggerTestingCallback;
+@property (nonatomic, copy) CDUnknownBlockType appNotificationTestingCallback; // @synthesize appNotificationTestingCallback=_appNotificationTestingCallback;
+@property (nonatomic, copy) CDUnknownBlockType zoomTriggerTestingCallback; // @synthesize zoomTriggerTestingCallback=_zoomTriggerTestingCallback;
 - (id)processApplicationObject:(id)arg1;
 - (id)processFrontMostApp:(id)arg1;
 - (id)processHitTest:(id)arg1;
@@ -32,4 +32,3 @@
 - (id)platformElementFromTranslation:(id)arg1;
 
 @end
-

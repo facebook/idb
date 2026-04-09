@@ -7,34 +7,29 @@
 
 #import "FBFramebuffer.h"
 
-#import <CoreSimulator/SimDeviceIOProtocol-Protocol.h>
-
-#import <xpc/xpc.h>
-
 #import <IOSurface/IOSurface.h>
-
-#import <FBControlCore/FBControlCore.h>
+#import <IOSurface/IOSurfaceObjC.h>
 
 #import <CoreSimulator/SimDevice.h>
-
+#import <CoreSimulator/SimDeviceIOProtocol-Protocol.h>
+#import <FBControlCore/FBControlCore.h>
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
 #import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+#import <xpc/xpc.h>
 
-#import <IOSurface/IOSurfaceObjC.h>
-
+#import "FBPeriodicStatsTimer.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
-#import "FBPeriodicStatsTimer.h"
 
 @interface FBFramebuffer ()
 
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
+@property (nonatomic, readonly, strong) NSMapTable<id<FBFramebufferConsumer>, NSUUID *> *consumers;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
 
 @property (nonatomic, assign) FBFramebufferStats stats;
 @property (nonatomic, assign) FBFramebufferStats lastLoggedStats;
@@ -73,8 +68,8 @@
     return [[FBFramebuffer alloc] initWithSurface:descriptor logger:logger];
   }
   return [[FBSimulatorError
-    describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
-    fail:error];
+           describeFormat:@"Could not find the Main Screen Surface for Clients %@ in %@", [FBCollectionInformation oneLineDescriptionFromArray:ioClient.ioPorts], ioClient]
+          fail:error];
 }
 
 - (instancetype)initWithSurface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
@@ -85,8 +80,8 @@
   }
 
   _consumers = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
-    valueOptions:NSPointerFunctionsCopyIn];
+                mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
+                valueOptions:NSPointerFunctionsCopyIn];
   _logger = logger;
   _surface = surface;
   _statsTimer = FBPeriodicStatsTimerCreate(5.0);
@@ -157,7 +152,7 @@
 
 - (void)registerConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid queue:(dispatch_queue_t)queue
 {
-  void (^ioSurfaceChanged)(IOSurface *) = ^void(IOSurface *surface) {
+  void (^ioSurfaceChanged)(IOSurface *) = ^void (IOSurface *surface) {
     FBFramebufferStats s = self.stats;
     s.ioSurfaceChangeCount += 1;
     self.stats = s;
@@ -172,19 +167,20 @@
   [self.surface registerCallbackWithUUID:uuid ioSurfacesChangeCallback:ioSurfaceChanged];
   [self.surface registerCallbackWithUUID:uuid ioSurfaceChangeCallback:ioSurfaceChanged];
 
-  [self.surface registerCallbackWithUUID:uuid damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
-    FBFramebufferStats s = self.stats;
-    s.damageCallbackCount += 1;
-    s.damageRectCount += frames.count;
-    if (frames.count == 0) {
-      s.emptyDamageCallbackCount += 1;
-    }
-    self.stats = s;
-    [self logStatsIfNeeded];
-    dispatch_async(queue, ^{
-      [consumer didReceiveDamageRect];
-    });
-  }];
+  [self.surface registerCallbackWithUUID:uuid
+                damageRectanglesCallback:^(NSArray<NSValue *> *frames) {
+                  FBFramebufferStats s = self.stats;
+                  s.damageCallbackCount += 1;
+                  s.damageRectCount += frames.count;
+                  if (frames.count == 0) {
+                    s.emptyDamageCallbackCount += 1;
+                  }
+                  self.stats = s;
+                  [self logStatsIfNeeded];
+                  dispatch_async(queue, ^{
+                    [consumer didReceiveDamageRect];
+                  });
+                }];
 }
 
 - (void)logStatsIfNeeded
@@ -213,21 +209,21 @@
   double totalRate = totalElapsed > 0 ? (double)current.damageCallbackCount / totalElapsed : 0;
 
   [self.logger.info logFormat:
-    @"Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-    (unsigned long)intervalCallbacks,
-    intervalDuration,
-    intervalRate,
-    (unsigned long)intervalRects,
-    (unsigned long)intervalEmpty,
-    (unsigned long)intervalIOSurface];
+   @"Framebuffer stats (interval): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+   (unsigned long)intervalCallbacks,
+   intervalDuration,
+   intervalRate,
+   (unsigned long)intervalRects,
+   (unsigned long)intervalEmpty,
+   (unsigned long)intervalIOSurface];
   [self.logger.info logFormat:
-    @"Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
-    (unsigned long)current.damageCallbackCount,
-    totalElapsed,
-    totalRate,
-    (unsigned long)current.damageRectCount,
-    (unsigned long)current.emptyDamageCallbackCount,
-    (unsigned long)current.ioSurfaceChangeCount];
+   @"Framebuffer stats (total): %lu damage callbacks in %.1fs (%.1f/s, %lu rects, %lu empty) — %lu IOSurface changes",
+   (unsigned long)current.damageCallbackCount,
+   totalElapsed,
+   totalRate,
+   (unsigned long)current.damageRectCount,
+   (unsigned long)current.emptyDamageCallbackCount,
+   (unsigned long)current.ioSurfaceChangeCount];
 }
 
 - (void)unregisterConsumer:(id<FBFramebufferConsumer>)consumer uuid:(NSUUID *)uuid

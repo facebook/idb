@@ -30,22 +30,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The maximum backoff time when stopping Instruments.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval terminateTimeout;
+@property (nonatomic, readonly, assign) NSTimeInterval terminateTimeout;
 
 /**
  The timeout waiting for Instruments to start properly.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval launchRetryTimeout;
+@property (nonatomic, readonly, assign) NSTimeInterval launchRetryTimeout;
 
 /**
  The time waiting for the Instruments launch error message to appear.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval launchErrorTimeout;
+@property (nonatomic, readonly, assign) NSTimeInterval launchErrorTimeout;
 
 /**
  The total operation duration for the Instruments operation.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval operationDuration;
+@property (nonatomic, readonly, assign) NSTimeInterval operationDuration;
 
 @end
 
@@ -71,32 +71,32 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The template name or path.
  */
-@property (nonatomic, copy, readonly) NSString *templateName;
+@property (nonatomic, readonly, copy) NSString *templateName;
 
 /**
  The target application bundle id.
  */
-@property (nonatomic, copy, readonly) NSString *targetApplication;
+@property (nonatomic, readonly, copy) NSString *targetApplication;
 
 /**
  The target application environment.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *appEnvironment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *appEnvironment;
 
 /**
  The arguments to the target application.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *appArguments;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *appArguments;
 
 /**
  Additional arguments.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *toolArguments;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *toolArguments;
 
 /**
  All the timings for the Instruments operation.
  */
-@property (nonatomic, copy, readonly) FBInstrumentsTimings *timings;
+@property (nonatomic, readonly, copy) FBInstrumentsTimings *timings;
 
 @end
 

@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns YES if the system logger will log to stderr, NO otherwise.
  */
-@property (nonatomic, readonly, assign, class) BOOL systemLoggerWillLogToStdErr;
+@property (class, nonatomic, readonly, assign) BOOL systemLoggerWillLogToStdErr;
 
 @end
 

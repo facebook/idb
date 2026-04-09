@@ -17,10 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
  Stats tracked by the framebuffer from the simulator's damage/IOSurface callbacks.
  */
 typedef struct {
-    NSUInteger damageCallbackCount;
-    NSUInteger damageRectCount;
-    NSUInteger emptyDamageCallbackCount;
-    NSUInteger ioSurfaceChangeCount;
+  NSUInteger damageCallbackCount;
+  NSUInteger damageRectCount;
+  NSUInteger emptyDamageCallbackCount;
+  NSUInteger ioSurfaceChangeCount;
 } FBFramebufferStats;
 
 /**

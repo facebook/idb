@@ -6,6 +6,7 @@
  */
 
 #import "FBAttachment.h"
+
 #import <XCTestPrivate/XCTAttachment.h>
 
 @implementation FBAttachment

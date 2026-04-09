@@ -9,7 +9,7 @@
 
 @interface FBiOSTargetDescription ()
 
-@property (nonatomic, copy, readonly) FBDeviceModel model;
+@property (nonatomic, readonly, copy) FBDeviceModel model;
 @end
 
 @implementation FBiOSTargetDescription
@@ -59,13 +59,13 @@ static NSString *const KeyUDID = @"udid";
 - (NSDictionary<NSString *, id> *)asJSON
 {
   NSMutableDictionary<NSString *, id> *representation = [NSMutableDictionary dictionaryWithDictionary:@{
-    KeyModel : self.model ?: NSNull.null,
-    KeyName : self.name ?: NSNull.null,
-    KeyOSVersion : self.osVersion.name ?: NSNull.null,
-    KeyState : FBiOSTargetStateStringFromState(self.state),
-    KeyType : FBiOSTargetTypeStringFromTargetType(self.targetType),
-    KeyUDID : self.udid ?: NSNull.null,
-  }];
+                                                           KeyModel : self.model ?: NSNull.null,
+                                                           KeyName : self.name ?: NSNull.null,
+                                                           KeyOSVersion : self.osVersion.name ?: NSNull.null,
+                                                           KeyState : FBiOSTargetStateStringFromState(self.state),
+                                                           KeyType : FBiOSTargetTypeStringFromTargetType(self.targetType),
+                                                           KeyUDID : self.udid ?: NSNull.null,
+                                                         }];
   [representation addEntriesFromDictionary:self.extendedInformation];
   return representation;
 }

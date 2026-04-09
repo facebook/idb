@@ -22,9 +22,9 @@
 - (FBSimulator *)doTestApplicationLaunches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   return [self
-    assertSimulatorWithConfiguration:self.simulatorConfiguration
-    boots:self.bootConfiguration
-    thenLaunchesApplication:appLaunch];
+          assertSimulatorWithConfiguration:self.simulatorConfiguration
+          boots:self.bootConfiguration
+          thenLaunchesApplication:appLaunch];
 }
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration

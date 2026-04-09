@@ -7,27 +7,27 @@
 
 #import "FBDeviceSet.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <FBControlCore/FBiOSTargetSet.h>
-#import <FBControlCore/FBiOSTarget.h>
-
 #import <objc/runtime.h>
 
-#import "FBAMDevice+Private.h"
+#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBiOSTarget.h>
+#import <FBControlCore/FBiOSTargetSet.h>
+
 #import "FBAMDevice.h"
+#import "FBAMDevice+Private.h"
 #import "FBAMDeviceManager.h"
 #import "FBAMRestorableDevice.h"
 #import "FBAMRestorableDeviceManager.h"
-#import "FBDevice+Private.h"
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDeviceStorage.h"
 
 @interface FBDeviceSet () <FBiOSTargetSetDelegate>
 
-@property (nonatomic, strong, readonly) FBAMDeviceManager *amDeviceManager;
-@property (nonatomic, strong, readonly) FBAMRestorableDeviceManager *restorableDeviceManager;
-@property (nonatomic, strong, readonly) FBDeviceStorage<FBDevice *> *storage;
+@property (nonatomic, readonly, strong) FBAMDeviceManager *amDeviceManager;
+@property (nonatomic, readonly, strong) FBAMRestorableDeviceManager *restorableDeviceManager;
+@property (nonatomic, readonly, strong) FBDeviceStorage<FBDevice *> *storage;
 
 @end
 

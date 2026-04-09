@@ -7,11 +7,12 @@
 
 #import "FBDataConsumer.h"
 
+#import <stdatomic.h>
+
 #import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
-#import <stdatomic.h>
 
 @interface FBDataConsumerAdaptor ()
 
@@ -21,7 +22,7 @@
 
 @interface FBDataConsumerAdaptor_ToNSData : NSObject <FBDispatchDataConsumer>
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
 
 @end
 
@@ -58,7 +59,7 @@
 
 @interface FBDataConsumerAdaptor_ToDispatchData : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
 
-@property (nonatomic, strong, readonly) id<FBDispatchDataConsumer, FBDataConsumerLifecycle> consumer;
+@property (nonatomic, readonly, strong) id<FBDispatchDataConsumer, FBDataConsumerLifecycle> consumer;
 
 @end
 
@@ -148,8 +149,9 @@
 @end
 
 typedef void (^dataBlock)(NSData *);
-static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString *)) {
-  return ^(NSData *data){
+static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString *))
+{
+  return ^(NSData *data) {
     NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     if (line == nil) {
       line = @"non-utf8";
@@ -160,9 +162,9 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
 
 @interface FBBlockDataConsumer_Dispatcher : NSObject <FBDataConsumer>
 
-@property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
-@property (nonatomic, strong, nullable, readwrite) dispatch_group_t group;
-@property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSData *);
+@property (nullable, nonatomic, readwrite, strong) dispatch_queue_t queue;
+@property (nullable, nonatomic, readwrite, strong) dispatch_group_t group;
+@property (nullable, nonatomic, readwrite, copy) void (^consumer)(NSData *);
 @property _Atomic int64_t numPendingTasks;
 
 @end
@@ -179,7 +181,7 @@ static inline dataBlock FBDataConsumerToStringConsumer (void(^consumer)(NSString
   _queue = queue;
   _group = dispatch_group_create();
   _consumer = consumer;
-atomic_init(&_numPendingTasks, 0);
+  atomic_init(&_numPendingTasks, 0);
 
   return self;
 }
@@ -190,7 +192,7 @@ atomic_init(&_numPendingTasks, 0);
   dispatch_queue_t queue;
   dispatch_group_t group;
   atomic_fetch_add(&_numPendingTasks, 1);
-  @synchronized (self)
+  @synchronized(self)
   {
     consumer = self.consumer;
     queue = self.queue;
@@ -199,13 +201,14 @@ atomic_init(&_numPendingTasks, 0);
       return;
     }
     if (queue) {
-      dispatch_group_async(group, queue, ^{
-        consumer(data);
-        atomic_fetch_sub(&self->_numPendingTasks, 1);
-      });
+      dispatch_group_async(group,
+        queue, ^{
+          consumer(data);
+          atomic_fetch_sub(&self->_numPendingTasks, 1);
+        });
     } else {
       consumer(data);
-        atomic_fetch_sub(&_numPendingTasks, 1);
+      atomic_fetch_sub(&_numPendingTasks, 1);
     }
   }
 }
@@ -213,7 +216,7 @@ atomic_init(&_numPendingTasks, 0);
 - (void)consumeEndOfFile
 {
   dispatch_group_t group;
-  @synchronized (self)
+  @synchronized(self)
   {
     group = self.group;
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
@@ -227,13 +230,13 @@ atomic_init(&_numPendingTasks, 0);
 
 @interface FBBlockDataConsumer () <FBDataConsumer, FBDataConsumerLifecycle>
 
-@property (nonatomic, strong, readonly) FBBlockDataConsumer_Dispatcher *dispatcher;
+@property (nonatomic, readonly, strong) FBBlockDataConsumer_Dispatcher *dispatcher;
 
 @end
 
 @interface FBBlockDataConsumerAsync : NSObject <FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>
 
-@property (nonatomic, strong, readonly) FBBlockDataConsumer_Dispatcher *dispatcher;
+@property (nonatomic, readonly, strong) FBBlockDataConsumer_Dispatcher *dispatcher;
 
 - (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher;
 
@@ -241,7 +244,7 @@ atomic_init(&_numPendingTasks, 0);
 
 @interface FBBlockDataConsumer_Buffered : FBBlockDataConsumer
 
-@property (nonatomic, strong, readonly) id<FBConsumableBuffer> buffer;
+@property (nonatomic, readonly, strong) id<FBConsumableBuffer> buffer;
 
 - (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher terminal:(NSData *)terminal;
 
@@ -249,13 +252,13 @@ atomic_init(&_numPendingTasks, 0);
 
 @interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
 @interface FBBlockDataConsumerAsync_Unbuffered : FBBlockDataConsumerAsync
 
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -340,7 +343,6 @@ atomic_init(&_numPendingTasks, 0);
 
 @end
 
-
 @implementation FBBlockDataConsumerAsync
 
 - (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher
@@ -385,7 +387,6 @@ atomic_init(&_numPendingTasks, 0);
 
 @end
 
-
 @implementation FBBlockDataConsumer_Buffered
 
 #pragma mark Initializers
@@ -406,14 +407,14 @@ atomic_init(&_numPendingTasks, 0);
 
 - (void)consumeData:(NSData *)data
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.buffer consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.buffer consumeEndOfFile];
   }
 }
@@ -447,14 +448,14 @@ atomic_init(&_numPendingTasks, 0);
 
 - (void)consumeData:(NSData *)data
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.dispatcher consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.dispatcher consumeEndOfFile];
     [self.finishedConsumingFuture resolveWithResult:NSNull.null];
   }
@@ -489,14 +490,14 @@ atomic_init(&_numPendingTasks, 0);
 
 - (void)consumeData:(NSData *)data
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.dispatcher consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  @synchronized (self) {
+  @synchronized(self) {
     [self.dispatcher consumeEndOfFile];
     [self.finishedConsumingFuture resolveWithResult:NSNull.null];
   }
@@ -558,16 +559,14 @@ atomic_init(&_numPendingTasks, 0);
 }
 
 - (void)consumeEndOfFile
-{
-
-}
+{}
 
 @end
 
 @interface FBCompositeDataConsumer ()
 
-@property (nonatomic, copy, readonly) NSArray<id<FBDataConsumer>> *consumers;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
+@property (nonatomic, readonly, copy) NSArray<id<FBDataConsumer>> *consumers;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -631,12 +630,9 @@ atomic_init(&_numPendingTasks, 0);
 #pragma mark FBDataConsumer
 
 - (void)consumeData:(NSData *)data
-{
-}
+{}
 
 - (void)consumeEndOfFile
-{
-
-}
+{}
 
 @end

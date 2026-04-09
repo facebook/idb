@@ -11,10 +11,10 @@
 
 @interface FBSocketServer ()
 
-@property (nonatomic, strong, readonly) id<FBSocketServerDelegate> delegate;
+@property (nonatomic, readonly, strong) id<FBSocketServerDelegate> delegate;
 
-@property (nonatomic, assign, readwrite) int socketDescriptor;
-@property (nonatomic, strong, readwrite) dispatch_source_t acceptSource;
+@property (nonatomic, readwrite, assign) int socketDescriptor;
+@property (nonatomic, readwrite, strong) dispatch_source_t acceptSource;
 
 @end
 
@@ -47,8 +47,8 @@
 {
   if (self.acceptSource) {
     return [[FBControlCoreError
-      describe:@"Cannot start listening, socket is already listening"]
-      failFuture];
+             describe:@"Cannot start listening, socket is already listening"]
+            failFuture];
   }
   return [self createSocketWithPort:self.port];
 }
@@ -57,8 +57,8 @@
 {
   if (!self.acceptSource) {
     return [[FBControlCoreError
-      describe:@"Cannot stop listening, there is no active socket"]
-      failFuture];
+             describe:@"Cannot stop listening, there is no active socket"]
+            failFuture];
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
@@ -72,10 +72,11 @@
 - (FBFutureContext<NSNull *> *)startListeningContext
 {
   return [[self
-    startListening]
-    onQueue:self.delegate.queue contextualTeardown:^(NSNull *_, FBFutureState __) {
-      return [self stopListening];
-    }];
+           startListening]
+          onQueue:self.delegate.queue
+          contextualTeardown:^(NSNull *_, FBFutureState __) {
+            return [self stopListening];
+          }];
 }
 
 #pragma mark Private
@@ -86,8 +87,8 @@
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if (socket <= 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to create a socket with error '%s'", strerror(errno)]
-      failFuture];
+             describeFormat:@"Failed to create a socket with error '%s'", strerror(errno)]
+            failFuture];
   }
   int flagTrue = 1;
   setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &flagTrue, sizeof(flagTrue));
@@ -102,16 +103,16 @@
   int result = bind(socketDescriptor, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]
-      failFuture];
+             describeFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]
+            failFuture];
   }
 
   // Start Listening
   result = listen(socketDescriptor, 10);
   if (result != 0) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]
-      failFuture];
+             describeFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]
+            failFuture];
   }
 
   // Prepare the Accept Source.
@@ -137,7 +138,7 @@
   // Update port
   memset(&address, 0, sizeof(address));
   socklen_t addresslen = sizeof(address);
-  getsockname(socketDescriptor, (struct sockaddr*)(&address), &addresslen);
+  getsockname(socketDescriptor, (struct sockaddr *)(&address), &addresslen);
   _port = ntohs(address.sin6_port);
 
   return FBFuture.empty;
@@ -151,8 +152,8 @@
   int acceptDescriptor = accept(socketDescriptor, (struct sockaddr *) &address, &addressLength);
   if (!acceptDescriptor) {
     return [[FBControlCoreError
-      describeFormat:@"accept() failed with error '%s'", strerror(errno)]
-      failBool:error];
+             describeFormat:@"accept() failed with error '%s'", strerror(errno)]
+            failBool:error];
   }
 
   // Notify the Delegate the queue it wished to be notified on.

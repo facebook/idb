@@ -7,9 +7,9 @@
 
 #import "FBVideoStreamConfiguration.h"
 
-#import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
 #import "FBCollectionOperations.h"
+#import "FBControlCoreError.h"
 
 FBVideoStreamEncoding const FBVideoStreamEncodingH264 = @"h264";
 FBVideoStreamEncoding const FBVideoStreamEncodingHEVC = @"hevc";
@@ -76,7 +76,7 @@ FBVideoStreamTransport const FBVideoStreamTransportFMP4 = @"fmp4";
   }
   if (self.type == FBVideoStreamFormatTypeCompressedVideo) {
     return [self.codec isEqualToString:object.codec]
-        && [self.transport isEqualToString:object.transport];
+    && [self.transport isEqualToString:object.transport];
   }
   return YES;
 }
@@ -202,10 +202,10 @@ FBVideoStreamTransport const FBVideoStreamTransportFMP4 = @"fmp4";
   }
 
   return [self.format isEqual:object.format]
-      && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond])
-      && [self.rateControl isEqual:object.rateControl]
-      && (self.scaleFactor == object.scaleFactor || [self.scaleFactor isEqualToNumber:object.scaleFactor])
-      && (self.keyFrameRate == object.keyFrameRate || [self.keyFrameRate isEqualToNumber:object.keyFrameRate]);
+  && (self.framesPerSecond == object.framesPerSecond || [self.framesPerSecond isEqualToNumber:object.framesPerSecond])
+  && [self.rateControl isEqual:object.rateControl]
+  && (self.scaleFactor == object.scaleFactor || [self.scaleFactor isEqualToNumber:object.scaleFactor])
+  && (self.keyFrameRate == object.keyFrameRate || [self.keyFrameRate isEqualToNumber:object.keyFrameRate]);
 }
 
 - (NSUInteger)hash
@@ -216,12 +216,12 @@ FBVideoStreamTransport const FBVideoStreamTransportFMP4 = @"fmp4";
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Format %@ | FPS %@ | Rate Control %@ | Scale %@ | Key frame rate %@",
-    self.format,
-    self.framesPerSecond,
-    self.rateControl,
-    self.scaleFactor,
-    self.keyFrameRate
+          @"Format %@ | FPS %@ | Rate Control %@ | Scale %@ | Key frame rate %@",
+          self.format,
+          self.framesPerSecond,
+          self.rateControl,
+          self.scaleFactor,
+          self.keyFrameRate
   ];
 }
 

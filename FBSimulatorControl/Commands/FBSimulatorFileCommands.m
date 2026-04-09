@@ -15,7 +15,7 @@
 
 @interface FBSimulatorFileCommands ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, strong) FBSimulator *simulator;
 
 @end
 
@@ -45,14 +45,16 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForContainerApplication:(NSString *)bundleID
 {
   return [[FBFuture
-    onQueue:self.simulator.asyncQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
-      id<FBContainedFile> containedFile = [self containedFileForApplication:bundleID error:error];
-      return [FBFileContainer fileContainerForContainedFile:containedFile];
-    }]
-    onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
-      // Do nothing.
-      return FBFuture.empty;
-    }];
+           onQueue:self.simulator.asyncQueue
+           resolveValue:^id<FBFileContainer>(NSError **error) {
+             id<FBContainedFile> containedFile = [self containedFileForApplication:bundleID error:error];
+             return [FBFileContainer fileContainerForContainedFile:containedFile];
+           }]
+          onQueue:self.simulator.asyncQueue
+          contextualTeardown:^(id _, FBFutureState __) {
+            // Do nothing.
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForAuxillary
@@ -63,33 +65,37 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForApplicationContainers
 {
   return [[FBFuture
-    onQueue:self.simulator.workQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
-      id<FBContainedFile> containedFile = [self containedFileForApplicationContainersWithError:error];
-      if (!containedFile) {
-        return nil;
-      }
-      return [FBFileContainer fileContainerForContainedFile:containedFile];
-    }]
-    onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
-      // Do nothing.
-      return FBFuture.empty;
-    }];
+           onQueue:self.simulator.workQueue
+           resolveValue:^id<FBFileContainer>(NSError **error) {
+             id<FBContainedFile> containedFile = [self containedFileForApplicationContainersWithError:error];
+             if (!containedFile) {
+               return nil;
+             }
+             return [FBFileContainer fileContainerForContainedFile:containedFile];
+           }]
+          onQueue:self.simulator.asyncQueue
+          contextualTeardown:^(id _, FBFutureState __) {
+            // Do nothing.
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForGroupContainers
 {
   return [[FBFuture
-    onQueue:self.simulator.workQueue resolveValue:^ id<FBFileContainer> (NSError **error) {
-      id<FBContainedFile> containedFile = [self containedFileForGroupContainersWithError:error];
-      if (!containedFile) {
-        return nil;
-      }
-      return [FBFileContainer fileContainerForContainedFile:containedFile];
-    }]
-    onQueue:self.simulator.asyncQueue contextualTeardown:^(id _, FBFutureState __) {
-      // Do nothing.
-      return FBFuture.empty;
-    }];
+           onQueue:self.simulator.workQueue
+           resolveValue:^id<FBFileContainer>(NSError **error) {
+             id<FBContainedFile> containedFile = [self containedFileForGroupContainersWithError:error];
+             if (!containedFile) {
+               return nil;
+             }
+             return [FBFileContainer fileContainerForContainedFile:containedFile];
+           }]
+          onQueue:self.simulator.asyncQueue
+          contextualTeardown:^(id _, FBFutureState __) {
+            // Do nothing.
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForRootFilesystem
@@ -108,43 +114,43 @@
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForMDMProfiles
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForProvisioningProfiles
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSpringboardIconLayout
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForWallpaper
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForDiskImages
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)fileCommandsForSymbols
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 #pragma mark FBSimulatorFileCommands Implementation
@@ -158,8 +164,8 @@
   NSString *container = installedApplication.dataContainer;
   if (!container) {
     return [[FBSimulatorError
-      describeFormat:@"No data container present for application %@", installedApplication]
-      fail:error];
+             describeFormat:@"No data container present for application %@", installedApplication]
+            fail:error];
   }
   return [FBFileContainer containedFileForBasePath:container];
 }

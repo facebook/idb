@@ -105,15 +105,14 @@ NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> r
 NSString *FBiOSTargetDescribe(id<FBiOSTargetInfo> target)
 {
   return [NSString stringWithFormat:
-    @"%@ | %@ | %@ | %@ | %@ ",
-    target.udid,
-    target.name,
-    FBiOSTargetStateStringFromState(target.state),
-    target.deviceType.model,
-    target.osVersion
+          @"%@ | %@ | %@ | %@ | %@ ",
+          target.udid,
+          target.name,
+          FBiOSTargetStateStringFromState(target.state),
+          target.deviceType.model,
+          target.osVersion
   ];
 }
-
 
 NSPredicate *FBiOSTargetPredicateForUDID(NSString *udid)
 {
@@ -124,21 +123,23 @@ NSPredicate *FBiOSTargetPredicateForUDIDs(NSArray<NSString *> *udids)
 {
   NSSet<NSString *> *udidsSet = [NSSet setWithArray:udids];
 
-  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+  return [NSPredicate predicateWithBlock:^BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
     return [udidsSet containsObject:candidate.udid];
   }];
 }
 
 FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> target, FBiOSTargetState state)
 {
-  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
-    return target.state == state;
-  }];
+  return [FBFuture onQueue:target.workQueue
+               resolveWhen:^BOOL {
+                 return target.state == state;
+               }];
 }
 
 FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state)
 {
-  return [FBFuture onQueue:target.workQueue resolveWhen:^ BOOL {
-    return target.state != state;
-  }];
+  return [FBFuture onQueue:target.workQueue
+               resolveWhen:^BOOL {
+                 return target.state != state;
+               }];
 }

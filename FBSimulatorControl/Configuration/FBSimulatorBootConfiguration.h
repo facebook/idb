@@ -28,25 +28,25 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Options for how the Simulator should be launched.
  */
-@property (nonatomic, assign, readonly) FBSimulatorBootOptions options;
+@property (nonatomic, readonly, assign) FBSimulatorBootOptions options;
 
 /**
  The environment used on boot.
  Boot environment is passed down to all launched processes in the Simulator.
  This is useful for injecting a dylib through `DYLD_` environment variables.
  */
-@property (nonatomic, nullable, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 #pragma mark Default Instance
 
 /**
  The Default Configuration.
  */
-@property (nonatomic, strong, class, readonly) FBSimulatorBootConfiguration *defaultConfiguration;
+@property (class, nonatomic, readonly, strong) FBSimulatorBootConfiguration *defaultConfiguration;
 
 /**
  The Designated Initializer.
- 
+
  @param options the options to use.
  @param environment the boot environment to use.
  @return a FBSimulatorBootConfiguration instance.

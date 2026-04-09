@@ -14,8 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBSimulator ()
 
-@property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
-@property (nonatomic, strong, readonly) id forwarder;
+@property (nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
+@property (nonatomic, readonly, strong) id forwarder;
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set;
 - (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;

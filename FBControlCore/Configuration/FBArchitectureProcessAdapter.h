@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBFuture.h>
 
@@ -18,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Force binaries to be launched in desired architectures.
 ///
 /// Convenience method for `-[FBArchitectureProcessAdapter adaptProcessConfiguration:toAnyArchitectureIn:hostArchitectures:queue:temporaryDirectory:]`
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
+- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
 
 /// Force binaries to be launched in desired architectures.
 ///
@@ -43,11 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 ///   - queue: Target Queue
 ///   - hostArchitectures: Set of architectures supported by the host machine
 ///   - temporaryDirectory: Target directory where we put lipoed binary
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)architectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
-
+- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)architectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory;
 
 /// Returns supported architectures based on companion launch architecture and launch under rosetta determination.
-+(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures;
++ (NSSet<FBArchitecture> *)hostMachineSupportedArchitectures;
 
 @end
 

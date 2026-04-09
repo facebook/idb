@@ -17,11 +17,11 @@
 - (void)testDefaultRateControl
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:nil
-    rateControl:nil
-    scaleFactor:nil
-    keyFrameRate:nil];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:nil
+                                        rateControl:nil
+                                        scaleFactor:nil
+                                        keyFrameRate:nil];
 
   // Default: constant quality at 0.75
   XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeConstantQuality);
@@ -31,11 +31,11 @@
 - (void)testDefaultKeyFrameRate
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:nil
-    rateControl:nil
-    scaleFactor:nil
-    keyFrameRate:nil];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:nil
+                                        rateControl:nil
+                                        scaleFactor:nil
+                                        keyFrameRate:nil];
 
   XCTAssertEqualObjects(config.keyFrameRate, @1.0);
 }
@@ -44,11 +44,11 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.7];
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:nil
-    rateControl:rc
-    scaleFactor:nil
-    keyFrameRate:@5.0];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:nil
+                                        rateControl:rc
+                                        scaleFactor:nil
+                                        keyFrameRate:@5.0];
 
   XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeConstantQuality);
   XCTAssertEqualObjects(config.rateControl.value, @0.7);
@@ -59,11 +59,11 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl bitrate:@500000];
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:nil
-    rateControl:rc
-    scaleFactor:nil
-    keyFrameRate:nil];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:nil
+                                        rateControl:rc
+                                        scaleFactor:nil
+                                        keyFrameRate:nil];
 
   XCTAssertEqual(config.rateControl.mode, FBVideoStreamRateControlModeAverageBitrate);
   XCTAssertEqualObjects(config.rateControl.value, @500000);
@@ -73,17 +73,17 @@
 {
   FBVideoStreamRateControl *rc = [FBVideoStreamRateControl quality:@0.5];
   FBVideoStreamConfiguration *a = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:@30
-    rateControl:rc
-    scaleFactor:nil
-    keyFrameRate:@5.0];
+                                   initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                   framesPerSecond:@30
+                                   rateControl:rc
+                                   scaleFactor:nil
+                                   keyFrameRate:@5.0];
   FBVideoStreamConfiguration *b = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:@30
-    rateControl:[FBVideoStreamRateControl quality:@0.5]
-    scaleFactor:nil
-    keyFrameRate:@5.0];
+                                   initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                   framesPerSecond:@30
+                                   rateControl:[FBVideoStreamRateControl quality:@0.5]
+                                   scaleFactor:nil
+                                   keyFrameRate:@5.0];
 
   XCTAssertEqualObjects(a, b);
 }
@@ -91,11 +91,11 @@
 - (void)testConfigurationCopy
 {
   FBVideoStreamConfiguration *config = [[FBVideoStreamConfiguration alloc]
-    initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
-    framesPerSecond:nil
-    rateControl:nil
-    scaleFactor:nil
-    keyFrameRate:nil];
+                                        initWithFormat:[FBVideoStreamFormat compressedVideoWithCodec:FBVideoStreamCodecH264 transport:FBVideoStreamTransportAnnexB]
+                                        framesPerSecond:nil
+                                        rateControl:nil
+                                        scaleFactor:nil
+                                        keyFrameRate:nil];
 
   FBVideoStreamConfiguration *copy = [config copy];
   // Immutable object returns self on copy

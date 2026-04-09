@@ -16,17 +16,17 @@
 + (NSDictionary<NSString *, id> *)readContentsOf:(NSURL *)xctestrunURL expandPlaceholderWithPath:(NSString *)path error:(NSError **)error
 {
   NSFileManager *fileManager = [NSFileManager defaultManager];
-  if(![fileManager fileExistsAtPath:[xctestrunURL path]]) {
+  if (![fileManager fileExistsAtPath:[xctestrunURL path]]) {
     return [[FBXCTestError
-      describeFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL]
-      fail:error];
+             describeFormat:@"xctestrun file does not exist at expected location: %@", xctestrunURL]
+            fail:error];
   }
   NSString *testRoot = [[xctestrunURL path] stringByDeletingLastPathComponent];
   NSString *idbAppStoragePath = [path stringByAppendingPathComponent:IdbApplicationsFolder];
   if (![fileManager fileExistsAtPath:idbAppStoragePath]) {
     return [[FBXCTestError
-      describeFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath]
-      fail:error];
+             describeFormat:@"IDB app storage folder does not exist at: %@", idbAppStoragePath]
+            fail:error];
   }
   NSDictionary<NSString *, id> *xctestrunContents = [NSDictionary dictionaryWithContentsOfURL:xctestrunURL error:error];
   NSMutableDictionary<NSString *, id> *mutableContents = [NSMutableDictionary dictionaryWithCapacity:xctestrunContents.count];
@@ -64,9 +64,9 @@
     if (dependencies && dependencies.count) {
       NSMutableArray<NSString *> *expandedDeps = [NSMutableArray arrayWithCapacity:dependencies.count];
       for (NSString *dep in dependencies) {
-          NSString *absPath = [dep stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
-          absPath = [absPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
-          [expandedDeps addObject:absPath];
+        NSString *absPath = [dep stringByReplacingOccurrencesOfString:@"__IDB_APPSTORAGE__" withString:idbAppStoragePath];
+        absPath = [absPath stringByReplacingOccurrencesOfString:@"__TESTROOT__" withString:testRoot];
+        [expandedDeps addObject:absPath];
       }
       [testTargetProperties setObject:[NSArray arrayWithArray:expandedDeps] forKey:@"DependentProductPaths"];
     }

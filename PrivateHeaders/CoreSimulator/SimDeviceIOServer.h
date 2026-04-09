@@ -6,16 +6,15 @@
  */
 
 #import <CoreSimulator/SimDeviceIO.h>
-
 #import <CoreSimulator/SimDeviceIOInterface-Protocol.h>
 
 @class NSArray, NSDictionary;
 
 @interface SimDeviceIOServer : SimDeviceIO <SimDeviceIOInterface>
 {
-    NSDictionary *_loadedBundles;
-    NSArray *_ioPorts;
-    NSArray *_ioPortProxies;
+  NSDictionary *_loadedBundles;
+  NSArray *_ioPorts;
+  NSArray *_ioPortProxies;
 }
 
 @property (nonatomic, copy) NSArray *ioPortProxies;

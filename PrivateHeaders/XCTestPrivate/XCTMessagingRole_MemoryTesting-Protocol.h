@@ -9,4 +9,3 @@
 
 @protocol XCTMessagingRole_MemoryTesting
 @end
-

@@ -7,54 +7,61 @@
 
 #import "FBArchitectureProcessAdapter.h"
 
-#import "FBProcessSpawnConfiguration.h"
-#import "FBCollectionInformation.h"
-#import "FBArchitecture.h"
-#import "FBProcessBuilder.h"
-#import "FBFuture.h"
-#import "FBControlCoreError.h"
-#import <mach-o/arch.h>
 #include <sys/sysctl.h>
 
+#import <mach-o/arch.h>
+
+#import "FBArchitecture.h"
+#import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+#import "FBFuture.h"
+#import "FBProcessBuilder.h"
+#import "FBProcessSpawnConfiguration.h"
 
 // https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment#Determine-Whether-Your-App-Is-Running-as-a-Translated-Binary
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 static int processIsTranslated(void)
 {
-   int ret = 0;
-   size_t size = sizeof(ret);
-   // patternlint-disable-next-line prefer-metasystemcontrol-byname
-   if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1)
-   {
-      if (errno == ENOENT)
-         return 0;
-      return -1;
-   }
-   return ret;
+  int ret = 0;
+  size_t size = sizeof(ret);
+  // patternlint-disable-next-line prefer-metasystemcontrol-byname
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+    if (errno == ENOENT) {
+      return 0;
+    }
+    return -1;
+  }
+  return ret;
 }
+
 #pragma clang diagnostic pop
 
 @implementation FBArchitectureProcessAdapter
 
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
-  return [self adaptProcessConfiguration:processConfiguration toAnyArchitectureIn:requestedArchitectures hostArchitectures:[FBArchitectureProcessAdapter hostMachineSupportedArchitectures] queue:queue temporaryDirectory:temporaryDirectory];
+- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory
+{
+  return [self adaptProcessConfiguration:processConfiguration
+                     toAnyArchitectureIn:requestedArchitectures
+                       hostArchitectures:[FBArchitectureProcessAdapter hostMachineSupportedArchitectures]
+                                   queue:queue
+                      temporaryDirectory:temporaryDirectory];
 }
 
 - (nullable FBArchitecture)selectArchitectureFrom:(NSSet<FBArchitecture> *)requestedArchitectures supportedArchitectures:(NSSet<FBArchitecture> *)supportedArchitectures
 {
-
-  if([requestedArchitectures containsObject:FBArchitectureArm64] && [supportedArchitectures containsObject:FBArchitectureArm64]) {
+  if ([requestedArchitectures containsObject:FBArchitectureArm64] && [supportedArchitectures containsObject:FBArchitectureArm64]) {
     return FBArchitectureArm64;
   }
 
-  if([requestedArchitectures containsObject:FBArchitectureX86_64] && [supportedArchitectures containsObject:FBArchitectureX86_64]) {
+  if ([requestedArchitectures containsObject:FBArchitectureX86_64] && [supportedArchitectures containsObject:FBArchitectureX86_64]) {
     return FBArchitectureX86_64;
   }
   return nil;
 }
 
--(FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory {
+- (FBFuture<FBProcessSpawnConfiguration *> *)adaptProcessConfiguration:(FBProcessSpawnConfiguration *)processConfiguration toAnyArchitectureIn:(NSSet<FBArchitecture> *)requestedArchitectures hostArchitectures:(NSSet<FBArchitecture> *)hostArchitectures queue:(dispatch_queue_t)queue temporaryDirectory:(NSURL *)temporaryDirectory
+{
   FBArchitecture architecture = [self selectArchitectureFrom:requestedArchitectures supportedArchitectures:hostArchitectures];
   if (!architecture) {
     return [[FBControlCoreError
@@ -63,83 +70,103 @@ static int processIsTranslated(void)
   }
 
   return [[[self verifyArchitectureAvailable:processConfiguration.launchPath architecture:architecture queue:queue]
-           onQueue:queue fmap:^FBFuture *(NSNull * _) {
-    NSString *fileName = [[[[processConfiguration.launchPath lastPathComponent] stringByAppendingString:[[NSUUID new] UUIDString]] stringByAppendingString:@"."] stringByAppendingString:architecture];
-    NSURL *filePath = [temporaryDirectory URLByAppendingPathComponent:fileName isDirectory:NO];
-    return [[self extractArchitecture:architecture processConfiguration:processConfiguration queue:queue outputPath:filePath] mapReplace:[filePath path]];
-  }]
-          onQueue:queue fmap:^FBFuture *(NSString *extractedBinary) {
-    return [[self getFixedupDyldFrameworkPathFromOriginalBinary:processConfiguration.launchPath queue:queue]
-            onQueue:queue map:^FBProcessSpawnConfiguration *(NSString *dyldFrameworkPath) {
-      NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [processConfiguration.environment mutableCopy];
-      // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framewosk"s in binary
-      // DYLD_LIBRARY_PATH adds additional search paths for required "*.dyld"s in binary
-      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_FRAMEWORK_PATH"];
-      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_LIBRARY_PATH"];
-      return [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:extractedBinary arguments:processConfiguration.arguments environment:updatedEnvironment io:processConfiguration.io mode:processConfiguration.mode];
-    }];
-  }];
+           onQueue:queue
+           fmap:^FBFuture *(NSNull *_) {
+             NSString *fileName = [[[[processConfiguration.launchPath lastPathComponent] stringByAppendingString:[[NSUUID new] UUIDString]] stringByAppendingString:@"."] stringByAppendingString:architecture];
+             NSURL *filePath = [temporaryDirectory URLByAppendingPathComponent:fileName isDirectory:NO];
+             return [[self extractArchitecture:architecture processConfiguration:processConfiguration queue:queue outputPath:filePath] mapReplace:[filePath path]];
+           }]
+          onQueue:queue
+          fmap:^FBFuture *(NSString *extractedBinary) {
+            return [[self getFixedupDyldFrameworkPathFromOriginalBinary:processConfiguration.launchPath queue:queue]
+                    onQueue:queue
+                    map:^FBProcessSpawnConfiguration *(NSString *dyldFrameworkPath) {
+                      NSMutableDictionary<NSString *, NSString *> *updatedEnvironment = [processConfiguration.environment mutableCopy];
+                      // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framewosk"s in binary
+                      // DYLD_LIBRARY_PATH adds additional search paths for required "*.dyld"s in binary
+                      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_FRAMEWORK_PATH"];
+                      [updatedEnvironment setValue:dyldFrameworkPath forKey:@"DYLD_LIBRARY_PATH"];
+                      return [[FBProcessSpawnConfiguration alloc] initWithLaunchPath:extractedBinary
+                                                                           arguments:processConfiguration.arguments
+                                                                         environment:updatedEnvironment
+                                                                                  io:processConfiguration.io
+                                                                                mode:processConfiguration.mode];
+                    }];
+          }];
 }
 
 /// Verifies that we can extract desired architecture from binary
--(FBFuture<NSNull *> *)verifyArchitectureAvailable:(NSString *)binary architecture:(FBArchitecture)architecture queue:(dispatch_queue_t)queue {
+- (FBFuture<NSNull *> *)verifyArchitectureAvailable:(NSString *)binary architecture:(FBArchitecture)architecture queue:(dispatch_queue_t)queue
+{
   return [[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/lipo" arguments:@[binary, @"-verify_arch", architecture]]
-    withStdOutToDevNull]
-    withStdErrToDevNull]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    rephraseFailure:@"Desired architecture %@ not found in %@ binary", architecture, binary]
-    mapReplace:[NSNull null]]
-    timeout:20 waitingFor:@"lipo -verify_arch"];
+                withLaunchPath:@"/usr/bin/lipo"
+                arguments:@[binary, @"-verify_arch", architecture]]
+               withStdOutToDevNull]
+              withStdErrToDevNull]
+             runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+            rephraseFailure:@"Desired architecture %@ not found in %@ binary", architecture, binary]
+           mapReplace:[NSNull null]]
+          timeout:20
+          waitingFor:@"lipo -verify_arch"];
 }
 
--(FBFuture<NSString *> *)extractArchitecture:(FBArchitecture)architecture processConfiguration:(FBProcessSpawnConfiguration *)processConfiguration queue:(dispatch_queue_t)queue outputPath:(NSURL *)outputPath {
+- (FBFuture<NSString *> *)extractArchitecture:(FBArchitecture)architecture processConfiguration:(FBProcessSpawnConfiguration *)processConfiguration queue:(dispatch_queue_t)queue outputPath:(NSURL *)outputPath
+{
   return [[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/lipo" arguments:@[processConfiguration.launchPath, @"-extract", architecture, @"-output", [outputPath path]]]
-    withStdOutToDevNull]
+                withLaunchPath:@"/usr/bin/lipo"
+                arguments:@[processConfiguration.launchPath, @"-extract", architecture, @"-output", [outputPath path]]]
+               withStdOutToDevNull]
               withStdErrLineReader:^(NSString * _Nonnull line) {
-    NSLog(@"LINE %@\n", line);
-  }]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    rephraseFailure:@"Failed to thin %@ architecture out from %@ binary", architecture, processConfiguration.launchPath]
-    mapReplace:[NSNull null]]
-    timeout:10 waitingFor:@"lipo -extract"];
+                NSLog(@"LINE %@\n", line);
+              }]
+             runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+            rephraseFailure:@"Failed to thin %@ architecture out from %@ binary", architecture, processConfiguration.launchPath]
+           mapReplace:[NSNull null]]
+          timeout:10
+          waitingFor:@"lipo -extract"];
 }
 
 /// After we lipoed out arch from binary, new binary placed into temporary folder.
 /// That makes all dynamic library imports become incorrect. To fix that up we
 /// have to specify `DYLD_FRAMEWORK_PATH` correctly.
--(FBFuture<NSString *> *)getFixedupDyldFrameworkPathFromOriginalBinary:(NSString *)binary queue:(dispatch_queue_t)queue {
+- (FBFuture<NSString *> *)getFixedupDyldFrameworkPathFromOriginalBinary:(NSString *)binary queue:(dispatch_queue_t)queue
+{
   NSString *binaryFolder = [[binary stringByResolvingSymlinksInPath] stringByDeletingLastPathComponent];
   return [[[self getOtoolInfoFromBinary:binary queue:queue]
-    onQueue:queue map:^NSSet<NSString *> *(NSString *result) {
-      return [self extractRpathsFromOtoolOutput:result];
-    }]
-    onQueue:queue map:^NSString *(NSSet<NSString *> *result) {
-      NSMutableArray<NSString *> *rpaths = [NSMutableArray new];
-      for (NSString *binaryRpath in result) {
-        if ([binaryRpath hasPrefix:@"@executable_path"]) {
-          [rpaths addObject:[binaryRpath stringByReplacingOccurrencesOfString:@"@executable_path" withString:binaryFolder]];
-        }
-      }
-      return [rpaths componentsJoinedByString:@":"];
-    }];
+           onQueue:queue
+           map:^NSSet<NSString *> *(NSString *result) {
+             return [self extractRpathsFromOtoolOutput:result];
+           }]
+          onQueue:queue
+          map:^NSString *(NSSet<NSString *> *result) {
+            NSMutableArray<NSString *> *rpaths = [NSMutableArray new];
+            for (NSString *binaryRpath in result) {
+              if ([binaryRpath hasPrefix:@"@executable_path"]) {
+                [rpaths addObject:[binaryRpath stringByReplacingOccurrencesOfString:@"@executable_path" withString:binaryFolder]];
+              }
+            }
+            return [rpaths componentsJoinedByString:@":"];
+          }];
 }
 
--(FBFuture<NSString *> *)getOtoolInfoFromBinary:(NSString *)binary queue:(dispatch_queue_t)queue {
-    return [[[[[[[FBProcessBuilder
-      withLaunchPath:@"/usr/bin/otool" arguments:@[@"-l", binary]]
-      withStdOutInMemoryAsString]
-      withStdErrToDevNull]
-      runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-      rephraseFailure:@"Failed query otool -l from %@", binary]
-      onQueue:queue fmap:^FBFuture<NSString *>*(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
-        if (task.stdOut) {
-            return [FBFuture futureWithResult: task.stdOut];
-        }
-        return [[FBControlCoreError describeFormat:@"Failed to call otool -l over %@", binary] failFuture];
-    }]
-      timeout:10 waitingFor:@"otool -l"];
+- (FBFuture<NSString *> *)getOtoolInfoFromBinary:(NSString *)binary queue:(dispatch_queue_t)queue
+{
+  return [[[[[[[FBProcessBuilder
+                withLaunchPath:@"/usr/bin/otool"
+                arguments:@[@"-l", binary]]
+               withStdOutInMemoryAsString]
+              withStdErrToDevNull]
+             runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+            rephraseFailure:@"Failed query otool -l from %@", binary]
+           onQueue:queue
+           fmap:^FBFuture<NSString *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
+             if (task.stdOut) {
+               return [FBFuture futureWithResult:task.stdOut];
+             }
+             return [[FBControlCoreError describeFormat:@"Failed to call otool -l over %@", binary] failFuture];
+           }]
+          timeout:10
+          waitingFor:@"otool -l"];
 }
 
 /// Extracts rpath from full otool output
@@ -154,8 +181,9 @@ static int processIsTranslated(void)
 /// ```
 /// @executable_path/../../Frameworks/
 /// ```
--(NSSet<NSString *> *)extractRpathsFromOtoolOutput:(NSString *)otoolOutput {
-  NSArray<NSString *> *lines = [otoolOutput componentsSeparatedByString: @"\n"];
+- (NSSet<NSString *> *)extractRpathsFromOtoolOutput:(NSString *)otoolOutput
+{
+  NSArray<NSString *> *lines = [otoolOutput componentsSeparatedByString:@"\n"];
   NSMutableSet<NSString *> *result = [NSMutableSet new];
 
   // Rpath entry looks like:
@@ -183,7 +211,8 @@ static int processIsTranslated(void)
 
 /// Checking for `LC_RPATH` in load commands
 /// - Parameter line: Single line entry for otool output
--(bool)isLcPathDefinitionLine:(NSString *)line {
+- (bool)isLcPathDefinitionLine:(NSString *)line
+{
   bool hasCMD = false;
   bool hasLcRpath = false;
   for (NSString *component in [line componentsSeparatedByString: @" "]) {
@@ -199,7 +228,8 @@ static int processIsTranslated(void)
 // Note: spaces in path names are not available. Currently we use adapter for binaries
 // inside Xcode that has relative paths to original binary.
 // And there is no spaces in paths over there.
--(nullable NSString *)extractRpathValueFromLine:(NSString *)line {
+- (nullable NSString *)extractRpathValueFromLine:(NSString *)line
+{
   for (NSString *component in [line componentsSeparatedByString: @" "]) {
     if ([component hasPrefix:@"@executable_path"]) {
       return component;
@@ -208,7 +238,8 @@ static int processIsTranslated(void)
   return nil;
 }
 
-+(NSSet<FBArchitecture> *)hostMachineSupportedArchitectures {
++ (NSSet<FBArchitecture> *)hostMachineSupportedArchitectures
+{
 #if TARGET_CPU_X86_64
   int isTranslated = processIsTranslated();
   if (isTranslated == 1) {

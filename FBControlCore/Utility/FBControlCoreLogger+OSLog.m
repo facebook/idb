@@ -9,13 +9,13 @@
 
 #if defined(__apple_build_version__)
 
-#include <os/log.h>
+ #include <os/log.h>
 
 static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 @interface FBControlCoreLogger_OSLog : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, strong, readonly) os_log_t client;
+@property (nonatomic, readonly, strong) os_log_t client;
 
 @end
 

@@ -39,9 +39,9 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return [self.arguments isEqual:object.arguments] &&
-         [self.environment isEqual:object.environment] &&
-         [self.io isEqual:object.io];
+  return [self.arguments isEqual:object.arguments]
+  && [self.environment isEqual:object.environment]
+  && [self.io isEqual:object.io];
 }
 
 @end

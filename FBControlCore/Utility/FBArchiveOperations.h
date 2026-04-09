@@ -31,7 +31,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
 
 /**
  Builds a command to extract from a file on disk
- 
+
  @param path the path to the archive.
  @param extractPath the extraction path.
  @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.
@@ -129,6 +129,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  Creates a gzipped tar archive, returning an the data of the tar.
 
  @param path the path to archive.
+ @param queue the queue to do work on
  @param logger the logger to log to.
  @return a Future containing the tar output.
  */

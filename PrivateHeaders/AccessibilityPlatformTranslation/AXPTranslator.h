@@ -16,7 +16,7 @@
 /**
  The return type of the translation callbacks, this will synchronously provide a response by calling out to CoreSimulator.
  */
-typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *request);
+typedef AXPTranslatorResponse *(^AXPTranslationCallback)(AXPTranslatorRequest *request);
 
 @protocol AXPTranslationDelegateHelper
 
@@ -25,20 +25,20 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
  The implementation of this function calls out the the underlying API to obtain a AXPTranslatorResponse for a given AXPTranslatorRequest.
  The call is synchronous and the CoreSimulator API is asynchronous, so this needs to operate on a background queue that can block.
  */
- - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallback;
+- (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallback;
 
 /**
  This is used in the construction of Mac accessibility objects.
  It's the job of this function to translate co-ordinate spaces.
  This is mostly relevant for Simulator.app where AppKit has a different co-ordinate space to UIKit.
  */
- - (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withContext:(id)context postProcess:(id)postProcess;
+- (CGRect)accessibilityTranslationConvertPlatformFrameToSystem:(CGRect)rect withContext:(id)context postProcess:(id)postProcess;
 
 /**
  Used to obtain the parent of an accessibility component.
  Unknown how this is implemented.
  */
- - (id)accessibilityTranslationRootParent;
+- (id)accessibilityTranslationRootParent;
 
 @end
 
@@ -66,25 +66,25 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
 
 @interface AXPTranslator : NSObject
 {
-    BOOL _accessibilityEnabled;
-    BOOL _supportsDelegateTokens;
-    id <AXPTranslationDelegateHelper> _bridgeDelegate;
-    id <AXPTranslationTokenDelegateHelper> _bridgeTokenDelegate;
-    id <AXPTranslationRuntimeHelper> _runtimeDelegate;
-    id <AXPTranslationSystemAppDelegate> _systemAppDelegate;
-    NSMutableDictionary *_fakeElementCache;
+  BOOL _accessibilityEnabled;
+  BOOL _supportsDelegateTokens;
+  id<AXPTranslationDelegateHelper> _bridgeDelegate;
+  id<AXPTranslationTokenDelegateHelper> _bridgeTokenDelegate;
+  id<AXPTranslationRuntimeHelper> _runtimeDelegate;
+  id<AXPTranslationSystemAppDelegate> _systemAppDelegate;
+  NSMutableDictionary *_fakeElementCache;
 }
 
 + (AXPTranslator_macOS *)sharedmacOSInstance;
 + (AXPTranslator_iOS *)sharediOSInstance;
 + (id)sharedInstance;
-@property(nonatomic) BOOL supportsDelegateTokens; // @synthesize supportsDelegateTokens=_supportsDelegateTokens;
-@property(retain, nonatomic) NSMutableDictionary *fakeElementCache; // @synthesize fakeElementCache=_fakeElementCache;
-@property(nonatomic) __weak id <AXPTranslationSystemAppDelegate> systemAppDelegate; // @synthesize systemAppDelegate=_systemAppDelegate;
-@property(nonatomic) __weak id <AXPTranslationRuntimeHelper> runtimeDelegate; // @synthesize runtimeDelegate=_runtimeDelegate;
-@property(nonatomic) __weak id <AXPTranslationTokenDelegateHelper> bridgeTokenDelegate; // @synthesize bridgeTokenDelegate=_bridgeTokenDelegate;
-@property(nonatomic) __weak id <AXPTranslationDelegateHelper> bridgeDelegate; // @synthesize bridgeDelegate=_bridgeDelegate;
-@property(nonatomic) BOOL accessibilityEnabled; // @synthesize accessibilityEnabled=_accessibilityEnabled;
+@property (nonatomic) BOOL supportsDelegateTokens; // @synthesize supportsDelegateTokens=_supportsDelegateTokens;
+@property (nonatomic, retain) NSMutableDictionary *fakeElementCache; // @synthesize fakeElementCache=_fakeElementCache;
+@property (nonatomic) __weak id<AXPTranslationSystemAppDelegate> systemAppDelegate; // @synthesize systemAppDelegate=_systemAppDelegate;
+@property (nonatomic) __weak id<AXPTranslationRuntimeHelper> runtimeDelegate; // @synthesize runtimeDelegate=_runtimeDelegate;
+@property (nonatomic) __weak id<AXPTranslationTokenDelegateHelper> bridgeTokenDelegate; // @synthesize bridgeTokenDelegate=_bridgeTokenDelegate;
+@property (nonatomic) __weak id<AXPTranslationDelegateHelper> bridgeDelegate; // @synthesize bridgeDelegate=_bridgeDelegate;
+@property (nonatomic) BOOL accessibilityEnabled; // @synthesize accessibilityEnabled=_accessibilityEnabled;
 - (id)remoteTranslationDataWithTranslation:(id)arg1 pid:(int)arg2;
 - (id)translationObjectFromData:(id)arg1;
 - (id)platformElementFromTranslation:(id)arg1;
@@ -115,4 +115,3 @@ typedef AXPTranslatorResponse * (^AXPTranslationCallback)(AXPTranslatorRequest *
 - (id)init;
 
 @end
-

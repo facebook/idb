@@ -34,70 +34,69 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  The "Unique" name of the crash log.
  This is taken to be the the last path component of the crash log path.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The Path of the Crash Log.
  */
-@property (nonatomic, copy, readonly) NSString *crashPath;
+@property (nonatomic, readonly, copy) NSString *crashPath;
 
 /**
  The identifier of the Crash Log.
  */
-@property (nonatomic, copy, readonly) NSString *identifier;
+@property (nonatomic, readonly, copy) NSString *identifier;
 
 /**
  The Path of the Executable Image.
  */
-@property (nonatomic, copy, readonly) NSString *executablePath;
+@property (nonatomic, readonly, copy) NSString *executablePath;
 
 /**
  The Name of the Crashed Process.
  */
-@property (nonatomic, copy, readonly) NSString *processName;
+@property (nonatomic, readonly, copy) NSString *processName;
 
 /**
  The Process Identifier of the Crashed Process/
  */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
+@property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
  The Process Name of the Crashed Process's parent.
  */
-@property (nonatomic, copy, readonly) NSString *parentProcessName;
+@property (nonatomic, readonly, copy) NSString *parentProcessName;
 
 /**
  The Process Identifier of the Crashed Process's parent.
  */
-@property (nonatomic, assign, readonly) pid_t parentProcessIdentifier;
+@property (nonatomic, readonly, assign) pid_t parentProcessIdentifier;
 
 /**
  The date of the crash
  */
-@property (nonatomic, copy, readonly) NSDate *date;
+@property (nonatomic, readonly, copy) NSDate *date;
 
 /**
  The Process Type of the Crash Log
  */
-@property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
+@property (nonatomic, readonly, assign) FBCrashLogInfoProcessType processType;
 
 /**
  The description of the exception
  */
-@property (nonatomic, copy, readonly, nullable) NSString *exceptionDescription;
+@property (nullable, nonatomic, readonly, copy) NSString *exceptionDescription;
 
 /**
  List of symbols on the crashed thread
  */
-@property (nonatomic, copy, readonly, nullable) NSString *crashedThreadDescription;
+@property (nullable, nonatomic, readonly, copy) NSString *crashedThreadDescription;
 
 #pragma mark Helpers
 
 /**
  The Diagnostics Report Paths for the User.
  */
-@property (nonatomic, class, copy, readonly) NSArray<NSString *> *diagnosticReportsPaths;
-
+@property (class, nonatomic, readonly, copy) NSArray<NSString *> *diagnosticReportsPaths;
 
 #pragma mark Initializers
 
@@ -110,7 +109,6 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @return a Crash Log Info on success, nil otherwise.
  */
 + (nullable instancetype)fromCrashLogAtPath:(NSString *)path error:(NSError **)error;
-
 
 #pragma mark Public Methods
 
@@ -145,7 +143,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  Reads the contents of the crash log on disk, as a string.
  */
- - (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
+- (nullable NSString *)loadRawCrashLogStringWithError:(NSError **)error;
 
 #pragma mark Predicates
 
@@ -209,13 +207,12 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
 /**
  Crash info.
  */
-@property (nonatomic, copy, readonly) FBCrashLogInfo *info;
+@property (nonatomic, readonly, copy) FBCrashLogInfo *info;
 
 /**
  Crash contents.
  */
-@property (nonatomic, copy, readonly) NSString *contents;
-
+@property (nonatomic, readonly, copy) NSString *contents;
 
 /// Provides date formatted to parse date strings from Apple crash logs
 + (NSDateFormatter *)dateFormatter;

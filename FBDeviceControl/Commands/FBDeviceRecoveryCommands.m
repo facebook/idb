@@ -13,7 +13,7 @@
 
 @interface FBDeviceRecoveryCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -43,46 +43,48 @@
 - (FBFuture<NSNull *> *)enterRecovery
 {
   return [[self.device
-    connectToDeviceWithPurpose:@"enter_recovery"]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (id<FBDeviceCommands> device) {
-      int status = device.calls.EnterRecovery(device.amDeviceRef);
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed have device enter recovery %@", internalMessage]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           connectToDeviceWithPurpose:@"enter_recovery"]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSNull *> *(id<FBDeviceCommands> device) {
+            int status = device.calls.EnterRecovery(device.amDeviceRef);
+            if (status != 0) {
+              NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+              return [[FBDeviceControlError
+                       describeFormat:@"Failed have device enter recovery %@", internalMessage]
+                      failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSNull *> *)exitRecovery
 {
   id<FBDeviceCommands> device = self.device;
   return [FBFuture
-    onQueue:self.device.workQueue resolve:^ FBFuture<NSNull *> * {
-      AMRecoveryModeDeviceRef recoveryDevice = device.recoveryModeDeviceRef;
-      if (recoveryDevice == NULL) {
-        return [[FBDeviceControlError
-          describeFormat:@"Device %@ is not in recovery mode", device]
-          failFuture];
-      }
-      int status = device.calls.RecoveryModeDeviceSetAutoBoot(recoveryDevice, 1);
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]
-          failFuture];
-      }
-      status = device.calls.RecoveryDeviceReboot(recoveryDevice);
-      if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+          onQueue:self.device.workQueue
+          resolve:^FBFuture<NSNull *> * {
+            AMRecoveryModeDeviceRef recoveryDevice = device.recoveryModeDeviceRef;
+            if (recoveryDevice == NULL) {
+              return [[FBDeviceControlError
+                       describeFormat:@"Device %@ is not in recovery mode", device]
+                      failFuture];
+            }
+            int status = device.calls.RecoveryModeDeviceSetAutoBoot(recoveryDevice, 1);
+            if (status != 0) {
+              NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+              return [[FBDeviceControlError
+                       describeFormat:@"Failed to set autoboot for recovery device %@ %@", recoveryDevice, internalMessage]
+                      failFuture];
+            }
+            status = device.calls.RecoveryDeviceReboot(recoveryDevice);
+            if (status != 0) {
+              NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+              return [[FBDeviceControlError
+                       describeFormat:@"Failed have device %@ enter recovery %@", recoveryDevice, internalMessage]
+                      failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 @end
