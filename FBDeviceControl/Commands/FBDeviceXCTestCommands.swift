@@ -81,7 +81,7 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
     // This results in xcodebuild returning an error, since it cannot find a device with requested
     // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
     // 00008101001D296A2EE8001E).
-    guard let device = device else {
+    guard let device else {
       return FBDeviceControlError.describe("Device is nil").failFuture() as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
     }
     let udid = device.calls.CopyDeviceIdentifier(device.amDeviceRef)!.takeRetainedValue() as String
