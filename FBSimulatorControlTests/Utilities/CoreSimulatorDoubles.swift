@@ -23,7 +23,7 @@ class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
 @objcMembers
 class FBSimulatorControlTests_SimDevice_Double: NSObject {
   var name: String = ""
-  @objc var UDID: NSUUID = NSUUID()
+  var UDID: NSUUID = NSUUID()
   private var _dataPath: String?
   var dataPath: String {
     get {
