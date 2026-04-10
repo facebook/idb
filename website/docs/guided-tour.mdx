@@ -1,0 +1,49 @@
+---
+id: guided-tour
+title: Guided Tour
+---
+
+This is a quick start guide to show you a glimpse of what idb can do. If you haven't installed idb already please refer to [installation](installation.mdx).
+
+Let's start with finding out what simulators/devices are available on your Mac. This will print out all the simulators on your Mac and all of the devices attached.
+
+```
+idb list-targets
+```
+
+Boot any one of them.
+
+```
+idb boot UDID
+```
+
+Try any of the commands below and make sure you pass `--udid` to run them with the correct simulator.
+
+```
+idb launch com.apple.Maps
+idb record
+idb log
+```
+
+Now let's try to run tests. This will install the test bundle provided on the simulator.
+
+```
+idb xctest install Fixtures/Binaries/iOSUnitTestFixture.xctest
+```
+
+To verify that it's been installed correctly just run
+
+```
+idb xctest list
+```
+
+Run the tests by issuing these commands.
+
+* `run logic` would just run the logic tests
+* `run app` will run the app tests
+* `run ui` will run the ui tests
+
+```
+idb xctest run logic com.facebook.iOSUnitTestFixture
+idb xctest run app com.facebook.iOSUnitTestFixture com.apple.Maps
+```

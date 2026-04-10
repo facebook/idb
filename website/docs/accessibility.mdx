@@ -1,0 +1,76 @@
+---
+id: accessibility
+title: Accessibility Automation
+---
+
+## Introduction
+
+`idb` offers some new primitives for iOS Simulators that provides access to all accessibility information on an iOS Simulator. Additionally, there are commands for synthesizing input events like tapping on the touch screen.
+
+These primitives can be used for a number of scenarios:
+
+- UI Testing without using `XCTest` based on reading the UI state and then manipulating the touch screen/keyboard.
+- Remote access to an iOS Simulator & Screencasting.
+- Accessibility auditing by reading the entire Accessibility heirarchy and having heuristic for determining if UI elements are accessible.
+
+All of these commands live under the `ui` subcommand prefix in `idb`.
+
+## `idb ui describe-all`
+
+Prints the entire UI heirarchy of the iOS Simulator.
+
+```
+idb ui describe-all
+[{"AXFrame":"{{0, 0}, {375, 667}}","AXUniqueId":null,"frame":{"y":0,"x":0,"width":375,"height":667},"role_description":"application","AXLabel":" ","content_required":false,"type":"Application","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXApplication","subrole":null},{"AXFrame":"{{0, 0}, {375, 667}}","AXUniqueId":null,"frame":{"y":0,"x":0,"width":375,"height":667},"role_description":"group","AXLabel":null,"content_required":false,"type":"Group","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXGroup","subrole":null},{"AXFrame":"{{21.5, 28}, {72, 87.5}}","AXUniqueId":"Calendar","frame":{"y":28,"x":21.5,"width":72,"height":87.5},"role_description":"button","AXLabel":"Calendar","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"Wednesday, October 14","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{112, 28}, {64, 87.5}}","AXUniqueId":"Photos","frame":{"y":28,"x":112,"width":64,"height":87.5},"role_description":"button","AXLabel":"Photos","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 28}, {64, 87.5}}","AXUniqueId":"Maps","frame":{"y":28,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Maps","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{277.5, 28}, {81.5, 87.5}}","AXUniqueId":"Reminders","frame":{"y":28,"x":277.5,"width":81.5,"height":87.5},"role_description":"button","AXLabel":"Reminders","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{25, 116}, {64, 87.5}}","AXUniqueId":"News","frame":{"y":116,"x":25,"width":64,"height":87.5},"role_description":"button","AXLabel":"News","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{112, 116}, {64, 87.5}}","AXUniqueId":"Health","frame":{"y":116,"x":112,"width":64,"height":87.5},"role_description":"button","AXLabel":"Health","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 116}, {64, 87.5}}","AXUniqueId":"Wallet","frame":{"y":116,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Wallet","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{284, 116}, {68.5, 87.5}}","AXUniqueId":"Settings","frame":{"y":116,"x":284,"width":68.5,"height":87.5},"role_description":"button","AXLabel":"Settings","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{146, 546.5}, {83.5, 25}}","AXUniqueId":"Page control","frame":{"y":546.5,"x":146,"width":83.5,"height":25},"role_description":"slider","AXLabel":null,"content_required":false,"type":"Slider","title":null,"help":null,"custom_actions":[],"AXValue":"Page 1 of 2","enabled":true,"role":"AXSlider","subrole":null},{"AXFrame":"{{0, 575}, {375, 92}}","AXUniqueId":null,"frame":{"y":575,"x":0,"width":375,"height":92},"role_description":"group","AXLabel":"Dock","content_required":false,"type":"Group","title":null,"help":null,"custom_actions":[],"AXValue":null,"enabled":true,"role":"AXGroup","subrole":null},{"AXFrame":"{{112, 589}, {64, 64}}","AXUniqueId":"Safari","frame":{"y":589,"x":112,"width":64,"height":64},"role_description":"button","AXLabel":"Safari","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null},{"AXFrame":"{{199, 589}, {64, 64}}","AXUniqueId":"Messages","frame":{"y":589,"x":199,"width":64,"height":64},"role_description":"button","AXLabel":"Messages","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null}]
+```
+
+The output here is an example of a fresh iOS Simulator booted into the Home Screen. Each of the App icons is represented as an entry within the heirarchy. Using [`jq`](https://stedolan.github.io/jq/) is an effective way of formatting this output for humans. This output is easily machine-readable being a JSON structure.
+
+## `idb ui describe-point x y`
+
+Returns the accessibility element at given co-ordinates on the iOS Simulator's screen. This is useful for "hit test" style queries, or understanding what is under a screen pointer.
+
+```
+idb ui describe-point 200 200
+{"AXFrame":"{{199, 116}, {64, 87.5}}","AXUniqueId":"Wallet","frame":{"y":116,"x":199,"width":64,"height":87.5},"role_description":"button","AXLabel":"Wallet","content_required":false,"type":"Button","title":null,"help":null,"custom_actions":["Edit mode","Today"],"AXValue":"","enabled":true,"role":"AXButton","subrole":null}
+```
+
+This example shows selection of the "Wallet" app, which is 200 points in x/y from the origin (top-left) of the screen.
+
+## `idb ui tap X Y`
+
+Taps the screen at the given X/Y co-ordinates from the origin.
+
+```
+idb ui tap 200 200
+```
+
+From the home-screen this will open the Wallet App, as the home screen icon for this app is at these co-ordinates.
+
+## `idb button BUTTON_NAME`
+
+Simulates a button press on the iOS Simulator. For example
+
+```
+idb button LOCK
+```
+
+Will send the iOS Simulator to the lockscreen. All button types are available with `--help`
+
+```
+idb ui button --help
+usage: idb ui button [-h] [--duration DURATION] [--udid UDID] [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--json] {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
+positional arguments:
+  {APPLE_PAY,HOME,LOCK,SIDE_BUTTON,SIRI}
+```
+
+## `idb text 'hello world'`
+
+Sends keyboard events to the iOS Simulator. This can be used at any time and are equivalent to sending events via a hardware keyboard.
+
+```
+idb text 'hello world'
+```
+
+Note that this accepts a single argument, so providing text entry with spaces will require quoting
+

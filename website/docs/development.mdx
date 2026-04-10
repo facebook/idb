@@ -1,0 +1,61 @@
+---
+id: development
+title: Development
+---
+
+## Building & Running the [`idb` cli](architecture#the-idb-cli)
+
+The `idb` cli is python based and can simply be built using `pip`
+
+```
+pip3 install .
+```
+
+## Building & Running the [`idb_companion`](architecture#the-idb_companion)
+
+This is a native macOS executable, built via Xcode.
+
+Firstly, there are system level build dependencies that needed, these can be [installed via homebrew](https://brew.sh):
+
+```
+# Tap for grpc
+brew tap grpc/grpc
+# The grpc compiler is used to generate C++ bindings from the idb.proto definition
+brew install grpc
+# cocoapods is needed to resolve dependencies for the Xcode project
+brew install cocoapods
+# cocoapods is used to resolve the grpc runtime library for the companion
+# This must be run from the root of the idb repository to use the appropriate Podfile
+pod install
+```
+
+This will open an Xcode project that you can build and run:
+
+```
+open idb_companion.xcworkspace
+```
+
+After opening the Xcode project you will need to add a `--udid` argument for launch.
+- Get the UDID of either your device or simulator
+  - Window -> Devices and Simulators
+  - Select the device or simulator you care about
+  - Copy the value in the `Identifier` section of the header
+- Project -> Scheme -> Edit Scheme (or `cmd + <`)
+- Run -> Arguments
+- Click the `+` under the `Arguments Passed on Launch` section
+- Enter `--udid <UDID copied above>`
+- Run the `idb_companion` target on `My Mac`
+
+Once `idb_companion` has launched, it will output the TCP port upon which the companion has bound to `stdout`:
+
+```
+{"grpc_port":10882}
+```
+
+By default this port is `10882`, it can be bound on a random port with `--port 0` or a port of your choosing. You'll now be able to direct `idb` commands against this companion with the `IDB_COMPANION` environment variable passed to the cli:
+
+```
+$ IDB_COMPANION=localhost:10882 idb describe
+```
+
+As long as you prefix this environment variable before all commands, you'll be able to run commands against the companion that you're currently debugging within Xcode.
