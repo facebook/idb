@@ -18,7 +18,6 @@
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 
-static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 @interface FBSimulatorSettingsCommands ()
 
@@ -423,57 +422,12 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
       failFuture];
   }
 
-  NSString *bulletinDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/BulletinBoard"];
-  NSString *notificationsApprovalPlistPath = [bulletinDirectory stringByAppendingPathComponent:@"VersionedSectionInfo.plist"];
-
-  NSMutableDictionary<NSString *, id> *sectionInfo = [NSMutableDictionary dictionaryWithContentsOfFile:notificationsApprovalPlistPath];
-
-  if (sectionInfo == nil) {
-    return [[FBSimulatorError
-      describe:@"Failed to load sectionInfo"]
-      failFuture];
-  }
-
+  NSString *action = approved ? @"approve" : @"revoke";
+  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    NSData *data = sectionInfo[@"sectionInfo"][bundleID];
-    if (data == nil) {
-      data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
-    }
-    if (data == nil) {
-      return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
-    }
-      if (approved) {
-        NSError *readError = nil;
-        NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
-        if (readError != nil) {
-          return [FBSimulatorError failFutureWithError:readError];
-        }
-        properties[@"$objects"][2] = bundleID;
-        properties[@"$objects"][3][@"allowsNotifications"] = @YES;
-
-        NSError *writeError = nil;
-        NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
-        if (writeError != nil) {
-          return [FBSimulatorError failFutureWithError:writeError];
-        }
-        sectionInfo[@"sectionInfo"][bundleID] = resultData;
-      } else {
-        [sectionInfo[@"sectionInfo"] removeObjectForKey:bundleID];
-      }
+    [futures addObject:[self runSimulatorFrameworkBridgeWithService:@"notifications" action:action arguments:@[bundleID]]];
   }
-
-  BOOL result = [sectionInfo writeToFile:notificationsApprovalPlistPath atomically:YES];
-  if (!result) {
-    return [[FBSimulatorError
-      describe:@"Failed to write sectionInfo data to plist"]
-      failFuture];
-  }
-
-  if (self.simulator.state == FBiOSTargetStateBooted) {
-    return [[self.simulator stopServiceWithName:SpringBoardServiceName] mapReplace:NSNull.null];
-  } else {
-    return FBFuture.empty;
-  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services grantAccess:(BOOL)grantAccess
