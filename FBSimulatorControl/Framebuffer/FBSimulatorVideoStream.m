@@ -20,7 +20,6 @@
 
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulatorControl-Swift.h"
-#import "FBSimulatorError.h"
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 

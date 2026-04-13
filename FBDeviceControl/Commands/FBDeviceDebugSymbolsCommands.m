@@ -9,9 +9,10 @@
 
 #import <dlfcn.h>
 
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAMDServiceConnection.h"
 #import "FBDevice.h"
-#import "FBDeviceControlError.h"
 
 // This signature for this function is shown in the OSS release of dyld (ex: https://opensource.apple.com/source/dyld/dyld-433.5/launch-cache/dsc_extractor.cpp.auto.html)
 typedef int (*SharedCacheExtractor)(const char *sharedCachePath, const char *extractionRootDirectory, void (^progressCallback)(int current, int total));

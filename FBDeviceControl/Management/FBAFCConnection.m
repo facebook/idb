@@ -10,9 +10,9 @@
 #include <dlfcn.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAMDServiceConnection.h"
-#import "FBDeviceControlError.h"
 
 static NSString *const AFCCodeKey = @"AFCCode";
 static NSString *const AFCDomainKey = @"AFCDomain";

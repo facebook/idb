@@ -7,9 +7,10 @@
 
 #import "FBAMDeviceManager.h"
 
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
 static NSString *const MobileBackupDomain = @"com.apple.mobile.backup";

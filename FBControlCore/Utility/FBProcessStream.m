@@ -11,7 +11,7 @@
 #import <sys/types.h>
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBDataBuffer.h"
 #import "FBFileReader.h"
 #import "FBFuture+Sync.h"

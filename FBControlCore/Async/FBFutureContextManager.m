@@ -7,7 +7,7 @@
 
 #import "FBFutureContextManager.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 #import "FBFuture.h"
 

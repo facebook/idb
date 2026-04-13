@@ -8,7 +8,7 @@
 #import "FBProcessTerminationStrategy.h"
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBProcessFetcher.h"
 
 @implementation FBControlCoreError (FBProcessTerminationStrategy)

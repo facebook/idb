@@ -12,8 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBDeviceControlError.h"
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 

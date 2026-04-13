@@ -7,11 +7,22 @@
 
 import Foundation
 
+public struct FBEventType: RawRepresentable, Equatable, Hashable, Sendable {
+  public let rawValue: String
+  public init(rawValue: String) { self.rawValue = rawValue }
+
+  public static let started = FBEventType(rawValue: "started")
+  public static let ended = FBEventType(rawValue: "ended")
+  public static let discrete = FBEventType(rawValue: "discrete")
+  public static let success = FBEventType(rawValue: "success")
+  public static let failure = FBEventType(rawValue: "failure")
+}
+
 @objc(FBEventReporterSubject)
 public final class FBEventReporterSubject: NSObject {
 
   @objc public let eventName: String
-  @objc public let eventType: FBEventType
+  public let eventType: FBEventType
   @objc public let arguments: [String]?
   @objc public let duration: NSNumber?
   @objc public let size: NSNumber?

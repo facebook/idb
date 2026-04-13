@@ -7,6 +7,8 @@
 
 import Foundation
 
+public let FBControlCoreErrorDomain = "com.facebook.FBControlCore"
+
 @objc
 open class FBControlCoreError: NSObject {
 

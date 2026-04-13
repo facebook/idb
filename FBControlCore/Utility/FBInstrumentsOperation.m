@@ -8,7 +8,7 @@
 #import "FBInstrumentsOperation.h"
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFuture.h"

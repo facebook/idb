@@ -10,7 +10,7 @@
 #include <spawn.h>
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"

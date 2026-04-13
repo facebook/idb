@@ -7,7 +7,7 @@
 
 #import "FBArchiveOperations.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 #import "FBProcessBuilder.h"
 #import "FBSubprocess.h"

@@ -7,8 +7,9 @@
 
 #import "FBAMDServiceConnection.h"
 
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAFCConnection.h"
-#import "FBDeviceControlError.h"
 
 typedef uint32_t HeaderIntType;
 static const NSUInteger HeaderLength = sizeof(HeaderIntType);

@@ -13,9 +13,7 @@
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBCodesignProvider.h>
-#import <FBControlCore/FBControlCoreError.h>
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>
-#import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
 #import <FBControlCore/FBControlCoreLogger+OSLog.h>
 #import <FBControlCore/FBCrashLog.h>
@@ -29,7 +27,6 @@
 #import <FBControlCore/FBDiagnosticInformationCommands.h>
 #import <FBControlCore/FBEraseCommands.h>
 #import <FBControlCore/FBEventReporter.h>
-#import <FBControlCore/FBEventReporterSubject.h>
 #import <FBControlCore/FBFileCommands.h>
 #import <FBControlCore/FBFileContainer.h>
 #import <FBControlCore/FBFileReader.h>
@@ -65,7 +62,6 @@
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
 #import <FBControlCore/FBXCTestCommands.h>
-#import <FBControlCore/FBXCTestShimConfiguration.h>
 #import <FBControlCore/FBXCTraceOperation.h>
 #import <FBControlCore/FBXCTraceRecordCommands.h>
 #import <FBControlCore/FBiOSTarget.h>

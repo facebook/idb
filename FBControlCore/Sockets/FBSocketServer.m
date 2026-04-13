@@ -7,7 +7,7 @@
 
 #import "FBSocketServer.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 
 @interface FBSocketServer ()
 

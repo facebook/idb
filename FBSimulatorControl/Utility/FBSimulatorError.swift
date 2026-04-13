@@ -7,6 +7,8 @@
 
 import Foundation
 
+public let FBSimulatorControlErrorDomain = "com.facebook.FBSimulatorControl"
+
 @objc(FBSimulatorError)
 open class FBSimulatorError: FBControlCoreError {
 
