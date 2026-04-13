@@ -201,7 +201,7 @@ final class FBAMDeviceTests: XCTestCase {
       future2.resolve(from: inner)
     }
 
-    let value = try FBFutureFromArray([future0, future1, future2]).await()
+    let value = try FBFuture<AnyObject>.combine([future0, future1, future2]).await()
     XCTAssertNotNil(value)
 
     var actual = sAMDeviceEvents
@@ -266,7 +266,7 @@ final class FBAMDeviceTests: XCTestCase {
       future2.resolve(from: future)
     }
 
-    let value = try FBFutureFromArray([future0, future1, future2]).await() as? [NSNumber]
+    let value = try FBFuture<AnyObject>.combine([future0, future1, future2]).await() as? [NSNumber]
     XCTAssertEqual(value, [0, 1, 2])
 
     let actual = sAMDeviceEvents

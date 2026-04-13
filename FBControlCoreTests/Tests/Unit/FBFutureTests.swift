@@ -9,13 +9,8 @@ import XCTest
 
 @testable import FBControlCore
 
-/// Helper to call the NS_SWIFT_UNAVAILABLE `futureWithFutures:` method from Swift tests.
 private func composeFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<NSArray> {
-  let selector = NSSelectorFromString("futureWithFutures:")
-  // swiftlint:disable:next force_cast
-  let result = (FBFuture<NSArray>.self as AnyObject).perform(selector, with: futures)!
-  // swiftlint:disable:next force_cast
-  return result.takeUnretainedValue() as! FBFuture<NSArray>
+  return FBFuture<AnyObject>.combine(futures)
 }
 
 final class FBFutureTests: XCTestCase {

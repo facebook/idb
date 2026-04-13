@@ -4,15 +4,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 @objc public protocol FBSimulatorApplicationCommandsProtocol: NSObjectProtocol {
   @objc(installedApplicationWithBundleID:error:)
   func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication
@@ -84,7 +75,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       unsafeBitCast(confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger), to: FBFuture<AnyObject>.self),
     ]
     return
-      (combineFutures(futures)
+      (FBFuture<AnyObject>.combine(futures)
       .onQueue(
         simulator.workQueue,
         fmap: { (_: Any) -> FBFuture<AnyObject> in
@@ -332,7 +323,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       unsafeBitCast(stdOut.startReading(), to: FBFuture<AnyObject>.self),
       unsafeBitCast(stdErr.startReading(), to: FBFuture<AnyObject>.self),
     ]
-    let readingFuture = combineFutures(readingFutures)
+    let readingFuture = FBFuture<AnyObject>.combine(readingFutures)
 
     return
       (unsafeBitCast(

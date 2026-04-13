@@ -131,13 +131,7 @@ private func dateFromString(_ date: String) -> Date? {
                 })
               operations.append(operation as AnyObject)
             }
-            // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-            let selector = NSSelectorFromString("futureWithFutures:")
-            let cls: AnyClass = FBFuture<NSArray>.self
-            let method = (cls as AnyObject).method(for: selector)
-            typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-            let combine = unsafeBitCast(method, to: CombineFunc.self)
-            return combine(cls as AnyObject, selector, operations as NSArray)
+            return unsafeBitCast(FBFuture<AnyObject>.combine(operations as! [FBFuture<AnyObject>]), to: FBFuture<AnyObject>.self)
           }),
         to: FBFuture<NSNull>.self
       )

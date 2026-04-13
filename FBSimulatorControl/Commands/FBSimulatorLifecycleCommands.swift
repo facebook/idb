@@ -10,15 +10,6 @@ import AppKit
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 private let openURLRetries = 2
 
 @objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands {
@@ -210,7 +201,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
       : unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
 
     return
-      (combineFutures([hidFuture, bridgeFuture])
+      (FBFuture<AnyObject>.combine([hidFuture, bridgeFuture])
       .onQueue(
         simulator.workQueue,
         chain: { [weak self] (_: FBFuture<AnyObject>) -> FBFuture<AnyObject> in

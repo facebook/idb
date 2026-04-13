@@ -15,15 +15,6 @@ private let keyMacTestShim = "mac_test_shim"
 private let shimulatorFileName = "libShimulator.dylib"
 private let maculatorShimFileName = "libMaculator.dylib"
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 @objc(FBXCTestShimConfiguration)
 public class FBXCTestShimConfiguration: NSObject, NSCopying {
 
@@ -102,7 +93,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
           let f: FBFuture<AnyObject> = confirmExistenceOfRequiredShims(inDirectory: path, logger: logger)
           futures.append(f.fallback("" as AnyObject))
         }
-        let combined = combineFutures(futures)
+        let combined = FBFuture<AnyObject>.combine(futures)
         return combined.onQueue(
           queue,
           fmap: { result -> FBFuture<AnyObject> in
@@ -128,7 +119,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
     for canonicalName in canonicalShimNameToShimFilenames.keys {
       futures.append(pathForCanonicallyNamedShim(canonicalName, inDirectory: directory, logger: logger))
     }
-    let combined = combineFutures(futures)
+    let combined = FBFuture<AnyObject>.combine(futures)
     return combined.mapReplace(directory as AnyObject)
   }
 
@@ -172,7 +163,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
             pathForCanonicallyNamedShim(keySimulatorTestShim, inDirectory: shimDirectory, logger: logger),
             pathForCanonicallyNamedShim(keyMacTestShim, inDirectory: shimDirectory, logger: logger),
           ]
-          return combineFutures(futures)
+          return unsafeBitCast(FBFuture<AnyObject>.combine(futures), to: FBFuture<AnyObject>.self)
         }
       )
       .onQueue(

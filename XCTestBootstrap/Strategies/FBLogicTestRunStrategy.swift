@@ -53,24 +53,17 @@ private final class FBLogicTestRunOutputs: NSObject {
   private func testFuture() -> FBFuture<NSNull> {
     let uuid = UUID()
 
-    // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-    let selector = NSSelectorFromString("futureWithFutures:")
-    let cls: AnyClass = FBFuture<NSArray>.self
-    let method = (cls as AnyObject).method(for: selector)
-    typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-    let combine = unsafeBitCast(method, to: CombineFunc.self)
-
-    let futures: [AnyObject] = [
+    let futures: [FBFuture<AnyObject>] = [
       buildOutputs(forUUID: uuid),
       unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
     ]
 
     return unsafeBitCast(
-      combine(cls as AnyObject, selector, futures as NSArray)
+      FBFuture<AnyObject>.combine(futures)
         .onQueue(
           target.workQueue,
           fmap: { tupleObj -> FBFuture<AnyObject> in
-            let tuple = tupleObj as! [AnyObject]
+            let tuple = tupleObj as [AnyObject]
             let outputs = tuple[0] as! FBLogicTestRunOutputs
             let shimPath = tuple[1] as! String
             return unsafeBitCast(
@@ -207,17 +200,11 @@ private final class FBLogicTestRunOutputs: NSObject {
           queue,
           chain: { _ -> FBFuture<AnyObject> in
             logger.log("xctest process terminated, Tearing down IO.")
-            // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-            let selector = NSSelectorFromString("futureWithFutures:")
-            let cls: AnyClass = FBFuture<NSArray>.self
-            let method = (cls as AnyObject).method(for: selector)
-            typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-            let combine = unsafeBitCast(method, to: CombineFunc.self)
-            let futures: [AnyObject] = [
-              unsafeBitCast(outputs.shimOutput.stopReading(), to: AnyObject.self),
-              outputs.shimConsumer.finishedConsuming as AnyObject,
+            let futures: [FBFuture<AnyObject>] = [
+              unsafeBitCast(outputs.shimOutput.stopReading(), to: FBFuture<AnyObject>.self),
+              unsafeBitCast(outputs.shimConsumer.finishedConsuming, to: FBFuture<AnyObject>.self),
             ]
-            let combined = combine(cls as AnyObject, selector, futures as NSArray)
+            let combined = FBFuture<AnyObject>.combine(futures)
             // timeout:waitingFor: is variadic, use onQueue:timeout:handler: instead
             let timedOut = combined.onQueue(
               queue, timeout: EndOfFileFromStopReadingTimeout,
@@ -324,20 +311,13 @@ private final class FBLogicTestRunOutputs: NSObject {
       shimFuture = mirrorLogger.logConsumption(of: shimConsumer, toFileNamed: "shimulator_logs.shim", logger: logger)
     }
 
-    // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-    let selector = NSSelectorFromString("futureWithFutures:")
-    let cls: AnyClass = FBFuture<NSArray>.self
-    let method = (cls as AnyObject).method(for: selector)
-    typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-    let combine = unsafeBitCast(method, to: CombineFunc.self)
+    let futures: [FBFuture<AnyObject>] = [stdOutFuture, stdErrFuture, shimFuture]
 
-    let futures: [AnyObject] = [stdOutFuture, stdErrFuture, shimFuture]
-
-    return combine(cls as AnyObject, selector, futures as NSArray)
+    return FBFuture<AnyObject>.combine(futures)
       .onQueue(
         target.workQueue,
         fmap: { outputsObj -> FBFuture<AnyObject> in
-          let outputsArray = outputsObj as! [AnyObject]
+          let outputsArray = outputsObj as [AnyObject]
           let resolvedStdOut = outputsArray[0] as! FBDataConsumer & FBDataConsumerLifecycle
           let resolvedStdErr = outputsArray[1] as! FBDataConsumer & FBDataConsumerLifecycle
           let resolvedShim = outputsArray[2] as! FBDataConsumer & FBDataConsumerLifecycle

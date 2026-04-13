@@ -4,15 +4,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 private let springBoardServiceName = "com.apple.SpringBoard"
 
 @objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
@@ -174,7 +165,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
       return futures.first!
     }
     let castedFutures = futures.map { unsafeBitCast($0, to: FBFuture<AnyObject>.self) }
-    return combineFutures(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return FBFuture<AnyObject>.combine(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   @objc
@@ -240,7 +231,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
       return futures.first!
     }
     let castedFutures = futures.map { unsafeBitCast($0, to: FBFuture<AnyObject>.self) }
-    return combineFutures(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return FBFuture<AnyObject>.combine(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   @objc

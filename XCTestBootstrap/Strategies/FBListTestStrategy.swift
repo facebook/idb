@@ -58,25 +58,18 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
 
   @objc public func listTests() -> FBFuture<NSArray> {
     let shimBuffer = FBDataBuffer.consumableBuffer()
-    // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-    let selector = NSSelectorFromString("futureWithFutures:")
-    let cls: AnyClass = FBFuture<NSArray>.self
-    let method = (cls as AnyObject).method(for: selector)
-    typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-    let combine = unsafeBitCast(method, to: CombineFunc.self)
-
-    let futures: [AnyObject] = [
+    let futures: [FBFuture<AnyObject>] = [
       unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
       unsafeBitCast(FBProcessOutput<NSNull>(for: shimBuffer).providedThroughFile(), to: FBFuture<AnyObject>.self),
     ]
-    let combined = combine(cls as AnyObject, selector, futures as NSArray)
+    let combined = FBFuture<AnyObject>.combine(futures)
 
     return unsafeBitCast(
       combined
         .onQueue(
           target.workQueue,
           fmap: { tupleObj -> FBFuture<AnyObject> in
-            let tuple = tupleObj as! [AnyObject]
+            let tuple = tupleObj as [AnyObject]
             let shimPath = tuple[0] as! String
             let shimOutput = tuple[1] as! FBProcessFileOutput
             return unsafeBitCast(
@@ -211,17 +204,11 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
               let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
               return XCTestBootstrapError.describe("Listing of tests failed due to xctest binary exiting with non-zero exit code \(exitCodeValue) [\(description)]: \(stdErrReversed)").failFuture()
             }
-            // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-            let selector = NSSelectorFromString("futureWithFutures:")
-            let cls: AnyClass = FBFuture<NSArray>.self
-            let method = (cls as AnyObject).method(for: selector)
-            typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-            let combine = unsafeBitCast(method, to: CombineFunc.self)
-            let futures: [AnyObject] = [
-              unsafeBitCast(output.stopReading(), to: FBFuture<AnyObject>.self) as AnyObject,
-              unsafeBitCast(shimBuffer.finishedConsuming, to: FBFuture<AnyObject>.self) as AnyObject,
+            let futures: [FBFuture<AnyObject>] = [
+              unsafeBitCast(output.stopReading(), to: FBFuture<AnyObject>.self),
+              unsafeBitCast(shimBuffer.finishedConsuming, to: FBFuture<AnyObject>.self),
             ]
-            return combine(cls as AnyObject, selector, futures as NSArray)
+            return unsafeBitCast(FBFuture<AnyObject>.combine(futures), to: FBFuture<AnyObject>.self)
           }),
       to: FBFuture<NSNull>.self
     )

@@ -133,7 +133,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param futures the futures to compose.
  @return a new future with the resolved results of all the composed futures.
  */
-+ (nonnull FBFuture<NSArray<T> *> *)futureWithFutures:(nonnull NSArray<FBFuture<T> *> *)futures NS_SWIFT_UNAVAILABLE("Use BridgeFuture.values instead");
++ (nonnull FBFuture<NSArray<T> *> *)futureWithFutures:(nonnull NSArray<FBFuture<T> *> *)futures NS_SWIFT_NAME(combine(_:));
 
 /**
  Constructrs a Future from an Array of Futures.

@@ -57,11 +57,8 @@ private let kUsageHelpMessage = """
       ecid:ECID                  Limit interactions to a specific Device ECID
   """
 
-// futureWithFutures: is NS_SWIFT_UNAVAILABLE, so call via ObjC runtime
 private func allFutures(_ futures: [AnyObject]) -> FBFuture<NSArray> {
-  let cls: AnyObject = FBFuture<NSArray>.self
-  let result = cls.perform(NSSelectorFromString("futureWithFutures:"), with: futures)!
-  return unsafeDowncast(result.takeUnretainedValue(), to: FBFuture<NSArray>.self)
+  return FBFuture<AnyObject>.combine(futures as! [FBFuture<AnyObject>])
 }
 
 private func writeJSONToStdOut(_ json: Any) {
