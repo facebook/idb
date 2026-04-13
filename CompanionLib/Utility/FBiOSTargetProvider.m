@@ -37,18 +37,7 @@
   if (target.state != FBiOSTargetStateBooted) {
     return [FBFuture futureWithResult:target];
   }
-  id<FBSimulatorLifecycleCommands> lifecycle = (id<FBSimulatorLifecycleCommands>) target;
-  if (![lifecycle conformsToProtocol:@protocol(FBSimulatorLifecycleCommands)]) {
-    return [FBFuture futureWithResult:target];;
-  }
-
-  if (FBXcodeConfiguration.isXcode12_5OrGreater) {
-    return [FBFuture futureWithResult:target];
-  }
-
-  return [[lifecycle
-    connectToBridge]
-    mapReplace:target];
+  return [FBFuture futureWithResult:target];
 }
 
 #pragma mark Private

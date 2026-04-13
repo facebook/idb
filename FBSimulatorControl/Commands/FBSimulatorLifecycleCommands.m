@@ -15,7 +15,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
-#import "FBSimulatorBridge.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
@@ -28,7 +27,6 @@ const int OPEN_URL_RETRIES = 2;
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
-@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 
 @end
 
@@ -183,33 +181,13 @@ const int OPEN_URL_RETRIES = 2;
 - (FBFuture<NSNull *> *)terminateConnections
 {
   FBSimulatorHID *hid = self.hid;
-  FBSimulatorBridge *bridge = self.bridge;
   return [[FBFuture
     futureWithFutures:@[
       (hid ? [hid disconnect] : FBFuture.empty),
-      (bridge ? [bridge disconnect] : FBFuture.empty),
     ]]
     onQueue:self.simulator.workQueue chain:^(FBFuture *_) {
-      // Nullify
       self.hid = nil;
-      self.bridge = nil;
       return FBFuture.empty;
-    }];
-}
-
-#pragma mark Bridge
-
-- (FBFuture<FBSimulatorBridge *> *)connectToBridge
-{
-  if (self.bridge) {
-    return [FBFuture futureWithResult:self.bridge];
-  }
-
-  return [[FBSimulatorBridge
-    bridgeForSimulator:self.simulator]
-    onQueue:self.simulator.workQueue map:^(FBSimulatorBridge *bridge) {
-      self.bridge = bridge;
-      return bridge;
     }];
 }
 
