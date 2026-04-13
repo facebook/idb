@@ -8,9 +8,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
-/// Wraps +[FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-FBFuture<NSArray *> *_Nonnull FBFutureFromArray(NSArray<FBFuture *> * _Nonnull futures);
-
 /// Returns a zero-initialized AMDCalls struct (needed because Swift can't zero-init
 /// structs with _Nonnull function pointer fields).
 static inline AMDCalls FBCreateZeroedAMDCalls(void)

@@ -4,15 +4,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 @objc(FBSimulatorDeletionStrategy)
 public final class FBSimulatorDeletionStrategy: NSObject {
 
@@ -69,7 +60,7 @@ public final class FBSimulatorDeletionStrategy: NSObject {
   @objc
   public class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
     let futures = simulators.map { unsafeBitCast(delete($0), to: FBFuture<AnyObject>.self) }
-    return combineFutures(futures).mapReplace(NSNull()) as! FBFuture<NSNull>
+    return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   // MARK: - Private

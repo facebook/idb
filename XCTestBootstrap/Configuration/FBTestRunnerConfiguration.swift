@@ -7,15 +7,6 @@
 
 import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 private let kEnvShimStartXCTest = "SHIMULATOR_START_XCTEST"
 private let kEnvWaitForDebugger = "XCTOOL_WAIT_FOR_DEBUGGER"
 private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
@@ -181,7 +172,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     }
 
     return unsafeBitCast(
-      combineFutures([
+      FBFuture<AnyObject>.combine([
         unsafeBitCast((target as any FBApplicationCommands).installedApplication(withBundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID), to: FBFuture<AnyObject>.self),
         unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
       ])

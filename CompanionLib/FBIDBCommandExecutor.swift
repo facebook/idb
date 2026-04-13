@@ -492,7 +492,7 @@ import XCTestBootstrap
           let futures = originPaths.map { originPath in
             containerObj.move(from: originPath, to: destinationPath) as! FBFuture<AnyObject>
           }
-          return Self.combineFutures(futures).mapReplace(NSNull())
+          return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
         }) as! FBFuture<NSNull>
   }
 
@@ -523,7 +523,7 @@ import XCTestBootstrap
               let futures = paths.map { originPath in
                 containerObj.copy(fromHost: originPath.path, toContainer: destinationPath) as! FBFuture<AnyObject>
               }
-              return Self.combineFutures(futures).mapReplace(NSNull())
+              return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
             })
       }) as! FBFuture<NSNull>
   }
@@ -592,7 +592,7 @@ import XCTestBootstrap
           let futures = paths.map { path in
             containerObj.remove(path) as! FBFuture<AnyObject>
           }
-          return Self.combineFutures(futures).mapReplace(NSNull())
+          return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
         }) as! FBFuture<NSNull>
   }
 
@@ -615,7 +615,7 @@ import XCTestBootstrap
           let futures = paths.map { path in
             containerObj.contents(ofDirectory: path) as! FBFuture<AnyObject>
           }
-          return Self.combineFutures(futures)
+          return unsafeBitCast(FBFuture<AnyObject>.combine(futures), to: FBFuture<AnyObject>.self)
         }
       )
       .onQueue(
@@ -661,12 +661,6 @@ import XCTestBootstrap
 
   // MARK: - Private Methods
 
-  private static func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-    let cls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)
-    let sel = NSSelectorFromString("futureWithFutures:")
-    return cls.perform(sel, with: futures)!.takeUnretainedValue() as! FBFuture<AnyObject>
-  }
-
   private func applyEnvironmentReplacements(_ environment: [String: String], replacements: [String: String]) -> [String: String] {
     logger.log("Original environment: \(environment)")
     logger.log("Existing replacement mapping: \(replacements)")
@@ -708,7 +702,7 @@ import XCTestBootstrap
           if uninstallFutures.isEmpty {
             return FBFuture(result: NSNull() as AnyObject)
           }
-          return Self.combineFutures(uninstallFutures)
+          return unsafeBitCast(FBFuture<AnyObject>.combine(uninstallFutures), to: FBFuture<AnyObject>.self)
         }) as! FBFuture<NSNull>
   }
 

@@ -7,15 +7,6 @@
 
 import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 @objc(FBCodesignProvider)
 public class FBCodesignProvider: NSObject {
 
@@ -129,7 +120,7 @@ public class FBCodesignProvider: NSObject {
       futures.append(unsafeBitCast(signBundle(atPath: pathToSign), to: FBFuture<AnyObject>.self))
     }
     return unsafeBitCast(
-      combineFutures(futures).mapReplace(NSNull()),
+      FBFuture<AnyObject>.combine(futures).mapReplace(NSNull()),
       to: FBFuture<NSNull>.self
     )
   }

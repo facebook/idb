@@ -134,8 +134,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     concurrent.async(execute: block1)
     concurrent.async(execute: block2)
 
-    // ObjC uses [FBFuture futureWithFutures:] which is unavailable in Swift.
-    // Await each in order instead; since each future resolves with its index, order is deterministic.
+    // Await each in order; since each future resolves with its index, order is deterministic.
     var values: [NSNumber] = []
     for future in [future0, future1, future2] {
       if let value = try? future.await(withTimeout: 1) as? NSNumber {
@@ -199,8 +198,7 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     concurrent.async(execute: block1)
     concurrent.async(execute: block2)
 
-    // ObjC uses [FBFuture futureWithFutures:] which is unavailable in Swift.
-    // Await each in order instead; since each future resolves with its index, order is deterministic.
+    // Await each in order; since each future resolves with its index, order is deterministic.
     var values: [NSNumber] = []
     for future in [future0, future1, future2] {
       if let value = try? future.await(withTimeout: 1) as? NSNumber {

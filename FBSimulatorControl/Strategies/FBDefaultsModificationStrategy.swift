@@ -9,15 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// Helper to call [FBFuture futureWithFutures:] which is NS_SWIFT_UNAVAILABLE.
-private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObject> {
-  let sel = NSSelectorFromString("futureWithFutures:")
-  let method = FBFuture<AnyObject>.method(for: sel)
-  typealias Signature = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<AnyObject>
-  let impl = unsafeBitCast(method, to: Signature.self)
-  return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
-}
-
 @objc(FBDefaultsModificationStrategy)
 public class FBDefaultsModificationStrategy: NSObject {
 
@@ -252,7 +243,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
       .onQueue(
         simulator.workQueue,
         fmap: { (_: Any) -> FBFuture<AnyObject> in
-          return combineFutures(futures).mapReplace(NSNull())
+          return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
         }
       )
       .onQueue(

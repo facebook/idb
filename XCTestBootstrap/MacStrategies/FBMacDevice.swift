@@ -144,14 +144,7 @@ import IOKit
     }
 
     if !queuedFutures.isEmpty {
-      let sel = NSSelectorFromString("futureWithFutures:")
-      let method = (FBFuture<AnyObject>.self as AnyObject).method(for: sel)!
-      typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> AnyObject
-      let combine = unsafeBitCast(method, to: CombineFunc.self)
-      return unsafeDowncast(
-        combine(FBFuture<AnyObject>.self as AnyObject, sel, queuedFutures as NSArray),
-        to: FBFuture<NSNull>.self
-      )
+      return unsafeBitCast(FBFuture<AnyObject>.combine(queuedFutures), to: FBFuture<NSNull>.self)
     }
     return FBFuture(result: NSNull())
   }

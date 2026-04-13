@@ -124,18 +124,12 @@ private let XcodebuildDestinationTimeoutSecs = "180"
     }
     logger.log("Terminating abandoned xcodebuild processes \(FBCollectionInformation.oneLineDescription(from: processes))")
     let strategy = FBProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
-    var futures: [AnyObject] = []
+    var futures: [FBFuture<AnyObject>] = []
     for process in processes {
       let termination = unsafeBitCast(strategy.killProcessIdentifier(process.processIdentifier), to: FBFuture<AnyObject>.self).mapReplace(process)
-      futures.append(termination as AnyObject)
+      futures.append(termination)
     }
-    // futureWithFutures: is NS_SWIFT_UNAVAILABLE, use ObjC runtime
-    let selector = NSSelectorFromString("futureWithFutures:")
-    let cls: AnyClass = FBFuture<NSArray>.self
-    let method = (cls as AnyObject).method(for: selector)
-    typealias CombineFunc = @convention(c) (AnyObject, Selector, NSArray) -> FBFuture<NSArray>
-    let combine = unsafeBitCast(method, to: CombineFunc.self)
-    return combine(cls as AnyObject, selector, futures as NSArray)
+    return FBFuture<AnyObject>.combine(futures)
   }
 
   @objc(xcodeBuildPathWithError:) public static func xcodeBuildPath() throws -> String {

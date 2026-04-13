@@ -62,9 +62,7 @@ import XCTestBootstrap
           if killFutures.isEmpty {
             return FBFuture(result: NSNull() as AnyObject)
           }
-          let cls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)
-          let sel = NSSelectorFromString("futureWithFutures:")
-          return cls.perform(sel, with: killFutures)!.takeUnretainedValue() as! FBFuture<AnyObject>
+          return unsafeBitCast(FBFuture<AnyObject>.combine(killFutures), to: FBFuture<AnyObject>.self)
         }
       )
       .mapReplace(NSNull()) as! FBFuture<NSNull>
@@ -267,13 +265,11 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
     stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
   }
 
-  let futureCls = unsafeBitCast(NSClassFromString("FBFuture")!, to: NSObject.Type.self)
-  let futuresSel = NSSelectorFromString("futureWithFutures:")
-  let combined = futureCls.perform(futuresSel, with: [stdOutFuture, stdErrFuture])!.takeUnretainedValue() as! FBFuture<AnyObject>
+  let combined = FBFuture<AnyObject>.combine([stdOutFuture, stdErrFuture])
   return combined.onQueue(
     queue,
     map: { results -> AnyObject in
-      let resultsArray = results as! [AnyObject]
+      let resultsArray = results as [AnyObject]
       let stdOutResult = resultsArray[0]
       let stdErrResult = resultsArray[1]
       let outputCls = unsafeBitCast(FBProcessOutput<AnyObject>.self, to: NSObject.Type.self)
