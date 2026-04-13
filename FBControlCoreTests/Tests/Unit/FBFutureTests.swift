@@ -9,10 +9,6 @@ import XCTest
 
 @testable import FBControlCore
 
-private func composeFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<NSArray> {
-  return FBFuture<AnyObject>.combine(futures)
-}
-
 final class FBFutureTests: XCTestCase {
 
   var queue: DispatchQueue!
@@ -151,7 +147,7 @@ final class FBFutureTests: XCTestCase {
     let future1 = FBMutableFuture<NSNumber>()
     let future2 = FBMutableFuture<NSNumber>()
     let future3 = FBMutableFuture<NSNumber>()
-    let compositeFuture = composeFutures([future1, future2, future3])
+    let compositeFuture = FBFuture<AnyObject>.combine([future1, future2, future3])
       .onQueue(
         DispatchQueue.global(qos: .userInitiated),
         notifyOfCompletion: { _ in
@@ -175,7 +171,7 @@ final class FBFutureTests: XCTestCase {
   }
 
   func testCompositeImmediateValue() {
-    let compositeFuture = composeFutures([
+    let compositeFuture = FBFuture<AnyObject>.combine([
       FBFuture(result: NSNumber(value: 0)),
       FBFuture(result: NSNumber(value: 1)),
       FBFuture(result: NSNumber(value: 2)),
@@ -186,7 +182,7 @@ final class FBFutureTests: XCTestCase {
   }
 
   func testCompositeEmpty() {
-    let compositeFuture = composeFutures([])
+    let compositeFuture = FBFuture<AnyObject>.combine([])
 
     XCTAssertEqual(compositeFuture.state, .done)
     XCTAssertEqual(compositeFuture.result, [] as NSArray)
@@ -195,7 +191,7 @@ final class FBFutureTests: XCTestCase {
   func testCompositeFailure() {
     let error = NSError(domain: "foo", code: 2, userInfo: nil)
     let pending = FBMutableFuture<NSNumber>()
-    let compositeFuture = composeFutures([
+    let compositeFuture = FBFuture<AnyObject>.combine([
       FBFuture(result: NSNumber(value: 0)),
       pending,
       FBFuture(error: error),
@@ -210,7 +206,7 @@ final class FBFutureTests: XCTestCase {
     let pending = FBMutableFuture<NSNumber>()
     let cancelled = FBMutableFuture<NSNumber>()
     cancelled.cancel()
-    let compositeFuture = composeFutures([
+    let compositeFuture = FBFuture<AnyObject>.combine([
       FBFuture(result: NSNumber(value: 0)),
       pending,
       cancelled,

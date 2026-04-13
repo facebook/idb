@@ -111,28 +111,13 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
       .onQueue(
         device.workQueue,
         fmap: { bundle -> FBFuture<AnyObject> in
-          let platformSelectFuture = self.platformSelectCommand()
-          let localTargetFuture = FBDeviceDebuggerCommands.localTarget(forApplicationAtPath: path)
-          let remoteTargetFuture = self.remoteTarget(forBundleID: bundle.identifier)
-          let processConnectFuture = FBDeviceDebuggerCommands.processConnect(forPort: port)
-          // Chain: start with platformSelect, then accumulate the rest
-          return platformSelectFuture.onQueue(
-            device.workQueue,
-            fmap: { cmd1 -> FBFuture<AnyObject> in
-              return localTargetFuture.onQueue(
-                device.workQueue,
-                fmap: { cmd2 -> FBFuture<AnyObject> in
-                  return remoteTargetFuture.onQueue(
-                    device.workQueue,
-                    fmap: { cmd3 -> FBFuture<AnyObject> in
-                      return processConnectFuture.onQueue(
-                        device.workQueue,
-                        map: { cmd4 -> AnyObject in
-                          return [cmd1, cmd2, cmd3, cmd4] as NSArray
-                        })
-                    })
-                })
-            })
+          return unsafeBitCast(
+            FBFuture<AnyObject>.combine([
+              unsafeBitCast(self.platformSelectCommand(), to: FBFuture<AnyObject>.self),
+              unsafeBitCast(FBDeviceDebuggerCommands.localTarget(forApplicationAtPath: path), to: FBFuture<AnyObject>.self),
+              unsafeBitCast(self.remoteTarget(forBundleID: bundle.identifier), to: FBFuture<AnyObject>.self),
+              unsafeBitCast(FBDeviceDebuggerCommands.processConnect(forPort: port), to: FBFuture<AnyObject>.self),
+            ]), to: FBFuture<AnyObject>.self)
         })) as! FBFuture<NSArray>
   }
 

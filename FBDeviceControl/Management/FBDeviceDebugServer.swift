@@ -89,18 +89,18 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
       connectionReadCompleted.resolve(withResult: NSNull())
     }
 
-    let socketFuture = unsafeBitCast(socketReadCompleted, to: FBFuture<NSNull>.self)
-    let connectionFuture = unsafeBitCast(connectionReadCompleted, to: FBFuture<NSNull>.self)
-    let raceFuture = FBFuture<NSNull>(race: [socketFuture, connectionFuture])
-      .onQueue(
-        connectionToSocketQueue,
-        doOnResolved: { _ in
-          logger.log("Closing socket file descriptor \(socket)")
-          close(socket)
-        }
-      )
-      .mapReplace(NSNull())
-    return unsafeBitCast(raceFuture, to: FBFuture<NSNull>.self)
+    let combinedFuture = FBFuture<AnyObject>.combine([
+      socketReadCompleted,
+      connectionReadCompleted,
+    ])
+    .onQueue(
+      connectionToSocketQueue,
+      doOnResolved: { _ in
+        logger.log("Closing socket file descriptor \(socket)")
+        close(socket)
+      }
+    )
+    return unsafeBitCast(combinedFuture, to: FBFuture<NSNull>.self)
   }
 }
 

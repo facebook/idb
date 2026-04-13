@@ -87,17 +87,16 @@ import XCTestBootstrap
         return FBIDBError.describe("Request for UI Test, but no app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
-      return target.installedApplication(withBundleID: testTargetAppBundleID)
-        .onQueue(
-          target.asyncQueue,
-          fmap: { appUnderTest in
-            target.installedApplication(withBundleID: testHostBundleID)
-              .onQueue(
-                target.asyncQueue,
-                map: { testHostApp -> AnyObject in
-                  return FBTestApplicationsPair(applicationUnderTest: appUnderTest as FBInstalledApplication, testHostApp: testHostApp as FBInstalledApplication)
-                })
-          }) as! FBFuture<FBTestApplicationsPair>
+      return FBFuture<AnyObject>.combine([
+        target.installedApplication(withBundleID: testTargetAppBundleID) as! FBFuture<AnyObject>,
+        target.installedApplication(withBundleID: testHostBundleID) as! FBFuture<AnyObject>,
+      ])
+      .onQueue(
+        target.asyncQueue,
+        map: { results -> AnyObject in
+          let applications = results as! [FBInstalledApplication]
+          return FBTestApplicationsPair(applicationUnderTest: applications[0], testHostApp: applications[1])
+        }) as! FBFuture<FBTestApplicationsPair>
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {

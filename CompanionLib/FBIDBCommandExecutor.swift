@@ -39,25 +39,22 @@ import XCTestBootstrap
   // MARK: - Installation
 
   @objc public func list_apps(_ fetchProcessState: Bool) -> FBFuture<NSDictionary> {
-    let installedFuture: FBFuture<AnyObject> = target.installedApplications() as! FBFuture<AnyObject>
-    let runningFuture: FBFuture<AnyObject> = fetchProcessState ? target.runningApplications() as! FBFuture<AnyObject> : FBFuture(result: NSDictionary())
-    return
-      installedFuture
-      .onQueue(
-        target.workQueue,
-        fmap: { installed in
-          runningFuture.onQueue(
-            self.target.workQueue,
-            map: { running -> AnyObject in
-              let installedApps = installed as! [FBInstalledApplication]
-              let runningApps = running as! [String: NSNumber]
-              let listing = NSMutableDictionary()
-              for application in installedApps {
-                listing[application] = runningApps[application.bundle.identifier] ?? NSNull()
-              }
-              return listing
-            })
-        }) as! FBFuture<NSDictionary>
+    return FBFuture<AnyObject>.combine([
+      target.installedApplications() as! FBFuture<AnyObject>,
+      fetchProcessState ? target.runningApplications() as! FBFuture<AnyObject> : FBFuture(result: NSDictionary()),
+    ])
+    .onQueue(
+      target.workQueue,
+      map: { results -> AnyObject in
+        let tuple = results as [AnyObject]
+        let installedApps = tuple[0] as! [FBInstalledApplication]
+        let runningApps = tuple[1] as! [String: NSNumber]
+        let listing = NSMutableDictionary()
+        for application in installedApps {
+          listing[application] = runningApps[application.bundle.identifier] ?? NSNull()
+        }
+        return listing
+      }) as! FBFuture<NSDictionary>
   }
 
   @objc public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) -> FBFuture<FBInstalledArtifact> {
@@ -872,22 +869,24 @@ import XCTestBootstrap
           } catch {
             return FBFuture(error: error as NSError)
           }
-          return self.target.installApplication(withPath: appBundle.path)
-            .onQueue(
-              self.target.asyncQueue,
-              fmap: { installed in
-                (self.storageManager.application.saveBundle(appBundle) as! FBFuture<AnyObject>)
-                  .onQueue(
-                    self.target.asyncQueue,
-                    fmap: { _ -> FBFuture<AnyObject> in
-                      if makeDebuggable && userDevelopmentAppIsRequired {
-                        if installed.installType != .userDevelopment {
-                          return FBIDBError.describe("\(appBundle.identifier) is not a user-development signed app and cannot be debugged on this device").failFuture()
-                        }
-                      }
-                      return FBFuture(result: FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: appBundle.path)) as AnyObject)
-                    })
-              })
+          return FBFuture<AnyObject>.combine([
+            self.target.installApplication(withPath: appBundle.path) as! FBFuture<AnyObject>,
+            // TODO: currently we have to persist it even if app is not used for debugging
+            // as installed apps are referenced from xctestrun files and expanded by idb
+            // by using its own application storage. Fix this by replacing xctestrun
+            // placeholders by app bundle paths instead
+            self.storageManager.application.saveBundle(appBundle) as! FBFuture<AnyObject>,
+          ])
+          .onQueue(
+            self.target.asyncQueue,
+            fmap: { results -> FBFuture<AnyObject> in
+              let tuple = results as [AnyObject]
+              let installedApp = tuple[0] as! FBInstalledApplication
+              if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
+                return FBIDBError.describe("Requested debuggable install of \(installedApp) but User Development signing is required").failFuture()
+              }
+              return FBFuture(result: FBInstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: installedApp.bundle.path)) as AnyObject)
+            })
         }) as! FBFuture<FBInstalledArtifact>
   }
 
