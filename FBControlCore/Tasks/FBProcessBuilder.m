@@ -12,7 +12,6 @@
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
-#import "FBProcessSpawnConfiguration.h"
 #import "FBProcessStream.h"
 #import "FBSubprocess.h"
 

@@ -551,7 +551,7 @@ import IOKit
     )
   }
 
-  @objc public func launchProcess(_ configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  @objc public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     return FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: self.logger!)
   }
 }

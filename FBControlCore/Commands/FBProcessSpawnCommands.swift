@@ -17,7 +17,7 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
   // MARK: Short-Running Processes
 
   @objc
-  public class func launchAndNotifyOfCompletion(_ configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSNumber> {
+  public class func launchAndNotifyOfCompletion(_ configuration: FBProcessSpawnConfiguration, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSNumber> {
     let result = commands.launchProcess(configuration)
       .onQueue(
         queue,
@@ -29,14 +29,14 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
   }
 
   @objc
-  public class func launchConsumingStdout(_ configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSString> {
+  public class func launchConsumingStdout(_ configuration: FBProcessSpawnConfiguration, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSString> {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
       stdIn: configuration.io.stdIn,
       stdOut: FBProcessOutput<AnyObject>(for: consumer),
       stdErr: configuration.io.stdOut
     )
-    let derived = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+    let derived = FBProcessSpawnConfiguration(
       launchPath: configuration.launchPath,
       arguments: configuration.arguments,
       environment: configuration.environment,
@@ -60,7 +60,7 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
     exitCodeFuture: FBMutableFuture<NSNumber>,
     signalFuture: FBMutableFuture<NSNumber>,
     processIdentifier: pid_t,
-    configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>,
+    configuration: FBProcessSpawnConfiguration,
     queue: DispatchQueue,
     logger: (any FBControlCoreLogger)?
   ) {

@@ -280,7 +280,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   // MARK: FBProcessSpawnConfiguration
 
   func testProcessSpawnConfigurationInit() {
-    let config = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+    let config = FBProcessSpawnConfiguration(
       launchPath: "/usr/bin/env",
       arguments: ["echo", "hello"],
       environment: ["PATH": "/usr/bin"],
@@ -295,7 +295,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   }
 
   func testProcessSpawnConfigurationProcessName() {
-    let config = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+    let config = FBProcessSpawnConfiguration(
       launchPath: "/usr/local/bin/my_tool",
       arguments: [],
       environment: [:],
@@ -308,22 +308,22 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   func testProcessSpawnConfigurationEquality() {
     let io = makeIO()
-    let a = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
-    let b = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
+    let a = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
+    let b = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
 
     XCTAssertEqual(a, b)
   }
 
   func testProcessSpawnConfigurationInequalityByMode() {
     let io = makeIO()
-    let a = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .posixSpawn)
-    let b = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .launchd)
+    let a = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .posixSpawn)
+    let b = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .launchd)
 
     XCTAssertNotEqual(a, b)
   }
 
   func testProcessSpawnConfigurationDescription() {
-    let config = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+    let config = FBProcessSpawnConfiguration(
       launchPath: "/usr/bin/env",
       arguments: ["--help"],
       environment: [:],

@@ -251,10 +251,10 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
         return FBFuture(error: error) as! FBFuture<AnyObject>
       }
       launchPath = appBundle.binary?.path ?? launchPath
-      let spawnConfiguration = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
+      let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
       return FBListTestStrategy.listTestProcess(withSpawnConfiguration: spawnConfiguration, onTarget: target, timeout: configuration.testTimeout, logger: logger)
     } else {
-      let spawnConfiguration = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
+      let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
       let adapter = FBArchitectureProcessAdapter()
 
       return unsafeBitCast(
@@ -264,13 +264,13 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
       .onQueue(
         target.workQueue,
         fmap: { mappedConfigObj -> FBFuture<AnyObject> in
-          let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>
+          let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration
           return FBListTestStrategy.listTestProcess(withSpawnConfiguration: mappedConfig, onTarget: target, timeout: configuration.testTimeout, logger: logger)
         })
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>, onTarget target: FBiOSTarget & FBProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & FBProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     return unsafeBitCast(target.launchProcess(spawnConfiguration), to: FBFuture<AnyObject>.self)
       .onQueue(
         target.workQueue,

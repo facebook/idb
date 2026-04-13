@@ -29,11 +29,11 @@ public class FBArchitectureProcessAdapter: NSObject {
   ///
   /// Convenience method for `adaptProcessConfiguration(_:toAnyArchitectureIn:hostArchitectures:queue:temporaryDirectory:)`
   @objc public func adaptProcessConfiguration(
-    _ processConfiguration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>,
+    _ processConfiguration: FBProcessSpawnConfiguration,
     toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
     queue: DispatchQueue,
     temporaryDirectory: URL
-  ) -> FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>> {
+  ) -> FBFuture<FBProcessSpawnConfiguration> {
     return adaptProcessConfiguration(
       processConfiguration,
       toAnyArchitectureIn: requestedArchitectures,
@@ -58,17 +58,17 @@ public class FBArchitectureProcessAdapter: NSObject {
 
   /// Force binaries to be launched in desired architectures.
   @objc public func adaptProcessConfiguration(
-    _ processConfiguration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>,
+    _ processConfiguration: FBProcessSpawnConfiguration,
     toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
     hostArchitectures: Set<FBArchitecture>,
     queue: DispatchQueue,
     temporaryDirectory: URL
-  ) -> FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>> {
+  ) -> FBFuture<FBProcessSpawnConfiguration> {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
       return
         FBControlCoreError
         .describe("Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: Array(requestedArchitectures))) compatible with \(FBCollectionInformation.oneLineDescription(from: Array(hostArchitectures)))")
-        .failFuture() as! FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>>
+        .failFuture() as! FBFuture<FBProcessSpawnConfiguration>
     }
 
     return unsafeBitCast(
@@ -96,7 +96,7 @@ public class FBArchitectureProcessAdapter: NSObject {
                   // DYLD_LIBRARY_PATH adds additional search paths for required "*.dylib"s in binary
                   updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
                   updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
-                  return FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+                  return FBProcessSpawnConfiguration(
                     launchPath: extractedBinary,
                     arguments: processConfiguration.arguments,
                     environment: updatedEnvironment as [String: String],
@@ -105,7 +105,7 @@ public class FBArchitectureProcessAdapter: NSObject {
                   )
                 })
           }),
-      to: FBFuture<FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>>.self
+      to: FBFuture<FBProcessSpawnConfiguration>.self
     )
   }
 
@@ -138,7 +138,7 @@ public class FBArchitectureProcessAdapter: NSObject {
 
   private func extractArchitecture(
     _ architecture: FBArchitecture,
-    processConfiguration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>,
+    processConfiguration: FBProcessSpawnConfiguration,
     queue: DispatchQueue,
     outputPath: URL
   ) -> FBFuture<NSNull> {

@@ -13,7 +13,7 @@ import XCTest
 final class FBArchitectureProcessAdapterTests: XCTestCase {
 
   var adapter: FBArchitectureProcessAdapter!
-  var processConfiguration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>!
+  var processConfiguration: FBProcessSpawnConfiguration!
   let targetQueue = DispatchQueue(label: "test_queue", qos: .userInteractive)
   var tmpDir: FBTemporaryDirectory!
 
@@ -27,7 +27,7 @@ final class FBArchitectureProcessAdapterTests: XCTestCase {
       .await(withTimeout: 2) as! String // swiftlint:disable:this force_cast
   }
 
-  func adaptedProcess(requested: Set<FBArchitecture>, host: Set<FBArchitecture>) throws -> FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject> {
+  func adaptedProcess(requested: Set<FBArchitecture>, host: Set<FBArchitecture>) throws -> FBProcessSpawnConfiguration {
     let tmpdir = tmpDir.temporaryDirectory()
     return
       try adapter
