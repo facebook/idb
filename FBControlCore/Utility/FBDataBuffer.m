@@ -7,7 +7,7 @@
 
 #import "FBDataBuffer.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 
 @interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, FBAccumulatingBuffer>
 

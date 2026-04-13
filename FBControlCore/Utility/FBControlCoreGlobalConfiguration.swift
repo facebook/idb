@@ -7,6 +7,9 @@
 
 import Foundation
 
+public let FBControlCoreStderrLogging = "FBCONTROLCORE_LOGGING"
+public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
+
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
 @objc(FBControlCoreGlobalConfiguration)

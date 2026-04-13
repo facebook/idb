@@ -10,7 +10,6 @@
 #import <FBDeviceControl/FBDeviceControl-Swift.h>
 
 #import "FBAMDevice.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
 @implementation FBDeviceManager

@@ -10,8 +10,7 @@
 #include <dlfcn.h>
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
-#import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBControlCoreLogger.h"
 
 void *FBGetSymbolFromHandle(void *handle, const char *name)

@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 
 static NSString *const CDHashPrefix = @"CDHash=";
 

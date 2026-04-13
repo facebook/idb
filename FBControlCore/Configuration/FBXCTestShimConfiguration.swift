@@ -7,6 +7,8 @@
 
 import Foundation
 
+public let FBXCTestShimDirectoryEnvironmentOverride = "TEST_SHIMS_DIRECTORY"
+
 private let keySimulatorTestShim = "ios_simulator_test_shim"
 private let keyMacTestShim = "mac_test_shim"
 

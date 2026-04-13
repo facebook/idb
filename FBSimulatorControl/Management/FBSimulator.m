@@ -18,7 +18,6 @@
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorControl-Swift.h"
-#import "FBSimulatorError.h"
 #import "FBSimulatorFileCommands.h"
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorLifecycleCommands.h"

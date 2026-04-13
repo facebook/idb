@@ -7,7 +7,7 @@
 
 #import "FBProcessIO.h"
 
-#import "FBControlCoreError.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBProcessStream.h"
 
 @interface FBProcessIO ()

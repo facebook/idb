@@ -15,8 +15,7 @@
 #include <mach-o/swap.h>
 
 #import "FBControlCore-Swift.h"
-#import "FBControlCoreError.h"
-#import "FBControlCoreGlobalConfiguration.h"
+#import "FBControlCore-SwiftImport.h"
 
 FBBinaryArchitecture const FBBinaryArchitecturei386 = @"i386";
 FBBinaryArchitecture const FBBinaryArchitecturex86_64 = @"x86_64";

@@ -12,7 +12,6 @@
 
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceEraseCommands.h"
 
 #pragma clang diagnostic push

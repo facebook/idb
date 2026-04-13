@@ -7,10 +7,11 @@
 
 #import "FBDeviceEraseCommands.h"
 
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAMDevice.h"
 #import "FBAMRestorableDeviceManager.h"
 #import "FBDevice.h"
-#import "FBDeviceControlError.h"
 
 @interface FBDeviceEraseOperation : NSObject <FBiOSTargetSetDelegate>
 

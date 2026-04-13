@@ -13,7 +13,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorControl-Swift.h"
-#import "FBSimulatorError.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

@@ -22,7 +22,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlFrameworkLoader.h"
-#import "FBSimulatorError.h"
 
 /**
  Mutable collector for profiling data during an accessibility request.

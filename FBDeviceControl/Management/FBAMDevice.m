@@ -17,7 +17,6 @@
 #import "FBAMDeviceManager.h"
 #import "FBAMRestorableDevice.h"
 #import "FBDeviceActivationCommands.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
 #pragma mark - FBAMDevice Implementation

@@ -7,8 +7,6 @@
 
 #import "FBAMRestorableDevice.h"
 
-#import "FBDeviceControlError.h"
-
 static NSString *const UnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice

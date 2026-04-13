@@ -7,8 +7,9 @@
 
 #import "FBAMRestorableDeviceManager.h"
 
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
 @interface FBAMRestorableDeviceManager ()
