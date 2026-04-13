@@ -500,6 +500,50 @@ static NSString *const EventClassStringOrientation = @"orientation";
 
 @end
 
+static NSString *const ShakeDarwinNotification = @"com.apple.UIKit.SimulatorShake";
+
+@interface FBSimulatorHIDEvent_Shake : NSObject <FBSimulatorHIDEventPayload>
+@end
+
+@implementation FBSimulatorHIDEvent_Shake
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return NSData.data;
+}
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
+{
+  return [FBFuture onQueue:hid.queue resolveValue:^NSNull *(NSError **error) {
+    if (![hid postDarwinNotification:ShakeDarwinNotification error:error]) {
+      return nil;
+    }
+    return NSNull.null;
+  }];
+}
+
+- (NSString *)description
+{
+  return @"Shake";
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+- (BOOL)isEqual:(id)event
+{
+  return [event isKindOfClass:self.class];
+}
+
+- (NSUInteger)hash
+{
+  return ShakeDarwinNotification.hash;
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 #pragma mark - Initializers
@@ -539,6 +583,11 @@ static NSString *const EventClassStringOrientation = @"orientation";
 + (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation
 {
   return [[FBSimulatorHIDEvent_DeviceOrientation alloc] initWithOrientation:orientation];
+}
+
++ (id<FBSimulatorHIDEventPayload>)shake
+{
+  return [[FBSimulatorHIDEvent_Shake alloc] init];
 }
 
 #pragma mark Multiple Payload Events

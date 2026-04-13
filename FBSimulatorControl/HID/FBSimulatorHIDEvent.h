@@ -139,6 +139,14 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation;
 
+/**
+ A HID Event that triggers a shake gesture.
+ Sent via Darwin notification (com.apple.UIKit.SimulatorShake).
+
+ @return a new HID Event.
+ */
++ (id<FBSimulatorHIDEventPayload>)shake;
+
 #pragma mark Multiple Payload Events
 
 /**

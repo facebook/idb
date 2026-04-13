@@ -72,4 +72,33 @@
   XCTAssertEqual(uniqueEvents.count, 4u, @"All four orientations should be distinct");
 }
 
+#pragma mark Shake
+
+- (void)testShakeFactory
+{
+  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent shake];
+  XCTAssertNotNil(event);
+  XCTAssertTrue([event conformsToProtocol:@protocol(FBSimulatorHIDEvent)]);
+}
+
+- (void)testShakeEquality
+{
+  id<FBSimulatorHIDEvent> event1 = [FBSimulatorHIDEvent shake];
+  id<FBSimulatorHIDEvent> event2 = [FBSimulatorHIDEvent shake];
+  XCTAssertEqualObjects(event1, event2);
+}
+
+- (void)testShakeCopying
+{
+  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent shake];
+  id<FBSimulatorHIDEvent> copy = [event copyWithZone:nil];
+  XCTAssertEqual(event, copy, @"Immutable event should return self from copy");
+}
+
+- (void)testShakeDescription
+{
+  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent shake];
+  XCTAssertTrue([[event description] containsString:@"Shake"]);
+}
+
 @end
