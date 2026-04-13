@@ -53,6 +53,8 @@
       return [self setHardwareKeyboardEnabled:enabled];
     case FBSimulatorSettingSlowAnimations:
       return [self setSlowAnimationsEnabled:enabled];
+    case FBSimulatorSettingIncreaseContrast:
+      return [self setIncreaseContrastEnabled:enabled];
     default:
       return [[FBSimulatorError describeFormat:@"Unknown simulator setting: %lu", (unsigned long)setting] failFuture];
   }
@@ -381,6 +383,16 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
 - (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled
 {
   return [self setDarwinNotificationState:enabled name:SlowAnimationsNotification];
+}
+
+- (FBFuture<NSNull *> *)setIncreaseContrastEnabled:(BOOL)enabled
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
+    if (![self.simulator.device setIncreaseContrastEnabled:enabled error:error]) {
+      return nil;
+    }
+    return NSNull.null;
+  }];
 }
 
 #pragma mark Private
