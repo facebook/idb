@@ -205,5 +205,10 @@
 
 - (BOOL)resetPrivacyAccessForService:(NSString *)service bundleID:(NSString *)bundleID error:(NSError **)error;
 
+// Keychain commands (SimDeviceKeychain category)
+// Uses host_support_mig_reset_keychain MIG call — same as `simctl keychain reset`.
+
+- (BOOL)resetKeychainWithError:(NSError **)error;
+
 @end
 
