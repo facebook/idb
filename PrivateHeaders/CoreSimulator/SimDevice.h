@@ -41,9 +41,9 @@
 
 + (BOOL)supportsFeature:(NSString *)arg1 deviceType:(SimDeviceType *)arg2 runtime:(SimRuntime *)arg3;
 + (BOOL)isValidState:(unsigned long long)arg1;
-+ (instancetype)simDevice:(NSString *)arg1 UDID:(NSUUID *)arg2 deviceTypeIdentifier:(NSString *)arg3 runtimeIdentifier:(NSString *)arg4 state:(unsigned long long)arg5 deviceSet:(SimDeviceSet *)arg6;
++ (instancetype)simDevice:(NSString *)arg1 UDID:(NSUUID *)arg2 deviceTypeIdentifier:(NSString *)arg3 runtimeIdentifier:(NSString *)arg4 runtimePolicy:(NSString *)arg5 runtimeSpecifier:(NSString *)arg6 state:(unsigned long long)arg7 lastBootedAt:(NSDate *)arg8 deviceSet:(SimDeviceSet *)arg9;
 + (instancetype)simDeviceAtPath:(NSString *)arg1 deviceSet:(SimDeviceSet *)arg2;
-+ (instancetype)createDeviceWithName:(NSString *)arg1 deviceSet:(SimDeviceSet *)arg2 deviceType:(SimDeviceType *)arg3 runtime:(SimRuntime *)arg4 initialDataPath:(NSString *)arg5;
++ (instancetype)createDeviceWithName:(NSString *)arg1 deviceSet:(SimDeviceSet *)arg2 deviceType:(SimDeviceType *)arg3 runtime:(SimRuntime *)arg4 initialDataPath:(NSString *)arg5 error:(NSError **)arg6;
 @property (copy, nonatomic) NSDictionary *bootEnvironmentExtra;
 @property (retain, nonatomic) NSMutableArray *darwinNotificationTokens;
 @property (retain, nonatomic) NSDate *bootStartedAt;
@@ -159,7 +159,7 @@
 - (void)registerPortsWithLaunchd;
 @property (nonatomic, copy, readonly) NSArray *launchDaemonsPaths;
 - (BOOL)removeLaunchdJobWithError:(NSError **)arg1;
-- (BOOL)createLaunchdJobWithError:(NSError **)arg1 extraEnvironment:(NSDictionary *)arg2 disabledJobs:(NSDictionary *)arg3;
+- (BOOL)createLaunchdJobWithBinpref:(NSUInteger)arg1 enableCheckedAllocations:(BOOL)arg2 extraEnvironment:(NSDictionary *)arg3 disabledJobs:(NSDictionary *)arg4 error:(NSError **)arg5;
 - (BOOL)createDarwinNotificationProxiesWithError:(NSError **)arg1;
 - (BOOL)createDarwinNotificationProxy:(NSString *)arg1 toSimAs:(NSString *)arg2 withState:(BOOL)arg3 error:(NSError **)arg4;
 - (BOOL)clearTmpWithError:(NSError **)arg1;
@@ -175,7 +175,7 @@
 - (NSString *)description;
 - (void)dealloc;
 - (BOOL)_onBootstrapQueue_initializeDeviceIO:(NSError **)arg1;
-- (instancetype)initDevice:(NSString *)arg1 UDID:(NSUUID *)arg2 deviceTypeIdentifier:(NSString *)arg3 runtimeIdentifier:(NSString *)arg4 state:(unsigned long long)arg5 initialDataPath:(NSString *)arg6 deviceSet:(SimDeviceSet *)arg7;
+- (instancetype)initDevice:(NSString *)arg1 UDID:(NSUUID *)arg2 deviceTypeIdentifier:(NSString *)arg3 runtimeIdentifier:(NSString *)arg4 runtimePolicy:(NSString *)arg5 runtimeSpecifier:(NSString *)arg6 state:(unsigned long long)arg7 initialDataPath:(NSString *)arg8 preparingForDeletion:(BOOL)arg9 isEphemeral:(BOOL)arg10 lastBootedAt:(NSDate *)arg11 deviceSet:(SimDeviceSet *)arg12;
 - (void)triggerCloudSyncWithCompletionHandler:(CDUnknownBlockType)arg1;
 - (void)launchApplicationAsyncWithID:(NSString *)arg1 options:(NSDictionary *)arg2 completionHandler:(void(^)(NSError *, pid_t))arg3;
 - (int)spawnWithPath:(NSString *)arg1 options:(NSDictionary *)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 error:(NSError **)arg4;
