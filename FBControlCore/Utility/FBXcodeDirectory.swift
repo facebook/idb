@@ -46,9 +46,10 @@ public final class FBXcodeDirectory: NSObject {
           }
           let resolved = (directory as NSString).resolvingSymlinksInPath
 
-          var error: NSError?
-          if !isValidXcodeDirectory(resolved, error: &error) {
-            return FBFuture<AnyObject>(error: error!)
+          do {
+            try Self.validateXcodeDirectory(resolved)
+          } catch {
+            return FBFuture<AnyObject>(error: error)
           }
           return FBFuture<AnyObject>(result: resolved as NSString)
         }) as! FBFuture<NSString>
@@ -56,40 +57,36 @@ public final class FBXcodeDirectory: NSObject {
 
   @objc public class func symlinkedDeveloperDirectory() throws -> String {
     let directory = ("/var/db/xcode_select_link" as NSString).resolvingSymlinksInPath
-    var error: NSError?
-    if !isValidXcodeDirectory(directory, error: &error) {
-      throw error!
-    }
+    try validateXcodeDirectory(directory)
     return directory
   }
 
   // MARK: Private
 
-  private class func isValidXcodeDirectory(_ directory: String?, error: NSErrorPointer) -> Bool {
+  private class func validateXcodeDirectory(_ directory: String?) throws {
     guard let directory else {
-      return
+      throw
         FBControlCoreError
         .describe("Xcode Path is nil")
-        .failBool(error)
+        .build()
     }
     if directory == "/Library/Developer/CommandLineTools" {
-      return
+      throw
         FBControlCoreError
         .describe("`xcode-select -p` returned /Library/Developer/CommandLineTools but idb requires a full xcode install.\(HelpText)")
-        .failBool(error)
+        .build()
     }
     if !FileManager.default.fileExists(atPath: directory) {
-      return
+      throw
         FBControlCoreError
         .describe("`xcode-select -p` returned \(directory) which doesn't exist\(HelpText)")
-        .failBool(error)
+        .build()
     }
     if directory == "/" {
-      return
+      throw
         FBControlCoreError
         .describe("`xcode-select -p` returned / which isn't valid.\(HelpText)")
-        .failBool(error)
+        .build()
     }
-    return true
   }
 }

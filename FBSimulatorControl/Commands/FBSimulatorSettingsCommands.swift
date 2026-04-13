@@ -44,13 +44,12 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     if simulator.device.responds(to: NSSelectorFromString("setHardwareKeyboardEnabled:keyboardType:error:")) {
       return FBFuture.onQueue(
         simulator.workQueue,
-        resolveValue: { (error: NSErrorPointer) -> NSNull? in
+        resolve: {
           do {
             try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
-            return NSNull()
-          } catch let e as NSError {
-            error?.pointee = e
-            return nil
+            return FBFuture(result: NSNull())
+          } catch {
+            return FBFuture(error: error)
           }
         })
     }

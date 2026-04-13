@@ -225,12 +225,11 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     }
     return FBFuture.onQueue(
       simulator.workQueue,
-      resolveValue: { (error: NSErrorPointer) -> FBFramebuffer? in
+      resolve: {
         do {
-          return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!)
-        } catch let e as NSError {
-          error?.pointee = e
-          return nil
+          return FBFuture(result: try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!))
+        } catch {
+          return FBFuture(error: error)
         }
       })
   }

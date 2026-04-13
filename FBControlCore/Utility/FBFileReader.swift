@@ -58,23 +58,26 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
   @objc public static func reader(withFilePath filePath: String, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> FBFuture<FBFileReader> {
     let queue = createQueue()
     return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(queue) { (error: NSErrorPointer) -> AnyObject in
-        let fd = open(filePath, O_RDONLY)
-        if fd == -1 {
-          return
-            FBControlCoreError
-            .describe("open of \(filePath) returned an error '\(String(cString: strerror(errno)))'")
-            .fail(error) as AnyObject
-        }
-        return FBFileReader(
-          fileDescriptor: fd,
-          closeOnEndOfFile: true,
-          consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
-          targeting: filePath,
-          queue: queue,
-          logger: logger
-        )
-      },
+      FBFuture<AnyObject>.onQueue(
+        queue,
+        resolve: {
+          let fd = open(filePath, O_RDONLY)
+          if fd == -1 {
+            return
+              FBControlCoreError
+              .describe("open of \(filePath) returned an error '\(String(cString: strerror(errno)))'")
+              .failFuture()
+          }
+          return FBFuture(
+            result: FBFileReader(
+              fileDescriptor: fd,
+              closeOnEndOfFile: true,
+              consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
+              targeting: filePath,
+              queue: queue,
+              logger: logger
+            ))
+        }),
       to: FBFuture<FBFileReader>.self
     )
   }

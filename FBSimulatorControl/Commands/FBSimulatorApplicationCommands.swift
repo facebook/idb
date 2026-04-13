@@ -108,13 +108,12 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     let simDevice = simulator.device
     return FBFuture.onQueue(
       simulator.workQueue,
-      resolveValue: { (error: NSErrorPointer) -> NSNull? in
+      resolve: {
         do {
           try simDevice.terminateApplication(withID: bundleID)
-          return NSNull()
-        } catch let e as NSError {
-          error?.pointee = e
-          return nil
+          return FBFuture(result: NSNull())
+        } catch {
+          return FBFuture(error: error)
         }
       })
   }
@@ -125,16 +124,17 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSArray>
     }
     return
-      ((FBFuture.onQueue(
-        simulator.workQueue,
-        resolveValue: { (error: NSErrorPointer) -> NSDictionary? in
-          do {
-            return try FBSimDeviceWrapper.installedApps(onDevice: simulator.device) as NSDictionary
-          } catch let e as NSError {
-            error?.pointee = e
-            return nil
-          }
-        }) as FBFuture)
+      ((unsafeBitCast(
+        FBFuture<NSDictionary>.onQueue(
+          simulator.workQueue,
+          resolve: {
+            do {
+              let result = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device) as NSDictionary
+              return FBFuture(result: result)
+            } catch {
+              return FBFuture(error: error)
+            }
+          }), to: FBFuture<AnyObject>.self))
       .onQueue(
         simulator.asyncQueue,
         map: { (installedAppsObj: Any) -> NSArray in
@@ -142,7 +142,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
           var applications: [FBInstalledApplication] = []
           for appInfo in installedApps.values {
             guard let dict = appInfo as? [String: Any],
-              let application = FBSimulatorApplicationCommands.installedApplication(fromInfo: dict, error: nil)
+              let application = try? FBSimulatorApplicationCommands.installedApplication(fromInfo: dict)
             else {
               continue
             }
@@ -198,8 +198,15 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     }
     return FBFuture.onQueue(
       simulator.workQueue,
-      resolveValue: { [weak self] (error: NSErrorPointer) -> FBInstalledApplication? in
-        return self?.fetchInstalledApplication(bundleID: bundleID, error: error)
+      resolve: { [weak self] in
+        do {
+          guard let self else {
+            return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+          }
+          return FBFuture(result: try self.fetchInstalledApplication(bundleID: bundleID))
+        } catch {
+          return FBFuture(error: error)
+        }
       })
   }
 
@@ -248,39 +255,20 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
 
   @objc
   public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
-    var error: NSError?
-    guard let result = fetchInstalledApplication(bundleID: bundleID, error: &error) else {
-      throw error ?? FBSimulatorError.describe("Failed to get installed application '\(bundleID)'").build()
-    }
-    return result
+    return try fetchInstalledApplication(bundleID: bundleID)
   }
 
   // MARK: - Private
 
-  private func fetchInstalledApplication(bundleID: String, error: NSErrorPointer) -> FBInstalledApplication? {
+  private func fetchInstalledApplication(bundleID: String) throws -> FBInstalledApplication {
     guard let simulator = self.simulator else {
-      FBSimulatorError.describe("Simulator deallocated").fail(error)
-      return nil
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let device = simulator.device
     var applicationType: NSString?
-    do {
-      try device.applicationIsInstalled(bundleID, type: &applicationType)
-    } catch let appErr as NSError {
-      error?.pointee = appErr
-      return nil
-    }
-    let appInfo: [String: Any]
-    do {
-      appInfo = try device.properties(ofApplication: bundleID)
-    } catch let e as NSError {
-      error?.pointee = e
-      return nil
-    }
-    guard let application = FBSimulatorApplicationCommands.installedApplication(fromInfo: appInfo, error: error) else {
-      return nil
-    }
-    return application
+    try device.applicationIsInstalled(bundleID, type: &applicationType)
+    let appInfo = try device.properties(ofApplication: bundleID)
+    return try FBSimulatorApplicationCommands.installedApplication(fromInfo: appInfo)
   }
 
   private static let uiKitApplicationRegex: NSRegularExpression = {
@@ -421,32 +409,25 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
 
   private static let keyDataContainer = "DataContainer"
 
-  private class func installedApplication(fromInfo appInfo: [String: Any], error: NSErrorPointer) -> FBInstalledApplication? {
+  private class func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
     guard let appName = appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] as? String else {
-      FBControlCoreError.describe("Bundle Name \(appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleName.rawValue) in \(appInfo)").fail(error)
-      return nil
+      throw FBControlCoreError.describe("Bundle Name \(appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleName.rawValue) in \(appInfo)").build()
     }
     guard let _ = appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
-      FBControlCoreError.describe("Bundle Identifier \(appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleIdentifier.rawValue) in \(appInfo)").fail(error)
-      return nil
+      throw FBControlCoreError.describe("Bundle Identifier \(appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.bundleIdentifier.rawValue) in \(appInfo)").build()
     }
     guard let appPath = appInfo[FBApplicationInstallInfoKey.path.rawValue] as? String else {
-      FBControlCoreError.describe("App Path \(appInfo[FBApplicationInstallInfoKey.path.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.path.rawValue) in \(appInfo)").fail(error)
-      return nil
+      throw FBControlCoreError.describe("App Path \(appInfo[FBApplicationInstallInfoKey.path.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.path.rawValue) in \(appInfo)").build()
     }
     guard let typeString = appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] as? String else {
-      FBControlCoreError.describe("Install Type \(appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.applicationType.rawValue) in \(appInfo)").fail(error)
-      return nil
+      throw FBControlCoreError.describe("Install Type \(appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] ?? "nil") is not a String for \(FBApplicationInstallInfoKey.applicationType.rawValue) in \(appInfo)").build()
     }
     let dataContainer = appInfo[keyDataContainer]
     if let dataContainer, !(dataContainer is URL) {
-      FBControlCoreError.describe("Data Container \(dataContainer) is not a NSURL for \(keyDataContainer) in \(appInfo)").fail(error)
-      return nil
+      throw FBControlCoreError.describe("Data Container \(dataContainer) is not a NSURL for \(keyDataContainer) in \(appInfo)").build()
     }
 
-    guard let bundle = try? FBBundleDescriptor.bundle(fromPath: appPath) else {
-      return nil
-    }
+    let bundle = try FBBundleDescriptor.bundle(fromPath: appPath)
 
     _ = appName // used for validation only
     return FBInstalledApplication.installedApplication(

@@ -71,9 +71,11 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
     logger.log("Starting xctrace with arguments: \(FBCollectionInformation.oneLineDescription(from: arguments))")
 
     // Find the absolute path to xctrace
-    var xctraceError: NSError?
-    guard let xctracePath = xctracePathWithError(&xctraceError) else {
-      return FBControlCoreError.failFuture(with: xctraceError!) as! FBFuture<FBXCTraceRecordOperation>
+    let xctracePath: String
+    do {
+      xctracePath = try Self.xctracePath()
+    } catch {
+      return FBFuture(error: error) as! FBFuture<FBXCTraceRecordOperation>
     }
 
     var environment: [String: String] = [:]
@@ -156,11 +158,10 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
 
-  @objc
-  public class func xctracePathWithError(_ error: NSErrorPointer) -> String? {
+  public class func xctracePath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
     if !FileManager.default.fileExists(atPath: path) {
-      return FBControlCoreError.describe("xctrace does not exist at expected path \(path)").fail(error) as? String
+      throw FBControlCoreError.describe("xctrace does not exist at expected path \(path)").build()
     }
     return path
   }

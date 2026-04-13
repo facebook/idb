@@ -14,15 +14,15 @@ import XCTestBootstrap
 @objc public final class FBiOSTargetProvider: NSObject {
 
   @objc public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
-    var error: NSError?
-    if udid.lowercased() == "only" {
-      guard let target = fetchSoleTarget(forTargetSets: targetSets, logger: logger, error: &error) else {
-        return FBFuture(error: error!)
+    let target: FBiOSTarget
+    do {
+      if udid.lowercased() == "only" {
+        target = try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
+      } else {
+        target = try fetchTarget(withUDID: udid, targetSets: targetSets, logger: logger)
       }
-      return FBFuture(result: target as AnyObject)
-    }
-    guard let target = fetchTarget(withUDID: udid, targetSets: targetSets, logger: logger, error: &error) else {
-      return FBFuture(error: error!)
+    } catch {
+      return FBFuture(error: error)
     }
     if !warmUp {
       return FBFuture(result: target as AnyObject)
@@ -43,7 +43,7 @@ import XCTestBootstrap
 
   // MARK: - Private
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger, error: NSErrorPointer) -> FBiOSTarget? {
+  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
     if udid.lowercased() == "mac" {
       return FBMacDevice(logger: logger)
     }
@@ -52,17 +52,15 @@ import XCTestBootstrap
         continue
       }
       guard let target = targetInfo as? FBiOSTarget else {
-        error?.pointee = FBDeviceControlError.describe("\(udid) exists, but the target is not usable \(targetInfo)").build() as NSError
-        return nil
+        throw FBDeviceControlError.describe("\(udid) exists, but the target is not usable \(targetInfo)").build()
       }
       return target
     }
 
-    error?.pointee = FBIDBError.describe("\(udid) could not be resolved to any target in \(targetSets)").build() as NSError
-    return nil
+    throw FBIDBError.describe("\(udid) could not be resolved to any target in \(targetSets)").build()
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger, error: NSErrorPointer) -> FBiOSTarget? {
+  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
     var targets: [FBiOSTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
@@ -72,13 +70,11 @@ import XCTestBootstrap
       }
     }
     if targets.count > 1 {
-      error?.pointee = FBIDBError.describe("Cannot get a sole target when multiple found \(FBCollectionInformation.oneLineDescription(from: targets))").build() as NSError
-      return nil
+      throw FBIDBError.describe("Cannot get a sole target when multiple found \(FBCollectionInformation.oneLineDescription(from: targets))").build()
     }
-    if targets.isEmpty {
-      error?.pointee = FBIDBError.describe("Cannot get a sole target when none were found in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build() as NSError
-      return nil
+    guard let target = targets.first else {
+      throw FBIDBError.describe("Cannot get a sole target when none were found in target sets \(FBCollectionInformation.oneLineDescription(from: targetSets))").build()
     }
-    return targets.first
+    return target
   }
 }
