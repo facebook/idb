@@ -85,7 +85,7 @@ public class FBDeviceRecoveryCommands: NSObject, FBDeviceRecoveryCommandsProtoco
           } else {
             internalMessage = "Unknown error"
           }
-          return FBDeviceControlError.describe("Failed have device \(recoveryDevice) enter recovery \(internalMessage)").failFuture()
+          return FBDeviceControlError.describe("Failed have device \(recoveryDevice) exit recovery \(internalMessage)").failFuture()
         }
         return FBFuture(result: NSNull() as AnyObject)
       }) as! FBFuture<NSNull>

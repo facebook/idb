@@ -124,7 +124,7 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
-    logger: (any FBControlCoreLogger)?
+    logger: any FBControlCoreLogger
   ) -> FBFuture<AnyObject> {
     return service.onQueue(
       queue,
@@ -153,13 +153,13 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
-    logger: (any FBControlCoreLogger)?
+    logger: any FBControlCoreLogger
   ) {
     self.serviceConnection = serviceConnection
     self.port = port
     self.lldbBootstrapCommands = lldbBootstrapCommands
     self.queue = queue
-    self.logger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    self.logger = logger
     super.init()
   }
 
@@ -204,10 +204,10 @@ public class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServe
   // MARK: - FBiOSTargetOperation
 
   @objc public var completed: FBFuture<NSNull> {
-    if let teardown {
-      return unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
+    guard let teardown else {
+      fatalError("teardown must be set via debugServer(forServiceConnection:...) before accessing completed")
     }
-    return unsafeBitCast(FBMutableFuture<NSNull>(), to: FBFuture<NSNull>.self)
+    return unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
   }
 
   // MARK: - Private Methods

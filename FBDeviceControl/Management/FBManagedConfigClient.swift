@@ -92,21 +92,21 @@ public class FBManagedConfigClient: NSObject {
       }) as! FBFuture<NSArray>
   }
 
-  @objc public func installProfile(_ payload: Data) -> FBFuture<NSNull> {
+  @objc public func installProfile(_ payload: Data) -> FBFuture<NSDictionary> {
     FBFuture.onQueue(
       queue,
       resolveValue: { errorPointer in
         do {
           let result = try self.connection.sendAndReceiveMessage(["RequestType": "InstallProfile", "Payload": payload])
-          guard result is [String: Any] else {
+          guard let resultDict = result as? [String: Any] else {
             return nil
           }
-          return NSNull()
+          return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as NSDictionary
         } catch {
           errorPointer?.pointee = error as NSError
           return nil
         }
-      }) as! FBFuture<NSNull>
+      }) as! FBFuture<NSDictionary>
   }
 
   @objc public func removeProfile(_ profileName: String) -> FBFuture<NSNull> {

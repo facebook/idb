@@ -55,7 +55,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
             port: port,
             lldbBootstrapCommands: commands as! [String],
             queue: device.workQueue,
-            logger: device.logger
+            logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
           )
         })) as! FBFuture<any FBDebugServer>
   }
