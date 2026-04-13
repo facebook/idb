@@ -38,15 +38,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorSetting) {
 - (FBFuture<NSNull *> *)setSetting:(FBSimulatorSetting)setting enabled:(BOOL)enabled;
 
 /**
- Enables or disables the hardware keyboard.
- Convenience wrapper — equivalent to setSetting:FBSimulatorSettingHardwareKeyboard enabled:.
-
- @param enabled YES if enabled, NO if disabled.
- @return a Future that resolves when successful.
- */
-- (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled;
-
-/**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
 
  @param name preference name
