@@ -3,6 +3,19 @@
 import FBControlCore
 import Foundation
 
+@objc public protocol FBSimulatorFileCommandsProtocol: NSObjectProtocol {
+  @objc(containedFileForApplication:error:)
+  func containedFile(forApplication bundleID: String) throws -> any FBContainedFile
+
+  @objc(containedFileForGroupContainersWithError:)
+  func containedFileForGroupContainers() throws -> any FBContainedFile
+
+  @objc(containedFileForApplicationContainersWithError:)
+  func containedFileForApplicationContainers() throws -> any FBContainedFile
+
+  func containedFileForRootFilesystem() -> any FBContainedFile
+}
+
 @objc(FBSimulatorFileCommands)
 public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand {
 
@@ -13,8 +26,8 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
   // MARK: - Initializers
 
   @objc(commandsWithTarget:)
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorFileCommands {
-    return FBSimulatorFileCommands(simulator: target as! FBSimulator)
+  public class func commands(with target: any FBiOSTarget) -> Self {
+    return unsafeDowncast(FBSimulatorFileCommands(simulator: target as! FBSimulator), to: self)
   }
 
   private init(simulator: FBSimulator) {
@@ -25,7 +38,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
   // MARK: - FBFileCommands Implementation
 
   @objc
-  public func fileCommands(forContainerApplication bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
     return
       (FBFuture<AnyObject>
       .onQueue(
@@ -36,7 +49,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
           }
           do {
             let containedFile = try self.containedFile(forApplication: bundleID)
-            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
+            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
           } catch {
             return FBFuture(error: error)
           }
@@ -51,7 +64,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
 
   @objc
   public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory)) as! FBFutureContext<any FBFileContainerProtocol>
+    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
@@ -66,7 +79,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
           }
           do {
             let containedFile = try self.containedFileForApplicationContainers()
-            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
+            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
           } catch {
             return FBFuture(error: error)
           }
@@ -91,7 +104,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
           }
           do {
             let containedFile = try self.containedFileForGroupContainers()
-            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
+            return FBFuture(result: FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject)
           } catch {
             return FBFuture(error: error)
           }
@@ -107,14 +120,14 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
   @objc
   public func fileCommandsForRootFilesystem() -> FBFutureContext<any FBFileContainerProtocol> {
     let containedFile = containedFileForRootFilesystem()
-    let fileContainer = FBFileContainer.fileContainer(for: containedFile)
+    let fileContainer = FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject
     return FBFutureContext<AnyObject>(result: fileContainer) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
   public func fileCommandsForMediaDirectory() -> FBFutureContext<any FBFileContainerProtocol> {
     let mediaDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Media")
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory)) as! FBFutureContext<any FBFileContainerProtocol>
+    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory) as AnyObject) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   @objc
@@ -169,11 +182,11 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
 
   @objc
   public func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
-    let installedApplication: FBInstalledApplication = try simulator.installedApplication(withBundleID: bundleID)
+    let installedApplication: FBInstalledApplication = try simulator.installedApplication(withBundleID: bundleID).await()
     guard let container = installedApplication.dataContainer else {
       throw FBSimulatorError.describe("No data container present for application \(installedApplication)").build()
     }
-    return FBFileContainer.containedFile(forBasePath: container)
+    return FBFileContainer.containedFile(forBasePath: container) as! any FBContainedFile
   }
 
   @objc
@@ -188,7 +201,7 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       }
       mapping[bundleID] = dataContainer.path
     }
-    return FBFileContainer.containedFile(forPathMapping: mapping)
+    return FBFileContainer.containedFile(forPathMapping: mapping) as! any FBContainedFile
   }
 
   @objc
@@ -209,11 +222,11 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
     for (identifier, url) in bundleIDToURL {
       pathMapping[identifier] = url.path
     }
-    return FBFileContainer.containedFile(forPathMapping: pathMapping)
+    return FBFileContainer.containedFile(forPathMapping: pathMapping) as! any FBContainedFile
   }
 
   @objc
   public func containedFileForRootFilesystem() -> any FBContainedFile {
-    return FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!)
+    return FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!) as! any FBContainedFile
   }
 }

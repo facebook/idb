@@ -14,4 +14,11 @@
  */
 @interface FBSimulatorAccessibilityCommands : NSObject <FBAccessibilityCommands>
 
+// FBiOSTargetCommand (Swift protocol members declared for visibility)
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
+
+// FBAccessibilityCommands (Swift protocol members declared for visibility)
+- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
+- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
+
 @end

@@ -7,6 +7,12 @@
 
 import Foundation
 
+@objc public protocol FBXCTraceRecordCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
+
+  @objc(startXctraceRecord:logger:)
+  func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation>
+}
+
 @objc(FBXCTraceRecordCommands)
 public class FBXCTraceRecordCommands: NSObject, FBXCTraceRecordCommandsProtocol {
 

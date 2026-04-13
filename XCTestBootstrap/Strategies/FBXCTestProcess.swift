@@ -115,7 +115,7 @@ private let KillBackoffTimeout: TimeInterval = 1
     ])
 
     return unsafeBitCast(
-      unsafeBitCast(crashLogCommands.notify(ofCrash: predicate), to: FBFuture<AnyObject>.self)
+      unsafeBitCast(crashLogCommands.notifyOfCrash(predicate), to: FBFuture<AnyObject>.self)
         .onQueue(
           queue, timeout: crashLogWaitTime,
           handler: {

@@ -7,6 +7,96 @@
 
 import Foundation
 
+// MARK: - FBiOSTargetInfo Protocol
+
+/// A protocol that defines an informational target.
+@objc public protocol FBiOSTargetInfo: NSObjectProtocol {
+
+  /// A Unique Identifier that describes this iOS Target.
+  var uniqueIdentifier: String { get }
+
+  /// The "Unique Device Identifier" of the iOS Target.
+  /// This may be distinct from the uniqueIdentifier.
+  var udid: String { get }
+
+  /// The Name of the iOS Target. This is the name given by the user, such as "Ada's iPhone"
+  var name: String { get }
+
+  /// The Device Type of the Target.
+  var deviceType: FBDeviceType { get }
+
+  /// Available architecture of the iOS Target
+  var architectures: [FBArchitecture] { get }
+
+  /// The OS Version of the Target.
+  var osVersion: FBOSVersion { get }
+
+  /// A dictionary containing per-target-type information that is unique to them.
+  /// For example iOS Devices have additional metadata that is not present on Simulators.
+  /// This dictionary must be JSON-Serializable.
+  var extendedInformation: [String: Any] { get }
+
+  /// The Type of the iOS Target
+  var targetType: FBiOSTargetType { get }
+
+  /// The State of the iOS Target. Currently only applies to Simulators.
+  var state: FBiOSTargetState { get }
+}
+
+// MARK: - FBiOSTarget Protocol
+
+/// A protocol that defines an interactible and informational target.
+/// Also conforms to FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands,
+/// FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands,
+/// FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol, FBLifecycleCommands.
+@objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol, FBLifecycleCommands {
+
+  /// The Target's Logger.
+  var logger: (any FBControlCoreLogger)? { get }
+
+  /// The path to the custom (non-default) device set if applicable.
+  var customDeviceSetPath: String? { get }
+
+  /// The directory that the target uses to store scratch files on the host.
+  var temporaryDirectory: FBTemporaryDirectory { get }
+
+  /// The directory that the target uses to store per-target files on the host.
+  /// This should only be used for storing files that need to be preserved over the lifespan of the target.
+  /// For example scratch or temporary files should *not* be stored here and temporaryDirectory should be used instead.
+  var auxillaryDirectory: String { get }
+
+  /// The root of the "Runtime" where applicable
+  var runtimeRootDirectory: String { get }
+
+  /// The root of the "Platform" where applicable
+  var platformRootDirectory: String { get }
+
+  /// The Screen Info for the Target.
+  var screenInfo: FBiOSTargetScreenInfo? { get }
+
+  /// The Queue to serialize work on.
+  /// This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
+  /// Mutually Exclusive operations should use this queue.
+  var workQueue: DispatchQueue { get }
+
+  /// A queue for independent operations to execute on.
+  /// Examples of these operations are transforming an immutable data structure.
+  var asyncQueue: DispatchQueue { get }
+
+  /// A Comparison Method for `sortedArrayUsingSelector:`
+  @objc(compare:)
+  func compare(_ target: any FBiOSTarget) -> ComparisonResult
+
+  /// If the target's bundle needs to be codesigned or not.
+  func requiresBundlesToBeSigned() -> Bool
+
+  /// Env var replacements
+  func replacementMapping() -> [String: String]
+
+  /// Env var additions
+  func environmentAdditions() -> [String: String]
+}
+
 // MARK: - C function replacements via @_cdecl
 
 /// The canonical string representation of the state enum.

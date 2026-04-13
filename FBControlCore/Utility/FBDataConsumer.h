@@ -9,81 +9,12 @@
 
 #import <FBControlCore/FBFuture.h>
 
-/**
- A consumer of NSData.
- */
-@protocol FBDataConsumer <NSObject>
-
-/**
- Consumes the provided binary data.
- If the receiver implements FBDataConsumerSync, then stack allocated data is permitted.
- Otherwise, the underlying buffer must survive data being consumed on a separate thread.
-
- @param data the data to consume.
- */
-- (void)consumeData:(nonnull NSData *)data;
-
-/**
- Consumes an end-of-file.
- */
-- (void)consumeEndOfFile;
-
-@end
-
-/**
- A consumer of dispatch_data.
- */
-@protocol FBDispatchDataConsumer <NSObject>
-
-/**
- Consumes the provided binary data.
-
- @param data the data to consume.
- */
-- (void)consumeData:(nonnull dispatch_data_t)data;
-
-/**
- Consumes an end-of-file.
- */
-- (void)consumeEndOfFile;
-
-@end
-
-/**
- Consumer which consumes the data synchronously in the same context as the caller invoking consumeData
- Members of this protocol will have any underlying data buffers that are passed in within `consumeData:`.
- This allows the caller to avoid copying data that may be stack-allocated.
- This is exposed as a more restrictive type in order to prevent non-stack consuming implementors performing a use-after-free.
- */
-@protocol FBDataConsumerSync <NSObject>
-
-@end
-
-/**
- Consumer which consumes the data asynchronously
- The data passed in to this consumer should not contain a pointer to a stack allocated data and it should be copied instead
- */
-@protocol FBDataConsumerAsync <NSObject>
-
-/**
-Number of submitted data that has not been consumed yet
-*/
-- (NSInteger)unprocessedDataCount;
-
-@end
-
-/**
- Observation of a Data Consumer's lifecycle
- */
-@protocol FBDataConsumerLifecycle <NSObject>
-
-/**
- A Future that resolves when an there is no more data to write and any underlying resource managed by the consumer is released.
- At this point, consumers are safe to assume that any resource that the writer is wrapping is safe to use.
- */
-@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *finishedConsuming;
-
-@end
+// Protocols defined in Swift (FBDataConsumer.swift)
+@protocol FBDataConsumer;
+@protocol FBDispatchDataConsumer;
+@protocol FBDataConsumerSync;
+@protocol FBDataConsumerAsync;
+@protocol FBDataConsumerLifecycle;
 
 /**
  Adapts a NSData consumer to a dispatch_data consumer to.
@@ -195,7 +126,7 @@ Number of submitted data that has not been consumed yet
 /**
  A consumer that logs received data to a logger.
  */
-@interface FBLoggingDataConsumer : NSObject <FBDataConsumer>
+@interface FBLoggingDataConsumer : NSObject
 
 /**
  The Designated Initializer
@@ -207,12 +138,15 @@ Number of submitted data that has not been consumed yet
  */
 @property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
+- (void)consumeData:(nonnull NSData *)data;
+- (void)consumeEndOfFile;
+
 @end
 
 /**
  A Composite Consumer.
  */
-@interface FBCompositeDataConsumer : NSObject <FBDataConsumer, FBDataConsumerLifecycle>
+@interface FBCompositeDataConsumer : NSObject
 
 /**
  A Consumer of Consumers.
@@ -222,11 +156,18 @@ Number of submitted data that has not been consumed yet
  */
 + (nonnull instancetype)consumerWithConsumers:(nonnull NSArray<id<FBDataConsumer>> *)consumers;
 
+- (void)consumeData:(nonnull NSData *)data;
+- (void)consumeEndOfFile;
+@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *finishedConsuming;
+
 @end
 
 /**
  A consumer that does nothing with the data.
  */
-@interface FBNullDataConsumer : NSObject <FBDataConsumer>
+@interface FBNullDataConsumer : NSObject
+
+- (void)consumeData:(nonnull NSData *)data;
+- (void)consumeEndOfFile;
 
 @end

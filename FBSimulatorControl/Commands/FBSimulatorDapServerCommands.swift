@@ -25,7 +25,7 @@ public final class FBSimulatorDapServerCommand: NSObject, FBDapServerCommand, FB
   // MARK: - FBDapServerCommand
 
   @objc
-  public func launchDapServer(_ dapPath: Any!, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) -> FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>> {
+  public func launchDapServer(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) -> FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>> {
     let dapLogDir = (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap")
 
     do {

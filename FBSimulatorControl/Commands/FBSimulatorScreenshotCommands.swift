@@ -63,7 +63,7 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands
       .onQueue(
         simulator.workQueue,
         fmap: { [weak self] framebuffer -> FBFuture<AnyObject> in
-          let image = FBSimulatorImage(framebuffer: framebuffer, logger: self?.simulator.logger)
+          let image = FBSimulatorImage(framebuffer: framebuffer as! FBFramebuffer, logger: self?.simulator.logger)
           self?.image = image
           return FBFuture(result: image)
         }) as! FBFuture<FBSimulatorImage>

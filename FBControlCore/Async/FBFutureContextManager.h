@@ -11,45 +11,7 @@
 @class FBFutureContext<T>;
 
 @protocol FBControlCoreLogger;
-
-/**
- The Delegate for a Context Manager
- */
-@protocol FBFutureContextManagerDelegate <NSObject>
-
-/**
- Prepare the Resource.
-
- @param logger the logger to use.
- @return a Future that resolves with the prepared context.
- */
-- (nonnull FBFuture<id> *)prepare:(nonnull id<FBControlCoreLogger>)logger;
-
-/**
- Teardown the resource.
-
- @param context the context to use.
- @param logger the logger to use.
- @return context
- */
-- (nonnull FBFuture<NSNull *> *)teardown:(nonnull id)context logger:(nonnull id<FBControlCoreLogger>)logger;
-
-/**
- The Name of the Resource.
- */
-@property (nonnull, nonatomic, readonly, copy) NSString *contextName;
-
-/**
- The amount of time to allow the resource to be held with no-one utilizing it.
- This is useful for ensuring that the same connection
- */
-@property (nullable, nonatomic, readonly, copy) NSNumber *contextPoolTimeout;
-/**
- Allows the context to be shared.
- */
-@property (nonatomic, readonly, assign) BOOL isContextSharable;
-
-@end
+@protocol FBFutureContextManagerDelegate;
 
 /**
  Manages an asynchronous context that can only be used by a single consumer

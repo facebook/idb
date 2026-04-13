@@ -292,7 +292,7 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
       binariesPaths.append(binaryPath)
     }
 
-    let testCompleted = target.runTest(with: testLaunchConfiguration, reporter: reporter, logger: logger)
+    let testCompleted = target.runTest(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
     let reporterConfiguration = FBXCTestReporterConfiguration(
       resultBundlePath: testLaunchConfiguration.resultBundlePath,
       coverageConfiguration: coverageConfiguration,

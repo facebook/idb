@@ -10,21 +10,9 @@
 #import <FBControlCore/FBFuture.h>
 
 /**
- A protocol that represents an operation of indeterminate length.
- */
-@protocol FBiOSTargetOperation <NSObject>
-
-/**
- A Optional Future that resolves when the operation has completed.
- */
-@property (nonnull, nonatomic, readonly, strong) FBFuture<NSNull *> *completed;
-
-@end
-
-/**
  Creates a new operation.
 
  @param completed the completion future
  @return an Operation wrapping the Future
  */
-extern id<FBiOSTargetOperation> _Nonnull FBiOSTargetOperationFromFuture(FBFuture<NSNull *> * _Nonnull completed);
+extern id _Nonnull FBiOSTargetOperationFromFuture(FBFuture<NSNull *> * _Nonnull completed);

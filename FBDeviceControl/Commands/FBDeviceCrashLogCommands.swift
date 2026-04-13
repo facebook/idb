@@ -29,7 +29,8 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
 
   // MARK: - FBCrashLogCommands
 
-  public func notify(ofCrash predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+  @objc(notifyOfCrash:)
+  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     ingestAllCrashLogs(useCache: false)
     return store.nextCrashLog(forMatchingPredicate: predicate)
   }

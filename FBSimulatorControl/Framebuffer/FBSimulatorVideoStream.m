@@ -21,6 +21,9 @@
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulatorControl-Swift.h"
 
+@interface FBSimulatorVideoStream () <FBFramebufferConsumer>
+@end
+
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
 
 @interface FBVideoCompressorCallbackSourceFrame : NSObject
@@ -33,16 +36,7 @@ typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Null
 
 @end
 
-@protocol FBSimulatorVideoStreamFramePusher <NSObject>
-
-- (BOOL)setupWithPixelBuffer:(CVPixelBufferRef)pixelBuffer edgeInsets:(FBVideoStreamEdgeInsets)edgeInsets error:(NSError **)error;
-- (BOOL)tearDown:(NSError **)error;
-- (BOOL)writeEncodedFrame:(CVPixelBufferRef)pixelBuffer frameNumber:(NSUInteger)frameNumber timeAtFirstFrame:(CFTimeInterval)timeAtFirstFrame frameDuration:(CFTimeInterval)frameDuration forceKeyFrame:(BOOL)forceKeyFrame error:(NSError **)error;
-
-@optional
-- (FBVideoEncoderStats)currentStats;
-
-@end
+@protocol FBSimulatorVideoStreamFramePusher;
 
 @interface FBSimulatorVideoStreamFramePusher_Bitmap : NSObject <FBSimulatorVideoStreamFramePusher>
 
@@ -1028,7 +1022,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
   }
 
   // Push the Frame
-  [framePusher writeEncodedFrame:bufferToEncode frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration forceKeyFrame:forceKeyFrame error:nil];
+  (void)[framePusher writeEncodedFrame:bufferToEncode frameNumber:frameNumber timeAtFirstFrame:timeAtFirstFrame frameDuration:frameDuration forceKeyFrame:forceKeyFrame error:nil];
 
   // Release the composited buffer if we created one.
   if (compositedBuffer) {

@@ -388,8 +388,9 @@ private final class FBLogicTestRunOutputs: NSObject {
           .onQueue(
             queue,
             fmap: { _ -> FBFuture<AnyObject> in
+              let crashCommands = self.target as any FBCrashLogCommands
               return unsafeBitCast(
-                FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: self.target, queue: queue, logger: logger),
+                FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
                 to: FBFuture<AnyObject>.self
               )
             })

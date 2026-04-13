@@ -9,6 +9,31 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+@objc public protocol FBSimulatorLaunchCtlCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
+  @objc(serviceNameForProcessIdentifier:)
+  func serviceName(forProcessIdentifier pid: pid_t) -> FBFuture<NSString>
+
+  @objc(serviceNameForProcess:)
+  func serviceName(forProcess process: FBProcessInfo) -> FBFuture<NSString>
+
+  @objc(serviceNamesAndProcessIdentifiersMatching:)
+  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) -> FBFuture<NSDictionary>
+
+  @objc(firstServiceNameAndProcessIdentifierMatching:)
+  func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) -> FBFuture<NSArray>
+
+  @objc(processIsRunningOnSimulator:)
+  func processIsRunning(onSimulator process: FBProcessInfo) -> FBFuture<NSNumber>
+
+  func listServices() -> FBFuture<NSDictionary>
+
+  @objc(stopServiceWithName:)
+  func stopService(withName serviceName: String) -> FBFuture<NSString>
+
+  @objc(startServiceWithName:)
+  func startService(withName serviceName: String) -> FBFuture<NSString>
+}
+
 @objc(FBSimulatorLaunchCtlCommands)
 public final class FBSimulatorLaunchCtlCommands: NSObject, FBSimulatorLaunchCtlCommandsProtocol {
 

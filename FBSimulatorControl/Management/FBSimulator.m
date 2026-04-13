@@ -15,18 +15,15 @@
 #import <CoreSimulator/SimRuntime.h>
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorControl-Swift.h"
-#import "FBSimulatorFileCommands.h"
-#import "FBSimulatorHIDEvent.h"
-#import "FBSimulatorLifecycleCommands.h"
-#import "FBSimulatorMediaCommands.h"
-#import "FBSimulatorSettingsCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
+
+@interface FBSimulator () <FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol, FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorMediaCommandsProtocol, FBXCTestExtendedCommands, FBDapServerCommand, FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol>
+@end
 
 static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
 

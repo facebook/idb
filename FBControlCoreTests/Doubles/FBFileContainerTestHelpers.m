@@ -7,6 +7,8 @@
 
 #import "FBFileContainerTestHelpers.h"
 
+#import <FBControlCore/FBControlCore-Swift.h>
+
 @interface FBFileContainerTestHelpers ()
 @property (nonatomic, strong) id<FBFileContainerProtocol> wrapped;
 @end
@@ -59,7 +61,7 @@
 
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
-  return [self.wrapped contentsOfDirectory:path];
+  return (FBFuture<NSArray<NSString *> *> *)[self.wrapped contentsOfDirectory:path];
 }
 
 @end

@@ -21,21 +21,4 @@ typedef struct {
   NSUInteger ioSurfaceChangeCount;
 } FBFramebufferStats;
 
-/**
- A Consumer of a Framebuffer.
- */
-@protocol FBFramebufferConsumer <NSObject>
-
-/**
- Called when an IOSurface becomes available or invalid
-
- @param surface the surface, or NULL if a surface is not available/becomes unavailable
- */
-- (void)didChangeIOSurface:(nullable IOSurface *)surface;
-
-/**
- Called when screen content has changed.
- */
-- (void)didReceiveDamageRect;
-
-@end
+@protocol FBFramebufferConsumer;

@@ -54,7 +54,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
   }
 
   @objc public func asFileContainer() -> FBFileContainerProtocol {
-    return FBFileContainer.fileContainer(forBasePath: basePath.path)
+    return FBFileContainer.fileContainer(forBasePath: basePath.path) as! FBFileContainerProtocol
   }
 
   @objc public var replacementMapping: [String: String] {

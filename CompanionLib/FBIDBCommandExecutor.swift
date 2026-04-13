@@ -782,7 +782,7 @@ import XCTestBootstrap
     if containerType == nil || containerType?.isEmpty == true {
       return target is FBDevice ? commands.fileCommandsForMediaDirectory() as! FBFutureContext<AnyObject> : commands.fileCommandsForRootFilesystem() as! FBFutureContext<AnyObject>
     }
-    return commands.fileCommands(forContainerApplication: containerType!) as! FBFutureContext<AnyObject>
+    return commands.fileCommandsForContainerApplication(containerType!) as! FBFutureContext<AnyObject>
   }
 
   private func screenshotCommands() -> FBFuture<AnyObject> {

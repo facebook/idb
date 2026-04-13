@@ -20,7 +20,8 @@ public class FBDeviceLifecycleCommands: NSObject, FBLifecycleCommands {
 
   // MARK: - FBLifecycleCommands
 
-  public func resolve(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+  @objc(resolveState:)
+  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
     guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }

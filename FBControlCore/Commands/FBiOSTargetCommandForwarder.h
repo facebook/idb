@@ -8,23 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBiOSTarget;
-
-/**
- A Protocol that defines a forwardable Commands Class.
- */
-@protocol FBiOSTargetCommand <NSObject>
-
-/**
- Instantiates the Commands instance.
-
- @param target the target to use.
- @return a new instance of the Command.
- */
-+ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
-
-@end
-
-@protocol FBiOSTarget;
+@protocol FBiOSTargetCommand;
 
 /**
  A Helper for Command Forwarding, suitable for FBiOSTargets

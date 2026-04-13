@@ -13,29 +13,8 @@
 @protocol FBDataConsumer;
 @protocol FBDataConsumerSync;
 
-/**
- Streams Bitmaps to a File Sink
- */
-@protocol FBVideoStream <FBiOSTargetOperation>
-
-#pragma mark Public Methods
-
-/**
- Starts the Streaming, to a Data Consumer.
-
- @param consumer the consumer to consume the bytes to.
- @return A future that resolves when the streaming has started.
- */
-- (nonnull FBFuture<NSNull *> *)startStreaming:(nonnull id<FBDataConsumer>)consumer;
-
-/**
- Stops the Streaming.
-
- @return A future that resolves when the streaming has stopped.
- */
-- (nonnull FBFuture<NSNull *> *)stopStreaming;
-
-@end
+// Protocol defined in Swift (FBVideoStreamProtocol.swift)
+@protocol FBVideoStream;
 
 /**
  Returns true if consumer is ready to process another frame, false if consumer buffered data exceedes allowed limit

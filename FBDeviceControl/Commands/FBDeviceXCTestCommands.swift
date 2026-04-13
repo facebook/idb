@@ -32,10 +32,10 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
 
   // MARK: FBXCTestCommands Implementation
 
-  @objc
+  @objc(runTestWithLaunchConfiguration:reporter:logger:)
   public func runTest(
-    with testLaunchConfiguration: FBTestLaunchConfiguration,
-    reporter: any FBXCTestReporter,
+    withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) -> FBFuture<NSNull> {
     // Return early and fail if there is already a test run for the device.
@@ -50,7 +50,7 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
       return self.startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger)
     }.onQueue(device!.workQueue) { (task: AnyObject) in
       // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
-      return FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task as! FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: testLaunchConfiguration, reporter: reporter, target: self.device!, logger: logger)
+      return FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task as! FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: testLaunchConfiguration, reporter: reporter as! FBXCTestReporter, target: self.device!, logger: logger)
     }.onQueue(
       device!.workQueue,
       chain: { future in

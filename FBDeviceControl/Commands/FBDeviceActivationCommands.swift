@@ -1,4 +1,9 @@
-// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 @preconcurrency import FBControlCore
 import Foundation
@@ -7,7 +12,7 @@ private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/dr
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
 @objc(FBDeviceActivationCommands)
-public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsProtocol {
+public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsProtocol, FBiOSTargetCommand {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

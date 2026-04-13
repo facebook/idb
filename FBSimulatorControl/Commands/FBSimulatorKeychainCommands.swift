@@ -3,6 +3,10 @@
 import FBControlCore
 import Foundation
 
+@objc public protocol FBSimulatorKeychainCommandsProtocol: NSObjectProtocol {
+  func clearKeychain() -> FBFuture<NSNull>
+}
+
 @objc(FBSimulatorKeychainCommands)
 public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCommandsProtocol, FBiOSTargetCommand {
 

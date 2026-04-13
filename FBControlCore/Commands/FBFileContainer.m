@@ -10,7 +10,6 @@
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
 #import "FBProcessBuilder.h"
-#import "FBProvisioningProfileCommands.h"
 
 FBFileContainerKind const FBFileContainerKindApplication = @"application";
 FBFileContainerKind const FBFileContainerKindAuxillary = @"auxillary";

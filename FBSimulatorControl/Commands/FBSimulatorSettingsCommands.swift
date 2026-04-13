@@ -15,6 +15,35 @@ private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObj
 
 private let springBoardServiceName = "com.apple.SpringBoard"
 
+@objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
+  func setHardwareKeyboardEnabled(_ enabled: Bool) -> FBFuture<NSNull>
+
+  @objc(setPreference:value:type:domain:)
+  func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull>
+
+  @objc(getCurrentPreference:domain:)
+  func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString>
+
+  @objc(grantAccess:toServices:)
+  func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull>
+
+  @objc(revokeAccess:toServices:)
+  func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull>
+
+  @objc(grantAccess:toDeeplink:)
+  func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull>
+
+  @objc(revokeAccess:toDeeplink:)
+  func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull>
+
+  @objc(updateContacts:)
+  func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull>
+
+  func clearContacts() -> FBFuture<NSNull>
+
+  func clearPhotos() -> FBFuture<NSNull>
+}
+
 @objc(FBSimulatorSettingsCommands)
 public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCommandsProtocol {
 
@@ -55,7 +84,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     }
 
     return
-      (unsafeBitCast(simulator.connectToBridge(), to: FBFuture<AnyObject>.self)
+      (simulator.connectToBridge()
       .onQueue(
         simulator.workQueue,
         fmap: { (bridgeObj: Any) -> FBFuture<AnyObject> in
