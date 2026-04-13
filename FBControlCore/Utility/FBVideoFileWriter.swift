@@ -87,6 +87,10 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
     logger.log("Did Pause Recording at \(filePath)")
   }
 
+  public func fileOutput(_ output: AVCaptureFileOutput, willFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+    logger.log("Will Finish Recording at \(filePath)")
+  }
+
   public func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
     logger.log("Did Finish Recording at \(filePath)")
     finishFuture.resolve(withResult: NSNull())

@@ -61,11 +61,13 @@ public class FBCodesignProvider: NSObject {
       return
     }
     var attributes = try fileManager.attributesOfItem(atPath: codeSignatureFile)
-    let currentPermissions = (attributes[.posixPermissions] as! NSNumber).int16Value
-    let newPermissions = currentPermissions | 0b010000000
-    attributes[.posixPermissions] = NSNumber(value: newPermissions)
-    try fileManager.setAttributes(attributes, ofItemAtPath: codeSignatureFile)
-    logger?.log("Added user writable permission to code sign file")
+    if let posixPermissions = attributes[.posixPermissions] as? NSNumber {
+      let currentPermissions = posixPermissions.int16Value
+      let newPermissions = currentPermissions | 0b010000000
+      attributes[.posixPermissions] = NSNumber(value: newPermissions)
+      try fileManager.setAttributes(attributes, ofItemAtPath: codeSignatureFile)
+      logger?.log("Added user writable permission to code sign file")
+    }
   }
 
   // MARK: Public Methods

@@ -47,11 +47,9 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
   }
 
   @objc public func clean() throws {
-    let urls = try? FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: [])
-    if let urls {
-      for url in urls {
-        try FileManager.default.removeItem(atPath: url.path)
-      }
+    let urls = try FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: [])
+    for url in urls {
+      try FileManager.default.removeItem(atPath: url.path)
     }
   }
 

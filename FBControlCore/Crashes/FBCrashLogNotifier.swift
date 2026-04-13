@@ -47,7 +47,7 @@ public class FBCrashLogNotifier: NSObject {
       queue,
       resolveUntil: {
         let crashInfo =
-          (FBCrashLogInfo.crashInfo(afterDate: FBCrashLogNotifier.sharedInstance.sinceDate, logger: nil) as NSArray)
+          (FBCrashLogInfo.crashInfo(afterDate: self.sinceDate, logger: nil) as NSArray)
           .filtered(using: predicate)
           .first as? FBCrashLogInfo
         guard let crashInfo else {
