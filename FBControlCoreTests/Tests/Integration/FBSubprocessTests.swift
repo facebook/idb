@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import FBControlCoreTestDoubles
 import XCTest
 
 @testable import FBControlCore
@@ -20,7 +19,7 @@ final class FBSubprocessTests: XCTestCase {
 
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
     let erasedFuture = unsafeBitCast(future, to: FBFuture<AnyObject>.self)
-    let timedFuture = FBFutureTestHelpers.applyTimeout(FBControlCoreGlobalConfiguration.regularTimeout, description: "FBTask to complete", to: erasedFuture)
+    let timedFuture = erasedFuture.timeout(FBControlCoreGlobalConfiguration.regularTimeout, waitingFor: "FBTask to complete")
     _ = try? timedFuture.`await`()
     return future.result!
   }
