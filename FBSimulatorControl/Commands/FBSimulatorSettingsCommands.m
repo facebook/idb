@@ -369,6 +369,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 - (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
 {
+  return [self runSimulatorFrameworkBridgeWithService:service action:action arguments:@[]];
+}
+
+- (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+{
   return [FBFuture onQueue:self.simulator.asyncQueue resolve:^{
     NSString *helperPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"SimulatorFrameworkBridge" ofType:nil];
     if (!helperPath) {
@@ -383,8 +388,11 @@ static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
         failFuture];
     }
 
+    NSMutableArray<NSString *> *spawnArguments = [NSMutableArray arrayWithObjects:helperPath, service, action, nil];
+    [spawnArguments addObjectsFromArray:arguments];
+
     return [[[self.simulator.simctlExecutor
-      taskBuilderWithCommand:@"spawn" arguments:@[helperPath, service, action]]
+      taskBuilderWithCommand:@"spawn" arguments:spawnArguments]
       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
       onQueue:self.simulator.asyncQueue fmap:^(FBSubprocess *task) {
         [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
