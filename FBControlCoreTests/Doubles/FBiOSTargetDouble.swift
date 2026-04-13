@@ -1,0 +1,162 @@
+// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+
+import FBControlCore
+
+/// A stub implementation of FBiOSTarget for testing.
+final class FBiOSTargetDouble: NSObject, FBiOSTarget {
+
+  // MARK: FBiOSTargetInfo - writable properties for test configuration
+
+  var uniqueIdentifier: String = ""
+  var udid: String = ""
+  var name: String = ""
+  var auxillaryDirectory: String = ""
+  var customDeviceSetPath: String?
+  var state: FBiOSTargetState = .unknown
+  var targetType: FBiOSTargetType = .simulator
+  var deviceType: FBDeviceType!
+  var osVersion: FBOSVersion!
+
+  // MARK: FBiOSTarget - synthesized properties
+
+  var architectures: [FBArchitecture] = []
+  var logger: (any FBControlCoreLogger)?
+  var platformRootDirectory: String = ""
+  var runtimeRootDirectory: String = ""
+  var screenInfo: FBiOSTargetScreenInfo?
+  var temporaryDirectory: FBTemporaryDirectory!
+
+  // MARK: FBiOSTargetCommand
+
+  @objc(commandsWithTarget:)
+  static func commands(with target: any FBiOSTarget) -> Self {
+    return self.init()
+  }
+
+  // MARK: FBiOSTarget
+
+  var workQueue: DispatchQueue { .main }
+
+  var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
+
+  @objc(compare:)
+  func compare(_ target: any FBiOSTarget) -> ComparisonResult {
+    return FBiOSTargetComparison(self, target)
+  }
+
+  var extendedInformation: [String: Any] { [:] }
+
+  func requiresBundlesToBeSigned() -> Bool { false }
+
+  func replacementMapping() -> [String: String] { [:] }
+
+  func environmentAdditions() -> [String: String] { [:] }
+
+  // MARK: FBApplicationCommands
+
+  func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBLaunchedApplication> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func installedApplications() -> FBFuture<NSArray> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func runningApplications() -> FBFuture<NSDictionary> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBVideoStreamCommands
+
+  func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<FBVideoStream> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBCrashLogCommands
+
+  func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func crashLogFiles() -> FBFutureContext<FBFileContainerProtocol> {
+    return FBFutureContext(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBLogCommands
+
+  func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBLogOperation> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBScreenshotCommands
+
+  func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBVideoRecordingCommands
+
+  func startRecording(toFile filePath: String) -> FBFuture<FBiOSTargetOperation> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  func stopRecording() -> FBFuture<NSNull> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBXCTestCommands
+
+  func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBXCTraceRecordCommandsProtocol
+
+  func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBInstrumentsCommandsProtocol
+
+  func startInstruments(_ configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBInstrumentsOperation> {
+    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
+  }
+
+  // MARK: FBLifecycleCommands
+
+  func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+    return unsafeBitCast(FBMutableFuture<AnyObject>(), to: FBFuture<NSNull>.self)
+  }
+
+  func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+    return unsafeBitCast(FBMutableFuture<AnyObject>(), to: FBFuture<NSNull>.self)
+  }
+}

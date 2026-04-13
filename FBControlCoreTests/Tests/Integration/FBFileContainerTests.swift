@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import FBControlCoreTestDoubles
 import XCTest
 
 @testable import FBControlCore
@@ -53,13 +52,13 @@ final class FBFileContainerTests: XCTestCase {
   private let fileInDirectoryInBasePathText = "Other Text"
 
   @discardableResult
-  private func setUpBasePathContainer() -> FBFileContainerTestHelpers {
+  private func setUpBasePathContainer() -> any FBFileContainerProtocol {
     let fm = FileManager.default
     try! fm.createDirectory(atPath: basePath, withIntermediateDirectories: true, attributes: nil)
     try! fm.createDirectory(atPath: directoryInBasePath, withIntermediateDirectories: true, attributes: nil)
     try! (fileInBasePathText as NSString).write(toFile: fileInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try! (fileInDirectoryInBasePathText as NSString).write(toFile: fileInDirectoryInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
-    return FBFileContainerTestHelpers.container(forBasePath: basePath)
+    return FBFileContainer.fileContainer(forBasePath: basePath) as! any FBFileContainerProtocol
   }
 
   // MARK: - Mapped Path Helpers
@@ -74,7 +73,7 @@ final class FBFileContainerTests: XCTestCase {
   private let fileInDirectoryInBarText = "Other Text"
 
   @discardableResult
-  private func setUpMappedPathContainer() -> FBFileContainerTestHelpers {
+  private func setUpMappedPathContainer() -> any FBFileContainerProtocol {
     let fm = FileManager.default
     try! fm.createDirectory(atPath: fooPath, withIntermediateDirectories: true, attributes: nil)
     try! fm.createDirectory(atPath: barPath, withIntermediateDirectories: true, attributes: nil)
@@ -82,7 +81,7 @@ final class FBFileContainerTests: XCTestCase {
     try! (fileInFooText as NSString).write(toFile: fileInFoo, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try! (fileInDirectoryInBarText as NSString).write(toFile: fileInDirectoryInBar, atomically: true, encoding: String.Encoding.utf8.rawValue)
     let pathMapping: [String: String] = ["foo": fooPath, "bar": barPath]
-    return FBFileContainerTestHelpers.container(forPathMapping: pathMapping)
+    return FBFileContainer.fileContainer(forPathMapping: pathMapping) as! any FBFileContainerProtocol
   }
 
   // MARK: - Base Path Tests
