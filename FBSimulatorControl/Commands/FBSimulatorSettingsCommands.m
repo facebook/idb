@@ -46,6 +46,16 @@
 
 #pragma mark Public
 
+- (FBFuture<NSNull *> *)setSetting:(FBSimulatorSetting)setting enabled:(BOOL)enabled
+{
+  switch (setting) {
+    case FBSimulatorSettingHardwareKeyboard:
+      return [self setHardwareKeyboardEnabled:enabled];
+    default:
+      return [[FBSimulatorError describeFormat:@"Unknown simulator setting: %lu", (unsigned long)setting] failFuture];
+  }
+}
+
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
   if ([self.simulator.device respondsToSelector:(@selector(setHardwareKeyboardEnabled:keyboardType:error:))]) {

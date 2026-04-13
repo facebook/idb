@@ -15,12 +15,31 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
+ An enumeration of simulator settings that can be toggled on/off.
+ Each value maps to a different underlying transport (SimDevice API, Darwin notification, etc.)
+ but the public API is uniform: setSetting:enabled:.
+ */
+typedef NS_ENUM(NSUInteger, FBSimulatorSetting) {
+  FBSimulatorSettingHardwareKeyboard,
+};
+
+/**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
 
 /**
+ Enables or disables a simulator setting.
+
+ @param setting the setting to modify.
+ @param enabled YES to enable, NO to disable.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setSetting:(FBSimulatorSetting)setting enabled:(BOOL)enabled;
+
+/**
  Enables or disables the hardware keyboard.
+ Convenience wrapper — equivalent to setSetting:FBSimulatorSettingHardwareKeyboard enabled:.
 
  @param enabled YES if enabled, NO if disabled.
  @return a Future that resolves when successful.
