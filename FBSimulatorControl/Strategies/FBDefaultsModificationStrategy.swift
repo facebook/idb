@@ -93,7 +93,7 @@ public class FBDefaultsModificationStrategy: NSObject {
 
   fileprivate func performDefaultsCommand(withArguments arguments: [String]) -> FBFuture<NSString> {
     // Make the Launch Config
-    let configuration = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(
+    let configuration = FBProcessSpawnConfiguration(
       launchPath: defaultsBinary,
       arguments: arguments,
       environment: [:],

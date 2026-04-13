@@ -1,4 +1,9 @@
-// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 @preconcurrency import FBControlCore
 import Foundation
@@ -25,7 +30,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
   // MARK: - FBProcessSpawnCommands Implementation
 
   @objc
-  public func launchProcess(_ configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     guard let simulator else {
       return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
     }
@@ -61,7 +66,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
 
   // MARK: - Private
 
-  private class func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>, attachment: FBProcessIOAttachment) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  private class func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let logger = simulator.logger
     let launchFuture = FBMutableFuture<NSNumber>(name: "Launch of \(configuration.launchPath) on \(simulator.udid)")
     let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")

@@ -16,7 +16,6 @@
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessSpawnCommands.h"
-#import "FBProcessSpawnConfiguration.h"
 #import "FBProcessStream.h"
 
 static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProcessStreamAttachment *attachment, int targetFileDescriptor, NSError **error)

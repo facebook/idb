@@ -365,7 +365,7 @@ private final class FBLogicTestRunOutputs: NSObject {
     let stdOut = FBProcessOutput<AnyObject>(for: outputs.stdOutConsumer)
     let stdErr = FBProcessOutput<AnyObject>(for: outputs.stdErrConsumer)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-    let spawnConfig = FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
+    let spawnConfig = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
     let adapter = FBArchitectureProcessAdapter()
 
     return unsafeBitCast(
@@ -375,7 +375,7 @@ private final class FBLogicTestRunOutputs: NSObject {
     .onQueue(
       queue,
       fmap: { mappedConfigObj -> FBFuture<AnyObject> in
-        let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration<AnyObject, AnyObject, AnyObject>
+        let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration
         return unsafeBitCast(self.target.launchProcess(mappedConfig), to: FBFuture<AnyObject>.self)
       }
     )

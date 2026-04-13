@@ -18,7 +18,6 @@
 #import <FBControlCore/FBInstalledApplication.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBLogCommands.h>
-#import <FBControlCore/FBProcessSpawnConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
 #import <FBControlCore/FBXCTraceRecordCommands.h>
