@@ -398,8 +398,6 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
   }];
 }
 
-#pragma mark Private
-
 - (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
 {
   return [self runSimulatorFrameworkBridgeWithService:service action:action arguments:@[]];
