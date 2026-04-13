@@ -199,33 +199,34 @@ public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
   }
 
   @objc public func runningApplications() -> FBFuture<NSDictionary> {
-    return pidToRunningProcessName().onQueue(
+    return FBFuture<AnyObject>.combine([
+      unsafeBitCast(pidToRunningProcessName(), to: FBFuture<AnyObject>.self),
+      unsafeBitCast(installedApplicationsData(Self.namingLookupAttributes), to: FBFuture<AnyObject>.self),
+    ])
+    .onQueue(
       device!.asyncQueue,
-      fmap: { (pidData: AnyObject) -> FBFuture<AnyObject> in
-        let pidToRunningProcessName = pidData as! [NSNumber: String]
-        return self.installedApplicationsData(Self.namingLookupAttributes).onQueue(
-          self.device!.asyncQueue,
-          map: { (appData: AnyObject) -> AnyObject in
-            let bundleIdentifierToAttributes = appData as! [String: [String: Any]]
+      map: { results -> AnyObject in
+        let tuple = results as [AnyObject]
+        let pidToRunningProcessName = tuple[0] as! [NSNumber: String]
+        let bundleIdentifierToAttributes = tuple[1] as! [String: [String: Any]]
 
-            var bundleNameToBundleIdentifier: [String: String] = [:]
-            for (bundleIdentifier, attributes) in bundleIdentifierToAttributes {
-              if let bundleName = attributes[FBApplicationInstallInfoKey.bundleName.rawValue] as? String {
-                bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
-              }
-            }
-            var runningProcessNameToPID: [String: NSNumber] = [:]
-            for (pid, processName) in pidToRunningProcessName {
-              runningProcessNameToPID[processName] = pid
-            }
-            var bundleNameToPID: [String: NSNumber] = [:]
-            for (processName, pid) in runningProcessNameToPID {
-              if let bundleName = bundleNameToBundleIdentifier[processName] {
-                bundleNameToPID[bundleName] = pid
-              }
-            }
-            return bundleNameToPID as NSDictionary as AnyObject
-          })
+        var bundleNameToBundleIdentifier: [String: String] = [:]
+        for (bundleIdentifier, attributes) in bundleIdentifierToAttributes {
+          if let bundleName = attributes[FBApplicationInstallInfoKey.bundleName.rawValue] as? String {
+            bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
+          }
+        }
+        var runningProcessNameToPID: [String: NSNumber] = [:]
+        for (pid, processName) in pidToRunningProcessName {
+          runningProcessNameToPID[processName] = pid
+        }
+        var bundleNameToPID: [String: NSNumber] = [:]
+        for (processName, pid) in runningProcessNameToPID {
+          if let bundleName = bundleNameToBundleIdentifier[processName] {
+            bundleNameToPID[bundleName] = pid
+          }
+        }
+        return bundleNameToPID as NSDictionary as AnyObject
       }) as! FBFuture<NSDictionary>
   }
 

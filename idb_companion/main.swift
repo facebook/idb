@@ -57,10 +57,6 @@ private let kUsageHelpMessage = """
       ecid:ECID                  Limit interactions to a specific Device ECID
   """
 
-private func allFutures(_ futures: [AnyObject]) -> FBFuture<NSArray> {
-  return FBFuture<AnyObject>.combine(futures as! [FBFuture<AnyObject>])
-}
-
 private func writeJSONToStdOut(_ json: Any) {
   guard let jsonOutput = try? JSONSerialization.data(withJSONObject: json) else { return }
   var readyOutput = Data(jsonOutput)
@@ -121,27 +117,27 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   if let only {
     if only.lowercased().contains("simulator") {
       logger.log("'--only' set for Simulators")
-      return allFutures([simulatorSet(userDefaults, logger: logger, reporter: reporter)])
+      return FBFuture<AnyObject>.combine([simulatorSet(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>])
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
-      return allFutures([deviceSet(logger, ecidFilter: nil)])
+      return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>])
     }
     if only.lowercased().hasPrefix("ecid:") {
       let ecid = only.lowercased().replacingOccurrences(of: "ecid:", with: "")
       logger.log("ECID filter of \(ecid)")
-      return allFutures([deviceSet(logger, ecidFilter: ecid)])
+      return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: ecid) as! FBFuture<AnyObject>])
     }
     return unsafeBitCast(FBIDBError.describe("\(only) is not a valid argument for '--only'").failFuture() as FBFuture<AnyObject>, to: FBFuture<NSArray>.self)
   }
   if !xcodeAvailable {
     logger.log("Xcode is not available, only Devices will be provided")
-    return allFutures([deviceSet(logger, ecidFilter: nil)])
+    return FBFuture<AnyObject>.combine([deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>])
   }
   logger.log("Providing targets across Simulator and Device sets.")
-  return allFutures([
-    simulatorSet(userDefaults, logger: logger, reporter: reporter),
-    deviceSet(logger, ecidFilter: nil),
+  return FBFuture<AnyObject>.combine([
+    simulatorSet(userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
+    deviceSet(logger, ecidFilter: nil) as! FBFuture<AnyObject>,
   ])
 }
 
@@ -351,9 +347,9 @@ private func createFuture(_ create: String, userDefaults: UserDefaults, logger: 
 
 private func cloneFuture(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger, reporter: FBEventReporter) -> FBFuture<NSNull> {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
-  return allFutures([
-    simulatorFuture(udid, userDefaults: userDefaults, logger: logger, reporter: reporter),
-    simulatorSetWithPath(destinationSet, logger: logger, reporter: reporter),
+  return FBFuture<AnyObject>.combine([
+    simulatorFuture(udid, userDefaults: userDefaults, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
+    simulatorSetWithPath(destinationSet, logger: logger, reporter: reporter) as! FBFuture<AnyObject>,
   ])
   .onQueue(
     DispatchQueue.main,

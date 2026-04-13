@@ -134,14 +134,9 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     concurrent.async(execute: block1)
     concurrent.async(execute: block2)
 
-    // Await each in order; since each future resolves with its index, order is deterministic.
-    var values: [NSNumber] = []
-    for future in [future0, future1, future2] {
-      if let value = try? future.await(withTimeout: 1) as? NSNumber {
-        values.append(value)
-      }
-    }
-    XCTAssertEqual(values, [0, 1, 2])
+    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 1) as NSArray?
+    XCTAssertNotNil(value)
+    XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
 
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)
@@ -198,14 +193,9 @@ final class FBFutureContextManagerTests: XCTestCase, FBFutureContextManagerDeleg
     concurrent.async(execute: block1)
     concurrent.async(execute: block2)
 
-    // Await each in order; since each future resolves with its index, order is deterministic.
-    var values: [NSNumber] = []
-    for future in [future0, future1, future2] {
-      if let value = try? future.await(withTimeout: 1) as? NSNumber {
-        values.append(value)
-      }
-    }
-    XCTAssertEqual(values, [0, 1, 2])
+    let value = try? FBFuture<AnyObject>.combine([future0, future1, future2]).await(withTimeout: 1) as NSArray?
+    XCTAssertNotNil(value)
+    XCTAssertEqual(value as? NSArray, [0, 1, 2] as NSArray)
 
     XCTAssertEqual(prepareCalled, 1)
     XCTAssertEqual(teardownCalled, 1)

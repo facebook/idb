@@ -31,28 +31,21 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
     guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
-    let relay = fetchInformationFromDiagnosticsRelay()
-    let springboard = fetchInformationFromSpringboard()
-    let config = fetchInformationFromMobileConfiguration()
-
-    return
-      (relay.onQueue(
-        device.asyncQueue,
-        fmap: { relayResult -> FBFuture<AnyObject> in
-          return springboard.onQueue(
-            device.asyncQueue,
-            fmap: { springboardResult -> FBFuture<AnyObject> in
-              return config.onQueue(
-                device.asyncQueue,
-                map: { configResult -> AnyObject in
-                  return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: [
-                    DiagnosticsRelayService: relayResult,
-                    FBSpringboardServicesClient.serviceName: springboardResult,
-                    FBManagedConfigClient.serviceName: configResult,
-                  ]) as AnyObject
-                })
-            })
-        })) as! FBFuture<NSDictionary>
+    return FBFuture<AnyObject>.combine([
+      fetchInformationFromDiagnosticsRelay(),
+      fetchInformationFromSpringboard(),
+      fetchInformationFromMobileConfiguration(),
+    ])
+    .onQueue(
+      device.asyncQueue,
+      map: { results -> AnyObject in
+        let resultsArray = results as [AnyObject]
+        return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: [
+          DiagnosticsRelayService: resultsArray[0],
+          FBSpringboardServicesClient.serviceName: resultsArray[1],
+          FBManagedConfigClient.serviceName: resultsArray[2],
+        ]) as AnyObject
+      }) as! FBFuture<NSDictionary>
   }
 
   // MARK: - Private
