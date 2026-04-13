@@ -30,14 +30,15 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       (FBFuture<AnyObject>
       .onQueue(
         simulator.asyncQueue,
-        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self else { return nil }
+        resolve: { [weak self] in
+          guard let self else {
+            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
+          }
           do {
             let containedFile = try self.containedFile(forApplication: bundleID)
-            return FBFileContainer.fileContainer(for: containedFile)
+            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
           } catch {
-            errorPtr?.pointee = error as NSError
-            return nil
+            return FBFuture(error: error)
           }
         }
       )
@@ -59,14 +60,15 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       (FBFuture<AnyObject>
       .onQueue(
         simulator.workQueue,
-        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self else { return nil }
+        resolve: { [weak self] in
+          guard let self else {
+            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
+          }
           do {
             let containedFile = try self.containedFileForApplicationContainers()
-            return FBFileContainer.fileContainer(for: containedFile)
+            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
           } catch {
-            errorPtr?.pointee = error as NSError
-            return nil
+            return FBFuture(error: error)
           }
         }
       )
@@ -83,14 +85,15 @@ public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulato
       (FBFuture<AnyObject>
       .onQueue(
         simulator.workQueue,
-        resolveValue: { [weak self] (errorPtr: NSErrorPointer) -> AnyObject? in
-          guard let self else { return nil }
+        resolve: { [weak self] in
+          guard let self else {
+            return FBFuture(error: FBControlCoreError.describe("FBSimulatorFileCommands deallocated").build())
+          }
           do {
             let containedFile = try self.containedFileForGroupContainers()
-            return FBFileContainer.fileContainer(for: containedFile)
+            return FBFuture(result: FBFileContainer.fileContainer(for: containedFile))
           } catch {
-            errorPtr?.pointee = error as NSError
-            return nil
+            return FBFuture(error: error)
           }
         }
       )

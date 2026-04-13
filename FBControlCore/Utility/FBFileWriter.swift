@@ -26,22 +26,23 @@ public class FBFileWriter: NSObject {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FBFileWriter_Null())
   }
 
-  private static func fileDescriptor(forPath filePath: String, error: NSErrorPointer) -> Int32 {
+  private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
     let fd = open(filePath, O_WRONLY | O_CREAT, 0o644)
     if fd == -1 {
-      return
+      throw
         FBControlCoreError
         .describe("A file handle for path \(filePath) could not be opened: \(String(cString: strerror(errno)))")
-        .failInt(error)
+        .build()
     }
     return fd
   }
 
   @objc public static func asyncDispatchDataWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBFuture<AnyObject> {
-    var error: NSError?
     let writer = FBFileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: createWorkQueue())
-    if !writer.startWriting(error: &error) {
-      return FBFuture(error: error!)
+    do {
+      try writer.startWriting()
+    } catch {
+      return FBFuture(error: error)
     }
     return FBFuture(result: writer)
   }
@@ -52,7 +53,10 @@ public class FBFileWriter: NSObject {
 
   @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (FBDataConsumer & FBDataConsumerLifecycle)? {
     let writer = FBFileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
-    if !writer.startWriting(error: error) {
+    do {
+      try writer.startWriting()
+    } catch let e {
+      error?.pointee = e as NSError
       return nil
     }
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
@@ -64,8 +68,11 @@ public class FBFileWriter: NSObject {
   }
 
   @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (FBDataConsumer & FBDataConsumerLifecycle & FBDataConsumerSync)? {
-    let fd = fileDescriptor(forPath: filePath, error: error)
-    if fd == 0 {
+    let fd: Int32
+    do {
+      fd = try fileDescriptor(forPath: filePath)
+    } catch let e {
+      error?.pointee = e as NSError
       return nil
     }
     return FBFileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true) as? (FBDataConsumer & FBDataConsumerLifecycle & FBDataConsumerSync)
@@ -76,14 +83,17 @@ public class FBFileWriter: NSObject {
     return FBFuture<AnyObject>.onQueue(
       queue,
       resolve: {
-        var error: NSError?
-        let fd = fileDescriptor(forPath: filePath, error: &error)
-        if fd == 0 {
-          return FBFuture(error: error!)
+        let fd: Int32
+        do {
+          fd = try fileDescriptor(forPath: filePath)
+        } catch {
+          return FBFuture(error: error)
         }
         let writer = FBFileWriter_Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
-        if !writer.startWriting(error: &error) {
-          return FBFuture(error: error!)
+        do {
+          try writer.startWriting()
+        } catch {
+          return FBFuture(error: error)
         }
         return FBFuture(result: FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer) as AnyObject)
       })
@@ -173,7 +183,7 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
     return unsafeBitCast(finishedConsumingMutable, to: FBFuture<NSNull>.self)
   }
 
-  func startWriting(error: NSErrorPointer) -> Bool {
+  func startWriting() throws {
     assert(io == nil)
 
     let finishedConsuming = finishedConsumingMutable
@@ -185,15 +195,14 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
       finishedConsuming.resolve(withResult: NSNull())
     }
     guard io != nil else {
-      return
+      throw
         FBControlCoreError
         .describe("A IO Channel could not be created for fd \(fileDescriptor)")
-        .failBool(error)
+        .build()
     }
 
     // Report partial results with as little as 1 byte read.
     io?.setLimit(lowWater: 1)
-    return true
   }
 
   private func ioChannelDidClose(withError errorCode: Int32) {
