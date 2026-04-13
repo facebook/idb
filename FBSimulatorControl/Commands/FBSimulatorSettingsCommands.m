@@ -15,7 +15,6 @@
 #import "FBDefaultsModificationStrategy.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
-#import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 
 
@@ -62,20 +61,10 @@
 
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
-  if ([self.simulator.device respondsToSelector:(@selector(setHardwareKeyboardEnabled:keyboardType:error:))]) {
-    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
-      NSError *error = nil;
-      [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:&error];
-
-      return FBFuture.empty;
-    }];
-  }
-
-  return [[self.simulator
-    connectToBridge]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
-      return [bridge setHardwareKeyboardEnabled:enabled];
-    }];
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
+    [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:error];
+    return NSNull.null;
+  }];
 }
 
 - (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
