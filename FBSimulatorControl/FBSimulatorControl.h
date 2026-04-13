@@ -16,7 +16,6 @@
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorBootStrategy.h>
 #import <FBSimulatorControl/FBSimulatorBootVerificationStrategy.h>
-#import <FBSimulatorControl/FBSimulatorBridge.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration+CoreSimulator.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControl+PrincipalClass.h>
