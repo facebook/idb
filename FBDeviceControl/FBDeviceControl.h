@@ -13,14 +13,11 @@
 #import <FBDeviceControl/FBAMRestorableDevice.h>
 #import <FBDeviceControl/FBAMRestorableDeviceManager.h>
 #import <FBDeviceControl/FBDevice.h>
-#import <FBDeviceControl/FBDeviceActivationCommands.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
 #import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
 #import <FBDeviceControl/FBDeviceEraseCommands.h>
 #import <FBDeviceControl/FBDeviceManager.h>
-#import <FBDeviceControl/FBDeviceRecoveryCommands.h>
-#import <FBDeviceControl/FBDeviceSocketForwardingCommands.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
 
 #if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)

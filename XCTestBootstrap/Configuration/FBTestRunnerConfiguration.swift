@@ -182,7 +182,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
     return unsafeBitCast(
       combineFutures([
-        unsafeBitCast(target.installedApplication(withBundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID), to: FBFuture<AnyObject>.self),
+        unsafeBitCast((target as any FBApplicationCommands).installedApplication(withBundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID), to: FBFuture<AnyObject>.self),
         unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
       ])
       .onQueue(

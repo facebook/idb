@@ -7,6 +7,17 @@
 
 import Foundation
 
+// MARK: - FBiOSTargetOperation Protocol
+
+/// A protocol that represents an operation of indeterminate length.
+@objc public protocol FBiOSTargetOperation: NSObjectProtocol {
+
+  /// A Future that resolves when the operation has completed.
+  var completed: FBFuture<NSNull> { get }
+}
+
+// MARK: - FBiOSTargetOperationWrapper
+
 private class FBiOSTargetOperationWrapper: NSObject, FBiOSTargetOperation {
 
   let completed: FBFuture<NSNull>

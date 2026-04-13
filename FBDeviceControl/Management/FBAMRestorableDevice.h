@@ -16,6 +16,18 @@
  */
 @interface FBAMRestorableDevice : NSObject <FBiOSTargetInfo, FBDeviceProtocol>
 
+#pragma mark - FBiOSTargetInfo Protocol Members
+// Declared explicitly for Swift visibility since FBiOSTargetInfo is Swift-defined.
+@property (nonnull, nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *udid;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceType *deviceType;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, strong) FBOSVersion *osVersion;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
+@property (nonatomic, readonly, assign) FBiOSTargetState state;
+
 /**
  The Designated Initializer.
 

@@ -7,6 +7,17 @@
 
 import Foundation
 
+@objc public protocol FBLogOperation: FBiOSTargetOperation {
+
+  @objc var consumer: FBDataConsumer { get }
+}
+
+@objc public protocol FBLogCommands: NSObjectProtocol, FBiOSTargetCommand {
+
+  @objc(tailLog:consumer:)
+  func tailLog(_ arguments: [String], consumer: FBDataConsumer) -> FBFuture<FBLogOperation>
+}
+
 @objc(FBProcessLogOperation)
 public class FBProcessLogOperation: NSObject, FBLogOperation {
 

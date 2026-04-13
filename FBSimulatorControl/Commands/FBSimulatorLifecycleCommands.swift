@@ -21,6 +21,25 @@ private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObj
 
 private let openURLRetries = 2
 
+@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands {
+  @objc(boot:)
+  func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull>
+
+  func focus() -> FBFuture<NSNull>
+
+  @objc(disconnectWithTimeout:logger:)
+  func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull>
+
+  func connectToBridge() -> FBFuture<FBSimulatorBridge>
+
+  func connectToFramebuffer() -> FBFuture<FBFramebuffer>
+
+  func connectToHID() -> FBFuture<FBSimulatorHID>
+
+  @objc(openURL:)
+  func open(_ url: URL) -> FBFuture<NSNull>
+}
+
 @objc(FBSimulatorLifecycleCommands)
 public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleCommandsProtocol {
 
@@ -88,8 +107,8 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
 
   // MARK: - States
 
-  @objc
-  public func resolve(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+  @objc(resolveState:)
+  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
     guard let simulator = self.simulator else {
       return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
     }

@@ -7,6 +7,12 @@
 
 import Foundation
 
+@objc public protocol FBProcessSpawnCommands: NSObjectProtocol, FBiOSTargetCommand {
+
+  @objc(launchProcess:)
+  func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+}
+
 @objc(FBProcessSpawnCommandHelpers)
 public final class FBProcessSpawnCommandHelpers: NSObject {
 

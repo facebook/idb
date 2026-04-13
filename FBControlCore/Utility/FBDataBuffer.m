@@ -101,14 +101,6 @@
 
 @end
 
-@protocol FBDataBuffer_Forwarder <NSObject>
-
-- (void)run:(id<FBConsumableBuffer>)buffer;
-
-@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
-
-@end
-
 @interface FBDataBuffer_Terminal_Forwarder : NSObject <FBDataBuffer_Forwarder>
 
 @property (nonatomic, readonly, copy) NSData *terminal;

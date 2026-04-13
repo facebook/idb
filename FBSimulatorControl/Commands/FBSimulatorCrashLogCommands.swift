@@ -30,8 +30,8 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
 
   // MARK: - FBCrashLogCommands
 
-  @objc
-  public func notify(ofCrash predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+  @objc(notifyOfCrash:)
+  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return notifier.nextCrashLog(forPredicate: predicate)
   }
 

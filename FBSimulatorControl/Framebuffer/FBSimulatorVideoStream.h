@@ -48,7 +48,8 @@ typedef struct {
  This component can be used to provide a real-time stream of a Simulator's Framebuffer.
  This can be connected to additional software via a stream to a File Handle or Fifo.
  */
-@interface FBSimulatorVideoStream : NSObject <FBFramebufferConsumer, FBVideoStream>
+// FBFramebufferConsumer conformance is declared in .m; FBVideoStream in Swift.
+@interface FBSimulatorVideoStream : NSObject
 
 #pragma mark Initializers
 

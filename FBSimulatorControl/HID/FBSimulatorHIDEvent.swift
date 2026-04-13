@@ -3,6 +3,28 @@
 import FBControlCore
 import Foundation
 
+public let DEFAULT_SWIPE_DELTA: Double = 10.0
+
+// MARK: - HID Event Protocols
+
+@objc public protocol FBSimulatorHIDEventProtocol: NSObjectProtocol, NSCopying {
+  @objc(performOnHID:)
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull>
+}
+
+@objc public protocol FBSimulatorHIDEventPayload: FBSimulatorHIDEventProtocol {
+  @objc(payloadForHID:)
+  func payload(for hid: FBSimulatorHID) -> Data
+}
+
+@objc public protocol FBSimulatorHIDEventDelay: FBSimulatorHIDEventProtocol {
+  var duration: TimeInterval { get }
+}
+
+@objc public protocol FBSimulatorHIDEventComposite: FBSimulatorHIDEventProtocol {
+  var events: [any FBSimulatorHIDEventProtocol] { get }
+}
+
 // MARK: - Private helper
 
 private func directionString(from direction: FBSimulatorHIDDirection) -> String? {

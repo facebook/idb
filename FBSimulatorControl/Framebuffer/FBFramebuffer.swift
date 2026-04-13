@@ -11,6 +11,25 @@ import Foundation
 import IOSurface
 @_implementationOnly @preconcurrency import SimulatorKit
 
+@objc public protocol FBSimulatorVideoStreamFramePusher: NSObjectProtocol {
+  @objc(setupWithPixelBuffer:edgeInsets:error:)
+  func setup(withPixelBuffer pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets, error: NSErrorPointer) -> Bool
+
+  func tearDown(_ error: NSErrorPointer) -> Bool
+
+  @objc(writeEncodedFrame:frameNumber:timeAtFirstFrame:frameDuration:forceKeyFrame:error:)
+  func writeEncodedFrame(_ pixelBuffer: CVPixelBuffer, frameNumber: UInt, timeAtFirstFrame: CFTimeInterval, frameDuration: CFTimeInterval, forceKeyFrame: Bool, error: NSErrorPointer) -> Bool
+
+  @objc optional func currentStats() -> FBVideoEncoderStats
+}
+
+@objc public protocol FBFramebufferConsumer: NSObjectProtocol {
+  @objc(didChangeIOSurface:)
+  func didChange(_ surface: IOSurface?)
+
+  func didReceiveDamageRect()
+}
+
 @objc(FBFramebuffer)
 public final class FBFramebuffer: NSObject, @unchecked Sendable {
 

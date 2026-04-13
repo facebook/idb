@@ -9,18 +9,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorFileCommands.h>
-#import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
-#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
-#import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
-#import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 
 @protocol FBControlCoreLogger;
 
 @class FBAppleSimctlCommandExecutor;
 @class FBControlCoreLogger;
+@class FBSimulatorBootConfiguration;
 @class FBSimulatorConfiguration;
 @class FBSimulatorSet;
 @class SimDevice;
@@ -28,7 +22,70 @@
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBFileCommands, FBLocationCommands, FBNotificationCommands, FBProcessSpawnCommands, FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol, FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol, FBSimulatorMediaCommandsProtocol, FBXCTestExtendedCommands, FBDapServerCommand, FBSimulatorApplicationCommandsProtocol, FBSimulatorFileCommandsProtocol>
+// Protocol conformances declared in Swift via extensions:
+// FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol,
+// FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol,
+// FBSimulatorMediaCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
+// FBSimulatorFileCommandsProtocol
+@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBLocationCommands, FBNotificationCommands, FBProcessSpawnCommands>
+
+#pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members
+
+/**
+ FBiOSTargetInfo protocol members - implemented in FBSimulator.m.
+ Must be declared explicitly for Swift visibility since the protocols are Swift-defined.
+ */
+@property (nonnull, nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *udid;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceType *deviceType;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, strong) FBOSVersion *osVersion;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
+@property (nonatomic, readonly, assign) FBiOSTargetState state;
+
+/**
+ FBiOSTarget protocol members - implemented in FBSimulator.m.
+ */
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, copy) NSString *customDeviceSetPath;
+@property (nonnull, nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *auxillaryDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *runtimeRootDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *platformRootDirectory;
+@property (nullable, nonatomic, readonly, strong) FBiOSTargetScreenInfo *screenInfo;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+- (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target;
+
+// FBApplicationCommands (forwarded at runtime)
+- (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;
+- (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID;
+- (nonnull FBFuture *)launchApplication:(nonnull id)configuration;
+- (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID;
+
+// FBProcessSpawnCommands (forwarded at runtime)
+- (nonnull FBFuture *)launchProcess:(nonnull FBProcessSpawnConfiguration *)configuration;
+
+// FBSimulatorLifecycleCommandsProtocol (forwarded at runtime)
+- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture *)connectToBridge;
+- (nonnull FBFuture *)connectToFramebuffer;
+
+// FBSimulatorLaunchCtlCommandsProtocol (forwarded at runtime)
+- (nonnull FBFuture<NSDictionary *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
+- (nonnull FBFuture<NSArray *> *)firstServiceNameAndProcessIdentifierMatching:(nonnull NSRegularExpression *)regex;
+- (nonnull FBFuture<NSString *> *)stopServiceWithName:(nonnull NSString *)serviceName;
+- (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)processIdentifier;
+- (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
+
+// FBPowerCommands / FBEraseCommands / FBSimulatorLifecycleCommandsProtocol (forwarded)
+- (nonnull FBFuture<NSNull *> *)shutdown;
+- (nonnull FBFuture<NSNull *> *)reboot;
+- (nonnull FBFuture<NSNull *> *)erase;
+- (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulatorBootConfiguration *)configuration;
+- (nonnull FBFuture *)installApplicationWithPath:(nonnull NSString *)path;
 
 #pragma mark Properties
 

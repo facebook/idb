@@ -326,50 +326,5 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
 
 @end
 
-/**
- Used for internal and external implementation.
- */
-@protocol FBAccessibilityOperations <NSObject>
-
-/**
- Obtain an opaque element at the given point.
- The element keeps the translation token registered so that it can be serialized or acted upon.
- The caller must call -close on the returned element when done.
-
- @param point the coordinate at which to obtain the accessibility element.
- @return a future wrapping the element.
- */
-- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
-
-/**
- Obtain an opaque element for the frontmost application.
- The element keeps the translation token registered so that it can be serialized (full tree traversal) or acted upon.
- The caller must call -close on the returned element when done.
-
- @return a future wrapping the element.
- */
-- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
-
-/**
- Obtain an opaque element by searching the frontmost application's element tree for the first
- element whose specified accessibility property contains the given value string.
- The element keeps the translation token registered so that it can be serialized or acted upon.
- The caller must call -close on the returned element when done.
-
- @param value the substring to search for in the specified property.
- @param key the searchable key identifying which string property to match (e.g. FBAXSearchableKeyLabel, FBAXSearchableKeyUniqueID).
- @param depth maximum tree depth to search.
- @return a future wrapping the found element, or an error if not found.
- */
-- (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(nonnull NSString *)value
-                                                                           forKey:(nonnull FBAXSearchableKey)key
-                                                                            depth:(NSUInteger)depth;
-
-@end
-
-/**
- Commands relating to Accessibility.
- */
-@protocol FBAccessibilityCommands <NSObject, FBiOSTargetCommand, FBAccessibilityOperations>
-
-@end
+@protocol FBAccessibilityCommands;
+@protocol FBAccessibilityOperations;

@@ -20,70 +20,13 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 
 @protocol FBDataConsumer;
 
-/**
- A Protocol for Classes that receive Logger Messages.
- */
-@protocol FBControlCoreLogger <NSObject>
-
-#pragma mark Public Methods
-
-/**
- Logs a Message with the provided String.
-
- @param message the message to log.
- @return the receiver, for chaining.
- */
-- (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
-
-/**
- Returns the Info Logger variant.
- */
-- (nonnull id<FBControlCoreLogger>)info;
-
-/**
- Returns the Debug Logger variant.
- */
-- (nonnull id<FBControlCoreLogger>)debug;
-
-/**
- Returns the Error Logger variant.
- */
-- (nonnull id<FBControlCoreLogger>)error;
-
-/**
- Returns a Logger for a named 'facility' or 'tag'.
-
- @param name the name to apply to all messages.
- @return a new Logger that will allows logging of messages on the provided queue.
- */
-- (nonnull id<FBControlCoreLogger>)withName:(nonnull NSString *)name;
-
-/**
- Enables or Disables date formatting in the logger.
-
- @param enabled YES to enable date formatting, NO otherwise.
- @return a new Logger with the date formatting applied.
- */
-- (nonnull id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
-
-#pragma mark Properties
-
-/**
- The Prefix for the Logger, if set.
- */
-@property (nullable, nonatomic, readonly, copy) NSString *name;
-
-/**
- The Current Log Level
- */
-@property (nonatomic, readonly, assign) FBControlCoreLogLevel level;
-
-@end
+// Protocol defined in Swift (FBControlCoreLoggerProtocol.swift)
+@protocol FBControlCoreLogger;
 
 /**
   A composite logger that logs to many loggers
  */
-@interface FBCompositeLogger : NSObject <FBControlCoreLogger>
+@interface FBCompositeLogger : NSObject
 
 #pragma mark Initializers
 
@@ -101,6 +44,15 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
   The loggers to log to.
  */
 @property (nonnull, nonatomic, readonly, strong) NSArray<id<FBControlCoreLogger>> *loggers;
+
+- (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
+- (nonnull id<FBControlCoreLogger>)info;
+- (nonnull id<FBControlCoreLogger>)debug;
+- (nonnull id<FBControlCoreLogger>)error;
+- (nonnull id<FBControlCoreLogger>)withName:(nonnull NSString *)name;
+- (nonnull id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
+@property (nullable, nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, assign) FBControlCoreLogLevel level;
 
 @end
 

@@ -14,7 +14,6 @@
 #import "FBActivityRecord.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerResultSummary.h"
-#import "FBXCTestReporter.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"

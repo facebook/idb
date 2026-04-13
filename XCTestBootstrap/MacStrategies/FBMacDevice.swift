@@ -386,13 +386,16 @@ import IOKit
     return FBFuture(result: runningProcesses)
   }
 
-  @objc public func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  @objc(runTestWithLaunchConfiguration:reporter:logger:)
+  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+    // swiftlint:disable:next force_cast
+    let typedReporter = reporter as! FBXCTestReporter
     return FBManagedTestRunStrategy.runToCompletion(
       withTarget: self,
       configuration: testLaunchConfiguration,
       codesign: nil,
       workingDirectory: self.workingDirectory,
-      reporter: reporter,
+      reporter: typedReporter,
       logger: logger
     )
   }
@@ -413,7 +416,8 @@ import IOKit
     return nil
   }
 
-  @objc public func resolve(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+  @objc(resolveState:)
+  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
     return FBiOSTargetResolveState(self, state)
   }
 
@@ -451,7 +455,8 @@ import IOKit
     )
   }
 
-  @objc public func listTestsForBundle(atPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
+  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
+  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
     let bundleDescriptor: FBBundleDescriptor
     do {
       bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
@@ -512,7 +517,8 @@ import IOKit
     )
   }
 
-  @objc public func notify(ofCrash predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+  @objc(notifyOfCrash:)
+  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 

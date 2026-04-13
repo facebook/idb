@@ -19,6 +19,10 @@ typedef CFTypeRef PrivateDevice;
  */
 @interface FBDeviceManager <PublicDevice : id> : NSObject <FBiOSTargetSet>
 
+#pragma mark - FBiOSTargetSet Protocol Members
+// Declared explicitly for Swift visibility since FBiOSTargetSet is Swift-defined.
+@property (nullable, nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
+
 #pragma mark Initializers
 
 /**

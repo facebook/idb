@@ -439,7 +439,7 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
 
   // MARK: FBFileCommands
 
-  public func fileCommands(forContainerApplication bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
     return device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
       .onQueue(
         device!.asyncQueue,
@@ -450,7 +450,7 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory))
+    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! any FBFileContainerProtocol)
   }
 
   public func fileCommandsForApplicationContainers() -> FBFutureContext<any FBFileContainerProtocol> {
@@ -476,7 +476,7 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
   }
 
   public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue))
+    return FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! any FBFileContainerProtocol)
   }
 
   public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
@@ -520,6 +520,7 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
   }
 
   public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: device! as any FBDeviceDebugSymbolsCommandsProtocol, queue: device!.asyncQueue) as any FBFileContainerProtocol)
+    let symbolCommands = unsafeBitCast(device! as AnyObject, to: (any FBDeviceDebugSymbolsCommandsProtocol).self)
+    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
   }
 }

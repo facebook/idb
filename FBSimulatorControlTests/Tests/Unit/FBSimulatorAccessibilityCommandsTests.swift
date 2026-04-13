@@ -131,7 +131,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableProfiling = enableProfiling
 
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     let result = response.elements as! [Any]
     XCTAssertEqual(result.count, 4, "Flat format should have 4 elements (root + 3 children)")
@@ -252,7 +252,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableProfiling = enableProfiling
 
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     let result = response.elements as! [String: Any]
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
@@ -284,7 +284,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableProfiling = enableProfiling
 
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     let result = response.elements as! [Any]
     XCTAssertEqual(result.count, 1, "Nested format should have 1 root element")
@@ -407,7 +407,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableProfiling = enableProfiling
 
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     let result = response.elements as! [Any]
     XCTAssertEqual(result.count, 4, "Should have 4 elements")
@@ -473,7 +473,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.enableProfiling = enableProfiling
 
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     let result = response.elements as! [String: Any]
 
@@ -602,7 +602,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(label, "OK")
 
     // Perform the unconditional tap
-    try! element.tap()
+    try! (element as FBAccessibilityElement).tap()
 
     // Serialize and verify structure — same expected dict as element-at-point tests
     let options = FBAccessibilityRequestOptions.default()
@@ -632,7 +632,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    element.close()
+    element.perform(NSSelectorFromString("close"))
 
     // Verify property access tracking - tap + serialization accesses
     XCTAssertTrue(
@@ -736,7 +736,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let options = FBAccessibilityRequestOptions.default()
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNil(response.frameCoverage, "Coverage should be nil when collectFrameCoverage is not enabled")
   }
 
@@ -751,7 +751,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage, "Coverage should be returned when collectFrameCoverage is enabled")
 
     let coverage = response.frameCoverage!.doubleValue
@@ -790,7 +790,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
     let coverage = response.frameCoverage!.doubleValue
@@ -820,7 +820,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
     let coverage = response.frameCoverage!.doubleValue
@@ -844,7 +844,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
     // Application element is skipped, so coverage should be 0
@@ -863,7 +863,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage, "frameCoverage should be set when collectFrameCoverage is enabled")
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil when no remote content is discovered")
   }
@@ -880,7 +880,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     options.collectFrameCoverage = true
     // remoteContentOptions is nil by default
     let response = try! element.serialize(with: options)
-    element.close()
+    element.perform(NSSelectorFromString("close"))
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil without remoteContentOptions")
   }
 }

@@ -7,6 +7,11 @@
 
 #import "FBControlCoreLoggerDouble.h"
 
+#import <FBControlCore/FBControlCore-Swift.h>
+
+@interface FBControlCoreLoggerDouble () <FBControlCoreLogger>
+@end
+
 @implementation FBControlCoreLoggerDouble
 
 - (id<FBControlCoreLogger>)log:(NSString *)string

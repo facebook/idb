@@ -17,10 +17,10 @@
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBInstalledApplication.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
-#import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
+#import <FBControlCore/FBScreenshotCommands.h>
 #import <FBControlCore/FBVideoStreamConfiguration.h>
-#import <FBControlCore/FBXCTraceRecordCommands.h>
+#import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)

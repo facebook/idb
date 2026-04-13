@@ -9,8 +9,13 @@ import AppKit
 import FBControlCore
 import Foundation
 
+@objc public protocol FBSimulatorMediaCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
+  @objc(addMedia:)
+  func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull>
+}
+
 @objc(FBSimulatorMediaCommands)
-public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
+public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsProtocol {
 
   // MARK: - Properties
 

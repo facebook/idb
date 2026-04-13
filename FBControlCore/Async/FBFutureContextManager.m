@@ -252,7 +252,7 @@
     return;
   }
   [logger log:[NSString stringWithFormat:@"Tearing down context %@ now", result]];
-  [self.delegate teardown:result logger:logger];
+  (void)[self.delegate teardown:result logger:logger];
   self.context = nil;
 }
 

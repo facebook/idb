@@ -61,27 +61,3 @@
 - (nonnull FBFutureContext<NSNull *> *)startListeningContext;
 
 @end
-
-/**
- The Delegate for the Server.
- */
-@protocol FBSocketServerDelegate <NSObject>
-
-/**
- Called when the socket server has a new client connected.
- The File Descriptor will not be automatically be closed, so it's up to implementors to ensure that this happens so file descriptors do not leak.
- If you wish to reject the connection, close the file handle immediately.
-
- @param server the socket server.
- @param address the IP Address of the connected client.
- @param fileDescriptor the file descriptor of the connected socket.
- */
-- (void)socketServer:(nonnull FBSocketServer *)server clientConnected:(struct in6_addr)address fileDescriptor:(int)fileDescriptor;
-
-/**
- The Queue on which the Delegate will be called.
- This may be a serial or a concurrent queue.
- */
-@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t queue;
-
-@end

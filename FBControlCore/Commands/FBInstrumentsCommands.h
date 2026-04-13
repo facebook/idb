@@ -13,27 +13,18 @@
 @class FBInstrumentsConfiguration;
 @class FBInstrumentsOperation;
 
-/**
- Defines an interface for interacting with Instruments.
- */
-@protocol FBInstrumentsCommandsProtocol <NSObject, FBiOSTargetCommand>
-
-/**
- Runs instruments with the given configuration
-
- @param configuration the configuration to use.
- @param logger the logger to use.
- @return A future that resolves with the instruments operation.
- */
-- (nonnull FBFuture<FBInstrumentsOperation *> *)startInstruments:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
-
-@end
+@protocol FBInstrumentsCommandsProtocol;
 
 /**
  A concrete implementation of FBInstrumentsCommandsProtocol.
+ Protocol conformance is declared in Swift (FBInstrumentsCommands.swift).
  */
-@interface FBInstrumentsCommands : NSObject <FBInstrumentsCommandsProtocol>
+// @lint-ignore FBOBJCDEPRECATEDCHECK
+@interface FBInstrumentsCommands : NSObject
 
 @property (nonnull, nonatomic, readonly, strong) id<FBiOSTarget> target;
+
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
+- (nonnull FBFuture<FBInstrumentsOperation *> *)startInstruments:(nonnull FBInstrumentsConfiguration *)configuration logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end

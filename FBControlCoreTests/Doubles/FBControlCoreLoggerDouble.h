@@ -12,6 +12,15 @@
 /*
  A Double of a Logger that does nothing.
  */
-@interface FBControlCoreLoggerDouble : NSObject <FBControlCoreLogger>
+@interface FBControlCoreLoggerDouble : NSObject
+
+- (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
+- (nonnull id<FBControlCoreLogger>)info;
+- (nonnull id<FBControlCoreLogger>)debug;
+- (nonnull id<FBControlCoreLogger>)error;
+- (nonnull id<FBControlCoreLogger>)withName:(nonnull NSString *)name;
+- (nonnull id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
+@property (nullable, nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, assign) FBControlCoreLogLevel level;
 
 @end

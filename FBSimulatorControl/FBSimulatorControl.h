@@ -12,19 +12,11 @@
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorBridge.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
-#import <FBSimulatorControl/FBSimulatorFileCommands.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
-#import <FBSimulatorControl/FBSimulatorHIDEvent.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
-#import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
-#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
-#import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
-#import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>
 
 #if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)

@@ -13,6 +13,11 @@ private func combineFutures(_ futures: [FBFuture<AnyObject>]) -> FBFuture<AnyObj
   return impl(FBFuture<AnyObject>.self, sel, futures as NSArray)
 }
 
+@objc public protocol FBSimulatorApplicationCommandsProtocol: NSObjectProtocol {
+  @objc(installedApplicationWithBundleID:error:)
+  func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication
+}
+
 @objc(FBSimulatorApplicationCommands)
 public final class FBSimulatorApplicationCommands: NSObject, FBApplicationCommands, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand {
 

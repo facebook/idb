@@ -26,7 +26,6 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestReporterAdapter.h"
-#import "FBXCTestReporter.h"
 #import "XCTestBootstrapError.h"
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>

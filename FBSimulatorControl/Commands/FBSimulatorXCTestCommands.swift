@@ -36,13 +36,15 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
   // MARK: - FBXCTestCommands
 
   @objc(runTestWithLaunchConfiguration:reporter:logger:)
-  public func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
+  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
     guard let simulator = self.simulator else {
       return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
     }
+    // swiftlint:disable:next force_cast
+    let typedReporter = reporter as! any FBXCTestReporter
 
     if !testLaunchConfiguration.shouldUseXcodebuild {
-      return runTest(with: testLaunchConfiguration, reporter: reporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
+      return runTest(with: testLaunchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
     }
 
     if isRunningXcodeBuildOperation {
@@ -73,7 +75,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
         fmap: { (task: Any) -> FBFuture<AnyObject> in
           let subprocess = task as! FBSubprocess<AnyObject, AnyObject, AnyObject>
           return unsafeBitCast(
-            FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: testLaunchConfiguration, reporter: reporter, target: simulator, logger: logger),
+            FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: testLaunchConfiguration, reporter: typedReporter, target: simulator, logger: logger),
             to: FBFuture<AnyObject>.self)
         }
       )
@@ -148,7 +150,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
   // MARK: - FBXCTestExtendedCommands
 
   @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
-  public func listTestsForBundle(atPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
+  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
     guard let simulator = self.simulator else {
       return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
     }
@@ -169,7 +171,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
       timeout: timeout,
       architectures: (bundleDescriptor.binary?.architectures as? Set<String>) ?? Set())
 
-    return FBListTestStrategy(target: simulator, configuration: configuration, logger: simulator.logger!)
+    return FBListTestStrategy(target: unsafeBitCast(simulator, to: (any FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands).self), configuration: configuration, logger: simulator.logger!)
       .listTests()
   }
 
@@ -212,7 +214,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
         .failFuture() as! FBFuture<NSNull>
     }
     return FBManagedTestRunStrategy.runToCompletion(
-      withTarget: simulator,
+      withTarget: unsafeBitCast(simulator, to: (any FBiOSTarget & FBXCTestExtendedCommands).self),
       configuration: testLaunchConfiguration,
       codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
         ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)

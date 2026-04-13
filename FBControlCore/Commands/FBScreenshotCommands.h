@@ -17,17 +17,4 @@ typedef NSString *FBScreenshotFormat NS_STRING_ENUM;
 extern FBScreenshotFormat _Nonnull const FBScreenshotFormatJPEG;
 extern FBScreenshotFormat _Nonnull const FBScreenshotFormatPNG;
 
-/**
- Defines the protocol for taking screenshots.
- */
-@protocol FBScreenshotCommands <NSObject, FBiOSTargetCommand>
-
-/**
- Takes a Screenshot
-
- @param format the format of the data.
- @return A Future, wrapping Data of the provided format.
- */
-- (nonnull FBFuture<NSData *> *)takeScreenshot:(nonnull FBScreenshotFormat)format;
-
-@end
+@protocol FBScreenshotCommands;

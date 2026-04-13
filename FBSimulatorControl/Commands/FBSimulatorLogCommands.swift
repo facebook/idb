@@ -58,7 +58,7 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
       .onQueue(
         simulator.workQueue,
         map: { process -> AnyObject in
-          return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
+          return FBProcessLogOperation(process: process as! FBSubprocess<AnyObject, AnyObject, AnyObject>, consumer: consumer, queue: simulator.asyncQueue)
         }) as! FBFuture<FBLogOperation>)
   }
 

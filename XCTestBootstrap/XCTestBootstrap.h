@@ -8,14 +8,11 @@
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
 #import <XCTestBootstrap/FBCodeCoverageConfiguration.h>
-#import <XCTestBootstrap/FBLogicXCTestReporter.h>
 #import <XCTestBootstrap/FBTestBundleConnection.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
-#import <XCTestBootstrap/FBXCTestReporter.h>
-#import <XCTestBootstrap/FBXCTestRunner.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
 
 // Note: FBTestReporterAdapter.h is intentionally excluded as it imports XCTestPrivate headers
