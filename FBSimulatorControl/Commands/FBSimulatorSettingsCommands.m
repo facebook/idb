@@ -51,6 +51,8 @@
   switch (setting) {
     case FBSimulatorSettingHardwareKeyboard:
       return [self setHardwareKeyboardEnabled:enabled];
+    case FBSimulatorSettingSlowAnimations:
+      return [self setSlowAnimationsEnabled:enabled];
     default:
       return [[FBSimulatorError describeFormat:@"Unknown simulator setting: %lu", (unsigned long)setting] failFuture];
   }
@@ -372,6 +374,28 @@
 - (FBFuture<NSNull *> *)clearPhotos
 {
   return [self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"];
+}
+
+static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
+
+- (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled
+{
+  return [self setDarwinNotificationState:enabled name:SlowAnimationsNotification];
+}
+
+#pragma mark Private
+
+- (FBFuture<NSNull *> *)setDarwinNotificationState:(BOOL)enabled name:(NSString *)name
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
+    if (![self.simulator.device darwinNotificationSetState:(enabled ? 1 : 0) name:name error:error]) {
+      return nil;
+    }
+    if (![self.simulator.device postDarwinNotification:name error:error]) {
+      return nil;
+    }
+    return NSNull.null;
+  }];
 }
 
 #pragma mark Private

@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 typedef NS_ENUM(NSUInteger, FBSimulatorSetting) {
   FBSimulatorSettingHardwareKeyboard,
+  FBSimulatorSettingSlowAnimations,
 };
 
 /**
