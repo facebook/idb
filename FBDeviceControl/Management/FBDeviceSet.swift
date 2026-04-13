@@ -109,7 +109,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
       return
     }
     device.amDevice = nil
-    if device.amDevice != nil || device.restorableDevice != nil {
+    if device.restorableDevice != nil {
       delegate?.targetUpdated(device, in: self)
     } else {
       storage.deviceDetached(forKey: amDevice.uniqueIdentifier)
@@ -135,7 +135,7 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
       return
     }
     device.restorableDevice = nil
-    if device.amDevice != nil || device.restorableDevice != nil {
+    if device.amDevice != nil {
       delegate?.targetUpdated(device, in: self)
     } else {
       storage.deviceDetached(forKey: restorableDevice.uniqueIdentifier)

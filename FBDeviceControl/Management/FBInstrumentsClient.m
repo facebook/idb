@@ -293,7 +293,7 @@ static const uint32 Int32ArgumentType = 3;
 {
   NSMutableData *data = NSMutableData.data;
   [data appendBytes:&EmptyDictionaryKey length:sizeof(EmptyDictionaryKey)];
-  [data appendBytes:&Int32ArgumentType length:sizeof(ObjectArgumentType)];
+  [data appendBytes:&Int32ArgumentType length:sizeof(Int32ArgumentType)];
   [data appendBytes:&value length:sizeof(value)];
   return data;
 }

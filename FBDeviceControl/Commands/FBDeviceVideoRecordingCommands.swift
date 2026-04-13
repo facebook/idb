@@ -53,7 +53,7 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
   // MARK: - FBVideoStreamCommands
 
   public func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<any FBVideoStream> {
-    guard let device else {
+    guard let device, let logger = device.logger else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
     return
@@ -62,7 +62,6 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
         device.workQueue,
         fmap: { session -> FBFuture<AnyObject> in
           do {
-            let logger = device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
             let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
             return FBFuture(result: stream as AnyObject)
           } catch {

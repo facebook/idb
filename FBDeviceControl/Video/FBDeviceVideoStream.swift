@@ -168,9 +168,8 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
 
-    let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
-    let size = CVPixelBufferGetDataSize(pixelBuffer)
-    if let baseAddress {
+    if let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) {
+      let size = CVPixelBufferGetDataSize(pixelBuffer)
       if consumer.conforms(to: FBDataConsumerSync.self) {
         let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
         consumer.consumeData(data)
@@ -178,6 +177,8 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
         let data = Data(bytes: baseAddress, count: size)
         consumer.consumeData(data)
       }
+    } else {
+      logger.log("Failed to get base address for pixel buffer")
     }
 
     CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
@@ -191,6 +192,9 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream {
 
   override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
+    if !output.availableVideoPixelFormatTypes.contains(kCVPixelFormatType_32BGRA) {
+      throw FBDeviceControlError().describe("kCVPixelFormatType_32BGRA is not a supported output type").build()
+    }
     output.videoSettings = [
       kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
