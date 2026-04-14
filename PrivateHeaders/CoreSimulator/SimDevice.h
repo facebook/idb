@@ -216,8 +216,10 @@
  Equivalent to `simctl ui <device> appearance`.
  */
 @interface SimDevice (SimUIInterfaceStyle)
-- (id)currentUIInterfaceStyle;
-- (BOOL)setUIInterfaceStyle:(NSString *)style error:(NSError **)error;
+/// Returns a raw NSInteger: 1 = Light, 2 = Dark (UIUserInterfaceStyle values).
+- (NSInteger)currentUIInterfaceStyle;
+/// Accepts a raw NSInteger: 1 = Light, 2 = Dark (UIUserInterfaceStyle values).
+- (BOOL)setUIInterfaceStyle:(NSInteger)style error:(NSError **)error;
 @end
 
 /**

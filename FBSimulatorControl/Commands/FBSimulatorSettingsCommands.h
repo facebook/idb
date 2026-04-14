@@ -26,6 +26,15 @@ typedef NS_ENUM(NSUInteger, FBSimulatorSetting) {
 };
 
 /**
+ Dark/Light mode appearance.
+ Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
+ */
+typedef NS_ENUM(NSInteger, FBSimulatorAppearance) {
+  FBSimulatorAppearanceLight = 1, // UIUserInterfaceStyleLight
+  FBSimulatorAppearanceDark = 2,  // UIUserInterfaceStyleDark
+};
+
+/**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
@@ -38,6 +47,13 @@ typedef NS_ENUM(NSUInteger, FBSimulatorSetting) {
  @return a Future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)setSetting:(FBSimulatorSetting)setting enabled:(BOOL)enabled;
+
+/**
+ Returns the current appearance (dark/light mode).
+
+ @return a Future that resolves with the current appearance.
+ */
+- (FBFuture<NSNumber *> *)currentAppearance;
 
 /**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain

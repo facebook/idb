@@ -59,6 +59,13 @@
   }
 }
 
+- (FBFuture<NSNumber *> *)currentAppearance
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNumber *(NSError **error) {
+    return @([self.simulator.device currentUIInterfaceStyle]);
+  }];
+}
+
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
   return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
