@@ -401,6 +401,19 @@
   return [self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"];
 }
 
+- (FBFuture<NSNull *> *)setProxyWithHost:(NSString *)host port:(NSUInteger)port type:(NSString *)type
+{
+  if (!host) {
+    return [[FBSimulatorError describe:@"Proxy host must not be nil"] failFuture];
+  }
+  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"set" arguments:@[host, [@(port) stringValue], type ?: @"http"]];
+}
+
+- (FBFuture<NSNull *> *)clearProxy
+{
+  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"clear"];
+}
+
 static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
 
 - (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled

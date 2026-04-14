@@ -175,6 +175,24 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  */
 - (FBFuture<NSNull *> *)clearPhotos;
 
+/**
+ Sets the network proxy for this simulator by writing directly to configd_sim's SCDynamicStore.
+ All networking APIs (NSURLSession, NWConnection, CFNetwork) will honor these settings transparently.
+
+ @param host The proxy host address (e.g. "127.0.0.1").
+ @param port The proxy port number.
+ @param type The proxy type: "http" (default) or "socks".
+ @return A future that resolves when the proxy has been configured.
+ */
+- (FBFuture<NSNull *> *)setProxyWithHost:(NSString *)host port:(NSUInteger)port type:(NSString *)type;
+
+/**
+ Clears the network proxy for this simulator.
+
+ @return A future that resolves when the proxy has been cleared.
+ */
+- (FBFuture<NSNull *> *)clearProxy;
+
 @end
 
 /**
