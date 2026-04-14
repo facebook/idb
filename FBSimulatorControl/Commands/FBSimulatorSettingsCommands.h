@@ -35,6 +35,24 @@ typedef NS_ENUM(NSInteger, FBSimulatorAppearance) {
 };
 
 /**
+ Dynamic Type content size categories.
+ Values match the integer indices used by SimDevice's setContentSizeCategory:error:.
+ */
+typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
+  FBSimulatorContentSizeCategoryExtraSmall = 1,
+  FBSimulatorContentSizeCategorySmall = 2,
+  FBSimulatorContentSizeCategoryMedium = 3,
+  FBSimulatorContentSizeCategoryLarge = 4,
+  FBSimulatorContentSizeCategoryExtraLarge = 5,
+  FBSimulatorContentSizeCategoryExtraExtraLarge = 6,
+  FBSimulatorContentSizeCategoryExtraExtraExtraLarge = 7,
+  FBSimulatorContentSizeCategoryAccessibilityMedium = 8,
+  FBSimulatorContentSizeCategoryAccessibilityLarge = 9,
+  FBSimulatorContentSizeCategoryAccessibilityExtraLarge = 10,
+  FBSimulatorContentSizeCategoryAccessibilityExtraExtraLarge = 11,
+  FBSimulatorContentSizeCategoryAccessibilityExtraExtraExtraLarge = 12,
+};
+/**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
@@ -62,6 +80,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorAppearance) {
  @return a Future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)setAppearance:(FBSimulatorAppearance)appearance;
+
+/**
+ Returns the current Dynamic Type content size category.
+
+ @return a Future that resolves with the current content size category.
+ */
+- (FBFuture<NSNumber *> *)currentContentSizeCategory;
 
 /**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain

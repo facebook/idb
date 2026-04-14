@@ -76,6 +76,13 @@
   }];
 }
 
+- (FBFuture<NSNumber *> *)currentContentSizeCategory
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNumber *(NSError **error) {
+    return @([self.simulator.device currentContentSizeCategory]);
+  }];
+}
+
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
   return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
