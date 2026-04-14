@@ -89,6 +89,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
 - (FBFuture<NSNumber *> *)currentContentSizeCategory;
 
 /**
+ Sets the Dynamic Type content size category.
+
+ @param category the content size category to set.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setContentSizeCategory:(FBSimulatorContentSizeCategory)category;
+
+/**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
 
  @param name preference name
