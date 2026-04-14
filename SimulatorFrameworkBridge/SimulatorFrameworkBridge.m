@@ -9,6 +9,7 @@
 #import "ContactsService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
+#import "ProxyService.h"
 
 int main(int argc, const char * argv[]) {
   @autoreleasepool {
@@ -35,9 +36,11 @@ int main(int argc, const char * argv[]) {
     } else if ([service isEqualToString:@"notifications"]) {
       NSString *bundleID = remainingArgs.count > 0 ? remainingArgs[0] : nil;
       return handleNotificationSettingsAction(action, bundleID);
+    } else if ([service isEqualToString:@"proxy"]) {
+      return handleProxyAction(action, remainingArgs);
     } else {
       NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts, photos, notifications");
+      NSLog(@"Available services: contacts, photos, notifications, proxy");
       return 1;
     }
     return 0;
