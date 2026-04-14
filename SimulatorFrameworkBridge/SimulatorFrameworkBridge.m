@@ -22,12 +22,18 @@ int main(int argc, const char * argv[]) {
     NSString *service = [NSString stringWithUTF8String:argv[1]];
     NSString *action = [NSString stringWithUTF8String:argv[2]];
 
+    // Collect remaining args (argv[3..]) into an array for services that need them
+    NSMutableArray<NSString *> *remainingArgs = [NSMutableArray array];
+    for (int i = 3; i < argc; i++) {
+      [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
+    }
+
     if ([service isEqualToString:@"contacts"]) {
       return handleContactsAction(action);
     } else if ([service isEqualToString:@"photos"]) {
       return handlePhotoLibraryAction(action);
     } else if ([service isEqualToString:@"notifications"]) {
-      NSString *bundleID = argc >= 4 ? [NSString stringWithUTF8String:argv[3]] : nil;
+      NSString *bundleID = remainingArgs.count > 0 ? remainingArgs[0] : nil;
       return handleNotificationSettingsAction(action, bundleID);
     } else {
       NSLog(@"Unknown service: %@", service);
