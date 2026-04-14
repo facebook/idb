@@ -66,6 +66,16 @@
   }];
 }
 
+- (FBFuture<NSNull *> *)setAppearance:(FBSimulatorAppearance)appearance
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
+    if (![self.simulator.device setUIInterfaceStyle:(NSInteger)appearance error:error]) {
+      return nil;
+    }
+    return NSNull.null;
+  }];
+}
+
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
   return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {

@@ -56,6 +56,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorAppearance) {
 - (FBFuture<NSNumber *> *)currentAppearance;
 
 /**
+ Sets the simulator appearance (dark/light mode).
+
+ @param appearance the appearance to set.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)setAppearance:(FBSimulatorAppearance)appearance;
+
+/**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
 
  @param name preference name
