@@ -33,3 +33,4 @@ build_xcframework() {
 build_xcframework "XCTestBootstrap"
 build_xcframework "FBControlCore"
 build_xcframework "FBSimulatorControl"
+build_xcframework "FBDeviceControl"

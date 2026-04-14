@@ -135,7 +135,7 @@ static dispatch_queue_t blockQueue(void)
     dispatch_group_leave(group);
   }];
   BOOL completed = dispatch_group_wait(group, timeout) == 0;
-  return ExtractResult(self, timeout, completed, error);
+  return ExtractResult(self, (NSTimeInterval)timeout, completed, error);
 }
 
 @end

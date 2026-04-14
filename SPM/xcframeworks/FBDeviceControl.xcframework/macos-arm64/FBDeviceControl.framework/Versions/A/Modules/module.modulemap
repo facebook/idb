@@ -1,0 +1,10 @@
+framework module FBDeviceControl {
+  umbrella header "FBDeviceControl.h"
+  export *
+
+  module * { export * }
+}
+
+module FBDeviceControl.Swift {
+  header "FBDeviceControl-Swift.h"
+}
