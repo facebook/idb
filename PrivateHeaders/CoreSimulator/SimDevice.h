@@ -227,16 +227,27 @@
 /**
  Status bar overrides for deterministic screenshots.
  Equivalent to `simctl status_bar <device> override/clear/list`.
- String parameters match the simctl CLI values (e.g. batteryState: "charged"/"charging"/"discharging").
+ All parameters are raw NSInteger values (same pattern as UIInterfaceStyle and ContentSizeCategory)
+ except timeString and operatorName which are genuine NSString *.
+ Integer mappings confirmed via xcrun simctl status_bar on Xcode 26.2.
  */
 @interface SimDevice (StatusBarOverrides)
 - (BOOL)overrideStatusBarTimeString:(NSString *)timeString error:(NSError **)error;
-- (BOOL)overrideStatusBarDataNetworkType:(NSString *)networkType error:(NSError **)error;
-- (BOOL)overrideStatusBarWiFiMode:(NSString *)mode bars:(NSString *)bars error:(NSError **)error;
-- (BOOL)overrideStatusBarCellularMode:(NSString *)mode operatorName:(NSString *)operatorName bars:(NSString *)bars error:(NSError **)error;
-- (BOOL)overrideStatusBarBatteryState:(NSString *)batteryState batteryLevel:(NSString *)level showNotCharging:(BOOL)showNotCharging error:(NSError **)error;
-- (BOOL)clearStatusBarOverrides:(NSError **)error;
-- (BOOL)currentStatusBarOverridesForTimeString:(NSString **)timeString dataNetworkType:(NSString **)networkType wiFiMode:(NSString **)wiFiMode wiFiBars:(NSString **)wiFiBars cellularMode:(NSString **)cellularMode operatorName:(NSString **)operatorName cellularBars:(NSString **)cellularBars batteryState:(NSString **)batteryState batteryLevel:(NSString **)batteryLevel showNotCharging:(BOOL *)showNotCharging error:(NSError **)error;
+/// dataNetworkType: 0=hide, 1=wifi, 6=3g, 7=4g, 8=lte, 9=lte-a, 10=lte+, 11=5g, 12=5g+, 13=5g-uwb, 14=5g-uc. Integers 2-5 are unused legacy gaps.
+- (BOOL)overrideStatusBarDataNetworkType:(NSInteger)networkType error:(NSError **)error;
+/// wiFiMode: 1=searching, 2=failed, 3=active. bars: 0-3.
+- (BOOL)overrideStatusBarWiFiMode:(NSInteger)mode bars:(NSInteger)bars error:(NSError **)error;
+/// cellularMode: 0=notSupported, 1=searching, 2=failed, 3=active. operatorName: NSString *. bars: 0-4.
+- (BOOL)overrideStatusBarCellularMode:(NSInteger)mode operatorName:(NSString *)operatorName bars:(NSInteger)bars error:(NSError **)error;
+/// batteryState: 0=discharging, 1=charging, 2=charged. batteryLevel: 0-100.
+- (BOOL)overrideStatusBarBatteryState:(NSInteger)batteryState batteryLevel:(NSInteger)level showNotCharging:(BOOL)showNotCharging error:(NSError **)error;
+/// Clears status bar overrides. `flags` is sent as @{@"OverridesToClear": @(flags)} via MIG.
+/// Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything. Values < 0x80000000 are no-ops.
+/// NOTE: Class-dump shows 1-arg `clearStatusBarOverrides:` — actual runtime selector is 2-arg `clearStatusBarOverrides:error:`.
+- (BOOL)clearStatusBarOverrides:(NSUInteger)flags error:(NSError **)error;
+/// All out-params are id * — the method deserializes a MIG dictionary and stores dict[@"Key"] to each.
+/// Strings (timeString, operatorName) return NSString *. Numbers return NSNumber *. showNotCharging returns NSNumber * (boolean).
+- (BOOL)currentStatusBarOverridesForTimeString:(NSString **)timeString dataNetworkType:(NSNumber **)networkType wiFiMode:(NSNumber **)wiFiMode wiFiBars:(NSNumber **)wiFiBars cellularMode:(NSNumber **)cellularMode operatorName:(NSString **)operatorName cellularBars:(NSNumber **)cellularBars batteryState:(NSNumber **)batteryState batteryLevel:(NSNumber **)batteryLevel showNotCharging:(NSNumber **)showNotCharging error:(NSError **)error;
 @end
 
 /**

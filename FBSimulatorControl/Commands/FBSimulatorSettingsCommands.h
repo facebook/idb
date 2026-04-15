@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBBundleDescriptor;
 @class FBSimulator;
+@class FBStatusBarOverride;
 
 /**
  An enumeration of simulator settings that can be toggled on/off.
@@ -95,6 +96,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  @return a Future that resolves when successful.
  */
 - (FBFuture<NSNull *> *)setContentSizeCategory:(FBSimulatorContentSizeCategory)category;
+
+/**
+ Returns the current status bar overrides, or nil if no overrides are active.
+
+ @return a Future that resolves with the current status bar overrides, or nil.
+ */
+- (FBFuture<FBStatusBarOverride *> *)currentStatusBarOverrides;
 
 /**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain

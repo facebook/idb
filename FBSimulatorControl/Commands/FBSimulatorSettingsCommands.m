@@ -9,6 +9,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBStatusBarOverride.h"
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
@@ -90,6 +92,37 @@
       return nil;
     }
     return NSNull.null;
+  }];
+}
+
+- (FBFuture<FBStatusBarOverride *> *)currentStatusBarOverrides
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^FBStatusBarOverride *(NSError **error) {
+    NSString *timeString = nil;
+    NSNumber *dataNetworkType = nil;
+    NSNumber *wiFiMode = nil;
+    NSNumber *wiFiBars = nil;
+    NSNumber *cellularMode = nil;
+    NSString *operatorName = nil;
+    NSNumber *cellularBars = nil;
+    NSNumber *batteryState = nil;
+    NSNumber *batteryLevel = nil;
+    NSNumber *showNotCharging = nil;
+    if (![self.simulator.device currentStatusBarOverridesForTimeString:&timeString dataNetworkType:&dataNetworkType wiFiMode:&wiFiMode wiFiBars:&wiFiBars cellularMode:&cellularMode operatorName:&operatorName cellularBars:&cellularBars batteryState:&batteryState batteryLevel:&batteryLevel showNotCharging:&showNotCharging error:error]) {
+      return nil;
+    }
+    FBStatusBarOverride *override = [[FBStatusBarOverride alloc] init];
+    override.timeString = timeString;
+    override.dataNetworkType = dataNetworkType;
+    override.wiFiMode = wiFiMode;
+    override.wiFiBars = wiFiBars;
+    override.cellularMode = cellularMode;
+    override.cellularBars = cellularBars;
+    override.operatorName = operatorName;
+    override.batteryState = batteryState;
+    override.batteryLevel = batteryLevel;
+    override.showNotCharging = showNotCharging;
+    return override;
   }];
 }
 
