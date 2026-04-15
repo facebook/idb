@@ -22,7 +22,7 @@
  The class mediates between:
  - The Host
  - The 'testmanagerd' daemon running on iOS.
- - The 'Test Runner', the Appication in which the XCTest bundle is running.
+ - The 'Test Runner', the Application in which the XCTest bundle is running.
  */
 @interface FBTestManagerAPIMediator : NSObject
 
@@ -36,9 +36,9 @@
 
  @param context the Context of the Test Manager.
  @param target the target.
- @param reporter the (optional) delegate to report test progress too.
+ @param reporter the (optional) delegate to report test progress to.
  @param logger the (optional) logger to events to.
- @return A future that resolves when test execution has fully completed, or an error occured with the execution.
+ @return A future that resolves when test execution has fully completed, or an error occurred with the execution.
  */
 + (nonnull FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
