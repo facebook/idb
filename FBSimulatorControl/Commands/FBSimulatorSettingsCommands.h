@@ -105,6 +105,15 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
 - (FBFuture<FBStatusBarOverride *> *)currentStatusBarOverrides;
 
 /**
+ Overrides the status bar with the given configuration, or clears all overrides if nil.
+ Only non-nil properties on the override object are applied.
+
+ @param override the overrides to apply, or nil to clear all overrides.
+ @return a Future that resolves when successful.
+ */
+- (FBFuture<NSNull *> *)overrideStatusBar:(nullable FBStatusBarOverride *)override;
+
+/**
  Sets preference by name and value for a given domain. If domain not specified assumed to be Apple Global Domain
 
  @param name preference name

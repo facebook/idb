@@ -126,6 +126,54 @@
   }];
 }
 
+- (FBFuture<NSNull *> *)overrideStatusBar:(nullable FBStatusBarOverride *)override
+{
+  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
+    if (!override) {
+      // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
+      // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.
+      if (![self.simulator.device clearStatusBarOverrides:NSUIntegerMax error:error]) {
+        return nil;
+      }
+      return NSNull.null;
+    }
+    if (override.timeString) {
+      if (![self.simulator.device overrideStatusBarTimeString:override.timeString error:error]) {
+        return nil;
+      }
+    }
+    if (override.dataNetworkType) {
+      if (![self.simulator.device overrideStatusBarDataNetworkType:override.dataNetworkType.integerValue error:error]) {
+        return nil;
+      }
+    }
+    if (override.wiFiMode || override.wiFiBars) {
+      NSInteger mode = override.wiFiMode ? override.wiFiMode.integerValue : 3;
+      NSInteger bars = override.wiFiBars ? override.wiFiBars.integerValue : 3;
+      if (![self.simulator.device overrideStatusBarWiFiMode:mode bars:bars error:error]) {
+        return nil;
+      }
+    }
+    if (override.cellularMode || override.operatorName || override.cellularBars) {
+      NSInteger mode = override.cellularMode ? override.cellularMode.integerValue : 3;
+      NSString *name = override.operatorName ?: @"";
+      NSInteger bars = override.cellularBars ? override.cellularBars.integerValue : 4;
+      if (![self.simulator.device overrideStatusBarCellularMode:mode operatorName:name bars:bars error:error]) {
+        return nil;
+      }
+    }
+    if (override.batteryState || override.batteryLevel || override.showNotCharging) {
+      NSInteger state = override.batteryState ? override.batteryState.integerValue : 2;
+      NSInteger level = override.batteryLevel ? override.batteryLevel.integerValue : 100;
+      BOOL notCharging = override.showNotCharging ? override.showNotCharging.boolValue : NO;
+      if (![self.simulator.device overrideStatusBarBatteryState:state batteryLevel:level showNotCharging:notCharging error:error]) {
+        return nil;
+      }
+    }
+    return NSNull.null;
+  }];
+}
+
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
   return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
