@@ -377,7 +377,18 @@ class Client(ClientBase):
                     generator = generate_requests([InstallRequest(payload=payload)])
 
                 else:
-                    file_path = str(Path(bundle).resolve(strict=True))
+                    try:
+                        file_path = str(Path(bundle).resolve(strict=True))
+                    except FileNotFoundError:
+                        # For remote companions, raise IdbException instead of
+                        # letting FileNotFoundError propagate. Without this,
+                        # the decorator's broad `except OSError` converts it to
+                        # IdbConnectionException, pruning a healthy remote companion
+                        # making `idb list-targets` return no targets until
+                        # `idb connect` is re-run.
+                        if not self.is_local:
+                            raise IdbException(f"Bundle path does not exist: {bundle}")
+                        raise
                     if self.is_local:
                         self.logger.debug(
                             f"Companion is local, sending local file by path {file_path}"
