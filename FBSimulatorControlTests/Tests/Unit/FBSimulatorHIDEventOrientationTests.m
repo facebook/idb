@@ -101,4 +101,32 @@
   XCTAssertTrue([[event description] containsString:@"Shake"]);
 }
 
+#pragma mark - Lock Device
+
+- (void)testLockDeviceFactory
+{
+  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent lockDevice];
+  XCTAssertNotNil(event);
+}
+
+- (void)testLockDeviceDescription
+{
+  id<FBSimulatorHIDEvent> event = [FBSimulatorHIDEvent lockDevice];
+  XCTAssertTrue([[event description] containsString:@"Lock"]);
+}
+
+- (void)testLockDeviceEquality
+{
+  id<FBSimulatorHIDEvent> event1 = [FBSimulatorHIDEvent lockDevice];
+  id<FBSimulatorHIDEvent> event2 = [FBSimulatorHIDEvent lockDevice];
+  XCTAssertEqualObjects(event1, event2);
+}
+
+- (void)testLockDeviceCopying
+{
+  id<FBSimulatorHIDEventPayload> event = [FBSimulatorHIDEvent lockDevice];
+  id<FBSimulatorHIDEventPayload> copied = [event copyWithZone:nil];
+  XCTAssertEqualObjects(event, copied);
+}
+
 @end

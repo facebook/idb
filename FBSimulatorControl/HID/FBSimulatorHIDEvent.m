@@ -544,6 +544,50 @@ static NSString *const ShakeDarwinNotification = @"com.apple.UIKit.SimulatorShak
 
 @end
 
+@interface FBSimulatorHIDEvent_LockDevice : NSObject <FBSimulatorHIDEventPayload>
+@end
+
+@implementation FBSimulatorHIDEvent_LockDevice
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return [hid.purple lockDeviceEvent];
+}
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
+{
+  return [FBFuture onQueue:hid.queue resolve:^ FBFuture<NSNull *> * {
+    NSData *payload = [self payloadForHID:hid];
+    NSError *error = nil;
+    if (![hid sendPurpleEvent:payload error:&error]) {
+      return [FBFuture futureWithError:error];
+    }
+    return FBFuture.empty;
+  }];
+}
+
+- (NSString *)description
+{
+  return @"Lock Device";
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+- (BOOL)isEqual:(id)event
+{
+  return [event isKindOfClass:self.class];
+}
+
+- (NSUInteger)hash
+{
+  return 1014;
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 #pragma mark - Initializers
@@ -588,6 +632,11 @@ static NSString *const ShakeDarwinNotification = @"com.apple.UIKit.SimulatorShak
 + (id<FBSimulatorHIDEventPayload>)shake
 {
   return [[FBSimulatorHIDEvent_Shake alloc] init];
+}
+
++ (id<FBSimulatorHIDEventPayload>)lockDevice
+{
+  return [[FBSimulatorHIDEvent_LockDevice alloc] init];
 }
 
 #pragma mark Multiple Payload Events

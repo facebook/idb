@@ -147,6 +147,14 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)shake;
 
+/**
+ A HID Event that locks the device.
+ Sent via PurpleWorkspacePort as a GSEvent type 1014.
+
+ @return a new HID Event.
+ */
++ (id<FBSimulatorHIDEventPayload>)lockDevice;
+
 #pragma mark Multiple Payload Events
 
 /**
