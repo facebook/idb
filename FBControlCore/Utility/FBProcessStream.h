@@ -76,7 +76,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @property (nonatomic, assign, readonly) ssize_t bytesTransferred;
 
 /**
- An error, if any has occured in the streaming of data to the input.
+ An error, if any has occurred in the streaming of data to the input.
  */
 @property (nonatomic, strong, nullable, readonly) NSError *streamError;
 
