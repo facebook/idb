@@ -588,6 +588,50 @@ static NSString *const ShakeDarwinNotification = @"com.apple.UIKit.SimulatorShak
 
 @end
 
+static NSString *const InCallStatusBarNotification = @"com.apple.iphonesimulator.toggleincallstatusbar";
+
+@interface FBSimulatorHIDEvent_ToggleInCallStatusBar : NSObject <FBSimulatorHIDEventPayload>
+@end
+
+@implementation FBSimulatorHIDEvent_ToggleInCallStatusBar
+
+- (NSData *)payloadForHID:(FBSimulatorHID *)hid
+{
+  return NSData.data;
+}
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
+{
+  return [FBFuture onQueue:hid.queue resolveValue:^NSNull *(NSError **error) {
+    if (![hid postDarwinNotification:InCallStatusBarNotification error:error]) {
+      return nil;
+    }
+    return NSNull.null;
+  }];
+}
+
+- (NSString *)description
+{
+  return @"Toggle In-Call Status Bar";
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+- (BOOL)isEqual:(id)event
+{
+  return [event isKindOfClass:self.class];
+}
+
+- (NSUInteger)hash
+{
+  return InCallStatusBarNotification.hash;
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 #pragma mark - Initializers
@@ -637,6 +681,11 @@ static NSString *const ShakeDarwinNotification = @"com.apple.UIKit.SimulatorShak
 + (id<FBSimulatorHIDEventPayload>)lockDevice
 {
   return [[FBSimulatorHIDEvent_LockDevice alloc] init];
+}
+
++ (id<FBSimulatorHIDEventPayload>)toggleInCallStatusBar
+{
+  return [[FBSimulatorHIDEvent_ToggleInCallStatusBar alloc] init];
 }
 
 #pragma mark Multiple Payload Events

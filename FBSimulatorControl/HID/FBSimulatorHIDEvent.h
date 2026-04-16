@@ -155,6 +155,15 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)lockDevice;
 
+/**
+ A HID Event that toggles the in-call status bar.
+ Sent via Darwin notification (com.apple.iphonesimulator.toggleincallstatusbar).
+ This is a state toggle — each invocation flips the current state.
+
+ @return a new HID Event.
+ */
++ (id<FBSimulatorHIDEventPayload>)toggleInCallStatusBar;
+
 #pragma mark Multiple Payload Events
 
 /**
