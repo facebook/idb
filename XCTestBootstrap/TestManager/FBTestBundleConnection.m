@@ -320,7 +320,7 @@ static NSTimeInterval CrashCheckWaitLimit = 120;  // Time to wait for crash repo
         [self.logger logFormat:@"Bundle disconnected, with the test plan completed. Bundle exited successfully."];
         return FBFuture.empty;
       }
-      [self.logger logFormat:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
+      [self.logger logFormat:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occurred"];
       return [self
                failedFutureWithCrashLogOrNotFoundErrorDescription:@"Lost connection to test process, but could not find a crash log"];
     }];
