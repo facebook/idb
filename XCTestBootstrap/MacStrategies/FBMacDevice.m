@@ -197,7 +197,7 @@
     if (!proxyError) {
       return;
     }
-    [logger logFormat:@"Error occured during synchronousRemoteObjectProxyWithErrorHandler call: %@", proxyError.description];
+    [logger logFormat:@"Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: %@", proxyError.description];
     weakSelf.connection = nil;
   }];
 
