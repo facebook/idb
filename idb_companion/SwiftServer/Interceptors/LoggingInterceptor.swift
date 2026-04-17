@@ -13,7 +13,7 @@ private enum MethodStartKey: UserInfo.Key {
   typealias Value = Date
 }
 
-final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
+final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
 
   private let logger: FBIDBLogger
   private let reporter: FBEventReporter
