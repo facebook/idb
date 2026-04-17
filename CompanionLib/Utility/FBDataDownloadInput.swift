@@ -27,7 +27,9 @@ import Foundation
     self.input = unsafeBitCast(rawInput, to: FBProcessInput<AnyObject>.self)
     super.init()
     let configuration = URLSessionConfiguration.default
-    let session = URLSession(configuration: configuration, delegate: self, delegateQueue: OperationQueue())
+    let delegateQueue = OperationQueue()
+    delegateQueue.name = "CompanionLib.FBDataDownloadInput.urlSessionDelegate"
+    let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
     self.urlSessionTask = session.dataTask(with: url)
   }
 }
