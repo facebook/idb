@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import "PhotoLibraryService.h"
+
+#import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
 #import <Photos/Photos.h>
 #import <objc/runtime.h>

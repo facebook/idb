@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <Contacts/Contacts.h>
 
-int clearContacts(void) {
+static int clearContacts(void) {
   CNContactStore *contactStore = [[CNContactStore alloc] init];
 
   NSError *fetchError = nil;
