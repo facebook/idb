@@ -6,17 +6,14 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "ContactsService.h"
-#import "NotificationSettingsService.h"
-#import "PhotoLibraryService.h"
-#import "ProxyService.h"
+#import "ServiceDispatch.h"
 
 int main(int argc, const char * argv[]) {
   @autoreleasepool {
     if (argc < 3) {
       NSLog(@"Usage: %s <service> <action> [args...]", argv[0]);
-      NSLog(@"Services: contacts, photos, notifications");
-      NSLog(@"Actions: clear, approve, revoke, check");
+      NSLog(@"Services: contacts, photos, notifications, proxy");
+      NSLog(@"Actions: clear, approve, revoke, check, set, list");
       return 1;
     }
 
@@ -29,20 +26,6 @@ int main(int argc, const char * argv[]) {
       [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
     }
 
-    if ([service isEqualToString:@"contacts"]) {
-      return handleContactsAction(action);
-    } else if ([service isEqualToString:@"photos"]) {
-      return handlePhotoLibraryAction(action);
-    } else if ([service isEqualToString:@"notifications"]) {
-      NSString *bundleID = remainingArgs.count > 0 ? remainingArgs[0] : nil;
-      return handleNotificationSettingsAction(action, bundleID);
-    } else if ([service isEqualToString:@"proxy"]) {
-      return handleProxyAction(action, remainingArgs);
-    } else {
-      NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts, photos, notifications, proxy");
-      return 1;
-    }
-    return 0;
+    return dispatchService(service, action, remainingArgs);
   }
 }
