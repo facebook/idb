@@ -28,7 +28,7 @@ static void *loadSystemConfiguration(void) {
   return sc;
 }
 
-static CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port) {
+CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port) {
   CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
       kCFAllocatorDefault, 0,
       &kCFTypeDictionaryKeyCallBacks,
@@ -57,7 +57,7 @@ static CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port) {
   return dict;
 }
 
-static CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port) {
+CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port) {
   CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
       kCFAllocatorDefault, 0,
       &kCFTypeDictionaryKeyCallBacks,
@@ -83,7 +83,7 @@ static CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port) {
   return dict;
 }
 
-static CFMutableDictionaryRef buildEmptyProxyDict(void) {
+CFMutableDictionaryRef buildEmptyProxyDict(void) {
   CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
       kCFAllocatorDefault, 0,
       &kCFTypeDictionaryKeyCallBacks,

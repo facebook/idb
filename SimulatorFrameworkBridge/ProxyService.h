@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
 
 /**
@@ -27,3 +28,34 @@
  * @return 0 on success, 1 on failure
  */
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments);
+
+/**
+ * Builds a CFDictionary containing HTTP/HTTPS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue.
+ * Caller is responsible for releasing the returned dictionary with CFRelease.
+ *
+ * @param host The proxy hostname or IP address
+ * @param port The proxy port number
+ * @return A retained CFMutableDictionaryRef with HTTP and HTTPS proxy keys
+ */
+CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port);
+
+/**
+ * Builds a CFDictionary containing SOCKS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue.
+ * Caller is responsible for releasing the returned dictionary with CFRelease.
+ *
+ * @param host The proxy hostname or IP address
+ * @param port The proxy port number
+ * @return A retained CFMutableDictionaryRef with SOCKS proxy keys
+ */
+CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port);
+
+/**
+ * Builds a CFDictionary with no proxy configuration (clears all proxy settings).
+ * The returned dictionary contains only FTPPassive=1.
+ * Caller is responsible for releasing the returned dictionary with CFRelease.
+ *
+ * @return A retained CFMutableDictionaryRef with cleared proxy settings
+ */
+CFMutableDictionaryRef buildEmptyProxyDict(void);
