@@ -86,6 +86,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments) {
     if (arguments.count < 2) {
       NSLog(@"[ProxyService] set requires <host> <port> [http|socks]");
       CFRelease(key);
+      CFRelease(store);
       return 1;
     }
     NSString *host = arguments[0];
@@ -104,6 +105,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments) {
   } else {
     NSLog(@"[ProxyService] Unknown action: %@. Use 'set' or 'clear'.", action);
     CFRelease(key);
+    CFRelease(store);
     return 1;
   }
 
@@ -112,6 +114,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments) {
   if (!success) {
     NSLog(@"[ProxyService] SCDynamicStoreSetValue failed");
     CFRelease(key);
+    CFRelease(store);
     return 1;
   }
 
@@ -121,5 +124,6 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments) {
 
   NSLog(@"[ProxyService] Proxy settings updated successfully");
   CFRelease(key);
+  CFRelease(store);
   return 0;
 }
