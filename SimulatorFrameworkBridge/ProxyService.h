@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Configures per-simulator network proxy settings by writing directly
@@ -30,32 +31,33 @@
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments);
 
 /**
- * Builds a CFDictionary containing HTTP/HTTPS proxy configuration.
- * The returned dictionary is suitable for SCDynamicStoreSetValue.
- * Caller is responsible for releasing the returned dictionary with CFRelease.
+ * Builds an NSDictionary containing HTTP/HTTPS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue
+ * (toll-free bridged via __bridge).
  *
  * @param host The proxy hostname or IP address
  * @param port The proxy port number
- * @return A retained CFMutableDictionaryRef with HTTP and HTTPS proxy keys
+ * @return An NSDictionary with HTTP and HTTPS proxy keys
  */
-CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port);
+NSDictionary<NSString *, id> *buildHTTPProxyDict(NSString *host, int port);
 
 /**
- * Builds a CFDictionary containing SOCKS proxy configuration.
- * The returned dictionary is suitable for SCDynamicStoreSetValue.
- * Caller is responsible for releasing the returned dictionary with CFRelease.
+ * Builds an NSDictionary containing SOCKS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue
+ * (toll-free bridged via __bridge).
  *
  * @param host The proxy hostname or IP address
  * @param port The proxy port number
- * @return A retained CFMutableDictionaryRef with SOCKS proxy keys
+ * @return An NSDictionary with SOCKS proxy keys
  */
-CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port);
+NSDictionary<NSString *, id> *buildSOCKSProxyDict(NSString *host, int port);
 
 /**
- * Builds a CFDictionary with no proxy configuration (clears all proxy settings).
+ * Builds an NSDictionary with no proxy configuration (clears all proxy settings).
  * The returned dictionary contains only FTPPassive=1.
- * Caller is responsible for releasing the returned dictionary with CFRelease.
  *
- * @return A retained CFMutableDictionaryRef with cleared proxy settings
+ * @return An NSDictionary with cleared proxy settings
  */
-CFMutableDictionaryRef buildEmptyProxyDict(void);
+NSDictionary<NSString *, id> *buildEmptyProxyDict(void);
+
+NS_ASSUME_NONNULL_END
