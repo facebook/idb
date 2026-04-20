@@ -33,7 +33,6 @@ from idb.cli.commands.crash import (
     CrashListCommand,
     CrashShowCommand,
 )
-from idb.cli.commands.daemon import DaemonCommand
 from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
@@ -255,7 +254,6 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         TargetCloneCommand(),
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
-        DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
             name="ui",
