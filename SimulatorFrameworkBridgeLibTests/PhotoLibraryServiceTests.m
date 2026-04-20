@@ -21,4 +21,12 @@
   XCTAssertEqual(handlePhotoLibraryAction(@"add"), 1);
 }
 
+- (void)testClearCompletesWithoutCrashing
+{
+  // Result depends on photo library state and PLPhotoLibrary private API
+  // availability, which vary between RE, devvm, and local macOS.
+  int result = handlePhotoLibraryAction(@"clear");
+  XCTAssertTrue(result == 0 || result == 1);
+}
+
 @end

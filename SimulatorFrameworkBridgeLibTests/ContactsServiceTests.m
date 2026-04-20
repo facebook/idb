@@ -21,4 +21,12 @@
   XCTAssertEqual(handleContactsAction(@"add"), 1);
 }
 
+- (void)testClearCompletesWithoutCrashing
+{
+  // TCC state varies by environment: returns 0 with authorization (contacts
+  // deleted or none to delete), 1 without (fetch fails).
+  int result = handleContactsAction(@"clear");
+  XCTAssertTrue(result == 0 || result == 1);
+}
+
 @end
