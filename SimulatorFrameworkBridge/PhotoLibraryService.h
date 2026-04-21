@@ -8,8 +8,15 @@
 #import <Foundation/Foundation.h>
 
 /**
- * Clears the photo library on the simulator.
+ * Manages the photo library on the simulator via the Photos framework
+ * and PLPhotoLibrary private API. Uses CoreData directly to delete
+ * photo assets from the managed object context, bypassing the public
+ * PHPhotoLibrary change request API (which requires user confirmation).
  *
+ * Usage:
+ *   handlePhotoLibraryAction(@"clear")  // Delete all photos
+ *
+ * @param action "clear"
  * @return 0 on success, 1 on failure
  */
 int handlePhotoLibraryAction(NSString *action);
