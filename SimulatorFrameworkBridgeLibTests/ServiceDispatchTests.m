@@ -89,4 +89,16 @@
   XCTAssertEqual(dispatchService(@"proxy", @"unknown", @[]), 1);
 }
 
+#pragma mark - DNS routing
+
+- (void)testDispatchDnsMissingArgsRoutes
+{
+  XCTAssertEqual(dispatchService(@"dns", @"set", @[]), 1);
+}
+
+- (void)testDispatchDnsUnknownAction
+{
+  XCTAssertEqual(dispatchService(@"dns", @"unknown", @[]), 1);
+}
+
 @end
