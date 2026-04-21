@@ -23,9 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
  *   handleProxyAction(@"set", @[@"127.0.0.1", @"8080"])         // HTTP proxy
  *   handleProxyAction(@"set", @[@"127.0.0.1", @"1080", @"socks"]) // SOCKS proxy
  *   handleProxyAction(@"clear", @[])                            // Clear proxy
+ *   handleProxyAction(@"list", @[])                             // Print current config as JSON
  *
- * @param action "set" or "clear"
- * @param arguments For "set": [host, port, type?]. For "clear": empty.
+ * @param action "set", "clear", or "list"
+ * @param arguments For "set": [host, port, type?]. For "clear"/"list": empty.
  * @return 0 on success, 1 on failure
  */
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments);
