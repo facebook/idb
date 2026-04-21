@@ -7,36 +7,21 @@
 
 #import "PhotoLibraryService.h"
 
-#import <CoreData/CoreData.h>
-#import <Foundation/Foundation.h>
-#import <Photos/Photos.h>
-#import <objc/message.h>
+#import "PhotosPrivate.h"
 
-@interface NSObject (PLPhotoLibraryPrivate)
-- (void)performTransactionAndWait:(void (^)(void))block;
-@end
-
-static id getPLPhotoLibrary(PHPhotoLibrary *photoLibrary) {
-    id lazyPhotoLibrary = nil;
-    id plPhotoLibrary = nil;
-
+static PLPhotoLibrary *getPLPhotoLibrary(PHPhotoLibrary *photoLibrary) {
     @try {
-      lazyPhotoLibrary = [photoLibrary valueForKey:@"_lazyPhotoLibrary"];
-      if (lazyPhotoLibrary && [lazyPhotoLibrary respondsToSelector:@selector(objectValue)]) {
-        id (*objectValue)(id, SEL) = (id (*)(id, SEL))objc_msgSend;
-        plPhotoLibrary = objectValue(lazyPhotoLibrary, @selector(objectValue));
-      }
+      id lazyPhotoLibrary = [photoLibrary valueForKey:@"_lazyPhotoLibrary"];
+      return [lazyPhotoLibrary objectValue];
     } @catch (NSException *exception) {
       NSLog(@"Failed to access PLPhotoLibrary: %@", exception);
       return nil;
     }
-
-    return plPhotoLibrary;
 }
 
 static BOOL deletePhotosFromManagedObjectContext(NSManagedObjectContext *moc, PHFetchResult<PHAsset *> *allPhotos) {
     for (PHAsset *asset in allPhotos) {
-      NSManagedObjectID *objectID = [asset valueForKey:@"objectID"];
+      NSManagedObjectID *objectID = asset.objectID;
       if (!objectID) {
         NSLog(@"Failed to get objectID for photo asset %@", asset.localIdentifier);
         return NO;
@@ -75,7 +60,7 @@ static int clearPhotoLibrary(void) {
 
     NSLog(@"Found %lu photos to delete", (unsigned long)allPhotos.count);
 
-    id plPhotoLibrary = getPLPhotoLibrary(photoLibrary);
+    PLPhotoLibrary *plPhotoLibrary = getPLPhotoLibrary(photoLibrary);
     if (!plPhotoLibrary) {
       NSLog(@"PLPhotoLibrary not available");
       return 1;
@@ -86,7 +71,7 @@ static int clearPhotoLibrary(void) {
     [plPhotoLibrary performTransactionAndWait:^{
       NSManagedObjectContext *moc = nil;
       @try {
-        moc = [plPhotoLibrary valueForKey:@"managedObjectContext"];
+        moc = plPhotoLibrary.managedObjectContext;
       } @catch (NSException *exception) {
         return;
       }
