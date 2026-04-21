@@ -7,18 +7,9 @@
 
 #import "ProxyService.h"
 
-#import <CoreFoundation/CoreFoundation.h>
-#import <dlfcn.h>
+#import "SystemConfigurationPrivate.h"
 
-// SCDynamicStore function types — loaded at runtime via dlsym
-// because the headers mark these API_UNAVAILABLE(ios), but the
-// functions exist in the simulator runtime.
-typedef void *SCDynStoreRef;
-typedef SCDynStoreRef (*SCDynamicStoreCreate_fn)(CFAllocatorRef, CFStringRef, void *, void *);
-typedef Boolean (*SCDynamicStoreSetValue_fn)(SCDynStoreRef, CFStringRef, CFPropertyListRef);
-typedef CFPropertyListRef (*SCDynamicStoreCopyValue_fn)(SCDynStoreRef, CFStringRef);
-typedef CFStringRef (*SCDynamicStoreKeyCreateProxies_fn)(CFAllocatorRef);
-typedef Boolean (*SCDynamicStoreNotifyValue_fn)(SCDynStoreRef, CFStringRef);
+#import <dlfcn.h>
 
 static void *loadSystemConfiguration(void) {
   void *sc = dlopen("/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration", RTLD_LAZY);
