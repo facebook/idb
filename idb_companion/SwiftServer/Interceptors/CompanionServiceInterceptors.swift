@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CompanionLib
+import CompanionLib
 import Foundation
 import GRPC
 import IDBGRPCSwift

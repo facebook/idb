@@ -21,7 +21,7 @@ struct GRPCMethodInfo {
   let callType: GRPCCallType
 }
 
-final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
+final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Request, Response> {
 
   @Atomic var methodDescriptors: [String: GRPCMethodDescriptor] = Idb_CompanionServiceServerMetadata
     .serviceDescriptor
