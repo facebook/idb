@@ -18,6 +18,9 @@
  *   types (or a curated default set when none given). Seeds the
  *   request record first; safe to call before any app-side
  *   `requestAuthorization`.
+ * - "revoke"  — set status = share+read denied for the listed
+ *   types (curated default if none given). Same seed-then-set
+ *   shape as `approve`.
  *
  * Returns 0 on success, non-zero on failure (HealthKit framework load
  * failure, missing entitlements, XPC error, etc.).

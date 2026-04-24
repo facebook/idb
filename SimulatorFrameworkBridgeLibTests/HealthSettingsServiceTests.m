@@ -41,6 +41,11 @@
   XCTAssertEqual(handleHealthSettingsAction(@"approve", @"com.example.test", @[]), 1);
 }
 
+- (void)testRevokeReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"revoke", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]), 1);
+}
+
 - (void)testUnknownActionReturnsFailure
 {
   XCTAssertEqual(handleHealthSettingsAction(@"frobnicate", @"com.example.test", @[]), 1);

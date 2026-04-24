@@ -16,6 +16,7 @@
 // daemon validator at `+[HDAuthorizationEntity _insertAuthorizationWith…]`.
 // These are NOT the public HKAuthorizationStatus enum (0..4).
 static const NSUInteger kHealthInternalAuthShareAndRead = 101;
+static const NSUInteger kHealthInternalAuthShareAndReadDenied = 104;
 
 // The curated default set of HKQuantity types used by `approve` when
 // the caller does not specify any. Kept small to match the most common
@@ -163,9 +164,11 @@ static id resolveHealthKitObjectType(NSString *identifier) {
 
 #pragma mark - Verb implementations
 
-static int handleApproveAction(HKAuthorizationStore *authStore,
-                               NSString *bundleID,
-                               NSArray<NSString *> *typeIdentifiers) {
+static int handleSetAction(HKAuthorizationStore *authStore,
+                           NSString *bundleID,
+                           NSArray<NSString *> *typeIdentifiers,
+                           NSUInteger statusCode,
+                           NSString *actionName) {
   NSArray<NSString *> *requested = typeIdentifiers.count > 0
     ? typeIdentifiers
     : defaultApproveTypeIdentifiers();
@@ -185,7 +188,7 @@ static int handleApproveAction(HKAuthorizationStore *authStore,
   }
   if (resolvedTypes.count == 0) {
     NSDictionary *output = @{
-      @"action": @"approve",
+      @"action": actionName,
       @"bundleID": bundleID,
       @"ok": @NO,
       @"error": @"no resolvable HK types in request",
@@ -210,10 +213,10 @@ static int handleApproveAction(HKAuthorizationStore *authStore,
   }];
   dispatch_semaphore_wait(seedSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
 
-  // Step 2: write share+read authorised status for every resolved type.
+  // Step 2: write the requested status for every resolved type.
   NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
   for (id type in resolvedTypes) {
-    statuses[type] = @(kHealthInternalAuthShareAndRead);
+    statuses[type] = @(statusCode);
   }
   __block BOOL setOK = NO;
   __block NSError *setError = nil;
@@ -230,7 +233,7 @@ static int handleApproveAction(HKAuthorizationStore *authStore,
   dispatch_semaphore_wait(setSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
 
   NSDictionary *output = @{
-    @"action": @"approve",
+    @"action": actionName,
     @"bundleID": bundleID,
     @"ok": @(seedOK && setOK),
     @"resolvedTypes": resolvedIdentifiers,
@@ -309,8 +312,13 @@ int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSS
     return handleClearAction(authStore, bundleID);
   }
   if ([action isEqualToString:@"approve"]) {
-    return handleApproveAction(authStore, bundleID, typeIdentifiers);
+    return handleSetAction(authStore, bundleID, typeIdentifiers,
+                           kHealthInternalAuthShareAndRead, @"approve");
   }
-  NSLog(@"[Health] Unknown action '%@'. Supported: list, clear, approve", action);
+  if ([action isEqualToString:@"revoke"]) {
+    return handleSetAction(authStore, bundleID, typeIdentifiers,
+                           kHealthInternalAuthShareAndReadDenied, @"revoke");
+  }
+  NSLog(@"[Health] Unknown action '%@'. Supported: list, clear, approve, revoke", action);
   return 1;
 }
