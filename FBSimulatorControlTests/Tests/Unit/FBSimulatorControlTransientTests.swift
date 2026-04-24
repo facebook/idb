@@ -280,7 +280,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   // MARK: FBSimulatorHIDEvent - Swipe
 
   func testSwipeHorizontalProducesCorrectStepCount() {
-    // Horizontal swipe: 100 pixels with delta=10 -> 10 steps
+    // Horizontal swipe: 100 points with delta=10 -> 10 steps
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 10, duration: 1.0)
     let composite = swipe as! FBSimulatorHIDEventComposite
     // steps = 10
@@ -292,7 +292,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
   }
 
   func testSwipeVerticalProducesCorrectStepCount() {
-    // Vertical swipe: 50 pixels with delta=10 -> 5 steps
+    // Vertical swipe: 50 points with delta=10 -> 5 steps
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 50, delta: 10, duration: 0.5)
     let composite = swipe as! FBSimulatorHIDEventComposite
     let expectedSteps = 5
@@ -311,7 +311,7 @@ final class FBSimulatorControlTransientTests: XCTestCase {
 
   func testSwipeWithZeroDeltaUsesDefault() {
     // When delta <= 0, DEFAULT_SWIPE_DELTA (10.0) is used
-    // 100 pixels / 10.0 = 10 steps
+    // 100 points / 10.0 = 10 steps
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 0, duration: 1.0)
     let composite = swipe as! FBSimulatorHIDEventComposite
     let expectedSteps = 10
