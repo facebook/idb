@@ -216,7 +216,7 @@ class SwipeCommand(ClientCommand):
         parser.add_argument(
             "--delta",
             dest="delta",
-            help="delta in pixels between every touch point on the line "
+            help="delta in points between every touch point on the line "
             "between start and end points",
             type=int,
             required=False,
