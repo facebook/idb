@@ -31,6 +31,16 @@
   XCTAssertEqual(handleHealthSettingsAction(@"clear", @"com.example.test", @[]), 1);
 }
 
+- (void)testApproveReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"approve", @"com.example.test", @[@"HKQuantityTypeIdentifierStepCount"]), 1);
+}
+
+- (void)testApproveWithDefaultTypesReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"approve", @"com.example.test", @[]), 1);
+}
+
 - (void)testUnknownActionReturnsFailure
 {
   XCTAssertEqual(handleHealthSettingsAction(@"frobnicate", @"com.example.test", @[]), 1);

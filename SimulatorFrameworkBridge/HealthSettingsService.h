@@ -14,12 +14,13 @@
  * - "list" — print authorisation records for `bundleID` as JSON.
  * - "clear" — reset every authorisation record for `bundleID` back
  *   to NotDetermined.
+ * - "approve" — set status = share+read authorised for the listed
+ *   types (or a curated default set when none given). Seeds the
+ *   request record first; safe to call before any app-side
+ *   `requestAuthorization`.
  *
  * Returns 0 on success, non-zero on failure (HealthKit framework load
  * failure, missing entitlements, XPC error, etc.).
- *
- * `typeIdentifiers` is currently unused but reserved for future verbs
- * (`approve`, `revoke`) that operate on per-type subsets.
  */
 int handleHealthSettingsAction(NSString *action,
                                NSString *bundleID,

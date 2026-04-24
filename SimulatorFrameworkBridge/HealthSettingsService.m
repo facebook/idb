@@ -11,6 +11,30 @@
 
 #import <dlfcn.h>
 
+// HKInternalAuthorizationStatus values used on the wire to healthd.
+// Reverse-engineered from `_HKInternalAuthorizationStatusMake` and the
+// daemon validator at `+[HDAuthorizationEntity _insertAuthorizationWith…]`.
+// These are NOT the public HKAuthorizationStatus enum (0..4).
+static const NSUInteger kHealthInternalAuthShareAndRead = 101;
+
+// The curated default set of HKQuantity types used by `approve` when
+// the caller does not specify any. Kept small to match the most common
+// HealthKit consumer use-cases in tests.
+static NSArray<NSString *> *defaultApproveTypeIdentifiers(void) {
+  static dispatch_once_t onceToken;
+  static NSArray<NSString *> *defaults;
+  dispatch_once(&onceToken, ^{
+    defaults = @[
+      @"HKQuantityTypeIdentifierStepCount",
+      @"HKQuantityTypeIdentifierHeartRate",
+      @"HKQuantityTypeIdentifierActiveEnergyBurned",
+      @"HKQuantityTypeIdentifierDistanceWalkingRunning",
+      @"HKQuantityTypeIdentifierBodyMass",
+    ];
+  });
+  return defaults;
+}
+
 #pragma mark - Framework loader
 
 static id loadHealthStore(void) {
@@ -88,7 +112,135 @@ static NSDictionary *recordToDictionary(id record) {
   return out;
 }
 
+#pragma mark - HKObjectType resolution
+
+// Resolve an HKQuantityTypeIdentifier* / HKCategoryTypeIdentifier* /
+// HKCharacteristicTypeIdentifier* / HKCorrelationTypeIdentifier* /
+// HKDocumentTypeIdentifier* string into the matching HKObjectType
+// via the runtime. Returns nil for identifiers that aren't known to
+// the iOS runtime version on this simulator (rare, but logged).
+static id resolveHealthKitObjectType(NSString *identifier) {
+  static NSArray<NSString *> *factoryClasses;
+  static NSArray<NSString *> *factorySelectors;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    factoryClasses = @[
+      @"HKQuantityType",
+      @"HKCategoryType",
+      @"HKCharacteristicType",
+      @"HKCorrelationType",
+      @"HKDocumentType",
+    ];
+    factorySelectors = @[
+      @"quantityTypeForIdentifier:",
+      @"categoryTypeForIdentifier:",
+      @"characteristicTypeForIdentifier:",
+      @"correlationTypeForIdentifier:",
+      @"documentTypeForIdentifier:",
+    ];
+  });
+
+  for (NSUInteger i = 0; i < factoryClasses.count; i++) {
+    Class cls = NSClassFromString(factoryClasses[i]);
+    SEL sel = NSSelectorFromString(factorySelectors[i]);
+    if (!cls || ![cls respondsToSelector:sel]) {
+      continue;
+    }
+    NSMethodSignature *sig = [cls methodSignatureForSelector:sel];
+    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+    inv.target = cls;
+    inv.selector = sel;
+    [inv setArgument:&identifier atIndex:2];
+    [inv invoke];
+    __unsafe_unretained id type = nil;
+    [inv getReturnValue:&type];
+    if (type) {
+      return type;
+    }
+  }
+  return nil;
+}
+
 #pragma mark - Verb implementations
+
+static int handleApproveAction(HKAuthorizationStore *authStore,
+                               NSString *bundleID,
+                               NSArray<NSString *> *typeIdentifiers) {
+  NSArray<NSString *> *requested = typeIdentifiers.count > 0
+    ? typeIdentifiers
+    : defaultApproveTypeIdentifiers();
+
+  NSMutableSet *resolvedTypes = [NSMutableSet set];
+  NSMutableArray<NSString *> *resolvedIdentifiers = [NSMutableArray array];
+  NSMutableArray<NSString *> *unresolvedIdentifiers = [NSMutableArray array];
+  for (NSString *identifier in requested) {
+    id type = resolveHealthKitObjectType(identifier);
+    if (type) {
+      [resolvedTypes addObject:type];
+      [resolvedIdentifiers addObject:identifier];
+    } else {
+      NSLog(@"[Health] Skipping unresolved HK type identifier: %@", identifier);
+      [unresolvedIdentifiers addObject:identifier];
+    }
+  }
+  if (resolvedTypes.count == 0) {
+    NSDictionary *output = @{
+      @"action": @"approve",
+      @"bundleID": bundleID,
+      @"ok": @NO,
+      @"error": @"no resolvable HK types in request",
+      @"unresolvedTypes": unresolvedIdentifiers,
+    };
+    printf("%s\n", jsonStringFromObject(output).UTF8String);
+    return 1;
+  }
+
+  // Step 1: seed the authorisation request rows. Without this, the
+  // daemon silently drops status writes for unseen (bundleID, type) pairs.
+  __block BOOL seedOK = NO;
+  __block NSError *seedError = nil;
+  dispatch_semaphore_t seedSem = dispatch_semaphore_create(0);
+  [authStore setRequestedAuthorizationForBundleIdentifier:bundleID
+                                                shareTypes:resolvedTypes
+                                                 readTypes:resolvedTypes
+                                                completion:^(BOOL ok, NSError *_Nullable err) {
+    seedOK = ok;
+    seedError = err;
+    dispatch_semaphore_signal(seedSem);
+  }];
+  dispatch_semaphore_wait(seedSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+
+  // Step 2: write share+read authorised status for every resolved type.
+  NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
+  for (id type in resolvedTypes) {
+    statuses[type] = @(kHealthInternalAuthShareAndRead);
+  }
+  __block BOOL setOK = NO;
+  __block NSError *setError = nil;
+  dispatch_semaphore_t setSem = dispatch_semaphore_create(0);
+  [authStore setAuthorizationStatuses:statuses
+                   authorizationModes:@{}
+                  forBundleIdentifier:bundleID
+                              options:nil
+                           completion:^(BOOL ok, NSError *_Nullable err) {
+    setOK = ok;
+    setError = err;
+    dispatch_semaphore_signal(setSem);
+  }];
+  dispatch_semaphore_wait(setSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+
+  NSDictionary *output = @{
+    @"action": @"approve",
+    @"bundleID": bundleID,
+    @"ok": @(seedOK && setOK),
+    @"resolvedTypes": resolvedIdentifiers,
+    @"unresolvedTypes": unresolvedIdentifiers,
+    @"seedError": seedError.localizedDescription ?: [NSNull null],
+    @"setError": setError.localizedDescription ?: [NSNull null],
+  };
+  printf("%s\n", jsonStringFromObject(output).UTF8String);
+  return (seedOK && setOK) ? 0 : 1;
+}
 
 static int handleClearAction(HKAuthorizationStore *authStore, NSString *bundleID) {
   __block BOOL clearOK = NO;
@@ -156,6 +308,9 @@ int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSS
   if ([action isEqualToString:@"clear"]) {
     return handleClearAction(authStore, bundleID);
   }
-  NSLog(@"[Health] Unknown action '%@'. Supported: list, clear", action);
+  if ([action isEqualToString:@"approve"]) {
+    return handleApproveAction(authStore, bundleID, typeIdentifiers);
+  }
+  NSLog(@"[Health] Unknown action '%@'. Supported: list, clear, approve", action);
   return 1;
 }

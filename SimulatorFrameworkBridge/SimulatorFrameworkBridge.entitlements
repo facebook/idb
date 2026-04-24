@@ -15,6 +15,7 @@
     <array>
         <string>read</string>
         <string>reset</string>
+        <string>write</string>
     </array>
 </dict>
 </plist>
