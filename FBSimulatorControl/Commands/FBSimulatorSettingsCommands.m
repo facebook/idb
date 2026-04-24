@@ -639,6 +639,26 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
   return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
 
+- (FBFuture<NSNull *> *)setHealthAuthorization:(BOOL)approved
+                                  forBundleID:(NSString *)bundleID
+                              typeIdentifiers:(NSArray<NSString *> *)typeIdentifiers
+{
+  NSString *action = approved ? @"approve" : @"revoke";
+  NSMutableArray<NSString *> *args = [NSMutableArray arrayWithObject:bundleID];
+  [args addObjectsFromArray:typeIdentifiers];
+  return [[self runSimulatorFrameworkBridgeWithService:@"health" action:action arguments:args] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)clearHealthAuthorizationForBundleID:(NSString *)bundleID
+{
+  return [[self runSimulatorFrameworkBridgeWithService:@"health" action:@"clear" arguments:@[bundleID]] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSString *> *)listHealthAuthorizationForBundleID:(NSString *)bundleID
+{
+  return [self runSimulatorFrameworkBridgeWithService:@"health" action:@"list" arguments:@[bundleID]];
+}
+
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services grantAccess:(BOOL)grantAccess
 {
   NSString *databasePath = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/TCC/TCC.db"];

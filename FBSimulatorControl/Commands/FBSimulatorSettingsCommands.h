@@ -150,6 +150,43 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
 - (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services;
 
 /**
+ Sets the HealthKit authorisation status for one or more HKObjectType identifiers
+ on a single bundle. This is the per-type counterpart of grantAccess:toServices:
+ with FBTargetSettingsServiceHealth, which always operates on the curated default
+ set and applies a single approve/revoke decision across both share and read.
+
+ @param approved YES to mark the listed types as share+read authorised, NO to mark them as share+read denied.
+ @param bundleID the target bundle id (must already have an entry in healthd's source database, see Discussion).
+ @param typeIdentifiers HKQuantityTypeIdentifier* / HKCategoryTypeIdentifier* / etc. strings to set; pass an empty array to apply the curated default set.
+ @return A future that resolves when the setting change is complete.
+
+ @discussion The target bundle must have called requestAuthorization at least
+ once on this simulator so healthd has a source row for it; otherwise the bridge
+ returns a non-zero exit and the future fails. There is no API on the simulator
+ to bootstrap that source row from outside the target bundle's process.
+ */
+- (FBFuture<NSNull *> *)setHealthAuthorization:(BOOL)approved
+                                  forBundleID:(NSString *)bundleID
+                              typeIdentifiers:(NSArray<NSString *> *)typeIdentifiers;
+
+/**
+ Resets every HealthKit authorisation record for a bundle id back to NotDetermined.
+
+ @param bundleID the target bundle id.
+ @return A future that resolves when the reset is complete.
+ */
+- (FBFuture<NSNull *> *)clearHealthAuthorizationForBundleID:(NSString *)bundleID;
+
+/**
+ Reads the HealthKit authorisation records for a bundle id and returns them as
+ a JSON document.
+
+ @param bundleID the target bundle id.
+ @return A future that resolves with the JSON document printed by the bridge.
+ */
+- (FBFuture<NSString *> *)listHealthAuthorizationForBundleID:(NSString *)bundleID;
+
+/**
  Grants access to the provided deeplink scheme.
 
  @param bundleIDs the bundle ids to provide access to.
