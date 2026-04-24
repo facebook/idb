@@ -252,6 +252,10 @@
     [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:YES]];
     [toApprove removeObject:FBTargetSettingsServiceNotification];
   }
+  if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceHealth]) {
+    [futures addObject:[self updateHealthService:bundleIDs.allObjects approve:YES]];
+    [toApprove removeObject:FBTargetSettingsServiceHealth];
+  }
 
   // Error out if there's nothing we can do to handle a specific approval.
   if (toApprove.count > 0) {
@@ -325,6 +329,10 @@
   if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceNotification]) {
     [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:NO]];
     [toRevoke removeObject:FBTargetSettingsServiceNotification];
+  }
+  if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceHealth]) {
+    [futures addObject:[self updateHealthService:bundleIDs.allObjects approve:NO]];
+    [toRevoke removeObject:FBTargetSettingsServiceHealth];
   }
 
   // Error out if there's nothing we can do to handle a specific approval.
@@ -611,6 +619,22 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
   NSMutableArray<FBFuture *> *futures = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
     [futures addObject:[[self runSimulatorFrameworkBridgeWithService:@"notifications" action:action arguments:@[bundleID]] mapReplace:NSNull.null]];
+  }
+  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+}
+
+- (FBFuture<NSNull *> *)updateHealthService:(NSArray<NSString *> *)bundleIDs approve:(BOOL)approved
+{
+  if ([bundleIDs count] == 0) {
+    return [[FBSimulatorError
+      describe:@"Empty bundleID set provided to health approve"]
+      failFuture];
+  }
+
+  NSString *action = approved ? @"approve" : @"revoke";
+  NSMutableArray<FBFuture *> *futures = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    [futures addObject:[[self runSimulatorFrameworkBridgeWithService:@"health" action:action arguments:@[bundleID]] mapReplace:NSNull.null]];
   }
   return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }

@@ -21,5 +21,6 @@ extern FBTargetSettingsService const FBTargetSettingsServiceLocation;
 extern FBTargetSettingsService const FBTargetSettingsServiceMicrophone;
 extern FBTargetSettingsService const FBTargetSettingsServiceUrl;
 extern FBTargetSettingsService const FBTargetSettingsServiceNotification;
+extern FBTargetSettingsService const FBTargetSettingsServiceHealth;
 
 NS_ASSUME_NONNULL_END
