@@ -35,7 +35,15 @@ NS_ASSUME_NONNULL_BEGIN
  * type, sharing/read status) we read via KVC.
  */
 - (void)fetchAuthorizationRecordsForBundleIdentifier:(NSString *)bundleID
-                                          completion:(void (^)(NSArray *_Nullable records, NSError *_Nullable error))completion;
+                                          completion:(void (^)(NSArray<id> *_Nullable records, NSError *_Nullable error))completion;
+
+/**
+ * Resets every authorisation record for the bundle ID back to
+ * "not determined". Useful for returning a target app to a clean
+ * pre-approval state between test runs.
+ */
+- (void)resetAuthorizationStatusForBundleIdentifier:(NSString *)bundleID
+                                         completion:(void (^)(BOOL success, NSError *_Nullable error))completion;
 
 @end
 

@@ -14,6 +14,7 @@
     <key>com.apple.private.healthkit.authorization_manager</key>
     <array>
         <string>read</string>
+        <string>reset</string>
     </array>
 </dict>
 </plist>

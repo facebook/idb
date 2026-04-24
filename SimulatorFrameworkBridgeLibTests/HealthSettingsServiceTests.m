@@ -26,6 +26,11 @@
   XCTAssertEqual(handleHealthSettingsAction(@"list", @"com.example.test", @[]), 1);
 }
 
+- (void)testClearReturnsFailureWhenFrameworkUnavailable
+{
+  XCTAssertEqual(handleHealthSettingsAction(@"clear", @"com.example.test", @[]), 1);
+}
+
 - (void)testUnknownActionReturnsFailure
 {
   XCTAssertEqual(handleHealthSettingsAction(@"frobnicate", @"com.example.test", @[]), 1);

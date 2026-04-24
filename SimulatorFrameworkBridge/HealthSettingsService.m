@@ -90,6 +90,28 @@ static NSDictionary *recordToDictionary(id record) {
 
 #pragma mark - Verb implementations
 
+static int handleClearAction(HKAuthorizationStore *authStore, NSString *bundleID) {
+  __block BOOL clearOK = NO;
+  __block NSError *clearError = nil;
+  dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+  [authStore resetAuthorizationStatusForBundleIdentifier:bundleID
+                                              completion:^(BOOL ok, NSError *_Nullable e) {
+    clearOK = ok;
+    clearError = e;
+    dispatch_semaphore_signal(sem);
+  }];
+  dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+
+  NSDictionary *output = @{
+    @"action": @"clear",
+    @"bundleID": bundleID,
+    @"ok": @(clearOK),
+    @"error": clearError.localizedDescription ?: [NSNull null],
+  };
+  printf("%s\n", jsonStringFromObject(output).UTF8String);
+  return clearOK ? 0 : 1;
+}
+
 static int handleListAction(HKAuthorizationStore *authStore, NSString *bundleID) {
   __block NSArray *records = nil;
   __block NSError *fetchError = nil;
@@ -131,6 +153,9 @@ int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSS
   if ([action isEqualToString:@"list"]) {
     return handleListAction(authStore, bundleID);
   }
-  NSLog(@"[Health] Unknown action '%@'. Supported: list", action);
+  if ([action isEqualToString:@"clear"]) {
+    return handleClearAction(authStore, bundleID);
+  }
+  NSLog(@"[Health] Unknown action '%@'. Supported: list, clear", action);
   return 1;
 }

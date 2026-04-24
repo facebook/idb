@@ -12,6 +12,8 @@
  *
  * Verbs:
  * - "list" — print authorisation records for `bundleID` as JSON.
+ * - "clear" — reset every authorisation record for `bundleID` back
+ *   to NotDetermined.
  *
  * Returns 0 on success, non-zero on failure (HealthKit framework load
  * failure, missing entitlements, XPC error, etc.).
