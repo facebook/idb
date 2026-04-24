@@ -9,6 +9,7 @@
 
 #import "ContactsService.h"
 #import "DnsService.h"
+#import "HealthSettingsService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
 #import "ProxyService.h"
@@ -23,11 +24,17 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
   } else if ([service isEqualToString:@"notifications"]) {
     NSString *bundleID = arguments.count > 0 ? arguments[0] : nil;
     return handleNotificationSettingsAction(action, bundleID);
+  } else if ([service isEqualToString:@"health"]) {
+    NSString *bundleID = arguments.count > 0 ? arguments[0] : nil;
+    NSArray<NSString *> *typeIDs = arguments.count > 1
+      ? [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)]
+      : @[];
+    return handleHealthSettingsAction(action, bundleID, typeIDs);
   } else if ([service isEqualToString:@"proxy"]) {
     return handleProxyAction(action, arguments);
   } else {
     NSLog(@"Unknown service: %@", service);
-    NSLog(@"Available services: contacts, dns, photos, notifications, proxy");
+    NSLog(@"Available services: contacts, dns, photos, notifications, health, proxy");
     return 1;
   }
 }
