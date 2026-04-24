@@ -495,6 +495,11 @@
   return [[self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"clear"] mapReplace:NSNull.null];
 }
 
+- (FBFuture<NSString *> *)listProxy
+{
+  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"list"];
+}
+
 static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
 
 - (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled

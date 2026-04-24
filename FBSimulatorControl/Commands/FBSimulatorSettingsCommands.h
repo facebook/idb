@@ -210,6 +210,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  */
 - (FBFuture<NSNull *> *)clearProxy;
 
+/**
+ Lists the current network proxy configuration from configd_sim's SCDynamicStore.
+
+ @return A future that resolves with a JSON string of the current proxy configuration.
+ */
+- (FBFuture<NSString *> *)listProxy;
+
 @end
 
 /**
