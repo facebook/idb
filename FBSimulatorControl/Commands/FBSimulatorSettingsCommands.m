@@ -474,12 +474,12 @@
 
 - (FBFuture<NSNull *> *)clearContacts
 {
-  return [self runSimulatorFrameworkBridgeWithService:@"contacts" action:@"clear"];
+  return [[self runSimulatorFrameworkBridgeWithService:@"contacts" action:@"clear"] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)clearPhotos
 {
-  return [self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"];
+  return [[self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)setProxyWithHost:(NSString *)host port:(NSUInteger)port type:(NSString *)type
@@ -487,12 +487,12 @@
   if (!host) {
     return [[FBSimulatorError describe:@"Proxy host must not be nil"] failFuture];
   }
-  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"set" arguments:@[host, [@(port) stringValue], type ?: @"http"]];
+  return [[self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"set" arguments:@[host, [@(port) stringValue], type ?: @"http"]] mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSNull *> *)clearProxy
 {
-  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"clear"];
+  return [[self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"clear"] mapReplace:NSNull.null];
 }
 
 static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
@@ -527,12 +527,12 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
   }];
 }
 
-- (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
+- (FBFuture<NSString *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
 {
   return [self runSimulatorFrameworkBridgeWithService:service action:action arguments:@[]];
 }
 
-- (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+- (FBFuture<NSString *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
 {
   return [FBFuture onQueue:self.simulator.asyncQueue resolve:^{
     NSString *helperPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"SimulatorFrameworkBridge" ofType:nil];
@@ -551,12 +551,13 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
     NSMutableArray<NSString *> *spawnArguments = [NSMutableArray arrayWithObjects:helperPath, service, action, nil];
     [spawnArguments addObjectsFromArray:arguments];
 
-    return [[[self.simulator.simctlExecutor
+    return [[[[self.simulator.simctlExecutor
       taskBuilderWithCommand:@"spawn" arguments:spawnArguments]
+      withStdOutInMemoryAsString]
       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
       onQueue:self.simulator.asyncQueue fmap:^(FBSubprocess *task) {
         [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
-        return [FBFuture futureWithResult:NSNull.null];
+        return [FBFuture futureWithResult:task.stdOut];
       }];
   }];
 }
@@ -584,9 +585,9 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
   }
 
   NSString *action = approved ? @"approve" : @"revoke";
-  NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
+  NSMutableArray<FBFuture *> *futures = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    [futures addObject:[self runSimulatorFrameworkBridgeWithService:@"notifications" action:action arguments:@[bundleID]]];
+    [futures addObject:[[self runSimulatorFrameworkBridgeWithService:@"notifications" action:action arguments:@[bundleID]] mapReplace:NSNull.null]];
   }
   return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
 }
