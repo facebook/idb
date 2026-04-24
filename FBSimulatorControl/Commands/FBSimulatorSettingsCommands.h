@@ -232,6 +232,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  */
 - (FBFuture<NSNull *> *)clearDns;
 
+/**
+ Lists the current DNS configuration from configd_sim's SCDynamicStore.
+
+ @return A future that resolves with a JSON string of the current DNS configuration.
+ */
+- (FBFuture<NSString *> *)listDns;
+
 @end
 
 /**

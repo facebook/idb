@@ -513,6 +513,11 @@
   return [[self runSimulatorFrameworkBridgeWithService:@"dns" action:@"clear"] mapReplace:NSNull.null];
 }
 
+- (FBFuture<NSString *> *)listDns
+{
+  return [self runSimulatorFrameworkBridgeWithService:@"dns" action:@"list"];
+}
+
 static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
 
 - (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled
