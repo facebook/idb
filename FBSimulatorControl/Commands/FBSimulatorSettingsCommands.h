@@ -217,6 +217,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  */
 - (FBFuture<NSString *> *)listProxy;
 
+/**
+ Sets the DNS servers for this simulator by writing to configd_sim's SCDynamicStore.
+
+ @param servers Array of DNS server addresses (e.g. @[@"8.8.8.8", @"8.8.4.4"]).
+ @return A future that resolves when the DNS servers have been configured.
+ */
+- (FBFuture<NSNull *> *)setDnsServers:(NSArray<NSString *> *)servers;
+
 @end
 
 /**

@@ -500,6 +500,14 @@
   return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"list"];
 }
 
+- (FBFuture<NSNull *> *)setDnsServers:(NSArray<NSString *> *)servers
+{
+  if (servers.count == 0) {
+    return [[FBSimulatorError describe:@"At least one DNS server address is required"] failFuture];
+  }
+  return [[self runSimulatorFrameworkBridgeWithService:@"dns" action:@"set" arguments:servers] mapReplace:NSNull.null];
+}
+
 static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
 
 - (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled
