@@ -225,6 +225,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorContentSizeCategory) {
  */
 - (FBFuture<NSNull *> *)setDnsServers:(NSArray<NSString *> *)servers;
 
+/**
+ Clears the DNS configuration for this simulator.
+
+ @return A future that resolves when the DNS configuration has been cleared.
+ */
+- (FBFuture<NSNull *> *)clearDns;
+
 @end
 
 /**
