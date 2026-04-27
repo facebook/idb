@@ -5,13 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
 import AXRuntime
-import XCTest
-
 @testable import FBControlCore
+import XCTest
 
 final class AXTraitsTest: XCTestCase {
   func testMappingNames() {
