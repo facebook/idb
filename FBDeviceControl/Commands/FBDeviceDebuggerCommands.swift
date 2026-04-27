@@ -72,7 +72,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
 
   /**
    Starts the Debug Server and exposes it via a service connection.
-  
+
    @return a future context with the service connection to the debug server.
    */
   public func connectToDebugServer() -> FBFutureContext<FBAMDServiceConnection> {
