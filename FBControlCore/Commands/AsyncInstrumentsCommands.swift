@@ -15,3 +15,15 @@ public protocol AsyncInstrumentsCommands: AnyObject {
     logger: any FBControlCoreLogger
   ) async throws -> FBInstrumentsOperation
 }
+
+/// Default bridge implementation against the legacy
+/// `FBInstrumentsCommandsProtocol`.
+extension AsyncInstrumentsCommands where Self: FBInstrumentsCommandsProtocol {
+
+  public func startInstruments(
+    configuration: FBInstrumentsConfiguration,
+    logger: any FBControlCoreLogger
+  ) async throws -> FBInstrumentsOperation {
+    try await bridgeFBFuture(self.startInstruments(configuration, logger: logger))
+  }
+}

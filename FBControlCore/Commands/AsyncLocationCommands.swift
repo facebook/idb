@@ -12,3 +12,12 @@ public protocol AsyncLocationCommands: AnyObject {
 
   func overrideLocation(longitude: Double, latitude: Double) async throws
 }
+
+/// Default bridge implementation against the legacy `FBLocationCommands`
+/// protocol.
+extension AsyncLocationCommands where Self: FBLocationCommands {
+
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
+    try await bridgeFBFutureVoid(self.overrideLocation(withLongitude: longitude, latitude: latitude))
+  }
+}

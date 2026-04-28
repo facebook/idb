@@ -16,3 +16,16 @@ public protocol AsyncDapServerCommand: AnyObject {
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString>
 }
+
+/// Default bridge implementation against the legacy `FBDapServerCommand`
+/// protocol.
+extension AsyncDapServerCommand where Self: FBDapServerCommand {
+
+  public func launchDapServer(
+    _ dapPath: Any,
+    stdIn: FBProcessInput<AnyObject>,
+    stdOut: any FBDataConsumer
+  ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
+    try await bridgeFBFuture(self.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut))
+  }
+}

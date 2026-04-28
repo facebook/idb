@@ -12,3 +12,12 @@ public protocol AsyncMemoryCommands: AnyObject {
 
   func simulateMemoryWarning() async throws
 }
+
+/// Default bridge implementation against the legacy `FBMemoryCommands`
+/// protocol.
+extension AsyncMemoryCommands where Self: FBMemoryCommands {
+
+  public func simulateMemoryWarning() async throws {
+    try await bridgeFBFutureVoid(self.simulateMemoryWarning())
+  }
+}

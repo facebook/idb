@@ -15,3 +15,15 @@ public protocol AsyncDebuggerCommands: AnyObject {
     port: in_port_t
   ) async throws -> any FBDebugServer
 }
+
+/// Default bridge implementation against the legacy `FBDebuggerCommands`
+/// protocol.
+extension AsyncDebuggerCommands where Self: FBDebuggerCommands {
+
+  public func launchDebugServer(
+    forHostApplication application: FBBundleDescriptor,
+    port: in_port_t
+  ) async throws -> any FBDebugServer {
+    try await bridgeFBFuture(self.launchDebugServer(forHostApplication: application, port: port))
+  }
+}

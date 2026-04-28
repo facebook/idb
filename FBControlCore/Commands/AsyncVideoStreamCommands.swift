@@ -12,3 +12,12 @@ public protocol AsyncVideoStreamCommands: AnyObject {
 
   func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream
 }
+
+/// Default bridge implementation against the legacy `FBVideoStreamCommands`
+/// protocol.
+extension AsyncVideoStreamCommands where Self: FBVideoStreamCommands {
+
+  public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+    try await bridgeFBFuture(self.createStream(with: configuration))
+  }
+}

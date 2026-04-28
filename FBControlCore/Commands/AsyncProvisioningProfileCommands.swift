@@ -16,3 +16,20 @@ public protocol AsyncProvisioningProfileCommands: AnyObject {
 
   func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any]
 }
+
+/// Default bridge implementation against the legacy `FBProvisioningProfileCommands`
+/// protocol.
+extension AsyncProvisioningProfileCommands where Self: FBProvisioningProfileCommands {
+
+  public func allProvisioningProfiles() async throws -> [[String: Any]] {
+    try await bridgeFBFutureArray(self.allProvisioningProfiles())
+  }
+
+  public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
+    try await bridgeFBFutureDictionary(self.removeProvisioningProfile(uuid))
+  }
+
+  public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
+    try await bridgeFBFutureDictionary(self.installProvisioningProfile(profileData))
+  }
+}
