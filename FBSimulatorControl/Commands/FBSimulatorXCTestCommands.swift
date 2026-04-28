@@ -10,6 +10,8 @@
 import Foundation
 @preconcurrency import XCTestBootstrap
 
+// swiftlint:disable force_unwrapping
+
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
@@ -33,60 +35,19 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
     super.init()
   }
 
-  // MARK: - FBXCTestCommands
+  // MARK: - FBXCTestCommands (legacy FBFuture entry points)
 
   @objc(runTestWithLaunchConfiguration:reporter:logger:)
   public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+    fbFutureFromAsync { [self] in
+      try await runTestAsync(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+      return NSNull()
     }
-    // swiftlint:disable:next force_cast
-    let typedReporter = reporter as! any FBXCTestReporter
-
-    if !testLaunchConfiguration.shouldUseXcodebuild {
-      return runTest(with: testLaunchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
-    }
-
-    if isRunningXcodeBuildOperation {
-      return
-        FBSimulatorError
-        .describe("Cannot Start Test Manager with Configuration \(testLaunchConfiguration) as it is already running")
-        .failFuture() as! FBFuture<NSNull>
-    }
-
-    return
-      (unsafeBitCast(
-        FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
-          forUDID: simulator.udid,
-          processFetcher: FBProcessFetcher(),
-          queue: simulator.workQueue,
-          logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [self] (_: Any) -> FBFuture<AnyObject> in
-          self.isRunningXcodeBuildOperation = true
-          return unsafeBitCast(self._startTest(with: testLaunchConfiguration, logger: logger), to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (task: Any) -> FBFuture<AnyObject> in
-          let subprocess = task as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-          return unsafeBitCast(
-            FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: testLaunchConfiguration, reporter: typedReporter, target: simulator, logger: logger),
-            to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        chain: { [self] (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          self.isRunningXcodeBuildOperation = false
-          return future
-        })) as! FBFuture<NSNull>
   }
 
+  // FBFutureContext APIs cannot be expressed natively in async/await producer
+  // form (only the consumer side `withFBFutureContext` exists). Keep the
+  // existing FBFuture/FBFutureContext implementation for now.
   @objc(transportForTestManagerService)
   public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
     guard let simulator = self.simulator else {
@@ -147,21 +108,67 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
         })) as! FBFutureContext<NSNumber>
   }
 
-  // MARK: - FBXCTestExtendedCommands
+  // MARK: - FBXCTestExtendedCommands (legacy FBFuture entry points)
 
   @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
+    fbFutureFromAsync { [self] in
+      try await listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath) as NSArray
+    }
+  }
+
+  @objc
+  public func extendedTestShim() -> FBFuture<NSString> {
+    fbFutureFromAsync { [self] in
+      try await extendedTestShimAsync() as NSString
+    }
+  }
+
+  @objc
+  public var xctestPath: String {
+    return (FBXcodeConfiguration.developerDirectory as NSString)
+      .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
+  }
+
+  // MARK: - Async
+
+  fileprivate func runTestAsync(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+    // swiftlint:disable:next force_cast
+    let typedReporter = reporter as! any FBXCTestReporter
+
+    if !launchConfiguration.shouldUseXcodebuild {
+      try await runTestAsync(with: launchConfiguration, reporter: typedReporter, logger: logger, workingDirectory: simulator.auxillaryDirectory)
+      return
     }
 
-    let bundleDescriptor: FBBundleDescriptor
-    do {
-      bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
-    } catch {
-      return FBFuture(error: error as NSError)
+    if isRunningXcodeBuildOperation {
+      throw FBSimulatorError.describe("Cannot Start Test Manager with Configuration \(launchConfiguration) as it is already running").build()
     }
 
+    _ = try await bridgeFBFuture(
+      FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
+        forUDID: simulator.udid,
+        processFetcher: FBProcessFetcher(),
+        queue: simulator.workQueue,
+        logger: logger))
+
+    isRunningXcodeBuildOperation = true
+    defer { isRunningXcodeBuildOperation = false }
+
+    let subprocess = try await startTestAsync(with: launchConfiguration, logger: logger)
+    try await bridgeFBFutureVoid(
+      FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
+  }
+
+  fileprivate func listTestsAsync(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+
+    let bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     let configuration = FBListTestConfiguration.configuration(
       withEnvironment: [:],
       workingDirectory: simulator.auxillaryDirectory,
@@ -171,57 +178,40 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
       timeout: timeout,
       architectures: (bundleDescriptor.binary?.architectures as? Set<String>) ?? Set())
 
-    return FBListTestStrategy(target: unsafeBitCast(simulator, to: (any FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands).self), configuration: configuration, logger: simulator.logger!)
-      .listTests()
+    return try await bridgeFBFutureArray(
+      FBListTestStrategy(target: unsafeBitCast(simulator, to: (any FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands).self), configuration: configuration, logger: simulator.logger!)
+        .listTests())
   }
 
-  @objc
-  public func extendedTestShim() -> FBFuture<NSString> {
+  fileprivate func extendedTestShimAsync() async throws -> String {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
     }
-
-    return
-      (unsafeBitCast(
-        FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        map: { (shims: Any) -> AnyObject in
-          let shimConfig = shims as! FBXCTestShimConfiguration
-          return shimConfig.iOSSimulatorTestShimPath as NSString
-        })) as! FBFuture<NSString>
-  }
-
-  @objc
-  public var xctestPath: String {
-    return (FBXcodeConfiguration.developerDirectory as NSString)
-      .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
+    let shimConfig = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger))
+    return shimConfig.iOSSimulatorTestShimPath
   }
 
   // MARK: - Private
 
-  private func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) -> FBFuture<NSNull> {
+  private func runTestAsync(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
     }
 
     if simulator.state != .booted {
-      return
-        FBSimulatorError
-        .describe("Simulator must be booted to run tests")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator must be booted to run tests").build()
     }
-    return FBManagedTestRunStrategy.runToCompletion(
-      withTarget: unsafeBitCast(simulator, to: (any FBiOSTarget & FBXCTestExtendedCommands).self),
-      configuration: testLaunchConfiguration,
-      codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
-        ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
-        : nil,
-      workingDirectory: simulator.auxillaryDirectory,
-      reporter: reporter,
-      logger: logger)
+
+    try await bridgeFBFutureVoid(
+      FBManagedTestRunStrategy.runToCompletion(
+        withTarget: unsafeBitCast(simulator, to: (any FBiOSTarget & FBXCTestExtendedCommands).self),
+        configuration: testLaunchConfiguration,
+        codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
+          ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
+          : nil,
+        workingDirectory: simulator.auxillaryDirectory,
+        reporter: reporter,
+        logger: logger))
   }
 
   private func testManagerDaemonSocketPath() -> FBFuture<NSString> {
@@ -251,45 +241,55 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
       .timeout(testmanagerdSimSockTimeout, waitingFor: "\(simSockEnvKey) to become available in the simulator environment")) as! FBFuture<NSString>
   }
 
-  private func _startTest(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  private func startTestAsync(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator is deallocated").build())
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
     }
 
-    let filePath: String
-    do {
-      filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
+    let xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
 
-    let xcodeBuildPath: String
-    do {
-      xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    let shimConfig = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger))
+    return try await bridgeFBFuture(
+      FBXcodeBuildOperation.operation(
+        withUDID: simulator.udid,
+        configuration: configuration,
+        xcodeBuildPath: xcodeBuildPath,
+        testRunFilePath: filePath,
+        simDeviceSet: simulator.customDeviceSetPath,
+        macOSTestShimPath: shimConfig.macOSTestShimPath,
+        queue: simulator.workQueue,
+        logger: logger.withName("xcodebuild")))
+  }
+}
 
-    return
-      (unsafeBitCast(
-        FBXCTestShimConfiguration.sharedShimConfiguration(with: simulator.logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        fmap: { (shims: Any) -> FBFuture<AnyObject> in
-          let shimConfig = shims as! FBXCTestShimConfiguration
-          return unsafeBitCast(
-            FBXcodeBuildOperation.operation(
-              withUDID: simulator.udid,
-              configuration: configuration,
-              xcodeBuildPath: xcodeBuildPath,
-              testRunFilePath: filePath,
-              simDeviceSet: simulator.customDeviceSetPath,
-              macOSTestShimPath: shimConfig.macOSTestShimPath,
-              queue: simulator.workQueue,
-              logger: logger.withName("xcodebuild")),
-            to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+// MARK: - AsyncXCTestExtendedCommands
+
+extension FBSimulatorXCTestCommands: AsyncXCTestExtendedCommands {
+
+  public func runTest(
+    launchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    try await runTestAsync(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+  }
+
+  public func listTests(
+    forBundleAtPath bundlePath: String,
+    timeout: TimeInterval,
+    withAppAtPath appPath: String?
+  ) async throws -> [String] {
+    try await listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+  }
+
+  public func extendedTestShim() async throws -> String {
+    try await extendedTestShimAsync()
+  }
+
+  public func withTransportForTestManagerService<R>(
+    body: (NSNumber) async throws -> R
+  ) async throws -> R {
+    try await withFBFutureContext(self.transportForTestManagerService(), body: body)
   }
 }

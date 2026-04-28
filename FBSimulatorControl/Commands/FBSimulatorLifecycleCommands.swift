@@ -10,6 +10,8 @@ import AppKit
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 private let openURLRetries = 2
 
 @objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands {
@@ -52,79 +54,150 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     super.init()
   }
 
-  // MARK: - Boot/Shutdown
+  // MARK: - Boot/Shutdown (legacy FBFuture entry points)
 
   @objc
   public func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await bootAsync(configuration)
+      return NSNull()
     }
-    return FBSimulatorBootStrategy.boot(simulator, with: configuration)
   }
-
-  // MARK: - FBPowerCommands
 
   @objc
   public func shutdown() -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await shutdownAsync()
+      return NSNull()
     }
-    return (simulator.set.shutdown(simulator) as FBFuture).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   @objc
   public func reboot() -> FBFuture<NSNull> {
-    return
-      (unsafeBitCast(shutdown(), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator!.workQueue,
-        fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBSimulatorError.describe("Simulator deallocated").failFuture()
-          }
-          return unsafeBitCast(self.boot(FBSimulatorBootConfiguration.default), to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await rebootAsync()
+      return NSNull()
+    }
   }
-
-  // MARK: - Erase
 
   @objc
   public func erase() -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await eraseAsync()
+      return NSNull()
     }
-    return (simulator.set.erase(simulator) as FBFuture).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
-
-  // MARK: - States
 
   @objc(resolveState:)
   public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await resolveStateAsync(state)
+      return NSNull()
     }
-    return FBiOSTargetResolveState(simulator, state)
   }
 
   @objc
   public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await resolveLeavesStateAsync(state)
+      return NSNull()
     }
-    return FBCoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device)
   }
-
-  // MARK: - Focus
 
   @objc
   public func focus() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await focusAsync()
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await disconnectAsync(withTimeout: timeout, logger: logger)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func connectToBridge() -> FBFuture<FBSimulatorBridge> {
+    fbFutureFromAsync { [self] in
+      try await connectToBridgeAsync()
+    }
+  }
+
+  @objc
+  public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
+    fbFutureFromAsync { [self] in
+      try await connectToFramebufferAsync()
+    }
+  }
+
+  @objc
+  public func connectToHID() -> FBFuture<FBSimulatorHID> {
+    fbFutureFromAsync { [self] in
+      try await connectToHIDAsync()
+    }
+  }
+
+  @objc
+  public func open(_ url: URL) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await openAsync(url)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func bootAsync(_ configuration: FBSimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try await bridgeFBFutureVoid(FBSimulatorBootStrategy.boot(simulator, with: configuration))
+  }
+
+  fileprivate func shutdownAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    _ = try await bridgeFBFuture(simulator.set.shutdown(simulator) as FBFuture)
+  }
+
+  fileprivate func rebootAsync() async throws {
+    try await shutdownAsync()
+    try await bootAsync(FBSimulatorBootConfiguration.default)
+  }
+
+  fileprivate func eraseAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    _ = try await bridgeFBFuture(simulator.set.erase(simulator) as FBFuture)
+  }
+
+  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, state))
+  }
+
+  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try await bridgeFBFutureVoid(FBCoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
+  }
+
+  fileprivate func focusAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     // We cannot 'focus' a SimulatorApp for the non-default device set.
     if let deviceSetPath = simulator.customDeviceSetPath {
-      return FBSimulatorError.describe("Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported").build()
     }
 
     // Find the running instances of SimulatorApp.
@@ -133,158 +206,142 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
 
     // If we have no SimulatorApp running then we can instead launch one in a focused state
     if simulatorApps.isEmpty {
-      return FBSimulatorLifecycleCommands.launchSimulatorApplicationForDefaultDeviceSet()
+      try await FBSimulatorLifecycleCommands.launchSimulatorApplicationForDefaultDeviceSet()
+      return
     }
 
     // Multiple apps, we don't know which to select.
     if simulatorApps.count > 1 {
-      return FBSimulatorError.describe("More than one SimulatorApp \(FBCollectionInformation.oneLineDescription(from: simulatorApps)) running, focus is ambiguous")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("More than one SimulatorApp \(FBCollectionInformation.oneLineDescription(from: simulatorApps)) running, focus is ambiguous").build()
     }
 
     // Otherwise we have a single Simulator App to activate.
     let simulatorApp = simulatorApps.first!
     if !simulatorApp.activate(options: .activateIgnoringOtherApps) {
-      return FBSimulatorError.describe("Failed to focus \(simulatorApp)")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to focus \(simulatorApp)").build()
     }
-
-    return FBFuture<NSNull>.empty()
   }
 
-  private class func launchSimulatorApplicationForDefaultDeviceSet() -> FBFuture<NSNull> {
+  private class func launchSimulatorApplicationForDefaultDeviceSet() async throws {
     let applicationBundle = FBXcodeConfiguration.simulatorApp
     let applicationURL = URL(fileURLWithPath: applicationBundle.path)
-    let future = FBMutableFuture<NSNull>()
     let configuration = NSWorkspace.OpenConfiguration()
     configuration.activates = true
-    NSWorkspace.shared.openApplication(at: applicationURL, configuration: configuration) { _, error in
-      if let error {
-        future.resolveWithError(error)
-      } else {
-        future.resolve(withResult: NSNull())
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      NSWorkspace.shared.openApplication(at: applicationURL, configuration: configuration) { _, error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          continuation.resume()
+        }
       }
     }
-    return unsafeBitCast(future, to: FBFuture<NSNull>.self)
   }
 
-  // MARK: - Connection
-
-  @objc
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+  fileprivate func disconnectAsync(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
+    guard self.simulator != nil else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let date = Date()
-    return
-      (unsafeBitCast(terminateConnections(), to: FBFuture<AnyObject>.self)
-      .timeout(timeout, waitingFor: "Simulator connections to teardown")
-      .onQueue(
-        simulator.workQueue,
-        map: { (_: Any) -> NSNull in
-          logger?.debug().log("Simulator connections torn down in \(Date().timeIntervalSince(date)) seconds")
-          return NSNull()
-        })) as! FBFuture<NSNull>
+    let teardownFuture =
+      fbFutureFromAsync { [self] in
+        try await terminateConnectionsAsync()
+        return NSNull()
+      }
+      .timeout(timeout, waitingFor: "Simulator connections to teardown") as! FBFuture<NSNull>
+    try await bridgeFBFutureVoid(teardownFuture)
+    logger?.debug().log("Simulator connections torn down in \(Date().timeIntervalSince(date)) seconds")
   }
 
-  private func terminateConnections() -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBFuture<NSNull>.empty()
+  private func terminateConnectionsAsync() async throws {
+    if let hid {
+      try await bridgeFBFutureVoid(hid.disconnect())
     }
-    let hidFuture: FBFuture<AnyObject> =
-      hid != nil
-      ? unsafeBitCast(hid!.disconnect(), to: FBFuture<AnyObject>.self)
-      : unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-    let bridgeFuture: FBFuture<AnyObject> =
-      bridge != nil
-      ? unsafeBitCast(bridge!.disconnect(), to: FBFuture<AnyObject>.self)
-      : unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-
-    return
-      (FBFuture<AnyObject>.combine([hidFuture, bridgeFuture])
-      .onQueue(
-        simulator.workQueue,
-        chain: { [weak self] (_: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          self?.hid = nil
-          self?.bridge = nil
-          return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<NSNull>
+    if let bridge {
+      try await bridgeFBFutureVoid(bridge.disconnect())
+    }
+    self.hid = nil
+    self.bridge = nil
   }
 
-  // MARK: - Bridge
-
-  @objc
-  public func connectToBridge() -> FBFuture<FBSimulatorBridge> {
+  fileprivate func connectToBridgeAsync() async throws -> FBSimulatorBridge {
     if let bridge = self.bridge {
-      return FBFuture(result: bridge)
+      return bridge
     }
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSimulatorBridge>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    return (FBSimulatorBridge.bridge(for: simulator) as FBFuture)
-      .onQueue(
-        simulator.workQueue,
-        map: { [weak self] (bridge: Any) -> FBSimulatorBridge in
-          let bridge = bridge as! FBSimulatorBridge
-          self?.bridge = bridge
-          return bridge
-        }) as! FBFuture<FBSimulatorBridge>
+    let bridge = try await bridgeFBFuture(FBSimulatorBridge.bridge(for: simulator) as FBFuture)
+    self.bridge = bridge
+    return bridge
   }
 
-  // MARK: - Framebuffer
-
-  @objc
-  public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
+  fileprivate func connectToFramebufferAsync() async throws -> FBFramebuffer {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBFramebuffer>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    return FBFuture.onQueue(
-      simulator.workQueue,
-      resolve: {
-        do {
-          return FBFuture(result: try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!))
-        } catch {
-          return FBFuture(error: error)
-        }
-      })
+    return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger!)
   }
 
-  // MARK: - HID
-
-  @objc
-  public func connectToHID() -> FBFuture<FBSimulatorHID> {
+  fileprivate func connectToHIDAsync() async throws -> FBSimulatorHID {
     if let hid = self.hid {
-      return FBFuture(result: hid)
+      return hid
     }
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSimulatorHID>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    return (FBSimulatorHID.hid(for: simulator) as FBFuture)
-      .onQueue(
-        simulator.workQueue,
-        map: { [weak self] (hid: Any) -> FBSimulatorHID in
-          let hid = hid as! FBSimulatorHID
-          self?.hid = hid
-          return hid
-        }) as! FBFuture<FBSimulatorHID>
+    let hid = try await bridgeFBFuture(FBSimulatorHID.hid(for: simulator) as FBFuture)
+    self.hid = hid
+    return hid
   }
 
-  // MARK: - URLs
-
-  @objc
-  public func open(_ url: URL) -> FBFuture<NSNull> {
+  fileprivate func openAsync(_ url: URL) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     var lastError: AnyObject?
     for _ in 0...openURLRetries {
       lastError = nil
       if simulator.device.openURL(url, error: &lastError) {
-        return FBFuture(result: NSNull())
+        return
       }
     }
+    _ = lastError
+    throw FBSimulatorError.describe("Failed to open URL \(url) on simulator \(simulator)").build()
+  }
+}
 
-    return FBSimulatorError.describe("Failed to open URL \(url) on simulator \(simulator)")
-      .failFuture() as! FBFuture<NSNull>
+// MARK: - AsyncPowerCommands
+
+extension FBSimulatorLifecycleCommands: AsyncPowerCommands {
+
+  public func shutdown() async throws {
+    try await shutdownAsync()
+  }
+
+  public func reboot() async throws {
+    try await rebootAsync()
+  }
+}
+
+// MARK: - AsyncEraseCommands
+
+extension FBSimulatorLifecycleCommands: AsyncEraseCommands {
+
+  public func erase() async throws {
+    try await eraseAsync()
+  }
+}
+
+// MARK: - AsyncLifecycleCommands
+
+extension FBSimulatorLifecycleCommands: AsyncLifecycleCommands {
+
+  public func resolveState(_ state: FBiOSTargetState) async throws {
+    try await resolveStateAsync(state)
+  }
+
+  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
+    try await resolveLeavesStateAsync(state)
   }
 }

@@ -27,25 +27,34 @@ public final class FBSimulatorMemoryCommands: NSObject, FBMemoryCommands {
     super.init()
   }
 
-  // MARK: - FBMemoryCommands
+  // MARK: - FBMemoryCommands (legacy FBFuture entry point)
 
   @objc
   public func simulateMemoryWarning() -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+    fbFutureFromAsync { [self] in
+      try await simulateMemoryWarningAsync()
+      return NSNull()
     }
-    if FBSimDeviceWrapper.deviceCanSimulateMemoryWarning(simulator.device) {
-      return FBFuture.onQueue(
-        simulator.workQueue,
-        resolve: { () -> FBFuture<AnyObject> in
-          FBSimDeviceWrapper.simulateMemoryWarning(onDevice: simulator.device)
-          return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
-    }
+  }
 
-    return
-      FBSimulatorError
-      .describe("SimDevice doesn't have simulateMemoryWarning selector")
-      .failFuture() as! FBFuture<NSNull>
+  // MARK: - Private
+
+  fileprivate func simulateMemoryWarningAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    guard FBSimDeviceWrapper.deviceCanSimulateMemoryWarning(simulator.device) else {
+      throw FBSimulatorError.describe("SimDevice doesn't have simulateMemoryWarning selector").build()
+    }
+    FBSimDeviceWrapper.simulateMemoryWarning(onDevice: simulator.device)
+  }
+}
+
+// MARK: - AsyncMemoryCommands
+
+extension FBSimulatorMemoryCommands: AsyncMemoryCommands {
+
+  public func simulateMemoryWarning() async throws {
+    try await simulateMemoryWarningAsync()
   }
 }

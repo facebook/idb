@@ -27,28 +27,13 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
     super.init()
   }
 
-  // MARK: - FBProcessSpawnCommands Implementation
+  // MARK: - FBProcessSpawnCommands (legacy FBFuture entry point)
 
   @objc
   public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    guard let simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+    fbFutureFromAsync { [self] in
+      try await launchProcessAsync(configuration)
     }
-    return
-      (unsafeBitCast(configuration.io.attach(), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (attachmentObj: AnyObject) -> FBFuture<AnyObject> in
-          let attachment = attachmentObj as! FBProcessIOAttachment
-          return unsafeBitCast(
-            FBSimulatorProcessSpawnCommands.launchProcess(
-              withSimulator: simulator,
-              configuration: configuration,
-              attachment: attachment
-            ),
-            to: FBFuture<AnyObject>.self
-          )
-        })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
   }
 
   // MARK: - Public
@@ -66,9 +51,20 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
 
   // MARK: - Private
 
-  private class func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  fileprivate func launchProcessAsync(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    guard let simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let attachment = try await bridgeFBFuture(configuration.io.attach())
+    return try await FBSimulatorProcessSpawnCommands.launchProcessAsync(
+      withSimulator: simulator,
+      configuration: configuration,
+      attachment: attachment
+    )
+  }
+
+  private class func launchProcessAsync(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = simulator.logger
-    let launchFuture = FBMutableFuture<NSNumber>(name: "Launch of \(configuration.launchPath) on \(simulator.udid)")
     let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")
     let exitCode = FBMutableFuture<NSNumber>(name: "Process exit of \(configuration.launchPath) on \(simulator.udid)")
     let signal = FBMutableFuture<NSNumber>(name: "Process signal of \(configuration.launchPath) on \(simulator.udid)")
@@ -84,7 +80,11 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
       mode: configuration.mode
     )
 
-    FBSimDeviceWrapper.spawnAsync(
+    // PID is needed by the termination handler for logging; we populate the
+    // holder once `spawnAsync` returns it. The terminationHandler will only be
+    // invoked after the process exits, which strictly follows that return.
+    let pidHolder = PIDHolder()
+    let processIdentifier = try await FBSimDeviceWrapper.spawnAsync(
       onDevice: simulator.device,
       path: configuration.launchPath,
       options: options,
@@ -96,7 +96,7 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
           statLocFuture: statLoc,
           exitCodeFuture: exitCode,
           signalFuture: signal,
-          processIdentifier: Int32(truncatingIfNeeded: launchFuture.result?.intValue ?? 0),
+          processIdentifier: pidHolder.value,
           configuration: configuration,
           queue: simulator.workQueue,
           logger: logger
@@ -104,31 +104,24 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
         attachment.stdOut?.close()
         attachment.stdErr?.close()
       },
-      completionQueue: simulator.workQueue,
-      completionHandler: { (error: Error?, processIdentifier: Int32) in
-        if let error {
-          launchFuture.resolveWithError(error)
-        } else {
-          launchFuture.resolve(withResult: NSNumber(value: processIdentifier))
-        }
-      }
+      completionQueue: simulator.workQueue
     )
+    pidHolder.value = processIdentifier
 
-    return
-      ((launchFuture as FBFuture<AnyObject>)
-      .onQueue(
-        simulator.workQueue,
-        map: { (processIdentifierNumber: AnyObject) -> AnyObject in
-          let processIdentifier = (processIdentifierNumber as! NSNumber).int32Value
-          return FBSubprocess<AnyObject, AnyObject, AnyObject>(
-            processIdentifier: processIdentifier,
-            statLoc: unsafeBitCast(statLoc, to: FBFuture<NSNumber>.self),
-            exitCode: unsafeBitCast(exitCode, to: FBFuture<NSNumber>.self),
-            signal: unsafeBitCast(signal, to: FBFuture<NSNumber>.self),
-            configuration: configuration,
-            queue: simulator.workQueue
-          )
-        })) as! FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
+    return FBSubprocess<AnyObject, AnyObject, AnyObject>(
+      processIdentifier: processIdentifier,
+      statLoc: unsafeBitCast(statLoc, to: FBFuture<NSNumber>.self),
+      exitCode: unsafeBitCast(exitCode, to: FBFuture<NSNumber>.self),
+      signal: unsafeBitCast(signal, to: FBFuture<NSNumber>.self),
+      configuration: configuration,
+      queue: simulator.workQueue
+    )
+  }
+
+  /// Lets the termination handler reach the PID once it's known, since
+  /// `spawnAsync` produces the PID after the handler is registered.
+  private final class PIDHolder: @unchecked Sendable {
+    var value: Int32 = 0
   }
 
   private class func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
@@ -155,5 +148,14 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnComm
       // Default behaviour is to use launchd if booted, otherwise use standalone.
       return simulator.state != .booted
     }
+  }
+}
+
+// MARK: - AsyncProcessSpawnCommands
+
+extension FBSimulatorProcessSpawnCommands: AsyncProcessSpawnCommands {
+
+  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    try await launchProcessAsync(configuration)
   }
 }

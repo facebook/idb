@@ -27,19 +27,22 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
     super.init()
   }
 
-  // MARK: - FBLogCommands
+  // MARK: - FBLogCommands (legacy FBFuture entry point)
 
   @objc
   public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBLogOperation> {
+    fbFutureFromAsync { [self] in
+      try await tailLogAsync(arguments: arguments, consumer: consumer)
+    }
+  }
+
+  // MARK: - Private
+
+  fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> FBLogOperation {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    let launchPath: String
-    do {
-      launchPath = try logExecutablePath()
-    } catch {
-      return FBFuture(error: error)
-    }
+    let launchPath = try logExecutablePath()
     let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(
       stdIn: nil,
@@ -53,16 +56,9 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
       io: processIO,
       mode: .default
     )
-    return
-      (simulator.launchProcess(configuration)
-      .onQueue(
-        simulator.workQueue,
-        map: { process -> AnyObject in
-          return FBProcessLogOperation(process: process as! FBSubprocess<AnyObject, AnyObject, AnyObject>, consumer: consumer, queue: simulator.asyncQueue)
-        }) as! FBFuture<FBLogOperation>)
+    let process = try await bridgeFBFuture(simulator.launchProcess(configuration)) as! FBSubprocess<AnyObject, AnyObject, AnyObject>
+    return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
   }
-
-  // MARK: - Private
 
   private func logExecutablePath() throws -> String {
     guard let simulator = self.simulator else {
@@ -78,5 +74,31 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
       .appendingPathComponent("log")
     let binary = try FBBinaryDescriptor.binary(withPath: path)
     return binary.path
+  }
+}
+
+// MARK: - AsyncLogCommands
+
+extension FBSimulatorLogCommands: AsyncLogCommands {
+
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+    let operation = try await tailLogAsync(arguments: arguments, consumer: consumer)
+    return AsyncFBLogOperationBridge(operation)
+  }
+}
+
+/// Adapter wrapping a legacy `FBLogOperation` in `AsyncLogOperation` shape.
+private final class AsyncFBLogOperationBridge: AsyncLogOperation {
+
+  let consumer: any FBDataConsumer
+  private let underlying: any FBLogOperation
+
+  init(_ underlying: any FBLogOperation) {
+    self.underlying = underlying
+    self.consumer = underlying.consumer
+  }
+
+  func waitUntilCompleted() async throws {
+    try await bridgeFBFutureVoid(underlying.completed)
   }
 }

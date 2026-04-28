@@ -27,52 +27,47 @@ public final class FBSimulatorNotificationCommands: NSObject, FBNotificationComm
     super.init()
   }
 
-  // MARK: - FBNotificationCommands
+  // MARK: - FBNotificationCommands (legacy FBFuture entry point)
 
   @objc
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Private
+
+  fileprivate func sendPushNotificationAsync(forBundleID bundleID: String, jsonPayload: String) async throws {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
 
     guard let data = jsonPayload.data(using: .utf8) else {
-      return
-        FBSimulatorError
-        .describe("Failed to encode notification json as UTF-8")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to encode notification json as UTF-8").build()
     }
-    let jsonObj: [String: Any]
-    do {
-      guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        return
-          FBSimulatorError
-          .describe("Failed to deserialize notification json: not a dictionary")
-          .failFuture() as! FBFuture<NSNull>
-      }
-      jsonObj = parsed
-    } catch {
-      return
-        FBSimulatorError
-        .describe("Failed to deserialize notification json: \(error)")
-        .failFuture() as! FBFuture<NSNull>
+    guard let jsonObj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+      throw FBSimulatorError.describe("Failed to deserialize notification json: not a dictionary").build()
     }
 
-    if FBSimDeviceWrapper.deviceCanSendPushNotification(simulator.device) {
-      return FBFuture.onQueue(
-        simulator.workQueue,
-        resolve: { () -> FBFuture<AnyObject> in
-          var error: NSError?
-          FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
-          if let error {
-            return FBFuture(error: error)
-          }
-          return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+    guard FBSimDeviceWrapper.deviceCanSendPushNotification(simulator.device) else {
+      throw FBSimulatorError.describe("SimDevice doesn't have sendPushNotificationForBundleID selector").build()
     }
 
-    return
-      FBSimulatorError
-      .describe("SimDevice doesn't have sendPushNotificationForBundleID selector")
-      .failFuture() as! FBFuture<NSNull>
+    var error: NSError?
+    FBSimDeviceWrapper.sendPushNotification(onDevice: simulator.device, bundleID: bundleID, jsonPayload: jsonObj, error: &error)
+    if let error {
+      throw error
+    }
+  }
+}
+
+// MARK: - AsyncNotificationCommands
+
+extension FBSimulatorNotificationCommands: AsyncNotificationCommands {
+
+  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
+    try await sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 }

@@ -8,6 +8,8 @@
 import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 // MARK: - FBSimulatorDebugServer
 
 private class FBSimulatorDebugServer: NSObject, FBDebugServer {
@@ -70,12 +72,20 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
     super.init()
   }
 
-  // MARK: - FBDebuggerCommands
+  // MARK: - FBDebuggerCommands (legacy FBFuture entry point)
 
   @objc
   public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<any FBDebugServer> {
+    fbFutureFromAsync { [self] in
+      try await launchDebugServerAsync(forHostApplication: application, port: port)
+    }
+  }
+
+  // MARK: - Private
+
+  fileprivate func launchDebugServerAsync(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let configuration = FBApplicationLaunchConfiguration(
       bundleID: application.identifier,
@@ -86,34 +96,16 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
-    let debugServerPath = self.debugServerPath
-    return
-      (simulator.launchApplication(configuration)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [weak self] (process: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBFuture(error: FBSimulatorError.describe("Commands deallocated").build())
-          }
-          let launchedApp = process as! FBLaunchedApplication
-          return self.debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        map: { (task: Any) -> AnyObject in
-          let debugTask = task as! FBSubprocess<NSNull, AnyObject, AnyObject>
-          let lldbBootstrapCommands = [
-            "process connect connect://localhost:\(port)"
-          ]
-          return FBSimulatorDebugServer(
-            debugServerTask: debugTask,
-            lldbBootstrapCommands: lldbBootstrapCommands
-          )
-        })) as! FBFuture<any FBDebugServer>
+    let launchedApp = try await bridgeFBFuture(simulator.launchApplication(configuration)) as! FBLaunchedApplication
+    let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)) as! FBSubprocess<NSNull, AnyObject, AnyObject>
+    let lldbBootstrapCommands = [
+      "process connect connect://localhost:\(port)"
+    ]
+    return FBSimulatorDebugServer(
+      debugServerTask: debugTask,
+      lldbBootstrapCommands: lldbBootstrapCommands
+    )
   }
-
-  // MARK: - Private
 
   private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: FBSimulator, debugServerPath: String) -> FBFuture<AnyObject> {
     return FBProcessBuilder<NSNull, AnyObject, AnyObject>
@@ -122,5 +114,17 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
       .withStdOut(to: simulator.logger!)
       .withStdErr(to: simulator.logger!)
       .start() as! FBFuture<AnyObject>
+  }
+}
+
+// MARK: - AsyncDebuggerCommands
+
+extension FBSimulatorDebuggerCommands: AsyncDebuggerCommands {
+
+  public func launchDebugServer(
+    forHostApplication application: FBBundleDescriptor,
+    port: in_port_t
+  ) async throws -> any FBDebugServer {
+    try await launchDebugServerAsync(forHostApplication: application, port: port)
   }
 }

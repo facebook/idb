@@ -59,69 +59,132 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     super.init()
   }
 
-  // MARK: - Public
+  // MARK: - Public (legacy FBFuture entry points)
 
   @objc
   public func setHardwareKeyboardEnabled(_ enabled: Bool) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await setHardwareKeyboardEnabledAsync(enabled)
+      return NSNull()
     }
-    if simulator.device.responds(to: NSSelectorFromString("setHardwareKeyboardEnabled:keyboardType:error:")) {
-      return FBFuture.onQueue(
-        simulator.workQueue,
-        resolve: {
-          do {
-            try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
-            return FBFuture(result: NSNull())
-          } catch {
-            return FBFuture(error: error)
-          }
-        })
-    }
-
-    return
-      (simulator.connectToBridge()
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (bridgeObj: Any) -> FBFuture<AnyObject> in
-          let bridge = bridgeObj as! FBSimulatorBridge
-          return unsafeBitCast(bridge.setHardwareKeyboardEnabled(enabled), to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<NSNull>
   }
 
   @objc
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await setPreferenceAsync(name, value: value, type: type, domain: domain)
+      return NSNull()
     }
-    return FBPreferenceModificationStrategy(simulator: simulator)
-      .setPreference(name, value: value, type: type, domain: domain)
   }
 
   @objc
   public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSString>
+    fbFutureFromAsync { [self] in
+      try await getCurrentPreferenceAsync(name, domain: domain) as NSString
     }
-    return FBPreferenceModificationStrategy(simulator: simulator)
-      .getCurrentPreference(name, domain: domain)
   }
 
   @objc
   public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await grantAccessAsync(bundleIDs, toServices: services)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await revokeAccessAsync(bundleIDs, toServices: services)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await grantAccessAsync(bundleIDs, toDeeplink: scheme)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await revokeAccessAsync(bundleIDs, toDeeplink: scheme)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await updateContactsAsync(databaseDirectory)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func clearContacts() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "contacts", action: "clear")
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func clearPhotos() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func setHardwareKeyboardEnabledAsync(_ enabled: Bool) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    if simulator.device.responds(to: NSSelectorFromString("setHardwareKeyboardEnabled:keyboardType:error:")) {
+      try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
+      return
+    }
+    let bridge = try await bridgeFBFuture(simulator.connectToBridge())
+    let setFuture = unsafeBitCast(bridge.setHardwareKeyboardEnabled(enabled), to: FBFuture<AnyObject>.self)
+    _ = try await bridgeFBFuture(setFuture)
+  }
+
+  fileprivate func setPreferenceAsync(_ name: String, value: String, type: String?, domain: String?) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try await bridgeFBFutureVoid(
+      FBPreferenceModificationStrategy(simulator: simulator)
+        .setPreference(name, value: value, type: type, domain: domain))
+  }
+
+  fileprivate func getCurrentPreferenceAsync(_ name: String, domain: String?) async throws -> String {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let result = try await bridgeFBFuture(
+      FBPreferenceModificationStrategy(simulator: simulator)
+        .getCurrentPreference(name, domain: domain))
+    return result as String
+  }
+
+  fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if services.isEmpty {
-      return FBSimulatorError.describe("Cannot approve any services for \(bundleIDs) since no services were provided")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot approve any services for \(bundleIDs) since no services were provided").build()
     }
     if bundleIDs.isEmpty {
-      return FBSimulatorError.describe("Cannot approve \(services) since no bundle ids were provided")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot approve \(services) since no bundle ids were provided").build()
     }
 
-    var futures: [FBFuture<NSNull>] = []
     var toApprove = services
     let iosVer = simulator.osVersion
     let coreSimulatorSettingMapping: [FBTargetSettingsService: String]
@@ -142,52 +205,39 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
           }
         }
         toApprove.subtract(simDeviceServices)
-        futures.append(coreSimulatorApprove(withBundleIDs: bundleIDs, toServices: internalServices))
+        try coreSimulatorApprove(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
     if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
       let tccServices = toApprove.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
       toApprove.subtract(tccServices)
-      futures.append(modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true))
+      try await modifyTCCDatabaseAsync(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
     }
     if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService.location) {
-      futures.append(authorizeLocationSettings(Array(bundleIDs)))
+      try await authorizeLocationSettingsAsync(Array(bundleIDs))
       toApprove.remove(FBTargetSettingsService.location)
     }
     if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService(rawValue: "notification")) {
-      futures.append(updateNotificationService(Array(bundleIDs), approve: true))
+      try await updateNotificationServiceAsync(Array(bundleIDs), approve: true)
       toApprove.remove(FBTargetSettingsService(rawValue: "notification"))
     }
 
     if !toApprove.isEmpty {
-      return FBSimulatorError.describe("Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(toApprove))) since there is no handling of it")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(toApprove))) since there is no handling of it").build()
     }
-    if futures.isEmpty {
-      return FBFuture<NSNull>.empty()
-    }
-    if futures.count == 1 {
-      return futures.first!
-    }
-    let castedFutures = futures.map { unsafeBitCast($0, to: FBFuture<AnyObject>.self) }
-    return FBFuture<AnyObject>.combine(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
-  @objc
-  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
+  fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if services.isEmpty {
-      return FBSimulatorError.describe("Cannot revoke any services for \(bundleIDs) since no services were provided")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot revoke any services for \(bundleIDs) since no services were provided").build()
     }
     if bundleIDs.isEmpty {
-      return FBSimulatorError.describe("Cannot revoke \(services) since no bundle ids were provided")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot revoke \(services) since no bundle ids were provided").build()
     }
 
-    var futures: [FBFuture<NSNull>] = []
     var toRevoke = services
     let iosVer = simulator.osVersion
     let coreSimulatorSettingMapping: [FBTargetSettingsService: String]
@@ -208,49 +258,37 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
           }
         }
         toRevoke.subtract(simDeviceServices)
-        futures.append(coreSimulatorRevoke(withBundleIDs: bundleIDs, toServices: internalServices))
+        try coreSimulatorRevoke(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
     if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
       let tccServices = toRevoke.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
       toRevoke.subtract(tccServices)
-      futures.append(modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false))
+      try await modifyTCCDatabaseAsync(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
     }
     if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService.location) {
-      futures.append(revokeLocationSettings(Array(bundleIDs)))
+      try await revokeLocationSettingsAsync(Array(bundleIDs))
       toRevoke.remove(FBTargetSettingsService.location)
     }
     if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService(rawValue: "notification")) {
-      futures.append(updateNotificationService(Array(bundleIDs), approve: false))
+      try await updateNotificationServiceAsync(Array(bundleIDs), approve: false)
       toRevoke.remove(FBTargetSettingsService(rawValue: "notification"))
     }
 
     if !toRevoke.isEmpty {
-      return FBSimulatorError.describe("Cannot revoke \(FBCollectionInformation.oneLineDescription(from: Array(toRevoke))) since there is no handling of it")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Cannot revoke \(FBCollectionInformation.oneLineDescription(from: Array(toRevoke))) since there is no handling of it").build()
     }
-    if futures.isEmpty {
-      return FBFuture<NSNull>.empty()
-    }
-    if futures.count == 1 {
-      return futures.first!
-    }
-    let castedFutures = futures.map { unsafeBitCast($0, to: FBFuture<AnyObject>.self) }
-    return FBFuture<AnyObject>.combine(castedFutures).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
-  @objc
-  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+  fileprivate func grantAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if scheme.isEmpty {
-      return FBSimulatorError.describe("Empty scheme provided to url approve")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Empty scheme provided to url approve").build()
     }
     if bundleIDs.isEmpty {
-      return FBSimulatorError.describe("Empty bundleID set provided to url approve")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Empty bundleID set provided to url approve").build()
     }
 
     let preferencesDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/Preferences")
@@ -259,8 +297,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     var schemeApprovalProperties: NSMutableDictionary = NSMutableDictionary()
     if FileManager.default.fileExists(atPath: schemeApprovalPlistPath) {
       guard let dict = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-        return FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)")
-          .failFuture() as! FBFuture<NSNull>
+        throw FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)").build()
       }
       schemeApprovalProperties = dict
     }
@@ -273,153 +310,114 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     do {
       try FileManager.default.createDirectory(atPath: preferencesDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      return FBSimulatorError.describe("Failed to create folders for scheme approval plist")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to create folders for scheme approval plist").build()
     }
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      return FBSimulatorError.describe("Failed to write scheme approval plist")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to write scheme approval plist").build()
     }
-    return FBFuture<NSNull>.empty()
   }
 
-  @objc
-  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+  fileprivate func revokeAccessAsync(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if scheme.isEmpty {
-      return FBSimulatorError.describe("Empty scheme provided to url revoke")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Empty scheme provided to url revoke").build()
     }
     if bundleIDs.isEmpty {
-      return FBSimulatorError.describe("Empty bundleID set provided to url revoke")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Empty bundleID set provided to url revoke").build()
     }
 
     let preferencesDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/Preferences")
     let schemeApprovalPlistPath = (preferencesDirectory as NSString).appendingPathComponent("com.apple.launchservices.schemeapproval.plist")
 
     guard FileManager.default.fileExists(atPath: schemeApprovalPlistPath) else {
-      return FBFuture<NSNull>.empty()
+      return
     }
     guard let schemeApprovalProperties = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-      return FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to read the file at \(schemeApprovalPlistPath)").build()
     }
 
     let urlKey = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
     schemeApprovalProperties.removeObject(forKey: urlKey)
 
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      return FBSimulatorError.describe("Failed to write scheme approval plist")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to write scheme approval plist").build()
     }
-    return FBFuture<NSNull>.empty()
   }
 
-  @objc
-  public func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull> {
+  fileprivate func updateContactsAsync(_ databaseDirectory: String) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let destinationDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
-      return FBSimulatorError.describe("Expected Address Book path to exist at \(destinationDirectory) but it was not there")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Expected Address Book path to exist at \(destinationDirectory) but it was not there").build()
     }
 
-    let sourceFilePaths: [String]
-    do {
-      sourceFilePaths = try FBSimulatorSettingsCommands.contactsDatabaseFilePaths(fromContainingDirectory: databaseDirectory)
-    } catch {
-      return FBFuture(error: error)
-    }
+    let sourceFilePaths = try FBSimulatorSettingsCommands.contactsDatabaseFilePaths(fromContainingDirectory: databaseDirectory)
 
     for sourceFilePath in sourceFilePaths {
       let destinationFilePath = (destinationDirectory as NSString).appendingPathComponent((sourceFilePath as NSString).lastPathComponent)
-      do {
-        if FileManager.default.fileExists(atPath: destinationFilePath) {
-          try FileManager.default.removeItem(atPath: destinationFilePath)
-        }
-        try FileManager.default.copyItem(atPath: sourceFilePath, toPath: destinationFilePath)
-      } catch {
-        return FBFuture(error: error)
+      if FileManager.default.fileExists(atPath: destinationFilePath) {
+        try FileManager.default.removeItem(atPath: destinationFilePath)
       }
+      try FileManager.default.copyItem(atPath: sourceFilePath, toPath: destinationFilePath)
     }
-
-    return FBFuture<NSNull>.empty()
-  }
-
-  @objc
-  public func clearContacts() -> FBFuture<NSNull> {
-    return runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
-  }
-
-  @objc
-  public func clearPhotos() -> FBFuture<NSNull> {
-    return runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 
   // MARK: - Private
 
-  private func runSimulatorFrameworkBridge(withService service: String, action: String) -> FBFuture<NSNull> {
+  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     guard let helperPath = Bundle(for: FBSimulatorSettingsCommands.self).path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
-      return FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources. Ensure FBSimulatorControl was built correctly.")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources. Ensure FBSimulatorControl was built correctly.").build()
     }
     if !FileManager.default.fileExists(atPath: helperPath) {
-      return FBSimulatorError.describe("SimulatorFrameworkBridge binary found in bundle but does not exist at path: \(helperPath)")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary found in bundle but does not exist at path: \(helperPath)").build()
     }
-    return
-      (unsafeBitCast(
-        simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: [helperPath, service, action])
-          .runUntilCompletion(withAcceptableExitCodes: [0]),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          simulator.logger?.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
+    let runFuture = unsafeBitCast(
+      simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: [helperPath, service, action])
+        .runUntilCompletion(withAcceptableExitCodes: [0]),
+      to: FBFuture<AnyObject>.self
+    )
+    _ = try await bridgeFBFuture(runFuture)
+    simulator.logger?.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
   }
 
-  private func authorizeLocationSettings(_ bundleIDs: [String]) -> FBFuture<NSNull> {
+  fileprivate func authorizeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    return FBLocationServicesModificationStrategy(simulator: simulator)
-      .approveLocationServices(forBundleIDs: bundleIDs)
+    try await bridgeFBFutureVoid(
+      FBLocationServicesModificationStrategy(simulator: simulator)
+        .approveLocationServices(forBundleIDs: bundleIDs))
   }
 
-  private func revokeLocationSettings(_ bundleIDs: [String]) -> FBFuture<NSNull> {
+  fileprivate func revokeLocationSettingsAsync(_ bundleIDs: [String]) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    return FBLocationServicesModificationStrategy(simulator: simulator)
-      .revokeLocationServices(forBundleIDs: bundleIDs)
+    try await bridgeFBFutureVoid(
+      FBLocationServicesModificationStrategy(simulator: simulator)
+        .revokeLocationServices(forBundleIDs: bundleIDs))
   }
 
-  private func updateNotificationService(_ bundleIDs: [String], approve approved: Bool) -> FBFuture<NSNull> {
+  fileprivate func updateNotificationServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if bundleIDs.isEmpty {
-      return FBSimulatorError.describe("Empty bundleID set provided to notifications approve")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Empty bundleID set provided to notifications approve").build()
     }
 
     let bulletinDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/BulletinBoard")
     let notificationsApprovalPlistPath = (bulletinDirectory as NSString).appendingPathComponent("VersionedSectionInfo.plist")
 
     guard let sectionInfo = NSMutableDictionary(contentsOfFile: notificationsApprovalPlistPath) else {
-      return FBSimulatorError.describe("Failed to load sectionInfo")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to load sectionInfo").build()
     }
 
     let sectionInfoDict = sectionInfo["sectionInfo"] as? NSMutableDictionary
@@ -430,13 +428,11 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
         data = sectionInfoDict?.allValues.first as? Data
       }
       guard let data else {
-        return FBSimulatorError.describe("No section info for \(bundleID)")
-          .failFuture() as! FBFuture<NSNull>
+        throw FBSimulatorError.describe("No section info for \(bundleID)").build()
       }
       if approved {
         guard let properties = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? NSDictionary else {
-          return FBSimulatorError.describe("Failed to deserialize section info plist")
-            .failFuture() as! FBFuture<NSNull>
+          throw FBSimulatorError.describe("Failed to deserialize section info plist").build()
         }
         if let objects = properties["$objects"] as? NSMutableArray {
           objects[2] = bundleID
@@ -446,8 +442,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
         }
 
         guard let resultData = try? PropertyListSerialization.data(fromPropertyList: properties, format: .binary, options: 0) else {
-          return FBSimulatorError.describe("Failed to serialize section info plist")
-            .failFuture() as! FBFuture<NSNull>
+          throw FBSimulatorError.describe("Failed to serialize section info plist").build()
         }
         sectionInfoDict?[bundleID] = resultData
       } else {
@@ -456,79 +451,63 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     }
 
     if !sectionInfo.write(toFile: notificationsApprovalPlistPath, atomically: true) {
-      return FBSimulatorError.describe("Failed to write sectionInfo data to plist")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Failed to write sectionInfo data to plist").build()
     }
 
     if simulator.state == .booted {
-      return (simulator.stopService(withName: springBoardServiceName) as FBFuture).mapReplace(NSNull()) as! FBFuture<NSNull>
-    } else {
-      return FBFuture<NSNull>.empty()
+      _ = try await bridgeFBFuture(simulator.stopService(withName: springBoardServiceName))
     }
   }
 
-  private func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) -> FBFuture<NSNull> {
+  fileprivate func modifyTCCDatabaseAsync(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     guard let dataDirectory = simulator.dataDirectory else {
-      return FBSimulatorError.describe("Simulator has no data directory").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator has no data directory").build()
     }
     let databasePath = (dataDirectory as NSString).appendingPathComponent("Library/TCC/TCC.db")
     var isDirectory: ObjCBool = true
     if !FileManager.default.fileExists(atPath: databasePath, isDirectory: &isDirectory) {
-      return FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it was not there")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it was not there").build()
     }
     if isDirectory.boolValue {
-      return FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it is a directory")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Expected file to exist at path \(databasePath) but it is a directory").build()
     }
     if !FileManager.default.isWritableFile(atPath: databasePath) {
-      return FBSimulatorError.describe("Database file at path \(databasePath) is not writable")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Database file at path \(databasePath) is not writable").build()
     }
 
     let logger = simulator.logger?.withName("sqlite_auth")
     let queue = simulator.asyncQueue
 
     if grantAccess {
-      return grantAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await grantAccessInTCCDatabaseAsync(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
     } else {
-      return revokeAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await revokeAccessInTCCDatabaseAsync(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
     }
   }
 
-  private func coreSimulatorApprove(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) -> FBFuture<NSNull> {
+  fileprivate func coreSimulatorApprove(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     for bundleID in bundleIDs {
       for internalService in services {
-        do {
-          try simulator.device.setPrivacyAccessForService(internalService, bundleID: bundleID, granted: true)
-        } catch {
-          return FBFuture(error: error)
-        }
+        try simulator.device.setPrivacyAccessForService(internalService, bundleID: bundleID, granted: true)
       }
     }
-    return FBFuture<NSNull>.empty()
   }
 
-  private func coreSimulatorRevoke(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) -> FBFuture<NSNull> {
+  fileprivate func coreSimulatorRevoke(withBundleIDs bundleIDs: Set<String>, toServices services: Set<String>) throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     for bundleID in bundleIDs {
       for internalService in services {
-        do {
-          try simulator.device.resetPrivacyAccess(forService: internalService, bundleID: bundleID)
-        } catch {
-          return FBFuture(error: error)
-        }
+        try simulator.device.resetPrivacyAccess(forService: internalService, bundleID: bundleID)
       }
     }
-    return FBFuture<NSNull>.empty()
   }
 
   private static let tccDatabaseMapping: [FBTargetSettingsService: String] = [
@@ -563,28 +542,12 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
-  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
-    }
-    return
-      (unsafeBitCast(
-        FBSimulatorSettingsCommands.buildRows(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (rowsObj: Any) -> FBFuture<AnyObject> in
-          let rows = rowsObj as! String
-          return unsafeBitCast(
-            FBSimulatorSettingsCommands.runSqliteCommand(onDatabase: databasePath, arguments: ["INSERT or REPLACE INTO access VALUES \(rows)"], queue: queue, logger: logger),
-            to: FBFuture<AnyObject>.self)
-        }
-      )
-      .mapReplace(NSNull())) as! FBFuture<NSNull>
+  fileprivate func grantAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
+    let rows = try await FBSimulatorSettingsCommands.buildRowsAsync(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(onDatabase: databasePath, arguments: ["INSERT or REPLACE INTO access VALUES \(rows)"], queue: queue, logger: logger)
   }
 
-  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
+  fileprivate func revokeAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
       for service in FBSimulatorSettingsCommands.filteredTCCApprovals(services) {
@@ -593,37 +556,26 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
       }
     }
     if deletions.isEmpty {
-      return FBFuture<NSNull>.empty()
+      return
     }
-    return
-      (FBSimulatorSettingsCommands.runSqliteCommand(
-        onDatabase: databasePath,
-        arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
-        queue: queue,
-        logger: logger) as FBFuture)
-      .mapReplace(NSNull()) as! FBFuture<NSNull>
+    _ = try await FBSimulatorSettingsCommands.runSqliteCommandAsync(
+      onDatabase: databasePath,
+      arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
+      queue: queue,
+      logger: logger)
   }
 
-  private class func buildRows(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) -> FBFuture<NSString> {
-    return
-      (unsafeBitCast(
-        runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        map: { (resultObj: Any) -> NSString in
-          let result = resultObj as! String
-          if result.contains("last_reminded") {
-            return postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services) as NSString
-          } else if result.contains("auth_value") {
-            return postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services) as NSString
-          } else if result.contains("last_modified") {
-            return postiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services) as NSString
-          } else {
-            return preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services) as NSString
-          }
-        })) as! FBFuture<NSString>
+  fileprivate class func buildRowsAsync(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+    let result = try await runSqliteCommandAsync(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
+    if result.contains("last_reminded") {
+      return postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    } else if result.contains("auth_value") {
+      return postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    } else if result.contains("last_modified") {
+      return postiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    } else {
+      return preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    }
   }
 
   private class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
@@ -673,32 +625,22 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return tuples.joined(separator: ", ")
   }
 
-  private class func runSqliteCommand(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) -> FBFuture<NSString> {
+  fileprivate class func runSqliteCommandAsync(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
     logger?.log("Running sqlite3 \(FBCollectionInformation.oneLineDescription(from: allArguments))")
-    return
-      (unsafeBitCast(
-        FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/sqlite3", arguments: allArguments)
-          .withStdOutInMemoryAsString()
-          .withStdErrInMemoryAsString()
-          .withTaskLifecycleLogging(to: logger)
-          .runUntilCompletion(withAcceptableExitCodes: [0, 1]),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        fmap: { (taskObj: Any) -> FBFuture<AnyObject> in
-          let task = taskObj as! FBSubprocess<NSNull, NSString, NSString>
-          if task.exitCode.result != 0 as NSNumber {
-            return FBSimulatorError.describe("Task did not exit 0: \(task.exitCode.result ?? 0) \(task.stdOut ?? "") \(task.stdErr ?? "")")
-              .failFuture()
-          }
-          if let stdErr = task.stdErr as? String, stdErr.hasPrefix("Error") {
-            return FBSimulatorError.describe("Failed to execute sqlite command: \(stdErr)")
-              .failFuture()
-          }
-          return FBFuture(result: task.stdOut ?? "" as NSString)
-        })) as! FBFuture<NSString>
+    let runFuture = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/sqlite3", arguments: allArguments)
+      .withStdOutInMemoryAsString()
+      .withStdErrInMemoryAsString()
+      .withTaskLifecycleLogging(to: logger)
+      .runUntilCompletion(withAcceptableExitCodes: [0, 1])
+    let task = try await bridgeFBFuture(runFuture)
+    if task.exitCode.result != 0 as NSNumber {
+      throw FBSimulatorError.describe("Task did not exit 0: \(task.exitCode.result ?? 0) \(task.stdOut ?? "") \(task.stdErr ?? "")").build()
+    }
+    if let stdErr = task.stdErr as? String, stdErr.hasPrefix("Error") {
+      throw FBSimulatorError.describe("Failed to execute sqlite command: \(stdErr)").build()
+    }
+    return (task.stdOut as String?) ?? ""
   }
 
   private class func contactsDatabaseFilePaths(fromContainingDirectory databaseDirectory: String) throws -> [String] {

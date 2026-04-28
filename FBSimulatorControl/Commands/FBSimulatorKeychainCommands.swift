@@ -8,6 +8,8 @@
 import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 @objc public protocol FBSimulatorKeychainCommandsProtocol: NSObjectProtocol {
   func clearKeychain() -> FBFuture<NSNull>
 }
@@ -37,48 +39,40 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
     super.init()
   }
 
-  // MARK: - FBSimulatorKeychainCommandsProtocol
+  // MARK: - FBSimulatorKeychainCommandsProtocol (legacy FBFuture entry point)
 
   @objc
   public func clearKeychain() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await clearKeychainAsync()
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  public func clearKeychainAsync() async throws {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    var stopServiceFuture = FBFuture<NSNull>.empty()
+    let serviceName = FBSimulatorKeychainCommands.securitydServiceName
+    let timeout = FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout
+
     if simulator.state == .booted {
-      stopServiceFuture =
-        (simulator.stopService(withName: FBSimulatorKeychainCommands.securitydServiceName)
-        .mapReplace(NSNull())
-        .timeout(
-          FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout,
-          waitingFor: "\(FBSimulatorKeychainCommands.securitydServiceName) service to stop"
-        )) as! FBFuture<NSNull>
+      let stopFuture =
+        simulator.stopService(withName: serviceName)
+        .timeout(timeout, waitingFor: "\(serviceName) service to stop") as! FBFuture<NSString>
+      _ = try await bridgeFBFuture(stopFuture)
     }
-    return unsafeBitCast(
-      stopServiceFuture
-        .onQueue(
-          simulator.workQueue,
-          fmap: { [weak self] (_: Any) -> FBFuture<AnyObject> in
-            guard let self, let simulator = self.simulator else {
-              return FBSimulatorError.describe("Simulator deallocated").failFuture()
-            }
-            do {
-              try self.removeKeychainContents(logger: simulator.logger)
-            } catch {
-              return FBFuture(error: error)
-            }
-            if simulator.state == .booted {
-              return simulator.startService(withName: FBSimulatorKeychainCommands.securitydServiceName)
-                .mapReplace(NSNull())
-                .timeout(
-                  FBSimulatorKeychainCommands.securitydServiceStartupShutdownTimeout,
-                  waitingFor: "\(FBSimulatorKeychainCommands.securitydServiceName) service to restart"
-                )
-            }
-            return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
-          }),
-      to: FBFuture<NSNull>.self
-    )
+
+    try removeKeychainContents(logger: simulator.logger)
+
+    if simulator.state == .booted {
+      let startFuture =
+        simulator.startService(withName: serviceName)
+        .timeout(timeout, waitingFor: "\(serviceName) service to restart") as! FBFuture<NSString>
+      _ = try await bridgeFBFuture(startFuture)
+    }
   }
 
   // MARK: - Private
