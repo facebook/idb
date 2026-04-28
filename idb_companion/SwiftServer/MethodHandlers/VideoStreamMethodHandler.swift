@@ -101,7 +101,7 @@ struct VideoStreamMethodHandler {
   private func streamFormat(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {
     switch requestFormat {
     case .h264:
-      return .compressedVideo(withCodec: .H264, transport: .annexB)
+      return .compressedVideo(withCodec: .h264, transport: .annexB)
     case .rbga:
       return .bgra()
     case .mjpeg:
@@ -109,7 +109,7 @@ struct VideoStreamMethodHandler {
     case .minicap:
       return .minicap()
     case .i420, .UNRECOGNIZED:
-      return .compressedVideo(withCodec: .H264, transport: .annexB)
+      return .compressedVideo(withCodec: .h264, transport: .annexB)
     }
   }
 }

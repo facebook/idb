@@ -16,8 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
  An enum for Screenshot Formats.
  */
 typedef NSString *FBScreenshotFormat NS_STRING_ENUM;
-extern FBScreenshotFormat const FBScreenshotFormatJPEG;
-extern FBScreenshotFormat const FBScreenshotFormatPNG;
+extern FBScreenshotFormat const FBScreenshotFormatJPEG NS_SWIFT_NAME(jpeg);
+extern FBScreenshotFormat const FBScreenshotFormatPNG NS_SWIFT_NAME(png);
 
 /**
  Defines the protocol for taking screenshots.
