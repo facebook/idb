@@ -8,6 +8,8 @@
 import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 @objc(FBSimulatorCrashLogCommands)
 public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
 
@@ -33,7 +35,7 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
     super.init()
   }
 
-  // MARK: - FBCrashLogCommands
+  // MARK: - FBCrashLogCommands (legacy FBFuture entry points)
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
@@ -42,23 +44,16 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
 
   @objc
   public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    if !hasPerformedInitialIngestion {
-      notifier.store.ingestAllExistingInDirectory()
-      hasPerformedInitialIngestion = true
+    fbFutureFromAsync { [self] in
+      try await crashesAsync(matching: predicate, useCache: useCache) as NSArray
     }
-    return FBFuture(result: notifier.store.ingestedCrashLogs(matchingPredicate: predicate) as NSArray)
   }
 
   @objc
   public func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+    fbFutureFromAsync { [self] in
+      try await pruneCrashesAsync(matching: predicate) as NSArray
     }
-    let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      FBCrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
-      predicate,
-    ])
-    return FBFuture(result: notifier.store.pruneCrashLogs(matchingPredicate: simulatorPredicate) as NSArray)
   }
 
   @objc
@@ -67,5 +62,47 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
       FBControlCoreError
       .describe("crashLogFiles not supported on simulators")
       .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+  }
+
+  // MARK: - Private
+
+  fileprivate func crashesAsync(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    if !hasPerformedInitialIngestion {
+      notifier.store.ingestAllExistingInDirectory()
+      hasPerformedInitialIngestion = true
+    }
+    return notifier.store.ingestedCrashLogs(matchingPredicate: predicate)
+  }
+
+  fileprivate func pruneCrashesAsync(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      FBCrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
+      predicate,
+    ])
+    return notifier.store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
+  }
+}
+
+// MARK: - AsyncCrashLogCommands
+
+extension FBSimulatorCrashLogCommands: AsyncCrashLogCommands {
+
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    try await crashesAsync(matching: predicate, useCache: useCache)
+  }
+
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    try await bridgeFBFuture(notifier.nextCrashLog(forPredicate: predicate))
+  }
+
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    try await pruneCrashesAsync(matching: predicate)
+  }
+
+  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
+    throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
   }
 }

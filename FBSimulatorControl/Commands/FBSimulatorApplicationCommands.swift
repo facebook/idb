@@ -9,6 +9,8 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 @objc public protocol FBSimulatorApplicationCommandsProtocol: NSObjectProtocol {
   @objc(installedApplicationWithBundleID:error:)
   func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication
@@ -33,223 +35,73 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     super.init()
   }
 
-  // MARK: - FBApplicationCommands
+  // MARK: - FBApplicationCommands (legacy FBFuture entry points)
 
   @objc
   public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
-    return
-      (unsafeBitCast(confirmCompatibilityOfApplication(atPath: path), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator!.workQueue,
-        fmap: { [weak self] (appBundleObj: Any) -> FBFuture<AnyObject> in
-          guard let self, let simulator = self.simulator else {
-            return FBSimulatorError.describe("Simulator deallocated").failFuture()
-          }
-          let appBundle = appBundleObj as! FBBundleDescriptor
-          let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
-          let appURL = URL(fileURLWithPath: appBundle.path)
-          var installError: AnyObject?
-          if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &installError) {
-            let f: FBFuture<FBInstalledApplication> = self.installedApplication(withBundleID: appBundle.identifier)
-            return unsafeBitCast(f, to: FBFuture<AnyObject>.self)
-          }
-
-          // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
-          if let err = installError as? NSError, err.description.contains("Failed to load Info.plist from bundle at path") {
-            simulator.logger?.log("Retrying install due to reinstall bug")
-            var retryError: AnyObject?
-            if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &retryError) {
-              let f: FBFuture<FBInstalledApplication> = self.installedApplication(withBundleID: appBundle.identifier)
-              return unsafeBitCast(f, to: FBFuture<AnyObject>.self)
-            }
-          }
-
-          return FBSimulatorError.describe("Failed to install Application \(appBundle) with options \(options)")
-            .failFuture()
-        })) as! FBFuture<FBInstalledApplication>
+    fbFutureFromAsync { [self] in
+      try await installApplicationAsync(withPath: path)
+    }
   }
 
   @objc
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBLaunchedApplication> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBLaunchedApplication>
+    fbFutureFromAsync { [self] in
+      try await launchApplicationAsync(configuration)
     }
-    let io = configuration.io
-    let futures: [FBFuture<AnyObject>] = [
-      unsafeBitCast(ensureApplicationIsInstalled(configuration.bundleID), to: FBFuture<AnyObject>.self),
-      unsafeBitCast(confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger), to: FBFuture<AnyObject>.self),
-    ]
-    return
-      (FBFuture<AnyObject>.combine(futures)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          return unsafeBitCast(io.attachViaFile(), to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [weak self] (attachmentObj: Any) -> FBFuture<AnyObject> in
-          guard let self else {
-            return FBSimulatorError.describe("Simulator deallocated").failFuture()
-          }
-          let attachment = attachmentObj as! FBProcessFileAttachment
-          let launch = self.launchApplication(configuration, stdOut: attachment.stdOut!, stdErr: attachment.stdErr!)
-          return unsafeBitCast(
-            FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch),
-            to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<FBLaunchedApplication>
   }
 
   @objc
   public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await killApplicationAsync(withBundleID: bundleID)
+      return NSNull()
     }
-    let simDevice = simulator.device
-    return FBFuture.onQueue(
-      simulator.workQueue,
-      resolve: {
-        do {
-          try simDevice.terminateApplication(withID: bundleID)
-          return FBFuture(result: NSNull())
-        } catch {
-          return FBFuture(error: error)
-        }
-      })
   }
 
   @objc
   public func installedApplications() -> FBFuture<NSArray> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSArray>
+    fbFutureFromAsync { [self] in
+      try await installedApplicationsAsync() as NSArray
     }
-    return
-      ((unsafeBitCast(
-        FBFuture<NSDictionary>.onQueue(
-          simulator.workQueue,
-          resolve: {
-            do {
-              let result = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device) as NSDictionary
-              return FBFuture(result: result)
-            } catch {
-              return FBFuture(error: error)
-            }
-          }), to: FBFuture<AnyObject>.self))
-      .onQueue(
-        simulator.asyncQueue,
-        map: { (installedAppsObj: Any) -> NSArray in
-          let installedApps = installedAppsObj as! [String: Any]
-          var applications: [FBInstalledApplication] = []
-          for appInfo in installedApps.values {
-            guard let dict = appInfo as? [String: Any],
-              let application = try? FBSimulatorApplicationCommands.installedApplication(fromInfo: dict)
-            else {
-              continue
-            }
-            applications.append(application)
-          }
-          return applications as NSArray
-        })) as! FBFuture<NSArray>
   }
 
   @objc
   public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await uninstallApplicationAsync(withBundleID: bundleID)
+      return NSNull()
     }
-    let instFuture: FBFuture<FBInstalledApplication> = simulator.installedApplication(withBundleID: bundleID)
-    return
-      (unsafeBitCast(instFuture, to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.asyncQueue,
-        fmap: { (installedAppObj: Any) -> FBFuture<AnyObject> in
-          let installedApplication = installedAppObj as! FBInstalledApplication
-          if installedApplication.installType == .system {
-            return FBSimulatorError.describe("Can't uninstall '\(installedApplication)' as it is a system Application")
-              .failFuture()
-          }
-          return FBFuture(result: installedApplication)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          return unsafeBitCast(
-            (simulator.killApplication(withBundleID: bundleID) as FBFuture).fallback(NSNull()),
-            to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          var uninstallError: AnyObject?
-          if !simulator.device.uninstallApplication(bundleID, withOptions: nil, error: &uninstallError) {
-            return FBSimulatorError.describe("Failed to uninstall '\(bundleID)'")
-              .failFuture()
-          }
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
   }
 
   @objc
   public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBInstalledApplication>
+    fbFutureFromAsync { [self] in
+      try await installedApplicationAsync(withBundleID: bundleID)
     }
-    return FBFuture.onQueue(
-      simulator.workQueue,
-      resolve: { [weak self] in
-        do {
-          guard let self else {
-            return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
-          }
-          return FBFuture(result: try self.fetchInstalledApplication(bundleID: bundleID))
-        } catch {
-          return FBFuture(error: error)
-        }
-      })
   }
 
   @objc
   public func runningApplications() -> FBFuture<NSDictionary> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSDictionary>
+    fbFutureFromAsync { [self] in
+      try await runningApplicationsAsync() as NSDictionary
     }
-    return
-      (unsafeBitCast(simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.asyncQueue,
-        map: { (serviceNameToProcessIdentifier: Any) -> NSDictionary in
-          let dict = serviceNameToProcessIdentifier as! [String: NSNumber]
-          var mapping: [String: NSNumber] = [:]
-          for serviceName in dict.keys {
-            if let bundleName = FBSimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
-              mapping[bundleName] = dict[serviceName]
-            }
-          }
-          return mapping as NSDictionary
-        })) as! FBFuture<NSDictionary>
   }
 
   @objc
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNumber>
+    fbFutureFromAsync { [self] in
+      let pid = try await processIDAsync(withBundleID: bundleID)
+      return NSNumber(value: pid)
     }
-    let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
-    guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-      return FBSimulatorError.describe("Couldn't build search pattern for '\(bundleID)'")
-        .failFuture() as! FBFuture<NSNumber>
+  }
+
+  @objc
+  public func isApplicationRunning(_ bundleID: String) -> FBFuture<NSNumber> {
+    fbFutureFromAsync { [self] in
+      let running = try await isApplicationRunningAsync(bundleID)
+      return NSNumber(value: running)
     }
-    return
-      (unsafeBitCast(simulator.firstServiceNameAndProcessIdentifier(matching: regex), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        map: { (result: Any) -> NSNumber in
-          let arr = result as! [Any]
-          return arr[1] as! NSNumber
-        })) as! FBFuture<NSNumber>
   }
 
   // MARK: - FBSimulatorApplicationCommandsProtocol
@@ -257,6 +109,122 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
   @objc
   public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
     return try fetchInstalledApplication(bundleID: bundleID)
+  }
+
+  // MARK: - Async
+
+  fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let appBundle = try await confirmCompatibilityOfApplicationAsync(atPath: path)
+    let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
+    let appURL = URL(fileURLWithPath: appBundle.path)
+    var installError: AnyObject?
+    if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &installError) {
+      return try await installedApplicationAsync(withBundleID: appBundle.identifier)
+    }
+
+    // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
+    if let err = installError as? NSError, err.description.contains("Failed to load Info.plist from bundle at path") {
+      simulator.logger?.log("Retrying install due to reinstall bug")
+      var retryError: AnyObject?
+      if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &retryError) {
+        return try await installedApplicationAsync(withBundleID: appBundle.identifier)
+      }
+    }
+
+    throw FBSimulatorError.describe("Failed to install Application \(appBundle) with options \(options)").build()
+  }
+
+  fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try await ensureApplicationIsInstalledAsync(configuration.bundleID)
+    try await confirmApplicationLaunchStateAsync(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
+    let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
+    let launch = launchApplication(configuration, stdOut: attachment.stdOut!, stdErr: attachment.stdErr!)
+    return try await bridgeFBFuture(FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
+  }
+
+  fileprivate func killApplicationAsync(withBundleID bundleID: String) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try simulator.device.terminateApplication(withID: bundleID)
+  }
+
+  fileprivate func installedApplicationsAsync() async throws -> [FBInstalledApplication] {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let installedApps = try FBSimDeviceWrapper.installedApps(onDevice: simulator.device)
+    var applications: [FBInstalledApplication] = []
+    for appInfo in installedApps.values {
+      guard let dict = appInfo as? [String: Any],
+        let application = try? FBSimulatorApplicationCommands.installedApplication(fromInfo: dict)
+      else {
+        continue
+      }
+      applications.append(application)
+    }
+    return applications
+  }
+
+  fileprivate func uninstallApplicationAsync(withBundleID bundleID: String) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let installedApplication = try await installedApplicationAsync(withBundleID: bundleID)
+    if installedApplication.installType == .system {
+      throw FBSimulatorError.describe("Can't uninstall '\(installedApplication)' as it is a system Application").build()
+    }
+    // Best-effort kill before uninstall; ignore errors.
+    _ = try? await killApplicationAsync(withBundleID: bundleID)
+    var uninstallError: AnyObject?
+    if !simulator.device.uninstallApplication(bundleID, withOptions: nil, error: &uninstallError) {
+      throw FBSimulatorError.describe("Failed to uninstall '\(bundleID)'").build()
+    }
+  }
+
+  fileprivate func installedApplicationAsync(withBundleID bundleID: String) async throws -> FBInstalledApplication {
+    return try fetchInstalledApplication(bundleID: bundleID)
+  }
+
+  fileprivate func runningApplicationsAsync() async throws -> [String: NSNumber] {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let serviceNameToProcessIdentifier = try await bridgeFBFuture(simulator.serviceNamesAndProcessIdentifiers(matching: FBSimulatorApplicationCommands.uiKitApplicationRegex)) as! [String: NSNumber]
+    var mapping: [String: NSNumber] = [:]
+    for serviceName in serviceNameToProcessIdentifier.keys {
+      if let bundleName = FBSimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
+        mapping[bundleName] = serviceNameToProcessIdentifier[serviceName]
+      }
+    }
+    return mapping
+  }
+
+  fileprivate func processIDAsync(withBundleID bundleID: String) async throws -> pid_t {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+      throw FBSimulatorError.describe("Couldn't build search pattern for '\(bundleID)'").build()
+    }
+    let result = try await bridgeFBFuture(simulator.firstServiceNameAndProcessIdentifier(matching: regex)) as! [Any]
+    return (result[1] as! NSNumber).int32Value
+  }
+
+  fileprivate func isApplicationRunningAsync(_ bundleID: String) async throws -> Bool {
+    do {
+      _ = try await processIDAsync(withBundleID: bundleID)
+      return true
+    } catch {
+      return false
+    }
   }
 
   // MARK: - Private
@@ -276,110 +244,66 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     return try! NSRegularExpression(pattern: "UIKitApplication:", options: [])
   }()
 
-  private func ensureApplicationIsInstalled(_ bundleID: String) -> FBFuture<NSNull> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+  private func ensureApplicationIsInstalledAsync(_ bundleID: String) async throws {
+    do {
+      _ = try await installedApplicationAsync(withBundleID: bundleID)
+    } catch {
+      throw FBSimulatorError.describe("App \(bundleID) can't be launched as it isn't installed: \(error)").build()
     }
-    let instFuture: FBFuture<FBInstalledApplication> = simulator.installedApplication(withBundleID: bundleID)
-    return
-      ((instFuture as FBFuture)
-      .mapReplace(NSNull()) as FBFuture)
-      .onQueue(
-        simulator.asyncQueue,
-        handleError: { (error: Error) -> FBFuture<AnyObject> in
-          return FBSimulatorError.describe("App \(bundleID) can't be launched as it isn't installed: \(error)")
-            .failFuture()
-        }) as! FBFuture<NSNull>
   }
 
-  private func confirmApplicationLaunchState(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) -> FBFuture<NSNull> {
+  private func confirmApplicationLaunchStateAsync(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) async throws {
     if waitForDebugger && launchMode == .foregroundIfRunning {
-      return FBSimulatorError.describe("'Foreground if running' and 'wait for debugger cannot be applied simultaneously")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("'Foreground if running' and 'wait for debugger cannot be applied simultaneously").build()
     }
 
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNull>
+    let pid: pid_t
+    do {
+      pid = try await processIDAsync(withBundleID: bundleID)
+    } catch {
+      // Process not running: treat as launchable.
+      return
     }
-    return
-      (unsafeBitCast(simulator.processID(withBundleID: bundleID), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.asyncQueue,
-        chain: { [weak self] (processFuture: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          let processID = processFuture.result
-          if processID == nil {
-            return FBFuture(result: NSNull())
-          }
-          if launchMode == .failIfRunning {
-            return FBSimulatorError.describe("App '\(bundleID)' can't be launched as it is already running (PID=\(processID!))")
-              .failFuture()
-          } else if launchMode == .relaunchIfRunning {
-            guard let self else {
-              return FBSimulatorError.describe("Simulator deallocated").failFuture()
-            }
-            return unsafeBitCast(self.killApplication(withBundleID: bundleID), to: FBFuture<AnyObject>.self)
-          }
-          return FBFuture(result: NSNull())
-        })) as! FBFuture<NSNull>
+
+    if launchMode == .failIfRunning {
+      throw FBSimulatorError.describe("App '\(bundleID)' can't be launched as it is already running (PID=\(pid))").build()
+    } else if launchMode == .relaunchIfRunning {
+      try await killApplicationAsync(withBundleID: bundleID)
+    }
   }
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOut: any FBProcessFileOutput, stdErr: any FBProcessFileOutput) -> FBFuture<NSNumber> {
-    let readingFutures: [FBFuture<AnyObject>] = [
-      unsafeBitCast(stdOut.startReading(), to: FBFuture<AnyObject>.self),
-      unsafeBitCast(stdErr.startReading(), to: FBFuture<AnyObject>.self),
-    ]
-    let readingFuture = FBFuture<AnyObject>.combine(readingFutures)
-
-    return
-      (unsafeBitCast(
-        launchApplication(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator!.workQueue,
-        fmap: { (result: Any) -> FBFuture<AnyObject> in
-          return readingFuture.mapReplace(result as AnyObject)
-        })) as! FBFuture<NSNumber>
-  }
-
-  @objc
-  public func isApplicationRunning(_ bundleID: String) -> FBFuture<NSNumber> {
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNumber>
+    fbFutureFromAsync { [self] in
+      try await bridgeFBFutureVoid(stdOut.startReading())
+      try await bridgeFBFutureVoid(stdErr.startReading())
+      return try await launchApplicationAsync(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
     }
-    return
-      (unsafeBitCast(simulator.processID(withBundleID: bundleID), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          let processIdentifier = future.result
-          return processIdentifier != nil ? FBFuture(result: NSNumber(value: true)) : FBFuture(result: NSNumber(value: false))
-        })) as! FBFuture<NSNumber>
   }
 
-  private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> FBFuture<NSNumber> {
+  private func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
     guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<NSNumber>
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration,
       stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: simulator.dataDirectory!),
       stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: simulator.dataDirectory!))
 
-    let future = FBMutableFuture<NSNumber>()
     let logger = simulator.logger
-
     logger?.log("Launching Application \(configuration.bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
-    simulator.device.launchApplicationAsync(withID: configuration.bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
-      if let error {
-        logger?.log("Failed to launch Application \(configuration.bundleID) \(error)")
-        future.resolveWithError(error)
-      } else {
-        logger?.log("Launched Application \(configuration.bundleID) with pid \(pid)")
-        future.resolve(withResult: NSNumber(value: pid))
+
+    let pid = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
+      simulator.device.launchApplicationAsync(withID: configuration.bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
+        if let error {
+          logger?.log("Failed to launch Application \(configuration.bundleID) \(error)")
+          continuation.resume(throwing: error)
+        } else {
+          logger?.log("Launched Application \(configuration.bundleID) with pid \(pid)")
+          continuation.resume(returning: pid)
+        }
       }
     }
-    return unsafeBitCast(future, to: FBFuture<NSNumber>.self)
+    return NSNumber(value: pid)
   }
 
   private func translateAbsolutePath(_ absolutePath: String?, toPathRelativeTo referencePath: String) -> String? {
@@ -438,36 +362,69 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
       dataContainer: (dataContainer as? URL)?.path)
   }
 
-  private func confirmCompatibilityOfApplication(atPath path: String) -> FBFuture<FBBundleDescriptor> {
+  private func confirmCompatibilityOfApplicationAsync(atPath path: String) async throws -> FBBundleDescriptor {
     guard let application = try? FBBundleDescriptor.bundle(fromPath: path) else {
-      return FBSimulatorError.describe("Could not determine Application information for path \(path)")
-        .failFuture() as! FBFuture<FBBundleDescriptor>
+      throw FBSimulatorError.describe("Could not determine Application information for path \(path)").build()
+    }
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
 
-    guard let simulator = self.simulator else {
-      return FBSimulatorError.describe("Simulator deallocated").failFuture() as! FBFuture<FBBundleDescriptor>
+    let installed: FBInstalledApplication?
+    do {
+      installed = try await installedApplicationAsync(withBundleID: application.identifier)
+    } catch {
+      installed = nil
     }
-    let installedFuture: FBFuture<FBInstalledApplication> = simulator.installedApplication(withBundleID: application.identifier)
-    return
-      (unsafeBitCast(installedFuture, to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          let installed = future.result as? FBInstalledApplication
-          if let installed, installed.installType == .system {
-            return FBSimulatorError.describe("Cannot install app as it is a system app \(installed)")
-              .failFuture()
-          }
-          let binaryArchRawValues = Set(application.binary!.architectures.map { $0.rawValue })
-          let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
-          let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
-          if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
-            return FBSimulatorError.describe(
-              "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: Array(binaryArchRawValues)))) of the executable at \(application.binary!.path). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: Array(supportedArchRawValues))))"
-            )
-            .failFuture()
-          }
-          return FBFuture(result: application)
-        })) as! FBFuture<FBBundleDescriptor>
+    if let installed, installed.installType == .system {
+      throw FBSimulatorError.describe("Cannot install app as it is a system app \(installed)").build()
+    }
+    let binaryArchRawValues = Set(application.binary!.architectures.map { $0.rawValue })
+    let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
+    let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
+    if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
+      throw FBSimulatorError.describe(
+        "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: Array(binaryArchRawValues)))) of the executable at \(application.binary!.path). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: Array(supportedArchRawValues))))"
+      ).build()
+    }
+    return application
+  }
+}
+
+// MARK: - AsyncApplicationCommands
+
+extension FBSimulatorApplicationCommands: AsyncApplicationCommands {
+
+  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+    try await installApplicationAsync(withPath: path)
+  }
+
+  public func uninstallApplication(bundleID: String) async throws {
+    try await uninstallApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    try await launchApplicationAsync(configuration)
+  }
+
+  public func killApplication(bundleID: String) async throws {
+    try await killApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func installedApplications() async throws -> [FBInstalledApplication] {
+    try await installedApplicationsAsync()
+  }
+
+  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+    try await installedApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func runningApplications() async throws -> [String: pid_t] {
+    let dict = try await runningApplicationsAsync()
+    return dict.mapValues { $0.int32Value }
+  }
+
+  public func processID(forBundleID bundleID: String) async throws -> pid_t {
+    try await processIDAsync(withBundleID: bundleID)
   }
 }

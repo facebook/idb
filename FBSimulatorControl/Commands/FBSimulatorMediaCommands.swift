@@ -33,16 +33,20 @@ public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsP
     super.init()
   }
 
-  // MARK: - FBSimulatorMediaCommands Protocol
+  // MARK: - FBSimulatorMediaCommands Protocol (legacy FBFuture entry point)
 
   @objc
   public func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull> {
-    do {
-      try uploadMedia(mediaFileURLs)
-      return FBFuture<NSNull>.empty()
-    } catch {
-      return FBFuture(error: error)
+    fbFutureFromAsync { [self] in
+      try await addMediaAsync(mediaFileURLs)
+      return NSNull()
     }
+  }
+
+  // MARK: - Async
+
+  public func addMediaAsync(_ mediaFileURLs: [URL]) async throws {
+    try uploadMedia(mediaFileURLs)
   }
 
   // MARK: - Private

@@ -8,6 +8,8 @@
 import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 @objc(FBSimulatorLocationCommands)
 public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
 
@@ -27,32 +29,36 @@ public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
     super.init()
   }
 
-  // MARK: - FBLocationCommands
+  // MARK: - FBLocationCommands (legacy FBFuture entry point)
 
   @objc
   public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await overrideLocationAsync(longitude: longitude, latitude: latitude)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Private
+
+  fileprivate func overrideLocationAsync(longitude: Double, latitude: Double) async throws {
     guard let simulator = self.simulator else {
-      return FBFuture(error: FBSimulatorError.describe("Simulator deallocated").build())
+      throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     if FBSimDeviceWrapper.deviceCanSetLocation(simulator.device) {
-      return FBFuture.onQueue(
-        simulator.workQueue,
-        resolve: { () -> FBFuture<AnyObject> in
-          do {
-            try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
-            return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error)
-          }
-        }) as! FBFuture<NSNull>
+      try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
+      return
     }
+    let bridge = try await bridgeFBFuture(simulator.connectToBridge()) as! FBSimulatorBridge
+    _ = try await bridgeFBFutureVoid(bridge.setLocationWithLatitude(latitude, longitude: longitude))
+  }
+}
 
-    return
-      (simulator.connectToBridge()
-      .onQueue(
-        simulator.workQueue,
-        fmap: { bridge -> FBFuture<AnyObject> in
-          return unsafeBitCast(bridge.setLocationWithLatitude(latitude, longitude: longitude), to: FBFuture<AnyObject>.self)
-        }) as! FBFuture<NSNull>)
+// MARK: - AsyncLocationCommands
+
+extension FBSimulatorLocationCommands: AsyncLocationCommands {
+
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
+    try await overrideLocationAsync(longitude: longitude, latitude: latitude)
   }
 }

@@ -8,6 +8,8 @@
 import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 @objc(FBSimulatorScreenshotCommands)
 public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands {
 
@@ -28,44 +30,46 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands
     super.init()
   }
 
-  // MARK: - FBScreenshotCommands
+  // MARK: - FBScreenshotCommands (legacy FBFuture entry point)
 
   @objc
   public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    return connectToImage()
-      .onQueue(
-        simulator.workQueue,
-        fmap: { image -> FBFuture<AnyObject> in
-          do {
-            let data: Data
-            if format == .JPEG {
-              data = try image.jpegImageData()
-            } else if format == .PNG {
-              data = try image.pngImageData()
-            } else {
-              return FBSimulatorError.describe("\(format) is not a recognized screenshot format")
-                .failFuture()
-            }
-            return FBFuture(result: data as NSData)
-          } catch {
-            return FBFuture(error: error)
-          }
-        }) as! FBFuture<NSData>
+    fbFutureFromAsync { [self] in
+      let data = try await takeScreenshotAsync(format: format)
+      return data as NSData
+    }
   }
 
   // MARK: - Private
 
-  private func connectToImage() -> FBFuture<FBSimulatorImage> {
-    if let image = self.image {
-      return FBFuture(result: image)
+  fileprivate func takeScreenshotAsync(format: FBScreenshotFormat) async throws -> Data {
+    let image = try await connectToImage()
+    if format == .JPEG {
+      return try image.jpegImageData()
+    } else if format == .PNG {
+      return try image.pngImageData()
+    } else {
+      throw FBSimulatorError.describe("\(format) is not a recognized screenshot format").build()
     }
-    return simulator.connectToFramebuffer()
-      .onQueue(
-        simulator.workQueue,
-        fmap: { [weak self] framebuffer -> FBFuture<AnyObject> in
-          let image = FBSimulatorImage(framebuffer: framebuffer as! FBFramebuffer, logger: self?.simulator.logger)
-          self?.image = image
-          return FBFuture(result: image)
-        }) as! FBFuture<FBSimulatorImage>
+  }
+
+  private func connectToImage() async throws -> FBSimulatorImage {
+    if let image = self.image {
+      return image
+    }
+    // The @objc protocol erases the generic; the runtime value is FBFramebuffer.
+    let framebuffer = try await bridgeFBFuture(simulator.connectToFramebuffer()) as! FBFramebuffer
+    let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
+    self.image = image
+    return image
+  }
+}
+
+// MARK: - AsyncScreenshotCommands
+
+extension FBSimulatorScreenshotCommands: AsyncScreenshotCommands {
+
+  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+    try await takeScreenshotAsync(format: format)
   }
 }

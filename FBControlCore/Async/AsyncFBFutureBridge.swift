@@ -167,6 +167,77 @@ public func withFBFutureContext<T: AnyObject, R>(
   }
 }
 
+// MARK: - async → FBFuture bridge
+
+/// Wraps a non-`Sendable` async closure so it can be captured by the
+/// `@Sendable` operation closure required by `Task.init`. The job runs exactly
+/// once on the spawned task, so unchecked sendability is safe in practice.
+private final class FBFutureJobBox<Success>: @unchecked Sendable {
+  let job: () async throws -> Success
+  init(_ job: @escaping () async throws -> Success) {
+    self.job = job
+  }
+}
+
+/// Bridges Swift concurrency back to the `FBFuture` world.
+///
+/// Used by classes that still need to satisfy a legacy `@objc` protocol
+/// returning `FBFuture<T>` while implementing the work natively in
+/// `async`/`await`. Cancellation propagates from the returned future to the
+/// surrounding task.
+///
+/// The `job` closure is *not* required to be `@Sendable`: callers frequently
+/// capture `self` from non-`Sendable` command classes whose internal
+/// serialisation is provided by their work queue. The job runs on exactly one
+/// task, so wrapping it via `@unchecked Sendable` is safe in practice.
+///
+/// `Success` is not constrained to `Sendable` because the existing
+/// FBFuture-backed model types (e.g. `NSData`) are not `Sendable`-annotated.
+/// The job's result is consumed by the future's resolution exactly once, so
+/// unchecked sendability is safe in practice. This is implemented as a free
+/// function rather than a `Task` static member so the surrounding `Task<T,
+/// Error>` type need not satisfy its own `Success: Sendable` constraint.
+public func fbFutureFromAsync<Success: AnyObject>(
+  job: @escaping () async throws -> Success
+) -> FBFuture<Success> {
+  let mutableFuture = FBMutableFuture<Success>()
+  let resultBox = FBFutureResultBox<FBMutableFuture<Success>>(mutableFuture)
+  let jobBox = FBFutureJobBox(job)
+  let resolverBox = FBFutureResolverBox<Success> { value in
+    resultBox.value.resolve(withResult: value)
+  } resolveError: { error in
+    resultBox.value.resolveWithError(error)
+  }
+
+  let task = Task<Void, Error> {
+    do {
+      let result = try await jobBox.job()
+      resolverBox.resolve(result)
+    } catch {
+      resolverBox.resolveError(error)
+    }
+  }
+
+  mutableFuture.onQueue(asyncBridgeQueue) {
+    task.cancel()
+    return FBFuture<NSNull>.empty()
+  }
+
+  // swiftlint:disable:next force_cast
+  return mutableFuture as! FBFuture<Success>
+}
+
+/// Captures the resolution callbacks so the spawned `Task` body never needs
+/// to reference the non-`Sendable` `FBMutableFuture` directly.
+private final class FBFutureResolverBox<Success>: @unchecked Sendable {
+  let resolve: (Success) -> Void
+  let resolveError: (Error) -> Void
+  init(resolve: @escaping (Success) -> Void, resolveError: @escaping (Error) -> Void) {
+    self.resolve = resolve
+    self.resolveError = resolveError
+  }
+}
+
 // MARK: - Internal
 
 let asyncBridgeQueue = DispatchQueue(label: "com.facebook.fbcontrolcore.async_bridge")
