@@ -14,3 +14,16 @@ public protocol AsyncLifecycleCommands: AnyObject {
 
   func resolveLeavesState(_ state: FBiOSTargetState) async throws
 }
+
+/// Default bridge implementation against the legacy `FBLifecycleCommands`
+/// protocol.
+extension AsyncLifecycleCommands where Self: FBLifecycleCommands {
+
+  public func resolveState(_ state: FBiOSTargetState) async throws {
+    try await bridgeFBFutureVoid(self.resolveState(state))
+  }
+
+  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
+    try await bridgeFBFutureVoid(self.resolveLeavesState(state))
+  }
+}

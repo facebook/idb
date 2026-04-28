@@ -23,3 +23,10 @@ public protocol AsyncAccessibilityOperations: AnyObject {
 
 /// Swift-native async/await counterpart of `FBAccessibilityCommands`.
 public protocol AsyncAccessibilityCommands: AsyncAccessibilityOperations {}
+
+// The default bridge implementation lives in `FBSimulatorControl` because
+// `FBAccessibilityElement` is declared in `FBControlCore` but implemented in
+// `FBSimulatorControl`. Specializing `bridgeFBFuture<FBAccessibilityElement>`
+// here would generate an `OBJC_CLASS_$_FBAccessibilityElement` reference in
+// `FBControlCore.o`, which test targets that link `FBControlCore` but not
+// `FBSimulatorControl` cannot resolve.

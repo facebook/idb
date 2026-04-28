@@ -15,3 +15,15 @@ public protocol AsyncXCTraceRecordCommands: AnyObject {
     logger: any FBControlCoreLogger
   ) async throws -> FBXCTraceRecordOperation
 }
+
+/// Default bridge implementation against the legacy
+/// `FBXCTraceRecordCommandsProtocol`.
+extension AsyncXCTraceRecordCommands where Self: FBXCTraceRecordCommandsProtocol {
+
+  public func startXctraceRecord(
+    configuration: FBXCTraceRecordConfiguration,
+    logger: any FBControlCoreLogger
+  ) async throws -> FBXCTraceRecordOperation {
+    try await bridgeFBFuture(self.startXctraceRecord(configuration, logger: logger))
+  }
+}

@@ -24,3 +24,30 @@ public protocol AsyncLogCommands: AnyObject {
 
   func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation
 }
+
+/// Adapter wrapping a legacy `FBLogOperation` in `AsyncLogOperation` shape so
+/// the default bridge can return a Swift-native handle. Cancellation of the
+/// awaiting task signals the underlying operation through `FBFuture.cancel()`.
+private final class AsyncLogOperationBridge: AsyncLogOperation {
+
+  let consumer: any FBDataConsumer
+  private let underlying: any FBLogOperation
+
+  init(_ underlying: any FBLogOperation) {
+    self.underlying = underlying
+    self.consumer = underlying.consumer
+  }
+
+  func waitUntilCompleted() async throws {
+    try await bridgeFBFutureVoid(underlying.completed)
+  }
+}
+
+/// Default bridge implementation against the legacy `FBLogCommands` protocol.
+extension AsyncLogCommands where Self: FBLogCommands {
+
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+    let operation = try await bridgeFBFuture(self.tailLog(arguments, consumer: consumer))
+    return AsyncLogOperationBridge(operation)
+  }
+}
