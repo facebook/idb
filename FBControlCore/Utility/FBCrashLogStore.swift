@@ -103,12 +103,38 @@ public class FBCrashLogStore: NSObject {
 
   @objc(nextCrashLogForMatchingPredicate:)
   public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    let result = FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: {
-        return FBCrashLogStore.oneshotCrashLogNotification(forPredicate: predicate, queue: self.queue)
-      })
-    return unsafeBitCast(result, to: FBFuture<FBCrashLogInfo>.self)
+    fbFutureFromAsync { [self] in
+      try await nextCrashLogAsync(forMatchingPredicate: predicate)
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func nextCrashLogAsync(forMatchingPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    let holder = ObserverHolder()
+    nonisolated(unsafe) let predicateRef = predicate
+    let box = try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogResultBox, Error>) in
+        holder.observer = NotificationCenter.default.addObserver(
+          forName: FBCrashLogAppeared,
+          object: nil,
+          queue: .main
+        ) { notification in
+          guard let crashLog = notification.object as? FBCrashLogInfo else { return }
+          if !predicateRef.evaluate(with: crashLog) { return }
+          if let obs = holder.observer {
+            NotificationCenter.default.removeObserver(obs)
+            holder.observer = nil
+          }
+          continuation.resume(returning: CrashLogResultBox(crashLog))
+        }
+      }
+    } onCancel: {
+      if let obs = holder.observer {
+        NotificationCenter.default.removeObserver(obs)
+      }
+    }
+    return box.value
   }
 
   @objc(ingestedCrashLogsMatchingPredicate:)
@@ -148,35 +174,9 @@ public class FBCrashLogStore: NSObject {
     var observer: NSObjectProtocol?
   }
 
-  private class func oneshotCrashLogNotification(forPredicate predicate: NSPredicate, queue: DispatchQueue) -> FBFuture<AnyObject> {
-    let notificationCenter = NotificationCenter.default
-    nonisolated(unsafe) let future: FBMutableFuture<AnyObject> = FBMutableFuture()
-    nonisolated(unsafe) let predicateRef = predicate
-    let holder = ObserverHolder()
-
-    holder.observer = notificationCenter.addObserver(
-      forName: FBCrashLogAppeared,
-      object: nil,
-      queue: .main
-    ) { notification in
-      guard let crashLog = notification.object as? FBCrashLogInfo else { return }
-      if !predicateRef.evaluate(with: crashLog) {
-        return
-      }
-      future.resolve(withResult: crashLog)
-      if let obs = holder.observer {
-        notificationCenter.removeObserver(obs)
-      }
-    }
-
-    return future.onQueue(
-      queue,
-      respondToCancellation: {
-        if let obs = holder.observer {
-          notificationCenter.removeObserver(obs)
-        }
-        return FBFuture<AnyObject>.empty()
-      })
+  private final class CrashLogResultBox: @unchecked Sendable {
+    let value: FBCrashLogInfo
+    init(_ value: FBCrashLogInfo) { self.value = value }
   }
 
   private func ingestCrashLogInDirectory(_ directory: String) -> [FBCrashLogInfo] {

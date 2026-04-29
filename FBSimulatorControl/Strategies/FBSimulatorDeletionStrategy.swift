@@ -16,85 +16,90 @@ public final class FBSimulatorDeletionStrategy: NSObject {
 
   @objc
   public class func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    // Get the Log Directory ahead of time as the Simulator will disappear on deletion.
-    let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
-    let workQueue = simulator.workQueue
-    let udid = simulator.udid
-    let set = simulator.set
-
-    // Kill the Simulators before deleting them.
-    simulator.logger?.log("Killing Simulator, in preparation for deletion \(simulator)")
-    return unsafeBitCast(FBSimulatorShutdownStrategy.shutdown(simulator), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
-          simulator.logger?.log("Deleting Simulator \(simulator)")
-          return FBSimulatorDeletionStrategy.onDeviceSet(simulator.set.deviceSet, performDeletionOfDevice: simulator.device, onQueue: simulator.asyncQueue)
-        }
-      )
-      .onQueue(
-        workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          simulator.logger?.log("Simulator \(udid) Deleted")
-
-          // The Logfiles now need disposing of.
-          if FileManager.default.fileExists(atPath: coreSimulatorLogsDirectory) {
-            simulator.logger?.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
-            do {
-              try FileManager.default.removeItem(atPath: coreSimulatorLogsDirectory)
-              simulator.logger?.log("Deleted Simulator Log Directory at \(coreSimulatorLogsDirectory)")
-            } catch {
-              simulator.logger?.error().log("Failed to delete Simulator Log Directory \(coreSimulatorLogsDirectory): \(error)")
-            }
-          }
-
-          simulator.logger?.log("Confirming \(udid) has been removed from set")
-          return unsafeBitCast(
-            FBSimulatorDeletionStrategy.confirmSimulatorUDID(udid, isRemovedFromSet: set),
-            to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        workQueue,
-        doOnResolved: { _ in
-          simulator.logger?.log("\(udid) has been removed from set")
-        }) as! FBFuture<NSNull>
+    fbFutureFromAsync {
+      try await deleteAsync(simulator)
+      return NSNull()
+    }
   }
 
   @objc
   public class func deleteAll(_ simulators: [FBSimulator]) -> FBFuture<NSNull> {
-    let futures = simulators.map { unsafeBitCast(delete($0), to: FBFuture<AnyObject>.self) }
-    return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull()) as! FBFuture<NSNull>
+    fbFutureFromAsync {
+      try await deleteAllAsync(simulators)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  static func deleteAsync(_ simulator: FBSimulator) async throws {
+    // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
+    let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
+    let udid = simulator.udid
+    let set = simulator.set
+    let logger = simulator.logger
+
+    // Kill the Simulator before deleting it.
+    logger?.log("Killing Simulator, in preparation for deletion \(simulator)")
+    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+
+    // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
+    logger?.log("Deleting Simulator \(simulator)")
+    try await performDeletionAsync(of: simulator.device, on: simulator.set.deviceSet, queue: simulator.asyncQueue)
+
+    logger?.log("Simulator \(udid) Deleted")
+
+    // The Logfiles now need disposing of.
+    if FileManager.default.fileExists(atPath: coreSimulatorLogsDirectory) {
+      logger?.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+      do {
+        try FileManager.default.removeItem(atPath: coreSimulatorLogsDirectory)
+        logger?.log("Deleted Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+      } catch {
+        logger?.error().log("Failed to delete Simulator Log Directory \(coreSimulatorLogsDirectory): \(error)")
+      }
+    }
+
+    logger?.log("Confirming \(udid) has been removed from set")
+    try await confirmSimulatorUDIDAsync(udid, isRemovedFromSet: set)
+    logger?.log("\(udid) has been removed from set")
+  }
+
+  static func deleteAllAsync(_ simulators: [FBSimulator]) async throws {
+    for simulator in simulators {
+      try await deleteAsync(simulator)
+    }
   }
 
   // MARK: - Private
 
-  private class func confirmSimulatorUDID(_ udid: String, isRemovedFromSet set: FBSimulatorSet) -> FBFuture<NSNull> {
+  private static func confirmSimulatorUDIDAsync(_ udid: String, isRemovedFromSet set: FBSimulatorSet) async throws {
     // Deleting the device from the set can still leave it around for a few seconds.
-    return
-      (FBFuture<AnyObject>.onQueue(
-        set.workQueue,
-        resolveWhen: {
-          let simulatorsInSet = Set(set.allSimulators.map { $0.udid })
-          return !simulatorsInSet.contains(udid)
-        }
-      )
-      .timeout(
-        FBControlCoreGlobalConfiguration.regularTimeout,
-        waitingFor: "Simulator to be removed from set")) as! FBFuture<NSNull>
+    let timeout = FBControlCoreGlobalConfiguration.regularTimeout
+    let deadline = Date().addingTimeInterval(timeout)
+    let pollIntervalNs = UInt64(0.1 * Double(NSEC_PER_SEC))
+    while true {
+      try Task.checkCancellation()
+      let simulatorsInSet = Set(set.allSimulators.map { $0.udid })
+      if !simulatorsInSet.contains(udid) {
+        return
+      }
+      if Date() >= deadline {
+        throw FBSimulatorError.describe("Timed out waiting for Simulator to be removed from set").build()
+      }
+      try await Task.sleep(nanoseconds: pollIntervalNs)
+    }
   }
 
-  private class func onDeviceSet(_ deviceSet: SimDeviceSet, performDeletionOfDevice device: SimDevice, onQueue queue: DispatchQueue) -> FBFuture<AnyObject> {
-    let udid = device.udid.uuidString
-    let future = FBMutableFuture<AnyObject>()
-    deviceSet.deleteDeviceAsync(device, completionQueue: queue) { error in
-      if let error {
-        future.resolveWithError(error)
-      } else {
-        future.resolve(withResult: udid as NSString)
+  private static func performDeletionAsync(of device: SimDevice, on deviceSet: SimDeviceSet, queue: DispatchQueue) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      deviceSet.deleteDeviceAsync(device, completionQueue: queue) { error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          continuation.resume(returning: ())
+        }
       }
     }
-    return future
   }
 }

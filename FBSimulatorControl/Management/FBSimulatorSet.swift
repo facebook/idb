@@ -64,6 +64,21 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
 
   @objc(createSimulatorWithConfiguration:)
   public func createSimulator(with configuration: FBSimulatorConfiguration) -> FBFuture<FBSimulator> {
+    fbFutureFromAsync { [self] in
+      try await createSimulatorAsync(with: configuration)
+    }
+  }
+
+  @objc(cloneSimulator:toDeviceSet:)
+  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) -> FBFuture<FBSimulator> {
+    fbFutureFromAsync { [self] in
+      try await cloneSimulatorAsync(simulator, toDeviceSet: destinationSet)
+    }
+  }
+
+  // MARK: - Async
+
+  func createSimulatorAsync(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     let model: String = configuration.device.model.rawValue
 
     // See if we meet the runtime requirements to create a Simulator with the given configuration.
@@ -73,46 +88,26 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
       deviceType = try configuration.obtainDeviceType()
       runtime = try configuration.obtainRuntime()
     } catch {
-      return FBFuture(error: FBSimulatorError.describe("Could not obtain DeviceType or SimRuntime for Configuration \(configuration)").caused(by: error as NSError).build())
+      throw FBSimulatorError.describe("Could not obtain DeviceType or SimRuntime for Configuration \(configuration)").caused(by: error as NSError).build()
     }
 
     // First, create the device.
     logger?.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
-    return
-      (unsafeBitCast(
-        FBSimulatorSet.onDeviceSet(deviceSet, createDeviceWithType: deviceType, runtime: runtime, name: model, queue: asyncQueue),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        workQueue,
-        fmap: { [self] (device: Any) -> FBFuture<AnyObject> in
-          return unsafeBitCast(self.fetchNewlyMadeSimulator(device as! SimDevice), to: FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        workQueue,
-        fmap: { [self] (sim: Any) -> FBFuture<AnyObject> in
-          let simulator = sim as! FBSimulator
-          simulator.configuration = configuration
-          self.logger?.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
-          return FBSimulatorShutdownStrategy.shutdown(simulator)
-            .rephraseFailure("Could not get newly-created simulator into a shutdown state")
-            .mapReplace(simulator)
-        })) as! FBFuture<FBSimulator>
+    let device = try await Self.createDeviceAsync(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
+    let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
+    simulator.configuration = configuration
+    logger?.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
+    do {
+      try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+    } catch {
+      throw FBSimulatorError.describe("Could not get newly-created simulator into a shutdown state").caused(by: error as NSError).build()
+    }
+    return simulator
   }
 
-  @objc(cloneSimulator:toDeviceSet:)
-  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) -> FBFuture<FBSimulator> {
-    return
-      (unsafeBitCast(
-        FBSimulatorSet.onDeviceSet(deviceSet, cloneDevice: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        workQueue,
-        fmap: { (device: Any) -> FBFuture<AnyObject> in
-          return unsafeBitCast(destinationSet.fetchNewlyMadeSimulator(device as! SimDevice), to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<FBSimulator>
+  func cloneSimulatorAsync(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
+    let device = try await Self.cloneDeviceAsync(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
+    return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
   @objc
@@ -195,38 +190,34 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     return dictionary
   }
 
-  private func fetchNewlyMadeSimulator(_ device: SimDevice) -> FBFuture<FBSimulator> {
-    let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString]
-    guard let simulator else {
-      return
-        FBSimulatorError
-        .describe("Expected simulator with UDID \(device.udid.uuidString) to be inflated")
-        .failFuture() as! FBFuture<FBSimulator>
+  private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> FBSimulator {
+    guard let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
+      throw FBSimulatorError.describe("Expected simulator with UDID \(device.udid.uuidString) to be inflated").build()
     }
-    return FBFuture(result: simulator)
+    return simulator
   }
 
-  private class func onDeviceSet(_ deviceSet: SimDeviceSet, createDeviceWithType deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) -> FBFuture<SimDevice> {
-    let future = FBMutableFuture<SimDevice>()
-    deviceSet.createDeviceAsync(withType: deviceType, runtime: runtime, name: name, completionQueue: queue) { error, device in
-      if let device {
-        future.resolve(withResult: device)
-      } else {
-        future.resolveWithError(error!)
+  private static func createDeviceAsync(on deviceSet: SimDeviceSet, type deviceType: SimDeviceType, runtime: SimRuntime, name: String, queue: DispatchQueue) async throws -> SimDevice {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
+      deviceSet.createDeviceAsync(withType: deviceType, runtime: runtime, name: name, completionQueue: queue) { error, device in
+        if let device {
+          continuation.resume(returning: device)
+        } else {
+          continuation.resume(throwing: error ?? FBSimulatorError.describe("Failed to create device with no error").build())
+        }
       }
     }
-    return unsafeBitCast(future, to: FBFuture<SimDevice>.self)
   }
 
-  private class func onDeviceSet(_ deviceSet: SimDeviceSet, cloneDevice device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) -> FBFuture<SimDevice> {
-    let future = FBMutableFuture<SimDevice>()
-    deviceSet.cloneDeviceAsync(device, name: device.name, to: destinationSet, completionQueue: queue) { error, created in
-      if let created {
-        future.resolve(withResult: created)
-      } else {
-        future.resolveWithError(error!)
+  private static func cloneDeviceAsync(on deviceSet: SimDeviceSet, device: SimDevice, toDeviceSet destinationSet: SimDeviceSet, queue: DispatchQueue) async throws -> SimDevice {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<SimDevice, Error>) in
+      deviceSet.cloneDeviceAsync(device, name: device.name, to: destinationSet, completionQueue: queue) { error, created in
+        if let created {
+          continuation.resume(returning: created)
+        } else {
+          continuation.resume(throwing: error ?? FBSimulatorError.describe("Failed to clone device with no error").build())
+        }
       }
     }
-    return unsafeBitCast(future, to: FBFuture<SimDevice>.self)
   }
 }
