@@ -26,82 +26,58 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
     super.init()
   }
 
-  // MARK: - FBDeviceActivationCommands Implementation
+  // MARK: - FBDeviceActivationCommands (legacy FBFuture entry point)
 
   public func activate() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await activateAsync()
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func activateAsync() async throws {
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
     let logger = device.logger
-    return
-      (activationState()
-      .onQueue(
-        device.asyncQueue,
-        fmap: { activationState -> FBFuture<AnyObject> in
-          if activationState as! FBDeviceActivationState == FBDeviceActivationState.activated {
-            logger?.log("Device is already activated, nothing to activate")
-            return FBFuture(result: NSNull() as AnyObject)
-          }
-          if activationState as! FBDeviceActivationState == FBDeviceActivationState.unactivated {
-            logger?.log("Device is not activated, starting activation")
-            return self.performActivation() as! FBFuture<AnyObject>
-          }
-          return FBControlCoreError.describe("\(activationState) is not a valid activation state").failFuture()
-        })) as! FBFuture<NSNull>
+    let state = try await activationStateAsync()
+    if state == FBDeviceActivationState.activated {
+      logger?.log("Device is already activated, nothing to activate")
+      return
+    }
+    if state == FBDeviceActivationState.unactivated {
+      logger?.log("Device is not activated, starting activation")
+      try await performActivationAsync()
+      return
+    }
+    throw FBControlCoreError.describe("\(state) is not a valid activation state").build()
   }
 
   // MARK: - Private
 
-  private func confirmActivationState(_ activationState: FBDeviceActivationState) -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func confirmActivationStateAsync(_ activationState: FBDeviceActivationState) async throws {
+    let actual = try await activationStateAsync()
+    if activationState != actual {
+      throw FBControlCoreError.describe("Activation State \(activationState) is not equal to actual activation state \(actual)").build()
     }
-    return
-      (self.activationState()
-      .onQueue(
-        device.asyncQueue,
-        fmap: { actualActivationState -> FBFuture<AnyObject> in
-          if activationState != (actualActivationState as! FBDeviceActivationState) {
-            return FBControlCoreError.describe("Activation State \(activationState) is not equal to actual activation state \(actualActivationState)").failFuture()
-          }
-          return FBFuture(result: NSNull() as AnyObject)
-        })) as! FBFuture<NSNull>
   }
 
-  private func performActivation() -> FBFuture<NSNull> {
+  private func performActivationAsync() async throws {
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
     let logger = device.logger
-    return
-      (confirmActivationState(FBDeviceActivationState.unactivated)
-      .onQueue(
-        device.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          logger?.log("Building DRM Handshake Payload")
-          return self.buildDRMHandshakePayload() as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        device.workQueue,
-        fmap: { drmHandshakePayload -> FBFuture<AnyObject> in
-          logger?.log("Obtaining Activation record from DRM Handshake Payload")
-          return self.activationRecordFromDRMHandshakePayload(drmHandshakePayload as! Data) as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        device.workQueue,
-        fmap: { activationRecordPayload -> FBFuture<AnyObject> in
-          logger?.log("Performing activation from activation record")
-          return self.activateFromActivationRecord(activationRecordPayload as! Data) as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        device.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          logger?.log("Confirming activation state is Activated")
-          return self.confirmActivationState(FBDeviceActivationState.activated) as! FBFuture<AnyObject>
-        })) as! FBFuture<NSNull>
+    try await confirmActivationStateAsync(FBDeviceActivationState.unactivated)
+    logger?.log("Building DRM Handshake Payload")
+    let drmHandshakePayload = try await buildDRMHandshakePayloadAsync()
+    logger?.log("Obtaining Activation record from DRM Handshake Payload")
+    let activationRecordPayload = try await activationRecordFromDRMHandshakePayloadAsync(drmHandshakePayload)
+    logger?.log("Performing activation from activation record")
+    try await activateFromActivationRecordAsync(activationRecordPayload)
+    logger?.log("Confirming activation state is Activated")
+    try await confirmActivationStateAsync(FBDeviceActivationState.activated)
   }
 
   private func mobileActivationService() -> FBFutureContext<FBAMDServiceConnection> {
@@ -111,100 +87,50 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
     return device.startService("com.apple.mobileactivationd")
   }
 
-  private func activationState() -> FBFuture<AnyObject> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func activationStateAsync() async throws -> FBDeviceActivationState {
+    return try await withFBFutureContext(mobileActivationService()) { connection in
+      let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
+      guard let responseDict = response as? NSDictionary,
+        let activationState = responseDict["Value"] as? String
+      else {
+        throw FBControlCoreError.describe("No Activation State in \(String(describing: response))").build()
+      }
+      return FBDeviceActivationStateCoerceFromString(activationState)
     }
-    return
-      mobileActivationService()
-      .onQueue(
-        device.workQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
-            guard let responseDict = response as? NSDictionary,
-              let activationState = responseDict["Value"] as? String
-            else {
-              return FBControlCoreError.describe("No Activation State in \(String(describing: response))").failFuture()
-            }
-            return FBFuture(result: FBDeviceActivationStateCoerceFromString(activationState) as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })
   }
 
-  private func buildDRMHandshakePayload() -> FBFuture<NSData> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func buildDRMHandshakePayloadAsync() async throws -> Data {
+    return try await withFBFutureContext(mobileActivationService()) { connection in
+      let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
+      guard let responseDict = response as? NSDictionary,
+        let responsePayload = responseDict["Value"] as? [String: Any]
+      else {
+        throw FBControlCoreError.describe("No 'Value' in \(String(describing: response))").build()
+      }
+      return try await Self.mobileActivationRequestAsync(forRequestPayload: responsePayload)
     }
-    return
-      (mobileActivationService()
-      .onQueue(
-        device.workQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
-            guard let responseDict = response as? NSDictionary,
-              let responsePayload = responseDict["Value"] as? [String: Any]
-            else {
-              return FBControlCoreError.describe("No 'Value' in \(String(describing: response))").failFuture()
-            }
-            return FBDeviceActivationCommands.mobileActivationRequest(forRequestPayload: responsePayload, queue: device.workQueue) as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSData>
   }
 
-  private func activationRecordFromDRMHandshakePayload(_ handshakePayload: Data) -> FBFuture<NSData> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func activationRecordFromDRMHandshakePayloadAsync(_ handshakePayload: Data) async throws -> Data {
+    return try await withFBFutureContext(mobileActivationService()) { connection in
+      let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
+      guard let responseDict = response as? NSDictionary,
+        let responsePayload = responseDict["Value"] as? [String: Any]
+      else {
+        throw FBControlCoreError.describe("No 'Value' in \(String(describing: response))").build()
+      }
+      return try await Self.mobileActivationActivateAsync(forRequestPayload: responsePayload)
     }
-    return
-      (mobileActivationService()
-      .onQueue(
-        device.workQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
-            guard let responseDict = response as? NSDictionary,
-              let responsePayload = responseDict["Value"] as? [String: Any]
-            else {
-              return FBControlCoreError.describe("No 'Value' in \(String(describing: response))").failFuture()
-            }
-            return FBDeviceActivationCommands.mobileActivationActivate(forRequestPayload: responsePayload, queue: device.workQueue) as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSData>
   }
 
-  private func activateFromActivationRecord(_ activationRecord: Data) -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func activateFromActivationRecordAsync(_ activationRecord: Data) async throws {
+    try await withFBFutureContext(mobileActivationService()) { connection in
+      _ = try connection.sendAndReceiveMessage(["Command": "HandleActivationInfoWithSessionRequest", "Value": activationRecord])
     }
-    return
-      (mobileActivationService()
-      .onQueue(
-        device.workQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            _ = try connection.sendAndReceiveMessage(["Command": "HandleActivationInfoWithSessionRequest", "Value": activationRecord])
-            return FBFuture(result: NSNull() as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSNull>
   }
 
-  private static func mobileActivationRequest(forRequestPayload requestPayload: [String: Any], queue: DispatchQueue) -> FBFuture<NSData> {
-    let body: Data
-    do {
-      body = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
-    } catch {
-      return FBFuture(error: error)
-    }
+  private static func mobileActivationRequestAsync(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
+    let body = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
     let url = URL(string: ProcessInfo.processInfo.environment["IDB_DRM_HANDSHAKE_URL"] ?? DefaultDRMHandshakeURL)!
     var request = URLRequest(url: url)
@@ -214,36 +140,16 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
     request.setValue("application/xml", forHTTPHeaderField: "Accept")
     request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)", forHTTPHeaderField: "User-Agent")
 
-    return
-      (response(for: request)
-      .onQueue(
-        queue,
-        fmap: { result -> FBFuture<AnyObject> in
-          guard let resultArray = result as? NSArray,
-            let httpResponse = resultArray[0] as? HTTPURLResponse,
-            let responseData = resultArray[1] as? Data
-          else {
-            return FBControlCoreError.describe("Invalid response format").failFuture()
-          }
-          if httpResponse.statusCode != 200 {
-            return FBControlCoreError.describe("\(httpResponse) no 200").failFuture()
-          }
-          do {
-            _ = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
-          } catch {
-            return FBFuture(error: error)
-          }
-          return FBFuture(result: responseData as NSData as AnyObject)
-        })) as! FBFuture<NSData>
+    let (responseData, httpResponse) = try await dataAsync(for: request)
+    if httpResponse.statusCode != 200 {
+      throw FBControlCoreError.describe("\(httpResponse) no 200").build()
+    }
+    _ = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
+    return responseData
   }
 
-  private static func mobileActivationActivate(forRequestPayload requestPayload: [String: Any], queue: DispatchQueue) -> FBFuture<NSData> {
-    let payloadData: Data
-    do {
-      payloadData = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
-    } catch {
-      return FBFuture(error: error)
-    }
+  private static func mobileActivationActivateAsync(forRequestPayload requestPayload: [String: Any]) async throws -> Data {
+    let payloadData = try PropertyListSerialization.data(fromPropertyList: requestPayload, format: .xml, options: 0)
 
     // Multipart info
     let boundaryConstant = UUID().uuidString
@@ -256,50 +162,38 @@ public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsPro
     request.setValue(contentType, forHTTPHeaderField: "Content-Type")
     request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)", forHTTPHeaderField: "User-Agent")
 
-    return
-      (response(for: request)
-      .onQueue(
-        queue,
-        fmap: { result -> FBFuture<AnyObject> in
-          guard let resultArray = result as? NSArray,
-            let httpResponse = resultArray[0] as? HTTPURLResponse,
-            let responseData = resultArray[1] as? Data
-          else {
-            return FBControlCoreError.describe("Invalid response format").failFuture()
-          }
-          if httpResponse.statusCode != 200 {
-            return FBControlCoreError.describe("\(httpResponse) no 200").failFuture()
-          }
-          do {
-            let responsePlist = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
-            guard let responseDict = responsePlist as? [String: Any],
-              let activationRecord = responseDict["ActivationRecord"]
-            else {
-              return FBControlCoreError.describe("No 'ActivationRecord' in \(String(describing: responsePlist))").failFuture()
-            }
-            let activationRecordData = try PropertyListSerialization.data(fromPropertyList: activationRecord, format: .xml, options: 0)
-            return FBFuture(result: activationRecordData as NSData as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSData>
+    let (responseData, httpResponse) = try await dataAsync(for: request)
+    if httpResponse.statusCode != 200 {
+      throw FBControlCoreError.describe("\(httpResponse) no 200").build()
+    }
+    let responsePlist = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
+    guard let responseDict = responsePlist as? [String: Any],
+      let activationRecord = responseDict["ActivationRecord"]
+    else {
+      throw FBControlCoreError.describe("No 'ActivationRecord' in \(String(describing: responsePlist))").build()
+    }
+    return try PropertyListSerialization.data(fromPropertyList: activationRecord, format: .xml, options: 0)
   }
 
-  private static func response(for request: URLRequest) -> FBFuture<AnyObject> {
-    let future = FBMutableFuture<AnyObject>()
-    let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
-      if let error {
-        future.resolveWithError(error)
-        return
+  private static func dataAsync(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, HTTPURLResponse), Error>) in
+      let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
+        if let error {
+          continuation.resume(throwing: error)
+          return
+        }
+        guard let responseData else {
+          continuation.resume(throwing: FBControlCoreError.describe("No response data in response \(String(describing: response))").build())
+          return
+        }
+        guard let httpResponse = response as? HTTPURLResponse else {
+          continuation.resume(throwing: FBControlCoreError.describe("Response is not an HTTPURLResponse: \(String(describing: response))").build())
+          return
+        }
+        continuation.resume(returning: (responseData, httpResponse))
       }
-      guard let responseData else {
-        future.resolveWithError(FBControlCoreError.describe("No response data in response \(String(describing: response))").build())
-        return
-      }
-      future.resolve(withResult: [response as Any, responseData] as AnyObject)
+      task.resume()
     }
-    task.resume()
-    return future
   }
 
   private static func multipartData(

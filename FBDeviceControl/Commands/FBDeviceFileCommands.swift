@@ -34,23 +34,9 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    var destination = destinationPath
-    if FBDeviceFileContainer.isDirectory(destinationPath) {
-      destination = (destinationPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
+    fbFutureFromAsync { [self] in
+      try await copyAsync(fromContainer: sourcePath, toHost: destinationPath) as NSString
     }
-    return
-      (readFileFromPath(inContainer: sourcePath)
-      .onQueue(
-        queue,
-        fmap: { (fileData: AnyObject) -> FBFuture<AnyObject> in
-          let data = fileData as! Data
-          do {
-            try data.write(to: URL(fileURLWithPath: destination))
-            return FBFuture(result: destination as NSString as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSString>
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -82,6 +68,18 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
     return handleAFCOperation { afc in
       return try afc.contents(ofDirectory: path) as NSArray
     }
+  }
+
+  // MARK: Async
+
+  fileprivate func copyAsync(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    var destination = destinationPath
+    if FBDeviceFileContainer.isDirectory(destinationPath) {
+      destination = (destinationPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
+    }
+    let data = try await bridgeFBFuture(readFileFromPath(inContainer: sourcePath)) as Data
+    try data.write(to: URL(fileURLWithPath: destination))
+    return destination
   }
 
   // MARK: Private
@@ -130,33 +128,19 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    return
-      (springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
-      .onQueue(
-        queue,
-        fmap: { (data: AnyObject) -> FBFuture<AnyObject> in
-          let imageData = data as! Data
-          do {
-            try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
-            return FBFuture(result: destinationPath as NSString as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSString>
+    fbFutureFromAsync { [self] in
+      let imageData = try await bridgeFBFuture(springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)) as Data
+      try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
+      return destinationPath as NSString
+    }
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        queue,
-        resolve: { () -> FBFuture<AnyObject> in
-          do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-            return self.managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data) as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error)
-          }
-        }), to: FBFuture<NSNull>.self)
+    fbFutureFromAsync { [self] in
+      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+      try await bridgeFBFutureVoid(managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data))
+      return NSNull()
+    }
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -197,17 +181,11 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        queue,
-        resolve: { () -> FBFuture<AnyObject> in
-          do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-            return self.managedConfig.installProfile(data) as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error)
-          }
-        }), to: FBFuture<NSNull>.self)
+    fbFutureFromAsync { [self] in
+      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+      _ = try await bridgeFBFuture(managedConfig.installProfile(data))
+      return NSNull()
+    }
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
@@ -267,32 +245,34 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   func remove(_ path: String) -> FBFuture<NSNull> {
-    if !path.hasPrefix(MountRootPath) {
-      return FBDeviceControlError.describe("\(path) cannot be removed, only mounts can be removed").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await removeAsync(path)
+      return NSNull()
     }
-    return
-      (mountedDiskImages()
-      .onQueue(
-        queue,
-        fmap: { (mountedImagesObj: AnyObject) -> FBFuture<AnyObject> in
-          let mountedImages = mountedImagesObj as! [String: FBDeveloperDiskImage]
-          guard let image = mountedImages[path] else {
-            return FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").failFuture()
-          }
-          return self.commands.unmountDiskImage(image) as! FBFuture<AnyObject>
-        })) as! FBFuture<NSNull>
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return
-      (allDiskImagePaths()
-      .onQueue(
-        queue,
-        map: { (diskImagePathsObj: AnyObject) -> AnyObject in
-          let diskImagePaths = diskImagePathsObj as! [String]
-          let traversedPaths = FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
-          return traversedPaths as NSArray as AnyObject
-        })) as! FBFuture<NSArray>
+    fbFutureFromAsync { [self] in
+      try await contentsAsync(ofDirectory: path) as NSArray
+    }
+  }
+
+  // MARK: Async
+
+  fileprivate func removeAsync(_ path: String) async throws {
+    if !path.hasPrefix(MountRootPath) {
+      throw FBDeviceControlError.describe("\(path) cannot be removed, only mounts can be removed").build()
+    }
+    let mountedImages = try await mountedDiskImagesAsync()
+    guard let image = mountedImages[path] else {
+      throw FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").build()
+    }
+    try await bridgeFBFutureVoid(commands.unmountDiskImage(image))
+  }
+
+  fileprivate func contentsAsync(ofDirectory path: String) async throws -> [String] {
+    let diskImagePaths = try await allDiskImagePathsAsync()
+    return FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
   }
 
   // MARK: Private
@@ -306,41 +286,29 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
     return mapping
   }
 
-  private func mountedDiskImages() -> FBFuture<NSDictionary> {
-    return
-      (commands.mountedDiskImages()
-      .onQueue(
-        queue,
-        map: { (mountedImagesObj: AnyObject) -> AnyObject in
-          let mountedImages = mountedImagesObj as! [FBDeveloperDiskImage]
-          var imagesByPath: [String: FBDeveloperDiskImage] = [:]
-          for image in mountedImages {
-            let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
-            imagesByPath[mountedFilePath] = image
-          }
-          return imagesByPath as NSDictionary as AnyObject
-        })) as! FBFuture<NSDictionary>
+  private func mountedDiskImagesAsync() async throws -> [String: FBDeveloperDiskImage] {
+    let mountedImages = try await bridgeFBFutureArray(commands.mountedDiskImages()) as [FBDeveloperDiskImage]
+    var imagesByPath: [String: FBDeveloperDiskImage] = [:]
+    for image in mountedImages {
+      let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
+      imagesByPath[mountedFilePath] = image
+    }
+    return imagesByPath
   }
 
-  private func allDiskImagePaths() -> FBFuture<NSArray> {
-    return
-      (mountedDiskImages()
-      .onQueue(
-        queue,
-        map: { (mountedDiskImagesObj: AnyObject) -> AnyObject in
-          let mountedDiskImages = mountedDiskImagesObj as! [String: FBDeveloperDiskImage]
-          var paths: [String] = []
-          let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
-            let v1 = pair1.value.version
-            let v2 = pair2.value.version
-            if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
-            return v1.minorVersion < v2.minorVersion
-          }.map { $0.key }
-          paths.append(contentsOf: sortedKeys)
-          paths.append(MountRootPath)
-          paths.append(contentsOf: mountedDiskImages.keys)
-          return paths as NSArray as AnyObject
-        })) as! FBFuture<NSArray>
+  private func allDiskImagePathsAsync() async throws -> [String] {
+    let mountedDiskImages = try await mountedDiskImagesAsync()
+    var paths: [String] = []
+    let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
+      let v1 = pair1.value.version
+      let v2 = pair2.value.version
+      if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
+      return v1.minorVersion < v2.minorVersion
+    }.map { $0.key }
+    paths.append(contentsOf: sortedKeys)
+    paths.append(MountRootPath)
+    paths.append(contentsOf: mountedDiskImages.keys)
+    return paths
   }
 
   static func traverseAndDescendPaths(_ paths: [String], path: String) -> [String] {
@@ -408,14 +376,10 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return
-      (commands.listSymbols()
-      .onQueue(
-        queue,
-        map: { (listedSymbolsObj: AnyObject) -> AnyObject in
-          let listedSymbols = listedSymbolsObj as! [String]
-          return (listedSymbols + [ExtractedSymbolsDirectory]) as NSArray as AnyObject
-        })) as! FBFuture<NSArray>
+    fbFutureFromAsync { [self] in
+      let listedSymbols = try await bridgeFBFutureArray(commands.listSymbols()) as [String]
+      return (listedSymbols + [ExtractedSymbolsDirectory]) as NSArray
+    }
   }
 }
 
