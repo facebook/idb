@@ -438,6 +438,10 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
           objects[2] = bundleID
           if let dict = objects[3] as? NSMutableDictionary {
             dict["allowsNotifications"] = true
+            dict["notificationCenterSetting"] = 1
+            dict["lockScreenSetting"] = 1
+            dict["alertType"] = 1
+            dict["authorizationStatus"] = 2
           }
         }
 
