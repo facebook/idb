@@ -15,7 +15,7 @@ struct FocusMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
-    try await BridgeFuture.await(commandExecutor.focus())
+    try await bridgeFBFutureVoid(commandExecutor.focus())
     return .init()
   }
 }

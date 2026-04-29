@@ -45,7 +45,7 @@ struct LaunchMethodHandler {
       waitForDebugger: start.waitForDebugger,
       io: io,
       launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
-    let launchedApp = try await BridgeFuture.value(commandExecutor.launch_app(config))
+    let launchedApp = try await bridgeFBFuture(commandExecutor.launch_app(config))
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }
@@ -58,9 +58,9 @@ struct LaunchMethodHandler {
       throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
     }
 
-    try await BridgeFuture.await(launchedApp.applicationTerminated.cancel())
+    try await bridgeFBFutureVoid(launchedApp.applicationTerminated.cancel())
 
-    _ = try await BridgeFuture.values(completions)
+    _ = try await bridgeFBFutures(completions)
   }
 
   private func processOutputForNullDevice() -> FBProcessOutput<AnyObject> {

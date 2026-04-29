@@ -79,9 +79,9 @@ enum MultisourceFileReader {
     let mappedInput = input as! FBProcessInput<AnyObject>
     let tarContext = temporaryDirectory.withArchiveExtracted(fromStream: mappedInput, compression: compression)
     if extractFromSubdir {
-      return try await BridgeFuture.values(temporaryDirectory.files(fromSubdirs: tarContext))
+      return try await bridgeFBFutureContextArray(temporaryDirectory.files(fromSubdirs: tarContext))
     } else {
-      let extractionDir = try await BridgeFuture.value(tarContext)
+      let extractionDir = try await bridgeFBFutureContext(tarContext)
       return try FileManager.default.contentsOfDirectory(at: extractionDir as URL, includingPropertiesForKeys: [.isDirectoryKey], options: [])
     }
   }

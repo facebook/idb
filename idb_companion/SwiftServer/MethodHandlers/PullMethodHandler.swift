@@ -34,7 +34,7 @@ struct PullMethodHandler {
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()
     let tempPath = url.appendingPathComponent(path.lastPathComponent).path
 
-    let filePath = try await BridgeFuture.value(
+    let filePath = try await bridgeFBFuture(
       commandExecutor.pull_file_path(
         request.srcPath,
         destination_path: tempPath,
@@ -53,7 +53,7 @@ struct PullMethodHandler {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 
     let filePath =
-      try await BridgeFuture.value(
+      try await bridgeFBFuture(
         commandExecutor.pull_file_path(
           request.srcPath,
           destination_path: request.dstPath,

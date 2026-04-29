@@ -99,6 +99,54 @@ public func bridgeFBFutureVoid(_ future: FBFuture<NSNull>) async throws {
   _ = try await bridgeFBFuture(future)
 }
 
+/// Awaits an `FBFuture<AnyObject>`, discarding the resolved value.
+///
+/// `FBMutableFuture<T>` does not bridge its exact generic type to Swift, but it
+/// is freely convertible to `FBFuture<AnyObject>`. This overload lets such
+/// futures be awaited when only completion (not the value) matters.
+public func bridgeFBFutureVoid(_ future: FBFuture<AnyObject>) async throws {
+  _ = try await bridgeFBFuture(future)
+}
+
+/// Awaits an array of `FBFuture`s in parallel and returns the resolved values
+/// in the same order as the inputs.
+///
+/// Mirrors `BridgeFuture.values` but lives in `FBControlCore`. Cancellation of
+/// the surrounding `Task` cancels every in-flight future.
+public func bridgeFBFutures<T: AnyObject>(_ futures: [FBFuture<T>]) async throws -> [T] {
+  return try await withThrowingTaskGroup(of: (Int, FBFutureResultBox<T>).self, returning: [T].self) { group in
+    var results: [T?] = .init(repeating: nil, count: futures.count)
+    for (index, future) in futures.enumerated() {
+      let box = FBFutureBox(future)
+      group.addTask {
+        let value = try await bridgeFBFuture(box.future)
+        return (index, FBFutureResultBox(value))
+      }
+    }
+    for try await (index, valueBox) in group {
+      results[index] = valueBox.value
+    }
+    return results.map { value -> T in
+      guard let value else {
+        preconditionFailure("bridgeFBFutures task group produced nil; unreachable")
+      }
+      return value
+    }
+  }
+}
+
+/// Force-casts an `FBMutableFuture<T>` to its `FBFuture<T>` parent type.
+///
+/// Swift's bridge does not preserve the Objective-C generic argument when
+/// passing `FBMutableFuture<T>` where `FBFuture<T>` is expected. Using
+/// `as! FBFuture<T>` is correct at runtime because the underlying class
+/// hierarchy holds the same type parameter.
+public func convertFBMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) -> FBFuture<T> {
+  let future: FBFuture<AnyObject> = mutableFuture
+  // swiftlint:disable:next force_cast
+  return future as! FBFuture<T>
+}
+
 // MARK: - FBFutureContext → async bridge
 
 /// Wraps a non-`Sendable` `FBFutureContext` so it can survive crossing the
