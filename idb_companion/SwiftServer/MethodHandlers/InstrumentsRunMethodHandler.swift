@@ -55,7 +55,7 @@ struct InstrumentsRunMethodHandler {
         targetLogger,
       ].compactMap { $0 })
 
-    let operation = try await BridgeFuture.value(target.startInstruments(configuration, logger: logger))
+    let operation = try await bridgeFBFuture(target.startInstruments(configuration, logger: logger))
 
     let runningStateResponse = Idb_InstrumentsRunResponse.with {
       $0.output = .state(.runningInstruments)

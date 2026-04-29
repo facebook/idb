@@ -18,7 +18,7 @@ struct XCTestListBundlesMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
-    let descriptors: [FBXCTestDescriptor] = try await BridgeFuture.value(
+    let descriptors: [FBXCTestDescriptor] = try await bridgeFBFutureArray(
       commandExecutor.list_test_bundles()
     )
     return .with {

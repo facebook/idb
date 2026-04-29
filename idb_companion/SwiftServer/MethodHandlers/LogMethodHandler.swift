@@ -40,13 +40,13 @@ struct LogMethodHandler {
       ? commandExecutor.tail_companion_logs(consumer)
       : target.tailLog(request.arguments, consumer: consumer)
 
-    let operation = try await BridgeFuture.value(operationFuture)
+    let operation = try await bridgeFBFuture(operationFuture)
 
-    let completed = FBFuture(race: [BridgeFuture.convertToFuture(writingDone), operation.completed])
+    let completed = FBFuture(race: [convertFBMutableFuture(writingDone), operation.completed])
 
-    try await BridgeFuture.await(completed)
+    try await bridgeFBFutureVoid(completed)
     writingDone.resolve(withResult: NSNull())
 
-    try await BridgeFuture.await(operation.completed.cancel())
+    try await bridgeFBFutureVoid(operation.completed.cancel())
   }
 }

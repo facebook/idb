@@ -115,23 +115,23 @@ struct InstallMethodHandler {
     func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
         )
       case .xctest:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
         )
       case .dsym:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
         )
       case .dylib:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_dylib_stream(dataStream, name: name)
         )
       case .framework:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_framework_stream(dataStream)
         )
       case .UNRECOGNIZED:
@@ -156,23 +156,23 @@ struct InstallMethodHandler {
     case let .filePath(filePath):
       switch destination {
       case .app:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
         )
       case .xctest:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
         )
       case .dsym:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
         )
       case .dylib:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_dylib_file_path(filePath)
         )
       case .framework:
-        return try await BridgeFuture.value(
+        return try await bridgeFBFuture(
           commandExecutor.install_framework_file_path(filePath)
         )
       case .UNRECOGNIZED:

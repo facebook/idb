@@ -43,7 +43,7 @@ struct VideoStreamMethodHandler {
     }
 
     let observeVideoStreamStop = Task<Void, Error> {
-      try await BridgeFuture.await(videoStream.completed)
+      try await bridgeFBFutureVoid(videoStream.completed)
     }
 
     try await Task.select(observeClientCancelStreaming, observeVideoStreamStop).value
@@ -96,7 +96,7 @@ struct VideoStreamMethodHandler {
       scaleFactor: .init(value: start.scaleFactor),
       keyFrameRate: .init(value: start.keyFrameRate))
 
-    let videoStream = try await BridgeFuture.value(target.createStream(with: config))
+    let videoStream = try await bridgeFBFuture(target.createStream(with: config))
 
     try await videoStream.startStreamingAsync(consumer)
 

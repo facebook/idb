@@ -23,12 +23,12 @@ final class CompanionLibTransientTests: XCTestCase {
     XCTAssertEqual(String(cString: __dispatch_queue_get_label(queue)), "com.facebook.miscellaneous.reader")
   }
 
-  // MARK: - BridgeFuture.value (single future) Tests
+  // MARK: - bridgeFBFuture (single future) Tests
 
   func testValueResolvesSuccessfulFuture() async throws {
     let expected = "hello" as NSString
     let future = FBFuture<NSString>(result: expected)
-    let result = try await BridgeFuture.value(future)
+    let result = try await bridgeFBFuture(future)
     XCTAssertEqual(result, expected)
   }
 
@@ -36,7 +36,7 @@ final class CompanionLibTransientTests: XCTestCase {
     let expectedError = NSError(domain: "test", code: 42)
     let future = FBFuture<NSString>(error: expectedError)
     do {
-      _ = try await BridgeFuture.value(future)
+      _ = try await bridgeFBFuture(future)
       XCTFail("Expected error")
     } catch {
       let nsError = error as NSError
@@ -47,10 +47,10 @@ final class CompanionLibTransientTests: XCTestCase {
 
   func testValueCancelsFutureOnTaskCancellation() async {
     let mutableFuture = FBMutableFuture<NSString>()
-    let future = BridgeFuture.convertToFuture(mutableFuture)
+    let future = convertFBMutableFuture(mutableFuture)
 
     let task = Task {
-      try await BridgeFuture.value(future)
+      try await bridgeFBFuture(future)
     }
 
     // Give the continuation time to register
@@ -62,14 +62,14 @@ final class CompanionLibTransientTests: XCTestCase {
     XCTAssertTrue(task.isCancelled)
   }
 
-  // MARK: - BridgeFuture.values (multiple futures) Tests
+  // MARK: - bridgeFBFutures (multiple futures) Tests
 
   func testValuesResolvesMultipleFuturesInOrder() async throws {
     let f1 = FBFuture<NSString>(result: "a" as NSString)
     let f2 = FBFuture<NSString>(result: "b" as NSString)
     let f3 = FBFuture<NSString>(result: "c" as NSString)
 
-    let results = try await BridgeFuture.values(f1, f2, f3)
+    let results = try await bridgeFBFutures([f1, f2, f3])
     XCTAssertEqual(results, ["a" as NSString, "b" as NSString, "c" as NSString])
   }
 
@@ -77,7 +77,7 @@ final class CompanionLibTransientTests: XCTestCase {
     let futures = (0..<5).map { i in
       FBFuture<NSNumber>(result: NSNumber(value: i))
     }
-    let results = try await BridgeFuture.values(futures)
+    let results = try await bridgeFBFutures(futures)
     XCTAssertEqual(results.map(\.intValue), [0, 1, 2, 3, 4])
   }
 
@@ -86,7 +86,7 @@ final class CompanionLibTransientTests: XCTestCase {
     let f2 = FBFuture<NSString>(error: NSError(domain: "test", code: 99))
 
     do {
-      _ = try await BridgeFuture.values([f1, f2])
+      _ = try await bridgeFBFutures([f1, f2])
       XCTFail("Expected error")
     } catch {
       let nsError = error as NSError
@@ -96,21 +96,21 @@ final class CompanionLibTransientTests: XCTestCase {
 
   func testValuesWithEmptyArrayReturnsEmpty() async throws {
     let futures: [FBFuture<NSString>] = []
-    let results = try await BridgeFuture.values(futures)
+    let results = try await bridgeFBFutures(futures)
     XCTAssertTrue(results.isEmpty)
   }
 
-  // MARK: - BridgeFuture.await Tests
+  // MARK: - bridgeFBFutureVoid Tests
 
   func testAwaitNSNullFuture() async throws {
     let future = FBFuture<NSNull>(result: NSNull())
-    try await BridgeFuture.await(future)
+    try await bridgeFBFutureVoid(future)
   }
 
   func testAwaitNSNullFutureThrowsOnError() async {
     let future = FBFuture<NSNull>(error: NSError(domain: "test", code: 1))
     do {
-      try await BridgeFuture.await(future)
+      try await bridgeFBFutureVoid(future)
       XCTFail("Expected error")
     } catch {
       let nsError = error as NSError
@@ -120,45 +120,45 @@ final class CompanionLibTransientTests: XCTestCase {
 
   func testAwaitAnyObjectFuture() async throws {
     let future = FBFuture<AnyObject>(result: "value" as NSString)
-    try await BridgeFuture.await(future)
+    try await bridgeFBFutureVoid(future)
   }
 
-  // MARK: - BridgeFuture.value (NSArray bridge) Tests
+  // MARK: - bridgeFBFutureArray (NSArray bridge) Tests
 
   func testValueBridgesNSArrayToTypedSwiftArray() async throws {
     let nsArray = NSArray(array: [NSNumber(value: 1), NSNumber(value: 2), NSNumber(value: 3)])
     let future = FBFuture<NSArray>(result: nsArray)
-    let result: [NSNumber] = try await BridgeFuture.value(future)
+    let result: [NSNumber] = try await bridgeFBFutureArray(future)
     XCTAssertEqual(result, [NSNumber(value: 1), NSNumber(value: 2), NSNumber(value: 3)])
   }
 
-  // MARK: - BridgeFuture.value (NSDictionary bridge) Tests
+  // MARK: - bridgeFBFutureDictionary (NSDictionary bridge) Tests
 
   func testValueBridgesNSDictionaryToTypedSwiftDict() async throws {
     let nsDict = NSDictionary(dictionary: ["key1": NSNumber(value: 10), "key2": NSNumber(value: 20)])
     let future = FBFuture<NSDictionary>(result: nsDict)
-    let result: [NSString: NSNumber] = try await BridgeFuture.value(future)
+    let result: [NSString: NSNumber] = try await bridgeFBFutureDictionary(future)
     XCTAssertEqual(result["key1" as NSString], NSNumber(value: 10))
     XCTAssertEqual(result["key2" as NSString], NSNumber(value: 20))
   }
 
-  // MARK: - BridgeFuture.convertToFuture Tests
+  // MARK: - convertFBMutableFuture Tests
 
   func testConvertMutableFutureToFuture() async throws {
     let mutableFuture = FBMutableFuture<NSString>()
-    let future = BridgeFuture.convertToFuture(mutableFuture)
+    let future = convertFBMutableFuture(mutableFuture)
     mutableFuture.resolve(withResult: "resolved" as NSString)
-    let result = try await BridgeFuture.value(future)
+    let result = try await bridgeFBFuture(future)
     XCTAssertEqual(result, "resolved" as NSString)
   }
 
   func testConvertMutableFutureToFutureWithError() async {
     let mutableFuture = FBMutableFuture<NSString>()
-    let future = BridgeFuture.convertToFuture(mutableFuture)
+    let future = convertFBMutableFuture(mutableFuture)
     let expectedError = NSError(domain: "test", code: 77)
     mutableFuture.resolveWithError(expectedError)
     do {
-      _ = try await BridgeFuture.value(future)
+      _ = try await bridgeFBFuture(future)
       XCTFail("Expected error")
     } catch {
       XCTAssertEqual((error as NSError).code, 77)
@@ -363,26 +363,26 @@ final class CompanionLibTransientTests: XCTestCase {
     XCTAssertEqual(FBIDBErrorDomain, "com.facebook.idb")
   }
 
-  // MARK: - BridgeFuture with delayed resolution Tests
+  // MARK: - bridgeFBFuture with delayed resolution Tests
 
   func testValueWithDelayedResolution() async throws {
     let mutableFuture = FBMutableFuture<NSString>()
-    let future = BridgeFuture.convertToFuture(mutableFuture)
+    let future = convertFBMutableFuture(mutableFuture)
 
     // Resolve after a short delay
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
       mutableFuture.resolve(withResult: "delayed" as NSString)
     }
 
-    let result = try await BridgeFuture.value(future)
+    let result = try await bridgeFBFuture(future)
     XCTAssertEqual(result, "delayed" as NSString)
   }
 
   func testValuesWithDelayedResolution() async throws {
     let mf1 = FBMutableFuture<NSNumber>()
     let mf2 = FBMutableFuture<NSNumber>()
-    let f1 = BridgeFuture.convertToFuture(mf1)
-    let f2 = BridgeFuture.convertToFuture(mf2)
+    let f1 = convertFBMutableFuture(mf1)
+    let f2 = convertFBMutableFuture(mf2)
 
     // Resolve in reverse order to verify ordering is preserved
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -392,7 +392,7 @@ final class CompanionLibTransientTests: XCTestCase {
       mf2.resolve(withResult: NSNumber(value: 2))
     }
 
-    let results = try await BridgeFuture.values([f1, f2])
+    let results = try await bridgeFBFutures([f1, f2])
     XCTAssertEqual(results[0], NSNumber(value: 1))
     XCTAssertEqual(results[1], NSNumber(value: 2))
   }

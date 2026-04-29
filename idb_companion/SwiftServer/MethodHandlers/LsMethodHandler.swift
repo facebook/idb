@@ -26,7 +26,7 @@ struct LsMethodHandler {
   }
 
   private func list(path: String, fileContainer: String) async throws -> Idb_LsResponse {
-    let paths: [String] = try await BridgeFuture.value(commandExecutor.list_path(path, containerType: fileContainer))
+    let paths: [String] = try await bridgeFBFutureArray(commandExecutor.list_path(path, containerType: fileContainer))
 
     return .with {
       $0.files = paths.map(toFileInfo)
@@ -34,7 +34,7 @@ struct LsMethodHandler {
   }
 
   private func list(pathList: [String], fileContainer: String) async throws -> Idb_LsResponse {
-    let pathsToPaths: [String: [String]] = try await BridgeFuture.value(commandExecutor.list_paths(pathList, containerType: fileContainer))
+    let pathsToPaths: [String: [String]] = try await bridgeFBFutureDictionary(commandExecutor.list_paths(pathList, containerType: fileContainer))
 
     return .with {
       $0.listings = pathsToPaths.map { containerPath, paths in

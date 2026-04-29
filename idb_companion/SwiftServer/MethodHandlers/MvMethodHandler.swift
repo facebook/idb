@@ -16,7 +16,7 @@ struct MvMethodHandler {
 
   func handle(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
-    try await BridgeFuture.await(commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer))
+    try await bridgeFBFutureVoid(commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer))
     return .init()
   }
 }

@@ -56,7 +56,7 @@ struct XctraceRecordMethodHandler {
         targetLogger,
       ].compactMap({ $0 }))
 
-    let operation = try await BridgeFuture.value(target.startXctraceRecord(config, logger: logger))
+    let operation = try await bridgeFBFuture(target.startXctraceRecord(config, logger: logger))
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .running
     }
@@ -67,7 +67,7 @@ struct XctraceRecordMethodHandler {
 
   private func stopXCTrace(operation: FBXCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
-    _ = try await BridgeFuture.value(operation.stop(withTimeout: stopTimeout))
+    _ = try await bridgeFBFuture(operation.stop(withTimeout: stopTimeout))
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }

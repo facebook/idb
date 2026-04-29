@@ -31,7 +31,7 @@ import Foundation
 
   /// - Returns: NSNumber initialized with boolean value
   @objc func disabledWith(_ feature: IDBFeatureBridge) -> FBFuture<NSNumber> {
-    return Task.fbFuture {
+    return fbFutureFromAsync {
       await NSNumber(value: self.idbKillswitch.disabled(feature.nativeValue))
     }
   }

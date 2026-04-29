@@ -51,7 +51,7 @@ struct DescribeMethodHandler {
       return response
     }
 
-    let diagnosticInformation = try await BridgeFuture.value(commandExecutor.diagnostic_information())
+    let diagnosticInformation = try await bridgeFBFuture(commandExecutor.diagnostic_information())
     let diagnosticInfoData = try JSONSerialization.data(withJSONObject: diagnosticInformation)
     response.targetDescription.diagnostics = diagnosticInfoData
 
