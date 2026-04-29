@@ -353,11 +353,10 @@ extension IDBXCTestReporter {
   }
 
   private func gzipFolder(at path: String) async throws -> Data {
-    let task = FBArchiveOperations.createGzippedTarData(
+    return try await FBArchiveOperations.createGzippedTarDataAsync(
       forPath: path,
       queue: queue,
       logger: logger)
-    return try await BridgeFuture.value(task) as Data
   }
 
   private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
@@ -447,7 +446,7 @@ extension IDBXCTestReporter {
       throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(exportProcess.stdErr ?? "")")
     }
 
-    let archiveProcess = try await BridgeFuture.value(archiveFuture)
+    let archiveProcess = try await bridgeFBFuture(archiveFuture)
     let stdOut = archiveProcess.stdOut ?? NSData()
     return stdOut as Data
   }
