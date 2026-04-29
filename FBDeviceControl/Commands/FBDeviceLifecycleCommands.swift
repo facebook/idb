@@ -23,20 +23,49 @@ public class FBDeviceLifecycleCommands: NSObject, FBLifecycleCommands {
     super.init()
   }
 
-  // MARK: - FBLifecycleCommands
+  // MARK: - FBLifecycleCommands (legacy FBFuture entry points)
 
   @objc(resolveState:)
   public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await resolveStateAsync(state)
+      return NSNull()
     }
-    return FBiOSTargetResolveState(device, state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await resolveLeavesStateAsync(state)
+      return NSNull()
     }
-    return FBiOSTargetResolveLeavesState(device, state)
+  }
+
+  // MARK: - Async
+
+  fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    try await bridgeFBFutureVoid(FBiOSTargetResolveState(device, state))
+  }
+
+  fileprivate func resolveLeavesStateAsync(_ state: FBiOSTargetState) async throws {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    try await bridgeFBFutureVoid(FBiOSTargetResolveLeavesState(device, state))
+  }
+}
+
+// MARK: - AsyncLifecycleCommands
+
+extension FBDeviceLifecycleCommands: AsyncLifecycleCommands {
+
+  public func resolveState(_ state: FBiOSTargetState) async throws {
+    try await resolveStateAsync(state)
+  }
+
+  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
+    try await resolveLeavesStateAsync(state)
   }
 }

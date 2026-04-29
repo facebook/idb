@@ -8,6 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_unwrapping
+
 private let StartCommand: UInt32 = 0x00000000
 
 @objc(FBDeviceLocationCommands)
@@ -25,40 +27,43 @@ public class FBDeviceLocationCommands: NSObject, FBLocationCommands {
     super.init()
   }
 
-  // MARK: - FBLocationCommands
+  // MARK: - FBLocationCommands (legacy FBFuture entry point)
 
   public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await overrideLocationAsync(withLongitude: longitude, latitude: latitude)
+      return NSNull()
     }
-    return
-      (device
-      .ensureDeveloperDiskImageIsMounted()
-      .onQueue(
-        device.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          return (device.startService("com.apple.dt.simulatelocation") as FBFutureContext<FBAMDServiceConnection>)
-            .onQueue(
-              device.workQueue,
-              pop: { connection -> FBFuture<AnyObject> in
-                do {
-                  var start = StartCommand
-                  let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)
-                  try connection.send(startData)
+  }
 
-                  let latitudeString = "\(latitude)"
-                  let latitudeData = latitudeString.data(using: .utf8)!
-                  try connection.send(withLengthHeader: latitudeData)
+  // MARK: - Async
 
-                  let longitudeString = "\(longitude)"
-                  let longitudeData = longitudeString.data(using: .utf8)!
-                  try connection.send(withLengthHeader: longitudeData)
+  fileprivate func overrideLocationAsync(withLongitude longitude: Double, latitude: Double) async throws {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
+    try await withFBFutureContext(device.startService("com.apple.dt.simulatelocation")) { connection in
+      var start = StartCommand
+      let startData = Data(bytes: &start, count: MemoryLayout<UInt32>.size)
+      try connection.send(startData)
 
-                  return FBFuture(result: NSNull() as AnyObject)
-                } catch {
-                  return FBFuture(error: error)
-                }
-              })
-        })) as! FBFuture<NSNull>
+      let latitudeString = "\(latitude)"
+      let latitudeData = latitudeString.data(using: .utf8)!
+      try connection.send(withLengthHeader: latitudeData)
+
+      let longitudeString = "\(longitude)"
+      let longitudeData = longitudeString.data(using: .utf8)!
+      try connection.send(withLengthHeader: longitudeData)
+    }
+  }
+}
+
+// MARK: - AsyncLocationCommands
+
+extension FBDeviceLocationCommands: AsyncLocationCommands {
+
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
+    try await overrideLocationAsync(withLongitude: longitude, latitude: latitude)
   }
 }

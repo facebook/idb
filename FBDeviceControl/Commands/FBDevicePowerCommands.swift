@@ -23,39 +23,48 @@ public class FBDevicePowerCommands: NSObject, FBPowerCommands {
     super.init()
   }
 
-  // MARK: - FBPowerCommands
+  // MARK: - FBPowerCommands (legacy FBFuture entry points)
 
   public func shutdown() -> FBFuture<NSNull> {
-    return sendRelayCommand("Shutdown")
+    fbFutureFromAsync { [self] in
+      try await sendRelayCommandAsync("Shutdown")
+      return NSNull()
+    }
   }
 
   public func reboot() -> FBFuture<NSNull> {
-    return sendRelayCommand("Restart")
+    fbFutureFromAsync { [self] in
+      try await sendRelayCommandAsync("Restart")
+      return NSNull()
+    }
   }
 
-  // MARK: - Private
+  // MARK: - Async
 
-  private func sendRelayCommand(_ request: String) -> FBFuture<NSNull> {
+  fileprivate func sendRelayCommandAsync(_ request: String) async throws {
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
-    return
-      (device
-      .startService("com.apple.mobile.diagnostics_relay")
-      .onQueue(
-        device.workQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
-              return FBControlCoreError.describe("Unexpected response").failFuture()
-            }
-            if (result["Status"] as? String) != "Success" {
-              return FBControlCoreError.describe("Not successful \(result)").failFuture()
-            }
-            return FBFuture(result: NSNull() as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<NSNull>
+    try await withFBFutureContext(device.startService("com.apple.mobile.diagnostics_relay")) { connection in
+      guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
+        throw FBControlCoreError.describe("Unexpected response").build()
+      }
+      if (result["Status"] as? String) != "Success" {
+        throw FBControlCoreError.describe("Not successful \(result)").build()
+      }
+    }
+  }
+}
+
+// MARK: - AsyncPowerCommands
+
+extension FBDevicePowerCommands: AsyncPowerCommands {
+
+  public func shutdown() async throws {
+    try await sendRelayCommandAsync("Shutdown")
+  }
+
+  public func reboot() async throws {
+    try await sendRelayCommandAsync("Restart")
   }
 }

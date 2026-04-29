@@ -25,53 +25,60 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
     super.init()
   }
 
-  // MARK: - FBVideoRecordingCommands
+  // MARK: - FBVideoRecordingCommands (legacy FBFuture entry points)
 
   public func startRecording(toFile filePath: String) -> FBFuture<any FBiOSTargetOperation> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await startRecordingAsync(toFile: filePath) as any FBiOSTargetOperation
     }
-    if video != nil {
-      return FBDeviceControlError().describe("Cannot create a new video recording session, one is already active").failFuture() as! FBFuture<any FBiOSTargetOperation>
-    }
-    return
-      (FBDeviceVideo.video(for: device, filePath: filePath)
-      .onQueue(
-        device.workQueue,
-        fmap: { video -> FBFuture<AnyObject> in
-          self.video = video
-          return video.startRecording().mapReplace(video as AnyObject)
-        })) as! FBFuture<any FBiOSTargetOperation>
   }
 
   public func stopRecording() -> FBFuture<NSNull> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await stopRecordingAsync()
+      return NSNull()
     }
-    guard let video else {
-      return FBDeviceControlError().describe("There was no existing video instance for \(device)").failFuture() as! FBFuture<NSNull>
-    }
-    self.video = nil
-    return video.stopRecording()
   }
 
-  // MARK: - FBVideoStreamCommands
+  // MARK: - FBVideoStreamCommands (legacy FBFuture entry point)
 
   public func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<any FBVideoStream> {
-    guard let device, let logger = device.logger else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await createStreamAsync(with: configuration)
     }
-    return
-      (FBDeviceVideo.captureSession(for: device)
-      .onQueue(
-        device.workQueue,
-        fmap: { session -> FBFuture<AnyObject> in
-          do {
-            let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
-            return FBFuture(result: stream as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })) as! FBFuture<any FBVideoStream>
+  }
+
+  // MARK: - Async
+
+  fileprivate func startRecordingAsync(toFile filePath: String) async throws -> FBDeviceVideo {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    if video != nil {
+      throw FBDeviceControlError().describe("Cannot create a new video recording session, one is already active").build()
+    }
+    let video = try await FBDeviceVideo.videoAsync(for: device, filePath: filePath)
+    self.video = video
+    try await bridgeFBFutureVoid(video.startRecording())
+    return video
+  }
+
+  fileprivate func stopRecordingAsync() async throws {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    guard let video else {
+      throw FBDeviceControlError().describe("There was no existing video instance for \(device)").build()
+    }
+    self.video = nil
+    try await bridgeFBFutureVoid(video.stopRecording())
+  }
+
+  fileprivate func createStreamAsync(with configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+    guard let device, let logger = device.logger else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let session = try await FBDeviceVideo.captureSessionAsync(for: device)
+    return try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
   }
 }

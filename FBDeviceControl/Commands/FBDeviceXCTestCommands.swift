@@ -9,6 +9,8 @@
 import Foundation
 import XCTestBootstrap
 
+// swiftlint:disable force_cast
+
 @objc(FBDeviceXCTestCommands)
 public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
@@ -30,7 +32,7 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
     super.init()
   }
 
-  // MARK: FBXCTestCommands Implementation
+  // MARK: FBXCTestCommands (legacy FBFuture entry point)
 
   @objc(runTestWithLaunchConfiguration:reporter:logger:)
   public func runTest(
@@ -38,25 +40,31 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) -> FBFuture<NSNull> {
-    // Return early and fail if there is already a test run for the device.
-    // There should only ever be one test run per-device.
-    if runningXcodeBuildOperation {
-      return (FBDeviceControlError.describe("Cannot Start Test Manager with Configuration \(testLaunchConfiguration) as it is already running").failFuture() as! FBFuture<NSNull>)
+    fbFutureFromAsync { [self] in
+      try await runTestAsync(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+      return NSNull()
     }
-    // Terminate the reparented xcodebuild invocations.
-    return FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device!.udid, processFetcher: processFetcher, queue: device!.workQueue, logger: logger).onQueue(device!.workQueue) { _ in
-      self.runningXcodeBuildOperation = true
-      // Then start the task. This future will yield when the task has *started*.
-      return self.startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger)
-    }.onQueue(device!.workQueue) { (task: AnyObject) in
-      // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
-      return FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task as! FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: testLaunchConfiguration, reporter: reporter as! FBXCTestReporter, target: self.device!, logger: logger)
-    }.onQueue(
-      device!.workQueue,
-      chain: { future in
-        self.runningXcodeBuildOperation = false
-        return future
-      }) as! FBFuture<NSNull>
+  }
+
+  // MARK: - Async
+
+  fileprivate func runTestAsync(
+    withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    if runningXcodeBuildOperation {
+      throw FBDeviceControlError.describe("Cannot Start Test Manager with Configuration \(testLaunchConfiguration) as it is already running").build()
+    }
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    runningXcodeBuildOperation = true
+    defer { runningXcodeBuildOperation = false }
+
+    _ = try await bridgeFBFuture(FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger))
+    let task = try await bridgeFBFuture(startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger))
+    try await bridgeFBFutureVoid(FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter as! FBXCTestReporter, target: device, logger: logger))
   }
 
   // MARK: Private

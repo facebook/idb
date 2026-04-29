@@ -25,32 +25,37 @@ public class FBDeviceScreenshotCommands: NSObject, FBScreenshotCommands {
     super.init()
   }
 
-  // MARK: - FBScreenshotCommands
+  // MARK: - FBScreenshotCommands (legacy FBFuture entry point)
 
   public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await takeScreenshotAsync(format) as NSData
     }
-    return
-      (device
-      .startDeviceLinkService("com.apple.mobile.screenshotr")
-      .onQueue(
-        device.workQueue,
-        pop: { client -> FBFuture<AnyObject> in
-          return client.processMessage(["MessageType": "ScreenShotRequest"]) as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        device.workQueue,
-        fmap: { response -> FBFuture<AnyObject> in
-          guard let dict = response as? NSDictionary,
-            let screenshotData = dict[ScreenShotDataKey] as? NSData
-          else {
-            return FBDeviceControlError()
-              .describe("\(String(describing: response)) is not an NSData for \(ScreenShotDataKey)")
-              .failFuture()
-          }
-          return FBFuture(result: screenshotData)
-        })) as! FBFuture<NSData>
+  }
+
+  // MARK: - Async
+
+  fileprivate func takeScreenshotAsync(_ format: FBScreenshotFormat) async throws -> Data {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.startDeviceLinkService("com.apple.mobile.screenshotr")) { client in
+      let response = try await bridgeFBFuture(client.processMessage(["MessageType": "ScreenShotRequest"]))
+      guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
+        throw FBDeviceControlError()
+          .describe("\(String(describing: response)) is not an NSData for \(ScreenShotDataKey)")
+          .build()
+      }
+      return screenshotData as Data
+    }
+  }
+}
+
+// MARK: - AsyncScreenshotCommands
+
+extension FBDeviceScreenshotCommands: AsyncScreenshotCommands {
+
+  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+    try await takeScreenshotAsync(format)
   }
 }

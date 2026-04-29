@@ -29,64 +29,52 @@ public class FBAppleDevicectlCommandExecutor: NSObject {
 
 public extension FBAppleDevicectlCommandExecutor {
   @objc func launchApplication(configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
-    do {
-      let tmpPath = try FileManager.default.temporaryFile(extension: "json")
-      let tmpPathStr: String
-      if #available(macOS 13.0, *) {
-        tmpPathStr = tmpPath.path()
-      } else {
-        tmpPathStr = tmpPath.path
-      }
-      var arguments = [
-        "device",
-        "process",
-        "launch",
-        "--device",
-        device.udid,
-        "--terminate-existing",
-        "--json-output",
-        tmpPathStr,
-      ]
-      if !configuration.environment.isEmpty {
-        if let envstr = String(
-          data: try JSONSerialization.data(withJSONObject: configuration.environment),
-          encoding: .utf8)
-        {
-          arguments += ["--environment-variables", envstr]
-        }
-      }
-      if configuration.waitForDebugger {
-        arguments.append("--start-stopped")
-      }
-      arguments.append(configuration.bundleID)
-      arguments += configuration.arguments
-
-      let builder = taskBuilder(arguments: arguments)
-
-      guard
-        let future = builder.runUntilCompletion(withAcceptableExitCodes: nil)
-          .onQueue(
-            device.asyncQueue,
-            fmap: { task in
-              if task.exitCode.result?.intValue != 0 {
-                return FBControlCoreError.describe("devicectl failed with exit code \(task.exitCode.result.flatMap(String.init) ?? "<nil>")\narguments: \(FBCollectionInformation.oneLineDescription(from: arguments))\n\(task.stdOut ?? "")\n\(task.stdErr ?? "")")
-                  .failFuture()
-              }
-              do {
-                let data = try Data(contentsOf: tmpPath)
-                let info = try JSONDecoder().decode(DevicectlProcInfo.self, from: data)
-                return FBFuture<AnyObject>(result: NSNumber(value: info.result.process.processIdentifier))
-              } catch {
-                return FBFuture(error: error)
-              }
-            }) as? FBFuture<NSNumber>
-      else {
-        assertionFailure("Failed to restore FBFuture generic parameter type after type erasure.")
-      }
-      return future
-    } catch {
-      return FBFuture(error: error)
+    fbFutureFromAsync { [self] in
+      try await launchApplicationAsync(configuration: configuration) as NSNumber
     }
+  }
+
+  func launchApplicationAsync(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
+    let tmpPath = try FileManager.default.temporaryFile(extension: "json")
+    let tmpPathStr: String
+    if #available(macOS 13.0, *) {
+      tmpPathStr = tmpPath.path()
+    } else {
+      tmpPathStr = tmpPath.path
+    }
+    var arguments = [
+      "device",
+      "process",
+      "launch",
+      "--device",
+      device.udid,
+      "--terminate-existing",
+      "--json-output",
+      tmpPathStr,
+    ]
+    if !configuration.environment.isEmpty {
+      if let envstr = String(
+        data: try JSONSerialization.data(withJSONObject: configuration.environment),
+        encoding: .utf8)
+      {
+        arguments += ["--environment-variables", envstr]
+      }
+    }
+    if configuration.waitForDebugger {
+      arguments.append("--start-stopped")
+    }
+    arguments.append(configuration.bundleID)
+    arguments += configuration.arguments
+
+    let builder = taskBuilder(arguments: arguments)
+    let task = try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: nil))
+    if task.exitCode.result?.intValue != 0 {
+      throw FBControlCoreError.describe("devicectl failed with exit code \(task.exitCode.result.flatMap(String.init) ?? "<nil>")\narguments: \(FBCollectionInformation.oneLineDescription(from: arguments))\n\(task.stdOut ?? "")\n\(task.stdErr ?? "")")
+        .build()
+    }
+    let data = try Data(contentsOf: tmpPath)
+    let info = try JSONDecoder().decode(DevicectlProcInfo.self, from: data)
+    return NSNumber(value: info.result.process.processIdentifier)
   }
 
   private struct DevicectlProcInfo: Decodable {
