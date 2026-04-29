@@ -45,7 +45,7 @@ struct LaunchMethodHandler {
       waitForDebugger: start.waitForDebugger,
       io: io,
       launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
-    let launchedApp = try await bridgeFBFuture(commandExecutor.launch_app(config))
+    let launchedApp = try await commandExecutor.launch_app(config)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }

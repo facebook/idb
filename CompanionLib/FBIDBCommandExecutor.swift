@@ -11,6 +11,8 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
+// swiftlint:disable force_cast force_unwrapping
+
 @objc public final class FBIDBCommandExecutor: NSObject {
 
   private let target: FBiOSTarget
@@ -106,172 +108,100 @@ import XCTestBootstrap
 
   // MARK: - Public Methods
 
-  @objc public func take_screenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    return screenshotCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBScreenshotCommands).takeScreenshot(format) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSData>
+  public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
+    let commands = target as FBScreenshotCommands
+    return try await bridgeFBFuture(commands.takeScreenshot(format)) as Data
   }
 
-  @objc public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) -> FBFuture<FBAccessibilityElementsResponse> {
-    return accessibilityCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          let cmds = commands as! FBAccessibilityCommands
-          let options = FBAccessibilityRequestOptions.`default`()
-          options.nestedFormat = nestedFormat
-          options.enableLogging = true
-
-          let elementFuture: FBFuture<AnyObject>
-          if let value {
-            elementFuture = cmds.accessibilityElement(at: value.pointValue) as! FBFuture<AnyObject>
-          } else {
-            elementFuture = cmds.accessibilityElementForFrontmostApplication() as! FBFuture<AnyObject>
-          }
-          return
-            elementFuture
-            .onQueue(
-              self.target.workQueue,
-              map: { element -> AnyObject in
-                let elem = element as! FBAccessibilityElement
-                let response = try? elem.serialize(with: options)
-                elem.close()
-                return response as AnyObject
-              })
-        }) as! FBFuture<FBAccessibilityElementsResponse>
-  }
-
-  @objc public func add_media(_ filePaths: [URL]) -> FBFuture<NSNull> {
-    return mediaCommands()
-      .onQueue(
-        target.asyncQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorMediaCommands).addMedia(filePaths) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
-  }
-
-  @objc public func set_location(_ latitude: Double, longitude: Double) -> FBFuture<NSNull> {
-    guard let commands = target as? FBLocationCommands else {
-      return FBIDBError.describe("\(target) does not conform to FBLocationCommands").failFuture() as! FBFuture<NSNull>
+  public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
+    guard let cmds = target as? FBAccessibilityCommands else {
+      throw FBIDBError.describe("Target doesn't conform to FBAccessibilityCommands protocol \(target)").build()
     }
-    return commands.overrideLocation(withLongitude: longitude, latitude: latitude)
+    let options = FBAccessibilityRequestOptions.`default`()
+    options.nestedFormat = nestedFormat
+    options.enableLogging = true
+
+    let element: FBAccessibilityElement
+    if let value {
+      element = try await bridgeFBFuture(cmds.accessibilityElement(at: value.pointValue))
+    } else {
+      element = try await bridgeFBFuture(cmds.accessibilityElementForFrontmostApplication())
+    }
+    defer { element.close() }
+    return try element.serialize(with: options)
   }
 
-  @objc public func clear_keychain() -> FBFuture<NSNull> {
-    return keychainCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorKeychainCommandsProtocol).clearKeychain() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func add_media(_ filePaths: [URL]) async throws {
+    let commands = try mediaCommands()
+    try await bridgeFBFutureVoid(commands.addMedia(filePaths))
   }
 
-  @objc public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).grantAccess(Set([bundleID]), toServices: services) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func set_location(_ latitude: Double, longitude: Double) async throws {
+    guard let commands = target as? AsyncLocationCommands else {
+      throw FBIDBError.describe("\(target) does not conform to FBLocationCommands").build()
+    }
+    try await commands.overrideLocation(longitude: longitude, latitude: latitude)
   }
 
-  @objc public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).revokeAccess(Set([bundleID]), toServices: services) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func clear_keychain() async throws {
+    let commands = try keychainCommands()
+    try await bridgeFBFutureVoid(commands.clearKeychain())
   }
 
-  @objc public func approve_deeplink(_ scheme: String, for_application bundleID: String) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).grantAccess(Set([bundleID]), toDeeplink: scheme) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.grantAccess(Set([bundleID]), toServices: services))
   }
 
-  @objc public func revoke_deeplink(_ scheme: String, for_application bundleID: String) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).revokeAccess(Set([bundleID]), toDeeplink: scheme) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.revokeAccess(Set([bundleID]), toServices: services))
   }
 
-  @objc public func open_url(_ url: String) -> FBFuture<NSNull> {
-    return lifecycleCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorLifecycleCommandsProtocol).open(URL(string: url)!) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func approve_deeplink(_ scheme: String, for_application bundleID: String) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.grantAccess(Set([bundleID]), toDeeplink: scheme))
   }
 
-  @objc public func focus() -> FBFuture<NSNull> {
-    return lifecycleCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorLifecycleCommandsProtocol).focus() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func revoke_deeplink(_ scheme: String, for_application bundleID: String) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.revokeAccess(Set([bundleID]), toDeeplink: scheme))
   }
 
-  @objc public func update_contacts(_ dbTarData: Data) -> FBFuture<NSNull> {
-    return (temporaryDirectory.withArchiveExtracted(dbTarData) as! FBFutureContext<AnyObject>)
-      .onQueue(
-        target.workQueue,
-        pop: { tempDirectory in
-          let tempDir = tempDirectory as! URL
-          return self.settingsCommands()
-            .onQueue(
-              self.target.workQueue,
-              fmap: { commands in
-                (commands as! FBSimulatorSettingsCommands).updateContacts(tempDir.path) as! FBFuture<AnyObject>
-              })
-        }) as! FBFuture<NSNull>
+  public func open_url(_ url: String) async throws {
+    let commands = try lifecycleCommands()
+    try await bridgeFBFutureVoid(commands.open(URL(string: url)!))
   }
 
-  @objc public func clear_contacts() -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).clearContacts() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func focus() async throws {
+    let commands = try lifecycleCommands()
+    try await bridgeFBFutureVoid(commands.focus())
   }
 
-  @objc public func clear_photos() -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).clearPhotos() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func update_contacts(_ dbTarData: Data) async throws {
+    let commands = try settingsCommands()
+    try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(dbTarData)) { tempDir in
+      try await bridgeFBFutureVoid(commands.updateContacts((tempDir as URL).path))
+    }
   }
 
-  @objc public func list_test_bundles() -> FBFuture<NSArray> {
-    return FBFuture.onQueue(
-      target.workQueue,
-      resolve: {
-        do {
-          let testDescriptors = try self.storageManager.xctest.listTestDescriptors()
-          return FBFuture(result: testDescriptors as NSArray)
-        } catch {
-          return FBFuture(error: error as NSError)
-        }
-      }) as! FBFuture<NSArray>
+  public func clear_contacts() async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.clearContacts())
+  }
+
+  public func clear_photos() async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.clearPhotos())
+  }
+
+  public func list_test_bundles() async throws -> [FBXCTestDescriptor] {
+    return try storageManager.xctest.listTestDescriptors()
   }
 
   private static let ListTestBundleTimeout: TimeInterval = 180.0
 
-  @objc public func list_tests_in_bundle(_ bundleID: String, with_app appPath: String?) -> FBFuture<NSArray> {
+  public func list_tests_in_bundle(_ bundleID: String, with_app appPath: String?) async throws -> [String] {
     var resolvedAppPath = appPath
     if resolvedAppPath == "" {
       resolvedAppPath = nil
@@ -282,31 +212,23 @@ import XCTestBootstrap
     }
 
     let finalAppPath = resolvedAppPath
-
-    return FBFuture.onQueue(
-      target.workQueue,
-      resolve: {
-        do {
-          let testDescriptor = try self.storageManager.xctest.testDescriptor(withID: bundleID)
-          typealias ListTestsFn = @convention(c) (AnyObject, Selector, NSString, TimeInterval, NSString?) -> AnyObject
-          let sel = NSSelectorFromString("listTestsForBundleAtPath:timeout:withAppAtPath:")
-          let imp = unsafeBitCast((self.target as AnyObject).method(for: sel), to: ListTestsFn.self)
-          return imp(self.target as AnyObject, sel, testDescriptor.url.path as NSString, FBIDBCommandExecutor.ListTestBundleTimeout, finalAppPath as NSString?) as! FBFuture<AnyObject>
-        } catch {
-          return FBFuture(error: error as NSError)
-        }
-      }) as! FBFuture<NSArray>
+    let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
+    typealias ListTestsFn = @convention(c) (AnyObject, Selector, NSString, TimeInterval, NSString?) -> AnyObject
+    let sel = NSSelectorFromString("listTestsForBundleAtPath:timeout:withAppAtPath:")
+    let imp = unsafeBitCast((target as AnyObject).method(for: sel), to: ListTestsFn.self)
+    let future = imp(target as AnyObject, sel, testDescriptor.url.path as NSString, FBIDBCommandExecutor.ListTestBundleTimeout, finalAppPath as NSString?) as! FBFuture<NSArray>
+    return try await bridgeFBFutureArray(future)
   }
 
-  @objc public func uninstall_application(_ bundleID: String) -> FBFuture<NSNull> {
-    return target.uninstallApplication(withBundleID: bundleID)
+  public func uninstall_application(_ bundleID: String) async throws {
+    try await bridgeFBFutureVoid(target.uninstallApplication(withBundleID: bundleID))
   }
 
-  @objc public func kill_application(_ bundleID: String) -> FBFuture<NSNull> {
-    return target.killApplication(withBundleID: bundleID).fallback(NSNull())
+  public func kill_application(_ bundleID: String) async throws {
+    _ = try await bridgeFBFuture(target.killApplication(withBundleID: bundleID).fallback(NSNull()))
   }
 
-  @objc public func launch_app(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBLaunchedApplication> {
+  public func launch_app(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     var replacements: [String: String] = [:]
     replacements.merge(storageManager.replacementMapping) { _, new in new }
     replacements.merge(target.replacementMapping()) { _, new in new }
@@ -321,46 +243,26 @@ import XCTestBootstrap
       io: configuration.io,
       launchMode: configuration.launchMode
     )
-    return target.launchApplication(derived)
+    return try await bridgeFBFuture(target.launchApplication(derived))
   }
 
-  @objc public func crash_list(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    return target.crashes(predicate, useCache: false)
-      .onQueue(
-        target.asyncQueue,
-        map: { crashes -> AnyObject in
-          return crashes
-        }) as! FBFuture<NSArray>
+  public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    return try await bridgeFBFutureArray(target.crashes(predicate, useCache: false))
   }
 
-  @objc public func crash_show(_ predicate: NSPredicate) -> FBFuture<FBCrashLog> {
-    return target.crashes(predicate, useCache: true)
-      .onQueue(
-        target.asyncQueue,
-        fmap: { crashes in
-          let crashArray = crashes as! [FBCrashLogInfo]
-          if crashArray.count > 1 {
-            return FBIDBError.describe("More than one crash log matching \(predicate)").failFuture()
-          }
-          if crashArray.isEmpty {
-            return FBIDBError.describe("No crashes matching \(predicate)").failFuture()
-          }
-          do {
-            let log = try crashArray.first!.obtainCrashLog()
-            return FBFuture(result: log) as! FBFuture<AnyObject>
-          } catch {
-            return FBFuture(error: error as NSError)
-          }
-        }) as! FBFuture<FBCrashLog>
+  public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
+    let crashArray: [FBCrashLogInfo] = try await bridgeFBFutureArray(target.crashes(predicate, useCache: true))
+    if crashArray.count > 1 {
+      throw FBIDBError.describe("More than one crash log matching \(predicate)").build()
+    }
+    guard let first = crashArray.first else {
+      throw FBIDBError.describe("No crashes matching \(predicate)").build()
+    }
+    return try first.obtainCrashLog()
   }
 
-  @objc public func crash_delete(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    return target.pruneCrashes(predicate)
-      .onQueue(
-        target.asyncQueue,
-        map: { crashes -> AnyObject in
-          return crashes
-        }) as! FBFuture<NSArray>
+  public func crash_delete(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    return try await bridgeFBFutureArray(target.pruneCrashes(predicate))
   }
 
   @objc public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<FBIDBTestOperation> {
@@ -424,59 +326,36 @@ import XCTestBootstrap
     return commands.fetchDiagnosticInformation()
   }
 
-  @objc public func hid(_ event: NSObject) -> FBFuture<NSNull> {
-    return connectToHID()
-      .onQueue(
-        target.workQueue,
-        fmap: { hid in
-          let performSel = NSSelectorFromString("performOnHID:")
-          return event.perform(performSel, with: hid)!.takeUnretainedValue() as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func hid(_ event: NSObject) async throws {
+    let hid = try await connectToHID()
+    let performSel = NSSelectorFromString("performOnHID:")
+    let future = event.perform(performSel, with: hid)!.takeUnretainedValue() as! FBFuture<AnyObject>
+    _ = try await bridgeFBFuture(future)
   }
 
-  @objc public func set_hardware_keyboard_enabled(_ enabled: Bool) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).setHardwareKeyboardEnabled(enabled) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.setHardwareKeyboardEnabled(enabled))
   }
 
-  @objc public func set_preference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).setPreference(name, value: value, type: type, domain: domain) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.setPreference(name, value: value, type: type, domain: domain))
   }
 
-  @objc public func get_preference(_ name: String, domain: String?) -> FBFuture<NSString> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).getCurrentPreference(name, domain: domain) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSString>
+  public func get_preference(_ name: String, domain: String?) async throws -> String {
+    let commands = try settingsCommands()
+    return try await bridgeFBFuture(commands.getCurrentPreference(name, domain: domain)) as String
   }
 
-  @objc public func set_locale_with_identifier(_ identifier: String) -> FBFuture<NSNull> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).setPreference("AppleLocale", value: identifier, type: nil, domain: nil) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSNull>
+  public func set_locale_with_identifier(_ identifier: String) async throws {
+    let commands = try settingsCommands()
+    try await bridgeFBFutureVoid(commands.setPreference("AppleLocale", value: identifier, type: nil, domain: nil))
   }
 
-  @objc public func get_current_locale_identifier() -> FBFuture<NSString> {
-    return settingsCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          (commands as! FBSimulatorSettingsCommands).getCurrentPreference("AppleLocale", domain: nil) as! FBFuture<AnyObject>
-        }) as! FBFuture<NSString>
+  public func get_current_locale_identifier() async throws -> String {
+    let commands = try settingsCommands()
+    return try await bridgeFBFuture(commands.getCurrentPreference("AppleLocale", domain: nil)) as String
   }
 
   @objc public func list_locale_identifiers() -> [String] {
@@ -628,11 +507,11 @@ import XCTestBootstrap
         }) as! FBFuture<NSDictionary>
   }
 
-  @objc public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: FBDataConsumer) -> FBFuture<AnyObject> {
-    guard let commands = target as? FBDapServerCommand else {
-      return FBControlCoreError.describe("Target doesn't conform to FBDapServerCommand protocol \(target)").failFuture()
+  public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
+    guard let commands = target as? AsyncDapServerCommand else {
+      throw FBControlCoreError.describe("Target doesn't conform to AsyncDapServerCommand protocol \(target)").build()
     }
-    return commands.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut) as! FBFuture<AnyObject>
+    return try await commands.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 
   @objc public func clean() -> FBFuture<NSNull> {
@@ -647,18 +526,18 @@ import XCTestBootstrap
         }) as! FBFuture<NSNull>
   }
 
-  @objc public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) -> FBFuture<NSNull> {
+  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
     guard let commands = target as? FBNotificationCommands else {
-      return FBIDBError.describe("\(target) does not conform to FBNotificationCommands").failFuture() as! FBFuture<NSNull>
+      throw FBIDBError.describe("\(target) does not conform to FBNotificationCommands").build()
     }
-    return commands.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await bridgeFBFutureVoid(commands.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload))
   }
 
-  @objc public func simulateMemoryWarning() -> FBFuture<NSNull> {
+  public func simulateMemoryWarning() async throws {
     guard let commands = target as? FBMemoryCommands else {
-      return FBIDBError.describe("\(target) does not conform to FBMemoryCommands").failFuture() as! FBFuture<NSNull>
+      throw FBIDBError.describe("\(target) does not conform to FBMemoryCommands").build()
     }
-    return commands.simulateMemoryWarning()
+    try await bridgeFBFutureVoid(commands.simulateMemoryWarning())
   }
 
   // MARK: - Private Methods
@@ -678,34 +557,22 @@ import XCTestBootstrap
   }
 
   private func remove_all_storage_and_clear_keychain() -> FBFuture<NSNull> {
-    do {
+    fbFutureFromAsync { [self] in
       try storageManager.clean()
-    } catch {
-      return FBFuture(error: error as NSError)
+      try await clear_keychain()
+      return NSNull()
     }
-    return clear_keychain()
   }
 
   private func uninstall_all_applications() -> FBFuture<NSNull> {
-    return list_apps(false)
-      .onQueue(
-        target.workQueue,
-        fmap: { apps in
-          let appsDict = apps as! [FBInstalledApplication: AnyObject]
-          let uninstallFutures: [FBFuture<AnyObject>] = appsDict.keys.compactMap { app in
-            guard app.installType == .user else { return nil }
-            return self.kill_application(app.bundle.identifier)
-              .onQueue(
-                self.target.workQueue,
-                fmap: { _ in
-                  self.uninstall_application(app.bundle.identifier) as! FBFuture<AnyObject>
-                })
-          }
-          if uninstallFutures.isEmpty {
-            return FBFuture(result: NSNull() as AnyObject)
-          }
-          return unsafeBitCast(FBFuture<AnyObject>.combine(uninstallFutures), to: FBFuture<AnyObject>.self)
-        }) as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      let apps = try await bridgeFBFuture(list_apps(false)) as! [FBInstalledApplication: AnyObject]
+      for app in apps.keys where app.installType == .user {
+        try await kill_application(app.bundle.identifier)
+        try await uninstall_application(app.bundle.identifier)
+      }
+      return NSNull()
+    }
   }
 
   private func debugserver_prepare(_ bundleID: String) -> FBFuture<AnyObject> {
@@ -781,59 +648,38 @@ import XCTestBootstrap
     return commands.fileCommandsForContainerApplication(containerType!) as! FBFutureContext<AnyObject>
   }
 
-  private func screenshotCommands() -> FBFuture<AnyObject> {
-    let commands = target as FBScreenshotCommands
-    return FBFuture(result: commands as AnyObject)
-  }
-
-  private func lifecycleCommands() -> FBFuture<AnyObject> {
+  private func lifecycleCommands() throws -> any FBSimulatorLifecycleCommandsProtocol {
     guard let commands = target as? FBSimulatorLifecycleCommandsProtocol else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorLifecycleCommands protocol \(target)").failFuture()
+      throw FBIDBError.describe("Target doesn't conform to FBSimulatorLifecycleCommands protocol \(target)").build()
     }
-    return FBFuture(result: commands as AnyObject)
+    return commands
   }
 
-  private func mediaCommands() -> FBFuture<AnyObject> {
+  private func mediaCommands() throws -> any FBSimulatorMediaCommandsProtocol {
     guard let commands = target as? FBSimulatorMediaCommandsProtocol else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").failFuture()
+      throw FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").build()
     }
-    return FBFuture(result: commands as AnyObject)
+    return commands
   }
 
-  private func keychainCommands() -> FBFuture<AnyObject> {
+  private func keychainCommands() throws -> any FBSimulatorKeychainCommandsProtocol {
     guard let commands = target as? FBSimulatorKeychainCommandsProtocol else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorKeychainCommands protocol \(target)").failFuture()
+      throw FBIDBError.describe("Target doesn't conform to FBSimulatorKeychainCommands protocol \(target)").build()
     }
-    return FBFuture(result: commands as AnyObject)
+    return commands
   }
 
-  private func settingsCommands() -> FBFuture<AnyObject> {
+  private func settingsCommands() throws -> any FBSimulatorSettingsCommandsProtocol {
     guard let commands = target as? (any FBSimulatorSettingsCommandsProtocol) else {
-      return FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").failFuture()
+      throw FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").build()
     }
-    return FBFuture(result: commands as AnyObject)
+    return commands
   }
 
-  private func accessibilityCommands() -> FBFuture<AnyObject> {
-    guard let commands = target as? FBAccessibilityCommands else {
-      return FBIDBError.describe("Target doesn't conform to FBAccessibilityCommands protocol \(target)").failFuture()
-    }
-    return FBFuture(result: commands as AnyObject)
-  }
-
-  private func connectToHID() -> FBFuture<AnyObject> {
-    return lifecycleCommands()
-      .onQueue(
-        target.workQueue,
-        fmap: { commands in
-          let cmds = commands as! FBSimulatorLifecycleCommandsProtocol
-          do {
-            try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(self.target.logger)
-          } catch {
-            return FBFuture(error: error as NSError)
-          }
-          return cmds.connectToHID() as! FBFuture<AnyObject>
-        })
+  private func connectToHID() async throws -> FBSimulatorHID {
+    let commands = try lifecycleCommands()
+    try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
+    return try await bridgeFBFuture(commands.connectToHID())
   }
 
   private func installExtractedApp(_ extractedAppContext: FBFutureContext<AnyObject>, makeDebuggable: Bool) -> FBFuture<FBInstalledArtifact> {

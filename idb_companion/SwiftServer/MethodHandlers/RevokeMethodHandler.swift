@@ -40,11 +40,11 @@ struct RevokeMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await bridgeFBFutureVoid(commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID))
+      try await commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID)
     }
 
     if !services.isEmpty {
-      try await bridgeFBFutureVoid(commandExecutor.revoke(services, for_application: request.bundleID))
+      try await commandExecutor.revoke(services, for_application: request.bundleID)
     }
     return .init()
   }

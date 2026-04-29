@@ -183,14 +183,14 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
 
   func contacts_clear(request: Idb_ContactsClearRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsClearResponse {
     return try await FBTeardownContext.withAutocleanup {
-      try await bridgeFBFutureVoid(commandExecutor.clear_contacts())
+      try await commandExecutor.clear_contacts()
       return Idb_ContactsClearResponse()
     }
   }
 
   func photos_clear(request: Idb_PhotosClearRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_PhotosClearResponse {
     return try await FBTeardownContext.withAutocleanup {
-      try await bridgeFBFutureVoid(commandExecutor.clear_photos())
+      try await commandExecutor.clear_photos()
       return Idb_PhotosClearResponse()
     }
   }

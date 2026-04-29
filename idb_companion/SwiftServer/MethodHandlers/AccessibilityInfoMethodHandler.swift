@@ -21,7 +21,7 @@ struct AccessibilityInfoMethodHandler {
       point = NSValue(point: .init(x: request.point.x, y: request.point.y))
     }
     let nested = request.format == .nested
-    let response = try await bridgeFBFuture(commandExecutor.accessibility_info_at_point(point, nestedFormat: nested))
+    let response = try await commandExecutor.accessibility_info_at_point(point, nestedFormat: nested)
     let jsonData = try JSONSerialization.data(withJSONObject: response.elements)
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
