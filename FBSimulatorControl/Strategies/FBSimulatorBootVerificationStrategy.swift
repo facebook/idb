@@ -34,41 +34,41 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
 
   @objc
   public class func verifySimulatorIsBooted(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorBootVerificationStrategy(simulator: simulator).verifySimulatorIsBooted()
+    fbFutureFromAsync {
+      try await verifySimulatorIsBootedAsync(simulator)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  static func verifySimulatorIsBootedAsync(_ simulator: FBSimulator) async throws {
+    try await bridgeFBFutureVoid(FBiOSTargetResolveState(simulator, .booted))
+    let strategy = FBSimulatorBootVerificationStrategy(simulator: simulator)
+    let interval = UInt64(bootVerificationWaitInterval * Double(NSEC_PER_SEC))
+    while true {
+      try Task.checkCancellation()
+      try await Task.sleep(nanoseconds: interval)
+      do {
+        try strategy.performBootVerificationCheck()
+        return
+      } catch {
+        // continue polling
+      }
+    }
   }
 
   // MARK: - Private
 
-  private func verifySimulatorIsBooted() -> FBFuture<NSNull> {
-    let simulator = self.simulator
-
-    return
-      (unsafeBitCast(FBiOSTargetResolveState(simulator, .booted), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { (_: Any) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>.onQueue(
-            simulator.workQueue,
-            resolveUntil: {
-              return unsafeBitCast(
-                self.performBootVerification().delay(FBSimulatorBootVerificationStrategy.bootVerificationWaitInterval),
-                to: FBFuture<AnyObject>.self)
-            })
-        })) as! FBFuture<NSNull>
-  }
-
-  private func performBootVerification() -> FBFuture<NSNull> {
+  private func performBootVerificationCheck() throws {
     let bootInfo: SimDeviceBootInfo? = simulator.device.bootStatus()
     guard let bootInfo else {
-      return FBSimulatorError.describe("No bootInfo for \(simulator)")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("No bootInfo for \(simulator)").build()
     }
     updateBootInfo(bootInfo)
     if bootInfo.isTerminalStatus == false {
-      return FBSimulatorError.describe("Not terminal status, status is \(String(describing: bootInfo))")
-        .failFuture() as! FBFuture<NSNull>
+      throw FBSimulatorError.describe("Not terminal status, status is \(String(describing: bootInfo))").build()
     }
-    return FBFuture<NSNull>.empty()
   }
 
   private func updateBootInfo(_ bootInfo: SimDeviceBootInfo) {

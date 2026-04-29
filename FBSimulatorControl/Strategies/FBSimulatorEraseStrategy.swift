@@ -16,29 +16,34 @@ public final class FBSimulatorEraseStrategy: NSObject {
 
   @objc
   public class func erase(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return unsafeBitCast(FBSimulatorShutdownStrategy.shutdown(simulator), to: FBFuture<AnyObject>.self)
-      .onQueue(
-        simulator.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          return unsafeBitCast(self.eraseContentsAndSettings(simulator), to: FBFuture<AnyObject>.self)
-        }) as! FBFuture<NSNull>
+    fbFutureFromAsync {
+      try await eraseAsync(simulator)
+      return NSNull()
+    }
+  }
+
+  // MARK: - Async
+
+  static func eraseAsync(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
+    try await eraseContentsAndSettingsAsync(simulator)
   }
 
   // MARK: - Private
 
-  private class func eraseContentsAndSettings(_ simulator: FBSimulator) -> FBFuture<NSNull> {
+  private static func eraseContentsAndSettingsAsync(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     let description = "\(simulator)"
     logger?.log("Erasing \(description)")
-    let future = FBMutableFuture<NSNull>()
-    simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.workQueue) { error in
-      if let error {
-        future.resolveWithError(error)
-      } else {
-        logger?.log("Erased \(description)")
-        future.resolve(withResult: NSNull())
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.workQueue) { error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          logger?.log("Erased \(description)")
+          continuation.resume(returning: ())
+        }
       }
     }
-    return unsafeBitCast(future, to: FBFuture<NSNull>.self)
   }
 }
