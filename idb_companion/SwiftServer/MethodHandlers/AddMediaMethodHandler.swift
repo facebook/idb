@@ -19,7 +19,7 @@ struct AddMediaMethodHandler {
       try await MultisourceFileReader
       .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true)
 
-    try await bridgeFBFutureVoid(commandExecutor.add_media(extractedFileURLs))
+    try await commandExecutor.add_media(extractedFileURLs)
     return .init()
   }
 }

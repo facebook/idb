@@ -15,7 +15,7 @@ struct SetLocationMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
-    try await bridgeFBFutureVoid(commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude))
+    try await commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude)
     return .init()
   }
 }

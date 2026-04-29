@@ -15,7 +15,7 @@ struct SimulateMemoryWarningMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
-    try await bridgeFBFutureVoid(commandExecutor.simulateMemoryWarning())
+    try await commandExecutor.simulateMemoryWarning()
     return .init()
   }
 }

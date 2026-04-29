@@ -16,7 +16,7 @@ struct CrashDeleteMethodHandler {
 
   func handle(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
-    let crashes: [FBCrashLogInfo] = try await bridgeFBFutureArray(commandExecutor.crash_delete(predicate))
+    let crashes = try await commandExecutor.crash_delete(predicate)
     return .with {
       $0.list = crashes.map(CrashLogInfoValueTransformer.responseCrashLogInfo(from:))
     }

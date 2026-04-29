@@ -16,7 +16,7 @@ struct CrashListMethodHandler {
 
   func handle(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
-    let crashes: [FBCrashLogInfo] = try await bridgeFBFutureArray(commandExecutor.crash_list(predicate))
+    let crashes = try await commandExecutor.crash_list(predicate)
     return Idb_CrashLogResponse.with {
       $0.list = crashes.map(CrashLogInfoValueTransformer.responseCrashLogInfo(from:))
     }
