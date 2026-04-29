@@ -25,84 +25,64 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBDiagnosticInform
     super.init()
   }
 
-  // MARK: - FBDiagnosticInformationCommands
+  // MARK: - FBDiagnosticInformationCommands (legacy FBFuture entry point)
 
   public func fetchDiagnosticInformation() -> FBFuture<NSDictionary> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await fetchDiagnosticInformationAsync() as NSDictionary
     }
-    return FBFuture<AnyObject>.combine([
-      fetchInformationFromDiagnosticsRelay(),
-      fetchInformationFromSpringboard(),
-      fetchInformationFromMobileConfiguration(),
-    ])
-    .onQueue(
-      device.asyncQueue,
-      map: { results -> AnyObject in
-        let resultsArray = results as [AnyObject]
-        return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: [
-          DiagnosticsRelayService: resultsArray[0],
-          FBSpringboardServicesClient.serviceName: resultsArray[1],
-          FBManagedConfigClient.serviceName: resultsArray[2],
-        ]) as AnyObject
-      }) as! FBFuture<NSDictionary>
+  }
+
+  // MARK: - Async
+
+  fileprivate func fetchDiagnosticInformationAsync() async throws -> [String: Any] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let diagnostics = try await fetchInformationFromDiagnosticsRelayAsync(device: device)
+    let springboard = try await fetchInformationFromSpringboardAsync(device: device)
+    let mobileConfig = try await fetchInformationFromMobileConfigurationAsync(device: device)
+    let merged: [String: Any] = [
+      DiagnosticsRelayService: diagnostics,
+      FBSpringboardServicesClient.serviceName: springboard,
+      FBManagedConfigClient.serviceName: mobileConfig,
+    ]
+    return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: merged) as [String: Any]
   }
 
   // MARK: - Private
 
-  private func fetchInformationFromDiagnosticsRelay() -> FBFuture<AnyObject> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func fetchInformationFromDiagnosticsRelayAsync(device: FBDevice) async throws -> Any {
+    try await withFBFutureContext(device.startService(DiagnosticsRelayService)) { connection in
+      guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
+        throw FBControlCoreError.describe("Unexpected response").build()
+      }
+      if (result["Status"] as? String) != "Success" {
+        throw FBControlCoreError.describe("Not successful \(result)").build()
+      }
+      guard let diagnostics = result["Diagnostics"] as? [String: Any] else {
+        return [:] as [String: Any]
+      }
+      return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: diagnostics) as [String: Any]
     }
-    return
-      device
-      .startService(DiagnosticsRelayService)
-      .onQueue(
-        device.asyncQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
-              return FBControlCoreError.describe("Unexpected response").failFuture()
-            }
-            if (result["Status"] as? String) != "Success" {
-              return FBControlCoreError.describe("Not successful \(result)").failFuture()
-            }
-            guard let diagnostics = result["Diagnostics"] as? [String: Any] else {
-              return FBFuture(result: NSDictionary() as AnyObject)
-            }
-            return FBFuture(result: FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: diagnostics) as AnyObject)
-          } catch {
-            return FBFuture(error: error)
-          }
-        })
   }
 
-  private func fetchInformationFromSpringboard() -> FBFuture<AnyObject> {
-    guard let device, let logger = device.logger else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func fetchInformationFromSpringboardAsync(device: FBDevice) async throws -> Any {
+    guard let logger = device.logger else {
+      throw FBDeviceControlError().describe("Device logger is nil").build()
     }
-    return
-      device
-      .startService(FBSpringboardServicesClient.serviceName)
-      .onQueue(
-        device.asyncQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          let client = FBSpringboardServicesClient(connection: connection, logger: logger)
-          return client.getIconLayout() as! FBFuture<AnyObject>
-        })
+    return try await withFBFutureContext(device.startService(FBSpringboardServicesClient.serviceName)) { connection in
+      let client = FBSpringboardServicesClient(connection: connection, logger: logger)
+      return try await client.getIconLayoutAsync()
+    }
   }
 
-  private func fetchInformationFromMobileConfiguration() -> FBFuture<AnyObject> {
-    guard let device, let logger = device.logger else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func fetchInformationFromMobileConfigurationAsync(device: FBDevice) async throws -> Any {
+    guard let logger = device.logger else {
+      throw FBDeviceControlError().describe("Device logger is nil").build()
     }
-    return
-      device
-      .startService(FBManagedConfigClient.serviceName)
-      .onQueue(
-        device.asyncQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          return FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration() as! FBFuture<AnyObject>
-        })
+    return try await withFBFutureContext(device.startService(FBManagedConfigClient.serviceName)) { connection in
+      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfigurationAsync()
+    }
   }
 }

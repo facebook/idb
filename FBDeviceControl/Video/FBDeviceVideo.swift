@@ -17,21 +17,6 @@ public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
 
   // MARK: Initialization Helpers
 
-  private class func findCaptureDevice(for device: FBDevice) -> FBFuture<AVCaptureDevice> {
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        device.workQueue,
-        resolveUntil: {
-          guard let captureDevice = AVCaptureDevice(uniqueID: device.udid) else {
-            return FBDeviceControlError.describe("Capture Device \(device.udid) not available").failFuture()
-          }
-          return FBFuture(result: captureDevice as AnyObject)
-        }
-      ).timeout(FBControlCoreGlobalConfiguration.fastTimeout, waitingFor: "Device \(device) to have an associated capture device appear"),
-      to: FBFuture<AVCaptureDevice>.self
-    )
-  }
-
   private class func allowAccessToScreenCaptureDevices() throws {
     var properties = CMIOObjectPropertyAddress(
       mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyAllowScreenCaptureDevices),
@@ -52,55 +37,52 @@ public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
     }
   }
 
+  private class func findCaptureDeviceAsync(for device: FBDevice) async throws -> AVCaptureDevice {
+    let timeout = FBControlCoreGlobalConfiguration.fastTimeout
+    let deadline = Date().addingTimeInterval(timeout)
+    while true {
+      if let captureDevice = AVCaptureDevice(uniqueID: device.udid) {
+        return captureDevice
+      }
+      if Date() >= deadline {
+        throw FBDeviceControlError.describe("Timed out waiting \(timeout)s for device \(device) to have an associated capture device appear").build()
+      }
+      try await Task.sleep(nanoseconds: 100_000_000)
+    }
+  }
+
   // MARK: Initializers
 
   @objc(captureSessionForDevice:)
   public class func captureSession(for device: FBDevice) -> FBFuture<AVCaptureSession> {
-    do {
-      try allowAccessToScreenCaptureDevices()
-    } catch {
-      return FBFuture(error: error)
+    fbFutureFromAsync {
+      try await captureSessionAsync(for: device)
     }
-    return unsafeBitCast(
-      findCaptureDevice(for: device).onQueue(
-        device.workQueue,
-        fmap: { (d: AnyObject) -> FBFuture<AnyObject> in
-          let captureDevice = d as! AVCaptureDevice
-          let deviceInput: AVCaptureDeviceInput
-          do {
-            deviceInput = try AVCaptureDeviceInput(device: captureDevice)
-          } catch {
-            return FBFuture(error: error)
-          }
-          let session = AVCaptureSession()
-          if !session.canAddInput(deviceInput) {
-            return FBDeviceControlError.describe("Cannot add Device Input to session for \(captureDevice)").failFuture()
-          }
-          session.addInput(deviceInput)
-          return FBFuture(result: session as AnyObject)
-        }),
-      to: FBFuture<AVCaptureSession>.self
-    )
+  }
+
+  public class func captureSessionAsync(for device: FBDevice) async throws -> AVCaptureSession {
+    try allowAccessToScreenCaptureDevices()
+    let captureDevice = try await findCaptureDeviceAsync(for: device)
+    let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
+    let session = AVCaptureSession()
+    if !session.canAddInput(deviceInput) {
+      throw FBDeviceControlError.describe("Cannot add Device Input to session for \(captureDevice)").build()
+    }
+    session.addInput(deviceInput)
+    return session
   }
 
   @objc(videoForDevice:filePath:)
   public class func video(for device: FBDevice, filePath: String) -> FBFuture<FBDeviceVideo> {
-    return unsafeBitCast(
-      captureSession(for: device).onQueue(
-        device.workQueue,
-        fmap: { (s: AnyObject) -> FBFuture<AnyObject> in
-          let session = s as! AVCaptureSession
-          let encoder: FBVideoFileWriter
-          do {
-            encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
-          } catch {
-            return FBFuture(error: error)
-          }
-          let video = FBDeviceVideo(encoder: encoder, workQueue: device.workQueue)
-          return FBFuture(result: video as AnyObject)
-        }),
-      to: FBFuture<FBDeviceVideo>.self
-    )
+    fbFutureFromAsync {
+      try await videoAsync(for: device, filePath: filePath)
+    }
+  }
+
+  public class func videoAsync(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
+    let session = try await captureSessionAsync(for: device)
+    let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
+    return FBDeviceVideo(encoder: encoder, workQueue: device.workQueue)
   }
 
   private init(encoder: FBVideoFileWriter, workQueue: DispatchQueue) {

@@ -23,16 +23,39 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
     super.init()
   }
 
-  // MARK: FBDeviceProvisioningProfileCommands Implementation
+  // MARK: FBDeviceProvisioningProfileCommands (legacy FBFuture entry points)
 
   @objc public func allProvisioningProfiles() -> FBFuture<NSArray> {
-    let ctx: FBFutureContext<NSArray> = listProvisioningProfiles()
-    let popBlock: (NSArray) -> FBFuture<AnyObject> = { (merged: NSArray) -> FBFuture<AnyObject> in
-      let device = merged[0] as! any FBDeviceCommands
-      let profiles = merged.subarray(with: NSRange(location: 1, length: merged.count - 1))
+    fbFutureFromAsync { [self] in
+      try await allProvisioningProfilesAsync() as NSArray
+    }
+  }
+
+  @objc public func removeProvisioningProfile(_ uuid: String) -> FBFuture<NSDictionary> {
+    fbFutureFromAsync { [self] in
+      try await removeProvisioningProfileAsync(uuid: uuid) as NSDictionary
+    }
+  }
+
+  @objc public func installProvisioningProfile(_ profileData: Data) -> FBFuture<NSDictionary> {
+    fbFutureFromAsync { [self] in
+      try await installProvisioningProfileAsync(profileData) as NSDictionary
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func allProvisioningProfilesAsync() async throws -> [[String: Any]] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.connectToDevice(withPurpose: "list_provisioning_profiles")) { connectedDevice in
+      guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
+        throw FBControlCoreError.describe("Failed to copy provisioning profiles").build()
+      }
       var allProfiles: [[String: Any]] = []
       for profile in profiles {
-        let payloadRef = device.calls.ProvisioningProfileCopyPayload?(profile as CFTypeRef)
+        let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile as CFTypeRef)
         var payload = payloadRef?.takeRetainedValue() as? [String: Any]
         if let p = payload {
           payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
@@ -41,66 +64,66 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
           allProfiles.append(payload)
         }
       }
-      return FBFuture(result: allProfiles as NSArray as AnyObject)
+      return allProfiles
     }
-    return unsafeBitCast(ctx.onQueue(device!.workQueue, pop: popBlock), to: FBFuture<NSArray>.self)
   }
 
-  @objc public func removeProvisioningProfile(_ uuid: String) -> FBFuture<NSDictionary> {
-    let ctx = device!.connectToDevice(withPurpose: "remove_provisioning_profile")
-    let popBlock: (AnyObject) -> FBFuture<AnyObject> = { (d: AnyObject) -> FBFuture<AnyObject> in
-      let device = d as! any FBDeviceCommands
-      let status = device.calls.RemoveProvisioningProfile?(device.amDeviceRef, uuid as CFString) ?? -1
+  fileprivate func removeProvisioningProfileAsync(uuid: String) async throws -> [String: Any] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.connectToDevice(withPurpose: "remove_provisioning_profile")) { connectedDevice in
+      let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
       if status != 0 {
-        let errRef = device.calls.ProvisioningProfileCopyErrorStringForCode?(status)
+        let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        return FBControlCoreError.describe("Failed to remove profile \(uuid): \(errorDescription)").failFuture()
+        throw FBControlCoreError.describe("Failed to remove profile \(uuid): \(errorDescription)").build()
       }
-      return FBFuture(result: [:] as NSDictionary as AnyObject)
+      return [:]
     }
-    return unsafeBitCast(ctx.onQueue(device!.workQueue, pop: popBlock), to: FBFuture<NSDictionary>.self)
   }
 
-  @objc public func installProvisioningProfile(_ profileData: Data) -> FBFuture<NSDictionary> {
-    let ctx = device!.connectToDevice(withPurpose: "install_provisioning_profile")
-    func popBlock(_ d: AnyObject) -> FBFuture<AnyObject> {
-      let device = d as! any FBDeviceCommands
-      guard let profileUnmanaged = device.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
-        return FBControlCoreError.describe("Could not construct profile from data \(profileData)").failFuture()
+  fileprivate func installProvisioningProfileAsync(_ profileData: Data) async throws -> [String: Any] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.connectToDevice(withPurpose: "install_provisioning_profile")) { connectedDevice in
+      guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
+        throw FBControlCoreError.describe("Could not construct profile from data \(profileData)").build()
       }
       let profile = profileUnmanaged.takeRetainedValue()
-      let status = device.calls.InstallProvisioningProfile?(device.amDeviceRef, profile) ?? -1
+      let status = connectedDevice.calls.InstallProvisioningProfile?(connectedDevice.amDeviceRef, profile) ?? -1
       if status != 0 {
-        let errRef = device.calls.ProvisioningProfileCopyErrorStringForCode?(status)
+        let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        return FBControlCoreError.describe("Failed to install profile \(profile): \(errorDescription)").failFuture()
+        throw FBControlCoreError.describe("Failed to install profile \(profile): \(errorDescription)").build()
       }
-      let payloadRef = device.calls.ProvisioningProfileCopyPayload?(profile)
+      let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile)
       var payload = payloadRef?.takeRetainedValue() as? [String: Any]
       if let p = payload {
         payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
       }
       guard let payload else {
-        return FBControlCoreError.describe("Failed to get payload of \(profile)").failFuture()
+        throw FBControlCoreError.describe("Failed to get payload of \(profile)").build()
       }
-      return FBFuture(result: payload as NSDictionary as AnyObject)
+      return payload
     }
-    return unsafeBitCast(ctx.onQueue(device!.workQueue, pop: popBlock), to: FBFuture<NSDictionary>.self)
+  }
+}
+
+// MARK: - AsyncProvisioningProfileCommands
+
+extension FBDeviceProvisioningProfileCommands: AsyncProvisioningProfileCommands {
+
+  public func allProvisioningProfiles() async throws -> [[String: Any]] {
+    try await allProvisioningProfilesAsync()
   }
 
-  // MARK: Private
+  public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
+    try await removeProvisioningProfileAsync(uuid: uuid)
+  }
 
-  private func listProvisioningProfiles() -> FBFutureContext<NSArray> {
-    let ctx = device!.connectToDevice(withPurpose: "list_provisioning_profiles")
-    func pendBlock(_ d: AnyObject) -> FBFuture<AnyObject> {
-      let device = d as! any FBDeviceCommands
-      let profilesRef = device.calls.CopyProvisioningProfiles?(device.amDeviceRef)
-      guard let profiles = profilesRef?.takeRetainedValue() as? [Any] else {
-        return FBControlCoreError.describe("Failed to copy provisioning profiles").failFuture()
-      }
-      let result: NSArray = ([device] as [Any] + profiles) as NSArray
-      return FBFuture(result: result as AnyObject)
-    }
-    return unsafeBitCast(ctx.onQueue(device!.workQueue, pend: pendBlock), to: FBFutureContext<NSArray>.self)
+  public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
+    try await installProvisioningProfileAsync(profileData)
   }
 }
