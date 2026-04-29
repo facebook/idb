@@ -66,22 +66,19 @@ struct InstrumentsRunMethodHandler {
   }
 
   private func stopInstruments(operation: FBInstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
-    _ = try await BridgeFuture.value(operation.stop())
+    _ = try await operation.stopAsync()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
     }
     try await responseStream.send(response)
 
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
-    let processed = try await BridgeFuture.value(
-      FBInstrumentsOperation.postProcess(
-        postProcessArguments,
-        traceFile: operation.traceFile,
-        queue: BridgeQueues.futureSerialFullfillmentQueue,
-        logger: logger))
-    guard let processedPath = processed.path else {
-      throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
-    }
+    let processed = try await FBInstrumentsOperation.postProcessAsync(
+      arguments: postProcessArguments,
+      traceFile: operation.traceFile,
+      queue: BridgeQueues.futureSerialFullfillmentQueue,
+      logger: logger)
+    let processedPath = processed.path
     finishedWriting.set(true)
 
     let archiveOperation = FBArchiveOperations.createGzippedTar(forPath: processedPath, logger: logger)

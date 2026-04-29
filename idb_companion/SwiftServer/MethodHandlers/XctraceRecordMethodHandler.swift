@@ -73,20 +73,16 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(response)
 
-    let processed = try await BridgeFuture.value(
-      FBInstrumentsOperation.postProcess(
-        stop.args,
-        traceFile: operation.traceDir,
-        queue: BridgeQueues.miscEventReaderQueue,
-        logger: logger)
-    )
+    let processed = try await FBInstrumentsOperation.postProcessAsync(
+      arguments: stop.args,
+      traceFile: operation.traceDir,
+      queue: BridgeQueues.miscEventReaderQueue,
+      logger: logger)
     finishedWriting.set(true)
 
-    guard let path = processed.path else {
-      throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
-    }
+    let path = processed.path
 
-    let data = try await BridgeFuture.value(FBArchiveOperations.createGzippedTarData(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger))
+    let data = try await FBArchiveOperations.createGzippedTarDataAsync(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger)
     let resp = Idb_XctraceRecordResponse.with {
       $0.payload = .with { $0.data = data as Data }
     }

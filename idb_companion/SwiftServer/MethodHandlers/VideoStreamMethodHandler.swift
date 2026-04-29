@@ -48,7 +48,7 @@ struct VideoStreamMethodHandler {
 
     try await Task.select(observeClientCancelStreaming, observeVideoStreamStop).value
 
-    try await BridgeFuture.await(videoStream.stopStreaming())
+    try await videoStream.stopStreamingAsync()
     targetLogger.log("The video stream is terminated")
   }
 
@@ -98,7 +98,7 @@ struct VideoStreamMethodHandler {
 
     let videoStream = try await BridgeFuture.value(target.createStream(with: config))
 
-    try await BridgeFuture.await(videoStream.startStreaming(consumer))
+    try await videoStream.startStreamingAsync(consumer)
 
     return videoStream
   }
