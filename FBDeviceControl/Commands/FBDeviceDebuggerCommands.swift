@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
 import FBControlCore
 import Foundation
+
+// swiftlint:disable force_cast
 
 /*
 Much of the implementation here comes from:
@@ -40,32 +39,12 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
     super.init()
   }
 
-  // MARK: - FBDebuggerCommands
+  // MARK: - FBDebuggerCommands (legacy FBFuture entry point)
 
   public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<any FBDebugServer> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await launchDebugServerAsync(forHostApplication: application, port: port)
     }
-    if device.osVersion.version.majorVersion >= 17 {
-      return FBFuture(
-        error: FBDeviceControlError()
-          .describe("Debugging is not supported for devices running iOS 17 and higher. Device OS version: \(device.osVersion.versionString)")
-          .build()
-      )
-    }
-    return
-      (lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
-      .onQueue(
-        device.workQueue,
-        fmap: { commands -> FBFuture<AnyObject> in
-          return FBDeviceDebugServer.debugServer(
-            forServiceConnection: self.connectToDebugServer(),
-            port: port,
-            lldbBootstrapCommands: commands as! [String],
-            queue: device.workQueue,
-            logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
-          )
-        })) as! FBFuture<any FBDebugServer>
   }
 
   // MARK: - Public
@@ -94,76 +73,66 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
         }) as! FBFutureContext<FBAMDServiceConnection>
   }
 
+  // MARK: - Async
+
+  fileprivate func launchDebugServerAsync(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    if device.osVersion.version.majorVersion >= 17 {
+      throw FBDeviceControlError()
+        .describe("Debugging is not supported for devices running iOS 17 and higher. Device OS version: \(device.osVersion.versionString)")
+        .build()
+    }
+    let commands = try await lldbBootstrapCommandsAsync(forApplicationAtPath: application.path, port: port)
+    let server = FBDeviceDebugServer.debugServer(
+      forServiceConnection: connectToDebugServer(),
+      port: port,
+      lldbBootstrapCommands: commands,
+      queue: device.workQueue,
+      logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    )
+    let result = try await bridgeFBFuture(server)
+    return result as! any FBDebugServer
+  }
+
   // MARK: - Private
 
-  private func applicationBundle(forPath path: String) -> FBFuture<FBBundleDescriptor> {
+  private func lldbBootstrapCommandsAsync(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
+    guard device != nil else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let bundle = try FBBundleDescriptor.bundle(fromPath: path)
+    let platformSelect = try platformSelectCommand()
+    let localTarget = "target create '\(path)'"
+    let remote = try await remoteTargetAsync(forBundleID: bundle.identifier)
+    let processConnect = "process connect connect://localhost:\(port)"
+    return [platformSelect, localTarget, remote, processConnect]
+  }
+
+  private func platformSelectCommand() throws -> String {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let platformSelectCommand = "platform select remote-ios"
+    guard let buildVersion = device.buildVersion else {
+      device.logger?.log("No build version available for \(device), no symbolication of system libraries will occur.")
+      return platformSelectCommand
+    }
     do {
-      let bundle = try FBBundleDescriptor.bundle(fromPath: path)
-      return FBFuture(result: bundle)
+      let developerSymbolsPath = try FBDeveloperDiskImage.pathForDeveloperSymbols(buildVersion, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
+      return platformSelectCommand + " --sysroot '\(developerSymbolsPath)'"
     } catch {
-      return FBFuture(error: error)
+      device.logger?.log("Failed to get developer symbols for \(device), no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: \(error)")
+      return platformSelectCommand
     }
   }
 
-  private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) -> FBFuture<NSArray> {
+  private func remoteTargetAsync(forBundleID bundleID: String) async throws -> String {
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
-    return
-      (applicationBundle(forPath: path)
-      .onQueue(
-        device.workQueue,
-        fmap: { bundle -> FBFuture<AnyObject> in
-          return unsafeBitCast(
-            FBFuture<AnyObject>.combine([
-              unsafeBitCast(self.platformSelectCommand(), to: FBFuture<AnyObject>.self),
-              unsafeBitCast(FBDeviceDebuggerCommands.localTarget(forApplicationAtPath: path), to: FBFuture<AnyObject>.self),
-              unsafeBitCast(self.remoteTarget(forBundleID: bundle.identifier), to: FBFuture<AnyObject>.self),
-              unsafeBitCast(FBDeviceDebuggerCommands.processConnect(forPort: port), to: FBFuture<AnyObject>.self),
-            ]), to: FBFuture<AnyObject>.self)
-        })) as! FBFuture<NSArray>
-  }
-
-  private func platformSelectCommand() -> FBFuture<NSString> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
-    }
-    return FBFuture.onQueue(
-      device.asyncQueue,
-      resolveValue: { _ in
-        let platformSelectCommand = "platform select remote-ios"
-        guard let buildVersion = device.buildVersion else {
-          device.logger?.log("No build version available for \(device), no symbolication of system libraries will occur.")
-          return platformSelectCommand as NSString
-        }
-        do {
-          let developerSymbolsPath = try FBDeveloperDiskImage.pathForDeveloperSymbols(buildVersion, logger: device.logger ?? FBControlCoreGlobalConfiguration.defaultLogger)
-          return (platformSelectCommand + " --sysroot '\(developerSymbolsPath)'") as NSString
-        } catch {
-          device.logger?.log("Failed to get developer symbols for \(device), no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: \(error)")
-          return platformSelectCommand as NSString
-        }
-      }) as! FBFuture<NSString>
-  }
-
-  private class func localTarget(forApplicationAtPath path: String) -> FBFuture<NSString> {
-    return FBFuture(result: "target create '\(path)'" as NSString)
-  }
-
-  private func remoteTarget(forBundleID bundleID: String) -> FBFuture<NSString> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
-    }
-    return
-      (device.installedApplication(withBundleID: bundleID)
-      .onQueue(
-        device.asyncQueue,
-        map: { installedApplication -> AnyObject in
-          return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))" as NSString
-        })) as! FBFuture<NSString>
-  }
-
-  private class func processConnect(forPort port: in_port_t) -> FBFuture<NSString> {
-    return FBFuture(result: "process connect connect://localhost:\(port)" as NSString)
+    let installedApplication = try await bridgeFBFuture(device.installedApplication(withBundleID: bundleID))
+    return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }

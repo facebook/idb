@@ -8,6 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast force_unwrapping
+
 // MARK: - FBDeviceWorkflowStatistics
 
 private class FBDeviceWorkflowStatistics: NSObject {
@@ -96,16 +98,65 @@ public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
     super.init()
   }
 
-  // MARK: FBApplicationCommands Implementation
+  // MARK: FBApplicationCommands (legacy FBFuture entry points)
 
   @objc public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
-    let bundle: FBBundleDescriptor
-    do {
-      bundle = try FBBundleDescriptor.bundle(fromPath: path)
-    } catch {
-      return FBFuture(error: error)
+    fbFutureFromAsync { [self] in
+      try await installApplicationAsync(withPath: path)
     }
+  }
 
+  @objc public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await uninstallApplicationAsync(withBundleID: bundleID)
+      return NSNull()
+    }
+  }
+
+  @objc public func installedApplications() -> FBFuture<NSArray> {
+    fbFutureFromAsync { [self] in
+      try await installedApplicationsAsync() as NSArray
+    }
+  }
+
+  @objc public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
+    fbFutureFromAsync { [self] in
+      try await installedApplicationAsync(withBundleID: bundleID)
+    }
+  }
+
+  @objc public func runningApplications() -> FBFuture<NSDictionary> {
+    fbFutureFromAsync { [self] in
+      try await runningApplicationsAsync() as NSDictionary
+    }
+  }
+
+  @objc public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
+    fbFutureFromAsync { [self] in
+      try await processIDAsync(withBundleID: bundleID) as NSNumber
+    }
+  }
+
+  @objc public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await killApplicationAsync(withBundleID: bundleID)
+      return NSNull()
+    }
+  }
+
+  @objc public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
+    fbFutureFromAsync { [self] in
+      try await launchApplicationAsync(configuration)
+    }
+  }
+
+  // MARK: - Async
+
+  fileprivate func installApplicationAsync(withPath path: String) async throws -> FBInstalledApplication {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
     let options: [String: Any] = [
       "CFBundleIdentifier": bundle.identifier,
@@ -115,271 +166,218 @@ public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
       "PackageType": "Developer",
       "ShadowParentKey": deltaUpdateDirectory,
     ]
-
-    return device!.connectToDevice(withPurpose: "install").onQueue(
-      device!.workQueue,
-      pop: { (d: AnyObject) -> FBFuture<AnyObject> in
-        let device = d as! any FBDeviceCommands
-        self.device!.logger?.log("Installing Application \(appURL)")
-        let statistics = FBDeviceWorkflowStatistics(workflowType: "Install", logger: device.logger)
-        let context = Unmanaged.passUnretained(statistics).toOpaque()
-        let status =
-          device.calls.SecureInstallApplicationBundle?(
-            device.amDeviceRef,
-            appURL as CFURL,
-            options as CFDictionary,
-            workflowCallback,
-            context
-          ) ?? -1
-        if status != 0 {
-          let errorMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-          return FBDeviceControlError.describe("Failed to install application \(appURL.lastPathComponent) 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage)). \(statistics.summaryOfRecentEvents)").failFuture()
-        }
-        self.device!.logger?.log("Installed Application \(appURL)")
-        return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
+    try await withFBFutureContext(device.connectToDevice(withPurpose: "install")) { connectedDevice in
+      device.logger?.log("Installing Application \(appURL)")
+      let statistics = FBDeviceWorkflowStatistics(workflowType: "Install", logger: connectedDevice.logger)
+      let context = Unmanaged.passUnretained(statistics).toOpaque()
+      let status =
+        connectedDevice.calls.SecureInstallApplicationBundle?(
+          connectedDevice.amDeviceRef,
+          appURL as CFURL,
+          options as CFDictionary,
+          workflowCallback,
+          context
+        ) ?? -1
+      if status != 0 {
+        let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
+        throw FBDeviceControlError.describe("Failed to install application \(appURL.lastPathComponent) 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage)). \(statistics.summaryOfRecentEvents)").build()
       }
-    ).onQueue(
-      device!.asyncQueue,
-      fmap: { (_: AnyObject) -> FBFuture<AnyObject> in
-        return self.installedApplication(withBundleID: bundle.identifier) as! FBFuture<AnyObject>
-      }) as! FBFuture<FBInstalledApplication>
-  }
-
-  @objc public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    return device!.connectToDevice(withPurpose: "uninstall_\(bundleID)").onQueue(
-      device!.workQueue,
-      pop: { (d: AnyObject) -> FBFuture<AnyObject> in
-        let device = d as! any FBDeviceCommands
-        let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: device.logger)
-        self.device!.logger?.log("Uninstalling Application \(bundleID)")
-        let context = Unmanaged.passUnretained(statistics).toOpaque()
-        let status =
-          device.calls.SecureUninstallApplication?(
-            nil,
-            device.amDeviceRef,
-            bundleID as CFString,
-            0,
-            workflowCallback,
-            context
-          ) ?? -1
-        if status != 0 {
-          let internalMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-          return FBDeviceControlError.describe("Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(internalMessage)). \(statistics.summaryOfRecentEvents)").failFuture()
-        }
-        self.device!.logger?.log("Uninstalled Application \(bundleID)")
-        return FBFuture<NSNull>.empty() as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
-  }
-
-  @objc public func installedApplications() -> FBFuture<NSArray> {
-    return installedApplicationsData(Self.installedApplicationLookupAttributes).onQueue(
-      device!.asyncQueue,
-      map: { (data: AnyObject) -> AnyObject in
-        let applicationData = data as! [String: [String: Any]]
-        var installedApplications: [FBInstalledApplication] = []
-        for app in applicationData.values {
-          let application = FBDeviceApplicationCommands.installedApplication(from: app)
-          installedApplications.append(application)
-        }
-        return installedApplications as NSArray as AnyObject
-      }) as! FBFuture<NSArray>
-  }
-
-  @objc public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
-    return installedApplicationsData(Self.installedApplicationLookupAttributes).onQueue(
-      device!.asyncQueue,
-      fmap: { (data: AnyObject) -> FBFuture<AnyObject> in
-        let applicationData = data as! [String: [String: Any]]
-        guard let app = applicationData[bundleID] else {
-          return FBDeviceControlError.describe("Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: Array(applicationData.keys) as [Any]))").failFuture()
-        }
-        let application = FBDeviceApplicationCommands.installedApplication(from: app)
-        return FBFuture(result: application as AnyObject)
-      }) as! FBFuture<FBInstalledApplication>
-  }
-
-  @objc public func runningApplications() -> FBFuture<NSDictionary> {
-    return FBFuture<AnyObject>.combine([
-      unsafeBitCast(pidToRunningProcessName(), to: FBFuture<AnyObject>.self),
-      unsafeBitCast(installedApplicationsData(Self.namingLookupAttributes), to: FBFuture<AnyObject>.self),
-    ])
-    .onQueue(
-      device!.asyncQueue,
-      map: { results -> AnyObject in
-        let tuple = results as [AnyObject]
-        let pidToRunningProcessName = tuple[0] as! [NSNumber: String]
-        let bundleIdentifierToAttributes = tuple[1] as! [String: [String: Any]]
-
-        var bundleNameToBundleIdentifier: [String: String] = [:]
-        for (bundleIdentifier, attributes) in bundleIdentifierToAttributes {
-          if let bundleName = attributes[FBApplicationInstallInfoKey.bundleName.rawValue] as? String {
-            bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
-          }
-        }
-        var runningProcessNameToPID: [String: NSNumber] = [:]
-        for (pid, processName) in pidToRunningProcessName {
-          runningProcessNameToPID[processName] = pid
-        }
-        var bundleNameToPID: [String: NSNumber] = [:]
-        for (processName, pid) in runningProcessNameToPID {
-          if let bundleName = bundleNameToBundleIdentifier[processName] {
-            bundleNameToPID[bundleName] = pid
-          }
-        }
-        return bundleNameToPID as NSDictionary as AnyObject
-      }) as! FBFuture<NSDictionary>
-  }
-
-  @objc public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
-    return runningApplications().onQueue(
-      device!.asyncQueue,
-      fmap: { (result: AnyObject) -> FBFuture<AnyObject> in
-        let running = result as! [String: NSNumber]
-        guard let pid = running[bundleID] else {
-          return FBDeviceControlError.describe("No pid for \(bundleID)").failFuture()
-        }
-        return FBFuture(result: pid as AnyObject)
-      }) as! FBFuture<NSNumber>
-  }
-
-  @objc public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
-    return processID(withBundleID: bundleID).onQueue(
-      device!.workQueue,
-      fmap: { (pid: AnyObject) -> FBFuture<AnyObject> in
-        let processIdentifier = (pid as! NSNumber).int32Value
-        return self.killApplication(withProcessIdentifier: processIdentifier) as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
-  }
-
-  @objc public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
-    if device!.osVersion.version.majorVersion >= 17 {
-      let devicectl = FBAppleDevicectlCommandExecutor(device: device!)
-      return devicectl.launchApplication(configuration: configuration).onQueue(
-        device!.asyncQueue,
-        map: { (pid: AnyObject) -> AnyObject in
-          let pidNumber = pid as! NSNumber
-          return FBDeviceLaunchedApplication(
-            processIdentifier: pidNumber.int32Value,
-            configuration: configuration,
-            commands: self,
-            queue: self.device!.workQueue
-          ) as AnyObject
-        }) as! FBFuture<any FBLaunchedApplication>
-    } else {
-      return remoteInstrumentsClient().onQueue(
-        device!.asyncQueue,
-        pop: { (client: AnyObject) -> FBFuture<AnyObject> in
-          let instrumentsClient = client as! FBInstrumentsClient
-          return instrumentsClient.launchApplication(configuration) as! FBFuture<AnyObject>
-        }
-      ).onQueue(
-        device!.asyncQueue,
-        map: { (pid: AnyObject) -> AnyObject in
-          let pidNumber = pid as! NSNumber
-          return FBDeviceLaunchedApplication(
-            processIdentifier: pidNumber.int32Value,
-            configuration: configuration,
-            commands: self,
-            queue: self.device!.workQueue
-          ) as AnyObject
-        }) as! FBFuture<any FBLaunchedApplication>
+      device.logger?.log("Installed Application \(appURL)")
     }
+    return try await installedApplicationAsync(withBundleID: bundle.identifier)
+  }
+
+  fileprivate func uninstallApplicationAsync(withBundleID bundleID: String) async throws {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    try await withFBFutureContext(device.connectToDevice(withPurpose: "uninstall_\(bundleID)")) { connectedDevice in
+      let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
+      device.logger?.log("Uninstalling Application \(bundleID)")
+      let context = Unmanaged.passUnretained(statistics).toOpaque()
+      let status =
+        connectedDevice.calls.SecureUninstallApplication?(
+          nil,
+          connectedDevice.amDeviceRef,
+          bundleID as CFString,
+          0,
+          workflowCallback,
+          context
+        ) ?? -1
+      if status != 0 {
+        let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
+        throw FBDeviceControlError.describe("Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(internalMessage)). \(statistics.summaryOfRecentEvents)").build()
+      }
+      device.logger?.log("Uninstalled Application \(bundleID)")
+    }
+  }
+
+  fileprivate func installedApplicationsAsync() async throws -> [FBInstalledApplication] {
+    let applicationData = try await installedApplicationsDataAsync(Self.installedApplicationLookupAttributes)
+    var installedApplications: [FBInstalledApplication] = []
+    for app in applicationData.values {
+      let application = FBDeviceApplicationCommands.installedApplication(from: app)
+      installedApplications.append(application)
+    }
+    return installedApplications
+  }
+
+  fileprivate func installedApplicationAsync(withBundleID bundleID: String) async throws -> FBInstalledApplication {
+    let applicationData = try await installedApplicationsDataAsync(Self.installedApplicationLookupAttributes)
+    guard let app = applicationData[bundleID] else {
+      throw FBDeviceControlError.describe("Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: Array(applicationData.keys) as [Any]))").build()
+    }
+    return FBDeviceApplicationCommands.installedApplication(from: app)
+  }
+
+  fileprivate func runningApplicationsAsync() async throws -> [String: NSNumber] {
+    // Sequential rather than parallel: Swift 6 strict concurrency would
+    // require Sendable captures of self/device for `async let` here.
+    let pidToRunningProcessName = try await pidToRunningProcessNameAsync()
+    let bundleIdentifierToAttributes = try await installedApplicationsDataAsync(Self.namingLookupAttributes)
+    var bundleNameToBundleIdentifier: [String: String] = [:]
+    for (bundleIdentifier, attributes) in bundleIdentifierToAttributes {
+      if let bundleName = attributes[FBApplicationInstallInfoKey.bundleName.rawValue] as? String {
+        bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
+      }
+    }
+    var runningProcessNameToPID: [String: NSNumber] = [:]
+    for (pid, processName) in pidToRunningProcessName {
+      runningProcessNameToPID[processName] = pid
+    }
+    var bundleNameToPID: [String: NSNumber] = [:]
+    for (processName, pid) in runningProcessNameToPID {
+      if let bundleName = bundleNameToBundleIdentifier[processName] {
+        bundleNameToPID[bundleName] = pid
+      }
+    }
+    return bundleNameToPID
+  }
+
+  fileprivate func processIDAsync(withBundleID bundleID: String) async throws -> NSNumber {
+    let running = try await runningApplicationsAsync()
+    guard let pid = running[bundleID] else {
+      throw FBDeviceControlError.describe("No pid for \(bundleID)").build()
+    }
+    return pid
+  }
+
+  fileprivate func killApplicationAsync(withBundleID bundleID: String) async throws {
+    let pid = try await processIDAsync(withBundleID: bundleID)
+    try await killApplicationAsync(withProcessIdentifier: pid.int32Value)
+  }
+
+  fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let pid: NSNumber
+    if device.osVersion.version.majorVersion >= 17 {
+      let devicectl = FBAppleDevicectlCommandExecutor(device: device)
+      pid = try await devicectl.launchApplicationAsync(configuration: configuration)
+    } else {
+      pid = try await withRemoteInstrumentsClient { client in
+        try await bridgeFBFuture(client.launchApplication(configuration))
+      }
+    }
+    return FBDeviceLaunchedApplication(
+      processIdentifier: pid.int32Value,
+      configuration: configuration,
+      commands: self,
+      queue: device.workQueue
+    )
   }
 
   // MARK: Private
 
   fileprivate func killApplication(withProcessIdentifier processIdentifier: pid_t) -> FBFuture<NSNull> {
-    return remoteInstrumentsClient().onQueue(
-      device!.asyncQueue,
-      pop: { (client: AnyObject) -> FBFuture<AnyObject> in
-        let instrumentsClient = client as! FBInstrumentsClient
-        return instrumentsClient.killProcess(processIdentifier) as! FBFuture<AnyObject>
-      }) as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      try await killApplicationAsync(withProcessIdentifier: processIdentifier)
+      return NSNull()
+    }
   }
 
-  private func installedApplicationsData(_ returnAttributes: [String]) -> FBFuture<NSDictionary> {
-    return device!.connectToDevice(withPurpose: "installed_apps").onQueue(
-      device!.workQueue,
-      pop: { (d: AnyObject) -> FBFuture<AnyObject> in
-        let device = d as! any FBDeviceCommands
-        let options: [String: Any] = [
-          "ReturnAttributes": returnAttributes
-        ]
-        var applications = Unmanaged<CFDictionary>.passUnretained(NSDictionary() as CFDictionary)
-        let status =
-          device.calls.LookupApplications?(
-            device.amDeviceRef,
-            options as CFDictionary,
-            &applications
-          ) ?? -1
-        if status != 0 {
-          let errorMessage = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-          return FBDeviceControlError.describe("Failed to get list of applications 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage))").failFuture()
-        }
-        let result = applications.takeRetainedValue()
-        return FBFuture(result: result as AnyObject)
-      }) as! FBFuture<NSDictionary>
+  fileprivate func killApplicationAsync(withProcessIdentifier processIdentifier: pid_t) async throws {
+    try await withRemoteInstrumentsClient { client in
+      try await bridgeFBFutureVoid(client.killProcess(processIdentifier))
+    }
   }
 
-  private func remoteInstrumentsClient() -> FBFutureContext<FBInstrumentsClient> {
-    let usesSecureConnection = device!.osVersion.version.majorVersion >= 14
-    return unsafeBitCast(
-      device!.ensureDeveloperDiskImageIsMounted()
-        .onQueue(
-          device!.workQueue,
-          pushTeardown: { (_: AnyObject) -> FBFutureContext<AnyObject> in
-            let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
-            return unsafeBitCast(self.device!.startService(serviceName), to: FBFutureContext<AnyObject>.self)
-          }
-        )
-        .onQueue(
-          device!.asyncQueue,
-          pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
-            let conn = connection as! FBAMDServiceConnection
-            return FBInstrumentsClient.instrumentsClient(with: conn, logger: self.device!.logger!) as! FBFuture<AnyObject>
-          }),
-      to: FBFutureContext<FBInstrumentsClient>.self
-    )
+  private func installedApplicationsDataAsync(_ returnAttributes: [String]) async throws -> [String: [String: Any]] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.connectToDevice(withPurpose: "installed_apps")) { connectedDevice in
+      let options: [String: Any] = [
+        "ReturnAttributes": returnAttributes
+      ]
+      var applications = Unmanaged<CFDictionary>.passUnretained(NSDictionary() as CFDictionary)
+      let status =
+        connectedDevice.calls.LookupApplications?(
+          connectedDevice.amDeviceRef,
+          options as CFDictionary,
+          &applications
+        ) ?? -1
+      if status != 0 {
+        let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
+        throw FBDeviceControlError.describe("Failed to get list of applications 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(errorMessage))").build()
+      }
+      let result = applications.takeRetainedValue() as NSDictionary
+      return result as! [String: [String: Any]]
+    }
   }
 
-  private func pidToRunningProcessName() -> FBFuture<NSDictionary> {
-    return device!.startService("com.apple.os_trace_relay").onQueue(
-      device!.asyncQueue,
-      pop: { (connection: AnyObject) -> FBFuture<AnyObject> in
-        let conn = connection as! FBAMDServiceConnection
-        do {
-          try conn.sendMessage(["Request": "PidList"])
-        } catch {
-          return FBDeviceControlError.describe("Failed to request PidList \(error)").failFuture()
+  private func withRemoteInstrumentsClient<R>(_ body: (FBInstrumentsClient) async throws -> R) async throws -> R {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let usesSecureConnection = device.osVersion.version.majorVersion >= 14
+    _ = try await bridgeFBFuture(device.ensureDeveloperDiskImageIsMounted())
+    let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
+    return try await withFBFutureContext(device.startService(serviceName)) { connection in
+      let client = try await bridgeFBFuture(FBInstrumentsClient.instrumentsClient(with: connection, logger: device.logger!))
+      return try await body(client)
+    }
+  }
+
+  private func pidToRunningProcessNameAsync() async throws -> [NSNumber: String] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    return try await withFBFutureContext(device.startService("com.apple.os_trace_relay")) { connection in
+      do {
+        try connection.sendMessage(["Request": "PidList"])
+      } catch {
+        throw FBDeviceControlError.describe("Failed to request PidList \(error)").build()
+      }
+      do {
+        _ = try connection.receive(1)
+      } catch {
+        throw FBDeviceControlError.describe("Failed to receive 1 byte after PidList \(error)").build()
+      }
+      let response: Any
+      do {
+        response = try connection.receiveMessage()
+      } catch {
+        throw FBDeviceControlError.describe("Failed to receive PidList response \(error)").build()
+      }
+      let responseDict = response as! [String: Any]
+      let status = responseDict["Status"] as? String
+      if status != "RequestSuccessful" {
+        throw FBDeviceControlError.describe("Request to PidList is not RequestSuccessful").build()
+      }
+      let payload = responseDict["Payload"] as? [NSNumber: Any] ?? [:]
+      var pidToRunningProcessName: [NSNumber: String] = [:]
+      for (processIdentifier, value) in payload {
+        guard let contents = value as? [String: Any],
+          let processName = contents["ProcessName"] as? String
+        else {
+          continue
         }
-        do {
-          _ = try conn.receive(1)
-        } catch {
-          return FBDeviceControlError.describe("Failed to receive 1 byte after PidList \(error)").failFuture()
-        }
-        let response: Any
-        do {
-          response = try conn.receiveMessage()
-        } catch {
-          return FBDeviceControlError.describe("Failed to receive PidList response \(error)").failFuture()
-        }
-        let responseDict = response as! [String: Any]
-        let status = responseDict["Status"] as? String
-        if status != "RequestSuccessful" {
-          return FBDeviceControlError.describe("Request to PidList is not RequestSuccessful").failFuture()
-        }
-        let payload = responseDict["Payload"] as? [NSNumber: Any] ?? [:]
-        var pidToRunningProcessName: [NSNumber: String] = [:]
-        for (processIdentifier, value) in payload {
-          guard let contents = value as? [String: Any],
-            let processName = contents["ProcessName"] as? String
-          else {
-            continue
-          }
-          pidToRunningProcessName[processIdentifier] = processName
-        }
-        return FBFuture(result: pidToRunningProcessName as NSDictionary as AnyObject)
-      }) as! FBFuture<NSDictionary>
+        pidToRunningProcessName[processIdentifier] = processName
+      }
+      return pidToRunningProcessName
+    }
   }
 
   private static func installedApplication(from app: [String: Any]) -> FBInstalledApplication {

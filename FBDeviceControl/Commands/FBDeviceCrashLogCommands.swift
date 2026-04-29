@@ -8,6 +8,8 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+// swiftlint:disable force_cast
+
 private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
@@ -32,42 +34,30 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
     super.init()
   }
 
-  // MARK: - FBCrashLogCommands
+  // MARK: - FBCrashLogCommands (legacy FBFuture entry points)
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    ingestAllCrashLogs(useCache: false)
-    return store.nextCrashLog(forMatchingPredicate: predicate)
+    // Set up the notification listener first, then kick off ingestion as a
+    // fire-and-forget background job. Matches the legacy ordering where the
+    // listener is registered before the ingestion future resolves.
+    let next = store.nextCrashLog(forMatchingPredicate: predicate)
+    _ = fbFutureFromAsync { [self] in
+      try await ingestAllCrashLogsAsync(useCache: false) as NSArray
+    }
+    return next
   }
 
   public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await crashesAsync(predicate, useCache: useCache) as NSArray
     }
-    return
-      (ingestAllCrashLogs(useCache: useCache)
-      .onQueue(
-        device.workQueue,
-        map: { _ -> AnyObject in
-          return self.store.ingestedCrashLogs(matchingPredicate: predicate) as NSArray
-        })) as! FBFuture<NSArray>
   }
 
   public func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+    fbFutureFromAsync { [self] in
+      try await pruneCrashesAsync(predicate) as NSArray
     }
-    let logger = device.logger?.withName("crash_remove")
-    return
-      (ingestAllCrashLogs(useCache: true)
-      .onQueue(
-        device.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          let pruned = self.store.pruneCrashLogs(matchingPredicate: predicate)
-          let names = (pruned as NSArray).value(forKeyPath: "name") as! [Any]
-          logger?.log("Pruned \(FBCollectionInformation.oneLineDescription(from: names)) logs from local cache")
-          return self.removeCrashLogsFromDevice(pruned, logger: logger) as! FBFuture<AnyObject>
-        })) as! FBFuture<NSArray>
   }
 
   public func crashLogFiles() -> FBFutureContext<any FBFileContainerProtocol> {
@@ -83,73 +73,76 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
         })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
+  // MARK: - Async
+
+  fileprivate func crashesAsync(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    guard device != nil else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    _ = try await ingestAllCrashLogsAsync(useCache: useCache)
+    return store.ingestedCrashLogs(matchingPredicate: predicate)
+  }
+
+  fileprivate func pruneCrashesAsync(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    guard let device else {
+      throw FBDeviceControlError().describe("Device is nil").build()
+    }
+    let logger = device.logger?.withName("crash_remove")
+    _ = try await ingestAllCrashLogsAsync(useCache: true)
+    let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
+    let names = (pruned as NSArray).value(forKeyPath: "name") as! [Any]
+    logger?.log("Pruned \(FBCollectionInformation.oneLineDescription(from: names)) logs from local cache")
+    return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
+  }
+
   // MARK: - Private
 
   @discardableResult
-  private func ingestAllCrashLogs(useCache: Bool) -> FBFuture<NSArray> {
+  private func ingestAllCrashLogsAsync(useCache: Bool) async throws -> [FBCrashLogInfo] {
     if hasPerformedInitialIngestion && useCache {
-      return FBFuture(result: NSArray())
+      return []
     }
-
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
-
     let logger = device.logger
-    return
-      (moveCrashReports()
-      .onQueue(
-        device.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          return
-            (self.crashReportFileConnection()
-            .onQueue(
-              device.workQueue,
-              pop: { afc -> FBFuture<AnyObject> in
-                if !self.hasPerformedInitialIngestion {
-                  self.store.ingestAllExistingInDirectory()
-                  self.hasPerformedInitialIngestion = true
-                }
-                do {
-                  let paths = try afc.contents(ofDirectory: ".")
-                  var crashes: [FBCrashLogInfo] = []
-                  for path in paths {
-                    do {
-                      let crash = try self.crashLogInfo(afc: afc, path: path)
-                      crashes.append(crash)
-                    } catch {
-                      logger?.log("Failed to ingest crash log \(path): \(error)")
-                    }
-                  }
-                  return FBFuture(result: crashes as NSArray as AnyObject)
-                } catch {
-                  return FBFuture(error: error)
-                }
-              }))
-        })) as! FBFuture<NSArray>
+    _ = try await moveCrashReportsAsync()
+    return try await withFBFutureContext(crashReportFileConnection()) { afc in
+      if !self.hasPerformedInitialIngestion {
+        self.store.ingestAllExistingInDirectory()
+        self.hasPerformedInitialIngestion = true
+      }
+      let paths = try afc.contents(ofDirectory: ".")
+      var crashes: [FBCrashLogInfo] = []
+      for path in paths {
+        do {
+          let crash = try self.crashLogInfo(afc: afc, path: path)
+          crashes.append(crash)
+        } catch {
+          logger?.log("Failed to ingest crash log \(path): \(error)")
+        }
+      }
+      return crashes
+    }
   }
 
-  private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) -> FBFuture<NSArray> {
-    guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+  private func removeCrashLogsFromDeviceAsync(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
+    guard device != nil else {
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
-    return
-      (crashReportFileConnection()
-      .onQueue(
-        device.workQueue,
-        pop: { afc -> FBFuture<AnyObject> in
-          var removed: [FBCrashLogInfo] = []
-          for crash in crashesToRemove {
-            do {
-              try afc.removePath(crash.name, recursively: false)
-              logger?.log("Crash \(crash.name) removed from device")
-              removed.append(crash)
-            } catch {
-              logger?.log("Crash \(crash.name) could not be removed from device: \(error)")
-            }
-          }
-          return FBFuture(result: removed as NSArray as AnyObject)
-        })) as! FBFuture<NSArray>
+    return try await withFBFutureContext(crashReportFileConnection()) { afc in
+      var removed: [FBCrashLogInfo] = []
+      for crash in crashesToRemove {
+        do {
+          try afc.removePath(crash.name, recursively: false)
+          logger?.log("Crash \(crash.name) removed from device")
+          removed.append(crash)
+        } catch {
+          logger?.log("Crash \(crash.name) could not be removed from device: \(error)")
+        }
+      }
+      return removed
+    }
   }
 
   private func crashLogInfo(afc: FBAFCConnection, path: String) throws -> FBCrashLogInfo {
@@ -165,36 +158,32 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
     return crash
   }
 
-  private func moveCrashReports() -> FBFuture<NSString> {
+  private func moveCrashReportsAsync() async throws -> String {
     guard let device else {
-      return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
+      throw FBDeviceControlError().describe("Device is nil").build()
     }
-    return
-      (device
-      .startService(CrashReportMoverService)
-      .onQueue(
-        device.asyncQueue,
-        pop: { connection -> FBFuture<AnyObject> in
-          do {
-            let data = try connection.receive(4)
-            guard let response = String(data: data, encoding: .ascii) else {
-              return FBDeviceControlError()
-                .describe("Failed to decode pingback from \(CrashReportMoverService)")
-                .failFuture()
-            }
-            if response != PingSuccess {
-              return FBDeviceControlError()
-                .describe("Pingback from \(CrashReportMoverService) is '\(response)' not '\(PingSuccess)'")
-                .failFuture()
-            }
-            return FBFuture(result: response as NSString as AnyObject)
-          } catch {
-            return FBDeviceControlError()
-              .describe("Failed to get pingback from \(CrashReportMoverService)")
-              .caused(by: error)
-              .failFuture()
-          }
-        })) as! FBFuture<NSString>
+    return try await withFBFutureContext(device.startService(CrashReportMoverService)) { connection in
+      let data: Data
+      do {
+        data = try connection.receive(4)
+      } catch {
+        throw FBDeviceControlError()
+          .describe("Failed to get pingback from \(CrashReportMoverService)")
+          .caused(by: error)
+          .build()
+      }
+      guard let response = String(data: data, encoding: .ascii) else {
+        throw FBDeviceControlError()
+          .describe("Failed to decode pingback from \(CrashReportMoverService)")
+          .build()
+      }
+      if response != PingSuccess {
+        throw FBDeviceControlError()
+          .describe("Pingback from \(CrashReportMoverService) is '\(response)' not '\(PingSuccess)'")
+          .build()
+      }
+      return response
+    }
   }
 
   private func crashReportFileConnection() -> FBFutureContext<FBAFCConnection> {
