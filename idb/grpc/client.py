@@ -34,6 +34,7 @@ from idb.common.hid import (
     iterator_to_async_iterator,
     key_press_to_events,
     multi_tap_to_events,
+    pinch_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -942,6 +943,25 @@ class Client(ClientBase):
                 logger=self.logger,
             )
             await stream.recv_message()
+
+    @log_and_handle_exceptions("hid")
+    async def pinch(
+        self,
+        center_x: float,
+        center_y: float,
+        scale: float,
+        duration: float = 0.5,
+        radius: float = 100.0,
+    ) -> None:
+        await self.send_events(
+            pinch_to_events(
+                center_x=center_x,
+                center_y=center_y,
+                scale=scale,
+                duration=duration,
+                radius=radius,
+            )
+        )
 
     @log_and_handle_exceptions("debugserver")
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:

@@ -15,6 +15,7 @@ from idb.common.types import (
     HIDDirection,
     HIDEvent,
     HIDKey,
+    HIDPinch,
     HIDPress,
     HIDPressAction,
     HIDSwipe,
@@ -27,6 +28,7 @@ from idb.grpc.idb_pb2 import HIDEvent as GrpcHIDEvent, Point as GrpcPoint
 GrpcHIDButton = GrpcHIDEvent.HIDButton
 GrpcHIDDelay = GrpcHIDEvent.HIDDelay
 GrpcHIDKey = GrpcHIDEvent.HIDKey
+GrpcHIDPinch = GrpcHIDEvent.HIDPinch
 GrpcHIDPress = GrpcHIDEvent.HIDPress
 GrpcHIDPressAction = GrpcHIDEvent.HIDPressAction
 GrpcHIDSwipe = GrpcHIDEvent.HIDSwipe
@@ -113,6 +115,15 @@ def delay_to_grpc(delay: HIDDelay) -> GrpcHIDDelay:
     return GrpcHIDDelay(duration=delay.duration)
 
 
+def pinch_to_grpc(pinch: HIDPinch) -> GrpcHIDPinch:
+    return GrpcHIDPinch(
+        center=point_to_grpc(pinch.center),
+        scale=pinch.scale,
+        duration=pinch.duration,
+        radius=pinch.radius,
+    )
+
+
 def event_to_grpc(event: HIDEvent) -> GrpcHIDEvent:
     if isinstance(event, HIDPress):
         return GrpcHIDEvent(press=press_to_grpc(event))
@@ -120,5 +131,7 @@ def event_to_grpc(event: HIDEvent) -> GrpcHIDEvent:
         return GrpcHIDEvent(swipe=swipe_to_grpc(event))
     elif isinstance(event, HIDDelay):
         return GrpcHIDEvent(delay=delay_to_grpc(event))
+    elif isinstance(event, HIDPinch):
+        return GrpcHIDEvent(pinch=pinch_to_grpc(event))
     else:
         raise Exception(f"Invalid event {event}")
