@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncIterator, Iterable, Iterator
 from typing import Dict, List, Optional, Tuple
 
 from idb.common.types import (
@@ -16,6 +16,7 @@ from idb.common.types import (
     HIDDirection,
     HIDEvent,
     HIDKey,
+    HIDPinch,
     HIDPress,
     HIDPressAction,
     HIDSwipe,
@@ -257,3 +258,18 @@ async def iterator_to_async_iterator(
 ) -> AsyncIterator[HIDEvent]:
     for event in events:
         yield event
+
+
+def pinch_to_events(
+    center_x: float,
+    center_y: float,
+    scale: float,
+    duration: float = 0.5,
+    radius: float = 100.0,
+) -> Iterator[HIDEvent]:
+    yield HIDPinch(
+        center=Point(x=center_x, y=center_y),
+        scale=scale,
+        duration=duration,
+        radius=radius,
+    )
