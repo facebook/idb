@@ -62,7 +62,7 @@ static NSString *const KeyEvents = @"events";
   }
 
   _events = events;
-  
+
   return self;
 }
 
@@ -374,9 +374,9 @@ static NSString *const KeyDuration = @"duration";
   if (!self) {
     return nil;
   }
-  
+
   _duration = duration;
-  
+
   return self;
 }
 
@@ -632,6 +632,47 @@ static NSString *const InCallStatusBarNotification = @"com.apple.iphonesimulator
 
 @end
 
+
+#pragma mark - Two-Finger Touch (Multi-Touch)
+
+@interface FBSimulatorHIDEvent_TwoFingerTouch : NSObject <FBSimulatorHIDEvent>
+@property (nonatomic, assign, readonly) CGPoint finger1;
+@property (nonatomic, assign, readonly) CGPoint finger2;
+@property (nonatomic, assign, readonly) FBSimulatorHIDDirection direction;
+@end
+
+@implementation FBSimulatorHIDEvent_TwoFingerTouch
+
+- (instancetype)initWithFinger1:(CGPoint)finger1 finger2:(CGPoint)finger2 direction:(FBSimulatorHIDDirection)direction
+{
+  self = [super init];
+  if (!self) return nil;
+  _finger1 = finger1;
+  _finger2 = finger2;
+  _direction = direction;
+  return self;
+}
+
+- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
+{
+  NSData *event = [hid.indigo twoFingerTouchScreenSize:hid.mainScreenSize
+                                           screenScale:hid.mainScreenScale
+                                             direction:self.direction
+                                               finger1:self.finger1
+                                               finger2:self.finger2];
+  return [hid sendEvent:event];
+}
+
+- (id)copyWithZone:(NSZone *)zone { return self; }
+
+- (NSString *)description
+{
+  NSString *dirStr = self.direction == FBSimulatorHIDDirectionDown ? @"down" : @"up";
+  return [NSString stringWithFormat:@"TwoFingerTouch %@ at (%.1f,%.1f) (%.1f,%.1f)", dirStr, self.finger1.x, self.finger1.y, self.finger2.x, self.finger2.y];
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 #pragma mark - Initializers
@@ -689,6 +730,48 @@ static NSString *const InCallStatusBarNotification = @"com.apple.iphonesimulator
 }
 
 #pragma mark Multiple Payload Events
+
+
++ (id<FBSimulatorHIDEventComposite>)pinchAtX:(double)centerX y:(double)centerY scale:(double)scale duration:(double)duration radius:(double)radius
+{
+  double startRadius = radius;
+  double endRadius = radius * scale;
+  double fingerDistance = fabs(endRadius - startRadius);
+
+  double delta = DEFAULT_SWIPE_DELTA;
+  int steps = (int)(fingerDistance / delta);
+  if (steps < 2) steps = 2;
+  double stepDelay = duration / (steps + 2);
+
+  NSMutableArray<id<FBSimulatorHIDEvent>> *events = [NSMutableArray array];
+
+  // Touch down at start positions (fingers on horizontal axis centered on target)
+  CGPoint f1Start = CGPointMake(centerX - startRadius, centerY);
+  CGPoint f2Start = CGPointMake(centerX + startRadius, centerY);
+  [events addObject:[[FBSimulatorHIDEvent_TwoFingerTouch alloc] initWithFinger1:f1Start finger2:f2Start direction:FBSimulatorHIDDirectionDown]];
+  [events addObject:[self delay:stepDelay]];
+
+  // Interpolated moves — same pattern as swipe
+  double dr = (endRadius - startRadius) / steps;
+  for (int i = 1; i <= steps; i++) {
+    double r = startRadius + dr * i;
+    CGPoint f1 = CGPointMake(centerX - r, centerY);
+    CGPoint f2 = CGPointMake(centerX + r, centerY);
+    [events addObject:[[FBSimulatorHIDEvent_TwoFingerTouch alloc] initWithFinger1:f1 finger2:f2 direction:FBSimulatorHIDDirectionDown]];
+    [events addObject:[self delay:stepDelay]];
+  }
+
+  // Duplicate final touch-down to avoid inertial scroll on arm simulators
+  CGPoint f1End = CGPointMake(centerX - endRadius, centerY);
+  CGPoint f2End = CGPointMake(centerX + endRadius, centerY);
+  [events addObject:[[FBSimulatorHIDEvent_TwoFingerTouch alloc] initWithFinger1:f1End finger2:f2End direction:FBSimulatorHIDDirectionDown]];
+  [events addObject:[self delay:stepDelay]];
+
+  // Touch up at end positions
+  [events addObject:[[FBSimulatorHIDEvent_TwoFingerTouch alloc] initWithFinger1:f1End finger2:f2End direction:FBSimulatorHIDDirectionUp]];
+
+  return [FBSimulatorHIDEvent eventWithEvents:events];
+}
 
 + (id<FBSimulatorHIDEventComposite>)eventWithEvents:(NSArray<id<FBSimulatorHIDEvent>> *)events
 {

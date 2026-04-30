@@ -221,6 +221,19 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventComposite>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration;
 
+
+/**
+ A HID Event for a pinch gesture (two-finger touch with movement).
+
+ @param centerX the X center of the pinch in pixels.
+ @param centerY the Y center of the pinch in pixels.
+ @param scale the scale factor. > 1.0 = pinch out (zoom in), < 1.0 = pinch in (zoom out).
+ @param duration the duration of the gesture in seconds.
+ @param radius the initial distance of each finger from center in pixels.
+ @return a composite HID Event representing the pinch gesture.
+ */
++ (id<FBSimulatorHIDEventComposite>)pinchAtX:(double)centerX y:(double)centerY scale:(double)scale duration:(double)duration radius:(double)radius;
+
 /**
  A HID Event consisting of multiple events
 

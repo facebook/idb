@@ -83,6 +83,20 @@ typedef NS_ENUM(int, FBSimulatorHIDDeviceOrientation) {
  */
 - (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
 
+
+/**
+ A Two-Finger Touch Event for multi-touch gestures (pinch, rotate, etc.).
+
+ @param screenSize the size of the screen in pixels.
+ @param screenScale the scale of the screen e.g. @2x
+ @param direction the direction of the event (Down for press/move, Up for lift).
+ @param finger1 the coordinate of finger 1 in pixels.
+ @param finger2 the coordinate of finger 2 in pixels.
+ @return an NSData-Wrapped IndigoMessage.
+ */
+- (NSData *)twoFingerTouchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction
+                             finger1:(CGPoint)finger1 finger2:(CGPoint)finger2;
+
 @end
 
 NS_ASSUME_NONNULL_END
