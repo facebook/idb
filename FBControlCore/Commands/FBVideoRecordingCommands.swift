@@ -14,3 +14,14 @@ import Foundation
 
   @objc func stopRecording() -> FBFuture<NSNull>
 }
+
+public extension FBVideoRecordingCommands {
+
+  func startRecordingAsync(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+    try await bridgeFBFuture(self.startRecording(toFile: filePath))
+  }
+
+  func stopRecordingAsync() async throws {
+    try await bridgeFBFutureVoid(self.stopRecording())
+  }
+}

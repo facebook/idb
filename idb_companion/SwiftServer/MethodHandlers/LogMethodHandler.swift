@@ -38,13 +38,17 @@ struct LogMethodHandler {
     let operation: FBLogOperation =
       request.source == .companion
       ? try await commandExecutor.tail_companion_logs(consumer)
-      : try await bridgeFBFuture(target.tailLog(request.arguments, consumer: consumer))
+      : try await target.tailLogAsync(arguments: request.arguments, consumer: consumer)
 
-    let completed = FBFuture(race: [convertFBMutableFuture(writingDone), operation.completed])
-
-    try await bridgeFBFutureVoid(completed)
+    let observeWritingDone = Task<Void, Error> {
+      try await bridgeFBFutureVoid(convertFBMutableFuture(writingDone))
+    }
+    let observeOperationCompletion = Task<Void, Error> {
+      try await operation.awaitCompletionAsync()
+    }
+    try await Task.select(observeWritingDone, observeOperationCompletion).value
     writingDone.resolve(withResult: NSNull())
 
-    try await bridgeFBFutureVoid(operation.completed.cancel())
+    try await operation.cancelAsync()
   }
 }

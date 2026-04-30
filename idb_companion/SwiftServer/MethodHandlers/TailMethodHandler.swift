@@ -41,7 +41,7 @@ struct TailMethodHandler {
     guard case .stop = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
-    try await bridgeFBFutureVoid(tail.cancel())
+    try await tail.cancelAsync()
     _finished.set(true)
   }
 }

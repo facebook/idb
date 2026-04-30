@@ -64,6 +64,11 @@ public class FBBundleDescriptor: NSObject, NSCopying {
 
   // MARK: Public Methods
 
+  /// Async wrapper for `updatePathsForRelocation(withCodesign:logger:queue:)`.
+  public func updatePathsForRelocationAsync(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) async throws {
+    _ = try await bridgeFBFuture(updatePathsForRelocation(withCodesign: codesign, logger: logger, queue: queue))
+  }
+
   @objc(updatePathsForRelocationWithCodesign:logger:queue:)
   public func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<AnyObject> {
     return replacementsForBinary()

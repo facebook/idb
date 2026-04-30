@@ -20,6 +20,23 @@ import XCTestBootstrap
   func testAppPair(for request: FBXCTestRunRequest, target: FBiOSTarget) -> FBFuture<FBTestApplicationsPair>
 }
 
+public extension FBXCTestDescriptor {
+  /// Async wrapper for `setup(with:target:)`.
+  func setupAsync(with request: FBXCTestRunRequest, target: FBiOSTarget) async throws {
+    try await bridgeFBFutureVoid(self.setup(with: request, target: target))
+  }
+
+  /// Async wrapper for `testAppPair(for:target:)`.
+  func testAppPairAsync(for request: FBXCTestRunRequest, target: FBiOSTarget) async throws -> FBTestApplicationsPair {
+    try await bridgeFBFuture(self.testAppPair(for: request, target: target))
+  }
+
+  /// Async wrapper for `testConfig(withRunRequest:testApps:logDirectoryPath:logger:queue:)`.
+  func testConfigAsync(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) async throws -> FBIDBAppHostedTestConfiguration {
+    try await bridgeFBFuture(self.testConfig(withRunRequest: request, testApps: testApps, logDirectoryPath: logDirectoryPath, logger: logger, queue: queue))
+  }
+}
+
 // MARK: - FBXCTestBootstrapDescriptor
 
 @objc public final class FBXCTestBootstrapDescriptor: NSObject, FBXCTestDescriptor {

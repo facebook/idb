@@ -108,59 +108,48 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
   }
 
   public func startAsync(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
-    let descriptor = try await bridgeFBFuture(fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)) as! FBXCTestDescriptor
+    let descriptor = try await fetchAndSetupDescriptorAsync(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
       let directory = temporaryDirectory.ephemeralTemporaryDirectory()
       try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
       logDirectoryPath = directory.path
     }
-    return try await bridgeFBFuture(startWithTestDescriptor(descriptor, logDirectoryPath: logDirectoryPath, reportActivities: reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory))
+    return try await startWithTestDescriptorAsync(descriptor, logDirectoryPath: logDirectoryPath, reportActivities: reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
-  func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
-    return FBIDBError.describe("\(type(of: self)) not implemented in abstract base class").failFuture() as! FBFuture<FBIDBTestOperation>
+  func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+    throw FBIDBError.describe("\(type(of: self)) not implemented in abstract base class").build()
   }
 
-  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) -> FBFuture<AnyObject> {
+  private func fetchAndSetupDescriptorAsync(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) async throws -> FBXCTestDescriptor {
     var testDescriptor: FBXCTestDescriptor?
 
     if let filePath = self.testPath {
       if filePath.pathExtension == "xctest" {
-        do {
-          let bundle = try FBBundleDescriptor.bundle(fromPath: filePath.path)
-          testDescriptor = FBXCTestBootstrapDescriptor(url: filePath, name: bundle.name, testBundle: bundle)
-        } catch {
-          return FBFuture(error: error as NSError)
-        }
+        let bundle = try FBBundleDescriptor.bundle(fromPath: filePath.path)
+        testDescriptor = FBXCTestBootstrapDescriptor(url: filePath, name: bundle.name, testBundle: bundle)
       }
       if filePath.pathExtension == "xctestrun" {
-        do {
-          let descriptors = try bundleStorage.getXCTestRunDescriptors(from: filePath)
-          if descriptors.count != 1 {
-            return FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").failFuture()
-          }
-          testDescriptor = descriptors[0]
-        } catch {
-          return FBFuture(error: error as NSError)
+        let descriptors = try bundleStorage.getXCTestRunDescriptors(from: filePath)
+        if descriptors.count != 1 {
+          throw FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").build()
         }
+        testDescriptor = descriptors[0]
       }
     } else {
       guard let bundleID = testBundleID else {
-        return FBIDBError.describe("No test bundle ID provided").failFuture()
+        throw FBIDBError.describe("No test bundle ID provided").build()
       }
-      do {
-        testDescriptor = try bundleStorage.testDescriptor(withID: bundleID)
-      } catch {
-        return FBFuture(error: error as NSError)
-      }
+      testDescriptor = try bundleStorage.testDescriptor(withID: bundleID)
     }
 
     guard let descriptor = testDescriptor else {
-      return FBIDBError.describe("Could not find test descriptor").failFuture()
+      throw FBIDBError.describe("Could not find test descriptor").build()
     }
 
-    return descriptor.setup(with: self, target: target).mapReplace(descriptor as AnyObject) as FBFuture
+    try await descriptor.setupAsync(with: self, target: target)
+    return descriptor
   }
 }
 
@@ -170,34 +159,26 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
   override var isLogicTest: Bool { true }
   override var isUITest: Bool { false }
 
-  override func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
+  override func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
-    do {
-      try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
     var coverageConfig: FBCodeCoverageConfiguration?
     if coverageRequest.collect {
       let dir = temporaryDirectory.ephemeralTemporaryDirectory()
       let coverageDirName = "coverage_\(NSUUID().uuidString)"
       let coverageDirPath = (dir.path as NSString).appendingPathComponent(coverageDirName)
-      do {
-        try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
-      } catch {
-        return FBFuture(error: error as NSError)
-      }
+      try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
       coverageConfig = FBCodeCoverageConfiguration(directory: coverageDirPath, format: coverageRequest.format, enableContinuousCoverageCollection: coverageRequest.shouldEnableContinuousCoverageCollection)
     }
 
     let testsToSkipArray = testsToSkip.sorted()
     if !testsToSkipArray.isEmpty {
-      return FBXCTestError.describe("'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkipArray)) provided, but Logic Tests to not support this.").failFuture() as! FBFuture<FBIDBTestOperation>
+      throw FBXCTestError.describe("'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkipArray)) provided, but Logic Tests to not support this.").build()
     }
     let testsToRunArray = testsToRun?.sorted() ?? []
     if testsToRunArray.count > 1 {
-      return FBXCTestError.describe("More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRunArray)) provided, but only one 'Tests to Run' is supported.").failFuture() as! FBFuture<FBIDBTestOperation>
+      throw FBXCTestError.describe("More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRunArray)) provided, but only one 'Tests to Run' is supported.").build()
     }
     let testFilter = testsToRunArray.first
 
@@ -216,10 +197,10 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
       architectures: testDescriptor.architectures
     )
 
-    return startTestExecution(configuration, target: target, reporter: reporter, logger: logger)
+    return try startTestExecution(configuration, target: target, reporter: reporter, logger: logger)
   }
 
-  private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<FBIDBTestOperation> {
+  private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
       target: target as! (FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands),
@@ -229,7 +210,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
     )
     let completed = runner.execute()
     if let error = completed.error {
-      return FBFuture(error: error)
+      throw error
     }
     let reporterConfiguration = FBXCTestReporterConfiguration(
       resultBundlePath: nil,
@@ -239,7 +220,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
       reportAttachments: reportAttachments,
       reportResultBundle: collectResultBundle
     )
-    let operation = FBIDBTestOperation(
+    return FBIDBTestOperation(
       configuration: configuration,
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
@@ -247,7 +228,6 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
       completed: completed,
       queue: target.workQueue
     )
-    return FBFuture(result: operation)
   }
 }
 
@@ -255,27 +235,15 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
   override var isLogicTest: Bool { false }
   override var isUITest: Bool { false }
 
-  override func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
-    return
-      (testDescriptor.testAppPair(for: self, target: target)
-      .onQueue(
-        target.workQueue,
-        fmap: { pair in
-          let appPair = pair as FBTestApplicationsPair
-          logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
-          return testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger, queue: target.workQueue) as! FBFuture<AnyObject>
-        }
-      )
-      .onQueue(
-        target.workQueue,
-        fmap: { config in
-          let appHostedTestConfig = config as! FBIDBAppHostedTestConfiguration
-          logger.log("Obtained app-hosted test configuration \(appHostedTestConfig)")
-          return FBXCTestRunRequest_AppTest.startTestExecution(appHostedTestConfig, reportAttachments: self.reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: self.collectResultBundle) as! FBFuture<AnyObject>
-        }) as AnyObject) as! FBFuture<FBIDBTestOperation>
+  override func startWithTestDescriptorAsync(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+    let appPair = try await testDescriptor.testAppPairAsync(for: self, target: target)
+    logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
+    let appHostedTestConfig = try await testDescriptor.testConfigAsync(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger, queue: target.workQueue)
+    logger.log("Obtained app-hosted test configuration \(appHostedTestConfig)")
+    return FBXCTestRunRequest_AppTest.startTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  static func startTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) -> FBFuture<FBIDBTestOperation> {
+  static func startTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) -> FBIDBTestOperation {
     let testLaunchConfiguration = configuration.testLaunchConfiguration
     let coverageConfiguration = configuration.coverageConfiguration
 
@@ -299,7 +267,7 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
       reportAttachments: reportAttachments,
       reportResultBundle: reportResultBundle
     )
-    let operation = FBIDBTestOperation(
+    return FBIDBTestOperation(
       configuration: testLaunchConfiguration,
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
@@ -307,7 +275,6 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
       completed: testCompleted,
       queue: target.workQueue
     )
-    return FBFuture(result: operation)
   }
 }
 
