@@ -12,3 +12,10 @@ import Foundation
   @objc(createStreamWithConfiguration:)
   func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<FBVideoStream>
 }
+
+public extension FBVideoStreamCommands {
+
+  func createStreamAsync(with configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+    try await bridgeFBFuture(self.createStream(with: configuration))
+  }
+}

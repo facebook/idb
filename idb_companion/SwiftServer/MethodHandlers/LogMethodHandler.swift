@@ -41,7 +41,7 @@ struct LogMethodHandler {
       : try await target.tailLogAsync(arguments: request.arguments, consumer: consumer)
 
     let observeWritingDone = Task<Void, Error> {
-      try await bridgeFBFutureVoid(convertFBMutableFuture(writingDone))
+      try await awaitMutableFutureVoid(writingDone)
     }
     let observeOperationCompletion = Task<Void, Error> {
       try await operation.awaitCompletionAsync()

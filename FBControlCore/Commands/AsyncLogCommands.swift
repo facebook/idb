@@ -28,17 +28,17 @@ public protocol AsyncLogCommands: AnyObject {
 /// Adapter wrapping a legacy `FBLogOperation` in `AsyncLogOperation` shape so
 /// the default bridge can return a Swift-native handle. Cancellation of the
 /// awaiting task signals the underlying operation through `FBFuture.cancel()`.
-private final class AsyncLogOperationBridge: AsyncLogOperation {
+public final class AsyncLogOperationBridge: AsyncLogOperation {
 
-  let consumer: any FBDataConsumer
+  public let consumer: any FBDataConsumer
   private let underlying: any FBLogOperation
 
-  init(_ underlying: any FBLogOperation) {
+  public init(_ underlying: any FBLogOperation) {
     self.underlying = underlying
     self.consumer = underlying.consumer
   }
 
-  func waitUntilCompleted() async throws {
+  public func waitUntilCompleted() async throws {
     try await bridgeFBFutureVoid(underlying.completed)
   }
 }

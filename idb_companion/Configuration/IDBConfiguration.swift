@@ -13,8 +13,4 @@ class IDBConfiguration: NSObject {
   @objc static var eventReporter: FBEventReporter = EmptyEventReporter.shared
 
   static var idbKillswitch: IDBKillswitch = EmptyIDBKillswitch()
-
-  @objc static func getIDBKillswitch() -> IDBKillswitchBridge {
-    return idbKillswitch.objcBridged
-  }
 }

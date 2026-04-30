@@ -41,6 +41,13 @@ import Foundation
   var finishedConsuming: FBFuture<NSNull> { get }
 }
 
+public extension FBDataConsumerLifecycle {
+  /// Awaits completion of `finishedConsuming`.
+  func awaitFinishedConsumingAsync() async throws {
+    try await bridgeFBFutureVoid(self.finishedConsuming)
+  }
+}
+
 // MARK: - Conformance extensions for ObjC classes
 
 extension FBLoggingDataConsumer: FBDataConsumer {}

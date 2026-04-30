@@ -36,3 +36,26 @@ public func awaitExit<StdIn, StdOut, StdErr>(
   let acceptable: Set<NSNumber> = Set(codes.map { NSNumber(value: $0) })
   _ = try await bridgeFBFuture(subprocess.exited(withCodes: acceptable))
 }
+
+/// Builds and starts the process described by `builder` and returns the
+/// spawned `FBSubprocess`.
+///
+/// Async wrapper around `-[FBProcessBuilder start]`.
+public func awaitStart<StdIn, StdOut, StdErr>(
+  of builder: FBProcessBuilder<StdIn, StdOut, StdErr>
+) async throws -> FBSubprocess<StdIn, StdOut, StdErr> {
+  try await bridgeFBFuture(builder.start())
+}
+
+/// Builds, starts and waits for the process described by `builder` to finish.
+/// Returns the resulting `FBSubprocess`.
+///
+/// Async wrapper around `-[FBProcessBuilder runUntilCompletionWithAcceptableExitCodes:]`.
+/// Pass `nil` to accept any exit code.
+public func awaitRunUntilCompletion<StdIn, StdOut, StdErr>(
+  of builder: FBProcessBuilder<StdIn, StdOut, StdErr>,
+  withAcceptableExitCodes acceptableExitCodes: Set<Int32>?
+) async throws -> FBSubprocess<StdIn, StdOut, StdErr> {
+  let codes: Set<NSNumber>? = acceptableExitCodes.map { Set($0.map { NSNumber(value: $0) }) }
+  return try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: codes))
+}

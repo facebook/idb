@@ -107,6 +107,12 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
 
   // MARK: Public Methods
 
+  /// Async wrapper for `stop(withTimeout:)`. Returns the trace directory URL on success.
+  public func stopAsync(withTimeout timeout: TimeInterval) async throws -> URL {
+    let url = try await bridgeFBFuture(self.stop(withTimeout: timeout))
+    return url as URL
+  }
+
   @objc
   public func stop(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
     let result = FBFuture<AnyObject>.onQueue(

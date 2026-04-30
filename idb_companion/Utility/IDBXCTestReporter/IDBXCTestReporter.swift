@@ -74,7 +74,7 @@ extension IDBXCTestReporter {
 
   /// Waits until reporting has terminated. Returns the status raw value reported.
   func awaitReportingTerminated() async throws -> NSNumber {
-    try await bridgeFBFuture(convertFBMutableFuture(reportingTerminated))
+    try await awaitMutableFuture(reportingTerminated)
   }
 
   // MARK: - FBDataConsumer implementation
@@ -367,7 +367,7 @@ extension IDBXCTestReporter {
   }
 
   private func getCoverageResponseData(config: FBCodeCoverageConfiguration) async throws -> Data {
-    try await bridgeFBFutureVoid(convertFBMutableFuture(processUnderTestExitedMutable))
+    try await awaitMutableFutureVoid(processUnderTestExitedMutable)
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config)
@@ -398,16 +398,15 @@ extension IDBXCTestReporter {
       ["llvm-profdata", "merge", "-o", profdataPath.path]
       + profraws.map(\.path)
 
-    let mergeProcessFuture = FBProcessBuilder<NSNull, NSData, NSString>
-      .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
-      .withStdOutInMemoryAsData()
-      .withStdErrInMemoryAsString()
-      .runUntilCompletion(withAcceptableExitCodes: nil)
-
-    let mergeProcess = try await bridgeFBFuture(mergeProcessFuture)
-    let exitCode = try await bridgeFBFuture(mergeProcess.exitCode)
+    let mergeProcess = try await awaitRunUntilCompletion(
+      of: FBProcessBuilder<NSNull, NSData, NSString>
+        .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
+        .withStdOutInMemoryAsData()
+        .withStdErrInMemoryAsString(),
+      withAcceptableExitCodes: nil)
+    let exitCode = try await awaitExitCode(of: mergeProcess)
     if exitCode != 0 {
-      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(mergeProcess.stdErr ?? "")")
+      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode) \(mergeProcess.stdErr ?? "")")
     }
   }
 
@@ -417,13 +416,11 @@ extension IDBXCTestReporter {
       + binariesPath.reduce(into: []) {
         $0 += ["-object", $1]
       }
-    let exportProcess = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSString>
+    let exportProcess = try await awaitStart(
+      of: FBProcessBuilder<NSNull, NSData, NSString>
         .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
         .withStdOutToInputStream()
-        .withStdErrInMemoryAsString()
-        .start()
-    )
+        .withStdErrInMemoryAsString())
 
     let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
     let archiveFuture = FBArchiveOperations.createGzipData(from: gzipProcessInput as! FBProcessInput<AnyObject>, logger: self.logger)
@@ -448,9 +445,9 @@ extension IDBXCTestReporter {
     exportOutputStream.close()
     gzipInputStream.close()
 
-    let exitCode = try await bridgeFBFuture(exportProcess.exitCode)
+    let exitCode = try await awaitExitCode(of: exportProcess)
     if exitCode != 0 {
-      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode.intValue) \(exportProcess.stdErr ?? "")")
+      throw FBControlCoreError.describe("xcrun failed to export code coverage data \(exitCode) \(exportProcess.stdErr ?? "")")
     }
 
     let archiveProcess = try await bridgeFBFuture(archiveFuture)

@@ -55,7 +55,7 @@ struct InstrumentsRunMethodHandler {
         targetLogger,
       ].compactMap { $0 })
 
-    let operation = try await bridgeFBFuture(target.startInstruments(configuration, logger: logger))
+    let operation = try await target.startInstrumentsAsync(configuration, logger: logger)
 
     let runningStateResponse = Idb_InstrumentsRunResponse.with {
       $0.output = .state(.runningInstruments)
@@ -81,9 +81,9 @@ struct InstrumentsRunMethodHandler {
     let processedPath = processed.path
     finishedWriting.set(true)
 
-    let archiveOperation = FBArchiveOperations.createGzippedTar(forPath: processedPath, logger: logger)
+    let archiveOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: processedPath, logger: logger)
 
-    try await FileDrainWriter.performDrain(taskFuture: archiveOperation) { data in
+    try await FileDrainWriter.performDrain(task: archiveOperation) { data in
       let response = Idb_InstrumentsRunResponse.with {
         $0.payload = .with {
           $0.data = data

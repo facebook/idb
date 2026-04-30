@@ -281,12 +281,6 @@ final class IDBTransientTests: XCTestCase {
     XCTAssertTrue(result)
   }
 
-  func testKillswitchObjcBridgeCreation() {
-    let killswitch = EmptyIDBKillswitch()
-    let bridge = killswitch.objcBridged
-    XCTAssertNotNil(bridge)
-  }
-
   // MARK: - IDBConfiguration Tests
 
   func testDefaultEventReporterIsEmptyReporter() {
@@ -295,11 +289,6 @@ final class IDBTransientTests: XCTestCase {
 
   func testDefaultKillswitchIsEmptyKillswitch() {
     XCTAssertTrue(IDBConfiguration.idbKillswitch is EmptyIDBKillswitch)
-  }
-
-  func testGetIDBKillswitchReturnsBridge() {
-    let bridge = IDBConfiguration.getIDBKillswitch()
-    XCTAssertNotNil(bridge)
   }
 
   // MARK: - EmptyEventReporter Tests
@@ -352,12 +341,6 @@ final class IDBTransientTests: XCTestCase {
   func testInacceptableStatusCodeDescription() {
     let error = FBInternGraphInternalError.inacceptableStatusCode("test output")
     XCTAssertTrue(error.description.contains("test output"))
-  }
-
-  // MARK: - IDBFeatureBridge Tests
-
-  func testIDBFeatureBridgeGrpcEndpointRawValue() {
-    XCTAssertEqual(IDBFeatureBridge.grpcEndpoint.rawValue, 0)
   }
 
   // MARK: - Helpers

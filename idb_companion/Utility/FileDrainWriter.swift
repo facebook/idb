@@ -12,8 +12,7 @@ import GRPC
 
 struct FileDrainWriter {
 
-  static func performDrain(taskFuture: FBFuture<FBSubprocess<NSNull, InputStream, AnyObject>>, sendResponse: (Data) async throws -> Void) async throws {
-    let task = try await bridgeFBFuture(taskFuture)
+  static func performDrain(task: FBSubprocess<NSNull, InputStream, AnyObject>, sendResponse: (Data) async throws -> Void) async throws {
     guard let inputStream = task.stdOut else {
       throw GRPCStatus(code: .internalError, message: "Unable to get stdOut to write")
     }
@@ -39,7 +38,7 @@ struct FileDrainWriter {
       try await sendResponse(data)
     }
 
-    let exitCode = try await bridgeFBFuture(task.exitCode).intValue
+    let exitCode = try await awaitExitCode(of: task)
     if exitCode != 0 {
       throw GRPCStatus(code: .internalError, message: "Draining operation failed with exit code \(exitCode)")
     }
