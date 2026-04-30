@@ -136,3 +136,15 @@ public class FBDeviceDebuggerCommands: NSObject, FBDebuggerCommands {
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }
+
+// MARK: - AsyncDebuggerCommands
+
+extension FBDeviceDebuggerCommands: AsyncDebuggerCommands {
+
+  public func launchDebugServer(
+    forHostApplication application: FBBundleDescriptor,
+    port: in_port_t
+  ) async throws -> any FBDebugServer {
+    try await launchDebugServerAsync(forHostApplication: application, port: port)
+  }
+}

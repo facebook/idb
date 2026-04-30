@@ -672,3 +672,48 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
   }
 }
+
+// MARK: - AsyncSettingsCommands
+
+extension FBSimulatorSettingsCommands: AsyncSettingsCommands {
+
+  public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
+    try await setHardwareKeyboardEnabledAsync(enabled)
+  }
+
+  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
+    try await setPreferenceAsync(name, value: value, type: type, domain: domain)
+  }
+
+  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
+    return try await getCurrentPreferenceAsync(name, domain: domain)
+  }
+
+  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+    try await grantAccessAsync(bundleIDs, toServices: services)
+  }
+
+  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+    try await revokeAccessAsync(bundleIDs, toServices: services)
+  }
+
+  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+    try await grantAccessAsync(bundleIDs, toDeeplink: scheme)
+  }
+
+  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+    try await revokeAccessAsync(bundleIDs, toDeeplink: scheme)
+  }
+
+  public func updateContacts(_ databaseDirectory: String) async throws {
+    try await updateContactsAsync(databaseDirectory)
+  }
+
+  public func clearContacts() async throws {
+    try await runSimulatorFrameworkBridgeAsync(withService: "contacts", action: "clear")
+  }
+
+  public func clearPhotos() async throws {
+    try await runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
+  }
+}

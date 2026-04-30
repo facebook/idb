@@ -44,14 +44,14 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
   @objc
   public func clearKeychain() -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
-      try await clearKeychainAsync()
+      try await clearKeychainImpl()
       return NSNull()
     }
   }
 
-  // MARK: - Async
+  // MARK: - Private
 
-  public func clearKeychainAsync() async throws {
+  fileprivate func clearKeychainImpl() async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -74,8 +74,6 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
       _ = try await bridgeFBFuture(startFuture)
     }
   }
-
-  // MARK: - Private
 
   private func removeKeychainContents(logger: (any FBControlCoreLogger)?) throws {
     guard let simulator = self.simulator else {
@@ -111,5 +109,14 @@ public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCom
       logger?.log("Removing keychain at path \(fullPath)")
       try FileManager.default.removeItem(atPath: fullPath)
     }
+  }
+}
+
+// MARK: - AsyncKeychainCommands
+
+extension FBSimulatorKeychainCommands: AsyncKeychainCommands {
+
+  public func clearKeychain() async throws {
+    try await clearKeychainImpl()
   }
 }

@@ -38,15 +38,9 @@ public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsP
   @objc
   public func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
-      try await addMediaAsync(mediaFileURLs)
+      try uploadMedia(mediaFileURLs)
       return NSNull()
     }
-  }
-
-  // MARK: - Async
-
-  public func addMediaAsync(_ mediaFileURLs: [URL]) async throws {
-    try uploadMedia(mediaFileURLs)
   }
 
   // MARK: - Private
@@ -126,5 +120,14 @@ public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsP
       guard let uti = try? workspace.type(ofFile: url.path) else { return false }
       return utiSet.contains(uti)
     }
+  }
+}
+
+// MARK: - AsyncMediaCommands
+
+extension FBSimulatorMediaCommands: AsyncMediaCommands {
+
+  public func addMedia(_ mediaFileURLs: [URL]) async throws {
+    try uploadMedia(mediaFileURLs)
   }
 }
