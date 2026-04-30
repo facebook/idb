@@ -35,12 +35,10 @@ struct LogMethodHandler {
       }
     }
 
-    let operationFuture =
+    let operation: FBLogOperation =
       request.source == .companion
-      ? commandExecutor.tail_companion_logs(consumer)
-      : target.tailLog(request.arguments, consumer: consumer)
-
-    let operation = try await bridgeFBFuture(operationFuture)
+      ? try await commandExecutor.tail_companion_logs(consumer)
+      : try await bridgeFBFuture(target.tailLog(request.arguments, consumer: consumer))
 
     let completed = FBFuture(race: [convertFBMutableFuture(writingDone), operation.completed])
 

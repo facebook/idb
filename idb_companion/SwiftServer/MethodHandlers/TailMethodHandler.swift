@@ -36,7 +36,7 @@ struct TailMethodHandler {
     }
 
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: start.container)
-    let tail = try await bridgeFBFuture(commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer))
+    let tail = try await commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer)
 
     guard case .stop = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
