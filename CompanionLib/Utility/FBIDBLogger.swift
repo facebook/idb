@@ -6,7 +6,7 @@
  */
 
 import Darwin
-import FBControlCore
+@preconcurrency import FBControlCore
 import Foundation
 
 nonisolated(unsafe) private let globalLoggers: NSMutableArray = NSMutableArray()
@@ -100,14 +100,20 @@ private class FBIDBLoggerOperation: NSObject, FBLogOperation {
   }
 
   @objc public func tailToConsumer(_ consumer: FBDataConsumer) -> FBFuture<AnyObject> {
+    fbFutureFromAsync { [self] in
+      try await tailToConsumerAsync(consumer) as AnyObject
+    }
+  }
+
+  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> FBLogOperation {
     let queue = FBIDBLogger.loggerQueue
-    return FBFuture.onQueue(
-      queue,
-      resolveValue: { _ -> AnyObject in
+    return await withCheckedContinuation { (continuation: CheckedContinuation<FBLogOperation, Never>) in
+      queue.async {
         let logger = FBControlCoreLoggerFactory.logger(to: consumer)
         let operation = FBIDBLoggerOperation(consumer: consumer, logger: logger, queue: queue)
         addGlobalLogger(logger)
-        return operation
-      })
+        continuation.resume(returning: operation)
+      }
+    }
   }
 }

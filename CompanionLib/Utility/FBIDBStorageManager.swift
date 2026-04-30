@@ -121,50 +121,40 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
   }
 
   @objc public func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    do {
-      try checkArchitecture(bundle)
-    } catch {
-      return FBFuture(error: error as NSError)
+    fbFutureFromAsync { [self] in
+      try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
     }
+  }
+
+  public func saveBundleAsync(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
+    return try await saveBundleAsync(bundle, usingSymlink: true, skipSigningBundles: false)
+  }
+
+  public func saveBundleAsync(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+    try checkArchitecture(bundle)
 
     let storageDirectory = basePath.appendingPathComponent(bundle.identifier)
-    do {
-      try prepareDirectory(with: storageDirectory)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    try prepareDirectory(with: storageDirectory)
 
     let sourceBundlePath = URL(fileURLWithPath: bundle.path)
     let destinationBundlePath = storageDirectory.appendingPathComponent(sourceBundlePath.lastPathComponent)
     if useSymlink {
       logger.log("Symlink \(bundle.identifier) to \(destinationBundlePath)")
-      do {
-        try FileManager.default.createSymbolicLink(at: destinationBundlePath, withDestinationURL: sourceBundlePath)
-      } catch {
-        return FBFuture(error: error as NSError)
-      }
+      try FileManager.default.createSymbolicLink(at: destinationBundlePath, withDestinationURL: sourceBundlePath)
     } else {
       logger.log("Moving \(bundle.identifier) to \(destinationBundlePath)")
-      do {
-        try FileManager.default.moveItem(at: sourceBundlePath, to: destinationBundlePath)
-      } catch {
-        return FBFuture(error: error as NSError)
-      }
+      try FileManager.default.moveItem(at: sourceBundlePath, to: destinationBundlePath)
       logger.log("Moved \(bundle.identifier)")
     }
 
     let artifact = FBInstalledArtifact(name: bundle.identifier, uuid: bundle.binary?.uuid as NSUUID?, path: destinationBundlePath)
     if !relocateLibraries || !target.requiresBundlesToBeSigned() || skipSigningBundles {
-      return FBFuture(result: artifact)
+      return artifact
     }
-    var updatedBundle: FBBundleDescriptor
-    do {
-      updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+    let updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
     let provider = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
-    return updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger, queue: queue).mapReplace(artifact) as! FBFuture<FBInstalledArtifact>
+    _ = try await bridgeFBFuture(updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger, queue: queue))
+    return artifact
   }
 
   @objc public var persistedBundleIDs: Set<String> {
@@ -220,43 +210,50 @@ private let XctestRunExtension = "xctestrun"
 @objc public final class FBXCTestBundleStorage: FBBundleStorage {
 
   @objc public func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    let buckets: [String: Set<URL>]
-    do {
-      buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
-    } catch {
-      return FBFuture(error: error as NSError)
+    fbFutureFromAsync { [self] in
+      try await saveBundleOrTestRunFromBaseDirectoryAsync(baseDirectory, skipSigningBundles: skipSigningBundles)
     }
+  }
+
+  public func saveBundleOrTestRunFromBaseDirectoryAsync(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+    let buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
     if xctestBucket.count > 1 {
-      return FBControlCoreError.describe("Multiple files with .xctest extension: \(FBCollectionInformation.oneLineDescription(from: xctestBucket))").failFuture() as! FBFuture<FBInstalledArtifact>
+      throw FBControlCoreError.describe("Multiple files with .xctest extension: \(FBCollectionInformation.oneLineDescription(from: xctestBucket))").build()
     }
     let xctestrunBucket = buckets[XctestRunExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestrunURL = xctestrunBucket.first
     if xctestrunBucket.count > 1 {
-      return FBControlCoreError.describe("Multiple files with .xctestrun extension: \(FBCollectionInformation.oneLineDescription(from: xctestrunBucket))").failFuture() as! FBFuture<FBInstalledArtifact>
+      throw FBControlCoreError.describe("Multiple files with .xctestrun extension: \(FBCollectionInformation.oneLineDescription(from: xctestrunBucket))").build()
     }
     if xctestBundleURL == nil && xctestrunURL == nil {
-      return FBIDBError.describe("Neither a .xctest bundle or .xctestrun file provided: \(FBCollectionInformation.oneLineDescription(from: buckets))").failFuture() as! FBFuture<FBInstalledArtifact>
+      throw FBIDBError.describe("Neither a .xctest bundle or .xctestrun file provided: \(FBCollectionInformation.oneLineDescription(from: buckets))").build()
     }
 
     if let xctestBundleURL {
-      return saveTestBundle(xctestBundleURL, usingSymlink: false, skipSigningBundles: skipSigningBundles)
+      return try await saveTestBundleAsync(xctestBundleURL, usingSymlink: false, skipSigningBundles: skipSigningBundles)
     }
     if let xctestrunURL {
-      return saveTestRun(xctestrunURL)
+      return try saveTestRun(xctestrunURL)
     }
-    return FBIDBError.describe(".xctest bundle (\(String(describing: xctestBundleURL))) or .xctestrun (\(String(describing: xctestrunURL))) file was not saved").failFuture() as! FBFuture<FBInstalledArtifact>
+    throw FBIDBError.describe(".xctest bundle (\(String(describing: xctestBundleURL))) or .xctestrun (\(String(describing: xctestrunURL))) file was not saved").build()
   }
 
   @objc public func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
+    fbFutureFromAsync { [self] in
+      try await saveBundleOrTestRunAsync(filePath, skipSigningBundles: skipSigningBundles)
+    }
+  }
+
+  public func saveBundleOrTestRunAsync(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     if filePath.pathExtension == XctestExtension {
-      return saveTestBundle(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
+      return try await saveTestBundleAsync(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
     }
     if filePath.pathExtension == XctestRunExtension {
-      return saveTestRun(filePath)
+      return try saveTestRun(filePath)
     }
-    return FBControlCoreError.describe("The path extension (\(filePath.pathExtension)) of the provided bundle (\(filePath)) is not .xctest or .xctestrun").failFuture() as! FBFuture<FBInstalledArtifact>
+    throw FBControlCoreError.describe("The path extension (\(filePath.pathExtension)) of the provided bundle (\(filePath)) is not .xctest or .xctestrun").build()
   }
 
   @objc public func listTestDescriptors() throws -> [FBXCTestDescriptor] {
@@ -404,42 +401,33 @@ private let XctestRunExtension = "xctestrun"
     return FBXCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
-  private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) -> FBFuture<FBInstalledArtifact> {
-    do {
-      let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
-      return saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
-    } catch {
-      return FBFuture(error: error as NSError)
-    }
+  private func saveTestBundleAsync(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+    let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
+    return try await saveBundleAsync(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 
-  private func saveTestRun(_ xcTestRunURL: URL) -> FBFuture<FBInstalledArtifact> {
-    do {
-      let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
-      if descriptors.count != 1 {
-        return FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").failFuture() as! FBFuture<FBInstalledArtifact>
-      }
-
-      let descriptor = descriptors[0]
-      if let toDelete = try? testDescriptor(withID: descriptor.testBundleID) {
-        try FileManager.default.removeItem(at: toDelete.url.deletingLastPathComponent())
-      }
-
-      let uuidString = NSUUID().uuidString
-      let newPath = basePath.appendingPathComponent(uuidString)
-      try prepareDirectory(with: newPath)
-
-      let dir = xcTestRunURL.deletingLastPathComponent()
-      let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: [])
-      for url in contents {
-        try FileManager.default.copyItem(at: url, to: newPath.appendingPathComponent(url.lastPathComponent))
-      }
-
-      let artifact = FBInstalledArtifact(name: descriptor.testBundleID, uuid: nil, path: dir)
-      return FBFuture(result: artifact)
-    } catch {
-      return FBFuture(error: error as NSError)
+  private func saveTestRun(_ xcTestRunURL: URL) throws -> FBInstalledArtifact {
+    let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
+    if descriptors.count != 1 {
+      throw FBIDBError.describe("Expected exactly one test in the xctestrun file, got: \(descriptors.count)").build()
     }
+
+    let descriptor = descriptors[0]
+    if let toDelete = try? testDescriptor(withID: descriptor.testBundleID) {
+      try FileManager.default.removeItem(at: toDelete.url.deletingLastPathComponent())
+    }
+
+    let uuidString = NSUUID().uuidString
+    let newPath = basePath.appendingPathComponent(uuidString)
+    try prepareDirectory(with: newPath)
+
+    let dir = xcTestRunURL.deletingLastPathComponent()
+    let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: [])
+    for url in contents {
+      try FileManager.default.copyItem(at: url, to: newPath.appendingPathComponent(url.lastPathComponent))
+    }
+
+    return FBInstalledArtifact(name: descriptor.testBundleID, uuid: nil, path: dir)
   }
 
   private func prepareDirectory(with url: URL) throws {

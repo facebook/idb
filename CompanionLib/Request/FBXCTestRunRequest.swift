@@ -9,6 +9,8 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
+// swiftlint:disable force_cast
+
 private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
 
 // MARK: - FBXCTestRunRequest
@@ -100,24 +102,20 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60 // Aprox. an hour.
   // MARK: - Public Methods
 
   @objc public func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {
-    return
-      (fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
-      .onQueue(
-        target.workQueue,
-        fmap: { descriptor in
-          let descriptorObj = descriptor as! FBXCTestDescriptor
-          var logDirectoryPath: String?
-          if self.collectLogs {
-            let directory = temporaryDirectory.ephemeralTemporaryDirectory()
-            do {
-              try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-            } catch {
-              return FBFuture(error: error as NSError)
-            }
-            logDirectoryPath = directory.path
-          }
-          return self.startWithTestDescriptor(descriptorObj, logDirectoryPath: logDirectoryPath, reportActivities: self.reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory) as! FBFuture<AnyObject>
-        }) as AnyObject) as! FBFuture<FBIDBTestOperation>
+    fbFutureFromAsync { [self] in
+      try await startAsync(withBundleStorageManager: bundleStorage, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
+    }
+  }
+
+  public func startAsync(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+    let descriptor = try await bridgeFBFuture(fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)) as! FBXCTestDescriptor
+    var logDirectoryPath: String?
+    if collectLogs {
+      let directory = temporaryDirectory.ephemeralTemporaryDirectory()
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+      logDirectoryPath = directory.path
+    }
+    return try await bridgeFBFuture(startWithTestDescriptor(descriptor, logDirectoryPath: logDirectoryPath, reportActivities: reportActivities, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory))
   }
 
   func startWithTestDescriptor(_ testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, reportActivities: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) -> FBFuture<FBIDBTestOperation> {

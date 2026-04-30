@@ -41,16 +41,21 @@ import XCTestBootstrap
   // MARK: - Installation
 
   public func list_apps(_ fetchProcessState: Bool) async throws -> [FBInstalledApplication: Any] {
-    let installedApps: [FBInstalledApplication] = try await bridgeFBFutureArray(target.installedApplications())
-    let runningApps: [String: NSNumber]
+    let commands = try applicationCommands()
+    let installedApps = try await commands.installedApplications()
+    let runningApps: [String: pid_t]
     if fetchProcessState {
-      runningApps = try await bridgeFBFutureDictionary(target.runningApplications())
+      runningApps = try await commands.runningApplications()
     } else {
       runningApps = [:]
     }
     var listing: [FBInstalledApplication: Any] = [:]
     for application in installedApps {
-      listing[application] = runningApps[application.bundle.identifier] ?? NSNull()
+      if let pid = runningApps[application.bundle.identifier] {
+        listing[application] = NSNumber(value: pid)
+      } else {
+        listing[application] = NSNull()
+      }
     }
     return listing
   }
@@ -238,19 +243,23 @@ import XCTestBootstrap
 
     let finalAppPath = resolvedAppPath
     let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
-    typealias ListTestsFn = @convention(c) (AnyObject, Selector, NSString, TimeInterval, NSString?) -> AnyObject
-    let sel = NSSelectorFromString("listTestsForBundleAtPath:timeout:withAppAtPath:")
-    let imp = unsafeBitCast((target as AnyObject).method(for: sel), to: ListTestsFn.self)
-    let future = imp(target as AnyObject, sel, testDescriptor.url.path as NSString, FBIDBCommandExecutor.ListTestBundleTimeout, finalAppPath as NSString?) as! FBFuture<NSArray>
-    return try await bridgeFBFutureArray(future)
+    let commands = try xctestExtendedCommands()
+    return try await commands.listTests(forBundleAtPath: testDescriptor.url.path, timeout: FBIDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
   }
 
   public func uninstall_application(_ bundleID: String) async throws {
-    try await bridgeFBFutureVoid(target.uninstallApplication(withBundleID: bundleID))
+    let commands = try applicationCommands()
+    try await commands.uninstallApplication(bundleID: bundleID)
   }
 
   public func kill_application(_ bundleID: String) async throws {
-    _ = try await bridgeFBFuture(target.killApplication(withBundleID: bundleID).fallback(NSNull()))
+    let commands = try applicationCommands()
+    do {
+      try await commands.killApplication(bundleID: bundleID)
+    } catch {
+      // Mirror the legacy `.fallback(NSNull())` behavior — kill is a no-op when
+      // the app isn't running.
+    }
   }
 
   public func launch_app(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
@@ -268,15 +277,18 @@ import XCTestBootstrap
       io: configuration.io,
       launchMode: configuration.launchMode
     )
-    return try await bridgeFBFuture(target.launchApplication(derived))
+    let commands = try applicationCommands()
+    return try await commands.launchApplication(derived)
   }
 
   public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    return try await bridgeFBFutureArray(target.crashes(predicate, useCache: false))
+    let commands = try crashLogCommands()
+    return try await commands.crashes(matching: predicate, useCache: false)
   }
 
   public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
-    let crashArray: [FBCrashLogInfo] = try await bridgeFBFutureArray(target.crashes(predicate, useCache: true))
+    let commands = try crashLogCommands()
+    let crashArray = try await commands.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
       throw FBIDBError.describe("More than one crash log matching \(predicate)").build()
     }
@@ -287,11 +299,12 @@ import XCTestBootstrap
   }
 
   public func crash_delete(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    return try await bridgeFBFutureArray(target.pruneCrashes(predicate))
+    let commands = try crashLogCommands()
+    return try await commands.pruneCrashes(matching: predicate)
   }
 
   public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
-    return try await bridgeFBFuture(request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory))
+    return try await request.startAsync(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
@@ -324,8 +337,7 @@ import XCTestBootstrap
   }
 
   public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> FBLogOperation {
-    let future = unsafeBitCast(logger.tailToConsumer(consumer), to: FBFuture<FBLogOperation>.self)
-    return try await bridgeFBFuture(future)
+    return try await logger.tailToConsumerAsync(consumer)
   }
 
   public func diagnostic_information() async throws -> NSDictionary {
@@ -338,9 +350,10 @@ import XCTestBootstrap
 
   public func hid(_ event: NSObject) async throws {
     let hid = try await connectToHID()
-    let performSel = NSSelectorFromString("performOnHID:")
-    let future = event.perform(performSel, with: hid)!.takeUnretainedValue() as! FBFuture<AnyObject>
-    _ = try await bridgeFBFuture(future)
+    guard let hidEvent = event as? FBSimulatorHIDEventProtocol else {
+      throw FBIDBError.describe("Event \(event) does not conform to FBSimulatorHIDEventProtocol").build()
+    }
+    _ = try await bridgeFBFuture(hidEvent.sendOn(hid: hid))
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
@@ -376,9 +389,9 @@ import XCTestBootstrap
 
   public func move_paths(_ originPaths: [String], to_path destinationPath: String, containerType: String?) async throws {
     try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
       for originPath in originPaths {
-        try await bridgeFBFutureVoid(containerObj.move(from: originPath, to: destinationPath))
+        try await containerObj.move(from: originPath, to: destinationPath)
       }
     }
   }
@@ -392,17 +405,17 @@ import XCTestBootstrap
 
   public func push_files(_ paths: [URL], to_path destinationPath: String, containerType: String?) async throws {
     try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
       for originPath in paths {
-        try await bridgeFBFutureVoid(containerObj.copy(fromHost: originPath.path, toContainer: destinationPath))
+        try await containerObj.copy(fromHost: originPath.path, toContainer: destinationPath)
       }
     }
   }
 
   public func pull_file_path(_ path: String, destination_path destinationPath: String?, containerType: String?) async throws -> String {
     return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
-      return try await bridgeFBFuture(containerObj.copy(fromContainer: path, toHost: destinationPath!)) as String
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+      return try await containerObj.copy(fromContainer: path, toHost: destinationPath!)
     }
   }
 
@@ -410,8 +423,8 @@ import XCTestBootstrap
     return try await withFBFutureContext(temporaryDirectory.withTemporaryDirectory()) { url in
       let tempPath = ((url as URL).path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
       try await withFBFutureContext(self.applicationDataContainerCommands(containerType)) { container in
-        let containerObj = container as! FBFileContainerProtocol
-        _ = try await bridgeFBFuture(containerObj.copy(fromContainer: path, toHost: tempPath))
+        let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+        _ = try await containerObj.copy(fromContainer: path, toHost: tempPath)
       }
       return try await bridgeFBFuture(FBArchiveOperations.createGzippedTarData(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger!)) as Data
     }
@@ -426,33 +439,33 @@ import XCTestBootstrap
 
   public func create_directory(_ directoryPath: String, containerType: String) async throws {
     try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
-      try await bridgeFBFutureVoid(containerObj.createDirectory(directoryPath))
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+      try await containerObj.createDirectory(directoryPath)
     }
   }
 
   public func remove_paths(_ paths: [String], containerType: String?) async throws {
     try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
       for path in paths {
-        try await bridgeFBFutureVoid(containerObj.remove(path))
+        try await containerObj.remove(path)
       }
     }
   }
 
   public func list_path(_ path: String, containerType: String?) async throws -> [String] {
     return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
-      return try await bridgeFBFutureArray(containerObj.contents(ofDirectory: path))
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+      return try await containerObj.contents(ofDirectory: path)
     }
   }
 
   public func list_paths(_ paths: [String], containerType: String?) async throws -> [String: [String]] {
     return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
       var result: [String: [String]] = [:]
       for path in paths {
-        let listing: [String] = try await bridgeFBFutureArray(containerObj.contents(ofDirectory: path))
+        let listing: [String] = try await containerObj.contents(ofDirectory: path)
         result[path] = listing
       }
       return result
@@ -616,6 +629,33 @@ import XCTestBootstrap
     return FBSimulatorSettingsCommands.commands(with: simulator)
   }
 
+  private func applicationCommands() throws -> any AsyncApplicationCommands {
+    if let simulator = target as? FBSimulator {
+      return FBSimulatorApplicationCommands.commands(with: simulator)
+    } else if let device = target as? FBDevice {
+      return FBDeviceApplicationCommands.commands(with: device)
+    } else {
+      throw FBIDBError.describe("\(target) does not support application commands").build()
+    }
+  }
+
+  private func crashLogCommands() throws -> any AsyncCrashLogCommands {
+    if let simulator = target as? FBSimulator {
+      return FBSimulatorCrashLogCommands.commands(with: simulator)
+    } else if let device = target as? FBDevice {
+      return FBDeviceCrashLogCommands.commands(with: device)
+    } else {
+      throw FBIDBError.describe("\(target) does not support crash log commands").build()
+    }
+  }
+
+  private func xctestExtendedCommands() throws -> any AsyncXCTestExtendedCommands {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot list tests in bundle: \(target)").build()
+    }
+    return FBSimulatorXCTestCommands.commands(with: simulator)
+  }
+
   private func connectToHID() async throws -> FBSimulatorHID {
     let commands = try lifecycleCommands()
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
@@ -632,12 +672,13 @@ import XCTestBootstrap
   private func installAppBundle(_ appBundle: FBBundleDescriptor, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
     let userDevelopmentAppIsRequired = target is FBDevice
     try storageManager.application.checkArchitecture(appBundle)
-    let installedApp = try await bridgeFBFuture(target.installApplication(withPath: appBundle.path))
+    let appCommands = try applicationCommands()
+    let installedApp = try await appCommands.installApplication(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
     // placeholders by app bundle paths instead
-    _ = try await bridgeFBFuture(storageManager.application.saveBundle(appBundle))
+    _ = try await storageManager.application.saveBundleAsync(appBundle)
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
       throw FBIDBError.describe("Requested debuggable install of \(installedApp) but User Development signing is required").build()
     }
@@ -645,11 +686,11 @@ import XCTestBootstrap
   }
 
   private func installXctest(_ extractionDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await bridgeFBFuture(storageManager.xctest.saveBundleOrTestRunFromBaseDirectory(extractionDirectory, skipSigningBundles: skipSigningBundles))
+    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectoryAsync(extractionDirectory, skipSigningBundles: skipSigningBundles)
   }
 
   private func installXctestFilePath(_ xctestURL: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await bridgeFBFuture(storageManager.xctest.saveBundleOrTestRun(xctestURL, skipSigningBundles: skipSigningBundles))
+    return try await storageManager.xctest.saveBundleOrTestRunAsync(xctestURL, skipSigningBundles: skipSigningBundles)
   }
 
   private func installFile(_ extractedFile: URL, intoStorage storage: FBFileStorage) async throws -> FBInstalledArtifact {
@@ -671,7 +712,8 @@ import XCTestBootstrap
     }
     let bundlePathURL: URL
     if linkTo.bundle_type == .app {
-      let app = try await bridgeFBFuture(target.installedApplication(withBundleID: linkTo.bundle_id))
+      let appCommands = try applicationCommands()
+      let app = try await appCommands.installedApplication(bundleID: linkTo.bundle_id)
       logger.log("Going to create a symlink for app bundle: \(app.bundle.name)")
       bundlePathURL = URL(fileURLWithPath: app.bundle.path)
     } else {
@@ -690,6 +732,6 @@ import XCTestBootstrap
 
   private func installBundle(_ extractedDirectory: URL, intoStorage storage: FBBundleStorage) async throws -> FBInstalledArtifact {
     let bundle = try FBStorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await bridgeFBFuture(storage.saveBundle(bundle))
+    return try await storage.saveBundleAsync(bundle)
   }
 }

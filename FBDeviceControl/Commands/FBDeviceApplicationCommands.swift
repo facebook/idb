@@ -408,3 +408,42 @@ public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
     FBApplicationInstallInfoKey.bundleName.rawValue,
   ]
 }
+
+// MARK: - AsyncApplicationCommands
+
+extension FBDeviceApplicationCommands: AsyncApplicationCommands {
+
+  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+    try await installApplicationAsync(withPath: path)
+  }
+
+  public func uninstallApplication(bundleID: String) async throws {
+    try await uninstallApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    try await launchApplicationAsync(configuration)
+  }
+
+  public func killApplication(bundleID: String) async throws {
+    try await killApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func installedApplications() async throws -> [FBInstalledApplication] {
+    try await installedApplicationsAsync()
+  }
+
+  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+    try await installedApplicationAsync(withBundleID: bundleID)
+  }
+
+  public func runningApplications() async throws -> [String: pid_t] {
+    let dict = try await runningApplicationsAsync()
+    return dict.mapValues { $0.int32Value }
+  }
+
+  public func processID(forBundleID bundleID: String) async throws -> pid_t {
+    let pid = try await processIDAsync(withBundleID: bundleID)
+    return pid.int32Value
+  }
+}
