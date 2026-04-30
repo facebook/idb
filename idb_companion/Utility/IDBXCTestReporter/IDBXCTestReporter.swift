@@ -70,6 +70,13 @@ extension IDBXCTestReporter {
     self.logger = logger
   }
 
+  // MARK: - Async API
+
+  /// Waits until reporting has terminated. Returns the status raw value reported.
+  func awaitReportingTerminated() async throws -> NSNumber {
+    try await bridgeFBFuture(convertFBMutableFuture(reportingTerminated))
+  }
+
   // MARK: - FBDataConsumer implementation
 
   @objc func consumeData(_ data: Data) {

@@ -18,6 +18,13 @@ import Foundation
   func tailLog(_ arguments: [String], consumer: FBDataConsumer) -> FBFuture<FBLogOperation>
 }
 
+public extension FBLogCommands {
+
+  func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> FBLogOperation {
+    try await bridgeFBFuture(self.tailLog(arguments, consumer: consumer))
+  }
+}
+
 @objc(FBProcessLogOperation)
 public class FBProcessLogOperation: NSObject, FBLogOperation {
 

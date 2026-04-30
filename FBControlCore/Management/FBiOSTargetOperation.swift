@@ -16,6 +16,18 @@ import Foundation
   var completed: FBFuture<NSNull> { get }
 }
 
+public extension FBiOSTargetOperation {
+  /// Cancels the operation and waits for the cancellation to complete.
+  func cancelAsync() async throws {
+    try await bridgeFBFutureVoid(self.completed.cancel())
+  }
+
+  /// Waits for the operation to complete.
+  func awaitCompletionAsync() async throws {
+    try await bridgeFBFutureVoid(self.completed)
+  }
+}
+
 // MARK: - FBiOSTargetOperationWrapper
 
 private class FBiOSTargetOperationWrapper: NSObject, FBiOSTargetOperation {

@@ -26,10 +26,10 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
-    _ = try await bridgeFBFuture(target.startRecording(toFile: filePath))
+    _ = try await target.startRecordingAsync(toFile: filePath)
 
     _ = try await requestStream.requiredNext
-    try await bridgeFBFutureVoid(target.stopRecording())
+    try await target.stopRecordingAsync()
 
     if start.filePath.isEmpty {
       let gzipTask = FBArchiveOperations.createGzip(

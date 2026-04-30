@@ -17,6 +17,13 @@ public let DEFAULT_SWIPE_DELTA: Double = 10.0
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull>
 }
 
+public extension FBSimulatorHIDEventProtocol {
+  /// Async wrapper for `sendOn(hid:)`.
+  func sendAsync(on hid: FBSimulatorHID) async throws {
+    try await bridgeFBFutureVoid(self.sendOn(hid: hid))
+  }
+}
+
 @objc public protocol FBSimulatorHIDEventPayload: FBSimulatorHIDEventProtocol {
   @objc(payloadForHID:)
   func payload(for hid: FBSimulatorHID) -> Data

@@ -331,7 +331,7 @@ import XCTestBootstrap
 
   public func debugserver_stop() async throws -> FBDebugServer {
     let server = try debugserver_status()
-    try await bridgeFBFutureVoid(server.completed.cancel())
+    try await server.cancelAsync()
     debugServer = nil
     return server
   }
@@ -353,7 +353,7 @@ import XCTestBootstrap
     guard let hidEvent = event as? FBSimulatorHIDEventProtocol else {
       throw FBIDBError.describe("Event \(event) does not conform to FBSimulatorHIDEventProtocol").build()
     }
-    _ = try await bridgeFBFuture(hidEvent.sendOn(hid: hid))
+    try await hidEvent.sendAsync(on: hid)
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
@@ -426,14 +426,14 @@ import XCTestBootstrap
         let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
         _ = try await containerObj.copy(fromContainer: path, toHost: tempPath)
       }
-      return try await bridgeFBFuture(FBArchiveOperations.createGzippedTarData(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger!)) as Data
+      return try await FBArchiveOperations.createGzippedTarDataAsync(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger!)
     }
   }
 
-  public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> FBFuture<NSNull> {
+  public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> any FBiOSTargetOperation {
     return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = container as! FBFileContainerProtocol
-      return try await bridgeFBFuture(containerObj.tail(path, to: consumer))
+      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+      return try await containerObj.tail(path, to: consumer)
     }
   }
 

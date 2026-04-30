@@ -35,7 +35,7 @@ struct XCTestRunMethodHandler {
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
     do {
-      try await bridgeFBFutureVoid(operation.completed)
+      try await operation.awaitCompletionAsync()
     } catch let error as NSError {
       // We should ignore errors that came from test binary. Like when exception is throwed or binary crashed.
       if error.domain != FBTestErrorDomain {
@@ -43,7 +43,7 @@ struct XCTestRunMethodHandler {
       }
     }
 
-    _ = try await bridgeFBFuture(reporter.reportingTerminated)
+    _ = try await reporter.awaitReportingTerminated()
   }
 
   func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {

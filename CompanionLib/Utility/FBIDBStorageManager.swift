@@ -153,7 +153,7 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     }
     let updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
     let provider = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
-    _ = try await bridgeFBFuture(updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger, queue: queue))
+    try await updatedBundle.updatePathsForRelocationAsync(withCodesign: provider, logger: logger, queue: queue)
     return artifact
   }
 
