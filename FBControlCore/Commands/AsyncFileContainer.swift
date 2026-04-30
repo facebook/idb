@@ -79,3 +79,45 @@ extension AsyncFileContainer where Self: FBFileContainerProtocol {
     try await bridgeFBFutureArray(self.contents(ofDirectory: path))
   }
 }
+
+/// Adapter that wraps an `FBFileContainerProtocol` instance and exposes the
+/// `AsyncFileContainer` async API. Concrete `FBFileContainerProtocol`
+/// implementations are scattered across Objective-C internals, so call sites
+/// wrap a value through this adapter to access the async API directly.
+public final class AsyncFileContainerAdapter: NSObject, FBFileContainerProtocol, AsyncFileContainer {
+
+  private let underlying: any FBFileContainerProtocol
+
+  public init(_ underlying: any FBFileContainerProtocol) {
+    self.underlying = underlying
+    super.init()
+  }
+
+  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
+    underlying.copy(fromHost: sourcePath, toContainer: destinationPath)
+  }
+
+  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
+    underlying.copy(fromContainer: sourcePath, toHost: destinationPath)
+  }
+
+  public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
+    underlying.tail(path, to: consumer)
+  }
+
+  public func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
+    underlying.createDirectory(directoryPath)
+  }
+
+  public func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
+    underlying.move(from: sourcePath, to: destinationPath)
+  }
+
+  public func remove(_ path: String) -> FBFuture<NSNull> {
+    underlying.remove(path)
+  }
+
+  public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
+    underlying.contents(ofDirectory: path)
+  }
+}

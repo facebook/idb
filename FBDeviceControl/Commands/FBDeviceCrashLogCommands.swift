@@ -200,3 +200,20 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
         }) as! FBFutureContext<FBAFCConnection>
   }
 }
+
+// MARK: - AsyncCrashLogCommands
+
+extension FBDeviceCrashLogCommands: AsyncCrashLogCommands {
+
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    try await crashesAsync(predicate, useCache: useCache)
+  }
+
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    try await bridgeFBFuture(notifyOfCrash(predicate))
+  }
+
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    try await pruneCrashesAsync(predicate)
+  }
+}
