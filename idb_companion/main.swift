@@ -12,6 +12,8 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
+// swiftlint:disable force_cast
+
 // @oss-disable
   // @oss-disable
 // @oss-disable
@@ -414,7 +416,10 @@ private func cleanFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
             debugserverPort: in_port_t(IDBPortsConfiguration(arguments: userDefaults).debugserverPort),
             logger: idbLogger
           )
-          return commandExecutor.clean() as! FBFuture<AnyObject>
+          return fbFutureFromAsync {
+            try await commandExecutor.clean()
+            return NSNull()
+          } as! FBFuture<AnyObject>
         } catch {
           return FBFuture(error: error)
         }

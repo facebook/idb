@@ -16,7 +16,7 @@ struct MkdirMethodHandler {
 
   func handle(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
-    try await bridgeFBFutureVoid(commandExecutor.create_directory(request.path, containerType: fileContainer))
+    try await commandExecutor.create_directory(request.path, containerType: fileContainer)
     return .init()
   }
 }

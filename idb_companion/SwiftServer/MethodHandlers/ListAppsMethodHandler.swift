@@ -18,7 +18,7 @@ struct ListAppsMethodHandler {
   func handle(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs
     let fetchAppProcessState = !request.suppressProcessState
-    let apps: [FBInstalledApplication: Any] = try await bridgeFBFutureDictionary(commandExecutor.list_apps(fetchAppProcessState))
+    let apps = try await commandExecutor.list_apps(fetchAppProcessState)
 
     return .with {
       $0.apps = apps.map { app, processState in

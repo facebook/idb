@@ -28,11 +28,10 @@ struct XCTestRunMethodHandler {
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
 
-    let operationFuture = commandExecutor.xctest_run(
+    let operation = try await commandExecutor.xctest_run(
       request,
       reporter: reporter,
       logger: FBControlCoreLoggerFactory.logger(to: reporter))
-    let operation = try await bridgeFBFuture(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
     do {

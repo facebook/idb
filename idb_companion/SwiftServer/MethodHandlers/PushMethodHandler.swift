@@ -26,9 +26,7 @@ struct PushMethodHandler {
       .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false)
 
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: inner.container)
-    try await bridgeFBFutureVoid(
-      commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
-    )
+    try await commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
 
     return .init()
   }
