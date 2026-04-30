@@ -30,3 +30,8 @@ extension AsyncAccessibilityOperations where Self: FBAccessibilityOperations {
     try await bridgeFBFuture(self.accessibilityElementMatchingValue(value, forKey: key, depth: depth))
   }
 }
+
+// Explicit conformance so `as? AsyncAccessibilityCommands` succeeds and so the
+// executor can hold an `AsyncAccessibilityCommands` reference. Default impls
+// above (via `where Self: FBAccessibilityOperations`) supply the methods.
+extension FBSimulatorAccessibilityCommands: AsyncAccessibilityCommands {}

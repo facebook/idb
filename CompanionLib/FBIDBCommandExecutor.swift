@@ -121,23 +121,31 @@ import XCTestBootstrap
   // MARK: - Public Methods
 
   public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
-    let commands = target as FBScreenshotCommands
-    return try await bridgeFBFuture(commands.takeScreenshot(format)) as Data
+    let commands: any AsyncScreenshotCommands
+    if let simulator = target as? FBSimulator {
+      commands = FBSimulatorScreenshotCommands.commands(with: simulator)
+    } else if let device = target as? FBDevice {
+      commands = FBDeviceScreenshotCommands.commands(with: device)
+    } else {
+      throw FBIDBError.describe("\(target) does not support screenshot commands").build()
+    }
+    return try await commands.takeScreenshot(format: format)
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
-    guard let cmds = target as? FBAccessibilityCommands else {
-      throw FBIDBError.describe("Target doesn't conform to FBAccessibilityCommands protocol \(target)").build()
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
+    let cmds: any AsyncAccessibilityCommands = FBSimulatorAccessibilityCommands.commands(with: simulator)
     let options = FBAccessibilityRequestOptions.`default`()
     options.nestedFormat = nestedFormat
     options.enableLogging = true
 
     let element: FBAccessibilityElement
     if let value {
-      element = try await bridgeFBFuture(cmds.accessibilityElement(at: value.pointValue))
+      element = try await cmds.accessibilityElement(at: value.pointValue)
     } else {
-      element = try await bridgeFBFuture(cmds.accessibilityElementForFrontmostApplication())
+      element = try await cmds.accessibilityElementForFrontmostApplication()
     }
     defer { element.close() }
     return try element.serialize(with: options)
@@ -145,66 +153,71 @@ import XCTestBootstrap
 
   public func add_media(_ filePaths: [URL]) async throws {
     let commands = try mediaCommands()
-    try await bridgeFBFutureVoid(commands.addMedia(filePaths))
+    try await commands.addMedia(filePaths)
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {
-    guard let commands = target as? AsyncLocationCommands else {
-      throw FBIDBError.describe("\(target) does not conform to FBLocationCommands").build()
+    let commands: any AsyncLocationCommands
+    if let simulator = target as? FBSimulator {
+      commands = FBSimulatorLocationCommands.commands(with: simulator)
+    } else if let device = target as? FBDevice {
+      commands = FBDeviceLocationCommands.commands(with: device)
+    } else {
+      throw FBIDBError.describe("\(target) does not support location commands").build()
     }
     try await commands.overrideLocation(longitude: longitude, latitude: latitude)
   }
 
   public func clear_keychain() async throws {
     let commands = try keychainCommands()
-    try await bridgeFBFutureVoid(commands.clearKeychain())
+    try await commands.clearKeychain()
   }
 
   public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.grantAccess(Set([bundleID]), toServices: services))
+    try await commands.grantAccess(Set([bundleID]), toServices: services)
   }
 
   public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.revokeAccess(Set([bundleID]), toServices: services))
+    try await commands.revokeAccess(Set([bundleID]), toServices: services)
   }
 
   public func approve_deeplink(_ scheme: String, for_application bundleID: String) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.grantAccess(Set([bundleID]), toDeeplink: scheme))
+    try await commands.grantAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func revoke_deeplink(_ scheme: String, for_application bundleID: String) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.revokeAccess(Set([bundleID]), toDeeplink: scheme))
+    try await commands.revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func open_url(_ url: String) async throws {
     let commands = try lifecycleCommands()
-    try await bridgeFBFutureVoid(commands.open(URL(string: url)!))
+    try await commands.open(URL(string: url)!)
   }
 
   public func focus() async throws {
     let commands = try lifecycleCommands()
-    try await bridgeFBFutureVoid(commands.focus())
+    try await commands.focus()
   }
 
   public func update_contacts(_ dbTarData: Data) async throws {
     let commands = try settingsCommands()
     try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(dbTarData)) { tempDir in
-      try await bridgeFBFutureVoid(commands.updateContacts((tempDir as URL).path))
+      try await commands.updateContacts((tempDir as URL).path)
     }
   }
 
   public func clear_contacts() async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.clearContacts())
+    try await commands.clearContacts()
   }
 
   public func clear_photos() async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.clearPhotos())
+    try await commands.clearPhotos()
   }
 
   public func list_test_bundles() async throws -> [FBXCTestDescriptor] {
@@ -282,11 +295,16 @@ import XCTestBootstrap
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
-    guard let commands = target as? FBDebuggerCommands else {
-      throw FBControlCoreError.describe("Target doesn't conform to FBDebuggerCommands protocol \(target)").build()
+    let commands: any AsyncDebuggerCommands
+    if let simulator = target as? FBSimulator {
+      commands = FBSimulatorDebuggerCommands.commands(with: simulator)
+    } else if let device = target as? FBDevice {
+      commands = FBDeviceDebuggerCommands.commands(with: device)
+    } else {
+      throw FBControlCoreError.describe("\(target) does not support debugger commands").build()
     }
     let bundle = try debugserver_prepare(bundleID)
-    let server = try await bridgeFBFuture(commands.launchDebugServer(forHostApplication: bundle, port: debugserverPort))
+    let server = try await commands.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }
@@ -311,10 +329,11 @@ import XCTestBootstrap
   }
 
   public func diagnostic_information() async throws -> NSDictionary {
-    guard let commands = target as? FBDiagnosticInformationCommands else {
+    guard let device = target as? FBDevice else {
       return NSDictionary()
     }
-    return try await bridgeFBFuture(commands.fetchDiagnosticInformation())
+    let commands: any AsyncDiagnosticInformationCommands = FBDeviceDiagnosticInformationCommands.commands(with: device)
+    return try await commands.fetchDiagnosticInformation() as NSDictionary
   }
 
   public func hid(_ event: NSObject) async throws {
@@ -326,27 +345,27 @@ import XCTestBootstrap
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.setHardwareKeyboardEnabled(enabled))
+    try await commands.setHardwareKeyboardEnabled(enabled)
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.setPreference(name, value: value, type: type, domain: domain))
+    try await commands.setPreference(name, value: value, type: type, domain: domain)
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {
     let commands = try settingsCommands()
-    return try await bridgeFBFuture(commands.getCurrentPreference(name, domain: domain)) as String
+    return try await commands.getCurrentPreference(name, domain: domain)
   }
 
   public func set_locale_with_identifier(_ identifier: String) async throws {
     let commands = try settingsCommands()
-    try await bridgeFBFutureVoid(commands.setPreference("AppleLocale", value: identifier, type: nil, domain: nil))
+    try await commands.setPreference("AppleLocale", value: identifier, type: nil, domain: nil)
   }
 
   public func get_current_locale_identifier() async throws -> String {
     let commands = try settingsCommands()
-    return try await bridgeFBFuture(commands.getCurrentPreference("AppleLocale", domain: nil)) as String
+    return try await commands.getCurrentPreference("AppleLocale", domain: nil)
   }
 
   @objc public func list_locale_identifiers() -> [String] {
@@ -441,9 +460,10 @@ import XCTestBootstrap
   }
 
   public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    guard let commands = target as? AsyncDapServerCommand else {
-      throw FBControlCoreError.describe("Target doesn't conform to AsyncDapServerCommand protocol \(target)").build()
+    guard let simulator = target as? FBSimulator else {
+      throw FBControlCoreError.describe("Target is not a simulator, cannot provide dap server commands: \(target)").build()
     }
+    let commands: any AsyncDapServerCommand = FBSimulatorDapServerCommand.commands(with: simulator)
     return try await commands.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 
@@ -455,17 +475,19 @@ import XCTestBootstrap
   }
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    guard let commands = target as? FBNotificationCommands else {
-      throw FBIDBError.describe("\(target) does not conform to FBNotificationCommands").build()
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot send push notifications: \(target)").build()
     }
-    try await bridgeFBFutureVoid(commands.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload))
+    let commands: any AsyncNotificationCommands = FBSimulatorNotificationCommands.commands(with: simulator)
+    try await commands.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 
   public func simulateMemoryWarning() async throws {
-    guard let commands = target as? FBMemoryCommands else {
-      throw FBIDBError.describe("\(target) does not conform to FBMemoryCommands").build()
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot simulate memory warnings: \(target)").build()
     }
-    try await bridgeFBFutureVoid(commands.simulateMemoryWarning())
+    let commands: any AsyncMemoryCommands = FBSimulatorMemoryCommands.commands(with: simulator)
+    try await commands.simulateMemoryWarning()
   }
 
   // MARK: - Private Methods
@@ -566,38 +588,38 @@ import XCTestBootstrap
     return commands.fileCommandsForContainerApplication(containerType!) as! FBFutureContext<AnyObject>
   }
 
-  private func lifecycleCommands() throws -> any FBSimulatorLifecycleCommandsProtocol {
-    guard let commands = target as? FBSimulatorLifecycleCommandsProtocol else {
-      throw FBIDBError.describe("Target doesn't conform to FBSimulatorLifecycleCommands protocol \(target)").build()
+  private func lifecycleCommands() throws -> any AsyncSimulatorLifecycleCommands {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot provide lifecycle commands: \(target)").build()
     }
-    return commands
+    return FBSimulatorLifecycleCommands.commands(with: simulator)
   }
 
-  private func mediaCommands() throws -> any FBSimulatorMediaCommandsProtocol {
-    guard let commands = target as? FBSimulatorMediaCommandsProtocol else {
-      throw FBIDBError.describe("Target doesn't conform to FBSimulatorMediaCommands protocol \(target)").build()
+  private func mediaCommands() throws -> any AsyncMediaCommands {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot provide media commands: \(target)").build()
     }
-    return commands
+    return FBSimulatorMediaCommands.commands(with: simulator)
   }
 
-  private func keychainCommands() throws -> any FBSimulatorKeychainCommandsProtocol {
-    guard let commands = target as? FBSimulatorKeychainCommandsProtocol else {
-      throw FBIDBError.describe("Target doesn't conform to FBSimulatorKeychainCommands protocol \(target)").build()
+  private func keychainCommands() throws -> any AsyncKeychainCommands {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot provide keychain commands: \(target)").build()
     }
-    return commands
+    return FBSimulatorKeychainCommands.commands(with: simulator)
   }
 
-  private func settingsCommands() throws -> any FBSimulatorSettingsCommandsProtocol {
-    guard let commands = target as? (any FBSimulatorSettingsCommandsProtocol) else {
-      throw FBIDBError.describe("Target doesn't conform to FBSimulatorSettingsCommands protocol \(target)").build()
+  private func settingsCommands() throws -> any AsyncSettingsCommands {
+    guard let simulator = target as? FBSimulator else {
+      throw FBIDBError.describe("Target is not a simulator, cannot provide settings commands: \(target)").build()
     }
-    return commands
+    return FBSimulatorSettingsCommands.commands(with: simulator)
   }
 
   private func connectToHID() async throws -> FBSimulatorHID {
     let commands = try lifecycleCommands()
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
-    return try await bridgeFBFuture(commands.connectToHID())
+    return try await commands.connectToHID()
   }
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> FBInstalledArtifact {

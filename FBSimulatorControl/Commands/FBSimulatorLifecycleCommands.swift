@@ -345,3 +345,20 @@ extension FBSimulatorLifecycleCommands: AsyncLifecycleCommands {
     try await resolveLeavesStateAsync(state)
   }
 }
+
+// MARK: - AsyncSimulatorLifecycleCommands
+
+extension FBSimulatorLifecycleCommands: AsyncSimulatorLifecycleCommands {
+
+  public func focus() async throws {
+    try await focusAsync()
+  }
+
+  public func open(_ url: URL) async throws {
+    try await openAsync(url)
+  }
+
+  public func connectToHID() async throws -> FBSimulatorHID {
+    return try await connectToHIDAsync()
+  }
+}
