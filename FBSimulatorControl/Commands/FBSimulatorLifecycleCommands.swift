@@ -155,14 +155,14 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await bridgeFBFutureVoid(FBSimulatorBootStrategy.boot(simulator, with: configuration))
+    try await FBSimulatorBootStrategy.bootAsync(simulator, with: configuration)
   }
 
   fileprivate func shutdownAsync() async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    _ = try await bridgeFBFuture(simulator.set.shutdown(simulator) as FBFuture)
+    try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
   }
 
   fileprivate func rebootAsync() async throws {
@@ -174,7 +174,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    _ = try await bridgeFBFuture(simulator.set.erase(simulator) as FBFuture)
+    try await FBSimulatorEraseStrategy.eraseAsync(simulator)
   }
 
   fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {

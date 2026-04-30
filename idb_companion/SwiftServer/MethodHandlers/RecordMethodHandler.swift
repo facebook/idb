@@ -32,11 +32,11 @@ struct RecordMethodHandler {
     try await target.stopRecordingAsync()
 
     if start.filePath.isEmpty {
-      let gzipTask = FBArchiveOperations.createGzip(
+      let gzipTask = try await FBArchiveOperations.createGzipAsync(
         forPath: filePath,
         logger: targetLogger)
 
-      try await FileDrainWriter.performDrain(taskFuture: gzipTask) { data in
+      try await FileDrainWriter.performDrain(task: gzipTask) { data in
         let response = Idb_RecordResponse.with { $0.payload.data = data }
         try await responseStream.send(response)
       }

@@ -56,7 +56,7 @@ struct XctraceRecordMethodHandler {
         targetLogger,
       ].compactMap({ $0 }))
 
-    let operation = try await bridgeFBFuture(target.startXctraceRecord(config, logger: logger))
+    let operation = try await target.startXctraceRecordAsync(config, logger: logger)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .running
     }
@@ -67,7 +67,7 @@ struct XctraceRecordMethodHandler {
 
   private func stopXCTrace(operation: FBXCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
-    _ = try await bridgeFBFuture(operation.stop(withTimeout: stopTimeout))
+    _ = try await operation.stopAsync(withTimeout: stopTimeout)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }
@@ -88,8 +88,8 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(resp)
 
-    let createTarOperation = FBArchiveOperations.createGzippedTar(forPath: path, logger: logger)
-    try await FileDrainWriter.performDrain(taskFuture: createTarOperation) { data in
+    let createTarOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: path, logger: logger)
+    try await FileDrainWriter.performDrain(task: createTarOperation) { data in
       let response = Idb_XctraceRecordResponse.with {
         $0.payload = .with { $0.data = data }
       }

@@ -13,6 +13,13 @@ import Foundation
   func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation>
 }
 
+public extension FBXCTraceRecordCommandsProtocol {
+
+  func startXctraceRecordAsync(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
+    try await bridgeFBFuture(self.startXctraceRecord(configuration, logger: logger))
+  }
+}
+
 @objc(FBXCTraceRecordCommands)
 public class FBXCTraceRecordCommands: NSObject, FBXCTraceRecordCommandsProtocol {
 

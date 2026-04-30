@@ -13,4 +13,11 @@ import Foundation
   func startInstruments(_ configuration: FBInstrumentsConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBInstrumentsOperation>
 }
 
+public extension FBInstrumentsCommandsProtocol {
+
+  func startInstrumentsAsync(_ configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> FBInstrumentsOperation {
+    try await bridgeFBFuture(self.startInstruments(configuration, logger: logger))
+  }
+}
+
 // FBInstrumentsCommands conforms via ObjC category in FBInstrumentsCommands.m

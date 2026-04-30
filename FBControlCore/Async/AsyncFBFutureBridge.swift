@@ -47,9 +47,7 @@ private final class FBFutureResultBox<T>: @unchecked Sendable {
 /// Cooperative cancellation is honoured: cancelling the surrounding `Task`
 /// also cancels the underlying future via `FBFuture.cancel()`.
 ///
-/// Mirrors the `BridgeFuture.value` API in `CompanionLib`, but lives in
-/// `FBControlCore` so callers below `CompanionLib` can use it. It will be
-/// removed once the underlying `FBFuture` types disappear.
+/// Will be removed once the underlying `FBFuture` types disappear.
 ///
 /// `T` is not constrained to `Sendable` because the existing FBFuture-backed
 /// model types are not `Sendable`-annotated; the bridge ferries the value
@@ -111,8 +109,7 @@ public func bridgeFBFutureVoid(_ future: FBFuture<AnyObject>) async throws {
 /// Awaits an array of `FBFuture`s in parallel and returns the resolved values
 /// in the same order as the inputs.
 ///
-/// Mirrors `BridgeFuture.values` but lives in `FBControlCore`. Cancellation of
-/// the surrounding `Task` cancels every in-flight future.
+/// Cancellation of the surrounding `Task` cancels every in-flight future.
 public func bridgeFBFutures<T: AnyObject>(_ futures: [FBFuture<T>]) async throws -> [T] {
   return try await withThrowingTaskGroup(of: (Int, FBFutureResultBox<T>).self, returning: [T].self) { group in
     var results: [T?] = .init(repeating: nil, count: futures.count)
@@ -145,6 +142,19 @@ public func convertFBMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFutur
   let future: FBFuture<AnyObject> = mutableFuture
   // swiftlint:disable:next force_cast
   return future as! FBFuture<T>
+}
+
+/// Awaits an `FBMutableFuture<T>` and returns its resolved value.
+///
+/// Convenience wrapper around `bridgeFBFuture(convertFBMutableFuture(_:))` that
+/// hides the cast through `FBFuture<T>` from callers.
+public func awaitMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) async throws -> T {
+  try await bridgeFBFuture(convertFBMutableFuture(mutableFuture))
+}
+
+/// Awaits an `FBMutableFuture<NSNull>`, discarding the resolved `NSNull`.
+public func awaitMutableFutureVoid(_ mutableFuture: FBMutableFuture<NSNull>) async throws {
+  try await bridgeFBFutureVoid(convertFBMutableFuture(mutableFuture))
 }
 
 // MARK: - FBFutureContext → async bridge

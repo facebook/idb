@@ -83,22 +83,6 @@ extension FBSimulatorLogCommands: AsyncLogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
     let operation = try await tailLogAsync(arguments: arguments, consumer: consumer)
-    return AsyncFBLogOperationBridge(operation)
-  }
-}
-
-/// Adapter wrapping a legacy `FBLogOperation` in `AsyncLogOperation` shape.
-private final class AsyncFBLogOperationBridge: AsyncLogOperation {
-
-  let consumer: any FBDataConsumer
-  private let underlying: any FBLogOperation
-
-  init(_ underlying: any FBLogOperation) {
-    self.underlying = underlying
-    self.consumer = underlying.consumer
-  }
-
-  func waitUntilCompleted() async throws {
-    try await bridgeFBFutureVoid(underlying.completed)
+    return AsyncLogOperationBridge(operation)
   }
 }

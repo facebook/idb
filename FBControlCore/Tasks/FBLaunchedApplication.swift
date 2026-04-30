@@ -23,3 +23,11 @@ import Foundation
   /// Exit code/Signal status of the launched process is not available.
   @objc var applicationTerminated: FBFuture<NSNull> { get }
 }
+
+public extension FBLaunchedApplication {
+  /// Terminates the launched application by cancelling `applicationTerminated`,
+  /// and awaits the cancellation to complete.
+  func terminateAsync() async throws {
+    try await bridgeFBFutureVoid(self.applicationTerminated.cancel())
+  }
+}
