@@ -6,7 +6,7 @@
  */
 
 import CompanionLib
-import FBControlCore
+@preconcurrency import FBControlCore
 import Foundation
 import GRPC
 import IDBCompanionUtilities
