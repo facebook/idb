@@ -39,8 +39,10 @@ final class FBSimulatorHIDEventOrientationTests: XCTestCase {
   }
 
   func testSetOrientationFactory() {
-    let event = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown)
+    let event: any FBSimulatorHIDEventPayload = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown)
     XCTAssertNotNil(event)
+    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventProtocol.self))
+    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventPayload.self))
   }
 
   func testAllOrientationsCreateDistinctEvents() {

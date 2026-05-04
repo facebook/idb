@@ -342,7 +342,7 @@ private class FBSimulatorHIDEvent_Delay: NSObject, FBSimulatorHIDEventDelay {
 
 // MARK: - FBSimulatorHIDEvent_DeviceOrientation
 
-private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEventProtocol {
+private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEventPayload {
 
   let orientation: FBSimulatorHIDDeviceOrientation
 
@@ -351,10 +351,13 @@ private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEve
     super.init()
   }
 
+  func payload(for hid: FBSimulatorHID) -> Data {
+    return hid.purple.orientationEvent(orientation)
+  }
+
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    let payload = hid.purple.orientationEvent(orientation)
     do {
-      try hid.sendPurpleEvent(payload)
+      try hid.sendPurpleEvent(payload(for: hid))
       return FBFuture<NSNull>.empty()
     } catch {
       return FBFuture<NSNull>(error: error as NSError)
@@ -432,7 +435,7 @@ public final class FBSimulatorHIDEvent: NSObject {
   }
 
   @objc(setOrientation:)
-  public class func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> any FBSimulatorHIDEventProtocol {
+  public class func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> any FBSimulatorHIDEventPayload {
     return FBSimulatorHIDEvent_DeviceOrientation(orientation: orientation)
   }
 
