@@ -256,6 +256,57 @@ private class FBSimulatorHIDEvent_Keyboard: NSObject, FBSimulatorHIDEventPayload
   }
 }
 
+// MARK: - FBSimulatorHIDEvent_TwoFingerTouch
+
+private class FBSimulatorHIDEvent_TwoFingerTouch: NSObject, FBSimulatorHIDEventPayload {
+
+  let direction: FBSimulatorHIDDirection
+  let finger1: CGPoint
+  let finger2: CGPoint
+
+  init(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) {
+    self.direction = direction
+    self.finger1 = finger1
+    self.finger2 = finger2
+    super.init()
+  }
+
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+    return hid.sendEvent(payload(for: hid))
+  }
+
+  func payload(for hid: FBSimulatorHID) -> Data {
+    return hid.indigo.twoFingerTouchScreenSize(
+      hid.mainScreenSize,
+      screenScale: hid.mainScreenScale,
+      direction: direction,
+      finger1: finger1,
+      finger2: finger2)
+  }
+
+  override var description: String {
+    if shouldLogHIDEventDetails() {
+      return "TwoFingerTouch \(directionString(from: direction) ?? "unknown") at (\(finger1.x),\(finger1.y)) (\(finger2.x),\(finger2.y))"
+    }
+    return "TwoFingerTouch <hidden>"
+  }
+
+  func copy(with zone: NSZone? = nil) -> Any {
+    return self
+  }
+
+  override func isEqual(_ object: Any?) -> Bool {
+    guard let other = object as? FBSimulatorHIDEvent_TwoFingerTouch else { return false }
+    return direction == other.direction
+      && finger1.x == other.finger1.x && finger1.y == other.finger1.y
+      && finger2.x == other.finger2.x && finger2.y == other.finger2.y
+  }
+
+  override var hash: Int {
+    return Int(direction.rawValue) ^ Int(finger1.x) ^ Int(finger1.y) ^ Int(finger2.x) ^ Int(finger2.y)
+  }
+}
+
 // MARK: - FBSimulatorHIDEvent_Delay
 
 private class FBSimulatorHIDEvent_Delay: NSObject, FBSimulatorHIDEventDelay {
@@ -400,6 +451,47 @@ public final class FBSimulatorHIDEvent: NSObject {
     events.append(delay(stepDelay))
 
     events.append(touchUpAt(x: xEnd, y: yEnd))
+
+    return with(events: events)
+  }
+
+  @objc(pinchAtX:y:scale:duration:radius:)
+  public class func pinchAt(x centerX: Double, y centerY: Double, scale: Double, duration: Double, radius: Double) -> any FBSimulatorHIDEventComposite {
+    let startRadius = radius
+    let endRadius = radius * scale
+    let fingerDistance = abs(endRadius - startRadius)
+
+    let delta = DEFAULT_SWIPE_DELTA
+    var steps = Int(fingerDistance / delta)
+    if steps < 2 { steps = 2 }
+    let stepDelay = duration / Double(steps + 2)
+
+    var events: [any FBSimulatorHIDEventProtocol] = []
+
+    // Touch down at start positions (fingers on horizontal axis centered on target)
+    let f1Start = CGPoint(x: centerX - startRadius, y: centerY)
+    let f2Start = CGPoint(x: centerX + startRadius, y: centerY)
+    events.append(FBSimulatorHIDEvent_TwoFingerTouch(direction: .down, finger1: f1Start, finger2: f2Start))
+    events.append(delay(stepDelay))
+
+    // Interpolated moves — same pattern as swipe
+    let dr = (endRadius - startRadius) / Double(steps)
+    for i in 1...steps {
+      let r = startRadius + dr * Double(i)
+      let f1 = CGPoint(x: centerX - r, y: centerY)
+      let f2 = CGPoint(x: centerX + r, y: centerY)
+      events.append(FBSimulatorHIDEvent_TwoFingerTouch(direction: .down, finger1: f1, finger2: f2))
+      events.append(delay(stepDelay))
+    }
+
+    // Duplicate final touch-down to avoid inertial scroll on arm simulators
+    let f1End = CGPoint(x: centerX - endRadius, y: centerY)
+    let f2End = CGPoint(x: centerX + endRadius, y: centerY)
+    events.append(FBSimulatorHIDEvent_TwoFingerTouch(direction: .down, finger1: f1End, finger2: f2End))
+    events.append(delay(stepDelay))
+
+    // Touch up at end positions
+    events.append(FBSimulatorHIDEvent_TwoFingerTouch(direction: .up, finger1: f1End, finger2: f2End))
 
     return with(events: events)
   }
