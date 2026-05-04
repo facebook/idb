@@ -340,6 +340,60 @@ private class FBSimulatorHIDEvent_Delay: NSObject, FBSimulatorHIDEventDelay {
   }
 }
 
+// MARK: - FBSimulatorHIDEvent_DeviceOrientation
+
+private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEventProtocol {
+
+  let orientation: FBSimulatorHIDDeviceOrientation
+
+  init(orientation: FBSimulatorHIDDeviceOrientation) {
+    self.orientation = orientation
+    super.init()
+  }
+
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+    let payload = hid.purple.orientationEvent(orientation)
+    do {
+      try hid.sendPurpleEvent(payload)
+      return FBFuture<NSNull>.empty()
+    } catch {
+      return FBFuture<NSNull>(error: error as NSError)
+    }
+  }
+
+  static func orientationString(from orientation: FBSimulatorHIDDeviceOrientation) -> String {
+    switch orientation {
+    case .portrait:
+      return "portrait"
+    case .portraitUpsideDown:
+      return "portrait_upside_down"
+    case .landscapeRight:
+      return "landscape_right"
+    case .landscapeLeft:
+      return "landscape_left"
+    @unknown default:
+      return "unknown"
+    }
+  }
+
+  override var description: String {
+    return "Set Orientation \(FBSimulatorHIDEvent_DeviceOrientation.orientationString(from: orientation))"
+  }
+
+  func copy(with zone: NSZone? = nil) -> Any {
+    return self
+  }
+
+  override func isEqual(_ object: Any?) -> Bool {
+    guard let other = object as? FBSimulatorHIDEvent_DeviceOrientation else { return false }
+    return orientation == other.orientation
+  }
+
+  override var hash: Int {
+    return Int(orientation.rawValue)
+  }
+}
+
 // MARK: - FBSimulatorHIDEvent
 
 @objc(FBSimulatorHIDEvent)
@@ -375,6 +429,11 @@ public final class FBSimulatorHIDEvent: NSObject {
   @objc(keyUp:)
   public class func keyUp(_ keyCode: UInt32) -> any FBSimulatorHIDEventPayload {
     return FBSimulatorHIDEvent_Keyboard(direction: .up, keyCode: keyCode)
+  }
+
+  @objc(setOrientation:)
+  public class func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> any FBSimulatorHIDEventProtocol {
+    return FBSimulatorHIDEvent_DeviceOrientation(orientation: orientation)
   }
 
   // MARK: - Multiple Payload Events

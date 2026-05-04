@@ -17,6 +17,7 @@
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
+#import <FBSimulatorControl/FBSimulatorPurpleHID.h>
 #import <FBSimulatorControl/FBSimulatorVideoStream.h>
 
 #if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)

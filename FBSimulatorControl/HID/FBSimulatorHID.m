@@ -24,8 +24,9 @@
 @interface FBSimulatorHID ()
 
 @property (nonatomic, readonly, strong) SimDeviceLegacyClient *client;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo client:(SimDeviceLegacyClient *)client mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue;
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo purple:(FBSimulatorPurpleHID *)purple client:(SimDeviceLegacyClient *)client simulator:(FBSimulator *)simulator mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue;
 
 @end
 
@@ -58,11 +59,12 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
   float scale = simulator.device.deviceType.mainScreenScale;
-  FBSimulatorHID *hid = [[self alloc] initWithIndigo:indigo client:client mainScreenSize:mainScreenSize mainScreenScale:scale queue:self.workQueue];
+  FBSimulatorPurpleHID *purple = [FBSimulatorPurpleHID purple];
+  FBSimulatorHID *hid = [[self alloc] initWithIndigo:indigo purple:purple client:client simulator:simulator mainScreenSize:mainScreenSize mainScreenScale:scale queue:self.workQueue];
   return [FBFuture futureWithResult:hid];
 }
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo client:(SimDeviceLegacyClient *)client mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo purple:(FBSimulatorPurpleHID *)purple client:(SimDeviceLegacyClient *)client simulator:(FBSimulator *)simulator mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -70,7 +72,9 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   }
 
   _indigo = indigo;
+  _purple = purple;
   _client = client;
+  _simulator = simulator;
   _mainScreenSize = mainScreenSize;
   _queue = queue;
   _mainScreenScale = mainScreenScale;
@@ -107,6 +111,30 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   IndigoMessage *message = malloc(size);
   memcpy(message, data.bytes, size);
   [self.client sendWithMessage:message freeWhenDone:YES completionQueue:completionQueue completion:completion];
+}
+
+- (BOOL)sendPurpleEvent:(NSData *)data error:(NSError **)error
+{
+  FBSimulator *simulator = self.simulator;
+  if (!simulator) {
+    return [[FBSimulatorError describe:@"Cannot send PurpleEvent, simulator reference is nil"] failBool:error];
+  }
+
+  mach_port_t purplePort = [simulator.device lookup:@"PurpleWorkspacePort" error:error];
+  if (purplePort == 0) {
+    return [[FBSimulatorError describe:@"Could not find PurpleWorkspacePort in simulator bootstrap namespace"] failBool:error];
+  }
+
+  // Copy the payload and patch msgh_remote_port with the looked-up port.
+  NSMutableData *mutableData = [data mutableCopy];
+  mach_msg_header_t *header = (mach_msg_header_t *)mutableData.mutableBytes;
+  header->msgh_remote_port = purplePort;
+
+  kern_return_t kr = mach_msg_send(header);
+  if (kr != KERN_SUCCESS) {
+    return [[FBSimulatorError describe:[NSString stringWithFormat:@"mach_msg_send to PurpleWorkspacePort failed: %d", kr]] failBool:error];
+  }
+  return YES;
 }
 
 #pragma mark NSObject

@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@testable import FBSimulatorControl
+import XCTest
+
+final class FBSimulatorHIDEventOrientationTests: XCTestCase {
+
+  private func makeEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> NSObject {
+    return FBSimulatorHIDEvent.setOrientation(orientation) as! NSObject
+  }
+
+  func testOrientationEventEquality() {
+    XCTAssertEqual(makeEvent(.landscapeLeft), makeEvent(.landscapeLeft))
+  }
+
+  func testOrientationEventInequality() {
+    XCTAssertNotEqual(makeEvent(.portrait), makeEvent(.landscapeLeft))
+  }
+
+  func testOrientationEventCopying() {
+    let event = makeEvent(.portrait)
+    let copy = event.copy() as AnyObject
+    XCTAssertTrue(event === copy, "Immutable event should return self from copy")
+  }
+
+  func testOrientationEventHash() {
+    XCTAssertNotEqual(makeEvent(.portrait).hash, makeEvent(.landscapeLeft).hash)
+    XCTAssertEqual(makeEvent(.portrait).hash, makeEvent(.portrait).hash)
+  }
+
+  func testOrientationEventDescription() {
+    let description = makeEvent(.landscapeLeft).description
+    XCTAssertTrue(description.contains("landscape_left"), "Description should contain orientation name, got: \(description)")
+  }
+
+  func testSetOrientationFactory() {
+    let event = FBSimulatorHIDEvent.setOrientation(.portraitUpsideDown)
+    XCTAssertNotNil(event)
+  }
+
+  func testAllOrientationsCreateDistinctEvents() {
+    let events: [NSObject] = [
+      makeEvent(.portrait),
+      makeEvent(.portraitUpsideDown),
+      makeEvent(.landscapeRight),
+      makeEvent(.landscapeLeft),
+    ]
+    let unique = Set(events)
+    XCTAssertEqual(unique.count, 4, "All four orientations should be distinct")
+  }
+}
