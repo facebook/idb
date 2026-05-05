@@ -101,6 +101,15 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
   func clearDns() -> FBFuture<NSNull>
 
   func listDns() -> FBFuture<NSString>
+
+  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
+  func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull>
+
+  @objc(clearHealthAuthorizationForBundleID:)
+  func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull>
+
+  @objc(listHealthAuthorizationForBundleID:)
+  func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString>
 }
 
 @objc(FBSimulatorSettingsCommands)
@@ -417,6 +426,31 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     }
   }
 
+  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
+  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      let action = approved ? "approve" : "revoke"
+      let args = [bundleID] + typeIdentifiers
+      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: args)
+      return NSNull()
+    }
+  }
+
+  @objc(clearHealthAuthorizationForBundleID:)
+  public func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "clear", arguments: [bundleID])
+      return NSNull()
+    }
+  }
+
+  @objc(listHealthAuthorizationForBundleID:)
+  public func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: "list", arguments: [bundleID]) as NSString
+    }
+  }
+
   // MARK: - Async
 
   fileprivate func setHardwareKeyboardEnabledAsync(_ enabled: Bool) async throws {
@@ -511,6 +545,10 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
       try await updateNotificationServiceAsync(Array(bundleIDs), approve: true)
       toApprove.remove(FBTargetSettingsService(rawValue: "notification"))
     }
+    if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService(rawValue: "health")) {
+      try await updateHealthServiceAsync(Array(bundleIDs), approve: true)
+      toApprove.remove(FBTargetSettingsService(rawValue: "health"))
+    }
 
     if !toApprove.isEmpty {
       throw FBSimulatorError.describe("Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(toApprove))) since there is no handling of it").build()
@@ -563,6 +601,10 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService(rawValue: "notification")) {
       try await updateNotificationServiceAsync(Array(bundleIDs), approve: false)
       toRevoke.remove(FBTargetSettingsService(rawValue: "notification"))
+    }
+    if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService(rawValue: "health")) {
+      try await updateHealthServiceAsync(Array(bundleIDs), approve: false)
+      toRevoke.remove(FBTargetSettingsService(rawValue: "health"))
     }
 
     if !toRevoke.isEmpty {
@@ -695,6 +737,16 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     try await bridgeFBFutureVoid(
       FBLocationServicesModificationStrategy(simulator: simulator)
         .revokeLocationServices(forBundleIDs: bundleIDs))
+  }
+
+  fileprivate func updateHealthServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
+    if bundleIDs.isEmpty {
+      throw FBSimulatorError.describe("Empty bundleID set provided to health approve").build()
+    }
+    let action = approved ? "approve" : "revoke"
+    for bundleID in bundleIDs {
+      try await runSimulatorFrameworkBridgeAsync(withService: "health", action: action, arguments: [bundleID])
+    }
   }
 
   fileprivate func updateNotificationServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {

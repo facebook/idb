@@ -9,5 +9,13 @@
     </array>
     <key>com.apple.bulletinboard.settings</key>
     <true/>
+    <key>com.apple.developer.healthkit</key>
+    <true/>
+    <key>com.apple.private.healthkit.authorization_manager</key>
+    <array>
+        <string>read</string>
+        <string>reset</string>
+        <string>write</string>
+    </array>
 </dict>
 </plist>

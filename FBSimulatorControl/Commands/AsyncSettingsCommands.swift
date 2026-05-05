@@ -54,6 +54,12 @@ public protocol AsyncSettingsCommands: AnyObject {
   func clearDns() async throws
 
   func listDns() async throws -> String
+
+  func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws
+
+  func clearHealthAuthorization(forBundleID bundleID: String) async throws
+
+  func listHealthAuthorization(forBundleID bundleID: String) async throws -> String
 }
 
 /// Default bridge implementation against the legacy
@@ -148,5 +154,17 @@ extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol 
 
   public func listDns() async throws -> String {
     return try await bridgeFBFuture(self.listDns()) as String
+  }
+
+  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
+    try await bridgeFBFutureVoid(self.setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers))
+  }
+
+  public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
+    try await bridgeFBFutureVoid(self.clearHealthAuthorization(forBundleID: bundleID))
+  }
+
+  public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
+    return try await bridgeFBFuture(self.listHealthAuthorization(forBundleID: bundleID)) as String
   }
 }
