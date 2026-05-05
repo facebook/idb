@@ -30,80 +30,36 @@ static void *loadSystemConfiguration(void)
   return sc;
 }
 
-static CFMutableDictionaryRef buildHTTPProxyDict(NSString *host, int port)
+NSDictionary<NSString *, id> *buildHTTPProxyDict(NSString *host, int port)
 {
-  CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
-    kCFAllocatorDefault,
-    0,
-    &kCFTypeDictionaryKeyCallBacks,
-    &kCFTypeDictionaryValueCallBacks
-  );
-
-  CFStringRef h = (__bridge CFStringRef)host;
-  CFNumberRef p = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &port);
-  int one = 1;
-  CFNumberRef enabled = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &one);
-
-  CFDictionarySetValue(dict, CFSTR("HTTPEnable"), enabled);
-  CFDictionarySetValue(dict, CFSTR("HTTPProxy"), h);
-  CFDictionarySetValue(dict, CFSTR("HTTPPort"), p);
-  CFDictionarySetValue(dict, CFSTR("HTTPSEnable"), enabled);
-  CFDictionarySetValue(dict, CFSTR("HTTPSProxy"), h);
-  CFDictionarySetValue(dict, CFSTR("HTTPSPort"), p);
-  CFDictionarySetValue(dict, CFSTR("FTPPassive"), enabled);
-
-  CFStringRef exceptions[] = {CFSTR("*.local"), CFSTR("169.254/16")};
-  CFArrayRef excList = CFArrayCreate(kCFAllocatorDefault, (const void **)exceptions, 2, &kCFTypeArrayCallBacks);
-  CFDictionarySetValue(dict, CFSTR("ExceptionsList"), excList);
-
-  CFRelease(p);
-  CFRelease(enabled);
-  CFRelease(excList);
-  return dict;
+  return @{
+    @"HTTPEnable" : @1,
+    @"HTTPProxy" : host,
+    @"HTTPPort" : @(port),
+    @"HTTPSEnable" : @1,
+    @"HTTPSProxy" : host,
+    @"HTTPSPort" : @(port),
+    @"FTPPassive" : @1,
+    @"ExceptionsList" : @[@"*.local", @"169.254/16"],
+  };
 }
 
-static CFMutableDictionaryRef buildSOCKSProxyDict(NSString *host, int port)
+NSDictionary<NSString *, id> *buildSOCKSProxyDict(NSString *host, int port)
 {
-  CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
-    kCFAllocatorDefault,
-    0,
-    &kCFTypeDictionaryKeyCallBacks,
-    &kCFTypeDictionaryValueCallBacks
-  );
-
-  CFStringRef h = (__bridge CFStringRef)host;
-  CFNumberRef p = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &port);
-  int one = 1;
-  CFNumberRef enabled = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &one);
-
-  CFDictionarySetValue(dict, CFSTR("SOCKSEnable"), enabled);
-  CFDictionarySetValue(dict, CFSTR("SOCKSProxy"), h);
-  CFDictionarySetValue(dict, CFSTR("SOCKSPort"), p);
-  CFDictionarySetValue(dict, CFSTR("FTPPassive"), enabled);
-
-  CFStringRef exceptions[] = {CFSTR("*.local"), CFSTR("169.254/16")};
-  CFArrayRef excList = CFArrayCreate(kCFAllocatorDefault, (const void **)exceptions, 2, &kCFTypeArrayCallBacks);
-  CFDictionarySetValue(dict, CFSTR("ExceptionsList"), excList);
-
-  CFRelease(p);
-  CFRelease(enabled);
-  CFRelease(excList);
-  return dict;
+  return @{
+    @"SOCKSEnable" : @1,
+    @"SOCKSProxy" : host,
+    @"SOCKSPort" : @(port),
+    @"FTPPassive" : @1,
+    @"ExceptionsList" : @[@"*.local", @"169.254/16"],
+  };
 }
 
-static CFMutableDictionaryRef buildEmptyProxyDict(void)
+NSDictionary<NSString *, id> *buildEmptyProxyDict(void)
 {
-  CFMutableDictionaryRef dict = CFDictionaryCreateMutable(
-    kCFAllocatorDefault,
-    0,
-    &kCFTypeDictionaryKeyCallBacks,
-    &kCFTypeDictionaryValueCallBacks
-  );
-  int one = 1;
-  CFNumberRef enabled = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &one);
-  CFDictionarySetValue(dict, CFSTR("FTPPassive"), enabled);
-  CFRelease(enabled);
-  return dict;
+  return @{
+    @"FTPPassive" : @1,
+  };
 }
 
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
@@ -131,7 +87,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
 
   CFStringRef key = fn_key(NULL);
 
-  CFDictionaryRef proxyDict = NULL;
+  NSDictionary<NSString *, id> *proxyDict = nil;
   if ([action isEqualToString:@"set"]) {
     if (arguments.count < 2) {
       NSLog(@"[ProxyService] set requires <host> <port> [http|socks]");
@@ -157,8 +113,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     return 1;
   }
 
-  Boolean success = fn_set(store, key, proxyDict);
-  CFRelease(proxyDict);
+  Boolean success = fn_set(store, key, (__bridge CFDictionaryRef)proxyDict);
 
   if (!success) {
     NSLog(@"[ProxyService] SCDynamicStoreSetValue failed");

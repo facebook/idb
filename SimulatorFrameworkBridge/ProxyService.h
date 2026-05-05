@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * Configures per-simulator network proxy settings by writing directly
  * to configd_sim's SCDynamicStore. This is transparent to all networking
@@ -27,3 +29,35 @@
  * @return 0 on success, 1 on failure
  */
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments);
+
+/**
+ * Builds an NSDictionary containing HTTP/HTTPS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue
+ * (toll-free bridged via __bridge).
+ *
+ * @param host The proxy hostname or IP address
+ * @param port The proxy port number
+ * @return An NSDictionary with HTTP and HTTPS proxy keys
+ */
+NSDictionary<NSString *, id> *buildHTTPProxyDict(NSString *host, int port);
+
+/**
+ * Builds an NSDictionary containing SOCKS proxy configuration.
+ * The returned dictionary is suitable for SCDynamicStoreSetValue
+ * (toll-free bridged via __bridge).
+ *
+ * @param host The proxy hostname or IP address
+ * @param port The proxy port number
+ * @return An NSDictionary with SOCKS proxy keys
+ */
+NSDictionary<NSString *, id> *buildSOCKSProxyDict(NSString *host, int port);
+
+/**
+ * Builds an NSDictionary with no proxy configuration (clears all proxy settings).
+ * The returned dictionary contains only FTPPassive=1.
+ *
+ * @return An NSDictionary with cleared proxy settings
+ */
+NSDictionary<NSString *, id> *buildEmptyProxyDict(void);
+
+NS_ASSUME_NONNULL_END
