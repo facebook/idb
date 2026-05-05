@@ -226,13 +226,19 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
           guard let self, let simulator = self.simulator else {
             return FBSimulatorError.describe("Simulator is deallocated").failFuture()
           }
-          var getenvError: AnyObject?
-          let socketPath = simulator.device.getenv(simSockEnvKey, error: &getenvError) as? String
+          let socketPath: String?
+          var getenvError: NSError?
+          do {
+            socketPath = try simulator.device.getenv(simSockEnvKey)
+          } catch {
+            socketPath = nil
+            getenvError = error as NSError
+          }
           if socketPath == nil || socketPath!.isEmpty {
             return
               FBSimulatorError
               .describe("Failed to get \(simSockEnvKey) from simulator environment")
-              .caused(by: getenvError as? NSError)
+              .caused(by: getenvError)
               .failFuture()
           }
           return FBFuture(result: socketPath! as NSString)

@@ -59,7 +59,7 @@ public final class FBSimulatorBootStrategy: NSObject {
     ]
 
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      simulator.device.bootAsync(withOptions: options, completionQueue: simulator.workQueue) { error in
+      simulator.device.bootAsync(options: options, completionQueue: simulator.workQueue) { error in
         if let error {
           continuation.resume(throwing: error)
         } else {

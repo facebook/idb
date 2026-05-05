@@ -120,16 +120,18 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     let appBundle = try await confirmCompatibilityOfApplicationAsync(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
     let appURL = URL(fileURLWithPath: appBundle.path)
-    var installError: AnyObject?
-    if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &installError) {
+    var installError: NSError?
+    do {
+      try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
       return try await installedApplicationAsync(withBundleID: appBundle.identifier)
+    } catch {
+      installError = error as NSError
     }
 
     // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
-    if let err = installError as? NSError, err.description.contains("Failed to load Info.plist from bundle at path") {
+    if let err = installError, err.description.contains("Failed to load Info.plist from bundle at path") {
       simulator.logger?.log("Retrying install due to reinstall bug")
-      var retryError: AnyObject?
-      if simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any], error: &retryError) {
+      if (try? simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])) != nil {
         return try await installedApplicationAsync(withBundleID: appBundle.identifier)
       }
     }
@@ -182,8 +184,9 @@ public final class FBSimulatorApplicationCommands: NSObject, FBApplicationComman
     }
     // Best-effort kill before uninstall; ignore errors.
     _ = try? await killApplicationAsync(withBundleID: bundleID)
-    var uninstallError: AnyObject?
-    if !simulator.device.uninstallApplication(bundleID, withOptions: nil, error: &uninstallError) {
+    do {
+      try simulator.device.uninstallApplication(bundleID, withOptions: nil)
+    } catch {
       throw FBSimulatorError.describe("Failed to uninstall '\(bundleID)'").build()
     }
   }

@@ -299,11 +299,14 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    var lastError: AnyObject?
+    var lastError: NSError?
     for _ in 0...openURLRetries {
       lastError = nil
-      if simulator.device.openURL(url, error: &lastError) {
+      do {
+        try simulator.device.open(url)
         return
+      } catch {
+        lastError = error as NSError
       }
     }
     _ = lastError

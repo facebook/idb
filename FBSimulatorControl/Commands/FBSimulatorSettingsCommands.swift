@@ -9,8 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-private let springBoardServiceName = "com.apple.SpringBoard"
-
 @objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
   func setHardwareKeyboardEnabled(_ enabled: Bool) -> FBFuture<NSNull>
 
@@ -368,7 +366,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 
   // MARK: - Private
 
-  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String) async throws {
+  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -378,8 +376,9 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     if !FileManager.default.fileExists(atPath: helperPath) {
       throw FBSimulatorError.describe("SimulatorFrameworkBridge binary found in bundle but does not exist at path: \(helperPath)").build()
     }
+    let spawnArguments = [helperPath, service, action] + arguments
     let runFuture = unsafeBitCast(
-      simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: [helperPath, service, action])
+      simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: spawnArguments)
         .runUntilCompletion(withAcceptableExitCodes: [0]),
       to: FBFuture<AnyObject>.self
     )
@@ -406,60 +405,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
   }
 
   fileprivate func updateNotificationServiceAsync(_ bundleIDs: [String], approve approved: Bool) async throws {
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
     if bundleIDs.isEmpty {
       throw FBSimulatorError.describe("Empty bundleID set provided to notifications approve").build()
     }
 
-    let bulletinDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Library/BulletinBoard")
-    let notificationsApprovalPlistPath = (bulletinDirectory as NSString).appendingPathComponent("VersionedSectionInfo.plist")
-
-    guard let sectionInfo = NSMutableDictionary(contentsOfFile: notificationsApprovalPlistPath) else {
-      throw FBSimulatorError.describe("Failed to load sectionInfo").build()
-    }
-
-    let sectionInfoDict = sectionInfo["sectionInfo"] as? NSMutableDictionary
-
+    let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      var data: Data? = sectionInfoDict?.object(forKey: bundleID) as? Data
-      if data == nil {
-        data = sectionInfoDict?.allValues.first as? Data
-      }
-      guard let data else {
-        throw FBSimulatorError.describe("No section info for \(bundleID)").build()
-      }
-      if approved {
-        guard let properties = try? PropertyListSerialization.propertyList(from: data, options: .mutableContainersAndLeaves, format: nil) as? NSDictionary else {
-          throw FBSimulatorError.describe("Failed to deserialize section info plist").build()
-        }
-        if let objects = properties["$objects"] as? NSMutableArray {
-          objects[2] = bundleID
-          if let dict = objects[3] as? NSMutableDictionary {
-            dict["allowsNotifications"] = true
-            dict["notificationCenterSetting"] = 1
-            dict["lockScreenSetting"] = 1
-            dict["alertType"] = 1
-            dict["authorizationStatus"] = 2
-          }
-        }
-
-        guard let resultData = try? PropertyListSerialization.data(fromPropertyList: properties, format: .binary, options: 0) else {
-          throw FBSimulatorError.describe("Failed to serialize section info plist").build()
-        }
-        sectionInfoDict?[bundleID] = resultData
-      } else {
-        sectionInfoDict?.removeObject(forKey: bundleID)
-      }
-    }
-
-    if !sectionInfo.write(toFile: notificationsApprovalPlistPath, atomically: true) {
-      throw FBSimulatorError.describe("Failed to write sectionInfo data to plist").build()
-    }
-
-    if simulator.state == .booted {
-      _ = try await bridgeFBFuture(simulator.stopService(withName: springBoardServiceName))
+      try await runSimulatorFrameworkBridgeAsync(withService: "notifications", action: action, arguments: [bundleID])
     }
   }
 
