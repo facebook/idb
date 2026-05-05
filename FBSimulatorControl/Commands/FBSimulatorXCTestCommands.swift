@@ -169,6 +169,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
     }
 
     let bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
+    let architectures = Set((bundleDescriptor.binary?.architectures ?? []).map(\.rawValue))
     let configuration = FBListTestConfiguration.configuration(
       withEnvironment: [:],
       workingDirectory: simulator.auxillaryDirectory,
@@ -176,7 +177,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBXCTestExtendedCommands
       runnerAppPath: appPath,
       waitForDebugger: false,
       timeout: timeout,
-      architectures: (bundleDescriptor.binary?.architectures as? Set<String>) ?? Set())
+      architectures: architectures)
 
     return try await bridgeFBFutureArray(
       FBListTestStrategy(target: unsafeBitCast(simulator, to: (any FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands).self), configuration: configuration, logger: simulator.logger!)
