@@ -169,13 +169,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    if simulator.device.responds(to: NSSelectorFromString("setHardwareKeyboardEnabled:keyboardType:error:")) {
-      try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
-      return
-    }
-    let bridge = try await bridgeFBFuture(simulator.connectToBridge())
-    let setFuture = unsafeBitCast(bridge.setHardwareKeyboardEnabled(enabled), to: FBFuture<AnyObject>.self)
-    _ = try await bridgeFBFuture(setFuture)
+    try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
   }
 
   fileprivate func setSlowAnimationsEnabledAsync(_ enabled: Bool) async throws {
