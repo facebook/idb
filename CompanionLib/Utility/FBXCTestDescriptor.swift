@@ -51,7 +51,8 @@ public extension FBXCTestDescriptor {
   }
 
   @objc public var architectures: Set<String> {
-    testBundle.binary!.architectures as! Set<String>
+    guard let arch = testBundle.binary?.architectures else { return [] }
+    return Set(arch.map(\.rawValue))
   }
 
   @objc public init(url: URL, name: String, testBundle: FBBundleDescriptor) {
@@ -72,7 +73,7 @@ public extension FBXCTestDescriptor {
       .onQueue(
         target.workQueue,
         fmap: { runningApplications in
-          let runningApps = runningApplications as! [String: FBProcessInfo]
+          let runningApps = runningApplications as! [String: NSNumber]
           let killFutures: [FBFuture<AnyObject>] = runningApps.keys.map { bundleID in
             target.killApplication(withBundleID: bundleID) as! FBFuture<AnyObject>
           }
@@ -195,7 +196,8 @@ public extension FBXCTestDescriptor {
   }
 
   @objc public var architectures: Set<String> {
-    testHostBundle.binary!.architectures as! Set<String>
+    guard let arch = testHostBundle.binary?.architectures else { return [] }
+    return Set(arch.map(\.rawValue))
   }
 
   @objc public init(url: URL, name: String, testBundle: FBBundleDescriptor, testHostBundle: FBBundleDescriptor) {
