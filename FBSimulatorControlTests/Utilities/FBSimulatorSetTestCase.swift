@@ -5,13 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
+@testable import FBSimulatorControl
 import Foundation
 import XCTest
-
-@testable import FBSimulatorControl
 
 /// A Test Case Template that creates a Set for mocking.
 class FBSimulatorSetTestCase: XCTestCase {

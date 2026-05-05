@@ -5,15 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
 import CoreMedia
 import FBControlCore
+@testable import FBSimulatorControl
 import VideoToolbox
 import XCTest
-
-@testable import FBSimulatorControl
 
 /// Creates an H264 CMSampleBuffer suitable for testing.
 /// The buffer is marked as data-ready.
