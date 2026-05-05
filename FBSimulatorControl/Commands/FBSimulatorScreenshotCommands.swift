@@ -44,9 +44,9 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands
 
   fileprivate func takeScreenshotAsync(format: FBScreenshotFormat) async throws -> Data {
     let image = try await connectToImage()
-    if format == .JPEG {
+    if format == .jpeg {
       return try image.jpegImageData()
-    } else if format == .PNG {
+    } else if format == .png {
       return try image.pngImageData()
     } else {
       throw FBSimulatorError.describe("\(format) is not a recognized screenshot format").build()

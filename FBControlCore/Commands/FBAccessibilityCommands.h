@@ -29,7 +29,7 @@ extern FBAXKeys _Nonnull const FBAXKeysRole;
 extern FBAXKeys _Nonnull const FBAXKeysRoleDescription;
 extern FBAXKeys _Nonnull const FBAXKeysSubrole;
 extern FBAXKeys _Nonnull const FBAXKeysContentRequired;
-extern FBAXKeys _Nonnull const FBAXKeysPID;
+extern FBAXKeys _Nonnull const FBAXKeysPID NS_SWIFT_NAME(pid);
 extern FBAXKeys _Nonnull const FBAXKeysTraits;
 extern FBAXKeys _Nonnull const FBAXKeysExpanded;
 extern FBAXKeys _Nonnull const FBAXKeysPlaceholder;
@@ -261,7 +261,7 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
   FBAccessibilityScrollDirectionDown,
   FBAccessibilityScrollDirectionLeft,
   FBAccessibilityScrollDirectionRight,
-  FBAccessibilityScrollDirectionToVisible,
+  FBAccessibilityScrollDirectionToVisible NS_SWIFT_NAME(visible),
 };
 
 /**

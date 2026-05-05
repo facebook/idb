@@ -11,7 +11,7 @@ import XCTest
 final class FBVideoStreamConfigurationTests: XCTestCase {
   func testDefaultRateControl() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -23,7 +23,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
 
   func testDefaultKeyFrameRate() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -35,7 +35,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   func testExplicitQualityPreserved() {
     let rc = FBVideoStreamRateControl.quality(NSNumber(value: 0.7))
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: rc,
       scaleFactor: nil,
@@ -49,7 +49,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   func testExplicitBitratePreserved() {
     let rc = FBVideoStreamRateControl.bitrate(NSNumber(value: 500000))
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: rc,
       scaleFactor: nil,
@@ -62,14 +62,14 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   func testConfigurationEquality() {
     let rc = FBVideoStreamRateControl.quality(NSNumber(value: 0.5))
     let a = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: NSNumber(value: 30),
       rateControl: rc,
       scaleFactor: nil,
       keyFrameRate: NSNumber(value: 5.0)
     )
     let b = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: NSNumber(value: 30),
       rateControl: FBVideoStreamRateControl.quality(NSNumber(value: 0.5)),
       scaleFactor: nil,
@@ -80,7 +80,7 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
 
   func testConfigurationCopy() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.H264, transport: FBVideoStreamTransport.annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
