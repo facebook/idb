@@ -46,12 +46,12 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
-  private let debugServerPath: String
+  internal weak var simulator: FBSimulator?
+  internal let debugServerPath: String
 
   // MARK: - Class Methods
 
-  private class func resolveDebugServerPath() -> String {
+  internal class func resolveDebugServerPath() -> String {
     return (FBXcodeConfiguration.contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
@@ -66,7 +66,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
     )
   }
 
-  private init(simulator: FBSimulator, debugServerPath: String) {
+  internal init(simulator: FBSimulator, debugServerPath: String) {
     self.simulator = simulator
     self.debugServerPath = debugServerPath
     super.init()

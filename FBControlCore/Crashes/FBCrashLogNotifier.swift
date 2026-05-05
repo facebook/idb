@@ -13,11 +13,11 @@ public class FBCrashLogNotifier: NSObject {
   // MARK: Properties
 
   @objc public let store: FBCrashLogStore
-  private var sinceDate: Date
+  internal var sinceDate: Date
 
   // MARK: Initializers
 
-  private init(logger: any FBControlCoreLogger) {
+  internal init(logger: any FBControlCoreLogger) {
     self.store = FBCrashLogStore.store(forDirectories: FBCrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
     super.init()

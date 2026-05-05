@@ -126,7 +126,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return FBSimulatorSettingsCommands(simulator: target as! FBSimulator)
   }
 
-  private init(simulator: FBSimulator) {
+  internal init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
   }
@@ -839,7 +839,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     "AddressBookImages.sqlitedb-wal",
   ]
 
-  private class func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
+  internal class func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
     return approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
@@ -879,7 +879,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     }
   }
 
-  private class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal class func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     var tuples: [String] = []
     for bundleID in bundleIDs {
       for service in filteredTCCApprovals(services) {
@@ -890,7 +890,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return tuples.joined(separator: ", ")
   }
 
-  private class func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal class func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -902,7 +902,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return tuples.joined(separator: ", ")
   }
 
-  private class func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal class func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -914,7 +914,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return tuples.joined(separator: ", ")
   }
 
-  private class func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal class func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -965,7 +965,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     return filePaths
   }
 
-  private class func magicDeeplinkKey(forScheme scheme: String) -> String {
+  internal class func magicDeeplinkKey(forScheme scheme: String) -> String {
     return "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
   }
 }
