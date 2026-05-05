@@ -13,6 +13,14 @@ public protocol AsyncSettingsCommands: AnyObject {
 
   func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws
 
+  func currentAppearance() async throws -> FBSimulatorAppearance
+
+  func setAppearance(_ appearance: FBSimulatorAppearance) async throws
+
+  func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory
+
+  func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws
+
   func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws
 
   func getCurrentPreference(_ name: String, domain: String?) async throws -> String
@@ -38,6 +46,24 @@ extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol 
 
   public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
     try await bridgeFBFutureVoid(self.setSetting(setting, enabled: enabled))
+  }
+
+  public func currentAppearance() async throws -> FBSimulatorAppearance {
+    let raw = try await bridgeFBFuture(self.currentAppearance())
+    return FBSimulatorAppearance(rawValue: raw.intValue) ?? .light
+  }
+
+  public func setAppearance(_ appearance: FBSimulatorAppearance) async throws {
+    try await bridgeFBFutureVoid(self.setAppearance(appearance))
+  }
+
+  public func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
+    let raw = try await bridgeFBFuture(self.currentContentSizeCategory())
+    return FBSimulatorContentSizeCategory(rawValue: raw.intValue) ?? .large
+  }
+
+  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws {
+    try await bridgeFBFutureVoid(self.setContentSizeCategory(category))
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
