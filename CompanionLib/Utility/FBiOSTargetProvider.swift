@@ -27,18 +27,7 @@ import XCTestBootstrap
     if !warmUp {
       return FBFuture(result: target as AnyObject)
     }
-    if target.state != .booted {
-      return FBFuture(result: target as AnyObject)
-    }
-    guard let lifecycle = target as? FBSimulatorLifecycleCommandsProtocol else {
-      return FBFuture(result: target as AnyObject)
-    }
-
-    if FBXcodeConfiguration.isXcode12_5OrGreater {
-      return FBFuture(result: target as AnyObject)
-    }
-
-    return lifecycle.connectToBridge().mapReplace(target as AnyObject)
+    return FBFuture(result: target as AnyObject)
   }
 
   // MARK: - Private

@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// swiftlint:disable force_cast
+
 import FBControlCore
 import Foundation
-
-// swiftlint:disable force_cast
 
 @objc(FBSimulatorLocationCommands)
 public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
@@ -45,12 +45,7 @@ public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    if FBSimDeviceWrapper.deviceCanSetLocation(simulator.device) {
-      try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
-      return
-    }
-    let bridge = try await bridgeFBFuture(simulator.connectToBridge()) as! FBSimulatorBridge
-    _ = try await bridgeFBFutureVoid(bridge.setLocationWithLatitude(latitude, longitude: longitude))
+    try FBSimDeviceWrapper.setLocationOnDevice(simulator.device, latitude: latitude, longitude: longitude)
   }
 }
 

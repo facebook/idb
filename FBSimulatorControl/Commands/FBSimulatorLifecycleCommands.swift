@@ -23,8 +23,6 @@ private let openURLRetries = 2
   @objc(disconnectWithTimeout:logger:)
   func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull>
 
-  func connectToBridge() -> FBFuture<FBSimulatorBridge>
-
   func connectToFramebuffer() -> FBFuture<FBFramebuffer>
 
   func connectToHID() -> FBFuture<FBSimulatorHID>
@@ -40,7 +38,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
 
   private weak var simulator: FBSimulator?
   private var hid: FBSimulatorHID?
-  private var bridge: FBSimulatorBridge?
 
   // MARK: - Initializers
 
@@ -117,13 +114,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     fbFutureFromAsync { [self] in
       try await disconnectAsync(withTimeout: timeout, logger: logger)
       return NSNull()
-    }
-  }
-
-  @objc
-  public func connectToBridge() -> FBFuture<FBSimulatorBridge> {
-    fbFutureFromAsync { [self] in
-      try await connectToBridgeAsync()
     }
   }
 
@@ -257,23 +247,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
     if let hid {
       try await bridgeFBFutureVoid(hid.disconnect())
     }
-    if let bridge {
-      try await bridgeFBFutureVoid(bridge.disconnect())
-    }
     self.hid = nil
-    self.bridge = nil
-  }
-
-  fileprivate func connectToBridgeAsync() async throws -> FBSimulatorBridge {
-    if let bridge = self.bridge {
-      return bridge
-    }
-    guard let simulator = self.simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
-    }
-    let bridge = try await bridgeFBFuture(FBSimulatorBridge.bridge(for: simulator) as FBFuture)
-    self.bridge = bridge
-    return bridge
   }
 
   fileprivate func connectToFramebufferAsync() async throws -> FBFramebuffer {
