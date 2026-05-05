@@ -14,7 +14,11 @@
 /// but the public API is uniform: setSetting:enabled:.
 @objc public enum FBSimulatorSetting: UInt {
   case hardwareKeyboard
+  case slowAnimations
+  case increaseContrast
 }
+
+private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
 @objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
   @objc(setSetting:enabled:)
@@ -69,17 +73,22 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 
   @objc(setSetting:enabled:)
   public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull> {
-    switch setting {
-    case .hardwareKeyboard:
-      return setHardwareKeyboardEnabledLegacy(enabled)
+    fbFutureFromAsync { [self] in
+      try await setSettingAsync(setting, enabled: enabled)
+      return NSNull()
     }
   }
 
-  // Private — invoked only by setSetting(.hardwareKeyboard, enabled:).
-  private func setHardwareKeyboardEnabledLegacy(_ enabled: Bool) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
+  // Single source of truth for setSetting dispatch. Both the FBFuture entry point
+  // and the AsyncSettingsCommands async entry point call into this.
+  fileprivate func setSettingAsync(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
+    switch setting {
+    case .hardwareKeyboard:
       try await setHardwareKeyboardEnabledAsync(enabled)
-      return NSNull()
+    case .slowAnimations:
+      try await setSlowAnimationsEnabledAsync(enabled)
+    case .increaseContrast:
+      try await setIncreaseContrastEnabledAsync(enabled)
     }
   }
 
@@ -167,6 +176,25 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     let bridge = try await bridgeFBFuture(simulator.connectToBridge())
     let setFuture = unsafeBitCast(bridge.setHardwareKeyboardEnabled(enabled), to: FBFuture<AnyObject>.self)
     _ = try await bridgeFBFuture(setFuture)
+  }
+
+  fileprivate func setSlowAnimationsEnabledAsync(_ enabled: Bool) async throws {
+    try await setDarwinNotificationStateAsync(enabled, name: slowAnimationsNotification)
+  }
+
+  fileprivate func setIncreaseContrastEnabledAsync(_ enabled: Bool) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try simulator.device.setIncreaseContrastEnabled(enabled)
+  }
+
+  fileprivate func setDarwinNotificationStateAsync(_ enabled: Bool, name: String) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try simulator.device.darwinNotificationSetState(enabled ? 1 : 0, name: name)
+    try simulator.device.postDarwinNotification(name)
   }
 
   fileprivate func setPreferenceAsync(_ name: String, value: String, type: String?, domain: String?) async throws {
@@ -646,10 +674,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 extension FBSimulatorSettingsCommands: AsyncSettingsCommands {
 
   public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
-    switch setting {
-    case .hardwareKeyboard:
-      try await setHardwareKeyboardEnabledAsync(enabled)
-    }
+    try await setSettingAsync(setting, enabled: enabled)
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
