@@ -58,6 +58,11 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
   @objc(setContentSizeCategory:)
   func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull>
 
+  func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride>
+
+  @objc(overrideStatusBar:)
+  func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull>
+
   @objc(setPreference:value:type:domain:)
   func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull>
 
@@ -82,6 +87,11 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
   func clearContacts() -> FBFuture<NSNull>
 
   func clearPhotos() -> FBFuture<NSNull>
+
+  @objc(setProxyWithHost:port:type:)
+  func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull>
+
+  func clearProxy() -> FBFuture<NSNull>
 }
 
 @objc(FBSimulatorSettingsCommands)
@@ -187,6 +197,95 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
   }
 
   @objc
+  public func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride> {
+    fbFutureFromAsync { [self] in
+      try await currentStatusBarOverridesAsync()
+    }
+  }
+
+  fileprivate func currentStatusBarOverridesAsync() async throws -> FBStatusBarOverride {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    var timeString: NSString?
+    var dataNetworkType: NSNumber?
+    var wiFiMode: NSNumber?
+    var wiFiBars: NSNumber?
+    var cellularMode: NSNumber?
+    var operatorName: NSString?
+    var cellularBars: NSNumber?
+    var batteryState: NSNumber?
+    var batteryLevel: NSNumber?
+    var showNotCharging: NSNumber?
+    try simulator.device.currentStatusBarOverrides(
+      forTime: &timeString,
+      dataNetworkType: &dataNetworkType,
+      wiFiMode: &wiFiMode,
+      wiFiBars: &wiFiBars,
+      cellularMode: &cellularMode,
+      operatorName: &operatorName,
+      cellularBars: &cellularBars,
+      batteryState: &batteryState,
+      batteryLevel: &batteryLevel,
+      showNotCharging: &showNotCharging)
+    let override = FBStatusBarOverride()
+    override.timeString = timeString as String?
+    override.dataNetworkType = dataNetworkType
+    override.wiFiMode = wiFiMode
+    override.wiFiBars = wiFiBars
+    override.cellularMode = cellularMode
+    override.cellularBars = cellularBars
+    override.operatorName = operatorName as String?
+    override.batteryState = batteryState
+    override.batteryLevel = batteryLevel
+    override.showNotCharging = showNotCharging
+    return override
+  }
+
+  @objc(overrideStatusBar:)
+  public func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await overrideStatusBarAsync(override)
+      return NSNull()
+    }
+  }
+
+  fileprivate func overrideStatusBarAsync(_ override: FBStatusBarOverride?) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    guard let override else {
+      // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
+      // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.
+      try simulator.device.clearStatusBarOverrides(UInt.max)
+      return
+    }
+    if let timeString = override.timeString {
+      try simulator.device.overrideStatusBarTime(timeString)
+    }
+    if let dataNetworkType = override.dataNetworkType {
+      try simulator.device.overrideStatusBarDataNetworkType(dataNetworkType.intValue)
+    }
+    if override.wiFiMode != nil || override.wiFiBars != nil {
+      let mode = override.wiFiMode?.intValue ?? 3
+      let bars = override.wiFiBars?.intValue ?? 3
+      try simulator.device.overrideStatusBarWiFiMode(mode, bars: bars)
+    }
+    if override.cellularMode != nil || override.operatorName != nil || override.cellularBars != nil {
+      let mode = override.cellularMode?.intValue ?? 3
+      let name = override.operatorName ?? ""
+      let bars = override.cellularBars?.intValue ?? 4
+      try simulator.device.overrideStatusBarCellularMode(mode, operatorName: name, bars: bars)
+    }
+    if override.batteryState != nil || override.batteryLevel != nil || override.showNotCharging != nil {
+      let state = override.batteryState?.intValue ?? 2
+      let level = override.batteryLevel?.intValue ?? 100
+      let notCharging = override.showNotCharging?.boolValue ?? false
+      try simulator.device.overrideStatusBarBatteryState(state, batteryLevel: level, showNotCharging: notCharging)
+    }
+  }
+
+  @objc
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await setPreferenceAsync(name, value: value, type: type, domain: domain)
@@ -253,6 +352,25 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
   public func clearPhotos() -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await runSimulatorFrameworkBridgeAsync(withService: "photos", action: "clear")
+      return NSNull()
+    }
+  }
+
+  @objc(setProxyWithHost:port:type:)
+  public func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(
+        withService: "proxy",
+        action: "set",
+        arguments: [host, "\(port)", type.isEmpty ? "http" : type])
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func clearProxy() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "clear")
       return NSNull()
     }
   }

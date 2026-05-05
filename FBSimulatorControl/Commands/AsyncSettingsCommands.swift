@@ -21,6 +21,10 @@ public protocol AsyncSettingsCommands: AnyObject {
 
   func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws
 
+  func currentStatusBarOverrides() async throws -> FBStatusBarOverride
+
+  func overrideStatusBar(_ override: FBStatusBarOverride?) async throws
+
   func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws
 
   func getCurrentPreference(_ name: String, domain: String?) async throws -> String
@@ -38,6 +42,10 @@ public protocol AsyncSettingsCommands: AnyObject {
   func clearContacts() async throws
 
   func clearPhotos() async throws
+
+  func setProxy(host: String, port: UInt, type: String) async throws
+
+  func clearProxy() async throws
 }
 
 /// Default bridge implementation against the legacy
@@ -64,6 +72,14 @@ extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol 
 
   public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws {
     try await bridgeFBFutureVoid(self.setContentSizeCategory(category))
+  }
+
+  public func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
+    return try await bridgeFBFuture(self.currentStatusBarOverrides())
+  }
+
+  public func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
+    try await bridgeFBFutureVoid(self.overrideStatusBar(override))
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
@@ -100,5 +116,13 @@ extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol 
 
   public func clearPhotos() async throws {
     try await bridgeFBFutureVoid(self.clearPhotos())
+  }
+
+  public func setProxy(host: String, port: UInt, type: String) async throws {
+    try await bridgeFBFutureVoid(self.setProxy(host: host, port: port, type: type))
+  }
+
+  public func clearProxy() async throws {
+    try await bridgeFBFutureVoid(self.clearProxy())
   }
 }

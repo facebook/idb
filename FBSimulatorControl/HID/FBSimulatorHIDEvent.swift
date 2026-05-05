@@ -433,6 +433,76 @@ private class FBSimulatorHIDEvent_Shake: NSObject, FBSimulatorHIDEventPayload {
   }
 }
 
+// MARK: - FBSimulatorHIDEvent_ToggleInCallStatusBar
+
+private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincallstatusbar"
+
+private class FBSimulatorHIDEvent_ToggleInCallStatusBar: NSObject, FBSimulatorHIDEventPayload {
+
+  func payload(for hid: FBSimulatorHID) -> Data {
+    return Data()
+  }
+
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+    do {
+      try hid.postDarwinNotification(inCallStatusBarNotification)
+      return FBFuture<NSNull>.empty()
+    } catch {
+      return FBFuture<NSNull>(error: error as NSError)
+    }
+  }
+
+  override var description: String {
+    return "Toggle In-Call Status Bar"
+  }
+
+  func copy(with zone: NSZone? = nil) -> Any {
+    return self
+  }
+
+  override func isEqual(_ object: Any?) -> Bool {
+    return object is FBSimulatorHIDEvent_ToggleInCallStatusBar
+  }
+
+  override var hash: Int {
+    return inCallStatusBarNotification.hashValue
+  }
+}
+
+// MARK: - FBSimulatorHIDEvent_LockDevice
+
+private class FBSimulatorHIDEvent_LockDevice: NSObject, FBSimulatorHIDEventPayload {
+
+  func payload(for hid: FBSimulatorHID) -> Data {
+    return hid.purple.lockDeviceEvent()
+  }
+
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+    do {
+      try hid.sendPurpleEvent(payload(for: hid))
+      return FBFuture<NSNull>.empty()
+    } catch {
+      return FBFuture<NSNull>(error: error as NSError)
+    }
+  }
+
+  override var description: String {
+    return "Lock Device"
+  }
+
+  func copy(with zone: NSZone? = nil) -> Any {
+    return self
+  }
+
+  override func isEqual(_ object: Any?) -> Bool {
+    return object is FBSimulatorHIDEvent_LockDevice
+  }
+
+  override var hash: Int {
+    return 1014
+  }
+}
+
 // MARK: - FBSimulatorHIDEvent
 
 @objc(FBSimulatorHIDEvent)
@@ -478,6 +548,16 @@ public final class FBSimulatorHIDEvent: NSObject {
   @objc(shake)
   public class func shake() -> any FBSimulatorHIDEventPayload {
     return FBSimulatorHIDEvent_Shake()
+  }
+
+  @objc(lockDevice)
+  public class func lockDevice() -> any FBSimulatorHIDEventPayload {
+    return FBSimulatorHIDEvent_LockDevice()
+  }
+
+  @objc(toggleInCallStatusBar)
+  public class func toggleInCallStatusBar() -> any FBSimulatorHIDEventPayload {
+    return FBSimulatorHIDEvent_ToggleInCallStatusBar()
   }
 
   // MARK: - Multiple Payload Events
