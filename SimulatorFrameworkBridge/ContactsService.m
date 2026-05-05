@@ -10,7 +10,7 @@
 #import <Contacts/Contacts.h>
 #import <Foundation/Foundation.h>
 
-int clearContacts(void)
+static int clearContacts(void)
 {
   CNContactStore *contactStore = [[CNContactStore alloc] init];
 
