@@ -5,12 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
-import Foundation
-
 @testable import FBSimulatorControl
+import Foundation
 
 @objcMembers
 class FBSimulatorControlTests_SimDeviceType_Double: NSObject {

@@ -5,14 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
 import FBControlCore
+@testable import FBSimulatorControl
 import Foundation
 import ObjectiveC
-
-@testable import FBSimulatorControl
 
 // MARK: - AXPTranslationObject Double
 
