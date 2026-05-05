@@ -397,6 +397,42 @@ private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEve
   }
 }
 
+// MARK: - FBSimulatorHIDEvent_Shake
+
+private let shakeDarwinNotification = "com.apple.UIKit.SimulatorShake"
+
+private class FBSimulatorHIDEvent_Shake: NSObject, FBSimulatorHIDEventPayload {
+
+  func payload(for hid: FBSimulatorHID) -> Data {
+    return Data()
+  }
+
+  func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
+    do {
+      try hid.postDarwinNotification(shakeDarwinNotification)
+      return FBFuture<NSNull>.empty()
+    } catch {
+      return FBFuture<NSNull>(error: error as NSError)
+    }
+  }
+
+  override var description: String {
+    return "Shake"
+  }
+
+  func copy(with zone: NSZone? = nil) -> Any {
+    return self
+  }
+
+  override func isEqual(_ object: Any?) -> Bool {
+    return object is FBSimulatorHIDEvent_Shake
+  }
+
+  override var hash: Int {
+    return shakeDarwinNotification.hashValue
+  }
+}
+
 // MARK: - FBSimulatorHIDEvent
 
 @objc(FBSimulatorHIDEvent)
@@ -437,6 +473,11 @@ public final class FBSimulatorHIDEvent: NSObject {
   @objc(setOrientation:)
   public class func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> any FBSimulatorHIDEventPayload {
     return FBSimulatorHIDEvent_DeviceOrientation(orientation: orientation)
+  }
+
+  @objc(shake)
+  public class func shake() -> any FBSimulatorHIDEventPayload {
+    return FBSimulatorHIDEvent_Shake()
   }
 
   // MARK: - Multiple Payload Events

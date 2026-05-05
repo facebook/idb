@@ -9,8 +9,16 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
+/// An enumeration of simulator settings that can be toggled on/off.
+/// Each value maps to a different underlying transport (SimDevice API, Darwin notification, etc.)
+/// but the public API is uniform: setSetting:enabled:.
+@objc public enum FBSimulatorSetting: UInt {
+  case hardwareKeyboard
+}
+
 @objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-  func setHardwareKeyboardEnabled(_ enabled: Bool) -> FBFuture<NSNull>
+  @objc(setSetting:enabled:)
+  func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull>
 
   @objc(setPreference:value:type:domain:)
   func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull>
@@ -59,8 +67,16 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 
   // MARK: - Public (legacy FBFuture entry points)
 
-  @objc
-  public func setHardwareKeyboardEnabled(_ enabled: Bool) -> FBFuture<NSNull> {
+  @objc(setSetting:enabled:)
+  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull> {
+    switch setting {
+    case .hardwareKeyboard:
+      return setHardwareKeyboardEnabledLegacy(enabled)
+    }
+  }
+
+  // Private — invoked only by setSetting(.hardwareKeyboard, enabled:).
+  private func setHardwareKeyboardEnabledLegacy(_ enabled: Bool) -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await setHardwareKeyboardEnabledAsync(enabled)
       return NSNull()
@@ -629,8 +645,11 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 
 extension FBSimulatorSettingsCommands: AsyncSettingsCommands {
 
-  public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
-    try await setHardwareKeyboardEnabledAsync(enabled)
+  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
+    switch setting {
+    case .hardwareKeyboard:
+      try await setHardwareKeyboardEnabledAsync(enabled)
+    }
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {

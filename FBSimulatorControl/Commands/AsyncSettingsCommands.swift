@@ -11,7 +11,7 @@ import Foundation
 /// Swift-native async/await counterpart of `FBSimulatorSettingsCommandsProtocol`.
 public protocol AsyncSettingsCommands: AnyObject {
 
-  func setHardwareKeyboardEnabled(_ enabled: Bool) async throws
+  func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws
 
   func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws
 
@@ -36,8 +36,8 @@ public protocol AsyncSettingsCommands: AnyObject {
 /// `FBSimulatorSettingsCommandsProtocol`.
 extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol {
 
-  public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
-    try await bridgeFBFutureVoid(self.setHardwareKeyboardEnabled(enabled))
+  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) async throws {
+    try await bridgeFBFutureVoid(self.setSetting(setting, enabled: enabled))
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {

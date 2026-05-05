@@ -55,4 +55,30 @@ final class FBSimulatorHIDEventOrientationTests: XCTestCase {
     let unique = Set(events)
     XCTAssertEqual(unique.count, 4, "All four orientations should be distinct")
   }
+
+  // MARK: - Shake
+
+  func testShakeFactory() {
+    let event: any FBSimulatorHIDEventPayload = FBSimulatorHIDEvent.shake()
+    XCTAssertNotNil(event)
+    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventProtocol.self))
+    XCTAssertTrue((event as AnyObject).conforms(to: FBSimulatorHIDEventPayload.self))
+  }
+
+  func testShakeEquality() {
+    let event1 = FBSimulatorHIDEvent.shake() as! NSObject
+    let event2 = FBSimulatorHIDEvent.shake() as! NSObject
+    XCTAssertEqual(event1, event2)
+  }
+
+  func testShakeCopying() {
+    let event = FBSimulatorHIDEvent.shake() as AnyObject
+    let copy = (event as! NSObject).copy() as AnyObject
+    XCTAssertTrue(event === copy, "Immutable event should return self from copy")
+  }
+
+  func testShakeDescription() {
+    let event = FBSimulatorHIDEvent.shake() as! NSObject
+    XCTAssertTrue(event.description.contains("Shake"))
+  }
 }
