@@ -92,6 +92,15 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
   func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull>
 
   func clearProxy() -> FBFuture<NSNull>
+
+  func listProxy() -> FBFuture<NSString>
+
+  @objc(setDnsServers:)
+  func setDnsServers(_ servers: [String]) -> FBFuture<NSNull>
+
+  func clearDns() -> FBFuture<NSNull>
+
+  func listDns() -> FBFuture<NSString>
 }
 
 @objc(FBSimulatorSettingsCommands)
@@ -375,6 +384,39 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     }
   }
 
+  @objc
+  public func listProxy() -> FBFuture<NSString> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "proxy", action: "list") as NSString
+    }
+  }
+
+  @objc(setDnsServers:)
+  public func setDnsServers(_ servers: [String]) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      if servers.isEmpty {
+        throw FBSimulatorError.describe("At least one DNS server address is required").build()
+      }
+      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "set", arguments: servers)
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func clearDns() -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "clear")
+      return NSNull()
+    }
+  }
+
+  @objc
+  public func listDns() -> FBFuture<NSString> {
+    fbFutureFromAsync { [self] in
+      try await runSimulatorFrameworkBridgeAsync(withService: "dns", action: "list") as NSString
+    }
+  }
+
   // MARK: - Async
 
   fileprivate func setHardwareKeyboardEnabledAsync(_ enabled: Bool) async throws {
@@ -616,7 +658,8 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
 
   // MARK: - Private
 
-  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws {
+  @discardableResult
+  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -627,13 +670,13 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
       throw FBSimulatorError.describe("SimulatorFrameworkBridge binary found in bundle but does not exist at path: \(helperPath)").build()
     }
     let spawnArguments = [helperPath, service, action] + arguments
-    let runFuture = unsafeBitCast(
+    let runFuture =
       simulator.simctlExecutor.taskBuilder(withCommand: "spawn", arguments: spawnArguments)
-        .runUntilCompletion(withAcceptableExitCodes: [0]),
-      to: FBFuture<AnyObject>.self
-    )
-    _ = try await bridgeFBFuture(runFuture)
+      .withStdOutInMemoryAsString()
+      .runUntilCompletion(withAcceptableExitCodes: [0])
+    let task = try await bridgeFBFuture(runFuture)
     simulator.logger?.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
+    return (task.stdOut as String?) ?? ""
   }
 
   fileprivate func authorizeLocationSettingsAsync(_ bundleIDs: [String]) async throws {

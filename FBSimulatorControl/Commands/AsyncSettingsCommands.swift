@@ -46,6 +46,14 @@ public protocol AsyncSettingsCommands: AnyObject {
   func setProxy(host: String, port: UInt, type: String) async throws
 
   func clearProxy() async throws
+
+  func listProxy() async throws -> String
+
+  func setDnsServers(_ servers: [String]) async throws
+
+  func clearDns() async throws
+
+  func listDns() async throws -> String
 }
 
 /// Default bridge implementation against the legacy
@@ -124,5 +132,21 @@ extension AsyncSettingsCommands where Self: FBSimulatorSettingsCommandsProtocol 
 
   public func clearProxy() async throws {
     try await bridgeFBFutureVoid(self.clearProxy())
+  }
+
+  public func listProxy() async throws -> String {
+    return try await bridgeFBFuture(self.listProxy()) as String
+  }
+
+  public func setDnsServers(_ servers: [String]) async throws {
+    try await bridgeFBFutureVoid(self.setDnsServers(servers))
+  }
+
+  public func clearDns() async throws {
+    try await bridgeFBFutureVoid(self.clearDns())
+  }
+
+  public func listDns() async throws -> String {
+    return try await bridgeFBFuture(self.listDns()) as String
   }
 }
