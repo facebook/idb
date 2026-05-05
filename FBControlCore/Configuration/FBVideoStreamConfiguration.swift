@@ -21,7 +21,7 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
 
   @objc
   public class func mjpeg() -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .MJPEG, codec: nil, transport: nil)
+    return FBVideoStreamFormat(type: .mjpeg, codec: nil, transport: nil)
   }
 
   @objc
@@ -31,7 +31,7 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
 
   @objc
   public class func bgra() -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .BGRA, codec: nil, transport: nil)
+    return FBVideoStreamFormat(type: .bgra, codec: nil, transport: nil)
   }
 
   private init(type: FBVideoStreamFormatType, codec: FBVideoStreamCodec?, transport: FBVideoStreamTransport?) {
@@ -69,11 +69,11 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
     switch type {
     case .compressedVideo:
       return "\(codec?.rawValue ?? "") over \(transport?.rawValue ?? "")"
-    case .MJPEG:
+    case .mjpeg:
       return "MJPEG"
     case .minicap:
       return "Minicap"
-    case .BGRA:
+    case .bgra:
       return "BGRA"
     @unknown default:
       return "Format(\(type.rawValue))"

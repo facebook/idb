@@ -15,7 +15,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testBasePropertiesAlwaysPresent() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .H264, transport: .annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -71,7 +71,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testH264CompressionPropertiesContainQuality() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .H264, transport: .annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: FBVideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
@@ -85,7 +85,7 @@ final class FBSimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 
   func testH264ProfileAndEntropyMode() {
     let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .H264, transport: .annexB),
+      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,

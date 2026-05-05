@@ -84,11 +84,11 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
         return FBDeviceVideoStream_H264.self
       }
       return nil
-    case .MJPEG:
+    case .mjpeg:
       return FBDeviceVideoStream_MJPEG.self
     case .minicap:
       return FBDeviceVideoStream_Minicap.self
-    case .BGRA:
+    case .bgra:
       return FBDeviceVideoStream_BGRA.self
     @unknown default:
       return nil

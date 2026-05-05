@@ -15,7 +15,7 @@ struct ScreenshotMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
-    let screenshot = try await commandExecutor.take_screenshot(.PNG)
+    let screenshot = try await commandExecutor.take_screenshot(.png)
     return .with {
       $0.imageData = screenshot
     }
