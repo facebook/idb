@@ -101,4 +101,18 @@
   XCTAssertEqual(dispatchService(@"dns", @"unknown", @[]), 1);
 }
 
+#pragma mark - Health routing
+
+- (void)testDispatchHealthRoutes
+{
+  // HealthKit unavailable on macOS → returns 1
+  XCTAssertEqual(dispatchService(@"health", @"list", @[@"com.test"]), 1);
+}
+
+- (void)testDispatchHealthNoBundleID
+{
+  // "list" with no arguments — bundleID is nil, framework load also fails
+  XCTAssertEqual(dispatchService(@"health", @"list", @[]), 1);
+}
+
 @end

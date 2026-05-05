@@ -19,3 +19,4 @@ extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceLocation;
 extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceMicrophone;
 extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceUrl;
 extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceNotification;
+extern FBTargetSettingsService _Nonnull const FBTargetSettingsServiceHealth;
