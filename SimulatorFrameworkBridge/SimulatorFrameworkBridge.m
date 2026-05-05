@@ -10,6 +10,7 @@
 #import "ContactsService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
+#import "ProxyService.h"
 
 int main(int argc, const char *argv[])
 {
@@ -24,16 +25,24 @@ int main(int argc, const char *argv[])
     NSString *service = [NSString stringWithUTF8String:argv[1]];
     NSString *action = [NSString stringWithUTF8String:argv[2]];
 
+    // Collect remaining args (argv[3..]) into an array for services that need them
+    NSMutableArray<NSString *> *remainingArgs = [NSMutableArray array];
+    for (int i = 3; i < argc; i++) {
+      [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
+    }
+
     if ([service isEqualToString:@"contacts"]) {
       return handleContactsAction(action);
     } else if ([service isEqualToString:@"photos"]) {
       return handlePhotoLibraryAction(action);
     } else if ([service isEqualToString:@"notifications"]) {
-      NSString *bundleID = argc >= 4 ? [NSString stringWithUTF8String:argv[3]] : nil;
+      NSString *bundleID = remainingArgs.count > 0 ? remainingArgs[0] : nil;
       return handleNotificationSettingsAction(action, bundleID);
+    } else if ([service isEqualToString:@"proxy"]) {
+      return handleProxyAction(action, remainingArgs);
     } else {
       NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts, photos, notifications");
+      NSLog(@"Available services: contacts, photos, notifications, proxy");
       return 1;
     }
     return 0;

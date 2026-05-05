@@ -81,4 +81,28 @@ final class FBSimulatorHIDEventOrientationTests: XCTestCase {
     let event = FBSimulatorHIDEvent.shake() as! NSObject
     XCTAssertTrue(event.description.contains("Shake"))
   }
+
+  // MARK: - Lock Device
+
+  func testLockDeviceFactory() {
+    let event = FBSimulatorHIDEvent.lockDevice()
+    XCTAssertNotNil(event)
+  }
+
+  func testLockDeviceDescription() {
+    let event = FBSimulatorHIDEvent.lockDevice() as! NSObject
+    XCTAssertTrue(event.description.contains("Lock"))
+  }
+
+  func testLockDeviceEquality() {
+    let event1 = FBSimulatorHIDEvent.lockDevice() as! NSObject
+    let event2 = FBSimulatorHIDEvent.lockDevice() as! NSObject
+    XCTAssertEqual(event1, event2)
+  }
+
+  func testLockDeviceCopying() {
+    let event = FBSimulatorHIDEvent.lockDevice() as! NSObject
+    let copied = event.copy() as! NSObject
+    XCTAssertEqual(event, copied)
+  }
 }
