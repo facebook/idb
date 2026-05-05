@@ -109,4 +109,12 @@
   XCTAssertEqualObjects(dict[@"FTPPassive"], @1);
 }
 
+#pragma mark - handleProxyAction list
+
+- (void)testHandleProxyActionListCompletes
+{
+  int result = handleProxyAction(@"list", @[]);
+  XCTAssertEqual(result, 0);
+}
+
 @end

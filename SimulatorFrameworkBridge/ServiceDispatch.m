@@ -8,6 +8,7 @@
 #import "ServiceDispatch.h"
 
 #import "ContactsService.h"
+#import "DnsService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
 #import "ProxyService.h"
@@ -16,6 +17,8 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
 {
   if ([service isEqualToString:@"contacts"]) {
     return handleContactsAction(action);
+  } else if ([service isEqualToString:@"dns"]) {
+    return handleDnsAction(action, arguments);
   } else if ([service isEqualToString:@"photos"]) {
     return handlePhotoLibraryAction(action);
   } else if ([service isEqualToString:@"notifications"]) {
@@ -25,7 +28,7 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleProxyAction(action, arguments);
   } else {
     NSLog(@"Unknown service: %@", service);
-    NSLog(@"Available services: contacts, photos, notifications, proxy");
+    NSLog(@"Available services: contacts, dns, photos, notifications, proxy");
     return 1;
   }
 }
