@@ -18,11 +18,45 @@
   case increaseContrast
 }
 
+/// Dark/Light mode appearance.
+/// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
+@objc public enum FBSimulatorAppearance: Int {
+  case light = 1 // UIUserInterfaceStyleLight
+  case dark = 2 // UIUserInterfaceStyleDark
+}
+
+/// Dynamic Type content size categories.
+/// Values match the integer indices used by SimDevice's setContentSizeCategory:error:.
+@objc public enum FBSimulatorContentSizeCategory: Int {
+  case extraSmall = 1
+  case small = 2
+  case medium = 3
+  case large = 4
+  case extraLarge = 5
+  case extraExtraLarge = 6
+  case extraExtraExtraLarge = 7
+  case accessibilityMedium = 8
+  case accessibilityLarge = 9
+  case accessibilityExtraLarge = 10
+  case accessibilityExtraExtraLarge = 11
+  case accessibilityExtraExtraExtraLarge = 12
+}
+
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
 @objc public protocol FBSimulatorSettingsCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
   @objc(setSetting:enabled:)
   func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull>
+
+  func currentAppearance() -> FBFuture<NSNumber>
+
+  @objc(setAppearance:)
+  func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull>
+
+  func currentContentSizeCategory() -> FBFuture<NSNumber>
+
+  @objc(setContentSizeCategory:)
+  func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull>
 
   @objc(setPreference:value:type:domain:)
   func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull>
@@ -90,6 +124,66 @@ public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCom
     case .increaseContrast:
       try await setIncreaseContrastEnabledAsync(enabled)
     }
+  }
+
+  @objc
+  public func currentAppearance() -> FBFuture<NSNumber> {
+    fbFutureFromAsync { [self] in
+      try await currentAppearanceAsync().rawValue as NSNumber
+    }
+  }
+
+  fileprivate func currentAppearanceAsync() async throws -> FBSimulatorAppearance {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let raw = simulator.device.currentUIInterfaceStyle()
+    return FBSimulatorAppearance(rawValue: raw) ?? .light
+  }
+
+  @objc(setAppearance:)
+  public func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await setAppearanceAsync(appearance)
+      return NSNull()
+    }
+  }
+
+  fileprivate func setAppearanceAsync(_ appearance: FBSimulatorAppearance) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try simulator.device.setUIInterfaceStyle(appearance.rawValue)
+  }
+
+  @objc
+  public func currentContentSizeCategory() -> FBFuture<NSNumber> {
+    fbFutureFromAsync { [self] in
+      try await currentContentSizeCategoryAsync().rawValue as NSNumber
+    }
+  }
+
+  fileprivate func currentContentSizeCategoryAsync() async throws -> FBSimulatorContentSizeCategory {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    let raw = simulator.device.currentContentSizeCategory()
+    return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
+  }
+
+  @objc(setContentSizeCategory:)
+  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull> {
+    fbFutureFromAsync { [self] in
+      try await setContentSizeCategoryAsync(category)
+      return NSNull()
+    }
+  }
+
+  fileprivate func setContentSizeCategoryAsync(_ category: FBSimulatorContentSizeCategory) async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator deallocated").build()
+    }
+    try simulator.device.setContentSizeCategory(category.rawValue)
   }
 
   @objc
