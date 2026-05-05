@@ -358,7 +358,7 @@ import XCTestBootstrap
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
     let commands = try settingsCommands()
-    try await commands.setHardwareKeyboardEnabled(enabled)
+    try await commands.setSetting(.hardwareKeyboard, enabled: enabled)
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {

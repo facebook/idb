@@ -94,6 +94,20 @@
  */
 - (BOOL)sendPurpleEvent:(nonnull NSData *)data error:(NSError * _Nullable * _Nullable)error;
 
+/**
+ Posts a Darwin notification to the simulator.
+ Used for features like shake that are triggered via Darwin notification
+ rather than Indigo HID or PurpleWorkspacePort.
+
+ This is synchronous — callers are responsible for dispatching to the appropriate
+ queue and wrapping in a future if needed.
+
+ @param notificationName the Darwin notification name to post (e.g. com.apple.UIKit.SimulatorShake).
+ @param error an error out for any error that occurs.
+ @return YES if the notification was posted successfully, NO otherwise.
+ */
+- (BOOL)postDarwinNotification:(nonnull NSString *)notificationName error:(NSError * _Nullable * _Nullable)error;
+
 #pragma mark Properties
 
 /**
