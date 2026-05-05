@@ -9,17 +9,7 @@
 
 #import <dlfcn.h>
 
-#import <CoreFoundation/CoreFoundation.h>
-
-// SCDynamicStore function types — loaded at runtime via dlsym
-// because the headers mark these API_UNAVAILABLE(ios), but the
-// functions exist in the simulator runtime.
-typedef void *SCDynStoreRef;
-typedef SCDynStoreRef (*SCDynamicStoreCreate_fn)(CFAllocatorRef, CFStringRef, void *, void *);
-typedef Boolean (*SCDynamicStoreSetValue_fn)(SCDynStoreRef, CFStringRef, CFPropertyListRef);
-typedef CFPropertyListRef (*SCDynamicStoreCopyValue_fn)(SCDynStoreRef, CFStringRef);
-typedef CFStringRef (*SCDynamicStoreKeyCreateProxies_fn)(CFAllocatorRef);
-typedef Boolean (*SCDynamicStoreNotifyValue_fn)(SCDynStoreRef, CFStringRef);
+#import "SystemConfigurationPrivate.h"
 
 static void *loadSystemConfiguration(void)
 {
@@ -70,11 +60,9 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
   }
 
   SCDynamicStoreCreate_fn fn_create = dlsym(sc, "SCDynamicStoreCreate");
-  SCDynamicStoreSetValue_fn fn_set = dlsym(sc, "SCDynamicStoreSetValue");
   SCDynamicStoreKeyCreateProxies_fn fn_key = dlsym(sc, "SCDynamicStoreKeyCreateProxies");
-  SCDynamicStoreNotifyValue_fn fn_notify = dlsym(sc, "SCDynamicStoreNotifyValue");
 
-  if (!fn_create || !fn_set || !fn_key) {
+  if (!fn_create || !fn_key) {
     NSLog(@"[ProxyService] Required SCDynamicStore symbols not found");
     return 1;
   }
@@ -87,11 +75,46 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
 
   CFStringRef key = fn_key(NULL);
 
+  if ([action isEqualToString:@"list"]) {
+    SCDynamicStoreCopyValue_fn fn_copy = dlsym(sc, "SCDynamicStoreCopyValue");
+    if (!fn_copy) {
+      NSLog(@"[ProxyService] SCDynamicStoreCopyValue not found");
+      CFRelease(key);
+      CFRelease(store);
+      return 1;
+    }
+    CFPropertyListRef value = fn_copy(store, key);
+    if (value) {
+      NSDictionary *dict = (__bridge_transfer NSDictionary *)value;
+      NSData *json = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+      NSString *str = json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : nil;
+      if (str) {
+        printf("%s\n", str.UTF8String);
+      }
+    } else {
+      printf("{}\n");
+    }
+    CFRelease(key);
+    CFRelease(store);
+    return 0;
+  }
+
+  SCDynamicStoreSetValue_fn fn_set = dlsym(sc, "SCDynamicStoreSetValue");
+  SCDynamicStoreNotifyValue_fn fn_notify = dlsym(sc, "SCDynamicStoreNotifyValue");
+
+  if (!fn_set) {
+    NSLog(@"[ProxyService] SCDynamicStoreSetValue not found");
+    CFRelease(key);
+    CFRelease(store);
+    return 1;
+  }
+
   NSDictionary<NSString *, id> *proxyDict = nil;
   if ([action isEqualToString:@"set"]) {
     if (arguments.count < 2) {
       NSLog(@"[ProxyService] set requires <host> <port> [http|socks]");
       CFRelease(key);
+      CFRelease(store);
       return 1;
     }
     NSString *host = arguments[0];
@@ -108,8 +131,9 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     proxyDict = buildEmptyProxyDict();
     NSLog(@"[ProxyService] Clearing proxy settings");
   } else {
-    NSLog(@"[ProxyService] Unknown action: %@. Use 'set' or 'clear'.", action);
+    NSLog(@"[ProxyService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action);
     CFRelease(key);
+    CFRelease(store);
     return 1;
   }
 
@@ -118,6 +142,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
   if (!success) {
     NSLog(@"[ProxyService] SCDynamicStoreSetValue failed");
     CFRelease(key);
+    CFRelease(store);
     return 1;
   }
 
@@ -127,5 +152,6 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
 
   NSLog(@"[ProxyService] Proxy settings updated successfully");
   CFRelease(key);
+  CFRelease(store);
   return 0;
 }
