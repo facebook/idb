@@ -11,9 +11,8 @@
 #import <VideoToolbox/VideoToolbox.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#import "FBPeriodicStatsTimer.h"
-#import "FBSimulatorVideoStream.h"
+#import <FBSimulatorControl/FBPeriodicStatsTimer.h>
+#import <FBSimulatorControl/FBSimulatorVideoStream.h>
 
 @class FBVideoStreamConfiguration;
 
