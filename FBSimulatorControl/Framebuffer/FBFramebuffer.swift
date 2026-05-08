@@ -139,22 +139,24 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
   // MARK: - Private
 
   private func extractImmediatelyAvailableSurface() -> IOSurface? {
-    let renderable = surface as! SimDisplayIOSurfaceRenderable
-    if let framebufferSurface = renderable.framebufferSurface as? IOSurface {
-      return framebufferSurface
+    guard let renderable = surface as? SimDisplayIOSurfaceRenderable else {
+      return nil
     }
-    return renderable.ioSurface as? IOSurface
+    if let surface = try? FBObjCExceptionGuard.guarded({ renderable.framebufferSurface }) as? IOSurface {
+      return surface
+    }
+    return try? FBObjCExceptionGuard.guarded({ renderable.ioSurface }) as? IOSurface
   }
 
   private func registerConsumer(_ consumer: any FBFramebufferConsumer, uuid: NSUUID, queue: DispatchQueue) {
     let renderable = surface as! SimDisplayIOSurfaceRenderable
     nonisolated(unsafe) let consumerRef = consumer
 
-    let ioSurfaceChanged: (Any) -> Void = { [weak self] surfaceArg in
+    let ioSurfaceChanged: (Any?) -> Void = { [weak self] surfaceArg in
       guard let self else { return }
       self.stats.ioSurfaceChangeCount += 1
       if self.stats.ioSurfaceChangeCount == 1 {
-        self.logger.info().log("First IOSurface change callback, surface=\(surfaceArg)")
+        self.logger.info().log("First IOSurface change callback, surface=\(String(describing: surfaceArg))")
       }
       nonisolated(unsafe) let surfaceRef = surfaceArg
       queue.async {
@@ -162,13 +164,17 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
       }
     }
 
-    renderable.registerCallback(with: uuid as UUID, ioSurfacesChangeCallback: ioSurfaceChanged)
-    renderable.registerCallback(with: uuid as UUID, ioSurfaceChangeCallback: ioSurfaceChanged)
+    _ = try? FBObjCExceptionGuard.guarded {
+      renderable.registerCallback(with: uuid as UUID, ioSurfacesChangeCallback: ioSurfaceChanged)
+    }
+    _ = try? FBObjCExceptionGuard.guarded {
+      renderable.registerCallback(with: uuid as UUID, ioSurfaceChangeCallback: ioSurfaceChanged)
+    }
 
     let displayRenderable = surface as! SimDisplayRenderable
-    displayRenderable.registerCallback(with: uuid as UUID) { [weak self] (frames: Any) in
+    let damageCallback: ([Any]?) -> Void = { [weak self] frames in
       guard let self else { return }
-      let frameArray = frames as? [Any] ?? []
+      let frameArray = frames ?? []
       self.stats.damageCallbackCount += 1
       self.stats.damageRectCount += UInt(frameArray.count)
       if frameArray.isEmpty {
@@ -178,6 +184,9 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
       queue.async {
         consumerRef.didReceiveDamageRect()
       }
+    }
+    _ = try? FBObjCExceptionGuard.guarded {
+      displayRenderable.registerCallback(with: uuid as UUID, damageRectanglesCallback: damageCallback)
     }
   }
 
@@ -217,9 +226,15 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   private func unregisterConsumer(uuid: NSUUID) {
     let renderable = surface as! SimDisplayIOSurfaceRenderable
-    renderable.unregisterIOSurfacesChangeCallback(with: uuid as UUID)
-    renderable.unregisterIOSurfaceChangeCallback(with: uuid as UUID)
+    _ = try? FBObjCExceptionGuard.guarded {
+      renderable.unregisterIOSurfacesChangeCallback(with: uuid as UUID)
+    }
+    _ = try? FBObjCExceptionGuard.guarded {
+      renderable.unregisterIOSurfaceChangeCallback(with: uuid as UUID)
+    }
     let displayRenderable = surface as! SimDisplayRenderable
-    displayRenderable.unregisterDamageRectanglesCallback(with: uuid as UUID)
+    _ = try? FBObjCExceptionGuard.guarded {
+      displayRenderable.unregisterDamageRectanglesCallback(with: uuid as UUID)
+    }
   }
 }
