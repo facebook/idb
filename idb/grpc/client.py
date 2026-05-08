@@ -1524,7 +1524,7 @@ class Client(ClientBase):
         ls_response = await self.ls(container=FileContainerType.ROOT, paths=["dap"])
         installed_daps = [entry.path for entry in ls_response[0].entries]
         if pkg_id in installed_daps:
-            self.logger.info(f"Dap pkg already exist. Id: f{pkg_id}")
+            self.logger.info(f"Dap pkg already exist. Id: {pkg_id}")
         else:
             self.logger.info(f"Pushing {path.absolute()} to simulator dap subfolder.")
             await self.push(
