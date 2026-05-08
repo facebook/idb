@@ -463,11 +463,9 @@ private func companionServerFuture(_ udid: String, userDefaults: UserDefaults, x
             logger: idbLogger
           )
 
-          let loggingCommandExecutor = FBLoggingWrapper.wrap(commandExecutor, simplifiedNaming: true, eventReporter: IDBConfiguration.eventReporter, logger: logger)
-
           let swiftServer = try GRPCSwiftServer(
             target: target,
-            commandExecutor: loggingCommandExecutor as! FBIDBCommandExecutor,
+            commandExecutor: commandExecutor,
             reporter: IDBConfiguration.eventReporter,
             logger: logger as! FBIDBLogger,
             ports: ports
