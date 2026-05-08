@@ -25,6 +25,7 @@
 #import <FBControlCore/FBInstrumentsCommands.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
 #import <FBControlCore/FBLoggingWrapper.h>
+#import <FBControlCore/FBObjCExceptionGuard.h>
 #import <FBControlCore/FBProcessBuilder.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessIO.h>
