@@ -26,7 +26,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @property (nonatomic, readonly, assign) int fileDescriptor;
 
 /**
- Whether the implementor should close when it reaches the end of it's stream.
+ Whether the implementor should close when it reaches the end of its stream.
  */
 @property (nonatomic, readonly, assign) BOOL closeOnEndOfFile;
 
@@ -102,7 +102,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (nonnull FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
- An Output Container that accumilates data in memory
+ An Output Container that accumulates data in memory
 
  @param data the mutable data to append to.
  @return a Process Output instance.
@@ -110,7 +110,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (nonnull FBProcessOutput<NSMutableData *> *)outputToMutableData:(nonnull NSMutableData *)data;
 
 /**
- An Output Container that accumilates data in memory, exposing it as a string.
+ An Output Container that accumulates data in memory, exposing it as a string.
 
  @param data the mutable data to append to.
  @return a Process Output instance.
@@ -155,7 +155,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (nonnull FBProcessInput<NSOutputStream *> *)inputFromStream;
 
 /**
- An Input container that connects data to the iput.
+ An Input container that connects data to the input.
 
  @param data the data to send.
  @return a Process Input instance.
