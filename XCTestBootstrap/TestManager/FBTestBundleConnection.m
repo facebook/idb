@@ -86,7 +86,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -132,7 +132,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 
 + (FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(id<FBLaunchedApplication>)testHostApplication requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestBundleConnection *connection = [[self alloc] initWithWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
+  FBTestBundleConnection *connection = [[self alloc] initWithContext:context target:target interface:interface testHostApplication:testHostApplication requestQueue:requestQueue logger:logger];
   return [connection connectAndRunToCompletion];
 }
 
@@ -153,7 +153,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
              NSString *msg = @"Error while establishing connection to test bundle: "
              @"The host application is likely to have crashed during startup, "
              @"but could not find a crash log.";
-             // In this case the application lived long enough to avoid a relaunch (see bellow), but crashed before idb could connect to it.
+             // In this case the application lived long enough to avoid a relaunch (see below), but crashed before idb could connect to it.
              return [self failedFutureWithCrashLogOrNotFoundErrorDescription:msg];
            }]
           onQueue:self.requestQueue
@@ -328,7 +328,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
               [self.logger log:@"Bundle disconnected, with the test plan completed. Bundle exited successfully."];
               return FBFuture.empty;
             }
-            [self.logger log:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occured"];
+            [self.logger log:@"Bundle disconnected, but test plan has not completed. This could mean a crash has occurred"];
             return [self
                     failedFutureWithCrashLogOrNotFoundErrorDescription:@"Lost connection to test process, but could not find a crash log"];
           }];
@@ -383,7 +383,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
              return [[crashLog
                       notifyOfCrash:[FBCrashLogInfo predicateForCrashLogsWithProcessID:testHostApplication.processIdentifier]]
                      timeout:crashWaitTimeout
-                     waitingFor:[NSString stringWithFormat:@"Getting crash log for process with pid %d, bunndle ID: %@", testHostApplication.processIdentifier, testHostBundleID]];
+                     waitingFor:[NSString stringWithFormat:@"Getting crash log for process with pid %d, bundle ID: %@", testHostApplication.processIdentifier, testHostBundleID]];
            }]
           onQueue:self.target.workQueue
           fmap:^(FBCrashLogInfo *info) {
@@ -441,7 +441,7 @@ static NSTimeInterval const CrashCheckWaitLimit = 120;  // Time to wait for cras
 - (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
 {
   NSError *innerError = [[[[XCTestBootstrapError
-                            describe:@"Failed to initilize for UI testing"]
+                            describe:@"Failed to initialize for UI testing"]
                            causedBy:error]
                           code:XCTestBootstrapErrorCodeStartupFailure]
                          build];
