@@ -201,40 +201,24 @@ public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 }
 
-// MARK: - AsyncCrashLogCommands
-
-extension FBDeviceCrashLogCommands: AsyncCrashLogCommands {
-
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashesAsync(predicate, useCache: useCache)
-  }
-
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await bridgeFBFuture(notifyOfCrash(predicate))
-  }
-
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await pruneCrashesAsync(predicate)
-  }
-}
-
 // MARK: - FBDevice+AsyncCrashLogCommands
 
 extension FBDevice: AsyncCrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().crashes(matching: predicate, useCache: useCache)
+    try await crashLogCommands().crashesAsync(predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLogCommands().notifyOfCrash(matching: predicate)
+    let cmds = try crashLogCommands()
+    return try await bridgeFBFuture(cmds.notifyOfCrash(predicate))
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().pruneCrashes(matching: predicate)
+    try await crashLogCommands().pruneCrashesAsync(predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    try await crashLogCommands().withCrashLogFiles(body: body)
+    try await withFBFutureContext(crashLogCommands().crashLogFiles(), body: body)
   }
 }

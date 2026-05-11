@@ -310,7 +310,7 @@ extension FBSimulator: AsyncXCTestCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestExtendedCommands().runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctestExtendedCommands().runTestAsync(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 
   public func listTests(

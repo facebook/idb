@@ -83,38 +83,16 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands,
   }
 }
 
-// MARK: - AsyncVideoRecordingCommands
-
-extension FBDeviceVideoRecordingCommands: AsyncVideoRecordingCommands {
-
-  public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
-    try await startRecordingAsync(toFile: filePath)
-  }
-
-  public func stopRecording() async throws {
-    try await stopRecordingAsync()
-  }
-}
-
-// MARK: - AsyncVideoStreamCommands
-
-extension FBDeviceVideoRecordingCommands: AsyncVideoStreamCommands {
-
-  public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
-    try await createStreamAsync(with: configuration)
-  }
-}
-
 // MARK: - FBDevice+AsyncVideoRecordingCommands
 
 extension FBDevice: AsyncVideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
-    try await videoRecordingCommands().startRecording(toFile: filePath)
+    try await videoRecordingCommands().startRecordingAsync(toFile: filePath)
   }
 
   public func stopRecording() async throws {
-    try await videoRecordingCommands().stopRecording()
+    try await videoRecordingCommands().stopRecordingAsync()
   }
 }
 
@@ -123,6 +101,6 @@ extension FBDevice: AsyncVideoRecordingCommands {
 extension FBDevice: AsyncVideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
-    try await videoRecordingCommands().createStream(configuration: configuration)
+    try await videoRecordingCommands().createStreamAsync(with: configuration)
   }
 }

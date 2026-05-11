@@ -494,12 +494,6 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
   }
 }
 
-// MARK: - AsyncFileCommands
-
-// Uses the default implementation in
-// `extension AsyncFileCommands where Self: FBFileCommands`.
-extension FBDeviceFileCommands: AsyncFileCommands {}
-
 // MARK: - FBDevice+AsyncFileCommands
 
 extension FBDevice: AsyncFileCommands {
@@ -508,72 +502,72 @@ extension FBDevice: AsyncFileCommands {
     _ bundleID: String,
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForContainerApplication(bundleID, body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForContainerApplication(bundleID), body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForAuxillary(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForAuxillary(), body: body)
   }
 
   public func withFileCommandsForApplicationContainers<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForApplicationContainers(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForApplicationContainers(), body: body)
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForGroupContainers(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForGroupContainers(), body: body)
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForRootFilesystem(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForRootFilesystem(), body: body)
   }
 
   public func withFileCommandsForMediaDirectory<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForMediaDirectory(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForMediaDirectory(), body: body)
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForProvisioningProfiles(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForProvisioningProfiles(), body: body)
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForMDMProfiles(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForMDMProfiles(), body: body)
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForSpringboardIconLayout(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForSpringboardIconLayout(), body: body)
   }
 
   public func withFileCommandsForWallpaper<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForWallpaper(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForWallpaper(), body: body)
   }
 
   public func withFileCommandsForDiskImages<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForDiskImages(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForDiskImages(), body: body)
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any FBFileContainerProtocol) async throws -> R
   ) async throws -> R {
-    try await fileCommands().withFileCommandsForSymbols(body: body)
+    try await withFBFutureContext(fileCommands().fileCommandsForSymbols(), body: body)
   }
 }

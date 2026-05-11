@@ -117,18 +117,6 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
   }
 }
 
-// MARK: - AsyncDebuggerCommands
-
-extension FBSimulatorDebuggerCommands: AsyncDebuggerCommands {
-
-  public func launchDebugServer(
-    forHostApplication application: FBBundleDescriptor,
-    port: in_port_t
-  ) async throws -> any FBDebugServer {
-    try await launchDebugServerAsync(forHostApplication: application, port: port)
-  }
-}
-
 // MARK: - FBSimulator+AsyncDebuggerCommands
 
 extension FBSimulator: AsyncDebuggerCommands {
@@ -137,6 +125,6 @@ extension FBSimulator: AsyncDebuggerCommands {
     forHostApplication application: FBBundleDescriptor,
     port: in_port_t
   ) async throws -> any FBDebugServer {
-    try await debuggerCommands().launchDebugServer(forHostApplication: application, port: port)
+    try await debuggerCommands().launchDebugServerAsync(forHostApplication: application, port: port)
   }
 }

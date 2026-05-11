@@ -77,21 +77,12 @@ public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetC
   }
 }
 
-// MARK: - AsyncLogCommands
-
-extension FBSimulatorLogCommands: AsyncLogCommands {
-
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
-    let operation = try await tailLogAsync(arguments: arguments, consumer: consumer)
-    return AsyncLogOperationBridge(operation)
-  }
-}
-
 // MARK: - FBSimulator+AsyncLogCommands
 
 extension FBSimulator: AsyncLogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
-    try await logCommands().tailLog(arguments: arguments, consumer: consumer)
+    let operation = try await logCommands().tailLogAsync(arguments: arguments, consumer: consumer)
+    return AsyncLogOperationBridge(operation)
   }
 }
