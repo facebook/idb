@@ -61,3 +61,12 @@ extension FBSimulatorKeychainCommands: AsyncKeychainCommands {
     try await clearKeychainImpl()
   }
 }
+
+// MARK: - FBSimulator+AsyncKeychainCommands
+
+extension FBSimulator: AsyncKeychainCommands {
+
+  public func clearKeychain() async throws {
+    try await keychainCommands().clearKeychain()
+  }
+}

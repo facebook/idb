@@ -71,3 +71,12 @@ extension FBSimulatorNotificationCommands: AsyncNotificationCommands {
     try await sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 }
+
+// MARK: - FBSimulator+AsyncNotificationCommands
+
+extension FBSimulator: AsyncNotificationCommands {
+
+  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
+    try await notificationCommands().sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
+  }
+}

@@ -300,3 +300,24 @@ extension FBSimulatorXCTestCommands: AsyncXCTestExtendedCommands {
     try await withFBFutureContext(self.transportForTestManagerService(), body: body)
   }
 }
+
+// MARK: - FBSimulator+AsyncXCTestCommands
+
+extension FBSimulator: AsyncXCTestCommands {
+
+  public func runTest(
+    launchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    try await xctestExtendedCommands().runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+  }
+
+  public func listTests(
+    forBundleAtPath bundlePath: String,
+    timeout: TimeInterval,
+    withAppAtPath appPath: String?
+  ) async throws -> [String] {
+    try await xctestExtendedCommands().listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+  }
+}

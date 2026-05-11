@@ -176,7 +176,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
       fromDevices: deviceSet.availableDevices,
       exitingSimulators: _allSimulators
     )
-    .sorted { ($0 as FBSimulator).compare($1) == .orderedAscending }
+    .sorted { ($0 as FBSimulator).compare($1 as any FBiOSTarget) == .orderedAscending }
     return _allSimulators
   }
 

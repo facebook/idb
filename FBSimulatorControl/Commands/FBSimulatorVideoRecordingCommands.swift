@@ -114,3 +114,25 @@ extension FBSimulatorVideoRecordingCommands: AsyncVideoStreamCommands {
     try await createStreamAsync(configuration: configuration)
   }
 }
+
+// MARK: - FBSimulator+AsyncVideoRecordingCommands
+
+extension FBSimulator: AsyncVideoRecordingCommands {
+
+  public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
+    try await videoRecordingCommands().startRecording(toFile: filePath)
+  }
+
+  public func stopRecording() async throws {
+    try await videoRecordingCommands().stopRecording()
+  }
+}
+
+// MARK: - FBSimulator+AsyncVideoStreamCommands
+
+extension FBSimulator: AsyncVideoStreamCommands {
+
+  public func createStream(configuration: FBVideoStreamConfiguration) async throws -> any FBVideoStream {
+    try await videoRecordingCommands().createStream(configuration: configuration)
+  }
+}
