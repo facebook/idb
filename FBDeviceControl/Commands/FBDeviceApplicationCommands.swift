@@ -447,3 +447,40 @@ extension FBDeviceApplicationCommands: AsyncApplicationCommands {
     return pid.int32Value
   }
 }
+
+// MARK: - FBDevice+AsyncApplicationCommands
+
+extension FBDevice: AsyncApplicationCommands {
+
+  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+    try await applicationCommands().installApplication(atPath: path)
+  }
+
+  public func uninstallApplication(bundleID: String) async throws {
+    try await applicationCommands().uninstallApplication(bundleID: bundleID)
+  }
+
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    try await applicationCommands().launchApplication(configuration)
+  }
+
+  public func killApplication(bundleID: String) async throws {
+    try await applicationCommands().killApplication(bundleID: bundleID)
+  }
+
+  public func installedApplications() async throws -> [FBInstalledApplication] {
+    try await applicationCommands().installedApplications()
+  }
+
+  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+    try await applicationCommands().installedApplication(bundleID: bundleID)
+  }
+
+  public func runningApplications() async throws -> [String: pid_t] {
+    try await applicationCommands().runningApplications()
+  }
+
+  public func processID(forBundleID bundleID: String) async throws -> pid_t {
+    try await applicationCommands().processID(forBundleID: bundleID)
+  }
+}

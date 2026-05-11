@@ -85,3 +85,18 @@ public class FBDeviceLogCommands: NSObject, FBLogCommands {
         }) as! FBFuture<any FBLogOperation>
   }
 }
+
+// MARK: - AsyncLogCommands
+
+// Uses the default implementation in
+// `extension AsyncLogCommands where Self: FBLogCommands`.
+extension FBDeviceLogCommands: AsyncLogCommands {}
+
+// MARK: - FBDevice+AsyncLogCommands
+
+extension FBDevice: AsyncLogCommands {
+
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+    try await logCommands().tailLog(arguments: arguments, consumer: consumer)
+  }
+}

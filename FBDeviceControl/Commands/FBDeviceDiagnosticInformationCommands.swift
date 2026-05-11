@@ -95,3 +95,12 @@ extension FBDeviceDiagnosticInformationCommands: AsyncDiagnosticInformationComma
     try await fetchDiagnosticInformationAsync()
   }
 }
+
+// MARK: - FBDevice+AsyncDiagnosticInformationCommands
+
+extension FBDevice: AsyncDiagnosticInformationCommands {
+
+  public func fetchDiagnosticInformation() async throws -> [String: Any] {
+    try await diagnosticInformationCommands().fetchDiagnosticInformationAsync()
+  }
+}

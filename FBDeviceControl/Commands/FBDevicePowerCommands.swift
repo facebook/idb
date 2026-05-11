@@ -68,3 +68,16 @@ extension FBDevicePowerCommands: AsyncPowerCommands {
     try await sendRelayCommandAsync("Restart")
   }
 }
+
+// MARK: - FBDevice+AsyncPowerCommands
+
+extension FBDevice: AsyncPowerCommands {
+
+  public func shutdown() async throws {
+    try await powerCommands().shutdown()
+  }
+
+  public func reboot() async throws {
+    try await powerCommands().reboot()
+  }
+}

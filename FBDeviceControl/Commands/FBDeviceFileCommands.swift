@@ -493,3 +493,87 @@ public class FBDeviceFileCommands: NSObject, FBFileCommands {
     return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
   }
 }
+
+// MARK: - AsyncFileCommands
+
+// Uses the default implementation in
+// `extension AsyncFileCommands where Self: FBFileCommands`.
+extension FBDeviceFileCommands: AsyncFileCommands {}
+
+// MARK: - FBDevice+AsyncFileCommands
+
+extension FBDevice: AsyncFileCommands {
+
+  public func withFileCommandsForContainerApplication<R>(
+    _ bundleID: String,
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForContainerApplication(bundleID, body: body)
+  }
+
+  public func withFileCommandsForAuxillary<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForAuxillary(body: body)
+  }
+
+  public func withFileCommandsForApplicationContainers<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForApplicationContainers(body: body)
+  }
+
+  public func withFileCommandsForGroupContainers<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForGroupContainers(body: body)
+  }
+
+  public func withFileCommandsForRootFilesystem<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForRootFilesystem(body: body)
+  }
+
+  public func withFileCommandsForMediaDirectory<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForMediaDirectory(body: body)
+  }
+
+  public func withFileCommandsForProvisioningProfiles<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForProvisioningProfiles(body: body)
+  }
+
+  public func withFileCommandsForMDMProfiles<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForMDMProfiles(body: body)
+  }
+
+  public func withFileCommandsForSpringboardIconLayout<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForSpringboardIconLayout(body: body)
+  }
+
+  public func withFileCommandsForWallpaper<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForWallpaper(body: body)
+  }
+
+  public func withFileCommandsForDiskImages<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForDiskImages(body: body)
+  }
+
+  public func withFileCommandsForSymbols<R>(
+    body: (any FBFileContainerProtocol) async throws -> R
+  ) async throws -> R {
+    try await fileCommands().withFileCommandsForSymbols(body: body)
+  }
+}

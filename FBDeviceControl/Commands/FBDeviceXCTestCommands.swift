@@ -98,3 +98,29 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
     return FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, queue: device.workQueue, logger: logger.withName("xcodebuild"))
   }
 }
+
+// MARK: - AsyncXCTestCommands
+
+extension FBDeviceXCTestCommands: AsyncXCTestCommands {
+
+  public func runTest(
+    launchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    try await runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+  }
+}
+
+// MARK: - FBDevice+AsyncXCTestCommands
+
+extension FBDevice: AsyncXCTestCommands {
+
+  public func runTest(
+    launchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    try await xctestCommands().runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+  }
+}

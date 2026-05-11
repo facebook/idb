@@ -59,3 +59,12 @@ extension FBDeviceScreenshotCommands: AsyncScreenshotCommands {
     try await takeScreenshotAsync(format)
   }
 }
+
+// MARK: - FBDevice+AsyncScreenshotCommands
+
+extension FBDevice: AsyncScreenshotCommands {
+
+  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+    try await screenshotCommands().takeScreenshot(format: format)
+  }
+}
