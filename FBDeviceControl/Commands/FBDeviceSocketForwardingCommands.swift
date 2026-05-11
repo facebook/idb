@@ -11,7 +11,7 @@ import Foundation
 // swiftlint:disable force_unwrapping
 
 @objc(FBDeviceSocketForwardingCommands)
-public class FBDeviceSocketForwardingCommands: NSObject, FBSocketForwardingCommands, FBiOSTargetCommand {
+public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers

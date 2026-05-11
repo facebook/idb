@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 @objc(FBSimulatorMemoryCommands)
-public final class FBSimulatorMemoryCommands: NSObject, FBMemoryCommands {
+public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

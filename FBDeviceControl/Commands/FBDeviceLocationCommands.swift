@@ -13,7 +13,7 @@ import Foundation
 private let StartCommand: UInt32 = 0x00000000
 
 @objc(FBDeviceLocationCommands)
-public class FBDeviceLocationCommands: NSObject, FBLocationCommands {
+public class FBDeviceLocationCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

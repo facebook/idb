@@ -11,7 +11,7 @@ import Foundation
 // swiftlint:disable force_cast
 
 @objc(FBSimulatorScreenshotCommands)
-public final class FBSimulatorScreenshotCommands: NSObject, FBScreenshotCommands {
+public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 
