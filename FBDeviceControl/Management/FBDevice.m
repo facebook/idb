@@ -55,6 +55,7 @@
   [self cacheValuesFromInfo:(amDevice ?: restorableDevice) overwrite:YES];
   _logger = [logger withName:self.udid];
   _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
+  _commandCache = [FBTargetCommandCache new];
 
   return self;
 }
