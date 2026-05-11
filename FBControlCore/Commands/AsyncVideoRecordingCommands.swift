@@ -14,16 +14,3 @@ public protocol AsyncVideoRecordingCommands: AnyObject {
 
   func stopRecording() async throws
 }
-
-/// Default bridge implementation against the legacy `FBVideoRecordingCommands`
-/// protocol.
-extension AsyncVideoRecordingCommands where Self: FBVideoRecordingCommands {
-
-  public func startRecording(toFile filePath: String) async throws -> any FBiOSTargetOperation {
-    try await bridgeFBFuture(self.startRecording(toFile: filePath))
-  }
-
-  public func stopRecording() async throws {
-    try await bridgeFBFutureVoid(self.stopRecording())
-  }
-}

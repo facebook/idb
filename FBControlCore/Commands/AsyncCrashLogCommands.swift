@@ -18,24 +18,3 @@ public protocol AsyncCrashLogCommands: AnyObject {
 
   func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R
 }
-
-/// Default bridge implementation against the legacy `FBCrashLogCommands`
-/// protocol.
-extension AsyncCrashLogCommands where Self: FBCrashLogCommands {
-
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await bridgeFBFutureArray(self.crashes(predicate, useCache: useCache))
-  }
-
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await bridgeFBFuture(self.notifyOfCrash(predicate))
-  }
-
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await bridgeFBFutureArray(self.pruneCrashes(predicate))
-  }
-
-  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    try await withFBFutureContext(self.crashLogFiles(), body: body)
-  }
-}

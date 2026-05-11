@@ -18,20 +18,3 @@ public protocol AsyncSimulatorLifecycleCommands: AnyObject {
 
   func connectToHID() async throws -> FBSimulatorHID
 }
-
-/// Default bridge implementation against the legacy
-/// `FBSimulatorLifecycleCommandsProtocol`.
-extension AsyncSimulatorLifecycleCommands where Self: FBSimulatorLifecycleCommandsProtocol {
-
-  public func focus() async throws {
-    try await bridgeFBFutureVoid(self.focus())
-  }
-
-  public func open(_ url: URL) async throws {
-    try await bridgeFBFutureVoid(self.open(url))
-  }
-
-  public func connectToHID() async throws -> FBSimulatorHID {
-    return try await bridgeFBFuture(self.connectToHID())
-  }
-}

@@ -42,12 +42,3 @@ public final class AsyncLogOperationBridge: AsyncLogOperation {
     try await bridgeFBFutureVoid(underlying.completed)
   }
 }
-
-/// Default bridge implementation against the legacy `FBLogCommands` protocol.
-extension AsyncLogCommands where Self: FBLogCommands {
-
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
-    let operation = try await bridgeFBFuture(self.tailLog(arguments, consumer: consumer))
-    return AsyncLogOperationBridge(operation)
-  }
-}

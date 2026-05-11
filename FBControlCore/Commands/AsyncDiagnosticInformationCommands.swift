@@ -12,12 +12,3 @@ public protocol AsyncDiagnosticInformationCommands: AnyObject {
 
   func fetchDiagnosticInformation() async throws -> [String: Any]
 }
-
-/// Default bridge implementation against the legacy `FBDiagnosticInformationCommands`
-/// protocol.
-extension AsyncDiagnosticInformationCommands where Self: FBDiagnosticInformationCommands {
-
-  public func fetchDiagnosticInformation() async throws -> [String: Any] {
-    try await bridgeFBFutureDictionary(self.fetchDiagnosticInformation())
-  }
-}

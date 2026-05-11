@@ -12,13 +12,3 @@ public protocol AsyncScreenshotCommands: AnyObject {
 
   func takeScreenshot(format: FBScreenshotFormat) async throws -> Data
 }
-
-/// Default bridge implementation against the legacy `FBScreenshotCommands`
-/// protocol.
-extension AsyncScreenshotCommands where Self: FBScreenshotCommands {
-
-  public func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
-    let data = try await bridgeFBFuture(self.takeScreenshot(format))
-    return data as Data
-  }
-}

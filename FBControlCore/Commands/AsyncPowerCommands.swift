@@ -14,15 +14,3 @@ public protocol AsyncPowerCommands: AnyObject {
 
   func reboot() async throws
 }
-
-/// Default bridge implementation against the legacy `FBPowerCommands` protocol.
-extension AsyncPowerCommands where Self: FBPowerCommands {
-
-  public func shutdown() async throws {
-    try await bridgeFBFutureVoid(self.shutdown())
-  }
-
-  public func reboot() async throws {
-    try await bridgeFBFutureVoid(self.reboot())
-  }
-}

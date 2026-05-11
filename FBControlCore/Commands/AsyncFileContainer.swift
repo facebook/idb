@@ -43,43 +43,6 @@ private final class FileContainerTailOperation: NSObject, FBiOSTargetOperation {
   }
 }
 
-/// Default bridge implementation against the legacy `FBFileContainerProtocol`.
-extension AsyncFileContainer where Self: FBFileContainerProtocol {
-
-  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    try await bridgeFBFutureVoid(self.copy(fromHost: sourcePath, toContainer: destinationPath))
-  }
-
-  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    let result = try await bridgeFBFuture(self.copy(fromContainer: sourcePath, toHost: destinationPath))
-    return result as String
-  }
-
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
-    // The legacy API returns FBFuture<FBFuture<NSNull>>: the outer future
-    // resolves once tailing has *started*, the inner future resolves once
-    // tailing has finished. Treat the inner future as the operation handle.
-    let inner = try await bridgeFBFuture(self.tail(path, to: consumer))
-    return FileContainerTailOperation(teardown: inner)
-  }
-
-  public func createDirectory(_ directoryPath: String) async throws {
-    try await bridgeFBFutureVoid(self.createDirectory(directoryPath))
-  }
-
-  public func move(from sourcePath: String, to destinationPath: String) async throws {
-    try await bridgeFBFutureVoid(self.move(from: sourcePath, to: destinationPath))
-  }
-
-  public func remove(_ path: String) async throws {
-    try await bridgeFBFutureVoid(self.remove(path))
-  }
-
-  public func contents(ofDirectory path: String) async throws -> [String] {
-    try await bridgeFBFutureArray(self.contents(ofDirectory: path))
-  }
-}
-
 /// Adapter that wraps an `FBFileContainerProtocol` instance and exposes the
 /// `AsyncFileContainer` async API. Concrete `FBFileContainerProtocol`
 /// implementations are scattered across Objective-C internals, so call sites
