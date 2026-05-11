@@ -82,8 +82,7 @@ static NSDictionary *recordToDictionary(id record) {
   // properties on the type itself.
   //
   // Property names confirmed via runtime introspection on iOS 26.2.
-  // The @try/@catch keeps this forward-compatible if a future runtime
-  // drops or renames a property.
+  // respondsToSelector: guards against future runtimes that drop a property.
   static NSArray<NSString *> *probeKeys;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -96,18 +95,17 @@ static NSDictionary *recordToDictionary(id record) {
 
   NSMutableDictionary *out = [NSMutableDictionary dictionary];
   for (NSString *key in probeKeys) {
-    @try {
-      id value = [record valueForKey:key];
-      if (!value) {
-        continue;
-      }
-      if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
-        out[key] = value;
-      } else {
-        out[key] = [NSString stringWithFormat:@"%@", value];
-      }
-    } @catch (NSException *exception) {
-      // Property not present on this runtime version; skip.
+    if (![record respondsToSelector:NSSelectorFromString(key)]) {
+      continue;
+    }
+    id value = [record valueForKey:key];
+    if (!value) {
+      continue;
+    }
+    if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
+      out[key] = value;
+    } else {
+      out[key] = [NSString stringWithFormat:@"%@", value];
     }
   }
   return out;
