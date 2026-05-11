@@ -58,3 +58,12 @@ extension FBSimulatorMemoryCommands: AsyncMemoryCommands {
     try await simulateMemoryWarningAsync()
   }
 }
+
+// MARK: - FBSimulator+AsyncMemoryCommands
+
+extension FBSimulator: AsyncMemoryCommands {
+
+  public func simulateMemoryWarning() async throws {
+    try await memoryCommands().simulateMemoryWarningAsync()
+  }
+}

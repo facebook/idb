@@ -128,3 +128,15 @@ extension FBSimulatorDebuggerCommands: AsyncDebuggerCommands {
     try await launchDebugServerAsync(forHostApplication: application, port: port)
   }
 }
+
+// MARK: - FBSimulator+AsyncDebuggerCommands
+
+extension FBSimulator: AsyncDebuggerCommands {
+
+  public func launchDebugServer(
+    forHostApplication application: FBBundleDescriptor,
+    port: in_port_t
+  ) async throws -> any FBDebugServer {
+    try await debuggerCommands().launchDebugServer(forHostApplication: application, port: port)
+  }
+}

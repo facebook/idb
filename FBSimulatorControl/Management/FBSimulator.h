@@ -59,6 +59,9 @@
 @property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 @property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 - (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target;
+- (BOOL)requiresBundlesToBeSigned;
+- (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
+- (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
 // FBApplicationCommands (forwarded at runtime)
 - (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;

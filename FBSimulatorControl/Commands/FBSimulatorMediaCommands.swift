@@ -131,3 +131,12 @@ extension FBSimulatorMediaCommands: AsyncMediaCommands {
     try uploadMedia(mediaFileURLs)
   }
 }
+
+// MARK: - FBSimulator+AsyncMediaCommands
+
+extension FBSimulator: AsyncMediaCommands {
+
+  public func addMedia(_ mediaFileURLs: [URL]) async throws {
+    try await mediaCommands().addMedia(mediaFileURLs)
+  }
+}

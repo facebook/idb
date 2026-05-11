@@ -57,3 +57,12 @@ extension FBSimulatorLocationCommands: AsyncLocationCommands {
     try await overrideLocationAsync(longitude: longitude, latitude: latitude)
   }
 }
+
+// MARK: - FBSimulator+AsyncLocationCommands
+
+extension FBSimulator: AsyncLocationCommands {
+
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
+    try await locationCommands().overrideLocation(longitude: longitude, latitude: latitude)
+  }
+}

@@ -86,3 +86,12 @@ extension FBSimulatorLogCommands: AsyncLogCommands {
     return AsyncLogOperationBridge(operation)
   }
 }
+
+// MARK: - FBSimulator+AsyncLogCommands
+
+extension FBSimulator: AsyncLogCommands {
+
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
+    try await logCommands().tailLog(arguments: arguments, consumer: consumer)
+  }
+}
