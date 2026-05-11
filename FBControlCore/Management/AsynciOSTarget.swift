@@ -16,13 +16,17 @@ public protocol AsynciOSTarget: AnyObject,
   AsyncApplicationCommands,
   AsyncVideoStreamCommands,
   AsyncCrashLogCommands,
+  AsyncDebuggerCommands,
+  AsyncFileCommands,
+  AsyncLocationCommands,
   AsyncLogCommands,
   AsyncScreenshotCommands,
   AsyncVideoRecordingCommands,
   AsyncXCTestCommands,
   AsyncXCTraceRecordCommands,
   AsyncInstrumentsCommands,
-  AsyncLifecycleCommands
+  AsyncLifecycleCommands,
+  AsyncPowerCommands
 {
 
   // MARK: FBiOSTargetInfo (sync, no FBFuture involved)
