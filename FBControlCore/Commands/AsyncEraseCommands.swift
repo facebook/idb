@@ -12,11 +12,3 @@ public protocol AsyncEraseCommands: AnyObject {
 
   func erase() async throws
 }
-
-/// Default bridge implementation against the legacy `FBEraseCommands` protocol.
-extension AsyncEraseCommands where Self: FBEraseCommands {
-
-  public func erase() async throws {
-    try await bridgeFBFutureVoid(self.erase())
-  }
-}

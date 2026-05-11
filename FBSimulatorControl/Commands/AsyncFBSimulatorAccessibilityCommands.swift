@@ -7,35 +7,6 @@
 
 import Foundation
 
-// Default bridge implementation against the legacy `FBAccessibilityOperations`
-// protocol. Lives in `FBSimulatorControl` rather than `FBControlCore` because
-// `FBAccessibilityElement` is implemented here, and specializing
-// `bridgeFBFuture<FBAccessibilityElement>` requires the class symbol at link
-// time.
-extension AsyncAccessibilityOperations where Self: FBAccessibilityOperations {
-
-  public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
-    try await bridgeFBFuture(self.accessibilityElement(at: point))
-  }
-
-  public func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
-    try await bridgeFBFuture(self.accessibilityElementForFrontmostApplication())
-  }
-
-  public func accessibilityElementMatching(
-    value: String,
-    forKey key: FBAXSearchableKey,
-    depth: UInt
-  ) async throws -> FBAccessibilityElement {
-    try await bridgeFBFuture(self.accessibilityElementMatchingValue(value, forKey: key, depth: depth))
-  }
-}
-
-// Explicit conformance so `as? AsyncAccessibilityCommands` succeeds and so the
-// executor can hold an `AsyncAccessibilityCommands` reference. Default impls
-// above (via `where Self: FBAccessibilityOperations`) supply the methods.
-extension FBSimulatorAccessibilityCommands: AsyncAccessibilityCommands {}
-
 // MARK: - FBSimulator+AsyncAccessibilityCommands
 
 extension FBSimulator: AsyncAccessibilityCommands {

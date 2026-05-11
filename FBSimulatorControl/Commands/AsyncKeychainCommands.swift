@@ -13,12 +13,3 @@ public protocol AsyncKeychainCommands: AnyObject {
 
   func clearKeychain() async throws
 }
-
-/// Default bridge implementation against the legacy
-/// `FBSimulatorKeychainCommandsProtocol`.
-extension AsyncKeychainCommands where Self: FBSimulatorKeychainCommandsProtocol {
-
-  public func clearKeychain() async throws {
-    try await bridgeFBFutureVoid(self.clearKeychain())
-  }
-}

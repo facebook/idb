@@ -14,14 +14,3 @@ public protocol AsyncProcessSpawnCommands: AnyObject {
     _ configuration: FBProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject>
 }
-
-/// Default bridge implementation against the legacy `FBProcessSpawnCommands`
-/// protocol.
-extension AsyncProcessSpawnCommands where Self: FBProcessSpawnCommands {
-
-  public func launchProcess(
-    _ configuration: FBProcessSpawnConfiguration
-  ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await bridgeFBFuture(self.launchProcess(configuration))
-  }
-}

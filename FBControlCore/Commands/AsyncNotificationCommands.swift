@@ -12,12 +12,3 @@ public protocol AsyncNotificationCommands: AnyObject {
 
   func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws
 }
-
-/// Default bridge implementation against the legacy `FBNotificationCommands`
-/// protocol.
-extension AsyncNotificationCommands where Self: FBNotificationCommands {
-
-  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await bridgeFBFutureVoid(self.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload))
-  }
-}

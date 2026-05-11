@@ -13,12 +13,3 @@ public protocol AsyncMediaCommands: AnyObject {
 
   func addMedia(_ mediaFileURLs: [URL]) async throws
 }
-
-/// Default bridge implementation against the legacy
-/// `FBSimulatorMediaCommandsProtocol`.
-extension AsyncMediaCommands where Self: FBSimulatorMediaCommandsProtocol {
-
-  public func addMedia(_ mediaFileURLs: [URL]) async throws {
-    try await bridgeFBFutureVoid(self.addMedia(mediaFileURLs))
-  }
-}
