@@ -66,6 +66,10 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
 
   // MARK: - Private
 
+  fileprivate func notifyOfCrashAsync(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    try await bridgeFBFuture(notifier.nextCrashLog(forPredicate: predicate))
+  }
+
   fileprivate func crashesAsync(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     if !hasPerformedInitialIngestion {
       notifier.store.ingestAllExistingInDirectory()
@@ -86,44 +90,23 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBCrashLogCommands {
   }
 }
 
-// MARK: - AsyncCrashLogCommands
-
-extension FBSimulatorCrashLogCommands: AsyncCrashLogCommands {
-
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashesAsync(matching: predicate, useCache: useCache)
-  }
-
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await bridgeFBFuture(notifier.nextCrashLog(forPredicate: predicate))
-  }
-
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await pruneCrashesAsync(matching: predicate)
-  }
-
-  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
-  }
-}
-
 // MARK: - FBSimulator+AsyncCrashLogCommands
 
 extension FBSimulator: AsyncCrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().crashes(matching: predicate, useCache: useCache)
+    try await crashLogCommands().crashesAsync(matching: predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLogCommands().notifyOfCrash(matching: predicate)
+    try await crashLogCommands().notifyOfCrashAsync(matching: predicate)
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLogCommands().pruneCrashes(matching: predicate)
+    try await crashLogCommands().pruneCrashesAsync(matching: predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    try await crashLogCommands().withCrashLogFiles(body: body)
+    throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
   }
 }

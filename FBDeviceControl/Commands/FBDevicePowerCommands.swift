@@ -56,28 +56,15 @@ public class FBDevicePowerCommands: NSObject, FBPowerCommands {
   }
 }
 
-// MARK: - AsyncPowerCommands
-
-extension FBDevicePowerCommands: AsyncPowerCommands {
-
-  public func shutdown() async throws {
-    try await sendRelayCommandAsync("Shutdown")
-  }
-
-  public func reboot() async throws {
-    try await sendRelayCommandAsync("Restart")
-  }
-}
-
 // MARK: - FBDevice+AsyncPowerCommands
 
 extension FBDevice: AsyncPowerCommands {
 
   public func shutdown() async throws {
-    try await powerCommands().shutdown()
+    try await powerCommands().sendRelayCommandAsync("Shutdown")
   }
 
   public func reboot() async throws {
-    try await powerCommands().reboot()
+    try await powerCommands().sendRelayCommandAsync("Restart")
   }
 }

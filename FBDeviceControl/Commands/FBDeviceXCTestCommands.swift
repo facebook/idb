@@ -99,19 +99,6 @@ public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetComm
   }
 }
 
-// MARK: - AsyncXCTestCommands
-
-extension FBDeviceXCTestCommands: AsyncXCTestCommands {
-
-  public func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
-    reporter: AnyObject,
-    logger: any FBControlCoreLogger
-  ) async throws {
-    try await runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
-  }
-}
-
 // MARK: - FBDevice+AsyncXCTestCommands
 
 extension FBDevice: AsyncXCTestCommands {
@@ -121,6 +108,6 @@ extension FBDevice: AsyncXCTestCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestCommands().runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctestCommands().runTestAsync(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 }

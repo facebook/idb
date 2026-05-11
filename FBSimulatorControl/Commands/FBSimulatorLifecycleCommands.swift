@@ -288,68 +288,16 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleC
   }
 }
 
-// MARK: - AsyncPowerCommands
-
-extension FBSimulatorLifecycleCommands: AsyncPowerCommands {
-
-  public func shutdown() async throws {
-    try await shutdownAsync()
-  }
-
-  public func reboot() async throws {
-    try await rebootAsync()
-  }
-}
-
-// MARK: - AsyncEraseCommands
-
-extension FBSimulatorLifecycleCommands: AsyncEraseCommands {
-
-  public func erase() async throws {
-    try await eraseAsync()
-  }
-}
-
-// MARK: - AsyncLifecycleCommands
-
-extension FBSimulatorLifecycleCommands: AsyncLifecycleCommands {
-
-  public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await resolveStateAsync(state)
-  }
-
-  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await resolveLeavesStateAsync(state)
-  }
-}
-
-// MARK: - AsyncSimulatorLifecycleCommands
-
-extension FBSimulatorLifecycleCommands: AsyncSimulatorLifecycleCommands {
-
-  public func focus() async throws {
-    try await focusAsync()
-  }
-
-  public func open(_ url: URL) async throws {
-    try await openAsync(url)
-  }
-
-  public func connectToHID() async throws -> FBSimulatorHID {
-    return try await connectToHIDAsync()
-  }
-}
-
 // MARK: - FBSimulator+AsyncLifecycleCommands
 
 extension FBSimulator: AsyncLifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands().resolveState(state)
+    try await lifecycleCommands().resolveStateAsync(state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycleCommands().resolveLeavesState(state)
+    try await lifecycleCommands().resolveLeavesStateAsync(state)
   }
 }
 
@@ -358,11 +306,11 @@ extension FBSimulator: AsyncLifecycleCommands {
 extension FBSimulator: AsyncPowerCommands {
 
   public func shutdown() async throws {
-    try await lifecycleCommands().shutdown()
+    try await lifecycleCommands().shutdownAsync()
   }
 
   public func reboot() async throws {
-    try await lifecycleCommands().reboot()
+    try await lifecycleCommands().rebootAsync()
   }
 }
 
@@ -371,7 +319,7 @@ extension FBSimulator: AsyncPowerCommands {
 extension FBSimulator: AsyncEraseCommands {
 
   public func erase() async throws {
-    try await lifecycleCommands().erase()
+    try await lifecycleCommands().eraseAsync()
   }
 }
 
@@ -380,14 +328,14 @@ extension FBSimulator: AsyncEraseCommands {
 extension FBSimulator: AsyncSimulatorLifecycleCommands {
 
   public func focus() async throws {
-    try await lifecycleCommands().focus()
+    try await lifecycleCommands().focusAsync()
   }
 
   public func open(_ url: URL) async throws {
-    try await lifecycleCommands().open(url)
+    try await lifecycleCommands().openAsync(url)
   }
 
   public func connectToHID() async throws -> FBSimulatorHID {
-    try await lifecycleCommands().connectToHID()
+    try await lifecycleCommands().connectToHIDAsync()
   }
 }
