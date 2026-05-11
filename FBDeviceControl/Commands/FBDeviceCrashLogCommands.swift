@@ -217,3 +217,24 @@ extension FBDeviceCrashLogCommands: AsyncCrashLogCommands {
     try await pruneCrashesAsync(predicate)
   }
 }
+
+// MARK: - FBDevice+AsyncCrashLogCommands
+
+extension FBDevice: AsyncCrashLogCommands {
+
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    try await crashLogCommands().crashes(matching: predicate, useCache: useCache)
+  }
+
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    try await crashLogCommands().notifyOfCrash(matching: predicate)
+  }
+
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    try await crashLogCommands().pruneCrashes(matching: predicate)
+  }
+
+  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
+    try await crashLogCommands().withCrashLogFiles(body: body)
+  }
+}

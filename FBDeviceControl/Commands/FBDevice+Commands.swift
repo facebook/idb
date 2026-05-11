@@ -40,6 +40,26 @@ extension FBDevice {
     commandCache.resolve { FBDeviceLifecycleCommands.commands(with: self) }
   }
 
+  func logCommands() throws -> FBDeviceLogCommands {
+    commandCache.resolve { FBDeviceLogCommands.commands(with: self) }
+  }
+
+  func videoRecordingCommands() throws -> FBDeviceVideoRecordingCommands {
+    commandCache.resolve { FBDeviceVideoRecordingCommands.commands(with: self) }
+  }
+
+  func xctestCommands() throws -> FBDeviceXCTestCommands {
+    commandCache.resolve { FBDeviceXCTestCommands.commands(with: self) }
+  }
+
+  func instrumentsCommands() throws -> FBInstrumentsCommands {
+    commandCache.resolve { FBInstrumentsCommands(target: self) }
+  }
+
+  func xctraceRecordCommands() throws -> FBXCTraceRecordCommands {
+    commandCache.resolve { FBXCTraceRecordCommands.commands(with: self) }
+  }
+
   // MARK: - Device-only accessors
 
   func diagnosticInformationCommands() throws -> FBDeviceDiagnosticInformationCommands {

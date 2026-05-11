@@ -69,3 +69,16 @@ extension FBDeviceLifecycleCommands: AsyncLifecycleCommands {
     try await resolveLeavesStateAsync(state)
   }
 }
+
+// MARK: - FBDevice+AsyncLifecycleCommands
+
+extension FBDevice: AsyncLifecycleCommands {
+
+  public func resolveState(_ state: FBiOSTargetState) async throws {
+    try await lifecycleCommands().resolveState(state)
+  }
+
+  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
+    try await lifecycleCommands().resolveLeavesState(state)
+  }
+}
