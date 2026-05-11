@@ -74,6 +74,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
                 simplifiedNaming:NO
                 eventReporter:reporter
                 logger:_logger];
+  _commandCache = [FBTargetCommandCache new];
 
   return self;
 }
