@@ -93,6 +93,8 @@ public final class AsyncFileContainerAdapter: NSObject, FBFileContainerProtocol,
     super.init()
   }
 
+  // MARK: - FBFileContainerProtocol (legacy passthrough)
+
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
     underlying.copy(fromHost: sourcePath, toContainer: destinationPath)
   }
@@ -119,5 +121,37 @@ public final class AsyncFileContainerAdapter: NSObject, FBFileContainerProtocol,
 
   public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
     underlying.contents(ofDirectory: path)
+  }
+
+  // MARK: - AsyncFileContainer (async bridges)
+
+  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    try await bridgeFBFutureVoid(underlying.copy(fromHost: sourcePath, toContainer: destinationPath))
+  }
+
+  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    let result = try await bridgeFBFuture(underlying.copy(fromContainer: sourcePath, toHost: destinationPath))
+    return result as String
+  }
+
+  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    let inner = try await bridgeFBFuture(underlying.tail(path, to: consumer))
+    return FileContainerTailOperation(teardown: inner)
+  }
+
+  public func createDirectory(_ directoryPath: String) async throws {
+    try await bridgeFBFutureVoid(underlying.createDirectory(directoryPath))
+  }
+
+  public func move(from sourcePath: String, to destinationPath: String) async throws {
+    try await bridgeFBFutureVoid(underlying.move(from: sourcePath, to: destinationPath))
+  }
+
+  public func remove(_ path: String) async throws {
+    try await bridgeFBFutureVoid(underlying.remove(path))
+  }
+
+  public func contents(ofDirectory path: String) async throws -> [String] {
+    try await bridgeFBFutureArray(underlying.contents(ofDirectory: path))
   }
 }

@@ -15,7 +15,7 @@ import XCTestBootstrap
 
 @objc public final class FBIDBCommandExecutor: NSObject {
 
-  private let target: FBiOSTarget
+  private let target: any FBiOSTarget & AsynciOSTarget
   private let logger: FBIDBLogger
   private let debugserverPort: in_port_t
 
@@ -26,10 +26,11 @@ import XCTestBootstrap
   // MARK: - Initializers
 
   @objc public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
-    return FBIDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.withName("grpc_handler") as! FBIDBLogger)
+    let asyncTarget = target as! any FBiOSTarget & AsynciOSTarget
+    return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.withName("grpc_handler") as! FBIDBLogger)
   }
 
-  private init(target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) {
+  private init(target: any FBiOSTarget & AsynciOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) {
     self.target = target
     self.storageManager = storageManager
     self.temporaryDirectory = temporaryDirectory
@@ -41,11 +42,10 @@ import XCTestBootstrap
   // MARK: - Installation
 
   public func list_apps(_ fetchProcessState: Bool) async throws -> [FBInstalledApplication: Any] {
-    let commands = try applicationCommands()
-    let installedApps = try await commands.installedApplications()
+    let installedApps = try await target.installedApplications()
     let runningApps: [String: pid_t]
     if fetchProcessState {
-      runningApps = try await commands.runningApplications()
+      runningApps = try await target.runningApplications()
     } else {
       runningApps = [:]
     }
@@ -126,103 +126,76 @@ import XCTestBootstrap
   // MARK: - Public Methods
 
   public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
-    let commands: any AsyncScreenshotCommands
-    if let simulator = target as? FBSimulator {
-      commands = FBSimulatorScreenshotCommands.commands(with: simulator)
-    } else if let device = target as? FBDevice {
-      commands = FBDeviceScreenshotCommands.commands(with: device)
-    } else {
-      throw FBIDBError.describe("\(target) does not support screenshot commands").build()
-    }
-    return try await commands.takeScreenshot(format: format)
+    try await target.takeScreenshot(format: format)
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, nestedFormat: Bool) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
-    let cmds: any AsyncAccessibilityCommands = FBSimulatorAccessibilityCommands.commands(with: simulator)
     let options = FBAccessibilityRequestOptions.`default`()
     options.nestedFormat = nestedFormat
     options.enableLogging = true
 
     let element: FBAccessibilityElement
     if let value {
-      element = try await cmds.accessibilityElement(at: value.pointValue)
+      element = try await simulator.accessibilityElement(at: value.pointValue)
     } else {
-      element = try await cmds.accessibilityElementForFrontmostApplication()
+      element = try await simulator.accessibilityElementForFrontmostApplication()
     }
     defer { element.close() }
     return try element.serialize(with: options)
   }
 
   public func add_media(_ filePaths: [URL]) async throws {
-    let commands = try mediaCommands()
-    try await commands.addMedia(filePaths)
+    try await simulatorTarget().addMedia(filePaths)
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {
-    let commands: any AsyncLocationCommands
-    if let simulator = target as? FBSimulator {
-      commands = FBSimulatorLocationCommands.commands(with: simulator)
-    } else if let device = target as? FBDevice {
-      commands = FBDeviceLocationCommands.commands(with: device)
-    } else {
-      throw FBIDBError.describe("\(target) does not support location commands").build()
-    }
-    try await commands.overrideLocation(longitude: longitude, latitude: latitude)
+    try await target.overrideLocation(longitude: longitude, latitude: latitude)
   }
 
   public func clear_keychain() async throws {
-    let commands = try keychainCommands()
-    try await commands.clearKeychain()
+    try await simulatorTarget().clearKeychain()
   }
 
   public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
-    let commands = try settingsCommands()
-    try await commands.grantAccess(Set([bundleID]), toServices: services)
+    try await simulatorTarget().grantAccess(Set([bundleID]), toServices: services)
   }
 
   public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
-    let commands = try settingsCommands()
-    try await commands.revokeAccess(Set([bundleID]), toServices: services)
+    try await simulatorTarget().revokeAccess(Set([bundleID]), toServices: services)
   }
 
   public func approve_deeplink(_ scheme: String, for_application bundleID: String) async throws {
-    let commands = try settingsCommands()
-    try await commands.grantAccess(Set([bundleID]), toDeeplink: scheme)
+    try await simulatorTarget().grantAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func revoke_deeplink(_ scheme: String, for_application bundleID: String) async throws {
-    let commands = try settingsCommands()
-    try await commands.revokeAccess(Set([bundleID]), toDeeplink: scheme)
+    try await simulatorTarget().revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func open_url(_ url: String) async throws {
-    let commands = try lifecycleCommands()
-    try await commands.open(URL(string: url)!)
+    try await simulatorTarget().open(URL(string: url)!)
   }
 
   public func focus() async throws {
-    let commands = try lifecycleCommands()
-    try await commands.focus()
+    try await simulatorTarget().focus()
   }
 
   public func update_contacts(_ dbTarData: Data) async throws {
-    let commands = try settingsCommands()
+    let simulator = try simulatorTarget()
     try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(dbTarData)) { tempDir in
-      try await commands.updateContacts((tempDir as URL).path)
+      try await simulator.updateContacts((tempDir as URL).path)
     }
   }
 
   public func clear_contacts() async throws {
-    let commands = try settingsCommands()
-    try await commands.clearContacts()
+    try await simulatorTarget().clearContacts()
   }
 
   public func clear_photos() async throws {
-    let commands = try settingsCommands()
-    try await commands.clearPhotos()
+    try await simulatorTarget().clearPhotos()
   }
 
   public func list_test_bundles() async throws -> [FBXCTestDescriptor] {
@@ -243,19 +216,16 @@ import XCTestBootstrap
 
     let finalAppPath = resolvedAppPath
     let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
-    let commands = try xctestExtendedCommands()
-    return try await commands.listTests(forBundleAtPath: testDescriptor.url.path, timeout: FBIDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
+    return try await simulatorTarget().listTests(forBundleAtPath: testDescriptor.url.path, timeout: FBIDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
   }
 
   public func uninstall_application(_ bundleID: String) async throws {
-    let commands = try applicationCommands()
-    try await commands.uninstallApplication(bundleID: bundleID)
+    try await target.uninstallApplication(bundleID: bundleID)
   }
 
   public func kill_application(_ bundleID: String) async throws {
-    let commands = try applicationCommands()
     do {
-      try await commands.killApplication(bundleID: bundleID)
+      try await target.killApplication(bundleID: bundleID)
     } catch {
       // Mirror the legacy `.fallback(NSNull())` behavior — kill is a no-op when
       // the app isn't running.
@@ -277,18 +247,15 @@ import XCTestBootstrap
       io: configuration.io,
       launchMode: configuration.launchMode
     )
-    let commands = try applicationCommands()
-    return try await commands.launchApplication(derived)
+    return try await target.launchApplication(derived)
   }
 
   public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    let commands = try crashLogCommands()
-    return try await commands.crashes(matching: predicate, useCache: false)
+    return try await target.crashes(matching: predicate, useCache: false)
   }
 
   public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
-    let commands = try crashLogCommands()
-    let crashArray = try await commands.crashes(matching: predicate, useCache: true)
+    let crashArray = try await target.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
       throw FBIDBError.describe("More than one crash log matching \(predicate)").build()
     }
@@ -299,8 +266,7 @@ import XCTestBootstrap
   }
 
   public func crash_delete(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    let commands = try crashLogCommands()
-    return try await commands.pruneCrashes(matching: predicate)
+    return try await target.pruneCrashes(matching: predicate)
   }
 
   public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
@@ -308,16 +274,8 @@ import XCTestBootstrap
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
-    let commands: any AsyncDebuggerCommands
-    if let simulator = target as? FBSimulator {
-      commands = FBSimulatorDebuggerCommands.commands(with: simulator)
-    } else if let device = target as? FBDevice {
-      commands = FBDeviceDebuggerCommands.commands(with: device)
-    } else {
-      throw FBControlCoreError.describe("\(target) does not support debugger commands").build()
-    }
     let bundle = try debugserver_prepare(bundleID)
-    let server = try await commands.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
+    let server = try await target.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }
@@ -344,8 +302,7 @@ import XCTestBootstrap
     guard let device = target as? FBDevice else {
       return NSDictionary()
     }
-    let commands: any AsyncDiagnosticInformationCommands = FBDeviceDiagnosticInformationCommands.commands(with: device)
-    return try await commands.fetchDiagnosticInformation() as NSDictionary
+    return try await device.fetchDiagnosticInformation() as NSDictionary
   }
 
   public func hid(_ event: NSObject) async throws {
@@ -357,28 +314,23 @@ import XCTestBootstrap
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
-    let commands = try settingsCommands()
-    try await commands.setSetting(.hardwareKeyboard, enabled: enabled)
+    try await simulatorTarget().setSetting(.hardwareKeyboard, enabled: enabled)
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    let commands = try settingsCommands()
-    try await commands.setPreference(name, value: value, type: type, domain: domain)
+    try await simulatorTarget().setPreference(name, value: value, type: type, domain: domain)
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {
-    let commands = try settingsCommands()
-    return try await commands.getCurrentPreference(name, domain: domain)
+    try await simulatorTarget().getCurrentPreference(name, domain: domain)
   }
 
   public func set_locale_with_identifier(_ identifier: String) async throws {
-    let commands = try settingsCommands()
-    try await commands.setPreference("AppleLocale", value: identifier, type: nil, domain: nil)
+    try await simulatorTarget().setPreference("AppleLocale", value: identifier, type: nil, domain: nil)
   }
 
   public func get_current_locale_identifier() async throws -> String {
-    let commands = try settingsCommands()
-    return try await commands.getCurrentPreference("AppleLocale", domain: nil)
+    try await simulatorTarget().getCurrentPreference("AppleLocale", domain: nil)
   }
 
   @objc public func list_locale_identifiers() -> [String] {
@@ -388,10 +340,9 @@ import XCTestBootstrap
   // MARK: - File Commands
 
   public func move_paths(_ originPaths: [String], to_path destinationPath: String, containerType: String?) async throws {
-    try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+    try await withFileContainer(for: containerType) { container in
       for originPath in originPaths {
-        try await containerObj.move(from: originPath, to: destinationPath)
+        try await container.move(from: originPath, to: destinationPath)
       }
     }
   }
@@ -404,68 +355,60 @@ import XCTestBootstrap
   }
 
   public func push_files(_ paths: [URL], to_path destinationPath: String, containerType: String?) async throws {
-    try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+    try await withFileContainer(for: containerType) { container in
       for originPath in paths {
-        try await containerObj.copy(fromHost: originPath.path, toContainer: destinationPath)
+        try await container.copy(fromHost: originPath.path, toContainer: destinationPath)
       }
     }
   }
 
   public func pull_file_path(_ path: String, destination_path destinationPath: String?, containerType: String?) async throws -> String {
-    return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
-      return try await containerObj.copy(fromContainer: path, toHost: destinationPath!)
+    return try await withFileContainer(for: containerType) { container in
+      try await container.copy(fromContainer: path, toHost: destinationPath!)
     }
   }
 
   public func pull_file(_ path: String, containerType: String?) async throws -> Data {
     return try await withFBFutureContext(temporaryDirectory.withTemporaryDirectory()) { url in
       let tempPath = ((url as URL).path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
-      try await withFBFutureContext(self.applicationDataContainerCommands(containerType)) { container in
-        let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
-        _ = try await containerObj.copy(fromContainer: path, toHost: tempPath)
+      try await self.withFileContainer(for: containerType) { container in
+        _ = try await container.copy(fromContainer: path, toHost: tempPath)
       }
       return try await FBArchiveOperations.createGzippedTarDataAsync(forPath: tempPath, queue: self.target.workQueue, logger: self.target.logger!)
     }
   }
 
   public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> any FBiOSTargetOperation {
-    return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
-      return try await containerObj.tail(path, to: consumer)
+    return try await withFileContainer(for: containerType) { container in
+      try await container.tail(path, to: consumer)
     }
   }
 
   public func create_directory(_ directoryPath: String, containerType: String) async throws {
-    try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
-      try await containerObj.createDirectory(directoryPath)
+    try await withFileContainer(for: containerType) { container in
+      try await container.createDirectory(directoryPath)
     }
   }
 
   public func remove_paths(_ paths: [String], containerType: String?) async throws {
-    try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+    try await withFileContainer(for: containerType) { container in
       for path in paths {
-        try await containerObj.remove(path)
+        try await container.remove(path)
       }
     }
   }
 
   public func list_path(_ path: String, containerType: String?) async throws -> [String] {
-    return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
-      return try await containerObj.contents(ofDirectory: path)
+    return try await withFileContainer(for: containerType) { container in
+      try await container.contents(ofDirectory: path)
     }
   }
 
   public func list_paths(_ paths: [String], containerType: String?) async throws -> [String: [String]] {
-    return try await withFBFutureContext(applicationDataContainerCommands(containerType)) { container in
-      let containerObj = AsyncFileContainerAdapter(container as! FBFileContainerProtocol)
+    return try await withFileContainer(for: containerType) { container in
       var result: [String: [String]] = [:]
       for path in paths {
-        let listing: [String] = try await containerObj.contents(ofDirectory: path)
+        let listing: [String] = try await container.contents(ofDirectory: path)
         result[path] = listing
       }
       return result
@@ -473,11 +416,7 @@ import XCTestBootstrap
   }
 
   public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    guard let simulator = target as? FBSimulator else {
-      throw FBControlCoreError.describe("Target is not a simulator, cannot provide dap server commands: \(target)").build()
-    }
-    let commands: any AsyncDapServerCommand = FBSimulatorDapServerCommand.commands(with: simulator)
-    return try await commands.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
+    return try await simulatorTarget().launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 
   public func clean() async throws {
@@ -488,19 +427,11 @@ import XCTestBootstrap
   }
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot send push notifications: \(target)").build()
-    }
-    let commands: any AsyncNotificationCommands = FBSimulatorNotificationCommands.commands(with: simulator)
-    try await commands.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await simulatorTarget().sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 
   public func simulateMemoryWarning() async throws {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot simulate memory warnings: \(target)").build()
-    }
-    let commands: any AsyncMemoryCommands = FBSimulatorMemoryCommands.commands(with: simulator)
-    try await commands.simulateMemoryWarning()
+    try await simulatorTarget().simulateMemoryWarning()
   }
 
   // MARK: - Private Methods
@@ -543,123 +474,109 @@ import XCTestBootstrap
     return bundle
   }
 
-  private func applicationDataContainerCommands(_ containerType: String?) -> FBFutureContext<AnyObject> {
+  private func withFileContainer<R>(
+    for containerType: String?,
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
     if containerType == FBFileContainerKind.crashes.rawValue {
-      return target.crashLogFiles() as! FBFutureContext<AnyObject>
-    }
-    guard let commands = target as? FBFileCommands else {
-      return FBControlCoreError.describe("Target doesn't conform to FBFileCommands protocol \(target)").failFutureContext()
-    }
-    if containerType == FBFileContainerKind.application.rawValue {
-      return commands.fileCommandsForApplicationContainers() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.group.rawValue {
-      return commands.fileCommandsForGroupContainers() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.media.rawValue {
-      return commands.fileCommandsForMediaDirectory() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.root.rawValue {
-      return commands.fileCommandsForRootFilesystem() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
-      return commands.fileCommandsForProvisioningProfiles() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.mdmProfiles.rawValue {
-      return commands.fileCommandsForMDMProfiles() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.springboardIcons.rawValue {
-      return commands.fileCommandsForSpringboardIconLayout() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.wallpaper.rawValue {
-      return commands.fileCommandsForWallpaper() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.diskImages.rawValue {
-      return commands.fileCommandsForDiskImages() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.symbols.rawValue {
-      return commands.fileCommandsForSymbols() as! FBFutureContext<AnyObject>
-    }
-    if containerType == FBFileContainerKind.auxillary.rawValue {
-      return commands.fileCommandsForAuxillary() as! FBFutureContext<AnyObject>
+      return try await target.withCrashLogFiles { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
     }
     if containerType == FBFileContainerKind.xctest.rawValue {
-      return FBFutureContext(result: storageManager.xctest.asFileContainer() as AnyObject)
+      return try await body(AsyncFileContainerAdapter(storageManager.xctest.asFileContainer()))
     }
     if containerType == FBFileContainerKind.dylib.rawValue {
-      return FBFutureContext(result: storageManager.dylib.asFileContainer() as AnyObject)
+      return try await body(AsyncFileContainerAdapter(storageManager.dylib.asFileContainer()))
     }
     if containerType == FBFileContainerKind.dsym.rawValue {
-      return FBFutureContext(result: storageManager.dsym.asFileContainer() as AnyObject)
+      return try await body(AsyncFileContainerAdapter(storageManager.dsym.asFileContainer()))
     }
     if containerType == FBFileContainerKind.framework.rawValue {
-      return FBFutureContext(result: storageManager.framework.asFileContainer() as AnyObject)
+      return try await body(AsyncFileContainerAdapter(storageManager.framework.asFileContainer()))
+    }
+    if containerType == FBFileContainerKind.application.rawValue {
+      return try await target.withFileCommandsForApplicationContainers { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.group.rawValue {
+      return try await target.withFileCommandsForGroupContainers { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.media.rawValue {
+      return try await target.withFileCommandsForMediaDirectory { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.root.rawValue {
+      return try await target.withFileCommandsForRootFilesystem { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
+      return try await target.withFileCommandsForProvisioningProfiles { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.mdmProfiles.rawValue {
+      return try await target.withFileCommandsForMDMProfiles { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.springboardIcons.rawValue {
+      return try await target.withFileCommandsForSpringboardIconLayout { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.wallpaper.rawValue {
+      return try await target.withFileCommandsForWallpaper { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.diskImages.rawValue {
+      return try await target.withFileCommandsForDiskImages { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.symbols.rawValue {
+      return try await target.withFileCommandsForSymbols { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
+    }
+    if containerType == FBFileContainerKind.auxillary.rawValue {
+      return try await target.withFileCommandsForAuxillary { container in
+        try await body(AsyncFileContainerAdapter(container))
+      }
     }
     if containerType == nil || containerType?.isEmpty == true {
-      return target is FBDevice ? commands.fileCommandsForMediaDirectory() as! FBFutureContext<AnyObject> : commands.fileCommandsForRootFilesystem() as! FBFutureContext<AnyObject>
+      if target is FBDevice {
+        return try await target.withFileCommandsForMediaDirectory { container in
+          try await body(AsyncFileContainerAdapter(container))
+        }
+      } else {
+        return try await target.withFileCommandsForRootFilesystem { container in
+          try await body(AsyncFileContainerAdapter(container))
+        }
+      }
     }
-    return commands.fileCommandsForContainerApplication(containerType!) as! FBFutureContext<AnyObject>
+    return try await target.withFileCommandsForContainerApplication(containerType!) { container in
+      try await body(AsyncFileContainerAdapter(container))
+    }
   }
 
-  private func lifecycleCommands() throws -> any AsyncSimulatorLifecycleCommands {
+  private func simulatorTarget() throws -> FBSimulator {
     guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot provide lifecycle commands: \(target)").build()
+      throw FBIDBError.describe("Target is not a simulator: \(target)").build()
     }
-    return FBSimulatorLifecycleCommands.commands(with: simulator)
-  }
-
-  private func mediaCommands() throws -> any AsyncMediaCommands {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot provide media commands: \(target)").build()
-    }
-    return FBSimulatorMediaCommands.commands(with: simulator)
-  }
-
-  private func keychainCommands() throws -> any AsyncKeychainCommands {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot provide keychain commands: \(target)").build()
-    }
-    return FBSimulatorKeychainCommands.commands(with: simulator)
-  }
-
-  private func settingsCommands() throws -> any AsyncSettingsCommands {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot provide settings commands: \(target)").build()
-    }
-    return FBSimulatorSettingsCommands.commands(with: simulator)
-  }
-
-  private func applicationCommands() throws -> any AsyncApplicationCommands {
-    if let simulator = target as? FBSimulator {
-      return FBSimulatorApplicationCommands.commands(with: simulator)
-    } else if let device = target as? FBDevice {
-      return FBDeviceApplicationCommands.commands(with: device)
-    } else {
-      throw FBIDBError.describe("\(target) does not support application commands").build()
-    }
-  }
-
-  private func crashLogCommands() throws -> any AsyncCrashLogCommands {
-    if let simulator = target as? FBSimulator {
-      return FBSimulatorCrashLogCommands.commands(with: simulator)
-    } else if let device = target as? FBDevice {
-      return FBDeviceCrashLogCommands.commands(with: device)
-    } else {
-      throw FBIDBError.describe("\(target) does not support crash log commands").build()
-    }
-  }
-
-  private func xctestExtendedCommands() throws -> any AsyncXCTestExtendedCommands {
-    guard let simulator = target as? FBSimulator else {
-      throw FBIDBError.describe("Target is not a simulator, cannot list tests in bundle: \(target)").build()
-    }
-    return FBSimulatorXCTestCommands.commands(with: simulator)
+    return simulator
   }
 
   private func connectToHID() async throws -> FBSimulatorHID {
-    let commands = try lifecycleCommands()
+    let simulator = try simulatorTarget()
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
-    return try await commands.connectToHID()
+    return try await simulator.connectToHID()
   }
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
@@ -672,8 +589,7 @@ import XCTestBootstrap
   private func installAppBundle(_ appBundle: FBBundleDescriptor, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
     let userDevelopmentAppIsRequired = target is FBDevice
     try storageManager.application.checkArchitecture(appBundle)
-    let appCommands = try applicationCommands()
-    let installedApp = try await appCommands.installApplication(atPath: appBundle.path)
+    let installedApp = try await target.installApplication(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
@@ -712,8 +628,7 @@ import XCTestBootstrap
     }
     let bundlePathURL: URL
     if linkTo.bundle_type == .app {
-      let appCommands = try applicationCommands()
-      let app = try await appCommands.installedApplication(bundleID: linkTo.bundle_id)
+      let app = try await target.installedApplication(bundleID: linkTo.bundle_id)
       logger.log("Going to create a symlink for app bundle: \(app.bundle.name)")
       bundlePathURL = URL(fileURLWithPath: app.bundle.path)
     } else {
