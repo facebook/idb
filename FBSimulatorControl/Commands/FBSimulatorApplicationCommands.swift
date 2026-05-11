@@ -17,7 +17,7 @@
 }
 
 @objc(FBSimulatorApplicationCommands)
-public final class FBSimulatorApplicationCommands: NSObject, FBApplicationCommands, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand {
+public final class FBSimulatorApplicationCommands: NSObject, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand {
 
   // MARK: - Properties
 

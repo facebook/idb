@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 @objc(FBSimulatorLogCommands)
-public final class FBSimulatorLogCommands: NSObject, FBLogCommands, FBiOSTargetCommand {
+public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

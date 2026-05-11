@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 @objc(FBSimulatorDapServerCommand)
-public final class FBSimulatorDapServerCommand: NSObject, FBDapServerCommand, FBiOSTargetCommand {
+public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

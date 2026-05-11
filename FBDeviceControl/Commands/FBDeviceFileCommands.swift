@@ -386,7 +386,7 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
 // MARK: - FBDeviceFileCommands
 
 @objc(FBDeviceFileCommands)
-public class FBDeviceFileCommands: NSObject, FBFileCommands {
+public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 

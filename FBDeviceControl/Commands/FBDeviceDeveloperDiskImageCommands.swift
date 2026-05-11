@@ -29,7 +29,7 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
 }
 
 @objc(FBDeviceDeveloperDiskImageCommands)
-public class FBDeviceDeveloperDiskImageCommands: NSObject, FBDeveloperDiskImageCommands {
+public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers

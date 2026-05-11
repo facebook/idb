@@ -22,7 +22,7 @@ import Foundation
 }
 
 @objc(FBSimulatorFileCommands)
-public final class FBSimulatorFileCommands: NSObject, FBFileCommands, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand {
+public final class FBSimulatorFileCommands: NSObject, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand {
 
   // MARK: - Properties
 

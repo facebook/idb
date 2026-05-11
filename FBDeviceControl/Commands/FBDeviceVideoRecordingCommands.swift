@@ -10,7 +10,7 @@ import AVFoundation
 import Foundation
 
 @objc(FBDeviceVideoRecordingCommands)
-public class FBDeviceVideoRecordingCommands: NSObject, FBVideoRecordingCommands, FBVideoStreamCommands {
+public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private var video: FBDeviceVideo?
 

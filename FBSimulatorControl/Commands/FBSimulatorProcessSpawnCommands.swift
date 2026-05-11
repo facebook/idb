@@ -9,7 +9,7 @@
 import Foundation
 
 @objc(FBSimulatorProcessSpawnCommands)
-public final class FBSimulatorProcessSpawnCommands: NSObject, FBProcessSpawnCommands {
+public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

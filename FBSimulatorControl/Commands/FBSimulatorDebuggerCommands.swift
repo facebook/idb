@@ -42,7 +42,7 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
 // MARK: - FBSimulatorDebuggerCommands
 
 @objc(FBSimulatorDebuggerCommands)
-public final class FBSimulatorDebuggerCommands: NSObject, FBDebuggerCommands {
+public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

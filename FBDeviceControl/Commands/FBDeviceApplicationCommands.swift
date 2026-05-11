@@ -80,7 +80,7 @@ private class FBDeviceLaunchedApplication: NSObject, FBLaunchedApplication {
 // MARK: - FBDeviceApplicationCommands
 
 @objc(FBDeviceApplicationCommands)
-public class FBDeviceApplicationCommands: NSObject, FBApplicationCommands {
+public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
   fileprivate weak var device: FBDevice?
   private let deltaUpdateDirectory: URL
 

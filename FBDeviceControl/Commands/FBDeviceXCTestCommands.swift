@@ -12,7 +12,7 @@ import XCTestBootstrap
 // swiftlint:disable force_cast
 
 @objc(FBDeviceXCTestCommands)
-public class FBDeviceXCTestCommands: NSObject, FBXCTestCommands, FBiOSTargetCommand {
+public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher

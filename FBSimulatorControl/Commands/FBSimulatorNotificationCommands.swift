@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 @objc(FBSimulatorNotificationCommands)
-public final class FBSimulatorNotificationCommands: NSObject, FBNotificationCommands {
+public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

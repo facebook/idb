@@ -11,7 +11,7 @@ import FBControlCore
 import Foundation
 
 @objc(FBSimulatorLocationCommands)
-public final class FBSimulatorLocationCommands: NSObject, FBLocationCommands {
+public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

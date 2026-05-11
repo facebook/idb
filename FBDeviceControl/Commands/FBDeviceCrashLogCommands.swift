@@ -15,7 +15,7 @@ private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
 
 @objc(FBDeviceCrashLogCommands)
-public class FBDeviceCrashLogCommands: NSObject, FBCrashLogCommands {
+public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   private var hasPerformedInitialIngestion: Bool = false
