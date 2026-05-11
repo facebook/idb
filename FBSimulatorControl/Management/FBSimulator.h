@@ -17,6 +17,7 @@
 @class FBSimulatorBootConfiguration;
 @class FBSimulatorConfiguration;
 @class FBSimulatorSet;
+@class FBTargetCommandCache;
 @class SimDevice;
 
 /**
@@ -135,6 +136,7 @@
 #pragma mark - Should be marked private when converting to Swift
 
 @property (nonnull, nonatomic, readonly, strong) id forwarder;
+@property (nonnull, nonatomic, readonly, strong) FBTargetCommandCache *commandCache;
 
 + (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;
 - (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
