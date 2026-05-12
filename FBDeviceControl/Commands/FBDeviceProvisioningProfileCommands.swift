@@ -110,20 +110,3 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
     }
   }
 }
-
-// MARK: - AsyncProvisioningProfileCommands
-
-extension FBDeviceProvisioningProfileCommands: AsyncProvisioningProfileCommands {
-
-  public func allProvisioningProfiles() async throws -> [[String: Any]] {
-    try await allProvisioningProfilesAsync()
-  }
-
-  public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
-    try await removeProvisioningProfileAsync(uuid: uuid)
-  }
-
-  public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
-    try await installProvisioningProfileAsync(profileData)
-  }
-}
