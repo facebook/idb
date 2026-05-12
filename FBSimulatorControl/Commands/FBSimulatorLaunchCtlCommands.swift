@@ -36,8 +36,84 @@
   func startService(withName serviceName: String) -> FBFuture<NSString>
 }
 
+// MARK: - FBSimulator+FBSimulatorLaunchCtlCommandsProtocol
+
+extension FBSimulator: FBSimulatorLaunchCtlCommandsProtocol {
+
+  @objc(serviceNameForProcessIdentifier:)
+  public func serviceName(forProcessIdentifier pid: pid_t) -> FBFuture<NSString> {
+    do {
+      return try launchCtlCommands().serviceName(forProcessIdentifier: pid)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(serviceNameForProcess:)
+  public func serviceName(forProcess process: FBProcessInfo) -> FBFuture<NSString> {
+    do {
+      return try launchCtlCommands().serviceName(forProcess: process)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(serviceNamesAndProcessIdentifiersMatching:)
+  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) -> FBFuture<NSDictionary> {
+    do {
+      return try launchCtlCommands().serviceNamesAndProcessIdentifiers(matching: regex)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(firstServiceNameAndProcessIdentifierMatching:)
+  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) -> FBFuture<NSArray> {
+    do {
+      return try launchCtlCommands().firstServiceNameAndProcessIdentifier(matching: regex)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(processIsRunningOnSimulator:)
+  public func processIsRunning(onSimulator process: FBProcessInfo) -> FBFuture<NSNumber> {
+    do {
+      return try launchCtlCommands().processIsRunning(onSimulator: process)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func listServices() -> FBFuture<NSDictionary> {
+    do {
+      return try launchCtlCommands().listServices()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(stopServiceWithName:)
+  public func stopService(withName serviceName: String) -> FBFuture<NSString> {
+    do {
+      return try launchCtlCommands().stopService(withName: serviceName)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(startServiceWithName:)
+  public func startService(withName serviceName: String) -> FBFuture<NSString> {
+    do {
+      return try launchCtlCommands().startService(withName: serviceName)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 @objc(FBSimulatorLaunchCtlCommands)
-public final class FBSimulatorLaunchCtlCommands: NSObject, FBSimulatorLaunchCtlCommandsProtocol {
+public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

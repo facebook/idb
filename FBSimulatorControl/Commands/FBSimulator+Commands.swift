@@ -48,6 +48,10 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
+  func launchCtlCommands() throws -> FBSimulatorLaunchCtlCommands {
+    commandCache.resolve { FBSimulatorLaunchCtlCommands.commands(with: self) }
+  }
+
   func instrumentsCommands() throws -> FBInstrumentsCommands {
     commandCache.resolve { FBInstrumentsCommands(target: self) }
   }
