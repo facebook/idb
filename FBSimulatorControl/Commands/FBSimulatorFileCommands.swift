@@ -21,8 +21,39 @@ import Foundation
   func containedFileForRootFilesystem() -> any FBContainedFile
 }
 
+// MARK: - FBSimulator+FBSimulatorFileCommandsProtocol
+
+extension FBSimulator: FBSimulatorFileCommandsProtocol {
+
+  @objc(containedFileForApplication:error:)
+  public func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
+    return try fileCommands().containedFile(forApplication: bundleID)
+  }
+
+  @objc(containedFileForGroupContainersWithError:)
+  public func containedFileForGroupContainers() throws -> any FBContainedFile {
+    return try fileCommands().containedFileForGroupContainers()
+  }
+
+  @objc(containedFileForApplicationContainersWithError:)
+  public func containedFileForApplicationContainers() throws -> any FBContainedFile {
+    return try fileCommands().containedFileForApplicationContainers()
+  }
+
+  @objc public func containedFileForRootFilesystem() -> any FBContainedFile {
+    do {
+      return try fileCommands().containedFileForRootFilesystem()
+    } catch {
+      // The accessor only throws if commandCache.resolve fails — extremely
+      // unlikely. Fall back to a stub for the non-throwing protocol method.
+      // swiftlint:disable:next force_cast
+      return FBFileContainer.containedFile(forBasePath: "") as! any FBContainedFile
+    }
+  }
+}
+
 @objc(FBSimulatorFileCommands)
-public final class FBSimulatorFileCommands: NSObject, FBSimulatorFileCommandsProtocol, FBiOSTargetCommand {
+public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

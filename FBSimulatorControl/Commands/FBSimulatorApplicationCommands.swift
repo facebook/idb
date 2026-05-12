@@ -16,8 +16,18 @@
   func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication
 }
 
+// MARK: - FBSimulator+FBSimulatorApplicationCommandsProtocol
+
+extension FBSimulator: FBSimulatorApplicationCommandsProtocol {
+
+  @objc(installedApplicationWithBundleID:error:)
+  public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
+    return try applicationCommands().installedApplication(withBundleID: bundleID)
+  }
+}
+
 @objc(FBSimulatorApplicationCommands)
-public final class FBSimulatorApplicationCommands: NSObject, FBSimulatorApplicationCommandsProtocol, FBiOSTargetCommand {
+public final class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 
