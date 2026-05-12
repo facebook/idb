@@ -18,7 +18,31 @@ import Foundation
   func pullAndExtractSymbols(toDestinationDirectory destinationDirectory: String) -> FBFuture<NSString>
 }
 
-// FBDevice and FBDeviceDebugSymbolsCommands conform at runtime via ObjC.
-// Do not add Swift extension conformance here - ObjC classes use
-// forwardingTargetForSelector: and commandsWithTarget: which cannot
-// be verified by the Swift compiler at compile time.
+// MARK: - FBDevice+FBDeviceDebugSymbolsCommandsProtocol
+
+extension FBDevice: FBDeviceDebugSymbolsCommandsProtocol {
+
+  @objc public func listSymbols() -> FBFuture<NSArray> {
+    do {
+      return try debugSymbolsCommands().listSymbols()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func pullSymbolFile(_ fileName: String, toDestinationPath destinationPath: String) -> FBFuture<NSString> {
+    do {
+      return try debugSymbolsCommands().pullSymbolFile(fileName, toDestinationPath: destinationPath)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func pullAndExtractSymbols(toDestinationDirectory destinationDirectory: String) -> FBFuture<NSString> {
+    do {
+      return try debugSymbolsCommands().pullAndExtractSymbols(toDestinationDirectory: destinationDirectory)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

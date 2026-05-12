@@ -9,7 +9,7 @@
 import Foundation
 
 @objc(FBDeviceRecoveryCommands)
-public class FBDeviceRecoveryCommands: NSObject, FBDeviceRecoveryCommandsProtocol, FBiOSTargetCommand {
+public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers

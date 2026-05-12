@@ -77,4 +77,16 @@ extension FBDevice {
   func provisioningProfileCommands() throws -> FBDeviceProvisioningProfileCommands {
     commandCache.resolve { FBDeviceProvisioningProfileCommands.commands(with: self) }
   }
+
+  func activationCommands() throws -> FBDeviceActivationCommands {
+    commandCache.resolve { FBDeviceActivationCommands.commands(with: self) }
+  }
+
+  func recoveryCommands() throws -> FBDeviceRecoveryCommands {
+    commandCache.resolve { FBDeviceRecoveryCommands.commands(with: self) }
+  }
+
+  func debugSymbolsCommands() throws -> FBDeviceDebugSymbolsCommands {
+    commandCache.resolve { FBDeviceDebugSymbolsCommands(device: self) }
+  }
 }

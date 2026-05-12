@@ -489,7 +489,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
-    let symbolCommands = unsafeBitCast(device! as AnyObject, to: (any FBDeviceDebugSymbolsCommandsProtocol).self)
+    let symbolCommands: any FBDeviceDebugSymbolsCommandsProtocol = device!
     return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
   }
 }

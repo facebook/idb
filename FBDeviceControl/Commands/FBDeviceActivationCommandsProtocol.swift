@@ -12,6 +12,15 @@ import Foundation
   @objc func activate() -> FBFuture<NSNull>
 }
 
-// FBDevice conforms at runtime via ObjC forwardingTargetForSelector:
-// Do not add Swift extension conformance here - it causes compile errors
-// because FBDevice doesn't implement these methods directly.
+// MARK: - FBDevice+FBDeviceActivationCommandsProtocol
+
+extension FBDevice: FBDeviceActivationCommandsProtocol {
+
+  @objc public func activate() -> FBFuture<NSNull> {
+    do {
+      return try activationCommands().activate()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

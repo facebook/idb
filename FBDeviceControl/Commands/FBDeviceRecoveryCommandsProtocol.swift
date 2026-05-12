@@ -14,5 +14,23 @@ import Foundation
   @objc func exitRecovery() -> FBFuture<NSNull>
 }
 
-// FBDevice conforms at runtime via ObjC forwardingTargetForSelector:
-// Do not add Swift extension conformance here.
+// MARK: - FBDevice+FBDeviceRecoveryCommandsProtocol
+
+extension FBDevice: FBDeviceRecoveryCommandsProtocol {
+
+  @objc public func enterRecovery() -> FBFuture<NSNull> {
+    do {
+      return try recoveryCommands().enterRecovery()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func exitRecovery() -> FBFuture<NSNull> {
+    do {
+      return try recoveryCommands().exitRecovery()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
