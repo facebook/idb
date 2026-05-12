@@ -21,7 +21,7 @@
 #import "FBPeriodicStatsTimer.h"
 #import "FBSimulatorControl-Swift.h"
 
-@interface FBSimulatorVideoStream () <FBFramebufferConsumer>
+@interface FBSimulatorVideoStream () <FBFramebufferConsumer, FBVideoStream>
 @end
 
 typedef BOOL (*FBCompressedFrameWriter)(CMSampleBufferRef sampleBuffer, id _Nullable context, id<FBDataConsumer> consumer, id<FBControlCoreLogger> logger, NSError **error);
