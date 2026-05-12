@@ -203,7 +203,7 @@ private class FBXCTestRunRequest_LogicTest: FBXCTestRunRequest {
   private func startTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
-      target: target as! (FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands),
+      target: target as! (FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands),
       configuration: configuration,
       reporter: adapter,
       logger: logger

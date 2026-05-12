@@ -14,7 +14,7 @@ private let KillBackoffTimeout: TimeInterval = 1
 
 @objc public final class FBXCTestProcess: NSObject {
 
-  @objc public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: FBCrashLogCommands?, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
+  public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any AsyncCrashLogCommands)?, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
 
     logger.log("Waiting for \(process.processIdentifier) to exit within \(timeout) seconds")
@@ -89,7 +89,7 @@ private let KillBackoffTimeout: TimeInterval = 1
         })
   }
 
-  private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: FBCrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
+  private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any AsyncCrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     logger.log("xctest process (\(process.processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
     return unsafeBitCast(
       unsafeBitCast(
@@ -108,14 +108,17 @@ private let KillBackoffTimeout: TimeInterval = 1
     )
   }
 
-  private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: FBCrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<FBCrashLogInfo> {
+  private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: any AsyncCrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<FBCrashLogInfo> {
     let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
       FBCrashLogInfo.predicateForCrashLogs(withProcessID: process.processIdentifier),
       FBCrashLogInfo.predicateNewer(thanDate: sinceDate),
     ])
 
+    let notify: FBFuture<FBCrashLogInfo> = fbFutureFromAsync {
+      try await crashLogCommands.notifyOfCrash(matching: predicate)
+    }
     return unsafeBitCast(
-      unsafeBitCast(crashLogCommands.notifyOfCrash(predicate), to: FBFuture<AnyObject>.self)
+      unsafeBitCast(notify, to: FBFuture<AnyObject>.self)
         .onQueue(
           queue, timeout: crashLogWaitTime,
           handler: {

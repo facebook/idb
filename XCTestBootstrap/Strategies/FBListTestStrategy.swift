@@ -45,11 +45,11 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
 
 @objc public final class FBListTestStrategy: NSObject {
 
-  let target: FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands
+  let target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands
   private let configuration: FBListTestConfiguration
   private let logger: FBControlCoreLogger
 
-  @objc public init(target: FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -58,8 +58,12 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
 
   @objc public func listTests() -> FBFuture<NSArray> {
     let shimBuffer = FBDataBuffer.consumableBuffer()
+    let target = self.target
+    let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
+      try await target.extendedTestShim() as AnyObject
+    }
     let futures: [FBFuture<AnyObject>] = [
-      unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
+      shimFuture,
       unsafeBitCast(FBProcessOutput<NSNull>(for: shimBuffer).providedThroughFile(), to: FBFuture<AnyObject>.self),
     ]
     let combined = FBFuture<AnyObject>.combine(futures)
@@ -214,7 +218,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     )
   }
 
-  private static func listTestProcess(withTarget target: FBiOSTarget & FBProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: FBiOSTarget & AsyncProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -257,8 +261,11 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & FBProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
-    return unsafeBitCast(target.launchProcess(spawnConfiguration), to: FBFuture<AnyObject>.self)
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & AsyncProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+    let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
+      try await target.launchProcess(spawnConfiguration)
+    }
+    return unsafeBitCast(launchFuture, to: FBFuture<AnyObject>.self)
       .onQueue(
         target.workQueue,
         map: { processObj -> AnyObject in
