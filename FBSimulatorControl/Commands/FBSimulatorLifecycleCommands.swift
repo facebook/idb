@@ -31,8 +31,114 @@ private let openURLRetries = 2
   func open(_ url: URL) -> FBFuture<NSNull>
 }
 
+// MARK: - FBSimulator+FBSimulatorLifecycleCommandsProtocol
+
+extension FBSimulator: FBSimulatorLifecycleCommandsProtocol {
+
+  // MARK: FBEraseCommands
+
+  @objc public func erase() -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().erase()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  // MARK: FBPowerCommands
+
+  @objc public func shutdown() -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().shutdown()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func reboot() -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().reboot()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  // MARK: FBLifecycleCommands
+
+  @objc(resolveState:)
+  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().resolveState(state)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(resolveLeavesState:)
+  public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().resolveLeavesState(state)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  // MARK: FBSimulatorLifecycleCommandsProtocol
+
+  @objc(boot:)
+  public func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().boot(configuration)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func focus() -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().focus()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(disconnectWithTimeout:logger:)
+  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().disconnect(withTimeout: timeout, logger: logger)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func connectToFramebuffer() -> FBFuture<FBFramebuffer> {
+    do {
+      return try lifecycleCommands().connectToFramebuffer()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func connectToHID() -> FBFuture<FBSimulatorHID> {
+    do {
+      return try lifecycleCommands().connectToHID()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(openURL:)
+  public func open(_ url: URL) -> FBFuture<NSNull> {
+    do {
+      return try lifecycleCommands().open(url)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 @objc(FBSimulatorLifecycleCommands)
-public final class FBSimulatorLifecycleCommands: NSObject, FBSimulatorLifecycleCommandsProtocol {
+public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 
