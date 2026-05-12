@@ -112,8 +112,229 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
   func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString>
 }
 
+// MARK: - FBSimulator+FBSimulatorSettingsCommandsProtocol
+
+extension FBSimulator: FBSimulatorSettingsCommandsProtocol {
+
+  @objc(setSetting:enabled:)
+  public func setSetting(_ setting: FBSimulatorSetting, enabled: Bool) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setSetting(setting, enabled: enabled)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func currentAppearance() -> FBFuture<NSNumber> {
+    do {
+      return try settingsCommands().currentAppearance()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setAppearance:)
+  public func setAppearance(_ appearance: FBSimulatorAppearance) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setAppearance(appearance)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func currentContentSizeCategory() -> FBFuture<NSNumber> {
+    do {
+      return try settingsCommands().currentContentSizeCategory()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setContentSizeCategory:)
+  public func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setContentSizeCategory(category)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func currentStatusBarOverrides() -> FBFuture<FBStatusBarOverride> {
+    do {
+      return try settingsCommands().currentStatusBarOverrides()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(overrideStatusBar:)
+  public func overrideStatusBar(_ override: FBStatusBarOverride?) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().overrideStatusBar(override)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setPreference:value:type:domain:)
+  public func setPreference(_ name: String, value: String, type: String?, domain: String?) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setPreference(name, value: value, type: type, domain: domain)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(getCurrentPreference:domain:)
+  public func getCurrentPreference(_ name: String, domain: String?) -> FBFuture<NSString> {
+    do {
+      return try settingsCommands().getCurrentPreference(name, domain: domain)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(grantAccess:toServices:)
+  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().grantAccess(bundleIDs, toServices: services)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(revokeAccess:toServices:)
+  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().revokeAccess(bundleIDs, toServices: services)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(grantAccess:toDeeplink:)
+  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().grantAccess(bundleIDs, toDeeplink: scheme)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(revokeAccess:toDeeplink:)
+  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().revokeAccess(bundleIDs, toDeeplink: scheme)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(updateContacts:)
+  public func updateContacts(_ databaseDirectory: String) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().updateContacts(databaseDirectory)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func clearContacts() -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().clearContacts()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func clearPhotos() -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().clearPhotos()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setProxyWithHost:port:type:)
+  public func setProxy(host: String, port: UInt, type: String) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setProxy(host: host, port: port, type: type)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func clearProxy() -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().clearProxy()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func listProxy() -> FBFuture<NSString> {
+    do {
+      return try settingsCommands().listProxy()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setDnsServers:)
+  public func setDnsServers(_ servers: [String]) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setDnsServers(servers)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func clearDns() -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().clearDns()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func listDns() -> FBFuture<NSString> {
+    do {
+      return try settingsCommands().listDns()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(setHealthAuthorization:forBundleID:typeIdentifiers:)
+  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(clearHealthAuthorizationForBundleID:)
+  public func clearHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSNull> {
+    do {
+      return try settingsCommands().clearHealthAuthorization(forBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(listHealthAuthorizationForBundleID:)
+  public func listHealthAuthorization(forBundleID bundleID: String) -> FBFuture<NSString> {
+    do {
+      return try settingsCommands().listHealthAuthorization(forBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 @objc(FBSimulatorSettingsCommands)
-public final class FBSimulatorSettingsCommands: NSObject, FBSimulatorSettingsCommandsProtocol {
+public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 
