@@ -95,3 +95,16 @@ extension FBDevice: AsyncDiagnosticInformationCommands {
     try await diagnosticInformationCommands().fetchDiagnosticInformationAsync()
   }
 }
+
+// MARK: - FBDevice+FBDiagnosticInformationCommands
+
+extension FBDevice: FBDiagnosticInformationCommands {
+
+  @objc public func fetchDiagnosticInformation() -> FBFuture<NSDictionary> {
+    do {
+      return try diagnosticInformationCommands().fetchDiagnosticInformation()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

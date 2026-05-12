@@ -204,3 +204,50 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
     }
   }
 }
+
+// MARK: - FBDevice+FBDeveloperDiskImageCommands
+
+extension FBDevice: FBDeveloperDiskImageCommands {
+
+  @objc public func mountedDiskImages() -> FBFuture<NSArray> {
+    do {
+      return try developerDiskImageCommands().mountedDiskImages()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(mountDiskImage:)
+  public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<FBDeveloperDiskImage> {
+    do {
+      return try developerDiskImageCommands().mountDiskImage(diskImage)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(unmountDiskImage:)
+  public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<NSNull> {
+    do {
+      return try developerDiskImageCommands().unmountDiskImage(diskImage)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func mountableDiskImages() -> [FBDeveloperDiskImage] {
+    do {
+      return try developerDiskImageCommands().mountableDiskImages()
+    } catch {
+      return []
+    }
+  }
+
+  @objc public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
+    do {
+      return try developerDiskImageCommands().ensureDeveloperDiskImageIsMounted()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

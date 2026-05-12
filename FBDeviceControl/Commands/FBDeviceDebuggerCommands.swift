@@ -148,3 +148,17 @@ extension FBDevice: AsyncDebuggerCommands {
     try await debuggerCommands().launchDebugServerAsync(forHostApplication: application, port: port)
   }
 }
+
+// MARK: - FBDevice+FBDebuggerCommands
+
+extension FBDevice: FBDebuggerCommands {
+
+  @objc(launchDebugServerForHostApplication:port:)
+  public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<FBDebugServer> {
+    do {
+      return try debuggerCommands().launchDebugServer(forHostApplication: application, port: port)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

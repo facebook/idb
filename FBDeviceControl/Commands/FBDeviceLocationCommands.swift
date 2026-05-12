@@ -67,3 +67,17 @@ extension FBDevice: AsyncLocationCommands {
     try await locationCommands().overrideLocationAsync(withLongitude: longitude, latitude: latitude)
   }
 }
+
+// MARK: - FBDevice+FBLocationCommands
+
+extension FBDevice: FBLocationCommands {
+
+  @objc(overrideLocationWithLongitude:latitude:)
+  public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
+    do {
+      return try locationCommands().overrideLocation(withLongitude: longitude, latitude: latitude)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

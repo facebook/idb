@@ -68,3 +68,24 @@ extension FBDevice: AsyncPowerCommands {
     try await powerCommands().sendRelayCommandAsync("Restart")
   }
 }
+
+// MARK: - FBDevice+FBPowerCommands
+
+extension FBDevice: FBPowerCommands {
+
+  @objc public func shutdown() -> FBFuture<NSNull> {
+    do {
+      return try powerCommands().shutdown()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func reboot() -> FBFuture<NSNull> {
+    do {
+      return try powerCommands().reboot()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

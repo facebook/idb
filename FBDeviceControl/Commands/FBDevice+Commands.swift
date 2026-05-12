@@ -89,4 +89,8 @@ extension FBDevice {
   func debugSymbolsCommands() throws -> FBDeviceDebugSymbolsCommands {
     commandCache.resolve { FBDeviceDebugSymbolsCommands(device: self) }
   }
+
+  func developerDiskImageCommands() throws -> FBDeviceDeveloperDiskImageCommands {
+    commandCache.resolve { FBDeviceDeveloperDiskImageCommands.commands(with: self) }
+  }
 }
