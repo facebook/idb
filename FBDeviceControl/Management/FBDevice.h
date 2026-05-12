@@ -23,7 +23,7 @@
 /**
  A class that represents an iOS Device.
  */
-@interface FBDevice : NSObject <FBiOSTarget, FBDebuggerCommands, FBDeviceCommands, FBDiagnosticInformationCommands, FBLocationCommands, FBPowerCommands, FBDeveloperDiskImageCommands>
+@interface FBDevice : NSObject <FBiOSTarget, FBDeviceCommands>
 
 #pragma mark - FBiOSTarget / FBiOSTargetInfo Protocol Members
 // These are implemented via @synthesize or method implementations in FBDevice.m.
