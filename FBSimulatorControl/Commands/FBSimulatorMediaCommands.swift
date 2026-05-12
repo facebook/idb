@@ -14,8 +14,22 @@ import Foundation
   func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull>
 }
 
+// MARK: - FBSimulator+FBSimulatorMediaCommandsProtocol
+
+extension FBSimulator: FBSimulatorMediaCommandsProtocol {
+
+  @objc(addMedia:)
+  public func addMedia(_ mediaFileURLs: [URL]) -> FBFuture<NSNull> {
+    do {
+      return try mediaCommands().addMedia(mediaFileURLs)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 @objc(FBSimulatorMediaCommands)
-public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsProtocol {
+public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

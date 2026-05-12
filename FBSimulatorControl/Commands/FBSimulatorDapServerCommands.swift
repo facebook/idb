@@ -90,3 +90,17 @@ extension FBSimulator: AsyncDapServerCommand {
     try await dapServerCommand().launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 }
+
+// MARK: - FBSimulator+FBDapServerCommand
+
+extension FBSimulator: FBDapServerCommand {
+
+  @objc(launchDapServer:stdIn:stdOut:)
+  public func launchDapServer(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) -> FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>> {
+    do {
+      return try dapServerCommand().launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

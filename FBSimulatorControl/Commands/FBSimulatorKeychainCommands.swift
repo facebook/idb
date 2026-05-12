@@ -14,8 +14,21 @@ import Foundation
   func clearKeychain() -> FBFuture<NSNull>
 }
 
+// MARK: - FBSimulator+FBSimulatorKeychainCommandsProtocol
+
+extension FBSimulator: FBSimulatorKeychainCommandsProtocol {
+
+  @objc public func clearKeychain() -> FBFuture<NSNull> {
+    do {
+      return try keychainCommands().clearKeychain()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
+
 @objc(FBSimulatorKeychainCommands)
-public final class FBSimulatorKeychainCommands: NSObject, FBSimulatorKeychainCommandsProtocol, FBiOSTargetCommand {
+public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 

@@ -308,3 +308,43 @@ extension FBSimulator: AsyncXCTestExtendedCommands {
     }
   }
 }
+
+// MARK: - FBSimulator+FBXCTestExtendedCommands
+
+extension FBSimulator: FBXCTestExtendedCommands {
+
+  @objc(runTestWithLaunchConfiguration:reporter:logger:)
+  public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
+    do {
+      return try xctestExtendedCommands().runTest(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(listTestsForBundleAtPath:timeout:withAppAtPath:)
+  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
+    do {
+      return try xctestExtendedCommands().listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func extendedTestShim() -> FBFuture<NSString> {
+    do {
+      return try xctestExtendedCommands().extendedTestShim()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(transportForTestManagerService)
+  public func transportForTestManagerService() -> FBFutureContext<NSNumber> {
+    do {
+      return try xctestExtendedCommands().transportForTestManagerService()
+    } catch {
+      return FBFutureContext(error: error)
+    }
+  }
+}
