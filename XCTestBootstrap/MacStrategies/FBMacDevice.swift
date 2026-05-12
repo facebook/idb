@@ -554,3 +554,108 @@ import IOKit
     return FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: self.logger!)
   }
 }
+
+// MARK: - FBMacDevice+AsyncProcessSpawnCommands
+
+extension FBMacDevice: AsyncProcessSpawnCommands {
+
+  public func launchProcess(
+    _ configuration: FBProcessSpawnConfiguration
+  ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    try await bridgeFBFuture(launchProcess(configuration))
+  }
+}
+
+// MARK: - FBMacDevice+AsyncXCTestExtendedCommands
+
+extension FBMacDevice: AsyncXCTestExtendedCommands {
+
+  public func runTest(
+    launchConfiguration: FBTestLaunchConfiguration,
+    reporter: AnyObject,
+    logger: any FBControlCoreLogger
+  ) async throws {
+    try await bridgeFBFutureVoid(
+      runTest(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger))
+  }
+
+  public func listTests(
+    forBundleAtPath bundlePath: String,
+    timeout: TimeInterval,
+    withAppAtPath appPath: String?
+  ) async throws -> [String] {
+    try await bridgeFBFutureArray(
+      listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath))
+  }
+
+  public func extendedTestShim() async throws -> String {
+    let shim = try await bridgeFBFuture(extendedTestShim() as FBFuture<NSString>)
+    return shim as String
+  }
+
+  public func withTransportForTestManagerService<R>(
+    body: (NSNumber) async throws -> R
+  ) async throws -> R {
+    try await withFBFutureContext(transportForTestManagerService(), body: body)
+  }
+}
+
+// MARK: - FBMacDevice+AsyncApplicationCommands
+
+extension FBMacDevice: AsyncApplicationCommands {
+
+  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+    try await bridgeFBFuture(installApplication(withPath: path))
+  }
+
+  public func uninstallApplication(bundleID: String) async throws {
+    try await bridgeFBFutureVoid(uninstallApplication(withBundleID: bundleID))
+  }
+
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    try await bridgeFBFuture(launchApplication(configuration))
+  }
+
+  public func killApplication(bundleID: String) async throws {
+    try await bridgeFBFutureVoid(killApplication(withBundleID: bundleID))
+  }
+
+  public func installedApplications() async throws -> [FBInstalledApplication] {
+    try await bridgeFBFutureArray(installedApplications())
+  }
+
+  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+    try await bridgeFBFuture(installedApplication(withBundleID: bundleID))
+  }
+
+  public func runningApplications() async throws -> [String: pid_t] {
+    let dict: [String: NSNumber] = try await bridgeFBFutureDictionary(runningApplications())
+    return dict.mapValues { $0.int32Value }
+  }
+
+  public func processID(forBundleID bundleID: String) async throws -> pid_t {
+    let n = try await bridgeFBFuture(processID(withBundleID: bundleID))
+    return n.int32Value
+  }
+}
+
+// MARK: - FBMacDevice+AsyncCrashLogCommands
+
+extension FBMacDevice: AsyncCrashLogCommands {
+
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+    try await bridgeFBFutureArray(crashes(predicate, useCache: useCache))
+  }
+
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+    try await bridgeFBFuture(notifyOfCrash(predicate))
+  }
+
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+    try await bridgeFBFutureArray(pruneCrashes(predicate))
+  }
+
+  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
+    try await withFBFutureContext(crashLogFiles(), body: body)
+  }
+}

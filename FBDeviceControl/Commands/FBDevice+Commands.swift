@@ -66,6 +66,10 @@ extension FBDevice {
     commandCache.resolve { FBDeviceDiagnosticInformationCommands.commands(with: self) }
   }
 
+  func eraseCommands() throws -> FBDeviceEraseCommands {
+    commandCache.resolve { FBDeviceEraseCommands.commands(with: self) }
+  }
+
   func powerCommands() throws -> FBDevicePowerCommands {
     commandCache.resolve { FBDevicePowerCommands.commands(with: self) }
   }

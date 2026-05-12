@@ -16,4 +16,8 @@
  */
 @interface FBDeviceEraseCommands : NSObject <FBEraseCommands>
 
+// FBiOSTargetCommand / FBEraseCommands (Swift protocol members declared for visibility)
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
+- (nonnull FBFuture<NSNull *> *)erase;
+
 @end

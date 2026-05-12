@@ -150,3 +150,14 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     }
   }
 }
+
+// MARK: - FBSimulator+AsyncProcessSpawnCommands
+
+extension FBSimulator: AsyncProcessSpawnCommands {
+
+  public func launchProcess(
+    _ configuration: FBProcessSpawnConfiguration
+  ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    try await processSpawnCommands().launchProcessAsync(configuration)
+  }
+}
