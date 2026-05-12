@@ -254,10 +254,13 @@ private func shutdownFuture(_ udid: String, userDefaults: UserDefaults, xcodeAva
     .onQueue(
       DispatchQueue.main,
       fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? FBPowerCommands else {
+        guard let target = targetObj as? any AsyncPowerCommands else {
           return FBIDBError.describe("Cannot shutdown \(targetObj), does not support shutting down").failFuture()
         }
-        return commands.shutdown() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await target.shutdown()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 
@@ -266,10 +269,13 @@ private func rebootFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvail
     .onQueue(
       DispatchQueue.main,
       fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? FBPowerCommands else {
+        guard let target = targetObj as? any AsyncPowerCommands else {
           return FBIDBError.describe("Cannot shutdown \(targetObj), does not support rebooting").failFuture()
         }
-        return commands.reboot() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await target.reboot()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 
@@ -278,10 +284,13 @@ private func eraseFuture(_ udid: String, userDefaults: UserDefaults, xcodeAvaila
     .onQueue(
       DispatchQueue.main,
       fmap: { (targetObj: AnyObject) -> FBFuture<AnyObject> in
-        guard let commands = targetObj as? FBEraseCommands else {
+        guard let target = targetObj as? any AsyncEraseCommands else {
           return FBIDBError.describe("Cannot erase \(targetObj), does not support erasing").failFuture()
         }
-        return commands.erase() as! FBFuture<AnyObject>
+        return fbFutureFromAsync {
+          try await target.erase()
+          return NSNull()
+        } as! FBFuture<AnyObject>
       }) as! FBFuture<NSNull>
 }
 

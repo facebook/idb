@@ -50,8 +50,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
 
   // MARK: Public
 
-  @objc(prepareConfigurationWithTarget:testLaunchConfiguration:workingDirectory:codesign:)
-  public class func prepareConfiguration(withTarget target: FBiOSTarget & FBXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) -> FBFuture<FBTestRunnerConfiguration> {
+  public class func prepareConfiguration(withTarget target: FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) -> FBFuture<FBTestRunnerConfiguration> {
     if let codesign {
       return unsafeBitCast(
         codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
@@ -97,7 +96,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
     return envs
   }
 
-  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & FBXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) -> FBFuture<FBTestRunnerConfiguration> {
+  private class func prepareConfigurationAfterCodesignatureCheck(withTarget target: FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) -> FBFuture<FBTestRunnerConfiguration> {
     // Common Paths
     let runtimeRoot = target.runtimeRootDirectory
     let platformRoot = target.platformRootDirectory
@@ -171,10 +170,16 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
       )
     }
 
+    let installedAppFuture: FBFuture<FBInstalledApplication> = fbFutureFromAsync {
+      try await target.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
+    }
+    let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
+      try await target.extendedTestShim() as AnyObject
+    }
     return unsafeBitCast(
       FBFuture<AnyObject>.combine([
-        unsafeBitCast((target as any FBApplicationCommands).installedApplication(withBundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID), to: FBFuture<AnyObject>.self),
-        unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
+        unsafeBitCast(installedAppFuture, to: FBFuture<AnyObject>.self),
+        shimFuture,
       ])
       .onQueue(
         target.asyncQueue,

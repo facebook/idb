@@ -29,12 +29,12 @@ private final class FBLogicTestRunOutputs: NSObject {
 
 @objc public final class FBLogicTestRunStrategy: NSObject, FBXCTestRunner {
 
-  private let target: FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands
+  private let target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands
   private let configuration: FBLogicTestConfiguration
   private let reporter: FBLogicXCTestReporter
   private let logger: FBControlCoreLogger
 
-  @objc public init(target: FBiOSTarget & FBProcessSpawnCommands & FBXCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -53,9 +53,13 @@ private final class FBLogicTestRunOutputs: NSObject {
   private func testFuture() -> FBFuture<NSNull> {
     let uuid = UUID()
 
+    let target = self.target
+    let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
+      try await target.extendedTestShim() as AnyObject
+    }
     let futures: [FBFuture<AnyObject>] = [
       buildOutputs(forUUID: uuid),
-      unsafeBitCast(target.extendedTestShim(), to: FBFuture<AnyObject>.self),
+      shimFuture,
     ]
 
     return unsafeBitCast(
@@ -356,7 +360,11 @@ private final class FBLogicTestRunOutputs: NSObject {
       queue,
       fmap: { mappedConfigObj -> FBFuture<AnyObject> in
         let mappedConfig = mappedConfigObj as! FBProcessSpawnConfiguration
-        return unsafeBitCast(self.target.launchProcess(mappedConfig), to: FBFuture<AnyObject>.self)
+        let target = self.target
+        let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
+          try await target.launchProcess(mappedConfig)
+        }
+        return unsafeBitCast(launchFuture, to: FBFuture<AnyObject>.self)
       }
     )
     .onQueue(
@@ -368,7 +376,7 @@ private final class FBLogicTestRunOutputs: NSObject {
           .onQueue(
             queue,
             fmap: { _ -> FBFuture<AnyObject> in
-              let crashCommands = self.target as any FBCrashLogCommands
+              let crashCommands = self.target as? any AsyncCrashLogCommands
               return unsafeBitCast(
                 FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
                 to: FBFuture<AnyObject>.self
