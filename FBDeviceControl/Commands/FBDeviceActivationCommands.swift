@@ -12,7 +12,7 @@ private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/dr
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
 @objc(FBDeviceActivationCommands)
-public class FBDeviceActivationCommands: NSObject, FBDeviceActivationCommandsProtocol, FBiOSTargetCommand {
+public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   private weak var device: FBDevice?
 
   // MARK: - Initializers

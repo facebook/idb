@@ -20,10 +20,6 @@
 @class FBiOSTargetCommandForwarder;
 @protocol FBControlCoreLogger;
 
-#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
- #import <FBDeviceControl/FBDeviceControl-Swift.h>
-#endif
-
 /**
  A class that represents an iOS Device.
  */
@@ -86,3 +82,10 @@
 - (nonnull instancetype)initWithSet:(nonnull FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
+
+// Imported after @interface FBDevice so Swift-generated category extensions
+// (e.g. `extension FBDevice: FBSomeProtocol`) can attach to the fully-defined
+// class.
+#if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
+ #import <FBDeviceControl/FBDeviceControl-Swift.h>
+#endif
