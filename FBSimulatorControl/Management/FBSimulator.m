@@ -22,7 +22,7 @@
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
 
-@interface FBSimulator () <FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol, FBSimulatorLifecycleCommandsProtocol, FBSimulatorMediaCommandsProtocol, FBXCTestExtendedCommands, FBDapServerCommand>
+@interface FBSimulator () <FBSimulatorSettingsCommandsProtocol, FBSimulatorLifecycleCommandsProtocol>
 @end
 
 static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/Devices";
@@ -32,7 +32,6 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize temporaryDirectory = _temporaryDirectory;
 @synthesize logger = _logger;
-@dynamic xctestPath;
 
 #pragma mark Lifecycle
 
