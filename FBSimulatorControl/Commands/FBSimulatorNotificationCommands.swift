@@ -63,15 +63,6 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
   }
 }
 
-// MARK: - AsyncNotificationCommands
-
-extension FBSimulatorNotificationCommands: AsyncNotificationCommands {
-
-  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
-  }
-}
-
 // MARK: - FBSimulator+AsyncNotificationCommands
 
 extension FBSimulator: AsyncNotificationCommands {

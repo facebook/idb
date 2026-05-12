@@ -78,19 +78,6 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - AsyncDapServerCommand
-
-extension FBSimulatorDapServerCommand: AsyncDapServerCommand {
-
-  public func launchDapServer(
-    _ dapPath: Any,
-    stdIn: FBProcessInput<AnyObject>,
-    stdOut: any FBDataConsumer
-  ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    try await launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
-  }
-}
-
 // MARK: - FBSimulator+AsyncDapServerCommand
 
 extension FBSimulator: AsyncDapServerCommand {

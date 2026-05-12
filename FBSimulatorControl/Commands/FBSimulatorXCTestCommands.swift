@@ -270,37 +270,6 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - AsyncXCTestExtendedCommands
-
-extension FBSimulatorXCTestCommands: AsyncXCTestExtendedCommands {
-
-  public func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
-    reporter: AnyObject,
-    logger: any FBControlCoreLogger
-  ) async throws {
-    try await runTestAsync(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
-  }
-
-  public func listTests(
-    forBundleAtPath bundlePath: String,
-    timeout: TimeInterval,
-    withAppAtPath appPath: String?
-  ) async throws -> [String] {
-    try await listTestsAsync(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
-  }
-
-  public func extendedTestShim() async throws -> String {
-    try await extendedTestShimAsync()
-  }
-
-  public func withTransportForTestManagerService<R>(
-    body: (NSNumber) async throws -> R
-  ) async throws -> R {
-    try await withFBFutureContext(self.transportForTestManagerService(), body: body)
-  }
-}
-
 // MARK: - FBSimulator+AsyncXCTestCommands
 
 extension FBSimulator: AsyncXCTestCommands {

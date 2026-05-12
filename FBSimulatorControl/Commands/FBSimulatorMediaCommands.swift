@@ -65,7 +65,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsP
     ])
   }
 
-  private func uploadMedia(_ mediaFileURLs: [URL]) throws {
+  fileprivate func uploadMedia(_ mediaFileURLs: [URL]) throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -123,20 +123,11 @@ public final class FBSimulatorMediaCommands: NSObject, FBSimulatorMediaCommandsP
   }
 }
 
-// MARK: - AsyncMediaCommands
-
-extension FBSimulatorMediaCommands: AsyncMediaCommands {
-
-  public func addMedia(_ mediaFileURLs: [URL]) async throws {
-    try uploadMedia(mediaFileURLs)
-  }
-}
-
 // MARK: - FBSimulator+AsyncMediaCommands
 
 extension FBSimulator: AsyncMediaCommands {
 
   public func addMedia(_ mediaFileURLs: [URL]) async throws {
-    try await mediaCommands().addMedia(mediaFileURLs)
+    try mediaCommands().uploadMedia(mediaFileURLs)
   }
 }
