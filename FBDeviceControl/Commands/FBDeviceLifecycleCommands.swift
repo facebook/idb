@@ -23,23 +23,6 @@ public class FBDeviceLifecycleCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBLifecycleCommands (legacy FBFuture entry points)
-
-  @objc(resolveState:)
-  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await resolveStateAsync(state)
-      return NSNull()
-    }
-  }
-
-  public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await resolveLeavesStateAsync(state)
-      return NSNull()
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {

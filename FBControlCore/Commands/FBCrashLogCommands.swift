@@ -9,14 +9,6 @@ import Foundation
 
 @objc public protocol FBCrashLogCommands: NSObjectProtocol, FBiOSTargetCommand {
 
-  @objc(crashes:useCache:)
-  func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray>
-
   @objc(notifyOfCrash:)
   func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo>
-
-  @objc(pruneCrashes:)
-  func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray>
-
-  @objc func crashLogFiles() -> FBFutureContext<FBFileContainerProtocol>
 }

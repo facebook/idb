@@ -125,12 +125,6 @@ public class FBDeviceApplicationCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  @objc public func runningApplications() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await runningApplicationsAsync() as NSDictionary
-    }
-  }
-
   @objc public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       try await processIDAsync(withBundleID: bundleID) as NSNumber

@@ -93,25 +93,10 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   }
 
   @objc
-  public func runningApplications() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await runningApplicationsAsync() as NSDictionary
-    }
-  }
-
-  @objc
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       let pid = try await processIDAsync(withBundleID: bundleID)
       return NSNumber(value: pid)
-    }
-  }
-
-  @objc
-  public func isApplicationRunning(_ bundleID: String) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      let running = try await isApplicationRunningAsync(bundleID)
-      return NSNumber(value: running)
     }
   }
 
@@ -230,15 +215,6 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
     }
     let result = try await bridgeFBFuture(simulator.firstServiceNameAndProcessIdentifier(matching: regex)) as! [Any]
     return (result[1] as! NSNumber).int32Value
-  }
-
-  fileprivate func isApplicationRunningAsync(_ bundleID: String) async throws -> Bool {
-    do {
-      _ = try await processIDAsync(withBundleID: bundleID)
-      return true
-    } catch {
-      return false
-    }
   }
 
   // MARK: - Private

@@ -26,8 +26,6 @@ import Foundation
   @objc(installedApplicationWithBundleID:)
   func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication>
 
-  @objc func runningApplications() -> FBFuture<NSDictionary>
-
   @objc(processIDWithBundleID:)
   func processID(withBundleID bundleID: String) -> FBFuture<NSNumber>
 }
