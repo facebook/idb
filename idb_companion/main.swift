@@ -187,7 +187,15 @@ private func simulatorFuture(_ udid: String, userDefaults: UserDefaults, logger:
 }
 
 private func targetOfflineFuture(_ target: FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-  return target.resolveLeavesState(.booted)
+  let resolveLeavesBooted: FBFuture<NSNull> = fbFutureFromAsync {
+    guard let asyncTarget = target as? any AsyncLifecycleCommands else {
+      throw FBIDBError.describe("\(target) does not support AsyncLifecycleCommands").build()
+    }
+    try await asyncTarget.resolveLeavesState(.booted)
+    return NSNull()
+  }
+  return
+    resolveLeavesBooted
     .onQueue(
       target.workQueue,
       doOnResolved: { (_: AnyObject) in

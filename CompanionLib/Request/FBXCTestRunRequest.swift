@@ -258,7 +258,13 @@ private class FBXCTestRunRequest_AppTest: FBXCTestRunRequest {
       binariesPaths.append(binaryPath)
     }
 
-    let testCompleted = target.runTest(withLaunchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+    let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
+      guard let asyncTarget = target as? any AsyncXCTestCommands else {
+        throw FBIDBError.describe("\(target) does not support AsyncXCTestCommands").build()
+      }
+      try await asyncTarget.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+      return NSNull()
+    }
     let reporterConfiguration = FBXCTestReporterConfiguration(
       resultBundlePath: testLaunchConfiguration.resultBundlePath,
       coverageConfiguration: coverageConfiguration,
