@@ -32,6 +32,6 @@
  @param logger the Logger to Log to.
  @return a Future that resolves successfully when the test plan has completed.
  */
-+ (nonnull FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target interface:(nonnull id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(nonnull id<FBLaunchedApplication>)testHostApplication requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNull *> *)connectAndRunBundleToCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target interface:(nonnull id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject>)interface testHostApplication:(nonnull id<FBLaunchedApplication>)testHostApplication requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end

@@ -213,7 +213,7 @@ extension FBDevice: AsyncCrashLogCommands {
 
 // MARK: - FBDevice+FBCrashLogCommands
 
-extension FBDevice {
+extension FBDevice: FBCrashLogCommands {
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {

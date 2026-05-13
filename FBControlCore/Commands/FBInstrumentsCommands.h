@@ -13,11 +13,8 @@
 @class FBInstrumentsConfiguration;
 @class FBInstrumentsOperation;
 
-@protocol FBInstrumentsCommandsProtocol;
-
 /**
- A concrete implementation of FBInstrumentsCommandsProtocol.
- Protocol conformance is declared in Swift (FBInstrumentsCommands.swift).
+ Concrete instruments command implementation, target-bound.
  */
 // @lint-ignore FBOBJCDEPRECATEDCHECK
 @interface FBInstrumentsCommands : NSObject

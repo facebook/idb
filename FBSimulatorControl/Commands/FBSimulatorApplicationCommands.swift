@@ -421,7 +421,7 @@ extension FBSimulator: AsyncApplicationCommands {
 
 // MARK: - FBSimulator+FBApplicationCommands
 
-extension FBSimulator {
+extension FBSimulator: FBApplicationCommands {
 
   @objc(installApplicationWithPath:)
   public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {

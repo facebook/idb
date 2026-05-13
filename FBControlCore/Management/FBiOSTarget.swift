@@ -46,10 +46,7 @@ import Foundation
 // MARK: - FBiOSTarget Protocol
 
 /// A protocol that defines an interactible and informational target.
-/// Also conforms to FBApplicationCommands, FBCrashLogCommands,
-/// FBVideoRecordingCommands, FBXCTestCommands,
-/// FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol.
-@objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBApplicationCommands, FBCrashLogCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol {
+@objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBiOSTargetCommand {
 
   /// The Target's Logger.
   var logger: (any FBControlCoreLogger)? { get }

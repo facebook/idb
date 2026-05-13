@@ -11,6 +11,7 @@
 
 @class FBTestManagerContext;
 
+@protocol FBApplicationCommands;
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
 @protocol FBXCTestExtendedCommands;
@@ -40,6 +41,6 @@
  @param logger the (optional) logger to events to.
  @return A future that resolves when test execution has fully completed, or an error occurred with the execution.
  */
-+ (nonnull FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSNull *> *)connectAndRunUntilCompletionWithContext:(nonnull FBTestManagerContext *)context target:(nonnull id<FBiOSTarget, FBXCTestExtendedCommands, FBApplicationCommands>)target reporter:(nonnull id<FBXCTestReporter>)reporter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end

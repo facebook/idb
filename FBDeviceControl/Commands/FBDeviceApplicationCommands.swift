@@ -444,7 +444,7 @@ extension FBDevice: AsyncApplicationCommands {
 
 // MARK: - FBDevice+FBApplicationCommands
 
-extension FBDevice {
+extension FBDevice: FBApplicationCommands {
 
   @objc(installApplicationWithPath:)
   public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
