@@ -476,20 +476,6 @@ import IOKit
     )
   }
 
-  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<any FBLogOperation> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice tailLog:consumer:] is not implemented").failFuture(),
-      to: FBFuture.self
-    )
-  }
-
-  @objc public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice takeScreenshot:] is not implemented").failFuture(),
-      to: FBFuture<NSData>.self
-    )
-  }
-
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)

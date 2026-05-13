@@ -27,15 +27,6 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBLogCommands (legacy FBFuture entry point)
-
-  @objc
-  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBLogOperation> {
-    fbFutureFromAsync { [self] in
-      try await tailLogAsync(arguments: arguments, consumer: consumer)
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> FBLogOperation {

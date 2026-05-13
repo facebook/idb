@@ -96,7 +96,10 @@ struct VideoStreamMethodHandler {
       scaleFactor: .init(value: start.scaleFactor),
       keyFrameRate: .init(value: start.keyFrameRate))
 
-    let videoStream = try await target.createStreamAsync(with: config)
+    guard let asyncTarget = target as? any AsyncVideoStreamCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncVideoStreamCommands")
+    }
+    let videoStream = try await asyncTarget.createStream(configuration: config)
 
     try await videoStream.startStreamingAsync(consumer)
 

@@ -25,14 +25,6 @@ public class FBDeviceScreenshotCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBScreenshotCommands (legacy FBFuture entry point)
-
-  public func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
-    fbFutureFromAsync { [self] in
-      try await takeScreenshotAsync(format) as NSData
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func takeScreenshotAsync(_ format: FBScreenshotFormat) async throws -> Data {
