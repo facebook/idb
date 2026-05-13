@@ -87,27 +87,9 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
   }
 
-  // MARK: FBVideoStreamCommands
-
-  func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<FBVideoStream> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
   // MARK: FBCrashLogCommands
 
   func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
-  // MARK: FBLogCommands
-
-  func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBLogOperation> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
-  // MARK: FBScreenshotCommands
-
-  func takeScreenshot(_ format: FBScreenshotFormat) -> FBFuture<NSData> {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
   }
 

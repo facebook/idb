@@ -7,14 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
-
 /**
  An enum for Screenshot Formats.
  */
 typedef NSString *FBScreenshotFormat NS_STRING_ENUM;
 extern FBScreenshotFormat _Nonnull const FBScreenshotFormatJPEG NS_SWIFT_NAME(jpeg);
 extern FBScreenshotFormat _Nonnull const FBScreenshotFormatPNG NS_SWIFT_NAME(png);
-
-@protocol FBScreenshotCommands;

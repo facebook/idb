@@ -27,16 +27,6 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBMemoryCommands (legacy FBFuture entry point)
-
-  @objc
-  public func simulateMemoryWarning() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await simulateMemoryWarningAsync()
-      return NSNull()
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func simulateMemoryWarningAsync() async throws {

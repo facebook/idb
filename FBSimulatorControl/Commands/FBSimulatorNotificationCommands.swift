@@ -27,16 +27,6 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
     super.init()
   }
 
-  // MARK: - FBNotificationCommands (legacy FBFuture entry point)
-
-  @objc
-  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await sendPushNotificationAsync(forBundleID: bundleID, jsonPayload: jsonPayload)
-      return NSNull()
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func sendPushNotificationAsync(forBundleID bundleID: String, jsonPayload: String) async throws {

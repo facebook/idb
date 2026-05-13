@@ -12,19 +12,6 @@ import Foundation
   @objc var consumer: FBDataConsumer { get }
 }
 
-@objc public protocol FBLogCommands: NSObjectProtocol, FBiOSTargetCommand {
-
-  @objc(tailLog:consumer:)
-  func tailLog(_ arguments: [String], consumer: FBDataConsumer) -> FBFuture<FBLogOperation>
-}
-
-public extension FBLogCommands {
-
-  func tailLogAsync(arguments: [String], consumer: any FBDataConsumer) async throws -> FBLogOperation {
-    try await bridgeFBFuture(self.tailLog(arguments, consumer: consumer))
-  }
-}
-
 @objc(FBProcessLogOperation)
 public class FBProcessLogOperation: NSObject, FBLogOperation {
 

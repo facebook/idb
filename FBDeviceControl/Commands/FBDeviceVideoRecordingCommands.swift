@@ -40,14 +40,6 @@ public class FBDeviceVideoRecordingCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  // MARK: - FBVideoStreamCommands (legacy FBFuture entry point)
-
-  public func createStream(with configuration: FBVideoStreamConfiguration) -> FBFuture<any FBVideoStream> {
-    fbFutureFromAsync { [self] in
-      try await createStreamAsync(with: configuration)
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func startRecordingAsync(toFile filePath: String) async throws -> FBDeviceVideo {

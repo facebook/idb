@@ -28,7 +28,7 @@
 // FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol,
 // FBSimulatorMediaCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
 // FBSimulatorFileCommandsProtocol
-@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBNotificationCommands, FBProcessSpawnCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBProcessSpawnCommands>
 
 #pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members
 
