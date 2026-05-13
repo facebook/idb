@@ -14,7 +14,7 @@ import AppKit
 
 private let openURLRetries = 2
 
-@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands, FBLifecycleCommands {
+@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands, FBPowerCommands {
   @objc(boot:)
   func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull>
 
@@ -58,26 +58,6 @@ extension FBSimulator: FBSimulatorLifecycleCommandsProtocol {
   @objc public func reboot() -> FBFuture<NSNull> {
     do {
       return try lifecycleCommands().reboot()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  // MARK: FBLifecycleCommands
-
-  @objc(resolveState:)
-  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().resolveState(state)
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc(resolveLeavesState:)
-  public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().resolveLeavesState(state)
     } catch {
       return FBFuture(error: error)
     }
@@ -187,22 +167,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   public func erase() -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await eraseAsync()
-      return NSNull()
-    }
-  }
-
-  @objc(resolveState:)
-  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await resolveStateAsync(state)
-      return NSNull()
-    }
-  }
-
-  @objc
-  public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await resolveLeavesStateAsync(state)
       return NSNull()
     }
   }

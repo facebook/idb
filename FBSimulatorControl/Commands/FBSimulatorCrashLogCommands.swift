@@ -35,33 +35,11 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBCrashLogCommands (legacy FBFuture entry points)
+  // MARK: - FBCrashLogCommands (legacy FBFuture entry point)
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return notifier.nextCrashLog(forPredicate: predicate)
-  }
-
-  @objc
-  public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await crashesAsync(matching: predicate, useCache: useCache) as NSArray
-    }
-  }
-
-  @objc
-  public func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await pruneCrashesAsync(matching: predicate) as NSArray
-    }
-  }
-
-  @objc
-  public func crashLogFiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return
-      FBControlCoreError
-      .describe("crashLogFiles not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   // MARK: - Private

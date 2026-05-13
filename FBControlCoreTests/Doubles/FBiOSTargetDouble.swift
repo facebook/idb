@@ -83,10 +83,6 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
   }
 
-  func runningApplications() -> FBFuture<NSDictionary> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
   func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
   }
@@ -99,20 +95,8 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
 
   // MARK: FBCrashLogCommands
 
-  func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
   func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
-  func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
-  }
-
-  func crashLogFiles() -> FBFutureContext<FBFileContainerProtocol> {
-    return FBFutureContext(error: FBControlCoreError.describe("Unimplemented").build())
   }
 
   // MARK: FBLogCommands
@@ -155,13 +139,4 @@ final class FBiOSTargetDouble: NSObject, FBiOSTarget {
     return FBFuture(error: FBControlCoreError.describe("Unimplemented").build())
   }
 
-  // MARK: FBLifecycleCommands
-
-  func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    return unsafeBitCast(FBMutableFuture<AnyObject>(), to: FBFuture<NSNull>.self)
-  }
-
-  func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    return unsafeBitCast(FBMutableFuture<AnyObject>(), to: FBFuture<NSNull>.self)
-  }
 }

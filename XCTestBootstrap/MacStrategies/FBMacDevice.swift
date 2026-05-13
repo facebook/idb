@@ -368,17 +368,6 @@ import IOKit
     )
   }
 
-  @objc public func runningApplications() -> FBFuture<NSDictionary> {
-    let runningProcesses = NSMutableDictionary()
-    let fetcher = FBProcessFetcher()
-    for bundleId in bundleIDToRunningTask.allKeys as! [String] {
-      if let task = bundleIDToRunningTask[bundleId] as? FBSubprocess<AnyObject, AnyObject, AnyObject> {
-        runningProcesses[bundleId] = fetcher.processInfo(for: task.processIdentifier)
-      }
-    }
-    return FBFuture(result: runningProcesses)
-  }
-
   @objc(runTestWithLaunchConfiguration:reporter:logger:)
   public func runTest(withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     // swiftlint:disable:next force_cast
@@ -407,15 +396,6 @@ import IOKit
 
   @objc public var customDeviceSetPath: String? {
     return nil
-  }
-
-  @objc(resolveState:)
-  public func resolveState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    return FBiOSTargetResolveState(self, state)
-  }
-
-  @objc public func resolveLeavesState(_ state: FBiOSTargetState) -> FBFuture<NSNull> {
-    return FBiOSTargetResolveLeavesState(self, state)
   }
 
   @objc public func replacementMapping() -> [String: String] {
@@ -515,27 +495,6 @@ import IOKit
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
-  @objc public func crashes(_ predicate: NSPredicate, useCache: Bool) -> FBFuture<NSArray> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice crashes:useCache:] is not implemented").failFuture(),
-      to: FBFuture<NSArray>.self
-    )
-  }
-
-  @objc public func pruneCrashes(_ predicate: NSPredicate) -> FBFuture<NSArray> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice pruneCrashes:] is not implemented").failFuture(),
-      to: FBFuture<NSArray>.self
-    )
-  }
-
-  public func crashLogFiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice crashLogFiles] is not implemented").failFutureContext(),
-      to: FBFutureContext.self
-    )
-  }
-
   @objc public func startInstruments(_ configuration: FBInstrumentsConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBInstrumentsOperation> {
     return unsafeBitCast(
       FBControlCoreError.describe("-[FBMacDevice startInstruments:logger:] is not implemented").failFuture(),
@@ -629,8 +588,14 @@ extension FBMacDevice: AsyncApplicationCommands {
   }
 
   public func runningApplications() async throws -> [String: pid_t] {
-    let dict: [String: NSNumber] = try await bridgeFBFutureDictionary(runningApplications())
-    return dict.mapValues { $0.int32Value }
+    var result: [String: pid_t] = [:]
+    // swiftlint:disable:next force_cast
+    for bundleId in bundleIDToRunningTask.allKeys as! [String] {
+      if let task = bundleIDToRunningTask[bundleId] as? FBSubprocess<AnyObject, AnyObject, AnyObject> {
+        result[bundleId] = task.processIdentifier
+      }
+    }
+    return result
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
@@ -644,7 +609,7 @@ extension FBMacDevice: AsyncApplicationCommands {
 extension FBMacDevice: AsyncCrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await bridgeFBFutureArray(crashes(predicate, useCache: useCache))
+    throw FBControlCoreError.describe("-[FBMacDevice crashes:useCache:] is not implemented").build()
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
@@ -652,10 +617,10 @@ extension FBMacDevice: AsyncCrashLogCommands {
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await bridgeFBFutureArray(pruneCrashes(predicate))
+    throw FBControlCoreError.describe("-[FBMacDevice pruneCrashes:] is not implemented").build()
   }
 
   public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    try await withFBFutureContext(crashLogFiles(), body: body)
+    throw FBControlCoreError.describe("-[FBMacDevice crashLogFiles] is not implemented").build()
   }
 }

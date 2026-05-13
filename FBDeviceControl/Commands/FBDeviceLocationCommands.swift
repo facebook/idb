@@ -27,15 +27,6 @@ public class FBDeviceLocationCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBLocationCommands (legacy FBFuture entry point)
-
-  public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await overrideLocationAsync(withLongitude: longitude, latitude: latitude)
-      return NSNull()
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func overrideLocationAsync(withLongitude longitude: Double, latitude: Double) async throws {
@@ -65,19 +56,5 @@ extension FBDevice: AsyncLocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
     try await locationCommands().overrideLocationAsync(withLongitude: longitude, latitude: latitude)
-  }
-}
-
-// MARK: - FBDevice+FBLocationCommands
-
-extension FBDevice: FBLocationCommands {
-
-  @objc(overrideLocationWithLongitude:latitude:)
-  public func overrideLocation(withLongitude longitude: Double, latitude: Double) -> FBFuture<NSNull> {
-    do {
-      return try locationCommands().overrideLocation(withLongitude: longitude, latitude: latitude)
-    } catch {
-      return FBFuture(error: error)
-    }
   }
 }

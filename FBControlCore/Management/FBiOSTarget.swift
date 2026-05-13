@@ -48,8 +48,8 @@ import Foundation
 /// A protocol that defines an interactible and informational target.
 /// Also conforms to FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands,
 /// FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands,
-/// FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol, FBLifecycleCommands.
-@objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol, FBLifecycleCommands {
+/// FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol.
+@objc public protocol FBiOSTarget: NSObjectProtocol, FBiOSTargetInfo, FBApplicationCommands, FBVideoStreamCommands, FBCrashLogCommands, FBLogCommands, FBScreenshotCommands, FBVideoRecordingCommands, FBXCTestCommands, FBXCTraceRecordCommandsProtocol, FBInstrumentsCommandsProtocol {
 
   /// The Target's Logger.
   var logger: (any FBControlCoreLogger)? { get }
