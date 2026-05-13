@@ -10,3 +10,6 @@
 
 // ObjC bridge for nullable CMSampleBuffer wrapper
 #import "FBVideoStreamTestDoublesBridge.h"
+
+// FBSimulator construction helper for unit tests
+#import "FBSimulatorTestSupport.h"

@@ -9,17 +9,37 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - Simulator Test Double
+// MARK: - Capturing Wrapper
 
-private class SimulatorDouble: NSObject {
-  let workQueue = DispatchQueue(label: "com.test.debugger.workQueue")
-  var capturedLaunchConfiguration: FBApplicationLaunchConfiguration?
-  let launchFuture = FBMutableFuture<FBLaunchedApplication>()
+/// Synthetic error used to unwind production after capturing the launch
+/// configuration; tests inspect the capture, not the future result.
+private struct LaunchCaptureStop: Error {}
 
-  @objc(launchApplication:)
-  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<FBLaunchedApplication> {
-    capturedLaunchConfiguration = configuration
-    return unsafeBitCast(launchFuture, to: FBFuture<FBLaunchedApplication>.self)
+/// Subclass of the real `FBSimulatorApplicationCommands` that overrides only
+/// `launchApplicationAsync` to record the configuration supplied by the
+/// production code path. All other behavior is inherited unchanged.
+///
+/// Registered via `simulator.commandCache.register(_:as: FBSimulatorApplicationCommands.self)`
+/// so production calls to `simulator.launchApplication(...)` resolve to this
+/// instance and route into the override.
+private final class CapturingApplicationCommands: FBSimulatorApplicationCommands {
+  private let lock = NSLock()
+  private var _capturedConfiguration: FBApplicationLaunchConfiguration?
+
+  var capturedConfiguration: FBApplicationLaunchConfiguration? {
+    lock.lock()
+    defer { lock.unlock() }
+    return _capturedConfiguration
+  }
+
+  override func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+    lock.lock()
+    _capturedConfiguration = configuration
+    lock.unlock()
+    // Throw to unwind launchDebugServerAsync before it reaches the
+    // (process-spawning) debugServerTask path. The thrown error never
+    // surfaces — tests poll the captured configuration directly.
+    throw LaunchCaptureStop()
   }
 }
 
@@ -27,36 +47,54 @@ private class SimulatorDouble: NSObject {
 
 final class FBSimulatorDebuggerCommandsTests: XCTestCase {
 
-  private func makeCommands(simulatorDouble: SimulatorDouble) -> FBSimulatorDebuggerCommands {
-    let castedSim = unsafeBitCast(simulatorDouble, to: FBSimulator.self)
-    return FBSimulatorDebuggerCommands(simulator: castedSim, debugServerPath: "/fake/debugserver")
+  /// Holds strong references to the real `FBSimulator` and the capturing wrapper
+  /// for the duration of a test. `FBSimulatorDebuggerCommands.simulator` and
+  /// `FBSimulatorApplicationCommands.simulator` are both `weak`, so without an
+  /// external strong ref the simulator deallocates the moment `makeCommands`
+  /// returns and the production code throws "Simulator deallocated" before the
+  /// override has a chance to capture.
+  private struct Harness {
+    let simulator: FBSimulator
+    let commands: FBSimulatorDebuggerCommands
+    let wrapper: CapturingApplicationCommands
   }
 
-  private func awaitCapturedConfig(_ double: SimulatorDouble, timeout: TimeInterval = 1.0) -> FBApplicationLaunchConfiguration? {
+  /// Builds a real `FBSimulator` (with a stub device — see FBSimulatorTestSupport),
+  /// pre-registers a capturing wrapper for `FBSimulatorApplicationCommands` in
+  /// its command cache, and constructs the production `FBSimulatorDebuggerCommands`
+  /// against that simulator.
+  private func makeHarness() -> Harness {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    let wrapper = CapturingApplicationCommands(simulator: simulator)
+    simulator.commandCache.register(wrapper, as: FBSimulatorApplicationCommands.self)
+    let commands = FBSimulatorDebuggerCommands(simulator: simulator, debugServerPath: "/fake/debugserver")
+    return Harness(simulator: simulator, commands: commands, wrapper: wrapper)
+  }
+
+  private func awaitCapturedConfig(_ wrapper: CapturingApplicationCommands, timeout: TimeInterval = 1.0) -> FBApplicationLaunchConfiguration? {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
-      if let config = double.capturedLaunchConfiguration {
+      if let config = wrapper.capturedConfiguration {
         return config
       }
       Thread.sleep(forTimeInterval: 0.01)
     }
-    return double.capturedLaunchConfiguration
+    return wrapper.capturedConfiguration
   }
 
   // MARK: - Launch Configuration
 
   func testLaunchDebugServerConfiguresApplicationForDebugging() {
-    let simulatorDouble = SimulatorDouble()
-    let commands = makeCommands(simulatorDouble: simulatorDouble)
+    let harness = makeHarness()
     let app = FBBundleDescriptor(
       name: "MyApp",
       identifier: "com.example.myapp",
       path: "/path/to/MyApp.app",
       binary: nil)
 
-    _ = commands.launchDebugServer(forHostApplication: app, port: 12345)
+    _ = harness.commands.launchDebugServer(forHostApplication: app, port: 12345)
 
-    let config = awaitCapturedConfig(simulatorDouble)
+    let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertNotNil(config, "Should have captured the launch configuration")
     XCTAssertTrue(
       config?.waitForDebugger ?? false,
@@ -73,17 +111,16 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
   }
 
   func testLaunchDebugServerUsesApplicationDescriptorProperties() {
-    let simulatorDouble = SimulatorDouble()
-    let commands = makeCommands(simulatorDouble: simulatorDouble)
+    let harness = makeHarness()
     let app = FBBundleDescriptor(
       name: "SpecialApp",
       identifier: "com.example.special",
       path: "/path/to/SpecialApp.app",
       binary: nil)
 
-    _ = commands.launchDebugServer(forHostApplication: app, port: 9999)
+    _ = harness.commands.launchDebugServer(forHostApplication: app, port: 9999)
 
-    let config = awaitCapturedConfig(simulatorDouble)
+    let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertEqual(
       config?.bundleID, "com.example.special",
       "Must use the bundle identifier from the application descriptor to launch the correct app")
