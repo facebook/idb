@@ -24,7 +24,6 @@
 #import <FBControlCore/FBInstalledApplication.h>
 #import <FBControlCore/FBInstrumentsCommands.h>
 #import <FBControlCore/FBInstrumentsOperation.h>
-#import <FBControlCore/FBLoggingWrapper.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>
 #import <FBControlCore/FBProcessBuilder.h>
 #import <FBControlCore/FBProcessFetcher.h>
@@ -39,7 +38,6 @@
 #import <FBControlCore/FBVideoStreamConfiguration.h>
 #import <FBControlCore/FBXCTraceOperation.h>
 #import <FBControlCore/FBiOSTarget.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBiOSTargetOperation.h>

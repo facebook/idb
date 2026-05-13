@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 /**
  An enumeration representing the existing file containers.

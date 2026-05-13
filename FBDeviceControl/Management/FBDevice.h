@@ -17,7 +17,6 @@
 @class FBDeviceVideoRecordingCommands;
 @class FBDeviceXCTestCommands;
 @class FBTargetCommandCache;
-@class FBiOSTargetCommandForwarder;
 @protocol FBControlCoreLogger;
 
 /**
@@ -76,7 +75,6 @@
 
 @property (nullable, nonatomic, readwrite, strong) FBAMDevice *amDevice;
 @property (nullable, nonatomic, readwrite, strong) FBAMRestorableDevice *restorableDevice;
-@property (nonnull, nonatomic, readonly, strong) FBiOSTargetCommandForwarder *forwarder;
 @property (nonnull, nonatomic, readonly, strong) FBTargetCommandCache *commandCache;
 
 - (nonnull instancetype)initWithSet:(nonnull FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(nonnull id<FBControlCoreLogger>)logger;
