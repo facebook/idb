@@ -180,7 +180,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
       architectures: architectures)
 
     return try await bridgeFBFutureArray(
-      FBListTestStrategy(target: unsafeBitCast(simulator, to: (any FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands).self), configuration: configuration, logger: simulator.logger!)
+      FBListTestStrategy(target: simulator as any FBiOSTarget & AsyncProcessSpawnCommands & AsyncXCTestExtendedCommands, configuration: configuration, logger: simulator.logger!)
         .listTests())
   }
 
@@ -205,7 +205,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
     try await bridgeFBFutureVoid(
       FBManagedTestRunStrategy.runToCompletion(
-        withTarget: unsafeBitCast(simulator, to: (any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands).self),
+        withTarget: simulator as any FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands,
         configuration: testLaunchConfiguration,
         codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
           ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)

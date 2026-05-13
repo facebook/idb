@@ -19,13 +19,19 @@ import Foundation
 
     let applicationLaunchConfiguration = configuration.applicationLaunchConfiguration
 
-    // Use ObjC runtime to call prepareConfigurationWithTarget: (not directly visible to Swift in mixed module)
-    let prepareSelector = NSSelectorFromString("prepareConfigurationWithTarget:testLaunchConfiguration:workingDirectory:codesign:")
-    let prepareMethod = (FBTestRunnerConfiguration.self as AnyObject).method(for: prepareSelector)!
-    typealias PrepareFunction = @convention(c) (AnyObject, Selector, AnyObject, AnyObject, NSString, FBCodesignProvider?) -> AnyObject
-    let prepareCall = unsafeBitCast(prepareMethod, to: PrepareFunction.self)
-    let prepareFuture = unsafeDowncast(
-      prepareCall(FBTestRunnerConfiguration.self as AnyObject, prepareSelector, target, configuration, workingDirectory as NSString, codesign),
+    // FBTestRunnerConfiguration.prepareConfiguration is a Swift method that
+    // requires the Async* protocol composition. FBSimulator and FBMacDevice
+    // both conform to these protocols in addition to the legacy ones declared
+    // in this function's signature, so the cast is safe at runtime.
+    // swiftlint:disable:next force_cast
+    let asyncTarget = target as! any FBiOSTarget & AsyncApplicationCommands & AsyncXCTestExtendedCommands
+    let prepareFuture: FBFuture<AnyObject> = unsafeBitCast(
+      FBTestRunnerConfiguration.prepareConfiguration(
+        withTarget: asyncTarget,
+        testLaunchConfiguration: configuration,
+        workingDirectory: workingDirectory,
+        codesign: codesign
+      ),
       to: FBFuture<AnyObject>.self
     )
 
@@ -46,13 +52,13 @@ import Foundation
               testConfiguration: runnerConfiguration.testConfiguration
             )
 
-            // Use ObjC runtime to call connectAndRunUntilCompletionWithContext:
-            let connectSelector = NSSelectorFromString("connectAndRunUntilCompletionWithContext:target:reporter:logger:")
-            let connectMethod = (FBTestManagerAPIMediator.self as AnyObject).method(for: connectSelector)!
-            typealias ConnectFunction = @convention(c) (AnyObject, Selector, AnyObject, AnyObject, AnyObject, AnyObject) -> AnyObject
-            let connectCall = unsafeBitCast(connectMethod, to: ConnectFunction.self)
-            return unsafeDowncast(
-              connectCall(FBTestManagerAPIMediator.self as AnyObject, connectSelector, context, target, reporter as AnyObject, logger as AnyObject),
+            return unsafeBitCast(
+              FBTestManagerAPIMediator.connectAndRunUntilCompletion(
+                with: context,
+                target: target,
+                reporter: reporter,
+                logger: logger
+              ),
               to: FBFuture<AnyObject>.self
             )
           }),
