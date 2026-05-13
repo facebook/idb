@@ -81,38 +81,36 @@ static NSString *jsonStringFromObject(id obj)
 
 static NSDictionary *recordToDictionary(id record)
 {
-  // Records are opaque private ObjC objects. Probe likely identifying
-  // KVC keys (object type, sharing/read status). Keys that aren't
-  // present on the record return nil and are skipped.
+  // fetchAuthorizationRecordsForBundleIdentifier: returns HKObjectType
+  // instances (HKQuantityType, HKCategoryType, etc.) — not dedicated
+  // authorization-record objects. The authorization state is exposed as
+  // properties on the type itself.
+  //
+  // Property names confirmed via runtime introspection on iOS 26.2.
+  // respondsToSelector: guards against future runtimes that drop a property.
   static NSArray<NSString *> *probeKeys;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     probeKeys = @[
-      @"objectType",
-      @"sharingAuthorizationStatus",
-      @"readAuthorizationStatus",
-      @"sharingRequestStatus",
-      @"readRequestStatus",
-      @"requestStatus",
-      @"authorizationStatus",
-      @"bundleIdentifier",
+      @"identifier",
+      @"sharingAuthorizationAllowed",
+      @"readingAuthorizationAllowed",
     ];
   });
 
   NSMutableDictionary *out = [NSMutableDictionary dictionary];
   for (NSString *key in probeKeys) {
-    @try {
-      id value = [record valueForKey:key];
-      if (!value) {
-        continue;
-      }
-      if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
-        out[key] = value;
-      } else {
-        out[key] = [NSString stringWithFormat:@"%@", value];
-      }
-    } @catch (NSException *exception) {
-      // KVC missing key — record doesn't expose this property; skip.
+    if (![record respondsToSelector:NSSelectorFromString(key)]) {
+      continue;
+    }
+    id value = [record valueForKey:key];
+    if (!value) {
+      continue;
+    }
+    if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
+      out[key] = value;
+    } else {
+      out[key] = [NSString stringWithFormat:@"%@", value];
     }
   }
   return out;
