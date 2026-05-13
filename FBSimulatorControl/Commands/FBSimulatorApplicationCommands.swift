@@ -27,20 +27,21 @@ extension FBSimulator: FBSimulatorApplicationCommandsProtocol {
 }
 
 @objc(FBSimulatorApplicationCommands)
-public final class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
+public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  internal weak var simulator: FBSimulator?
 
   // MARK: - Initializers
 
   @objc(commandsWithTarget:)
-  public class func commands(with target: any FBiOSTarget) -> FBSimulatorApplicationCommands {
-    return FBSimulatorApplicationCommands(simulator: target as! FBSimulator)
+  public class func commands(with target: any FBiOSTarget) -> Self {
+    let simulator = target as! FBSimulator
+    return Self(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  internal required init(simulator: FBSimulator) {
     self.simulator = simulator
     super.init()
   }
@@ -149,7 +150,7 @@ public final class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand 
     throw FBSimulatorError.describe("Failed to install Application \(appBundle) with options \(options)").build()
   }
 
-  fileprivate func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  internal func launchApplicationAsync(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }

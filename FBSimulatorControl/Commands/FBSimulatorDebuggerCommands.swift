@@ -96,7 +96,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
-    let launchedApp = try await bridgeFBFuture(simulator.launchApplication(configuration)) as! FBLaunchedApplication
+    let launchedApp = try await simulator.launchApplication(configuration)
     let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)) as! FBSubprocess<NSNull, AnyObject, AnyObject>
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"

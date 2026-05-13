@@ -29,4 +29,16 @@ import Foundation
     slots[key] = value
     return value
   }
+
+  /// Pre-populate a slot so the next `resolve(T.self) { ... }` returns this
+  /// value instead of constructing a new one. Intended for tests that want to
+  /// substitute a subclass / wrapper of a command class. Stored under the
+  /// statically-known type `T`, so callers must spell the slot key explicitly
+  /// (e.g. `register(wrapper, as: FBSimulatorDebuggerCommands.self)`) when the
+  /// runtime type is a subclass.
+  public func register<T>(_ value: T, as type: T.Type = T.self) {
+    lock.lock()
+    defer { lock.unlock() }
+    slots[ObjectIdentifier(type as Any.Type)] = value
+  }
 }
