@@ -132,7 +132,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
-    let installedApplication = try await bridgeFBFuture(device.installedApplication(withBundleID: bundleID))
+    let installedApplication = try await device.installedApplication(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }

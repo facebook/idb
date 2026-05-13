@@ -7,6 +7,7 @@
 
 import FBControlCore
 import Foundation
+import IDBCompanionUtilities
 import XCTestBootstrap
 
 @objc public protocol FBXCTestDescriptor: NSObjectProtocol {
@@ -69,21 +70,17 @@ public extension FBXCTestDescriptor {
   // MARK: - Private
 
   private static func killAllRunningApplications(_ target: FBiOSTarget) -> FBFuture<NSNull> {
-    return target.runningApplications()
-      .onQueue(
-        target.workQueue,
-        fmap: { runningApplications in
-          let runningApps = runningApplications as! [String: NSNumber]
-          let killFutures: [FBFuture<AnyObject>] = runningApps.keys.map { bundleID in
-            target.killApplication(withBundleID: bundleID) as! FBFuture<AnyObject>
-          }
-          if killFutures.isEmpty {
-            return FBFuture(result: NSNull() as AnyObject)
-          }
-          return unsafeBitCast(FBFuture<AnyObject>.combine(killFutures), to: FBFuture<AnyObject>.self)
-        }
-      )
-      .mapReplace(NSNull()) as! FBFuture<NSNull>
+    let future: FBFuture<NSNull> = fbFutureFromAsync {
+      guard let asyncTarget = target as? any AsyncApplicationCommands else {
+        throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+      }
+      let running = try await asyncTarget.runningApplications()
+      try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
+        try await asyncTarget.killApplication(bundleID: bundleID)
+      }
+      return NSNull()
+    }
+    return future
   }
 
   // MARK: - FBXCTestDescriptor
@@ -105,27 +102,27 @@ public extension FBXCTestDescriptor {
         return FBIDBError.describe("Request for UI Test, but no app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
-      return FBFuture<AnyObject>.combine([
-        target.installedApplication(withBundleID: testTargetAppBundleID) as! FBFuture<AnyObject>,
-        target.installedApplication(withBundleID: testHostBundleID) as! FBFuture<AnyObject>,
-      ])
-      .onQueue(
-        target.asyncQueue,
-        map: { results -> AnyObject in
-          let applications = results as! [FBInstalledApplication]
-          return FBTestApplicationsPair(applicationUnderTest: applications[0], testHostApp: applications[1])
-        }) as! FBFuture<FBTestApplicationsPair>
+      let pairFuture: FBFuture<FBTestApplicationsPair> = fbFutureFromAsync {
+        guard let asyncTarget = target as? any AsyncApplicationCommands else {
+          throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+        }
+        let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
+        let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
+        return FBTestApplicationsPair(applicationUnderTest: testTargetApp, testHostApp: testHostApp)
+      }
+      return pairFuture
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
       return FBIDBError.describe("Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided").failFuture() as! FBFuture<FBTestApplicationsPair>
     }
-    return target.installedApplication(withBundleID: bundleID)
-      .onQueue(
-        target.asyncQueue,
-        map: { application -> AnyObject in
-          return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application as FBInstalledApplication)
-        }) as! FBFuture<FBTestApplicationsPair>
+    return fbFutureFromAsync {
+      guard let asyncTarget = target as? any AsyncApplicationCommands else {
+        throw FBIDBError.describe("\(target) does not support AsyncApplicationCommands").build()
+      }
+      let application = try await asyncTarget.installedApplication(bundleID: bundleID)
+      return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
+    }
   }
 
   @objc public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: FBTestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger, queue: DispatchQueue) -> FBFuture<FBIDBAppHostedTestConfiguration> {

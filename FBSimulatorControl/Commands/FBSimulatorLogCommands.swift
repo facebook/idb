@@ -56,7 +56,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
       io: processIO,
       mode: .default
     )
-    let process = try await bridgeFBFuture(simulator.launchProcess(configuration)) as! FBSubprocess<AnyObject, AnyObject, AnyObject>
+    let process = try await simulator.launchProcess(configuration)
     return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
   }
 
