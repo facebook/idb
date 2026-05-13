@@ -63,6 +63,15 @@
 
 @end
 
+// Subclass used when the wrapped consumer is itself synchronous, so callers that
+// branch on `-conformsToProtocol:@protocol(FBDataConsumerSync)` (e.g.
+// FBSimulatorVideoStream's zero-copy fast path) can still find the marker.
+@interface FBDataConsumerAdaptor_SyncToDispatchData : FBDataConsumerAdaptor_ToDispatchData <FBDataConsumerSync>
+@end
+
+@implementation FBDataConsumerAdaptor_SyncToDispatchData
+@end
+
 @implementation FBDataConsumerAdaptor_ToDispatchData
 
 #pragma mark Initializers
@@ -110,7 +119,10 @@
 
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<FBDispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
 {
-  return [[FBDataConsumerAdaptor_ToDispatchData alloc] initWithConsumer:consumer];
+  Class adaptorClass = [consumer conformsToProtocol:@protocol(FBDataConsumerSync)]
+  ? [FBDataConsumerAdaptor_SyncToDispatchData class]
+  : [FBDataConsumerAdaptor_ToDispatchData class];
+  return [[adaptorClass alloc] initWithConsumer:consumer];
 }
 
 #pragma mark Public
@@ -250,7 +262,15 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 @end
 
-@interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer
+// Used when the dispatcher has no queue (synchronous delivery), so callers that
+// branch on `-conformsToProtocol:@protocol(FBDataConsumerSync)` find the marker.
+@interface FBBlockDataConsumer_Buffered_Sync : FBBlockDataConsumer_Buffered <FBDataConsumerSync>
+@end
+
+@implementation FBBlockDataConsumer_Buffered_Sync
+@end
+
+@interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer <FBDataConsumerSync>
 
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
@@ -275,7 +295,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 + (id<FBDataConsumer, FBDataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:nil consumer:FBDataConsumerToStringConsumer(consumer)];
-  return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
+  return [[FBBlockDataConsumer_Buffered_Sync alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
 + (id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
