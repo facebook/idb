@@ -63,12 +63,6 @@
 - (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
 - (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
-// FBApplicationCommands (forwarded at runtime)
-- (nonnull FBFuture<FBInstalledApplication *> *)installedApplicationWithBundleID:(nonnull NSString *)bundleID;
-- (nonnull FBFuture<NSNull *> *)killApplicationWithBundleID:(nonnull NSString *)bundleID;
-- (nonnull FBFuture *)launchApplication:(nonnull id)configuration;
-- (nonnull FBFuture<NSNumber *> *)processIDWithBundleID:(nonnull NSString *)bundleID;
-
 // FBProcessSpawnCommands (forwarded at runtime)
 - (nonnull FBFuture *)launchProcess:(nonnull FBProcessSpawnConfiguration *)configuration;
 
@@ -89,7 +83,6 @@
 - (nonnull FBFuture<NSNull *> *)reboot;
 - (nonnull FBFuture<NSNull *> *)erase;
 - (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulatorBootConfiguration *)configuration;
-- (nonnull FBFuture *)installApplicationWithPath:(nonnull NSString *)path;
 
 #pragma mark Properties
 

@@ -88,3 +88,17 @@ extension FBSimulator: AsyncCrashLogCommands {
     throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
   }
 }
+
+// MARK: - FBSimulator+FBCrashLogCommands
+
+extension FBSimulator {
+
+  @objc(notifyOfCrash:)
+  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+    do {
+      return try crashLogCommands().notifyOfCrash(predicate)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
