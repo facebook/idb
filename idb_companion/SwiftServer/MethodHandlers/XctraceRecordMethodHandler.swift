@@ -56,7 +56,10 @@ struct XctraceRecordMethodHandler {
         targetLogger,
       ].compactMap({ $0 }))
 
-    let operation = try await target.startXctraceRecordAsync(config, logger: logger)
+    guard let asyncTarget = target as? any AsyncXCTraceRecordCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncXCTraceRecordCommands")
+    }
+    let operation = try await asyncTarget.startXctraceRecord(configuration: config, logger: logger)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .running
     }

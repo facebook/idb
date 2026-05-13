@@ -7,21 +7,8 @@
 
 import Foundation
 
-@objc public protocol FBXCTraceRecordCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
-
-  @objc(startXctraceRecord:logger:)
-  func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation>
-}
-
-public extension FBXCTraceRecordCommandsProtocol {
-
-  func startXctraceRecordAsync(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
-    try await bridgeFBFuture(self.startXctraceRecord(configuration, logger: logger))
-  }
-}
-
 @objc(FBXCTraceRecordCommands)
-public class FBXCTraceRecordCommands: NSObject, FBXCTraceRecordCommandsProtocol {
+public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: Properties
 
@@ -39,7 +26,7 @@ public class FBXCTraceRecordCommands: NSObject, FBXCTraceRecordCommandsProtocol 
     super.init()
   }
 
-  // MARK: FBXCTraceRecordCommandsProtocol
+  // MARK: Operations
 
   public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
     let result = FBXCTestShimConfiguration.sharedShimConfiguration(with: logger)

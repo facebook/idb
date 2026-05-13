@@ -91,7 +91,7 @@ extension FBSimulator: AsyncCrashLogCommands {
 
 // MARK: - FBSimulator+FBCrashLogCommands
 
-extension FBSimulator {
+extension FBSimulator: FBCrashLogCommands {
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {

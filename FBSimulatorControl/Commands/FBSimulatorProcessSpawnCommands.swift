@@ -161,3 +161,17 @@ extension FBSimulator: AsyncProcessSpawnCommands {
     try await processSpawnCommands().launchProcessAsync(configuration)
   }
 }
+
+// MARK: - FBSimulator+FBProcessSpawnCommands
+
+extension FBSimulator: FBProcessSpawnCommands {
+
+  @objc(launchProcess:)
+  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+    do {
+      return try processSpawnCommands().launchProcess(configuration)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

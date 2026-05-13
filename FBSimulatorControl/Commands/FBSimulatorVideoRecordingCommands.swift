@@ -30,23 +30,6 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
     super.init()
   }
 
-  // MARK: - FBVideoRecordingCommands (legacy FBFuture entry points)
-
-  @objc
-  public func startRecording(toFile filePath: String) -> FBFuture<any FBiOSTargetOperation> {
-    fbFutureFromAsync { [self] in
-      try await startRecordingAsync(toFile: filePath)
-    }
-  }
-
-  @objc
-  public func stopRecording() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await stopRecordingAsync()
-      return NSNull()
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func startRecordingAsync(toFile filePath: String) async throws -> any FBiOSTargetOperation {

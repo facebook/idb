@@ -11,9 +11,6 @@
 #import "FBInstrumentsOperation.h"
 #import "FBiOSTarget.h"
 
-@interface FBInstrumentsCommands () <FBInstrumentsCommandsProtocol>
-@end
-
 @implementation FBInstrumentsCommands
 
 #pragma mark Properties

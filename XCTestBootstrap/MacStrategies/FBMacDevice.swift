@@ -13,7 +13,7 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-@objc public final class FBMacDevice: NSObject, FBiOSTarget, FBXCTestExtendedCommands, FBProcessSpawnCommands {
+@objc public final class FBMacDevice: NSObject, FBiOSTarget, FBApplicationCommands, FBCrashLogCommands, FBXCTestExtendedCommands, FBProcessSpawnCommands {
 
   // MARK: - FBiOSTarget synthesized properties
 
@@ -479,20 +479,6 @@ import IOKit
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
-  }
-
-  @objc public func startInstruments(_ configuration: FBInstrumentsConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBInstrumentsOperation> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice startInstruments:logger:] is not implemented").failFuture(),
-      to: FBFuture<FBInstrumentsOperation>.self
-    )
-  }
-
-  @objc public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
-    return unsafeBitCast(
-      FBControlCoreError.describe("-[FBMacDevice startXctraceRecord:logger:] is not implemented").failFuture(),
-      to: FBFuture<FBXCTraceRecordOperation>.self
-    )
   }
 
   @objc public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {

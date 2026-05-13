@@ -28,7 +28,7 @@
 // FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol,
 // FBSimulatorMediaCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
 // FBSimulatorFileCommandsProtocol
-@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBProcessSpawnCommands>
+@interface FBSimulator : NSObject <FBiOSTarget>
 
 #pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members
 
@@ -62,9 +62,6 @@
 - (BOOL)requiresBundlesToBeSigned;
 - (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
 - (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
-
-// FBProcessSpawnCommands (forwarded at runtime)
-- (nonnull FBFuture *)launchProcess:(nonnull FBProcessSpawnConfiguration *)configuration;
 
 // FBSimulatorLifecycleCommandsProtocol (forwarded at runtime)
 - (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;

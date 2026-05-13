@@ -10,7 +10,7 @@ import Foundation
 
 @objc public final class FBManagedTestRunStrategy: NSObject {
 
-  @objc public static func runToCompletion(withTarget target: FBiOSTarget & FBXCTestExtendedCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  @objc public static func runToCompletion(withTarget target: FBiOSTarget & FBXCTestExtendedCommands & FBApplicationCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {
