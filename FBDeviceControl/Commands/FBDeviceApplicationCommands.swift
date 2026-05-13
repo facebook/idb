@@ -441,3 +441,70 @@ extension FBDevice: AsyncApplicationCommands {
     return pid.int32Value
   }
 }
+
+// MARK: - FBDevice+FBApplicationCommands
+
+extension FBDevice {
+
+  @objc(installApplicationWithPath:)
+  public func installApplication(withPath path: String) -> FBFuture<FBInstalledApplication> {
+    do {
+      return try applicationCommands().installApplication(withPath: path)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(uninstallApplicationWithBundleID:)
+  public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    do {
+      return try applicationCommands().uninstallApplication(withBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(launchApplication:)
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<any FBLaunchedApplication> {
+    do {
+      return try applicationCommands().launchApplication(configuration)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(killApplicationWithBundleID:)
+  public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+    do {
+      return try applicationCommands().killApplication(withBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc public func installedApplications() -> FBFuture<NSArray> {
+    do {
+      return try applicationCommands().installedApplications()
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(installedApplicationWithBundleID:)
+  public func installedApplication(withBundleID bundleID: String) -> FBFuture<FBInstalledApplication> {
+    do {
+      return try applicationCommands().installedApplication(withBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+
+  @objc(processIDWithBundleID:)
+  public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
+    do {
+      return try applicationCommands().processID(withBundleID: bundleID)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}

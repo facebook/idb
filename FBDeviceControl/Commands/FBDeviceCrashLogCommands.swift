@@ -210,3 +210,17 @@ extension FBDevice: AsyncCrashLogCommands {
     try await withFBFutureContext(crashLogCommands().crashLogFilesContext(), body: body)
   }
 }
+
+// MARK: - FBDevice+FBCrashLogCommands
+
+extension FBDevice {
+
+  @objc(notifyOfCrash:)
+  public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
+    do {
+      return try crashLogCommands().notifyOfCrash(predicate)
+    } catch {
+      return FBFuture(error: error)
+    }
+  }
+}
