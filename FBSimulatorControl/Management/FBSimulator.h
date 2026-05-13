@@ -20,6 +20,8 @@
 @class FBTargetCommandCache;
 @class SimDevice;
 
+// Methods declared here are implemented via Swift extensions on FBSimulator.
+
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
@@ -63,19 +65,17 @@
 - (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
 - (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
 
-// FBSimulatorLifecycleCommandsProtocol (forwarded at runtime)
-- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+// FBSimulatorLifecycleCommandsProtocol- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
 - (nonnull FBFuture *)connectToBridge;
 - (nonnull FBFuture *)connectToFramebuffer;
 
-// FBSimulatorLaunchCtlCommandsProtocol (forwarded at runtime)
-- (nonnull FBFuture<NSDictionary *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
+// FBSimulatorLaunchCtlCommandsProtocol- (nonnull FBFuture<NSDictionary *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
 - (nonnull FBFuture<NSArray *> *)firstServiceNameAndProcessIdentifierMatching:(nonnull NSRegularExpression *)regex;
 - (nonnull FBFuture<NSString *> *)stopServiceWithName:(nonnull NSString *)serviceName;
 - (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)processIdentifier;
 - (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
 
-// FBPowerCommands / FBEraseCommands / FBSimulatorLifecycleCommandsProtocol (forwarded)
+// FBPowerCommands / FBEraseCommands / FBSimulatorLifecycleCommandsProtocol
 - (nonnull FBFuture<NSNull *> *)shutdown;
 - (nonnull FBFuture<NSNull *> *)reboot;
 - (nonnull FBFuture<NSNull *> *)erase;
@@ -128,7 +128,6 @@
 
 #pragma mark - Should be marked private when converting to Swift
 
-@property (nonnull, nonatomic, readonly, strong) id forwarder;
 @property (nonnull, nonatomic, readonly, strong) FBTargetCommandCache *commandCache;
 
 + (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;

@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 /**
  Keys for accessibility element dictionaries.

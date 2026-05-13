@@ -8,7 +8,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+
+@protocol FBiOSTarget;
+@protocol FBControlCoreLogger;
 
 @class FBInstrumentsConfiguration;
 @class FBInstrumentsOperation;

@@ -54,7 +54,6 @@
   _restorableDevice = restorableDevice;
   [self cacheValuesFromInfo:(amDevice ?: restorableDevice) overwrite:YES];
   _logger = [logger withName:self.udid];
-  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders statefulCommands:FBDevice.statefulCommands];
   _commandCache = [FBTargetCommandCache new];
 
   return self;
@@ -285,70 +284,14 @@
                              failFutureContext];
 }
 
-#pragma mark Forwarding
-
-+ (NSArray<Class> *)commandResponders
-{
-  static dispatch_once_t onceToken;
-  static NSArray<Class> *commandClasses;
-  dispatch_once(&onceToken, ^{
-    commandClasses = @[
-      FBDeviceActivationCommands.class,
-      FBDeviceApplicationCommands.class,
-      FBDeviceCrashLogCommands.class,
-      FBDeviceDebuggerCommands.class,
-      FBDeviceDebugSymbolsCommands.class,
-      FBDeviceDeveloperDiskImageCommands.class,
-      FBDeviceDiagnosticInformationCommands.class,
-      FBDeviceEraseCommands.class,
-      FBDeviceFileCommands.class,
-      FBDeviceLifecycleCommands.class,
-      FBDeviceLocationCommands.class,
-      FBDeviceLogCommands.class,
-      FBDevicePowerCommands.class,
-      FBDeviceRecoveryCommands.class,
-      FBDeviceScreenshotCommands.class,
-      FBDeviceSocketForwardingCommands.class,
-      FBDeviceVideoRecordingCommands.class,
-      FBDeviceXCTestCommands.class,
-      FBInstrumentsCommands.class,
-      FBXCTraceRecordCommands.class,
-    ];
-  });
-  return commandClasses;
-}
-
-+ (NSSet<Class> *)statefulCommands
-{
-  // All commands are stateful
-  return [NSSet setWithArray:self.commandResponders];
-}
+#pragma mark FBAMDevice forwarding
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  // Try the underling FBAMDevice instance>
   if ([self.amDevice respondsToSelector:selector]) {
     return self.amDevice;
   }
-  // Try the forwarder.
-  id command = [self.forwarder forwardingTargetForSelector:selector];
-  if (command) {
-    return command;
-  }
-  // Nothing left.
   return [super forwardingTargetForSelector:selector];
-}
-
-- (BOOL)conformsToProtocol:(Protocol *)protocol
-{
-  if ([super conformsToProtocol:protocol]) {
-    return YES;
-  }
-  if ([self.forwarder conformsToProtocol:protocol]) {
-    return YES;
-  }
-
-  return NO;
 }
 
 @end

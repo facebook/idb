@@ -65,11 +65,6 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   _set = set;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = [logger withName:device.UDID.UUIDString];
-  _forwarder = [FBLoggingWrapper
-                wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
-                simplifiedNaming:NO
-                eventReporter:reporter
-                logger:_logger];
   _commandCache = [FBTargetCommandCache new];
 
   return self;
@@ -251,71 +246,11 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return FBiOSTargetDescribe(self);
 }
 
-#pragma mark Forwarding
-
-- (id)forwardingTargetForSelector:(SEL)selector
-{
-  return [self.forwarder forwardingTargetForSelector:selector];
-}
-
-- (void)forwardInvocation:(NSInvocation *)invocation
-{
-  [self.forwarder forwardInvocation:invocation];
-}
-
-+ (NSArray<Class> *)commandResponders
-{
-  static dispatch_once_t onceToken;
-  static NSArray<Class> *commandClasses;
-  dispatch_once(&onceToken, ^{
-    commandClasses = @[
-      FBInstrumentsCommands.class,
-      FBSimulatorAccessibilityCommands.class,
-      FBSimulatorApplicationCommands.class,
-      FBSimulatorCrashLogCommands.class,
-      FBSimulatorDebuggerCommands.class,
-      FBSimulatorDapServerCommand.class,
-      FBSimulatorFileCommands.class,
-      FBSimulatorKeychainCommands.class,
-      FBSimulatorLaunchCtlCommands.class,
-      FBSimulatorLifecycleCommands.class,
-      FBSimulatorLocationCommands.class,
-      FBSimulatorLogCommands.class,
-      FBSimulatorMediaCommands.class,
-      FBSimulatorProcessSpawnCommands.class,
-      FBSimulatorScreenshotCommands.class,
-      FBSimulatorSettingsCommands.class,
-      FBSimulatorVideoRecordingCommands.class,
-      FBSimulatorXCTestCommands.class,
-      FBXCTraceRecordCommands.class,
-      FBSimulatorNotificationCommands.class,
-      FBSimulatorMemoryCommands.class,
-    ];
-  });
-  return commandClasses;
-}
-
 #pragma mark Private
 
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device
 {
   return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
-}
-
-+ (NSSet<Class> *)statefulCommands
-{
-  static dispatch_once_t onceToken;
-  static NSSet<Class> *statefulCommands;
-  dispatch_once(&onceToken, ^{
-    statefulCommands = [NSSet setWithArray:@[
-      FBSimulatorCrashLogCommands.class,
-      FBSimulatorLifecycleCommands.class,
-      FBSimulatorScreenshotCommands.class,
-      FBSimulatorVideoRecordingCommands.class,
-      FBSimulatorXCTestCommands.class,
-                        ]];
-  });
-  return statefulCommands;
 }
 
 @end

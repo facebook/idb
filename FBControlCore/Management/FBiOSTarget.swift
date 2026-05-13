@@ -7,6 +7,16 @@
 
 import Foundation
 
+// MARK: - FBiOSTargetCommand Protocol
+
+/// A protocol that defines a command class that can be instantiated for a target.
+/// Concrete command classes (e.g. `FBSimulatorApplicationCommands`) adopt this directly.
+@objc public protocol FBiOSTargetCommand: NSObjectProtocol {
+  /// Instantiates the Commands instance.
+  @objc(commandsWithTarget:)
+  static func commands(with target: any FBiOSTarget) -> Self
+}
+
 // MARK: - FBiOSTargetInfo Protocol
 
 /// A protocol that defines an informational target.
