@@ -389,18 +389,10 @@ message HIDEvent {
     double duration = 1;
   }
 
-  message HIDPinch {
-    Point center = 1;
-    double scale = 2;
-    double duration = 3;
-    double radius = 4;
-  }
-
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
     HIDDelay delay = 3;
-    HIDPinch pinch = 4;
   }
 }
 

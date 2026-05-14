@@ -52,26 +52,20 @@ T = TypeVar("T")
 
 @overload
 def swallow_exceptions(
-    # pyrefly: ignore [bad-specialization, not-a-type]
     f: Callable[P, Awaitable[T]],
-    # pyrefly: ignore [bad-specialization, not-a-type]
 ) -> Callable[P, Awaitable[T | None]]: ...
 
 
 @overload
-# pyrefly: ignore [bad-specialization, not-a-type]
 def swallow_exceptions(f: Callable[P, T]) -> Callable[P, T | None]: ...
 
 
 def swallow_exceptions(
-    # pyrefly: ignore [bad-specialization, not-a-type]
     f: Callable[P, T] | Callable[P, Awaitable[T]],
-    # pyrefly: ignore [bad-specialization, not-a-type]
 ) -> Callable[P, T | None] | Callable[P, Awaitable[T | None]]:
     if asyncio.iscoroutinefunction(f):
 
         @wraps(f)
-        # pyrefly: ignore [not-a-type]
         async def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
                 return await f(*args, **kwargs)
@@ -81,11 +75,12 @@ def swallow_exceptions(
     else:
 
         @wraps(f)
-        # pyrefly: ignore [not-a-type]
         def inner(*args: P.args, **kwargs: P.kwargs) -> T | None:
             try:
+                # pyre-ignore[7]
                 return f(*args, **kwargs)
             except Exception:
+                # pyre-ignore[16]
                 logger.exception(f"{f.__name__} plugin failed, swallowing exception")
 
     return inner
@@ -150,7 +145,6 @@ def on_connecting_parser(parser: ArgumentParser, logger: Logger) -> None:
         plugin_parser = getattr(plugin, "on_connecting_parser", None)
         if parser is None:
             continue
-        # pyrefly: ignore [not-callable]
         plugin_parser(parser=parser, logger=logger)
 
 
@@ -177,7 +171,6 @@ def append_companion_metadata(
         if not method:
             continue
         metadata = method(logger=logger, metadata=metadata)
-    # pyrefly: ignore [bad-return]
     return metadata
 
 

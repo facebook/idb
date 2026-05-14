@@ -410,83 +410,6 @@ function run_tests() {
 }
 
 # =============================================================================
-# Package Functions
-# =============================================================================
-
-function package_idb_companion() {
-  local RELEASE_DIR="$BUILD_DIRECTORY/Build/Products/Release"
-  local DIST_DIR="idb-companion-dist"
-  local ARCHIVE_NAME="idb-companion.tar.gz"
-
-  # Check if build exists
-  if [ ! -f "$RELEASE_DIR/idb_companion" ]; then
-    echo "error: idb_companion not found. Run './build.sh build' first."
-    exit 1
-  fi
-
-  echo "Creating distribution package..."
-
-  # Clean and create distribution directory
-  rm -rf "$DIST_DIR"
-  mkdir -p "$DIST_DIR/PackageFrameworks"
-
-  # Copy main executable
-  echo "  Copying idb_companion..."
-  cp "$RELEASE_DIR/idb_companion" "$DIST_DIR/"
-
-  # Copy main frameworks to PackageFrameworks (matching the expected rpath)
-  echo "  Copying main frameworks..."
-  for fw in FBControlCore XCTestBootstrap FBSimulatorControl FBDeviceControl CompanionLib IDBCompanionUtilities IDBGRPCSwift; do
-    if [ -d "$RELEASE_DIR/$fw.framework" ]; then
-      cp -R "$RELEASE_DIR/$fw.framework" "$DIST_DIR/PackageFrameworks/"
-    fi
-  done
-
-  # Copy SPM frameworks from PackageFrameworks directory
-  echo "  Copying SPM frameworks..."
-  if [ -d "$RELEASE_DIR/PackageFrameworks" ]; then
-    cp -R "$RELEASE_DIR/PackageFrameworks/"*.framework "$DIST_DIR/PackageFrameworks/" 2>/dev/null || true
-  fi
-
-  # Copy dylibs
-  echo "  Copying dylibs..."
-  if [ -f "$RELEASE_DIR/libMaculator.dylib" ]; then
-    cp "$RELEASE_DIR/libMaculator.dylib" "$DIST_DIR/PackageFrameworks/"
-  fi
-
-  # Create archive
-  echo "  Creating archive: $ARCHIVE_NAME..."
-  tar -czf "$ARCHIVE_NAME" -C "$DIST_DIR" .
-
-  # Calculate SHA256
-  local sha256=$(shasum -a 256 "$ARCHIVE_NAME" | cut -d' ' -f1)
-
-  # Get file size
-  local size=$(ls -lh "$ARCHIVE_NAME" | awk '{print $5}')
-
-  echo ""
-  echo "=========================================="
-  echo "Package created successfully!"
-  echo "=========================================="
-  echo "  Archive: $ARCHIVE_NAME"
-  echo "  Size: $size"
-  echo "  SHA256: $sha256"
-  echo ""
-  echo "Usage after extraction:"
-  echo "  cd idb-companion && ./idb_companion --help"
-  echo ""
-  echo "Contents:"
-  ls -la "$DIST_DIR/"
-  echo ""
-  echo "Frameworks included:"
-  ls "$DIST_DIR/PackageFrameworks/"
-  echo ""
-
-  # Clean up
-  rm -rf "$DIST_DIR"
-}
-
-# =============================================================================
 # Usage
 # =============================================================================
 
@@ -533,11 +456,6 @@ Commands:
       FBSimulatorControl Test FBSimulatorControl
       FBDeviceControl Test FBDeviceControl
 
-  package
-    Create a distributable tar.gz archive of idb_companion with all dependencies.
-    The archive includes the executable and all required frameworks.
-    Output: idb-companion.tar.gz in the project root.
-
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
   ./build.sh generate-proto           # Regenerate gRPC Swift from proto
@@ -548,7 +466,6 @@ Examples:
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
   ./build.sh test FBSimulatorControl  # Test specific framework
-  ./build.sh package                  # Create distribution archive
 
 Prerequisites:
   - Xcode 14.0+
@@ -588,8 +505,6 @@ case $COMMAND in
   test)
     regenerate_projects
     run_tests $TARGET_ARG;;
-  package)
-    package_idb_companion;;
   *)
     echo "Unknown command: $COMMAND"
     print_usage

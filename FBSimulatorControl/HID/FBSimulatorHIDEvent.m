@@ -411,95 +411,6 @@ static NSString *const KeyDuration = @"duration";
 
 @end
 
-@interface FBSimulatorHIDEvent_DeviceOrientation : NSObject <FBSimulatorHIDEventPayload>
-
-@property (nonatomic, assign, readonly) FBSimulatorHIDDeviceOrientation orientation;
-
-@end
-
-@implementation FBSimulatorHIDEvent_DeviceOrientation
-
-static NSString *const EventClassStringOrientation = @"orientation";
-
-- (instancetype)initWithOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _orientation = orientation;
-
-  return self;
-}
-
-- (NSData *)payloadForHID:(FBSimulatorHID *)hid
-{
-  return [hid.purple orientationEvent:self.orientation];
-}
-
-- (FBFuture<NSNull *> *)performOnHID:(FBSimulatorHID *)hid
-{
-  return [FBFuture onQueue:hid.queue resolve:^ FBFuture<NSNull *> * {
-    NSData *payload = [self payloadForHID:hid];
-    NSError *error = nil;
-    if (![hid sendPurpleEvent:payload error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return FBFuture.empty;
-  }];
-}
-
-+ (NSString *)orientationStringFromOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  switch (orientation) {
-    case FBSimulatorHIDDeviceOrientationPortrait:
-      return @"portrait";
-    case FBSimulatorHIDDeviceOrientationPortraitUpsideDown:
-      return @"portrait_upside_down";
-    case FBSimulatorHIDDeviceOrientationLandscapeRight:
-      return @"landscape_right";
-    case FBSimulatorHIDDeviceOrientationLandscapeLeft:
-      return @"landscape_left";
-    default:
-      return @"unknown";
-  }
-}
-
-+ (FBSimulatorHIDDeviceOrientation)orientationFromString:(NSString *)string
-{
-  if ([string isEqualToString:@"portrait"]) return FBSimulatorHIDDeviceOrientationPortrait;
-  if ([string isEqualToString:@"portrait_upside_down"]) return FBSimulatorHIDDeviceOrientationPortraitUpsideDown;
-  if ([string isEqualToString:@"landscape_right"]) return FBSimulatorHIDDeviceOrientationLandscapeRight;
-  if ([string isEqualToString:@"landscape_left"]) return FBSimulatorHIDDeviceOrientationLandscapeLeft;
-  return FBSimulatorHIDDeviceOrientationPortrait;
-}
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"Set Orientation %@", [FBSimulatorHIDEvent_DeviceOrientation orientationStringFromOrientation:self.orientation]];
-}
-
-- (id)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-- (BOOL)isEqual:(FBSimulatorHIDEvent_DeviceOrientation *)event
-{
-  if (![event isKindOfClass:self.class]) {
-    return NO;
-  }
-  return self.orientation == event.orientation;
-}
-
-- (NSUInteger)hash
-{
-  return (NSUInteger)self.orientation;
-}
-
-@end
-
 @implementation FBSimulatorHIDEvent
 
 #pragma mark - Initializers
@@ -534,11 +445,6 @@ static NSString *const EventClassStringOrientation = @"orientation";
 + (id<FBSimulatorHIDEventPayload>)keyUp:(unsigned int)keyCode
 {
   return [[FBSimulatorHIDEvent_Keyboard alloc] initWithDirection:FBSimulatorHIDDirectionUp keyCode:keyCode];
-}
-
-+ (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation
-{
-  return [[FBSimulatorHIDEvent_DeviceOrientation alloc] initWithOrientation:orientation];
 }
 
 #pragma mark Multiple Payload Events
