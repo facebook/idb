@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer.
 
- @param processIdentifier the process identifer.
+ @param processIdentifier the process identifier.
  @param launchPath the path of the binary that the process was launched with.
  @param arguments the arguments that the process was launched with.
  @param environment the environment that the
