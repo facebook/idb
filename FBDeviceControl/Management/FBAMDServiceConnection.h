@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
 // Over the course of iOS releases, the requirement to send data using SSL has become more strictly enforced.
 //
 // The send-side of the protocol is as follows:
-// 1) Any packet has a device-endian 32-bit unsigned integer that encodes the length of a packet. This is used for both the sending and receiving side.
+// 1) Any packet has a device-endian 32-bit unsigned integer that encodes the length of a packet. This is used for both the sending and recieving side.
 // 2) The data after this is a binary-plist of the payload itself. This means that any plist-serializable data can be transmitted.
 // 3) There is no trailer for a packet, the header defines when the end of the packet is.
 // 4) The header (#1) and the binary plist (#2) are then sent over the socket. If there's an SSL context then any data that is transmitted is encrypted. When encryption is enabled, all data on the channel is encrypted, including the header
@@ -195,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
  After this is called, this object is no longer valid.
 
  @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return YES is succesful, NO otherwise.
  */
 - (BOOL)invalidateWithError:(NSError **)error;
 
@@ -214,7 +214,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The name of the service.
+ The name of of the service.
  */
 @property (nonatomic, copy, readonly) NSString *name;
 

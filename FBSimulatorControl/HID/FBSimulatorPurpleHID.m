@@ -47,24 +47,4 @@
   return [NSData dataWithBytes:buf length:sizeof(buf)];
 }
 
-- (NSData *)lockDeviceEvent
-{
-  // Same 112-byte buffer as orientation, but with GSEventTypeLockDevice and no payload.
-  uint8_t buf[112];
-  memset(buf, 0, sizeof(buf));
-
-  mach_msg_header_t *header = (mach_msg_header_t *)buf;
-  header->msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0);
-  header->msgh_size = 108;
-  header->msgh_remote_port = MACH_PORT_NULL;
-  header->msgh_local_port = MACH_PORT_NULL;
-  header->msgh_id = GSEventMachMessageID;
-
-  uint32_t *gsEventType = (uint32_t *)(buf + 0x18);
-  *gsEventType = GSEventTypeLockDevice | GSEventHostFlag;
-
-  // record_info_size = 0, no payload
-  return [NSData dataWithBytes:buf length:sizeof(buf)];
-}
-
 @end

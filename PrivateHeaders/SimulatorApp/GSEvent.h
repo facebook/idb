@@ -58,6 +58,5 @@
  */
 
 #define GSEventTypeDeviceOrientationChanged 50
-#define GSEventTypeLockDevice 1014
 #define GSEventHostFlag 0x20000
 #define GSEventMachMessageID 0x7B

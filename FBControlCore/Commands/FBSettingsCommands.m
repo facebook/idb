@@ -14,4 +14,3 @@ FBTargetSettingsService const FBTargetSettingsServiceLocation = @"location";
 FBTargetSettingsService const FBTargetSettingsServiceMicrophone = @"microphone";
 FBTargetSettingsService const FBTargetSettingsServiceUrl = @"url";
 FBTargetSettingsService const FBTargetSettingsServiceNotification = @"notification";
-FBTargetSettingsService const FBTargetSettingsServiceHealth = @"health";

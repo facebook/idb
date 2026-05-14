@@ -216,7 +216,7 @@ class SwipeCommand(ClientCommand):
         parser.add_argument(
             "--delta",
             dest="delta",
-            help="delta in points between every touch point on the line "
+            help="delta in pixels between every touch point on the line "
             "between start and end points",
             type=int,
             required=False,
@@ -229,40 +229,4 @@ class SwipeCommand(ClientCommand):
             p_end=(args.x_end, args.y_end),
             duration=args.duration,
             delta=args.delta,
-        )
-
-
-class PinchCommand(ClientCommand):
-    @property
-    def description(self) -> str:
-        return "Perform a pinch gesture"
-
-    @property
-    def name(self) -> str:
-        return "pinch"
-
-    def add_parser_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument("x", help="X coordinate of pinch center", type=float)
-        parser.add_argument("y", help="Y coordinate of pinch center", type=float)
-        parser.add_argument(
-            "scale", help="Scale factor (>1.0 = zoom in, <1.0 = zoom out)", type=float
-        )
-        parser.add_argument(
-            "--duration", help="Duration in seconds", type=float, default=0.5
-        )
-        parser.add_argument(
-            "--radius",
-            help="Initial finger distance from center in pixels",
-            type=float,
-            default=100.0,
-        )
-        super().add_parser_arguments(parser)
-
-    async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.pinch(
-            center_x=args.x,
-            center_y=args.y,
-            scale=args.scale,
-            duration=args.duration,
-            radius=args.radius,
         )

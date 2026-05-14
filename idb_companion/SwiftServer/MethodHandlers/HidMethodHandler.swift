@@ -75,14 +75,6 @@ struct HidMethodHandler {
     case let .delay(delay):
       return FBSimulatorHIDEvent.delay(delay.duration)
 
-    case let .pinch(pinch):
-      let centerX = Double(pinch.center.x)
-      let centerY = Double(pinch.center.y)
-      let scale = pinch.scale
-      let duration = pinch.duration > 0 ? pinch.duration : 0.5
-      let radius = pinch.radius > 0 ? pinch.radius : 100.0
-      return FBSimulatorHIDEvent.pinchAt(x: centerX, y: centerY, scale: scale, duration: duration, radius: radius)
-
     case .none:
       throw GRPCStatus(code: .invalidArgument, message: "Unrecognized request.event")
     }

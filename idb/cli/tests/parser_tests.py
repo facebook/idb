@@ -805,39 +805,6 @@ class TestParser(TestCase):
             x=10, y=20, count=2, duration=None, pause=0.2
         )
 
-    async def test_pinch_default(self) -> None:
-        self.client_mock.pinch = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["ui", "pinch", "200", "400", "2.0"])
-        self.client_mock.pinch.assert_called_once_with(
-            center_x=200.0, center_y=400.0, scale=2.0, duration=0.5, radius=100.0
-        )
-
-    async def test_pinch_zoom_out(self) -> None:
-        self.client_mock.pinch = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["ui", "pinch", "200", "400", "0.5"])
-        self.client_mock.pinch.assert_called_once_with(
-            center_x=200.0, center_y=400.0, scale=0.5, duration=0.5, radius=100.0
-        )
-
-    async def test_pinch_with_options(self) -> None:
-        self.client_mock.pinch = AsyncMock(return_value=[])
-        await cli_main(
-            cmd_input=[
-                "ui",
-                "pinch",
-                "100",
-                "300",
-                "3.0",
-                "--duration",
-                "1.0",
-                "--radius",
-                "50",
-            ]
-        )
-        self.client_mock.pinch.assert_called_once_with(
-            center_x=100.0, center_y=300.0, scale=3.0, duration=1.0, radius=50.0
-        )
-
     async def test_button(self) -> None:
         self.client_mock.button = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "button", "SIRI"])

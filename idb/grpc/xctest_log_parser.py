@@ -25,18 +25,13 @@ XCTestLogParserData = dict[XCTestLogParserKey, list[str]]
 
 
 def _try_parse_event(log_line: str) -> Event | None:
-    # Fast rejection: skip lines that cannot be JSON objects
-    if (
-        len(log_line) >= 10_000
-        or not log_line.startswith("{")
-        or not log_line.endswith("}")
-    ):
-        return None
-
-    try:
-        parsed_json = json.loads(log_line)
-    except json.decoder.JSONDecodeError:
-        return None
+    event = None
+    parsed_json = None
+    if len(log_line) < 10_000:  # For performance reasons, don't parse long lines
+        try:
+            parsed_json = json.loads(log_line)
+        except json.decoder.JSONDecodeError:
+            pass
 
     keys = ["event", "className", "methodName"]
     if (
@@ -44,12 +39,12 @@ def _try_parse_event(log_line: str) -> Event | None:
         and all(key in parsed_json for key in keys)
         and all(isinstance(parsed_json[key], str) for key in keys)
     ):
-        return Event(
+        event = Event(
             event=parsed_json["event"],
             className=parsed_json["className"],
             methodName=parsed_json["methodName"],
         )
-    return None
+    return event
 
 
 class XCTestLogParser:

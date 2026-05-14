@@ -308,15 +308,7 @@ class HIDDelay:
     duration: float
 
 
-@dataclass(frozen=True)
-class HIDPinch:
-    center: Point
-    scale: float
-    duration: float
-    radius: float
-
-
-HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch]
+HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay]
 
 
 @dataclass(frozen=True)
@@ -779,16 +771,6 @@ class Client(ABC):
     @abstractmethod
     async def hid(self, event_iterator: AsyncIterable[HIDEvent]) -> None:
         pass
-
-    @abstractmethod
-    async def pinch(
-        self,
-        center_x: float,
-        center_y: float,
-        scale: float,
-        duration: float = 0.5,
-        radius: float = 100.0,
-    ) -> None: ...
 
     @abstractmethod
     async def ls_single(

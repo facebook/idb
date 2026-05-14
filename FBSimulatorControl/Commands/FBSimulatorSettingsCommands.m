@@ -9,16 +9,16 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBStatusBarOverride.h"
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAppleSimctlCommandExecutor.h"
 #import "FBDefaultsModificationStrategy.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 
+static NSString *const SpringBoardServiceName = @"com.apple.SpringBoard";
 
 @interface FBSimulatorSettingsCommands ()
 
@@ -47,139 +47,22 @@
 
 #pragma mark Public
 
-- (FBFuture<NSNull *> *)setSetting:(FBSimulatorSetting)setting enabled:(BOOL)enabled
-{
-  switch (setting) {
-    case FBSimulatorSettingHardwareKeyboard:
-      return [self setHardwareKeyboardEnabled:enabled];
-    case FBSimulatorSettingSlowAnimations:
-      return [self setSlowAnimationsEnabled:enabled];
-    case FBSimulatorSettingIncreaseContrast:
-      return [self setIncreaseContrastEnabled:enabled];
-    default:
-      return [[FBSimulatorError describeFormat:@"Unknown simulator setting: %lu", (unsigned long)setting] failFuture];
-  }
-}
-
-- (FBFuture<NSNumber *> *)currentAppearance
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNumber *(NSError **error) {
-    return @([self.simulator.device currentUIInterfaceStyle]);
-  }];
-}
-
-- (FBFuture<NSNull *> *)setAppearance:(FBSimulatorAppearance)appearance
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    if (![self.simulator.device setUIInterfaceStyle:(NSInteger)appearance error:error]) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSNumber *> *)currentContentSizeCategory
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNumber *(NSError **error) {
-    return @([self.simulator.device currentContentSizeCategory]);
-  }];
-}
-
-- (FBFuture<NSNull *> *)setContentSizeCategory:(FBSimulatorContentSizeCategory)category
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    if (![self.simulator.device setContentSizeCategory:category error:error]) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<FBStatusBarOverride *> *)currentStatusBarOverrides
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^FBStatusBarOverride *(NSError **error) {
-    NSString *timeString = nil;
-    NSNumber *dataNetworkType = nil;
-    NSNumber *wiFiMode = nil;
-    NSNumber *wiFiBars = nil;
-    NSNumber *cellularMode = nil;
-    NSString *operatorName = nil;
-    NSNumber *cellularBars = nil;
-    NSNumber *batteryState = nil;
-    NSNumber *batteryLevel = nil;
-    NSNumber *showNotCharging = nil;
-    if (![self.simulator.device currentStatusBarOverridesForTimeString:&timeString dataNetworkType:&dataNetworkType wiFiMode:&wiFiMode wiFiBars:&wiFiBars cellularMode:&cellularMode operatorName:&operatorName cellularBars:&cellularBars batteryState:&batteryState batteryLevel:&batteryLevel showNotCharging:&showNotCharging error:error]) {
-      return nil;
-    }
-    FBStatusBarOverride *override = [[FBStatusBarOverride alloc] init];
-    override.timeString = timeString;
-    override.dataNetworkType = dataNetworkType;
-    override.wiFiMode = wiFiMode;
-    override.wiFiBars = wiFiBars;
-    override.cellularMode = cellularMode;
-    override.cellularBars = cellularBars;
-    override.operatorName = operatorName;
-    override.batteryState = batteryState;
-    override.batteryLevel = batteryLevel;
-    override.showNotCharging = showNotCharging;
-    return override;
-  }];
-}
-
-- (FBFuture<NSNull *> *)overrideStatusBar:(nullable FBStatusBarOverride *)override
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    if (!override) {
-      // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
-      // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.
-      if (![self.simulator.device clearStatusBarOverrides:NSUIntegerMax error:error]) {
-        return nil;
-      }
-      return NSNull.null;
-    }
-    if (override.timeString) {
-      if (![self.simulator.device overrideStatusBarTimeString:override.timeString error:error]) {
-        return nil;
-      }
-    }
-    if (override.dataNetworkType) {
-      if (![self.simulator.device overrideStatusBarDataNetworkType:override.dataNetworkType.integerValue error:error]) {
-        return nil;
-      }
-    }
-    if (override.wiFiMode || override.wiFiBars) {
-      NSInteger mode = override.wiFiMode ? override.wiFiMode.integerValue : 3;
-      NSInteger bars = override.wiFiBars ? override.wiFiBars.integerValue : 3;
-      if (![self.simulator.device overrideStatusBarWiFiMode:mode bars:bars error:error]) {
-        return nil;
-      }
-    }
-    if (override.cellularMode || override.operatorName || override.cellularBars) {
-      NSInteger mode = override.cellularMode ? override.cellularMode.integerValue : 3;
-      NSString *name = override.operatorName ?: @"";
-      NSInteger bars = override.cellularBars ? override.cellularBars.integerValue : 4;
-      if (![self.simulator.device overrideStatusBarCellularMode:mode operatorName:name bars:bars error:error]) {
-        return nil;
-      }
-    }
-    if (override.batteryState || override.batteryLevel || override.showNotCharging) {
-      NSInteger state = override.batteryState ? override.batteryState.integerValue : 2;
-      NSInteger level = override.batteryLevel ? override.batteryLevel.integerValue : 100;
-      BOOL notCharging = override.showNotCharging ? override.showNotCharging.boolValue : NO;
-      if (![self.simulator.device overrideStatusBarBatteryState:state batteryLevel:level showNotCharging:notCharging error:error]) {
-        return nil;
-      }
-    }
-    return NSNull.null;
-  }];
-}
-
 - (FBFuture<NSNull *> *)setHardwareKeyboardEnabled:(BOOL)enabled
 {
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:error];
-    return NSNull.null;
-  }];
+  if ([self.simulator.device respondsToSelector:(@selector(setHardwareKeyboardEnabled:keyboardType:error:))]) {
+    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
+      NSError *error = nil;
+      [self.simulator.device setHardwareKeyboardEnabled:enabled keyboardType:0 error:&error];
+
+      return FBFuture.empty;
+    }];
+  }
+
+  return [[self.simulator
+    connectToBridge]
+    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
+      return [bridge setHardwareKeyboardEnabled:enabled];
+    }];
 }
 
 - (FBFuture<NSNull *> *)setPreference:(NSString *)name value:(NSString *)value type:(nullable NSString *)type domain:(nullable NSString *)domain;
@@ -251,10 +134,6 @@
   if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceNotification]) {
     [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:YES]];
     [toApprove removeObject:FBTargetSettingsServiceNotification];
-  }
-  if (toApprove.count > 0 && [toApprove containsObject:FBTargetSettingsServiceHealth]) {
-    [futures addObject:[self updateHealthService:bundleIDs.allObjects approve:YES]];
-    [toApprove removeObject:FBTargetSettingsServiceHealth];
   }
 
   // Error out if there's nothing we can do to handle a specific approval.
@@ -329,10 +208,6 @@
   if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceNotification]) {
     [futures addObject:[self updateNotificationService:bundleIDs.allObjects approve:NO]];
     [toRevoke removeObject:FBTargetSettingsServiceNotification];
-  }
-  if (toRevoke.count > 0 && [toRevoke containsObject:FBTargetSettingsServiceHealth]) {
-    [futures addObject:[self updateHealthService:bundleIDs.allObjects approve:NO]];
-    [toRevoke removeObject:FBTargetSettingsServiceHealth];
   }
 
   // Error out if there's nothing we can do to handle a specific approval.
@@ -482,88 +357,17 @@
 
 - (FBFuture<NSNull *> *)clearContacts
 {
-  return [[self runSimulatorFrameworkBridgeWithService:@"contacts" action:@"clear"] mapReplace:NSNull.null];
+  return [self runSimulatorFrameworkBridgeWithService:@"contacts" action:@"clear"];
 }
 
 - (FBFuture<NSNull *> *)clearPhotos
 {
-  return [[self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSNull *> *)setProxyWithHost:(NSString *)host port:(NSUInteger)port type:(NSString *)type
-{
-  if (!host) {
-    return [[FBSimulatorError describe:@"Proxy host must not be nil"] failFuture];
-  }
-  return [[self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"set" arguments:@[host, [@(port) stringValue], type ?: @"http"]] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSNull *> *)clearProxy
-{
-  return [[self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"clear"] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSString *> *)listProxy
-{
-  return [self runSimulatorFrameworkBridgeWithService:@"proxy" action:@"list"];
-}
-
-- (FBFuture<NSNull *> *)setDnsServers:(NSArray<NSString *> *)servers
-{
-  if (servers.count == 0) {
-    return [[FBSimulatorError describe:@"At least one DNS server address is required"] failFuture];
-  }
-  return [[self runSimulatorFrameworkBridgeWithService:@"dns" action:@"set" arguments:servers] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSNull *> *)clearDns
-{
-  return [[self runSimulatorFrameworkBridgeWithService:@"dns" action:@"clear"] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSString *> *)listDns
-{
-  return [self runSimulatorFrameworkBridgeWithService:@"dns" action:@"list"];
-}
-
-static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorSlowMotionAnimationState";
-
-- (FBFuture<NSNull *> *)setSlowAnimationsEnabled:(BOOL)enabled
-{
-  return [self setDarwinNotificationState:enabled name:SlowAnimationsNotification];
-}
-
-- (FBFuture<NSNull *> *)setIncreaseContrastEnabled:(BOOL)enabled
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    if (![self.simulator.device setIncreaseContrastEnabled:enabled error:error]) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
+  return [self runSimulatorFrameworkBridgeWithService:@"photos" action:@"clear"];
 }
 
 #pragma mark Private
 
-- (FBFuture<NSNull *> *)setDarwinNotificationState:(BOOL)enabled name:(NSString *)name
-{
-  return [FBFuture onQueue:self.simulator.workQueue resolveValue:^NSNull *(NSError **error) {
-    if (![self.simulator.device darwinNotificationSetState:(enabled ? 1 : 0) name:name error:error]) {
-      return nil;
-    }
-    if (![self.simulator.device postDarwinNotification:name error:error]) {
-      return nil;
-    }
-    return NSNull.null;
-  }];
-}
-
-- (FBFuture<NSString *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
-{
-  return [self runSimulatorFrameworkBridgeWithService:service action:action arguments:@[]];
-}
-
-- (FBFuture<NSString *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+- (FBFuture<NSNull *> *)runSimulatorFrameworkBridgeWithService:(NSString *)service action:(NSString *)action
 {
   return [FBFuture onQueue:self.simulator.asyncQueue resolve:^{
     NSString *helperPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"SimulatorFrameworkBridge" ofType:nil];
@@ -579,16 +383,12 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
         failFuture];
     }
 
-    NSMutableArray<NSString *> *spawnArguments = [NSMutableArray arrayWithObjects:helperPath, service, action, nil];
-    [spawnArguments addObjectsFromArray:arguments];
-
-    return [[[[self.simulator.simctlExecutor
-      taskBuilderWithCommand:@"spawn" arguments:spawnArguments]
-      withStdOutInMemoryAsString]
+    return [[[self.simulator.simctlExecutor
+      taskBuilderWithCommand:@"spawn" arguments:@[helperPath, service, action]]
       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
       onQueue:self.simulator.asyncQueue fmap:^(FBSubprocess *task) {
         [self.simulator.logger logFormat:@"SimulatorFrameworkBridge %@ %@ completed successfully", service, action];
-        return [FBFuture futureWithResult:task.stdOut];
+        return [FBFuture futureWithResult:NSNull.null];
       }];
   }];
 }
@@ -615,48 +415,57 @@ static NSString *const SlowAnimationsNotification = @"com.apple.UIKit.SimulatorS
       failFuture];
   }
 
-  NSString *action = approved ? @"approve" : @"revoke";
-  NSMutableArray<FBFuture *> *futures = [NSMutableArray array];
-  for (NSString *bundleID in bundleIDs) {
-    [futures addObject:[[self runSimulatorFrameworkBridgeWithService:@"notifications" action:action arguments:@[bundleID]] mapReplace:NSNull.null]];
-  }
-  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
-}
+  NSString *bulletinDirectory = [self.simulator.dataDirectory stringByAppendingPathComponent:@"Library/BulletinBoard"];
+  NSString *notificationsApprovalPlistPath = [bulletinDirectory stringByAppendingPathComponent:@"VersionedSectionInfo.plist"];
 
-- (FBFuture<NSNull *> *)updateHealthService:(NSArray<NSString *> *)bundleIDs approve:(BOOL)approved
-{
-  if ([bundleIDs count] == 0) {
+  NSMutableDictionary<NSString *, id> *sectionInfo = [NSMutableDictionary dictionaryWithContentsOfFile:notificationsApprovalPlistPath];
+
+  if (sectionInfo == nil) {
     return [[FBSimulatorError
-      describe:@"Empty bundleID set provided to health approve"]
+      describe:@"Failed to load sectionInfo"]
       failFuture];
   }
 
-  NSString *action = approved ? @"approve" : @"revoke";
-  NSMutableArray<FBFuture *> *futures = [NSMutableArray array];
   for (NSString *bundleID in bundleIDs) {
-    [futures addObject:[[self runSimulatorFrameworkBridgeWithService:@"health" action:action arguments:@[bundleID]] mapReplace:NSNull.null]];
+    NSData *data = sectionInfo[@"sectionInfo"][bundleID];
+    if (data == nil) {
+      data = [[sectionInfo[@"sectionInfo"] allValues] firstObject];
+    }
+    if (data == nil) {
+      return [[FBSimulatorError describeFormat:@"No section info for %@", bundleID] failFuture];
+    }
+      if (approved) {
+        NSError *readError = nil;
+        NSDictionary<NSString *, id> *properties = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&readError];
+        if (readError != nil) {
+          return [FBSimulatorError failFutureWithError:readError];
+        }
+        properties[@"$objects"][2] = bundleID;
+        properties[@"$objects"][3][@"allowsNotifications"] = @YES;
+
+        NSError *writeError = nil;
+        NSData *resultData = [NSPropertyListSerialization dataWithPropertyList:properties format:NSPropertyListBinaryFormat_v1_0 options:0 error:&writeError];
+        if (writeError != nil) {
+          return [FBSimulatorError failFutureWithError:writeError];
+        }
+        sectionInfo[@"sectionInfo"][bundleID] = resultData;
+      } else {
+        [sectionInfo[@"sectionInfo"] removeObjectForKey:bundleID];
+      }
   }
-  return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
-}
 
-- (FBFuture<NSNull *> *)setHealthAuthorization:(BOOL)approved
-                                  forBundleID:(NSString *)bundleID
-                              typeIdentifiers:(NSArray<NSString *> *)typeIdentifiers
-{
-  NSString *action = approved ? @"approve" : @"revoke";
-  NSMutableArray<NSString *> *args = [NSMutableArray arrayWithObject:bundleID];
-  [args addObjectsFromArray:typeIdentifiers];
-  return [[self runSimulatorFrameworkBridgeWithService:@"health" action:action arguments:args] mapReplace:NSNull.null];
-}
+  BOOL result = [sectionInfo writeToFile:notificationsApprovalPlistPath atomically:YES];
+  if (!result) {
+    return [[FBSimulatorError
+      describe:@"Failed to write sectionInfo data to plist"]
+      failFuture];
+  }
 
-- (FBFuture<NSNull *> *)clearHealthAuthorizationForBundleID:(NSString *)bundleID
-{
-  return [[self runSimulatorFrameworkBridgeWithService:@"health" action:@"clear" arguments:@[bundleID]] mapReplace:NSNull.null];
-}
-
-- (FBFuture<NSString *> *)listHealthAuthorizationForBundleID:(NSString *)bundleID
-{
-  return [self runSimulatorFrameworkBridgeWithService:@"health" action:@"list" arguments:@[bundleID]];
+  if (self.simulator.state == FBiOSTargetStateBooted) {
+    return [[self.simulator stopServiceWithName:SpringBoardServiceName] mapReplace:NSNull.null];
+  } else {
+    return FBFuture.empty;
+  }
 }
 
 - (FBFuture<NSNull *> *)modifyTCCDatabaseWithBundleIDs:(NSSet<NSString *> *)bundleIDs toServices:(NSSet<FBTargetSettingsService> *)services grantAccess:(BOOL)grantAccess

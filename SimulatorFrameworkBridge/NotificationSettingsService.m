@@ -7,13 +7,38 @@
 
 #import "NotificationSettingsService.h"
 
-#import "BulletinBoardPrivate.h"
-
 #import <dlfcn.h>
 
 // UNAuthorizationStatus values
 static const NSUInteger UNAuthorizationStatusDenied = 1;
 static const NSUInteger UNAuthorizationStatusAuthorized = 2;
+
+// Forward declarations for BulletinBoard private classes.
+// These are loaded at runtime via dlopen — the @interface declarations
+// let us call methods directly without objc_msgSend casts.
+
+@class BBSectionInfo;
+
+@interface BBSettingsGateway : NSObject
+- (BBSectionInfo *)sectionInfoForSectionID:(NSString *)sectionID;
+- (void)setSectionInfo:(BBSectionInfo *)sectionInfo forSectionID:(NSString *)sectionID;
+- (NSArray<NSString *> *)allSectionIDs;
+@end
+
+@interface BBSectionInfo : NSObject
+// Factory method to create a default section info.
+// sectionType 0 = application.
++ (instancetype)defaultSectionInfoForType:(NSUInteger)sectionType;
+// The bundle identifier for this section.
+@property (nonatomic, copy) NSString *sectionID;
+// Properties from BBSectionInfoSettingsShortcuts category.
+// These delegate to the underlying BBSectionInfoSettings object.
+@property (nonatomic) BOOL allowsNotifications;
+@property (nonatomic) NSUInteger authorizationStatus;
+@property (nonatomic) NSUInteger alertType;
+@property (nonatomic) NSUInteger lockScreenSetting;
+@property (nonatomic) NSUInteger notificationCenterSetting;
+@end
 
 static BBSettingsGateway *loadGateway(void) {
   if (!dlopen("/System/Library/PrivateFrameworks/BulletinBoard.framework/BulletinBoard", RTLD_NOW)) {

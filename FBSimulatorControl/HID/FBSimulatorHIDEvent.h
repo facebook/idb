@@ -139,31 +139,6 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation;
 
-/**
- A HID Event that triggers a shake gesture.
- Sent via Darwin notification (com.apple.UIKit.SimulatorShake).
-
- @return a new HID Event.
- */
-+ (id<FBSimulatorHIDEventPayload>)shake;
-
-/**
- A HID Event that locks the device.
- Sent via PurpleWorkspacePort as a GSEvent type 1014.
-
- @return a new HID Event.
- */
-+ (id<FBSimulatorHIDEventPayload>)lockDevice;
-
-/**
- A HID Event that toggles the in-call status bar.
- Sent via Darwin notification (com.apple.iphonesimulator.toggleincallstatusbar).
- This is a state toggle — each invocation flips the current state.
-
- @return a new HID Event.
- */
-+ (id<FBSimulatorHIDEventPayload>)toggleInCallStatusBar;
-
 #pragma mark Multiple Payload Events
 
 /**
@@ -220,19 +195,6 @@ extern double const DEFAULT_SWIPE_DELTA;
  @return a new HID Event.
  */
 + (id<FBSimulatorHIDEventComposite>)swipe:(double)xStart yStart:(double)yStart xEnd:(double)xEnd yEnd:(double)yEnd delta:(double)delta duration:(double)duration;
-
-
-/**
- A HID Event for a pinch gesture (two-finger touch with movement).
-
- @param centerX the X center of the pinch in pixels.
- @param centerY the Y center of the pinch in pixels.
- @param scale the scale factor. > 1.0 = pinch out (zoom in), < 1.0 = pinch in (zoom out).
- @param duration the duration of the gesture in seconds.
- @param radius the initial distance of each finger from center in pixels.
- @return a composite HID Event representing the pinch gesture.
- */
-+ (id<FBSimulatorHIDEventComposite>)pinchAtX:(double)centerX y:(double)centerY scale:(double)scale duration:(double)duration radius:(double)radius;
 
 /**
  A HID Event consisting of multiple events

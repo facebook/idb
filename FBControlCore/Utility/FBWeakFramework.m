@@ -14,6 +14,11 @@
 #import "FBXcodeConfiguration.h"
 #import "FBControlCoreLogger.h"
 
+typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
+  FBWeakFrameworkTypeFramework,
+  FBWeakFrameworkDylib,
+};
+
 @interface FBWeakFramework ()
 
 @property (nonatomic, copy, readonly) NSString *name;

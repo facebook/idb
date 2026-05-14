@@ -34,7 +34,6 @@ from idb.common.hid import (
     iterator_to_async_iterator,
     key_press_to_events,
     multi_tap_to_events,
-    pinch_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -378,18 +377,7 @@ class Client(ClientBase):
                     generator = generate_requests([InstallRequest(payload=payload)])
 
                 else:
-                    try:
-                        file_path = str(Path(bundle).resolve(strict=True))
-                    except FileNotFoundError:
-                        # For remote companions, raise IdbException instead of
-                        # letting FileNotFoundError propagate. Without this,
-                        # the decorator's broad `except OSError` converts it to
-                        # IdbConnectionException, pruning a healthy remote companion
-                        # making `idb list-targets` return no targets until
-                        # `idb connect` is re-run.
-                        if not self.is_local:
-                            raise IdbException(f"Bundle path does not exist: {bundle}")
-                        raise
+                    file_path = str(Path(bundle).resolve(strict=True))
                     if self.is_local:
                         self.logger.debug(
                             f"Companion is local, sending local file by path {file_path}"
@@ -943,25 +931,6 @@ class Client(ClientBase):
                 logger=self.logger,
             )
             await stream.recv_message()
-
-    @log_and_handle_exceptions("hid")
-    async def pinch(
-        self,
-        center_x: float,
-        center_y: float,
-        scale: float,
-        duration: float = 0.5,
-        radius: float = 100.0,
-    ) -> None:
-        await self.send_events(
-            pinch_to_events(
-                center_x=center_x,
-                center_y=center_y,
-                scale=scale,
-                duration=duration,
-                radius=radius,
-            )
-        )
 
     @log_and_handle_exceptions("debugserver")
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
@@ -1524,7 +1493,7 @@ class Client(ClientBase):
         ls_response = await self.ls(container=FileContainerType.ROOT, paths=["dap"])
         installed_daps = [entry.path for entry in ls_response[0].entries]
         if pkg_id in installed_daps:
-            self.logger.info(f"Dap pkg already exist. Id: {pkg_id}")
+            self.logger.info(f"Dap pkg already exist. Id: f{pkg_id}")
         else:
             self.logger.info(f"Pushing {path.absolute()} to simulator dap subfolder.")
             await self.push(

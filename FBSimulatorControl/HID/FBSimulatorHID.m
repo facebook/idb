@@ -137,15 +137,6 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   return YES;
 }
 
-- (BOOL)postDarwinNotification:(NSString *)notificationName error:(NSError **)error
-{
-  FBSimulator *simulator = self.simulator;
-  if (!simulator) {
-    return [[FBSimulatorError describe:@"Cannot post Darwin notification, simulator reference is nil"] failBool:error];
-  }
-  return [simulator.device postDarwinNotification:notificationName error:error];
-}
-
 #pragma mark NSObject
 
 - (NSString *)description

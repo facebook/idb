@@ -314,7 +314,7 @@ static const CGFloat kDefaultCellSize = 10.0;
   // Fill cells row by row using memset for efficiency
   NSUInteger fillWidth = (NSUInteger)(maxX - minX + 1);
   for (NSInteger y = minY; y <= maxY; y++) {
-    memset(&_grid[(NSUInteger)y * _width + (NSUInteger)minX], 1, fillWidth);
+    memset(&_grid[y * _width + minX], 1, fillWidth);
   }
 }
 
@@ -339,7 +339,7 @@ static const CGFloat kDefaultCellSize = 10.0;
   }
 
   // O(1) lookup in the grid array
-  return _grid[(NSUInteger)cellY * _width + (NSUInteger)cellX] != 0;
+  return _grid[cellY * _width + cellX] != 0;
 }
 
 - (CGFloat)coverageRatio

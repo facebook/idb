@@ -41,15 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSData *)orientationEvent:(FBSimulatorHIDDeviceOrientation)orientation;
 
-/**
- Constructs a GSEvent lock device mach message.
- The message uses GSEvent type 1014 (kGSEventLockDevice) with the host flag.
- No payload is needed (record_info_size = 0).
-
- @return an NSData containing the complete mach message (112 bytes).
- */
-- (NSData *)lockDeviceEvent;
-
 @end
 
 NS_ASSUME_NONNULL_END

@@ -538,7 +538,7 @@ static const NSTimeInterval ListTestBundleTimeout = 180.0;
   return [[self
     settingsCommands]
     onQueue:self.target.workQueue fmap:^(id<FBSimulatorSettingsCommands> commands) {
-      return [commands setSetting:FBSimulatorSettingHardwareKeyboard enabled:enabled];
+      return [commands setHardwareKeyboardEnabled:enabled];
     }];
 }
 

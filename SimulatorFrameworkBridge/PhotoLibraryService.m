@@ -5,35 +5,62 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "PhotoLibraryService.h"
+#import <Foundation/Foundation.h>
+#import <Photos/Photos.h>
+#import <objc/runtime.h>
+#import <objc/message.h>
 
-#import "PhotosPrivate.h"
+@interface NSObject (PLPhotoLibraryPrivate)
+- (void)performTransactionAndWait:(void (^)(void))block;
+@end
 
-static PLPhotoLibrary *getPLPhotoLibrary(PHPhotoLibrary *photoLibrary) {
+static id getPLPhotoLibrary(PHPhotoLibrary *photoLibrary) {
+    id lazyPhotoLibrary = nil;
+    id plPhotoLibrary = nil;
+
     @try {
-      id lazyPhotoLibrary = [photoLibrary valueForKey:@"_lazyPhotoLibrary"];
-      return [lazyPhotoLibrary objectValue];
+      lazyPhotoLibrary = [photoLibrary valueForKey:@"_lazyPhotoLibrary"];
+      if (lazyPhotoLibrary && [lazyPhotoLibrary respondsToSelector:@selector(objectValue)]) {
+        id (*objectValue)(id, SEL) = (id (*)(id, SEL))objc_msgSend;
+        plPhotoLibrary = objectValue(lazyPhotoLibrary, @selector(objectValue));
+      }
     } @catch (NSException *exception) {
       NSLog(@"Failed to access PLPhotoLibrary: %@", exception);
       return nil;
     }
+
+    return plPhotoLibrary;
 }
 
-static BOOL deletePhotosFromManagedObjectContext(NSManagedObjectContext *moc, PHFetchResult<PHAsset *> *allPhotos) {
+static BOOL deletePhotosFromManagedObjectContext(id managedObjectContext, PHFetchResult<PHAsset *> *allPhotos) {
     for (PHAsset *asset in allPhotos) {
-      NSManagedObjectID *objectID = asset.objectID;
+      id objectID = [asset valueForKey:@"objectID"];
       if (!objectID) {
         NSLog(@"Failed to get objectID for photo asset %@", asset.localIdentifier);
         return NO;
       }
 
       @try {
-        NSManagedObject *managedObject = [moc objectWithID:objectID];
+        if (![managedObjectContext respondsToSelector:@selector(objectWithID:)]) {
+          NSLog(@"managedObjectContext does not respond to objectWithID:");
+          return NO;
+        }
+
+        id (*objectWithID)(id, SEL, id) = (id (*)(id, SEL, id))objc_msgSend;
+        id managedObject = objectWithID(managedObjectContext, @selector(objectWithID:), objectID);
+
         if (!managedObject) {
           NSLog(@"Failed to get managedObject for photo asset %@", asset.localIdentifier);
           return NO;
         }
-        [moc deleteObject:managedObject];
+
+        if (![managedObjectContext respondsToSelector:@selector(deleteObject:)]) {
+          NSLog(@"managedObjectContext does not respond to deleteObject:");
+          return NO;
+        }
+
+        void (*deleteObject)(id, SEL, id) = (void (*)(id, SEL, id))objc_msgSend;
+        deleteObject(managedObjectContext, @selector(deleteObject:), managedObject);
       } @catch (NSException *exception) {
         NSLog(@"Failed to delete photo asset %@: %@", asset.localIdentifier, exception);
         return NO;
@@ -43,8 +70,28 @@ static BOOL deletePhotosFromManagedObjectContext(NSManagedObjectContext *moc, PH
     return YES;
 }
 
-static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outError) {
-    return [moc save:outError];
+static BOOL saveManagedObjectContext(id managedObjectContext, NSError **outError) {
+    if (![managedObjectContext respondsToSelector:@selector(save:)]) {
+      return NO;
+    }
+
+    NSMethodSignature *signature = [managedObjectContext methodSignatureForSelector:@selector(save:)];
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
+    [invocation setTarget:managedObjectContext];
+    [invocation setSelector:@selector(save:)];
+
+    NSError *error = nil;
+    [invocation setArgument:&error atIndex:2];
+    [invocation invoke];
+
+    BOOL saveResult = NO;
+    [invocation getReturnValue:&saveResult];
+
+    if (!saveResult && outError) {
+      *outError = error;
+    }
+
+    return saveResult;
 }
 
 static int clearPhotoLibrary(void) {
@@ -60,33 +107,41 @@ static int clearPhotoLibrary(void) {
 
     NSLog(@"Found %lu photos to delete", (unsigned long)allPhotos.count);
 
-    PLPhotoLibrary *plPhotoLibrary = getPLPhotoLibrary(photoLibrary);
+    id plPhotoLibrary = getPLPhotoLibrary(photoLibrary);
     if (!plPhotoLibrary) {
       NSLog(@"PLPhotoLibrary not available");
       return 1;
     }
 
+    if (![plPhotoLibrary respondsToSelector:@selector(performTransactionAndWait:)]) {
+      NSLog(@"PLPhotoLibrary does not respond to performTransactionAndWait:");
+      return 1;
+    }
+
     __block BOOL success = NO;
     __block NSError *transactionError = nil;
-    [plPhotoLibrary performTransactionAndWait:^{
-      NSManagedObjectContext *moc = nil;
+    void (^transactionBlock)(void) = ^{
+      id managedObjectContext = nil;
       @try {
-        moc = plPhotoLibrary.managedObjectContext;
+        managedObjectContext = [plPhotoLibrary valueForKey:@"managedObjectContext"];
       } @catch (NSException *exception) {
         return;
       }
 
-      if (!moc) {
+      if (!managedObjectContext) {
         return;
       }
 
-      if (!deletePhotosFromManagedObjectContext(moc, allPhotos)) {
+      if (!deletePhotosFromManagedObjectContext(managedObjectContext, allPhotos)) {
         NSLog(@"Failed to delete all photos");
         return;
       }
 
-      success = saveManagedObjectContext(moc, &transactionError);
-    }];
+      success = saveManagedObjectContext(managedObjectContext, &transactionError);
+    };
+
+    void (*performTransaction)(id, SEL, id) = (void (*)(id, SEL, id))objc_msgSend;
+    performTransaction(plPhotoLibrary, @selector(performTransactionAndWait:), transactionBlock);
 
     if (success) {
       NSLog(@"Successfully deleted all photos");

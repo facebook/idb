@@ -28,7 +28,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @property (nonatomic, assign, readonly) int fileDescriptor;
 
 /**
- Whether the implementor should close when it reaches the end of its stream.
+ Whether the implementor should close when it reaches the end of it's stream.
  */
 @property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
 
@@ -76,7 +76,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @property (nonatomic, assign, readonly) ssize_t bytesTransferred;
 
 /**
- An error, if any has occurred in the streaming of data to the input.
+ An error, if any has occured in the streaming of data to the input.
  */
 @property (nonatomic, strong, nullable, readonly) NSError *streamError;
 
@@ -93,12 +93,12 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 @property (nonatomic, copy, readonly) NSString *filePath;
 
 /**
- Should be called just after the file path has been written to.
+ Should be called just after the the file path has been written to.
  */
 - (FBFuture<NSNull *> *)startReading;
 
 /**
- Should be called just after the file has stopped being written to.
+ Should be called just after the the file has stopped being written to.
  */
 - (FBFuture<NSNull *> *)stopReading;
 
@@ -181,7 +181,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger;
 
 /**
- An Output Container that accumulates data in memory
+ An Output Container that accumilates data in memory
 
  @param data the mutable data to append to.
  @return a Process Output instance.
@@ -189,7 +189,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (FBProcessOutput<NSMutableData *> *)outputToMutableData:(NSMutableData *)data;
 
 /**
- An Output Container that accumulates data in memory, exposing it as a string.
+ An Output Container that accumilates data in memory, exposing it as a string.
 
  @param data the mutable data to append to.
  @return a Process Output instance.
@@ -229,7 +229,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 + (FBProcessInput<NSOutputStream *> *)inputFromStream;
 
 /**
- An Input container that connects data to the input.
+ An Input container that connects data to the iput.
 
  @param data the data to send.
  @return a Process Input instance.

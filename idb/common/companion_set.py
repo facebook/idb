@@ -41,7 +41,7 @@ async def _open_lockfile(filename: str) -> AsyncGenerator[None, None]:
                 yield None
             except FileExistsError:
                 if datetime.now() >= deadline:
-                    raise IdbException(f"Failed to open the lockfile {lock_path}")
+                    raise IdbException("Failed to open the lockfile {lock_path}")
                 await asyncio.sleep(retry_time)
     finally:
         if lock is not None:

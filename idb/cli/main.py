@@ -33,6 +33,7 @@ from idb.cli.commands.crash import (
     CrashListCommand,
     CrashShowCommand,
 )
+from idb.cli.commands.daemon import DaemonCommand
 from idb.cli.commands.dap import DapCommand
 from idb.cli.commands.debugserver import (
     DebugServerStartCommand,
@@ -59,7 +60,6 @@ from idb.cli.commands.hid import (
     KeyCommand,
     KeySequenceCommand,
     MultiTapCommand,
-    PinchCommand,
     SwipeCommand,
     TapCommand,
     TextCommand,
@@ -125,7 +125,7 @@ def get_default_companion_path() -> str | None:
     # Prefer the direct binary over the wrapper script at /usr/local/bin/idb_companion,
     # which invokes a DotSlash stub that can fail due to environment differences
     # (e.g., XAR/PAR modifying PATH to include an incompatible dotslash binary).
-    direct_path = "/opt/facebook/idb/bin/idb_companion"
+    direct_path = "/opt/facebook/bin/idb_companion"
     if os.path.isfile(direct_path):
         return direct_path
     return shutil.which("idb_companion") or "/usr/local/bin/idb_companion"
@@ -255,6 +255,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         TargetCloneCommand(),
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
+        DaemonCommand(),
         ScreenshotCommand(),
         CommandGroup(
             name="ui",
@@ -264,7 +265,6 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
                 AccessibilityInfoAtPointCommand(),
                 TapCommand(),
                 MultiTapCommand(),
-                PinchCommand(),
                 ButtonCommand(),
                 TextCommand(),
                 KeyCommand(),

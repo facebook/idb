@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import FBControlCore
 import XCTest
+
+@testable import FBControlCore
 
 // swiftlint:disable implicitly_unwrapped_optional
 final class FBArchitectureProcessAdapterTests: XCTestCase {

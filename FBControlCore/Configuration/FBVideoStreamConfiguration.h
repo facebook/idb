@@ -13,35 +13,35 @@ NS_ASSUME_NONNULL_BEGIN
  The Encoding of the Video Stream.
  */
 typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingH264 NS_SWIFT_NAME(h264);
-extern FBVideoStreamEncoding const FBVideoStreamEncodingHEVC NS_SWIFT_NAME(hevc);
-extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA NS_SWIFT_NAME(bgra);
-extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG NS_SWIFT_NAME(mjpeg);
+extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingHEVC;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
+extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
 extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
 
 /**
  The Video Codec for compressed video streams.
  */
 typedef NSString *FBVideoStreamCodec NS_STRING_ENUM;
-extern FBVideoStreamCodec const FBVideoStreamCodecH264 NS_SWIFT_NAME(h264);
-extern FBVideoStreamCodec const FBVideoStreamCodecHEVC NS_SWIFT_NAME(hevc);
+extern FBVideoStreamCodec const FBVideoStreamCodecH264;
+extern FBVideoStreamCodec const FBVideoStreamCodecHEVC;
 
 /**
  The Transport/Container format for compressed video streams.
  */
 typedef NSString *FBVideoStreamTransport NS_STRING_ENUM;
 extern FBVideoStreamTransport const FBVideoStreamTransportAnnexB;
-extern FBVideoStreamTransport const FBVideoStreamTransportMPEGTS NS_SWIFT_NAME(mpegts);
-extern FBVideoStreamTransport const FBVideoStreamTransportFMP4 NS_SWIFT_NAME(fmp4);
+extern FBVideoStreamTransport const FBVideoStreamTransportMPEGTS;
+extern FBVideoStreamTransport const FBVideoStreamTransportFMP4;
 
 /**
  The type of video stream format.
  */
 typedef NS_ENUM(NSUInteger, FBVideoStreamFormatType) {
   FBVideoStreamFormatTypeCompressedVideo,
-  FBVideoStreamFormatTypeMJPEG NS_SWIFT_NAME(mjpeg),
+  FBVideoStreamFormatTypeMJPEG,
   FBVideoStreamFormatTypeMinicap,
-  FBVideoStreamFormatTypeBGRA NS_SWIFT_NAME(bgra),
+  FBVideoStreamFormatTypeBGRA,
 };
 
 /**
