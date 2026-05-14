@@ -17,8 +17,8 @@ static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed
 {
   if (!completed) {
     return [[FBControlCoreError
-      describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
-      fail:error];
+             describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
+            fail:error];
   }
   if (future.error) {
     if (error) {
@@ -28,8 +28,8 @@ static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed
   }
   if (future.state == FBFutureStateCancelled) {
     return [[FBControlCoreError
-      describeFormat:@"Future %@ was cancelled", future]
-      fail:error];
+             describeFormat:@"Future %@ was cancelled", future]
+            fail:error];
   }
   return future.result;
 }
@@ -49,7 +49,7 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   threadLocals[KeyIsAwaiting] = @(spinning);
 }
 
-- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:(BOOL (^)(void) )untilTrue
 {
   NSDate *date = [NSDate dateWithTimeIntervalSinceNow:timeout];
   while (!untilTrue()) {
@@ -64,13 +64,14 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   return YES;
 }
 
-- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists
+- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:(id (^)(void) )untilExists
 {
   __block id value = nil;
-  BOOL success = [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    value = untilExists();
-    return value != nil;
-  }];
+  BOOL success = [self spinRunLoopWithTimeout:timeout
+                                    untilTrue:^BOOL {
+                                      value = untilExists();
+                                      return value != nil;
+                                    }];
   if (!success) {
     return nil;
   }
@@ -80,9 +81,10 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
 - (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   [NSRunLoop updateRunLoopIsAwaiting:YES];
-  BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return future.hasCompleted;
-  }];
+  BOOL completed = [self spinRunLoopWithTimeout:timeout
+                                      untilTrue:^BOOL {
+                                        return future.hasCompleted;
+                                      }];
   [NSRunLoop updateRunLoopIsAwaiting:NO];
   return ExtractResult(future, timeout, completed, error);
 }
@@ -131,9 +133,10 @@ static dispatch_queue_t blockQueue(void)
 {
   dispatch_group_t group = dispatch_group_create();
   dispatch_group_enter(group);
-  [self onQueue:queue notifyOfCompletion:^(FBFuture *future) {
-    dispatch_group_leave(group);
-  }];
+  [self onQueue:queue
+   notifyOfCompletion:^(FBFuture *future) {
+     dispatch_group_leave(group);
+   }];
   BOOL completed = dispatch_group_wait(group, timeout) == 0;
   return ExtractResult(self, timeout, completed, error);
 }

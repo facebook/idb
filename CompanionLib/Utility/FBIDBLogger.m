@@ -20,7 +20,7 @@ static NSMutableArray<id<FBControlCoreLogger>> *GlobalLoggers(void)
 static void AddGlobalLogger(id<FBControlCoreLogger> logger)
 {
   NSMutableArray<id<FBControlCoreLogger>> *loggers = GlobalLoggers();
-  @synchronized (loggers) {
+  @synchronized(loggers) {
     [loggers addObject:logger];
   }
 }
@@ -28,16 +28,16 @@ static void AddGlobalLogger(id<FBControlCoreLogger> logger)
 static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 {
   NSMutableArray<id<FBControlCoreLogger>> *loggers = GlobalLoggers();
-  @synchronized (loggers) {
+  @synchronized(loggers) {
     [loggers removeObject:logger];
   }
 }
 
 @interface FBIDBLogger_Operation : NSObject <FBLogOperation>
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -54,16 +54,16 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
   _logger = logger;
   _queue = queue;
 
-
   return self;
 }
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [FBMutableFuture.future onQueue:self.queue respondToCancellation:^{
-    RemoveGlobalLogger(self.logger);
-    return FBFuture.empty;
-  }];
+  return [FBMutableFuture.future onQueue:self.queue
+                   respondToCancellation:^{
+                     RemoveGlobalLogger(self.logger);
+                     return FBFuture.empty;
+                   }];
 }
 
 - (NSString *)operationType
@@ -132,7 +132,7 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 {
   NSMutableArray<id<FBControlCoreLogger>> *global = GlobalLoggers();
   NSMutableArray<id<FBControlCoreLogger>> *all = [[super loggers] mutableCopy];
-  @synchronized (global)
+  @synchronized(global)
   {
     [all addObjectsFromArray:global];
   }
@@ -144,12 +144,13 @@ static void RemoveGlobalLogger(id<FBControlCoreLogger> logger)
 - (FBFuture<id<FBLogOperation>> *)tailToConsumer:(id<FBDataConsumer>)consumer
 {
   dispatch_queue_t queue = FBIDBLogger.loggerQueue;
-  return [FBFuture onQueue:queue resolveValue:^(NSError **_) {
-    id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:consumer];
-    id<FBLogOperation> operation =  [[FBIDBLogger_Operation alloc] initWithConsumer:consumer logger:logger queue:queue];
-    AddGlobalLogger(logger);
-    return operation;
-  }];
+  return [FBFuture onQueue:queue
+              resolveValue:^(NSError **_) {
+                id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:consumer];
+                id<FBLogOperation> operation = [[FBIDBLogger_Operation alloc] initWithConsumer:consumer logger:logger queue:queue];
+                AddGlobalLogger(logger);
+                return operation;
+              }];
 }
 
 @end

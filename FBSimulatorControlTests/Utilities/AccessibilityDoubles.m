@@ -288,13 +288,13 @@
                                                                   children:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
 {
   return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
-    initWithLabel:label
-       identifier:nil
-             role:@"AXButton"
-            frame:frame
+          initWithLabel:label
+          identifier:nil
+          role:@"AXButton"
+          frame:frame
           enabled:YES
-      actionNames:@[@"AXPress"]
-         children:children];
+          actionNames:@[@"AXPress"]
+          children:children];
 }
 
 + (FBSimulatorControlTests_AXPMacPlatformElement_Double *)rootElementWithChildren:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
@@ -307,13 +307,13 @@
                                                                       children:(NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *)children
 {
   return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
-    initWithLabel:label
-       identifier:nil
-             role:@"AXApplication"
-            frame:frame
+          initWithLabel:label
+          identifier:nil
+          role:@"AXApplication"
+          frame:frame
           enabled:YES
-      actionNames:nil
-         children:children];
+          actionNames:nil
+          children:children];
 }
 
 + (FBSimulatorControlTests_AXPMacPlatformElement_Double *)buttonWithLabel:(NSString *)label
@@ -321,26 +321,26 @@
                                                                     frame:(NSRect)frame
 {
   return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
-    initWithLabel:label
-       identifier:identifier
-             role:@"AXButton"
-            frame:frame
+          initWithLabel:label
+          identifier:identifier
+          role:@"AXButton"
+          frame:frame
           enabled:YES
-      actionNames:@[@"AXPress"]
-         children:nil];
+          actionNames:@[@"AXPress"]
+          children:nil];
 }
 
 + (FBSimulatorControlTests_AXPMacPlatformElement_Double *)staticTextWithLabel:(NSString *)label
                                                                         frame:(NSRect)frame
 {
   return [[FBSimulatorControlTests_AXPMacPlatformElement_Double alloc]
-    initWithLabel:label
-       identifier:nil
-             role:@"AXStaticText"
-            frame:frame
+          initWithLabel:label
+          identifier:nil
+          role:@"AXStaticText"
+          frame:frame
           enabled:YES
-      actionNames:nil
-         children:nil];
+          actionNames:nil
+          children:nil];
 }
 
 @end
@@ -352,7 +352,8 @@ static IMP sOriginalSharedInstanceIMP = NULL;
 static BOOL sSwizzleInstalled = NO;
 
 // Replacement implementation for +[AXPTranslator sharedInstance]
-static id FBMockTranslatorSharedInstance(id self, SEL _cmd) {
+static id FBMockTranslatorSharedInstance(id self, SEL _cmd)
+{
   return sInstalledMockTranslator;
 }
 
@@ -440,7 +441,7 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
 
   // Create device double
   FBSimulatorControlTests_SimDevice_Accessibility_Double *device =
-    [[FBSimulatorControlTests_SimDevice_Accessibility_Double alloc] init];
+  [[FBSimulatorControlTests_SimDevice_Accessibility_Double alloc] init];
 
   // Create simulator double wrapping device
   fixture->_simulator = [[FBSimulatorControlTests_FBSimulator_Double alloc] initWithDevice:device];
@@ -460,7 +461,7 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
 
   // Configure the translator with default results
   FBSimulatorControlTests_AXPTranslationObject_Double *translation =
-    [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
+  [[FBSimulatorControlTests_AXPTranslationObject_Double alloc] init];
   translation.pid = 12345;
 
   self.translator.frontmostApplicationResult = translation;
@@ -471,7 +472,7 @@ static const unsigned long long FBiOSTargetStateBooted_Value = 3;
   } else {
     // Create a default root element
     self.translator.macPlatformElementResult =
-      [FBAccessibilityTestElementBuilder rootElementWithChildren:@[]];
+    [FBAccessibilityTestElementBuilder rootElementWithChildren:@[]];
   }
 
   // Install the translator swizzle

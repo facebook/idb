@@ -16,10 +16,10 @@
 
 @interface FBSimulatorVideo ()
 
-@property (nonatomic, copy, readonly) NSString *filePath;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *completedFuture;
+@property (nonatomic, readonly, copy) NSString *filePath;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *completedFuture;
 
 - (instancetype)initWithFilePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
@@ -27,10 +27,10 @@
 
 @interface FBSimulatorVideo_SimCtl : FBSimulatorVideo
 
-@property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
-@property (nonatomic, strong, nullable, readwrite) FBFuture<FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
+@property (nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
+@property (nullable, nonatomic, readwrite, strong) FBFuture<FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted;
 
-- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath  logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithWithSimctlExecutor:(FBAppleSimctlCommandExecutor *)simctlExecutor filePath:(NSString *)filePath logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -77,9 +77,10 @@
 
 - (FBFuture<NSNull *> *)completed
 {
-  return [self.completedFuture onQueue:self.queue respondToCancellation:^{
-    return [self stopRecording];
-  }];
+  return [self.completedFuture onQueue:self.queue
+                 respondToCancellation:^{
+                   return [self stopRecording];
+                 }];
 }
 
 @end
@@ -105,30 +106,32 @@
   // Fail early if there's a task running.
   if (self.recordingStarted) {
     return [[FBSimulatorError
-      describe:@"Cannot Start Recording, there is already an recording task running"]
-      failFuture];
+             describe:@"Cannot Start Recording, there is already an recording task running"]
+            failFuture];
   }
 
   self.recordingStarted = [[self
-    simctlVersionNumber]
-    onQueue:self.queue fmap:^(NSDecimalNumber *simctlVersion) {
-      // Earlier versions use --type=codec instead of --type, so we need to switch on the version of simctl
-      NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
-      if ([simctlVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
-        recordVideoParameters = @[@"--codec=h264", @"--force"];
-      }
+                            simctlVersionNumber]
+                           onQueue:self.queue
+                           fmap:^(NSDecimalNumber *simctlVersion) {
+                             // Earlier versions use --type=codec instead of --type, so we need to switch on the version of simctl
+                             NSArray<NSString *> *recordVideoParameters = @[@"--type=mp4"];
+                             if ([simctlVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"681.14"]]) {
+                               recordVideoParameters = @[@"--codec=h264", @"--force"];
+                             }
 
-      NSArray<NSString *> *ioCommandArguments = [[@[@"recordVideo"]
-        arrayByAddingObjectsFromArray:recordVideoParameters]
-        arrayByAddingObject:self.filePath];
+                             NSArray<NSString *> *ioCommandArguments = [[@[@"recordVideo"]
+                                                                         arrayByAddingObjectsFromArray:recordVideoParameters]
+                                                                        arrayByAddingObject:self.filePath];
 
-      return [[[[[self.simctlExecutor
-        taskBuilderWithCommand:@"io" arguments:ioCommandArguments]
-        withStdOutToLogger:self.logger]
-        withStdErrToLogger:self.logger]
-        withTaskLifecycleLoggingTo:self.logger]
-        start];
-    }];
+                             return [[[[[self.simctlExecutor
+                                         taskBuilderWithCommand:@"io"
+                                         arguments:ioCommandArguments]
+                                        withStdOutToLogger:self.logger]
+                                       withStdErrToLogger:self.logger]
+                                      withTaskLifecycleLoggingTo:self.logger]
+                                     start];
+                           }];
 
   return [self.recordingStarted mapReplace:NSNull.null];
 }
@@ -141,14 +144,14 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
   FBFuture<FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *> *recordingStarted = self.recordingStarted;
   if (!recordingStarted) {
     return [[FBSimulatorError
-      describe:@"Cannot Stop Recording, there is no recording task started"]
-      failFuture];
+             describe:@"Cannot Stop Recording, there is no recording task started"]
+            failFuture];
   }
   FBSubprocess<NSNull *, id<FBControlCoreLogger>, id<FBControlCoreLogger>> *recordingTask = recordingStarted.result;
   if (!recordingTask) {
     return [[FBSimulatorError
-      describe:@"Cannot Stop Recording, the recording task hasn't started"]
-      failFuture];
+             describe:@"Cannot Stop Recording, the recording task hasn't started"]
+            failFuture];
   }
 
   // Grab the task and see if it died already.
@@ -159,16 +162,21 @@ static NSTimeInterval const recordingTaskWaitTimeout = 10.0;
 
   // Stop for real be interrupting the task itself.
   FBFuture<NSNull *> *completed = [[[[recordingTask
-    sendSignal:SIGINT backingOffToKillWithTimeout:recordingTaskWaitTimeout logger:self.logger]
-    logCompletion:self.logger withPurpose:@"The video recording task terminated"]
-    onQueue:self.queue fmap:^(NSNumber *result) {
-      self.recordingStarted = nil;
-      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:self.filePath queue:self.queue logger:self.logger];
-    }]
-    onQueue:self.queue handleError:^(NSError *error) {
-      [self.logger logFormat:@"Failed confirm video file been written %@", error];
-      return [FBFuture futureWithResult:NSNull.null];
-    }];
+                                      sendSignal:SIGINT
+                                      backingOffToKillWithTimeout:recordingTaskWaitTimeout
+                                      logger:self.logger]
+                                     logCompletion:self.logger
+                                     withPurpose:@"The video recording task terminated"]
+                                    onQueue:self.queue
+                                    fmap:^(NSNumber *result) {
+                                      self.recordingStarted = nil;
+                                      return [FBSimulatorVideo_SimCtl confirmFileHasBeenWritten:self.filePath queue:self.queue logger:self.logger];
+                                    }]
+                                   onQueue:self.queue
+                                   handleError:^(NSError *error) {
+                                     [self.logger logFormat:@"Failed confirm video file been written %@", error];
+                                     return [FBFuture futureWithResult:NSNull.null];
+                                   }];
 
   [self.completedFuture resolveFromFuture:completed];
 
@@ -188,53 +196,57 @@ static NSTimeInterval const SimctlResolveFileTimeout = 10;
 + (FBFuture<NSNull *> *)confirmFileHasBeenWritten:(NSString *)filePath queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [[FBFuture
-    onQueue:queue resolveWhen:^{
-      NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:nil];
-      NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
-      if (fileSize > 0) {
-        [logger logFormat:@"simctl has written out the video to %@ with file size %lu", filePath, fileSize];
-        return YES;
-      }
-      return NO;
-    }]
-    timeout:SimctlResolveFileTimeout waitingFor:@"simctl to write file to %@", filePath];
+           onQueue:queue
+           resolveWhen:^{
+             NSDictionary<NSString *, id> *fileAttributes = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:nil];
+             NSUInteger fileSize = [fileAttributes[NSFileSize] unsignedIntegerValue];
+             if (fileSize > 0) {
+               [logger logFormat:@"simctl has written out the video to %@ with file size %lu", filePath, fileSize];
+               return YES;
+             }
+             return NO;
+           }]
+          timeout:SimctlResolveFileTimeout
+          waitingFor:@"simctl to write file to %@", filePath];
 }
 
 - (FBFuture<NSDecimalNumber *> *)simctlVersionNumber
 {
   return [[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/what"
-    arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
-    withStdOutInMemoryAsString]
-    withStdErrToDevNull]
-    runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^(FBSubprocess<NSNull *, NSString *, NSNull *> *task) {
-      NSString *output = task.stdOut;
-      NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
-      NSRegularExpression* regex = [NSRegularExpression
-        regularExpressionWithPattern:pattern
-        options:0
-        error:nil];
+               withLaunchPath:@"/usr/bin/what"
+               arguments:@[@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]]
+              withStdOutInMemoryAsString]
+             withStdErrToDevNull]
+            runUntilCompletionWithAcceptableExitCodes:nil]
+           onQueue:self.queue
+           fmap:^(FBSubprocess<NSNull *, NSString *, NSNull *> *task) {
+             NSString *output = task.stdOut;
+             NSString *pattern = @"CoreSimulator-([0-9\\.]+)";
+             NSRegularExpression *regex = [NSRegularExpression
+                                           regularExpressionWithPattern:pattern
+                                           options:0
+                                           error:nil];
 
-      NSArray* matches = [regex
-        matchesInString:output
-        options:0
-        range:NSMakeRange(0, output.length)];
+             NSArray *matches = [regex
+                                 matchesInString:output
+                                 options:0
+                                 range:NSMakeRange(0, output.length)];
 
-      // Some versions can output information twice, pick the first one
-      if (matches.count < 1) {
-        [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
-        return [FBFuture futureWithResult:NSDecimalNumber.zero];
-      }
-      NSTextCheckingResult *match = matches[0];
-      NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
+             // Some versions can output information twice, pick the first one
+             if (matches.count < 1) {
+               [self.logger logFormat:@"Couldn't find simctl version from: %@, return 0.0", output];
+               return [FBFuture futureWithResult:NSDecimalNumber.zero];
+             }
+             NSTextCheckingResult *match = matches[0];
+             NSString *result = [output substringWithRange:[match rangeAtIndex:1]];
 
-      return [FBFuture futureWithResult:[NSDecimalNumber decimalNumberWithString:result]];
-    }]
-    onQueue:self.queue handleError:^(NSError *error) {
-      [self.logger logFormat:@"Abnormal exit of 'what' process %@, assuming version 0.0", error];
-      return [FBFuture futureWithResult:NSDecimalNumber.zero];
-    }];
+             return [FBFuture futureWithResult:[NSDecimalNumber decimalNumberWithString:result]];
+           }]
+          onQueue:self.queue
+          handleError:^(NSError *error) {
+            [self.logger logFormat:@"Abnormal exit of 'what' process %@, assuming version 0.0", error];
+            return [FBFuture futureWithResult:NSDecimalNumber.zero];
+          }];
 }
 
 @end

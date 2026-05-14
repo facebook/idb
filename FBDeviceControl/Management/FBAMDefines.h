@@ -42,7 +42,7 @@ typedef CFTypeRef AMRecoveryModeDeviceRef;
 /**
  An Alias for a "Secure IO Context"
  */
-typedef void * AMSecureIOContext;
+typedef void *AMSecureIOContext;
 
 /**
  An Alias for the MISProfileRef Type.
@@ -142,8 +142,8 @@ typedef struct {
   void (*Release)(AMDeviceRef device);
 
   // Getting Properties of a Device.
-  _Nullable CFStringRef (*_Nonnull CopyDeviceIdentifier)(AMDeviceRef device);
-  _Nullable CFStringRef (*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
+  _Nullable CFStringRef(*_Nonnull CopyDeviceIdentifier)(AMDeviceRef device);
+  _Nullable CFStringRef(*_Nonnull CopyValue)(AMDeviceRef device, _Nullable CFStringRef domain, CFStringRef name);
 
   // Obtaining Devices.
   _Nullable CFArrayRef (*CreateDeviceList)(void);
@@ -206,7 +206,7 @@ typedef struct {
   // AppleMobileSync
   int (*AMSInitialize)(int arg0);
   int (*AMSEraseDevice)(CFStringRef udid, AMSEraseDeviceCallback callback, void *context);
-  
+
   // USBMux
   int (*GetConnectionID)(AMDeviceRef device);
   int (*USBMuxConnectByPort)(int connectionID, int remotePort, int *socket);
@@ -230,7 +230,7 @@ typedef struct {
 
   // Individual Operations
   int (*DirectoryOpen)(AFCConnectionRef connection, const char *path, CFTypeRef _Nullable * _Nullable dir);
-  int (*DirectoryRead)(AFCConnectionRef connection, CFTypeRef dir, char *_Nullable*_Nullable dirent);
+  int (*DirectoryRead)(AFCConnectionRef connection, CFTypeRef dir, char *_Nullable *_Nullable dirent);
   int (*DirectoryClose)(AFCConnectionRef connection, CFTypeRef dir);
   int (*DirectoryCreate)(AFCConnectionRef connection, const char *dir);
   int (*FileRefOpen)(AFCConnectionRef connection, const char *_Nonnull path, FBAFCReadMode mode, CFTypeRef *_Nonnull ref);

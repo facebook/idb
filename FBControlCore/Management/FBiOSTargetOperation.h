@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Optional Future that resolves when the operation has completed.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *completed;
+@property (nonatomic, readonly, strong) FBFuture<NSNull *> *completed;
 
 @end
 

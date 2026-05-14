@@ -31,40 +31,44 @@
 
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = configuration.applicationLaunchConfiguration;
   return [[FBTestRunnerConfiguration
-    prepareConfigurationWithTarget:target testLaunchConfiguration:configuration workingDirectory:workingDirectory codesign:codesign]
-    onQueue:target.workQueue fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
-      // The launch configuration for the test bundle host.
-      FBApplicationLaunchConfiguration *testHostLaunchConfiguration = [self
-        prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
-        withTestRunnerConfiguration:runnerConfiguration];
+           prepareConfigurationWithTarget:target
+           testLaunchConfiguration:configuration
+           workingDirectory:workingDirectory
+           codesign:codesign]
+          onQueue:target.workQueue
+          fmap:^(FBTestRunnerConfiguration *runnerConfiguration) {
+            // The launch configuration for the test bundle host.
+            FBApplicationLaunchConfiguration *testHostLaunchConfiguration = [self
+                                                                             prepareApplicationLaunchConfiguration:applicationLaunchConfiguration
+                                                                             withTestRunnerConfiguration:runnerConfiguration];
 
-      // Make the Context for the Test Manager.
-      FBTestManagerContext *context = [[FBTestManagerContext alloc]
-        initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
-        timeout:configuration.timeout
-        testHostLaunchConfiguration:testHostLaunchConfiguration
-        testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment
-        testConfiguration:runnerConfiguration.testConfiguration];
+            // Make the Context for the Test Manager.
+            FBTestManagerContext *context = [[FBTestManagerContext alloc]
+                                             initWithSessionIdentifier:runnerConfiguration.sessionIdentifier
+                                             timeout:configuration.timeout
+                                             testHostLaunchConfiguration:testHostLaunchConfiguration
+                                             testedApplicationAdditionalEnvironment:runnerConfiguration.testedApplicationAdditionalEnvironment
+                                             testConfiguration:runnerConfiguration.testConfiguration];
 
-      // Construct and run the mediator, the core of the test execution.
-      return [FBTestManagerAPIMediator
-        connectAndRunUntilCompletionWithContext:context
-        target:target
-        reporter:reporter
-        logger:logger];
-    }];
+            // Construct and run the mediator, the core of the test execution.
+            return [FBTestManagerAPIMediator
+                    connectAndRunUntilCompletionWithContext:context
+                    target:target
+                    reporter:reporter
+                    logger:logger];
+          }];
 }
 
 + (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
 {
   return [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:testRunnerConfiguration.testRunner.identifier
-    bundleName:testRunnerConfiguration.testRunner.identifier
-    arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
-    environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
-    waitForDebugger:applicationLaunchConfiguration.waitForDebugger
-    io:applicationLaunchConfiguration.io
-    launchMode:FBApplicationLaunchModeRelaunchIfRunning];
+          initWithBundleID:testRunnerConfiguration.testRunner.identifier
+          bundleName:testRunnerConfiguration.testRunner.identifier
+          arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
+          environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+          waitForDebugger:applicationLaunchConfiguration.waitForDebugger
+          io:applicationLaunchConfiguration.io
+          launchMode:FBApplicationLaunchModeRelaunchIfRunning];
 }
 
 + (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes

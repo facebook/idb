@@ -8,8 +8,8 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -66,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Path to the xctest executable.
  */
-@property (nonatomic, copy, readonly) NSString *xctestPath;
+@property (nonatomic, readonly, copy) NSString *xctestPath;
 
 @end
 

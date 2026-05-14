@@ -9,7 +9,7 @@
 
 @interface FBIDBTestOperation ()
 
-@property (nonatomic, strong, readonly) id configuration;
+@property (nonatomic, readonly, strong) id configuration;
 
 @end
 

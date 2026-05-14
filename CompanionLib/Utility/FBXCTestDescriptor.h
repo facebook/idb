@@ -29,27 +29,27 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The URL of the Test Bundle
  */
-@property (nonatomic, strong, readonly) NSURL *url;
+@property (nonatomic, readonly, strong) NSURL *url;
 
 /**
  The name of the test bundle.
  */
-@property (nonatomic, strong, readonly) NSString *name;
+@property (nonatomic, readonly, strong) NSString *name;
 
 /**
  The bundle ID of the test bundle.
  */
-@property (nonatomic, strong, readonly) NSString *testBundleID;
+@property (nonatomic, readonly, strong) NSString *testBundleID;
 
 /**
  The supported architectures of the test bundle.
  */
-@property (nonatomic, strong, readonly) NSSet<NSString *> *architectures;
+@property (nonatomic, readonly, strong) NSSet<NSString *> *architectures;
 
 /**
  The underlying test bundle.
  */
-@property (nonatomic, strong, readonly) FBBundleDescriptor *testBundle;
+@property (nonatomic, readonly, strong) FBBundleDescriptor *testBundle;
 
 #pragma mark Public Methods.
 
@@ -90,7 +90,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTestBootstrapDescriptor : NSObject <FBXCTestDescriptor>
 
-
 #pragma mark Public Methods
 
 /**
@@ -115,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The app bundle into which the test bundle is injected
  */
-@property (nonatomic, strong, readonly) FBBundleDescriptor *testHostBundle;
+@property (nonatomic, readonly, strong) FBBundleDescriptor *testHostBundle;
 
 #pragma mark Public Methods
 

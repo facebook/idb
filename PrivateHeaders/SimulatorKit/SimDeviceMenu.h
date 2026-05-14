@@ -12,18 +12,18 @@
 
 @interface SimDeviceMenu : NSMenu
 {
-    id <SimDeviceMenuDelegate> _simDeviceMenuDelegate;
-    SimDeviceSet *_deviceSet;
-    unsigned long long _regID;
-    NSMutableDictionary *_menuItemPairForDeviceUDID;
-    SimDeviceMenuItemPair *_selectedMenuItemPair;
+  id<SimDeviceMenuDelegate> _simDeviceMenuDelegate;
+  SimDeviceSet *_deviceSet;
+  unsigned long long _regID;
+  NSMutableDictionary *_menuItemPairForDeviceUDID;
+  SimDeviceMenuItemPair *_selectedMenuItemPair;
 }
 
-@property (retain, nonatomic) SimDeviceMenuItemPair *selectedMenuItemPair;
-@property (retain, nonatomic) NSMutableDictionary *menuItemPairForDeviceUDID;
-@property(nonatomic, assign) unsigned long long regID; // @synthesize regID=_regID;
-@property (retain, nonatomic) SimDeviceSet *deviceSet;
-@property (nonatomic, weak) id <SimDeviceMenuDelegate> simDeviceMenuDelegate;
+@property (nonatomic, retain) SimDeviceMenuItemPair *selectedMenuItemPair;
+@property (nonatomic, retain) NSMutableDictionary *menuItemPairForDeviceUDID;
+@property (nonatomic, assign) unsigned long long regID; // @synthesize regID=_regID;
+@property (nonatomic, retain) SimDeviceSet *deviceSet;
+@property (nonatomic, weak) id<SimDeviceMenuDelegate> simDeviceMenuDelegate;
 
 - (BOOL)selectDevice:(id)arg1;
 - (void)clearSelectedDevice;
@@ -33,4 +33,3 @@
 - (id)initWithTitle:(id)arg1;
 
 @end
-

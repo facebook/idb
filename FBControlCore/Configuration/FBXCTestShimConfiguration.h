@@ -70,12 +70,12 @@ extern NSString *const FBXCTestShimDirectoryEnvironmentOverride;
 /**
  The location of the shim used to run & list iOS Simulator Tests.
  */
-@property (nonatomic, copy, readonly) NSString *iOSSimulatorTestShimPath;
+@property (nonatomic, readonly, copy) NSString *iOSSimulatorTestShimPath;
 
 /**
  The location of the shim used to run & list macOS Tests.
  */
-@property (nonatomic, copy, readonly) NSString *macOSTestShimPath;
+@property (nonatomic, readonly, copy) NSString *macOSTestShimPath;
 
 @end
 

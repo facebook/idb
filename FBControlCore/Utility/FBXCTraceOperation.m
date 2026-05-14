@@ -12,15 +12,14 @@
 #import "FBControlCoreLogger.h"
 #import "FBDataConsumer.h"
 #import "FBFuture.h"
-#import "FBiOSTarget.h"
 #import "FBProcessBuilder.h"
-#import "FBXcodeConfiguration.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTraceConfiguration.h"
+#import "FBXcodeConfiguration.h"
+#import "FBiOSTarget.h"
 
 const NSTimeInterval DefaultXCTraceRecordOperationTimeLimit = 4 * 60 * 60; // 4h
 const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
-
 
 @implementation FBXCTraceRecordOperation
 
@@ -78,17 +77,18 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   }
 
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:xctracePath]
-    withArguments:arguments]
-    withEnvironmentAdditions:environment]
-    withStdOutToLogger:logger]
-    withStdErrToLogger:logger]
-    withTaskLifecycleLoggingTo:logger]
-    start]
-    onQueue:target.asyncQueue map:^ FBXCTraceRecordOperation * (FBSubprocess *task) {
-      [logger logFormat:@"Started xctrace %@", task];
-      return [[FBXCTraceRecordOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
-    }];
+                 withLaunchPath:xctracePath]
+                withArguments:arguments]
+               withEnvironmentAdditions:environment]
+              withStdOutToLogger:logger]
+             withStdErrToLogger:logger]
+            withTaskLifecycleLoggingTo:logger]
+           start]
+          onQueue:target.asyncQueue
+          map:^FBXCTraceRecordOperation *(FBSubprocess *task) {
+            [logger logFormat:@"Started xctrace %@", task];
+            return [[FBXCTraceRecordOperation alloc] initWithTask:task traceDir:[NSURL fileURLWithPath:traceFile] configuration:configuration queue:queue logger:logger];
+          }];
 }
 
 - (instancetype)initWithTask:(FBSubprocess *)task traceDir:(NSURL *)traceDir configuration:(FBXCTraceRecordConfiguration *)configuration queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -112,17 +112,19 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
 - (FBFuture<NSURL *> *)stopWithTimeout:(NSTimeInterval)timeout
 {
   return [[FBFuture
-    onQueue:self.queue resolve:^{
-      [self.logger logFormat:@"Terminating xctrace record %@. Backoff Timeout %f", self.task, timeout];
-      return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:timeout logger:self.logger];
-    }] chainReplace:[[self.task exitCode]
-    onQueue:self.queue fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
-      if ([exitCode isEqualToNumber:@0]) {
-        return [FBFuture futureWithResult:self.traceDir];
-      } else {
-        return [[FBControlCoreError describeFormat:@"Xctrace record exited with failure - status: %@", exitCode] failFuture];
-      }
-    }]
+           onQueue:self.queue
+           resolve:^{
+             [self.logger logFormat:@"Terminating xctrace record %@. Backoff Timeout %f", self.task, timeout];
+             return [self.task sendSignal:SIGINT backingOffToKillWithTimeout:timeout logger:self.logger];
+           }] chainReplace:[[self.task exitCode]
+                            onQueue:self.queue
+                            fmap:^FBFuture<NSURL *> *(NSNumber *exitCode) {
+                              if ([exitCode isEqualToNumber:@0]) {
+                                return [FBFuture futureWithResult:self.traceDir];
+                              } else {
+                                return [[FBControlCoreError describeFormat:@"Xctrace record exited with failure - status: %@", exitCode] failFuture];
+                              }
+                            }]
   ];
 }
 
@@ -134,21 +136,22 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   NSURL *outputTraceFile = [[traceDir URLByDeletingLastPathComponent] URLByAppendingPathComponent:arguments[2]];
   NSMutableArray<NSString *> *launchArguments = [@[arguments[1], traceDir.path, @"-o", outputTraceFile.path] mutableCopy];
   if (arguments.count > 3) {
-    [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange){3, [arguments count] - 3}]];
+    [launchArguments addObjectsFromArray:[arguments subarrayWithRange:(NSRange) {3, [arguments count] - 3}]];
   }
 
   [logger logFormat:@"Starting post processing | Launch path: %@ | Arguments: %@", arguments[0], [FBCollectionInformation oneLineDescriptionFromArray:launchArguments]];
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:arguments[0]]
-    withArguments:launchArguments]
-    withStdInConnected]
-    withStdOutToLogger:logger]
-    withStdErrToLogger:logger]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(id _) {
-      return outputTraceFile;
-    }];
+                 withLaunchPath:arguments[0]]
+                withArguments:launchArguments]
+               withStdInConnected]
+              withStdOutToLogger:logger]
+             withStdErrToLogger:logger]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          onQueue:queue
+          map:^(id _) {
+            return outputTraceFile;
+          }];
 }
 
 + (NSString *)xctracePathWithError:(NSError **)error
@@ -156,8 +159,8 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xctrace"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[FBControlCoreError
-      describeFormat:@"xctrace does not exist at expected path %@", path]
-      fail:error];
+             describeFormat:@"xctrace does not exist at expected path %@", path]
+            fail:error];
   }
   return path;
 }
@@ -167,11 +170,12 @@ const NSTimeInterval DefaultXCTraceRecordStopTimeout = 600.0; // 600s
 - (FBFuture<NSNull *> *)completed
 {
   return [[[self.task
-    exitedWithCodes:[NSSet setWithObject:@0]]
-    mapReplace:NSNull.null]
-    onQueue:self.queue respondToCancellation:^{
-      return [[self stopWithTimeout:DefaultXCTraceRecordStopTimeout] mapReplace:NSNull.null];
-    }];
+            exitedWithCodes:[NSSet setWithObject:@0]]
+           mapReplace:NSNull.null]
+          onQueue:self.queue
+          respondToCancellation:^{
+            return [[self stopWithTimeout:DefaultXCTraceRecordStopTimeout] mapReplace:NSNull.null];
+          }];
 }
 
 @end

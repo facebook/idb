@@ -6,9 +6,9 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <XCTest/XCTest.h>
 
 #import "FBiOSTargetDouble.h"
 
@@ -38,13 +38,13 @@
 + (NSArray<FBDeviceModel> *)iPadModels
 {
   return @[
-     FBDeviceModeliPad2,
-     FBDeviceModeliPadAir,
-     FBDeviceModeliPadAir2,
-     FBDeviceModeliPadPro,
-     FBDeviceModeliPadPro_12_9_Inch,
-     FBDeviceModeliPadPro_9_7_Inch,
-     FBDeviceModeliPadRetina,
+    FBDeviceModeliPad2,
+    FBDeviceModeliPadAir,
+    FBDeviceModeliPadAir2,
+    FBDeviceModeliPadPro,
+    FBDeviceModeliPadPro_12_9_Inch,
+    FBDeviceModeliPadPro_9_7_Inch,
+    FBDeviceModeliPadRetina,
   ];
 }
 

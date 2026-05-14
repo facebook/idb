@@ -9,7 +9,7 @@
 @protocol SimPasteboard;
 
 @protocol SimPasteboardSyncPoolProtocol
-@property (readonly, retain, nonatomic) NSUUID *poolIdentifier;
+@property (nonatomic, readonly, retain) NSUUID *poolIdentifier;
 - (BOOL)removePasteboard:(NSObject<SimPasteboard> *)arg1 withError:(id *)arg2;
 - (BOOL)addPasteboard:(NSObject<SimPasteboard> *)arg1 withError:(id *)arg2;
 @end

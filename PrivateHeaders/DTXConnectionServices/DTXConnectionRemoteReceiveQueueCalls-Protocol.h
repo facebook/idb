@@ -16,4 +16,3 @@
 - (void)_notifyOfPublishedCapabilities:(NSDictionary *)arg1;
 - (void)_requestChannelWithCode:(unsigned int)arg1 identifier:(NSString *)arg2;
 @end
-

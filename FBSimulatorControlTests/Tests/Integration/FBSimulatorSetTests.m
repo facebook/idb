@@ -29,7 +29,7 @@
     @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBiOSTargetStateBooted)},
     @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBiOSTargetStateCreating)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown), @"os" : FBOSVersionNameiOS_10_0},
-  ]];
+   ]];
 
   NSArray<FBSimulator *> *simulators = self.set.allSimulators;
   XCTAssertEqual(simulators.count, 8u);
@@ -86,7 +86,7 @@
     @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBiOSTargetStateBooted)},
     @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBiOSTargetStateCreating)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBiOSTargetStateShutdown), @"os" : FBOSVersionNameiOS_10_0},
-  ]];
+   ]];
 
   NSArray *firstFetch = self.set.allSimulators;
   NSArray *secondFetch = self.set.allSimulators;

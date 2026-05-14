@@ -17,10 +17,10 @@
   if (!self) {
     return nil;
   }
-  
+
   _testLaunchConfiguration = testLaunchConfiguration;
   _coverageConfiguration = coverageConfiguration;
-  
+
   return self;
 }
 

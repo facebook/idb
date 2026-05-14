@@ -6,16 +6,18 @@
  */
 
 #import "ContactsService.h"
-#import <Foundation/Foundation.h>
-#import <Contacts/Contacts.h>
 
-int clearContacts(void) {
+#import <Contacts/Contacts.h>
+#import <Foundation/Foundation.h>
+
+int clearContacts(void)
+{
   CNContactStore *contactStore = [[CNContactStore alloc] init];
 
   NSError *fetchError = nil;
   NSArray<CNContact *> *allContacts = [contactStore unifiedContactsMatchingPredicate:[NSPredicate predicateWithValue:YES]
-                                                                          keysToFetch:@[]
-                                                                                error:&fetchError];
+                                                                         keysToFetch:@[]
+                                                                               error:&fetchError];
 
   if (fetchError) {
     NSLog(@"Failed to fetch contacts: %@", fetchError.localizedDescription);
@@ -47,7 +49,8 @@ int clearContacts(void) {
   return 0;
 }
 
-int handleContactsAction(NSString *action) {
+int handleContactsAction(NSString *action)
+{
   if ([action isEqualToString:@"clear"]) {
     return clearContacts();
   } else {

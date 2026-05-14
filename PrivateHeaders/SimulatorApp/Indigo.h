@@ -153,10 +153,10 @@ typedef struct {
  The Indigo Message sent over the wire with mach_msg_send.
  */
 typedef struct {
-    MachMessageHeader header; // 0x0
-    unsigned int innerSize; // 0x18
-    unsigned char eventType; // 0x1c
-    IndigoPayload payload; // 0x20
+  MachMessageHeader header; // 0x0
+  unsigned int innerSize; // 0x18
+  unsigned char eventType; // 0x1c
+  IndigoPayload payload; // 0x20
 } IndigoMessage;
 
 #define IndigoEventTypeButton 1

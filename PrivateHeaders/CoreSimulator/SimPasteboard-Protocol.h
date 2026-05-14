@@ -11,7 +11,7 @@
 @protocol OS_dispatch_queue;
 
 @protocol SimPasteboard <SimDeviceNotifier>
-@property (atomic, copy, readonly) NSArray *items;
+@property (atomic, readonly, copy) NSArray *items;
 @property (atomic, readonly) unsigned long long changeCount;
 - (void)setPasteboardAsyncWithItems:(NSArray *)arg1 completionQueue:(NSObject<OS_dispatch_queue> *)arg2 completionHandler:(void (^)(unsigned long long, NSError *))arg3;
 - (unsigned long long)setPasteboardWithItems:(NSArray *)arg1 error:(id *)arg2;

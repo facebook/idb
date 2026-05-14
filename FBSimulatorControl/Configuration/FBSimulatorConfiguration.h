@@ -29,24 +29,24 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device Configuration.
  */
-@property (nonatomic, strong, readonly) FBDeviceType *device;
+@property (nonatomic, readonly, strong) FBDeviceType *device;
 
 /**
  The OS Configuration.
  */
-@property (nonatomic, strong, readonly) FBOSVersion *os;
+@property (nonatomic, readonly, strong) FBOSVersion *os;
 
 /**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
-@property (nonatomic, copy, readonly, class) FBSimulatorConfiguration *defaultConfiguration;
+@property (class, nonatomic, readonly, copy) FBSimulatorConfiguration *defaultConfiguration;
 
 #pragma mark Models
 
 /**
  Returns a new configuration, applying the specified model.
- 
+
  @param model the model to apply
  @return a new configuration
  */
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Returns a new configuration, applying the specified os name..
- 
+
  @param osName the OS Name.
  @return a new configuration.
  */

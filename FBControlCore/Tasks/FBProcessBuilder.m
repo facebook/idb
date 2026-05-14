@@ -12,19 +12,19 @@
 #import "FBDataBuffer.h"
 #import "FBDataConsumer.h"
 #import "FBProcessIO.h"
+#import "FBProcessSpawnConfiguration.h"
 #import "FBProcessStream.h"
 #import "FBSubprocess.h"
-#import "FBProcessSpawnConfiguration.h"
 
 @interface FBProcessBuilder ()
 
-@property (nonatomic, copy, readwrite) NSString *launchPath;
-@property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
-@property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdOut;
-@property (nonatomic, strong, nullable, readwrite) FBProcessOutput *stdErr;
-@property (nonatomic, strong, nullable, readwrite) FBProcessInput *stdIn;
-@property (nonatomic, strong, nullable, readwrite) id<FBControlCoreLogger> logger;
+@property (nonatomic, readwrite, copy) NSString *launchPath;
+@property (nonatomic, readwrite, copy) NSArray<NSString *> *arguments;
+@property (nonatomic, readwrite, copy) NSDictionary<NSString *, NSString *> *environment;
+@property (nullable, nonatomic, readwrite, strong) FBProcessOutput *stdOut;
+@property (nullable, nonatomic, readwrite, strong) FBProcessOutput *stdErr;
+@property (nullable, nonatomic, readwrite, strong) FBProcessInput *stdIn;
+@property (nullable, nonatomic, readwrite, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -239,10 +239,11 @@
 {
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
   return [[self
-    start]
-    onQueue:queue fmap:^(FBSubprocess *process) {
-      return [[process exitedWithCodes:exitCodes] mapReplace:process];
-    }];
+           start]
+          onQueue:queue
+          fmap:^(FBSubprocess *process) {
+            return [[process exitedWithCodes:exitCodes] mapReplace:process];
+          }];
 }
 
 #pragma mark Private
@@ -250,11 +251,11 @@
 - (FBProcessSpawnConfiguration *)buildConfiguration
 {
   return [[FBProcessSpawnConfiguration alloc]
-    initWithLaunchPath:self.launchPath
-    arguments:self.arguments
-    environment:self.environment
-    io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-    mode:FBProcessSpawnModeDefault];
+          initWithLaunchPath:self.launchPath
+          arguments:self.arguments
+          environment:self.environment
+          io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
+          mode:FBProcessSpawnModeDefault];
 }
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess

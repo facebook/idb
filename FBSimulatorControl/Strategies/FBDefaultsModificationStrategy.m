@@ -16,7 +16,7 @@
 
 @interface FBDefaultsModificationStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, strong) FBSimulator *simulator;
 
 @end
 
@@ -41,9 +41,9 @@
 - (NSString *)defaultsBinary
 {
   NSString *path = [[[self.simulator.device.runtime.root
-    stringByAppendingPathComponent:@"usr"]
-    stringByAppendingPathComponent:@"bin"]
-    stringByAppendingPathComponent:@"defaults"];
+                      stringByAppendingPathComponent:@"usr"]
+                     stringByAppendingPathComponent:@"bin"]
+                    stringByAppendingPathComponent:@"defaults"];
   NSError *error = nil;
   FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:&error];
   NSAssert(binary, @"Could not locate defaults at expected location '%@', error %@", path, error);
@@ -56,14 +56,14 @@
   NSString *file = [self.simulator.auxillaryDirectory stringByAppendingPathComponent:@"temporary.plist"];
   if (![NSFileManager.defaultManager createDirectoryAtPath:[file stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not create intermediate directories for temporary plist %@", file]
-      causedBy:innerError]
-      failFuture];
+              describeFormat:@"Could not create intermediate directories for temporary plist %@", file]
+             causedBy:innerError]
+            failFuture];
   }
   if (![defaults writeToFile:file atomically:YES]) {
     return [[FBSimulatorError
-      describeFormat:@"Failed to write out defaults to temporary file %@", file]
-      failFuture];
+             describeFormat:@"Failed to write out defaults to temporary file %@", file]
+            failFuture];
   }
 
   // Build the arguments
@@ -79,42 +79,44 @@
 - (FBFuture<NSNull *> *)setDefaultInDomain:(NSString *)domain key:(NSString *)key value:(NSString *)value type:(NSString *)type
 {
   return [[self
-    performDefaultsCommandWithArguments:@[
-      @"write",
-      domain,
-      key,
-      [NSString stringWithFormat:@"-%@", type ? type : @"string"],
-      value,
-    ]]
-    mapReplace:NSNull.null];
+           performDefaultsCommandWithArguments:@[
+             @"write",
+             domain,
+             key,
+             [NSString stringWithFormat:@"-%@", type ? type : @"string"],
+             value,
+           ]]
+          mapReplace:NSNull.null];
 }
 
 - (FBFuture<NSString *> *)getDefaultInDomain:(NSString *)domain key:(NSString *)key
 {
   return [self
-    performDefaultsCommandWithArguments:@[
-      @"read",
-      domain,
-      key,
-    ]];
+          performDefaultsCommandWithArguments:@[
+            @"read",
+            domain,
+            key,
+          ]];
 }
 
 - (FBFuture<NSString *> *)performDefaultsCommandWithArguments:(NSArray<NSString *> *)arguments
 {
   // Make the Launch Config
   FBProcessSpawnConfiguration *configuration = [[FBProcessSpawnConfiguration alloc]
-    initWithLaunchPath:self.defaultsBinary
-    arguments:arguments
-    environment:@{}
-    io:FBProcessIO.outputToDevNull
-    mode:FBProcessSpawnModeDefault];
+                                                initWithLaunchPath:self.defaultsBinary
+                                                arguments:arguments
+                                                environment:@{}
+                                                io:FBProcessIO.outputToDevNull
+                                                mode:FBProcessSpawnModeDefault];
 
   // Run the defaults command.
   return [[FBProcessSpawnCommandHelpers
-    launchConsumingStdout:configuration withCommands:self.simulator]
-    onQueue:self.simulator.asyncQueue map:^(NSString *output) {
-      return [output stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
-    }];
+           launchConsumingStdout:configuration
+           withCommands:self.simulator]
+          onQueue:self.simulator.asyncQueue
+          map:^(NSString *output) {
+            return [output stringByTrimmingCharactersInSet:NSCharacterSet.newlineCharacterSet];
+          }];
 }
 
 - (FBFuture<NSNull *> *)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName
@@ -123,28 +125,30 @@
   FBiOSTargetState state = simulator.state;
   if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
-      failFuture];
+             describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+            failFuture];
   }
 
   // Stop the service, if booted.
   FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
-    ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
-    : FBFuture.empty;
+  ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
+  : FBFuture.empty;
 
   // The path to amend.
   NSString *fullPath = [self.simulator.dataDirectory stringByAppendingPathComponent:relativePath];
 
-  return  [[stopFuture
-    onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *_) {
-      return [self modifyDefaultsInDomainOrPath:fullPath defaults:defaults];
-    }]
-    onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
-      // Re-start the Service if booted.
-      return state == FBiOSTargetStateBooted
-        ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
-        : FBFuture.empty;
-    }];
+  return [[stopFuture
+           onQueue:self.simulator.workQueue
+           fmap:^FBFuture *(NSNull *_) {
+             return [self modifyDefaultsInDomainOrPath:fullPath defaults:defaults];
+           }]
+          onQueue:self.simulator.workQueue
+          fmap:^FBFuture<NSNull *> *(NSNull *_) {
+            // Re-start the Service if booted.
+            return state == FBiOSTargetStateBooted
+            ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
+            : FBFuture.empty;
+          }];
 }
 
 @end
@@ -180,64 +184,66 @@ static NSString *const AppleGlobalDomain = @"Apple Global Domain";
   NSMutableDictionary<NSString *, id> *defaults = [NSMutableDictionary dictionary];
   for (NSString *bundleID in bundleIDs) {
     defaults[bundleID] = @{
-      @"Whitelisted": @NO,
-      @"BundleId": bundleID,
+      @"Whitelisted" : @NO,
+      @"BundleId" : bundleID,
       @"SupportedAuthorizationMask" : @3,
       @"Authorization" : @2,
-      @"Authorized": @YES,
-      @"Executable": @"",
-      @"Registered": @"",
+      @"Authorized" : @YES,
+      @"Executable" : @"",
+      @"Registered" : @"",
     };
   }
 
   return [self
-    amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
-    defaults:[defaults copy]
-    managingService:@"locationd"];
+          amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
+          defaults:[defaults copy]
+          managingService:@"locationd"];
 }
 
 - (FBFuture<NSNull *> *)revokeLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs
 {
   NSParameterAssert(bundleIDs);
 
-    FBSimulator *simulator = self.simulator;
-    FBiOSTargetState state = simulator.state;
-    if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
-      return [[FBSimulatorError
-        describeFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
-        failFuture];
-    }
+  FBSimulator *simulator = self.simulator;
+  FBiOSTargetState state = simulator.state;
+  if (state != FBiOSTargetStateBooted && state != FBiOSTargetStateShutdown) {
+    return [[FBSimulatorError
+             describeFormat:@"Cannot modify a plist when the Simulator state is %@, should be %@ or %@", FBiOSTargetStateStringFromState(state), FBiOSTargetStateStringShutdown, FBiOSTargetStateStringBooted]
+            failFuture];
+  }
 
-    NSString *serviceName = @"locationd";
+  NSString *serviceName = @"locationd";
 
-    // Stop the service, if booted.
-    FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
-      ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
-      : FBFuture.empty;
+  // Stop the service, if booted.
+  FBFuture<NSNull *> *stopFuture = state == FBiOSTargetStateBooted
+  ? [[simulator stopServiceWithName:serviceName] mapReplace:NSNull.null]
+  : FBFuture.empty;
 
-    NSString *path = [self.simulator.dataDirectory
-                      stringByAppendingPathComponent:@"Library/Caches/locationd/clients.plist"];
-    NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
-    for (NSString *bundleID in bundleIDs) {
-      [futures addObject:
-       [self
-        performDefaultsCommandWithArguments:@[
-          @"delete",
-          path,
-          bundleID,
-        ]]];
-    }
+  NSString *path = [self.simulator.dataDirectory
+                    stringByAppendingPathComponent:@"Library/Caches/locationd/clients.plist"];
+  NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
+  for (NSString *bundleID in bundleIDs) {
+    [futures addObject:
+     [self
+      performDefaultsCommandWithArguments:@[
+        @"delete",
+        path,
+        bundleID,
+     ]]];
+  }
 
-    return [[stopFuture
-      onQueue:self.simulator.workQueue fmap:^FBFuture *(NSNull *_) {
-        return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
-      }]
-      onQueue:self.simulator.workQueue fmap:^FBFuture<NSNull *> *(NSNull *_) {
-        // Re-start the Service if booted.
-        return state == FBiOSTargetStateBooted
-          ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
-          : FBFuture.empty;
-      }];
+  return [[stopFuture
+           onQueue:self.simulator.workQueue
+           fmap:^FBFuture *(NSNull *_) {
+             return [[FBFuture futureWithFutures:futures] mapReplace:NSNull.null];
+           }]
+          onQueue:self.simulator.workQueue
+          fmap:^FBFuture<NSNull *> *(NSNull *_) {
+            // Re-start the Service if booted.
+            return state == FBiOSTargetStateBooted
+            ? [[simulator startServiceWithName:serviceName] mapReplace:NSNull.null]
+            : FBFuture.empty;
+          }];
 }
 
 @end

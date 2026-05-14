@@ -30,16 +30,16 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
 @interface FBFileReader ()
 
-@property (nonatomic, copy, readonly) NSString *targeting;
-@property (nonatomic, strong, readonly) id<FBDispatchDataConsumer> consumer;
-@property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *ioChannelRelinquishedControl;
-@property (nonatomic, assign, readonly) int fileDescriptor;
-@property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, copy) NSString *targeting;
+@property (nonatomic, readonly, strong) id<FBDispatchDataConsumer> consumer;
+@property (nonatomic, readonly, strong) dispatch_queue_t readQueue;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNumber *> *ioChannelRelinquishedControl;
+@property (nonatomic, readonly, assign) int fileDescriptor;
+@property (nonatomic, readonly, assign) BOOL closeOnEndOfFile;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
-@property (atomic, assign, readwrite) FBFileReaderState state;
-@property (nonatomic, strong, nullable, readwrite) dispatch_io_t io;
+@property (atomic, readwrite, assign) FBFileReaderState state;
+@property (nullable, nonatomic, readwrite, strong) dispatch_io_t io;
 
 @end
 
@@ -66,15 +66,21 @@ static NSString *StateStringFromState(FBFileReaderState state)
 + (FBFuture<FBFileReader *> *)readerWithFilePath:(NSString *)filePath consumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createQueue;
-  return [FBFuture onQueue:queue resolveValue:^id (NSError **error) {
-    int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
-    if (fileDescriptor == -1) {
-      return [[FBControlCoreError
-        describeFormat:@"open of %@ returned an error '%s'", filePath, strerror(errno)]
-        fail:error];
-    }
-    return [[self alloc] initWithFileDescriptor:fileDescriptor closeOnEndOfFile:YES consumer:[FBDataConsumerAdaptor dispatchDataConsumerForDataConsumer:consumer] targeting:filePath queue:queue logger:logger];
-  }];
+  return [FBFuture onQueue:queue
+              resolveValue:^id (NSError **error) {
+                int fileDescriptor = open(filePath.UTF8String, O_RDONLY);
+                if (fileDescriptor == -1) {
+                  return [[FBControlCoreError
+                           describeFormat:@"open of %@ returned an error '%s'", filePath, strerror(errno)]
+                          fail:error];
+                }
+                return [[self alloc] initWithFileDescriptor:fileDescriptor
+                                           closeOnEndOfFile:YES
+                                                   consumer:[FBDataConsumerAdaptor dispatchDataConsumerForDataConsumer:consumer]
+                                                  targeting:filePath
+                                                      queue:queue
+                                                     logger:logger];
+              }];
 }
 
 - (instancetype)initWithFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile consumer:(id<FBDispatchDataConsumer>)consumer targeting:(NSString *)targeting queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
@@ -107,39 +113,44 @@ static NSString *StateStringFromState(FBFileReaderState state)
 
 - (FBFuture<NSNull *> *)startReading
 {
-  return [FBFuture onQueue:self.readQueue resolve:^{
-    return [self startReadingNow];
-  }];
+  return [FBFuture onQueue:self.readQueue
+                   resolve:^{
+                     return [self startReadingNow];
+                   }];
 }
 
 - (FBFuture<NSNumber *> *)stopReading
 {
-  return [FBFuture onQueue:self.readQueue resolve:^{
-    return [self stopReadingNow];
-  }];
+  return [FBFuture onQueue:self.readQueue
+                   resolve:^{
+                     return [self stopReadingNow];
+                   }];
 }
 
 - (FBFuture<NSNumber *> *)finishedReadingWithTimeout:(NSTimeInterval)timeout
 {
   return [[[self
-    finishedReading]
-    timeout:timeout waitingFor:@"Process Reading to Finish"]
-    onQueue:self.readQueue handleError:^(NSError *_) {
-      // Since waiting for finishedReading timed out, we need to cancel the in-flight read operation.
-      // This is not mandatory if finishedReading has resolved, which is why we use handleError.
-      return [self stopReadingNow];
-    }];
+            finishedReading]
+           timeout:timeout
+           waitingFor:@"Process Reading to Finish"]
+          onQueue:self.readQueue
+          handleError:^(NSError *_) {
+            // Since waiting for finishedReading timed out, we need to cancel the in-flight read operation.
+            // This is not mandatory if finishedReading has resolved, which is why we use handleError.
+            return [self stopReadingNow];
+          }];
 }
 
 - (FBFuture<NSNumber *> *)finishedReading
 {
   // We don't re-alias ioChannelFinishedReadOperation as if it's externally cancelled, we want the ioChannelFinishedReadOperation to resolve normally
   return [[[FBMutableFuture
-    futureWithNameFormat:@"Finished reading of %@", self.targeting]
-    resolveFromFuture:self.ioChannelRelinquishedControl]
-    onQueue:self.readQueue respondToCancellation:^{
-      return [self stopReadingNow];
-    }];
+            futureWithNameFormat:@"Finished reading of %@", self.targeting]
+           resolveFromFuture:self.ioChannelRelinquishedControl]
+          onQueue:self.readQueue
+          respondToCancellation:^{
+            return [self stopReadingNow];
+          }];
 }
 
 #pragma mark Private
@@ -148,8 +159,8 @@ static NSString *StateStringFromState(FBFileReaderState state)
 {
   if (self.state != FBFileReaderStateNotStarted) {
     return [[FBControlCoreError
-      describeFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]
-      failFuture];
+             describeFormat:@"Could not start reading read of %@ when it is in state %@", self.targeting, StateStringFromState(self.state)]
+            failFuture];
   }
   NSAssert(!self.io, @"IO Channel should not exist when not started");
 
@@ -162,26 +173,31 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // This does not include any error during the read, which instead comes from the dispatch_io_read callback.
   // The self-capture is intentional, if the creator of an FBFileReader no longer strongly references self, we still need to keep it alive.
   // The self-capture is then removed in the below callback, which means the FBFileReader can then be deallocated.
-  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileDescriptor, self.readQueue, ^(int createErrorCode) {
-    [self ioChannelHasRelinquishedControlWithErrorCode:(createErrorCode ?: readErrorCode)];
-  });
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM,
+    fileDescriptor,
+    self.readQueue, ^(int createErrorCode) {
+      [self ioChannelHasRelinquishedControlWithErrorCode:(createErrorCode ?: readErrorCode)];
+    });
   if (!self.io) {
     return [[FBControlCoreError
-      describeFormat:@"A IO Channel could not be created for %@", self.description]
-      failFuture];
+             describeFormat:@"A IO Channel could not be created for %@", self.description]
+            failFuture];
   }
 
   // Report partial results with as little as 1 byte read.
   dispatch_io_set_low_water(self.io, 1);
-  dispatch_io_read(self.io, 0, SIZE_MAX, self.readQueue, ^(bool done, dispatch_data_t dispatchData, int errorCode) {
-    if (dispatchData != NULL && dispatchData != dispatch_data_empty) {
-      [consumer consumeData:dispatchData];
-    }
-    if (done) {
-      readErrorCode = errorCode;
-      [self ioChannelReadOperationDone:errorCode];
-    }
-  });
+  dispatch_io_read(self.io,
+    0,
+    SIZE_MAX,
+    self.readQueue, ^(bool done, dispatch_data_t dispatchData, int errorCode) {
+      if (dispatchData != NULL && dispatchData != dispatch_data_empty) {
+        [consumer consumeData:dispatchData];
+      }
+      if (done) {
+        readErrorCode = errorCode;
+        [self ioChannelReadOperationDone:errorCode];
+      }
+    });
   self.state = FBFileReaderStateReading;
   return FBFuture.empty;
 }
@@ -191,8 +207,8 @@ static NSString *StateStringFromState(FBFileReaderState state)
   // The only error condition is that we haven't yet started reading
   if (self.state == FBFileReaderStateNotStarted) {
     return [[FBControlCoreError
-      describeFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]
-      failFuture];
+             describeFormat:@"File reader has not started reading %@, you should call 'startReading' first", self.targeting]
+            failFuture];
   }
   // All states other than reading mean that we don't need to close the channel.
   if (self.state != FBFileReaderStateReading) {

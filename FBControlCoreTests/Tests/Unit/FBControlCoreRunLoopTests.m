@@ -20,10 +20,12 @@
 - (void)testNestedAwaiting
 {
   FBFuture<NSNumber *> *future = [[FBFuture
-    futureWithDelay:0.1 future:[FBFuture futureWithResult:@YES]]
-    onQueue:dispatch_get_main_queue() map:^(id _) {
-      return [[FBFuture futureWithDelay:0.1 future:[FBFuture futureWithResult:@YES]] await:nil];
-    }];
+                                   futureWithDelay:0.1
+                                   future:[FBFuture futureWithResult:@YES]]
+                                  onQueue:dispatch_get_main_queue()
+                                  map:^(id _) {
+                                    return [[FBFuture futureWithDelay:0.1 future:[FBFuture futureWithResult:@YES]] await:nil];
+                                  }];
 
   NSError *error = nil;
   BOOL succeeded = [future await:&error] != nil;

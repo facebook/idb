@@ -7,11 +7,10 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBActivityRecord.h>
 #import <XCTestBootstrap/FBAttachment.h>
 #import <XCTestBootstrap/FBExceptionInfo.h>
-
+#import <XCTestBootstrap/FBTestManagerResultSummary.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,7 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param pid the process identifer of the waiting process.
  */
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
-
 
 /**
  Called when the test plan has started executing.
@@ -139,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param message the failure message.
  */
-- (void)testPlanDidFailWithMessage:(nonnull NSString *) message;
+- (void)testPlanDidFailWithMessage:(nonnull NSString *)message;
 
 /**
  Called after finished a video recording during test run.

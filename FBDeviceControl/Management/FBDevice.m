@@ -135,7 +135,8 @@
   return @{};
 }
 
-- (BOOL) requiresBundlesToBeSigned {
+- (BOOL)requiresBundlesToBeSigned
+{
   return YES;
 }
 
@@ -225,7 +226,7 @@
 - (AMDeviceRef)amDeviceRef
 {
   FBAMDevice *amDevice = self.amDevice;
-  if (!amDevice)  {
+  if (!amDevice) {
     return NULL;
   }
   return amDevice.amDeviceRef;
@@ -253,8 +254,8 @@
     return [amDevice connectToDeviceWithPurpose:@"%@", string];
   }
   return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
@@ -264,8 +265,8 @@
     return [amDevice startService:service];
   }
   return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
@@ -275,8 +276,8 @@
     return [amDevice startDeviceLinkService:service];
   }
   return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
@@ -286,8 +287,8 @@
     return [amDevice startAFCService:service];
   }
   return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
@@ -297,8 +298,8 @@
     return [amDevice houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls];
   }
   return [[FBDeviceControlError
-    describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ fails when not AMDevice backed.", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 #pragma mark Forwarding
@@ -361,7 +362,7 @@
     return YES;
   }
   if ([self.forwarder conformsToProtocol:protocol]) {
-    return  YES;
+    return YES;
   }
 
   return NO;

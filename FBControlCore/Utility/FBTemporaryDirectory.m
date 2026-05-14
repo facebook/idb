@@ -12,7 +12,7 @@
 
 @interface FBTemporaryDirectory ()
 
-@property (nonatomic, copy, readonly) NSURL *rootTemporaryDirectory;
+@property (nonatomic, readonly, copy) NSURL *rootTemporaryDirectory;
 
 @end
 
@@ -68,12 +68,15 @@
 - (FBFutureContext<NSURL *> *)withGzipExtractedFromStream:(FBProcessInput *)input name:(NSString *)name
 {
   return [[self
-    withTemporaryFileNamed:name]
-    onQueue:self.queue pend:^(NSURL *result) {
-      return [[FBArchiveOperations
-        extractGzipFromStream:input toPath:result.path logger:self.logger]
-        mapReplace:result];
-    }];
+           withTemporaryFileNamed:name]
+          onQueue:self.queue
+          pend:^(NSURL *result) {
+            return [[FBArchiveOperations
+                     extractGzipFromStream:input
+                     toPath:result.path
+                     logger:self.logger]
+                    mapReplace:result];
+          }];
 }
 
 - (FBFutureContext<NSURL *> *)withArchiveExtracted:(NSData *)tarData
@@ -89,10 +92,11 @@
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromStream:(FBProcessInput *)input compression:(FBCompressionFormat)compression overrideModificationTime:(BOOL)overrideMTime
 {
   return [[self
-    withTemporaryDirectory]
-    onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger compression:compression] mapReplace:tempDir];
-    }];
+           withTemporaryDirectory]
+          onQueue:self.queue
+          pend:^(NSURL *tempDir) {
+            return [[FBArchiveOperations extractArchiveFromStream:input toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger compression:compression] mapReplace:tempDir];
+          }];
 }
 
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath
@@ -103,31 +107,33 @@
 - (FBFutureContext<NSURL *> *)withArchiveExtractedFromFile:(NSString *)filePath overrideModificationTime:(BOOL)overrideMTime
 {
   return [[self
-    withTemporaryDirectory]
-    onQueue:self.queue pend:^(NSURL *tempDir) {
-      return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger] mapReplace:tempDir];
-    }];
+           withTemporaryDirectory]
+          onQueue:self.queue
+          pend:^(NSURL *tempDir) {
+            return [[FBArchiveOperations extractArchiveAtPath:filePath toPath:tempDir.path overrideModificationTime:overrideMTime logger:self.logger] mapReplace:tempDir];
+          }];
 }
 
 - (FBFutureContext<NSArray<NSURL *> *> *)filesFromSubdirs:(FBFutureContext<NSURL *> *)extractionDirContext
 {
   return [extractionDirContext
-    onQueue:self.queue pend:^ FBFuture<NSArray<NSURL *> *> * (NSURL *extractionDir) {
-      NSError *error = nil;
-      NSArray<NSURL *> *subfolders = [FBStorageUtils filesInDirectory:extractionDir error:&error];
-      if (!subfolders) {
-        return [FBFuture futureWithError:error];
-      }
-      NSMutableArray<NSURL *> *filesInTar = [NSMutableArray arrayWithCapacity:subfolders.count];
-      for (NSURL *subfolder in subfolders) {
-        NSURL *file = [FBStorageUtils findUniqueFileInDirectory:subfolder error:&error];
-        if (!file) {
-          return [FBFuture futureWithError:error];
-        }
-        [filesInTar addObject:file];
-      }
-      return [FBFuture futureWithResult:filesInTar];
-    }];
+          onQueue:self.queue
+          pend:^FBFuture<NSArray<NSURL *> *> *(NSURL *extractionDir) {
+            NSError *error = nil;
+            NSArray<NSURL *> *subfolders = [FBStorageUtils filesInDirectory:extractionDir error:&error];
+            if (!subfolders) {
+              return [FBFuture futureWithError:error];
+            }
+            NSMutableArray<NSURL *> *filesInTar = [NSMutableArray arrayWithCapacity:subfolders.count];
+            for (NSURL *subfolder in subfolders) {
+              NSURL *file = [FBStorageUtils findUniqueFileInDirectory:subfolder error:&error];
+              if (!file) {
+                return [FBFuture futureWithError:error];
+              }
+              [filesInTar addObject:file];
+            }
+            return [FBFuture futureWithResult:filesInTar];
+          }];
 }
 
 #pragma mark Temporary Directory
@@ -150,40 +156,43 @@
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtURL:tempDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
     return [[[FBControlCoreError
-      describeFormat:@"Failed to create Temp Dir %@", tempDirectory]
-      causedBy:error]
-      failFutureContext];
+              describeFormat:@"Failed to create Temp Dir %@", tempDirectory]
+             causedBy:error]
+            failFutureContext];
   }
   return [[FBFuture
-    futureWithResult:tempDirectory]
-    onQueue:self.queue contextualTeardown:^(id _, FBFutureState __) {
-      NSError *innerError = nil;
-      if ([NSFileManager.defaultManager removeItemAtURL:tempDirectory error:&innerError]) {
-        [self.logger logFormat:@"Deleted Temp Dir %@", tempDirectory];
-      } else {
-        [self.logger logFormat:@"Failed to delete Temp Dir %@: %@", tempDirectory, innerError];
-      }
-      return FBFuture.empty;
-    }];
+           futureWithResult:tempDirectory]
+          onQueue:self.queue
+          contextualTeardown:^(id _, FBFutureState __) {
+            NSError *innerError = nil;
+            if ([NSFileManager.defaultManager removeItemAtURL:tempDirectory error:&innerError]) {
+              [self.logger logFormat:@"Deleted Temp Dir %@", tempDirectory];
+            } else {
+              [self.logger logFormat:@"Failed to delete Temp Dir %@: %@", tempDirectory, innerError];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFutureContext<NSURL *> *)withTemporaryFileNamed:(NSString *)name
 {
   return [[[self
-    withTemporaryDirectory]
-    onQueue:self.queue pend:^(NSURL *directory) {
-      NSURL *tempFile = [directory URLByAppendingPathComponent:name];
-      return [FBFuture futureWithResult:tempFile];
-    }]
-    onQueue:self.queue contextualTeardown:^(NSURL *tempFile, FBFutureState __) {
-      NSError *innerError = nil;
-      if ([NSFileManager.defaultManager removeItemAtURL:tempFile error:&innerError]) {
-        [self.logger logFormat:@"Deleted Temp File %@", tempFile];
-      } else {
-        [self.logger logFormat:@"Failed to delete Temp File %@: %@", tempFile, innerError];
-      }
-      return FBFuture.empty;
-    }];
+            withTemporaryDirectory]
+           onQueue:self.queue
+           pend:^(NSURL *directory) {
+             NSURL *tempFile = [directory URLByAppendingPathComponent:name];
+             return [FBFuture futureWithResult:tempFile];
+           }]
+          onQueue:self.queue
+          contextualTeardown:^(NSURL *tempFile, FBFutureState __) {
+            NSError *innerError = nil;
+            if ([NSFileManager.defaultManager removeItemAtURL:tempFile error:&innerError]) {
+              [self.logger logFormat:@"Deleted Temp File %@", tempFile];
+            } else {
+              [self.logger logFormat:@"Failed to delete Temp File %@: %@", tempFile, innerError];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 @end

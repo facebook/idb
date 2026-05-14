@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBDeviceControl/FBDeviceCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -22,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Connects to a remote port, relaying the input and output to the provided file descriptors.
- 
+
  @param localFileDescriptorInput the file descriptor for the file input.
  @param localFileDescriptorOutput the file descriptor for the file output.
  @param remotePort remote port number.

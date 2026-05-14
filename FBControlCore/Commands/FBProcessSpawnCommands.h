@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Resolves an exitCode future from a statLoc.
  Performs the necessary unwapping of the statLoc bitmask.
- 
+
  @param statLoc the stat_loc value.
  @param attachment the IO attachment of the process.
  @param statLocFuture the statLoc future to resolve.

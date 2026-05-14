@@ -16,10 +16,11 @@
   static dispatch_once_t onceToken;
   static XCTestBootstrapFrameworkLoader *loader;
   dispatch_once(&onceToken, ^{
-    loader = [XCTestBootstrapFrameworkLoader loaderWithName:@"XCTestBootstrap" frameworks:@[
-      FBWeakFramework.DTXConnectionServices,
-      FBWeakFramework.XCTest,
-    ]];
+    loader = [XCTestBootstrapFrameworkLoader loaderWithName:@"XCTestBootstrap"
+                                                 frameworks:@[
+                FBWeakFramework.DTXConnectionServices,
+                FBWeakFramework.XCTest,
+              ]];
   });
   return loader;
 }

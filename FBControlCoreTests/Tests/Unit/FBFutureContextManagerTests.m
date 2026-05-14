@@ -11,14 +11,14 @@
 
 @interface FBFutureContextManagerTests : XCTestCase <FBFutureContextManagerDelegate>
 
-@property (nonatomic, strong, readwrite) dispatch_queue_t queue;
-@property (nonatomic, assign, readwrite) NSUInteger prepareCalled;
-@property (atomic, assign, readwrite) NSUInteger teardownCalled;
-@property (nonatomic, copy, readwrite) NSNumber *contextPoolTimeout;
-@property (nonatomic, assign, readwrite) BOOL failPrepare;
-@property (nonatomic, assign, readwrite) BOOL resetFailPrepare; // if YES, set failPrepare = NO when prepare fails
-@property (nonatomic, assign, readwrite) BOOL isContextSharable;
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
+@property (nonatomic, readwrite, strong) dispatch_queue_t queue;
+@property (nonatomic, readwrite, assign) NSUInteger prepareCalled;
+@property (atomic, readwrite, assign) NSUInteger teardownCalled;
+@property (nonatomic, readwrite, copy) NSNumber *contextPoolTimeout;
+@property (nonatomic, readwrite, assign) BOOL failPrepare;
+@property (nonatomic, readwrite, assign) BOOL resetFailPrepare; // if YES, set failPrepare = NO when prepare fails
+@property (nonatomic, readwrite, assign) BOOL isContextSharable;
+@property (nonatomic, readwrite, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -44,10 +44,11 @@
 - (void)testSingleAquire
 {
   FBFuture *future = [[self.manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@123];
-    }];
+                       utilizeWithPurpose:@"A Test"]
+                      onQueue:self.queue
+                      pop:^(id result) {
+                        return [FBFuture futureWithResult:@123];
+                      }];
 
   NSError *error = nil;
   id value = [future awaitWithTimeout:1 error:&error];
@@ -63,10 +64,11 @@
   FBFutureContextManager<NSNumber *> *manager = self.manager;
 
   FBFuture *future0 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@0];
-    }];
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@0];
+                       }];
 
   NSError *error = nil;
   id value = [future0 awaitWithTimeout:1 error:&error];
@@ -77,10 +79,11 @@
   XCTAssertEqual(self.teardownCalled, 1u);
 
   FBFuture *future1 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@1];
-    }];
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@1];
+                       }];
   value = [future1 awaitWithTimeout:1 error:&error];
   XCTAssertNil(error);
   XCTAssertEqualObjects(value, @1);
@@ -99,29 +102,32 @@
 
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 0"]
-      onQueue:self.queue pop:^(id result) {
-        [self.logger log:@"Test 0 In Use"];
-        return [FBFuture futureWithResult:@0];
-      }];
+                        utilizeWithPurpose:@"Test 0"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 0 In Use"];
+                         return [FBFuture futureWithResult:@0];
+                       }];
     [future0 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 1"]
-      onQueue:self.queue pop:^(id result) {
-        [self.logger log:@"Test 1 In Use"];
-        return [FBFuture futureWithResult:@1];
-      }];
+                        utilizeWithPurpose:@"Test 1"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 1 In Use"];
+                         return [FBFuture futureWithResult:@1];
+                       }];
     [future1 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 2"]
-      onQueue:self.queue pop:^(id result) {
-        [self.logger log:@"Test 2 In Use"];
-        return [FBFuture futureWithResult:@2];
-      }];
+                        utilizeWithPurpose:@"Test 2"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 2 In Use"];
+                         return [FBFuture futureWithResult:@2];
+                       }];
     [future2 resolveFromFuture:inner];
   });
 
@@ -145,29 +151,32 @@
 
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 0"]
-      onQueue:self.queue pop:^(id result) {
-        [self.logger log:@"Test 0 In Use"];
-        return [FBFuture futureWithResult:@0];
-      }];
+                        utilizeWithPurpose:@"Test 0"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 0 In Use"];
+                         return [FBFuture futureWithResult:@0];
+                       }];
     [future0 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 1"]
-      onQueue:self.queue pop:^(id result){
-        [self.logger log:@"Test 1 In Use"];
-        return [FBFuture futureWithResult:@1];
-      }];
+                        utilizeWithPurpose:@"Test 1"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 1 In Use"];
+                         return [FBFuture futureWithResult:@1];
+                       }];
     [future1 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"Test 2"]
-      onQueue:self.queue pop:^(id result) {
-        [self.logger log:@"Test 2 In Use"];
-        return [FBFuture futureWithResult:@2];
-      }];
+                        utilizeWithPurpose:@"Test 2"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         [self.logger log:@"Test 2 In Use"];
+                         return [FBFuture futureWithResult:@2];
+                       }];
     [future2 resolveFromFuture:inner];
   });
 
@@ -185,10 +194,11 @@
   FBFutureContextManager<NSNumber *> *manager = self.manager;
   self.failPrepare = YES;
   FBFuture *future0 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@0];
-    }];
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@0];
+                       }];
 
   NSError *error = nil;
   id value = [future0 awaitWithTimeout:1 error:&error];
@@ -199,10 +209,11 @@
 
   self.failPrepare = NO;
   FBFuture *future1 = [[manager
-    utilizeWithPurpose:@"A Test"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@1];
-    }];
+                        utilizeWithPurpose:@"A Test"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@1];
+                       }];
   error = nil;
   value = [future1 awaitWithTimeout:1 error:&error];
   XCTAssertNil(error);
@@ -224,26 +235,29 @@
   self.resetFailPrepare = YES;
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"A Test 1"]
-      onQueue:self.queue pop:^(id result) {
-       return [FBFuture futureWithResult:@0];
-      }];
+                        utilizeWithPurpose:@"A Test 1"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@0];
+                       }];
     [future0 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-    utilizeWithPurpose:@"A Test 2"]
-    onQueue:self.queue pop:^(id result) {
-      return [FBFuture futureWithResult:@1];
-    }];
+                        utilizeWithPurpose:@"A Test 2"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@1];
+                       }];
     [future1 resolveFromFuture:inner];
   });
   dispatch_async(concurrent, ^{
     FBFuture *inner = [[manager
-      utilizeWithPurpose:@"A Test 3"]
-      onQueue:self.queue pop:^(id result) {
-        return [FBFuture futureWithResult:@2];
-      }];
+                        utilizeWithPurpose:@"A Test 3"]
+                       onQueue:self.queue
+                       pop:^(id result) {
+                         return [FBFuture futureWithResult:@2];
+                       }];
     [future2 resolveFromFuture:inner];
   });
 
@@ -296,8 +310,7 @@
       self.failPrepare = NO;
     }
     return [[FBControlCoreError describe:@"Error in prepare"] failFuture];
-  }
-  else {
+  } else {
     return [FBFuture futureWithResult:@0];
   }
 }

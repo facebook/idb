@@ -14,16 +14,15 @@
 #import "FBDebugLog.h"
 #import "FBRuntimeTools.h"
 #import "FBXCTestConstants.h"
+#include "TargetConditionals.h"
 #import "XCTestCaseHelpers.h"
 #import "XCTestPrivate.h"
 #import "XTSwizzle.h"
 
-#include "TargetConditionals.h"
-
 #if TARGET_OS_IPHONE
-#import <UIKit/UIKit.h>
+ #import <UIKit/UIKit.h>
 #elif TARGET_OS_MAC
-#import <AppKit/AppKit.h>
+ #import <AppKit/AppKit.h>
 #endif
 
 __attribute__((constructor)) static void XCTestMainEntryPoint()
@@ -67,7 +66,7 @@ BOOL FBLoadXCTestIfNeeded()
 
   FBDebugLog(@"[XCTestMainEntryPoint] Explictly looking for XCTest.framework in DYLD_FALLBACK_FRAMEWORK_PATH: %@", fallbackFrameworkDirs);
 
-  for(NSString *frameworkDir in fallbackFrameworkDirs) {
+  for (NSString *frameworkDir in fallbackFrameworkDirs) {
     NSString *possibleLocation = [frameworkDir stringByAppendingPathComponent:@"XCTest.framework/XCTest"];
     if ([NSFileManager.defaultManager fileExistsAtPath:possibleLocation isDirectory:nil]) {
       if (dlopen([possibleLocation cStringUsingEncoding:NSUTF8StringEncoding], RTLD_LAZY)) {
@@ -84,7 +83,8 @@ BOOL FBLoadXCTestIfNeeded()
   return NO;
 }
 
-void FBDeployBlockWhenAppLoads(void(^mainBlock)()) {
+void FBDeployBlockWhenAppLoads(void (^mainBlock)())
+{
 #if TARGET_OS_IPHONE
   NSString *notification = UIApplicationDidFinishLaunchingNotification;
 #elif TARGET_OS_MAC
@@ -137,7 +137,7 @@ BOOL FBXCTestMain()
     return NO;
   }
   XCTestConfiguration *configuration = nil;
-  if([NSKeyedUnarchiver respondsToSelector:@selector(xct_unarchivedObjectOfClass:fromData:)]){
+  if ([NSKeyedUnarchiver respondsToSelector:@selector(xct_unarchivedObjectOfClass:fromData:)]) {
     configuration = (XCTestConfiguration *)[NSKeyedUnarchiver xct_unarchivedObjectOfClass:NSClassFromString(@"XCTestConfiguration") fromData:data];
   } else {
     configuration = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSString class] fromData:data error:&error];
@@ -165,9 +165,10 @@ BOOL FBXCTestMain()
   }
   void (*XCTestMain)(XCTestConfiguration *) = (void (*)(XCTestConfiguration *))FBRetrieveXCTestSymbol("_XCTestMain");
   FBDeployBlockWhenAppLoads(^{
-    CFRunLoopPerformBlock([NSRunLoop mainRunLoop].getCFRunLoop, kCFRunLoopCommonModes, ^{
-      XCTestMain(configuration);
-    });
+    CFRunLoopPerformBlock([NSRunLoop mainRunLoop].getCFRunLoop,
+      kCFRunLoopCommonModes, ^{
+        XCTestMain(configuration);
+      });
   });
   return YES;
 }

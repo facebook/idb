@@ -13,14 +13,14 @@
 
 @interface FBFileContainerTests : XCTestCase
 
-@property (nonatomic, copy, readonly) NSString *basePathTestBasePath;
-@property (nonatomic, copy, readonly) NSString *basePathPulledFileTestBasePath;
-@property (nonatomic, copy, readonly) NSString *basePathPulledDirectoryTestBasePath;
-@property (nonatomic, copy, readonly) NSString *basePathTestPathMappingFoo;
-@property (nonatomic, copy, readonly) NSString *basePathTestPathMappingBar;
-@property (nonatomic, copy, readonly) NSString *basePathPulledFileTestPathMapping;
-@property (nonatomic, copy, readonly) NSString *basePathPulledDirectoryTestPathMapping;
-@property (nonatomic, copy, readonly) NSString *basePathPulledMappedDirectoryTestPathMapping;
+@property (nonatomic, readonly, copy) NSString *basePathTestBasePath;
+@property (nonatomic, readonly, copy) NSString *basePathPulledFileTestBasePath;
+@property (nonatomic, readonly, copy) NSString *basePathPulledDirectoryTestBasePath;
+@property (nonatomic, readonly, copy) NSString *basePathTestPathMappingFoo;
+@property (nonatomic, readonly, copy) NSString *basePathTestPathMappingBar;
+@property (nonatomic, readonly, copy) NSString *basePathPulledFileTestPathMapping;
+@property (nonatomic, readonly, copy) NSString *basePathPulledDirectoryTestPathMapping;
+@property (nonatomic, readonly, copy) NSString *basePathPulledMappedDirectoryTestPathMapping;
 @end
 
 @implementation FBFileContainerTests
@@ -32,7 +32,7 @@
   _basePathTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath", NSUUID.UUID.UUIDString]];
   _basePathPulledFileTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_file", NSUUID.UUID.UUIDString]];
   _basePathPulledDirectoryTestBasePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testBasePath_pulled_directory", NSUUID.UUID.UUIDString]];
-  _basePathTestPathMappingFoo =[NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_foo", NSUUID.UUID.UUIDString]];
+  _basePathTestPathMappingFoo = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_foo", NSUUID.UUID.UUIDString]];
   _basePathTestPathMappingBar = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_bar", NSUUID.UUID.UUIDString]];
   _basePathPulledFileTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_file", NSUUID.UUID.UUIDString]];;
   _basePathPulledDirectoryTestPathMapping = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_FBSimulatorFileCommandsTests_testPathMapping_pulled_directory", NSUUID.UUID.UUIDString]];
@@ -126,7 +126,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   XCTAssertTrue([FileInFooText writeToFile:self.fileInFoo atomically:YES encoding:NSUTF8StringEncoding error:&error]);
   XCTAssertTrue([FileInDirectoryInBarText writeToFile:self.fileInDirectoryInBar atomically:YES encoding:NSUTF8StringEncoding error:&error]);
 
-  NSDictionary<NSString *, NSString *> *pathMapping = @{@"foo": self.fooPath, @"bar": self.barPath};
+  NSDictionary<NSString *, NSString *> *pathMapping = @{@"foo" : self.fooPath, @"bar" : self.barPath};
   return [FBFileContainer fileContainerForPathMapping:pathMapping];
 }
 
@@ -199,7 +199,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
 - (void)testBasePathCreateDirectory
 {
   id<FBFileContainer> container = [self setUpBasePathContainer];
-  NSError *error =nil;
+  NSError *error = nil;
   XCTAssertNotNil([[container createDirectory:@"other"] await:&error]);
   XCTAssertNil(error);
   NSSet<NSString *> *expectedFiles = [NSSet setWithArray:@[@"file.txt", @"dir", @"other"]];
@@ -252,7 +252,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
     @"agent_custom_set.crash",
     @"photo0.png",
     @"simulator_system.log",
-  ]];
+                   ]];
   actualFiles = [[container contentsOfDirectory:@"dir/Resources"] await:&error];
   XCTAssertNotNil(actualFiles);
   XCTAssertNil(error);
@@ -464,7 +464,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
     @"agent_custom_set.crash",
     @"photo0.png",
     @"simulator_system.log",
-  ]];
+                   ]];
   actualFiles = [[container contentsOfDirectory:@"bar/dir/Resources"] await:&error];
   XCTAssertNotNil(actualFiles);
   XCTAssertNil(error);
@@ -506,7 +506,7 @@ NSString *FileInDirectoryInBarText = @"Other Text";
   // Then back again.
   XCTAssertNotNil([[container moveFrom:@"bar/moved_dir" to:@"bar/dir"] await:&error]);
   XCTAssertNil(error);
-  expectedFiles = [NSSet setWithArray:@[@"in_dir.txt",]];
+  expectedFiles = [NSSet setWithArray:@[@"in_dir.txt", ]];
   actualFiles = [[container contentsOfDirectory:@"bar/dir"] await:&error];
   XCTAssertNotNil(actualFiles);
   XCTAssertNil(error);

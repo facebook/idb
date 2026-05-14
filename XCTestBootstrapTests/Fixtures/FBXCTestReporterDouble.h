@@ -19,37 +19,37 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An array of the started test suites.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *startedSuites;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *startedSuites;
 
 /**
  An array of ended test suites
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *endedSuites;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *endedSuites;
 
 /**
  An array of called test class/method pairs.
  */
-@property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *startedTests;
+@property (nonatomic, readonly, copy) NSArray<NSArray<NSString *> *> *startedTests;
 
 /**
  An array of passed test class/method pairs.
  */
-@property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *passedTests;
+@property (nonatomic, readonly, copy) NSArray<NSArray<NSString *> *> *passedTests;
 
 /**
  An array of failed test class/method pairs.
  */
-@property (nonatomic, copy, readonly) NSArray<NSArray<NSString *> *> *failedTests;
+@property (nonatomic, readonly, copy) NSArray<NSArray<NSString *> *> *failedTests;
 
 /**
  Confirmation -[FBXCTestReporter printReportWithError:] was called.
  */
-@property (nonatomic, assign, readonly) BOOL printReportWasCalled;
+@property (nonatomic, readonly, assign) BOOL printReportWasCalled;
 
 /**
  Path to logs directory
  */
-@property (nonatomic, nullable, copy) NSString *logDirectoryPath;
+@property (nullable, nonatomic, copy) NSString *logDirectoryPath;
 
 /**
  Get events by name that were received from `-[FBXCTestReporter handleExternalEvent:]`

@@ -60,7 +60,6 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  */
 - (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
 
-
 /**
  A Touch Event.
  @param screenSize the size of the screen in pixels.

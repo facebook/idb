@@ -331,17 +331,17 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  The Width of the Screen in Pixels.
  */
-@property (nonatomic, assign, readonly) NSUInteger widthPixels;
+@property (nonatomic, readonly, assign) NSUInteger widthPixels;
 
 /**
  The Height of the Screen in Pixels.
  */
-@property (nonatomic, assign, readonly) NSUInteger heightPixels;
+@property (nonatomic, readonly, assign) NSUInteger heightPixels;
 
 /**
  The Scale of the Screen.
  */
-@property (nonatomic, assign, readonly) float scale;
+@property (nonatomic, readonly, assign) float scale;
 
 /**
  The Designated Initializer.
@@ -357,22 +357,22 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  The Device Name of the Device.
  */
-@property (nonatomic, copy, readonly) FBDeviceModel model;
+@property (nonatomic, readonly, copy) FBDeviceModel model;
 
 /**
  The String Representations of the Product Types.
  */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
+@property (nonatomic, readonly, copy) NSSet<NSString *> *productTypes;
 
 /**
  The native Device Architecture.
  */
-@property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
+@property (nonatomic, readonly, copy) FBArchitecture deviceArchitecture;
 
 /**
  The Supported Product Family.
  */
-@property (nonatomic, assign, readonly) FBControlCoreProductFamily family;
+@property (nonatomic, readonly, assign) FBControlCoreProductFamily family;
 
 /**
  A Generic Device with the Given Name.
@@ -388,27 +388,27 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  A string representation of the OS Version.
  */
-@property (nonatomic, copy, readonly) FBOSVersionName name;
+@property (nonatomic, readonly, copy) FBOSVersionName name;
 
 /**
  A String representation of the numeric part of the OS Version.
  */
-@property (nonatomic, copy, readonly) NSString *versionString;
+@property (nonatomic, readonly, copy) NSString *versionString;
 
 /**
  An NSDecimalNumber representation of the numeric part of the OS Version.
  */
-@property (nonatomic, copy, readonly) NSDecimalNumber *number;
+@property (nonatomic, readonly, copy) NSDecimalNumber *number;
 
 /**
  An NSOperatingSystemVersion representation of the numeric part of the OS Version.
  */
-@property (nonatomic, assign, readonly) NSOperatingSystemVersion version;
+@property (nonatomic, readonly, assign) NSOperatingSystemVersion version;
 
 /**
  The Supported Families of the OS Version.
  */
-@property (nonatomic, copy, readonly) NSSet<NSNumber *> *families;
+@property (nonatomic, readonly, copy) NSSet<NSNumber *> *families;
 
 /**
  A Generic OS with the Given Name.
@@ -433,22 +433,22 @@ extern FBOSVersionName const FBOSVersionNamemac;
 /**
  Maps Device Names to Devices.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBDeviceModel, FBDeviceType *> *nameToDevice;
+@property (class, nonatomic, readonly, copy) NSDictionary<FBDeviceModel, FBDeviceType *> *nameToDevice;
 
 /**
  Maps Device 'ProductType' to Device Variants.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, FBDeviceType *> *productTypeToDevice;
+@property (class, nonatomic, readonly, copy) NSDictionary<NSString *, FBDeviceType *> *productTypeToDevice;
 
 /**
  OS Version names to OS Versions.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBOSVersionName, FBOSVersion *> *nameToOSVersion;
+@property (class, nonatomic, readonly, copy) NSDictionary<FBOSVersionName, FBOSVersion *> *nameToOSVersion;
 
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-+ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture>*)architectures;
++ (NSSet<FBArchitecture> *)baseArchsToCompatibleArch:(NSArray<FBArchitecture> *)architectures;
 
 @end
 

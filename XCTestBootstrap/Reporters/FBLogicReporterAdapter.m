@@ -6,8 +6,9 @@
  */
 
 #import "FBLogicReporterAdapter.h"
-#import <XCTestBootstrap/FBXCTestReporter.h>
+
 #import <XCTestBootstrap/FBXCTestLogger.h>
+#import <XCTestBootstrap/FBXCTestReporter.h>
 
 #import "FBXCTestConstants.h"
 
@@ -31,7 +32,6 @@
 
   return self;
 }
-
 
 - (void)didBeginExecutingTestPlan
 {
@@ -79,7 +79,6 @@
     } else {
       NSAssert(NO, @"Unknown type of obj. This will likely cause crash in runtime because of swift signature mismatch");
     }
-
   } else if ([eventName isEqualToString:kReporter_Events_BeginTest]) {
     NSString *className = JSONEvent[kReporter_BeginTest_ClassNameKey];
     NSString *methodName = JSONEvent[kReporter_BeginTest_MethodNameKey];
@@ -90,13 +89,13 @@
     NSDate *finishDate = [NSDate dateWithTimeIntervalSince1970:[JSONEvent[kReporter_TimestampKey] doubleValue]];
     NSInteger unexpected = [JSONEvent[kReporter_EndTestSuite_UnexpectedExceptionCountKey] integerValue];
     FBTestManagerResultSummary *summary = [[FBTestManagerResultSummary alloc]
-      initWithTestSuite:JSONEvent[kReporter_EndTestSuite_SuiteKey]
-      finishTime:finishDate
-      runCount:[JSONEvent[kReporter_EndTestSuite_TestCaseCountKey] integerValue]
-      failureCount:[JSONEvent[kReporter_EndTestSuite_TotalFailureCountKey] integerValue]
-      unexpected:unexpected
-      testDuration:[JSONEvent[kReporter_EndTestSuite_TestDurationKey] doubleValue]
-      totalDuration:[JSONEvent[kReporter_EndTest_TotalDurationKey] doubleValue]];
+                                           initWithTestSuite:JSONEvent[kReporter_EndTestSuite_SuiteKey]
+                                           finishTime:finishDate
+                                           runCount:[JSONEvent[kReporter_EndTestSuite_TestCaseCountKey] integerValue]
+                                           failureCount:[JSONEvent[kReporter_EndTestSuite_TotalFailureCountKey] integerValue]
+                                           unexpected:unexpected
+                                           testDuration:[JSONEvent[kReporter_EndTestSuite_TestDurationKey] doubleValue]
+                                           totalDuration:[JSONEvent[kReporter_EndTest_TotalDurationKey] doubleValue]];
     [reporter finishedWithSummary:summary];
   } else {
     [self.logger logFormat:@"[%@] Unhandled event JSON: %@", NSStringFromClass(self.class), JSONEvent];
@@ -129,15 +128,15 @@
 - (void)reportTestFailureForTestClass:(NSString *)testClass testName:(NSString *)testName endTestEvent:(NSDictionary *)JSONEvent
 {
   NSArray<NSDictionary *> *exceptionDicts = JSONEvent[kReporter_EndTest_ExceptionsKey];
-    NSMutableArray<FBExceptionInfo *> *parsedExceptions = [NSMutableArray new];
+  NSMutableArray<FBExceptionInfo *> *parsedExceptions = [NSMutableArray new];
 
-    for (NSDictionary *exceptionDict in exceptionDicts) {
-        NSString *message = exceptionDict[kReporter_EndTest_Exception_ReasonKey];
-        NSString *file = exceptionDict[kReporter_EndTest_Exception_FilePathInProjectKey];
-        NSUInteger line = [exceptionDict[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
-        FBExceptionInfo *exception = [[FBExceptionInfo alloc]initWithMessage:message file:file line:line];
-        [parsedExceptions addObject:exception];
-    }
+  for (NSDictionary *exceptionDict in exceptionDicts) {
+    NSString *message = exceptionDict[kReporter_EndTest_Exception_ReasonKey];
+    NSString *file = exceptionDict[kReporter_EndTest_Exception_FilePathInProjectKey];
+    NSUInteger line = [exceptionDict[kReporter_EndTest_Exception_LineNumberKey] unsignedIntegerValue];
+    FBExceptionInfo *exception = [[FBExceptionInfo alloc]initWithMessage:message file:file line:line];
+    [parsedExceptions addObject:exception];
+  }
 
   [self.reporter testCaseDidFailForTestClass:testClass method:testName exceptions:[parsedExceptions copy]];
 }

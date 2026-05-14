@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
 #import <sys/sysctl.h>
+
+#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @class FBProcessInfo;
@@ -79,7 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if process is Runnig and error is NOT set. False if process isn't running or error is set.
  */
-- (BOOL) isProcessRunning:(pid_t)processIdentifier error:(NSError **)error;
+- (BOOL)isProcessRunning:(pid_t)processIdentifier error:(NSError **)error;
 
 /**
  Verify if process is stopped
@@ -88,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if process is Stopped and error is NOT set. False if process isn't stopped or error is set.
  */
-- (BOOL) isProcessStopped:(pid_t)processIdentifier error:(NSError **)error;
+- (BOOL)isProcessStopped:(pid_t)processIdentifier error:(NSError **)error;
 
 /**
  Verify if process has a debugger attached to it.
@@ -97,7 +98,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if process is has a debugger attached and error is NOT set.. False if process doesn't have a debugger attached  or error is set.
  */
-- (BOOL) isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError **)error;
+- (BOOL)isDebuggerAttachedTo:(pid_t)processIdentifier error:(NSError **)error;
 
 /**
  Wait for a debugger to attach to the process and the process to be up running again.
@@ -105,7 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processIdentifier the Process Identifier of the process.
  @return A future waitting for the debugger and process up running again.
  */
-+ (FBFuture<NSNull *> *) waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier;
++ (FBFuture<NSNull *> *)waitForDebuggerToAttachAndContinueFor:(pid_t)processIdentifier;
 
 /**
  Wait for process to receive SIGSTOP.
@@ -113,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processIdentifier the Process Identifier of the process.
  @return A future waitting for the process to be in SSTOP state.
  */
-+ (FBFuture<NSNull *> *) waitStopSignalForProcess:(pid_t) processIdentifier;
++ (FBFuture<NSNull *> *)waitStopSignalForProcess:(pid_t)processIdentifier;
 
 /**
  Performs a stackshot on the provided process id.

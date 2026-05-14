@@ -5,16 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreSimulator/SimDevice.h>
 #import "FBSimulatorNotificationCommands.h"
+
+#import <CoreSimulator/SimDevice.h>
+#import <FBControlCore/FBiOSTarget.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import <FBControlCore/FBiOSTarget.h>
 
 @interface FBSimulatorNotificationCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -53,20 +54,21 @@
   }
 
   if ([self.simulator.device respondsToSelector:(@selector(sendPushNotificationForBundleID:jsonPayload:error:))]) {
-    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
-      NSError *error = nil;
-      [self.simulator.device sendPushNotificationForBundleID:bundleID jsonPayload:jsonObj error:&error];
-      if (error) {
-        return [FBFuture futureWithError:error];
-      }
+    return [FBFuture onQueue:self.simulator.workQueue
+                     resolve:^FBFuture<NSNull *> *() {
+                       NSError *error = nil;
+                       [self.simulator.device sendPushNotificationForBundleID:bundleID jsonPayload:jsonObj error:&error];
+                       if (error) {
+                         return [FBFuture futureWithError:error];
+                       }
 
-      return FBFuture.empty;
-    }];
+                       return FBFuture.empty;
+                     }];
   }
 
   return [[FBSimulatorError
-            describe:@"SimDevice doesn't have sendPushNotificationForBundleID selector"]
-            failFuture];
+           describe:@"SimDevice doesn't have sendPushNotificationForBundleID selector"]
+          failFuture];
 }
 
 @end

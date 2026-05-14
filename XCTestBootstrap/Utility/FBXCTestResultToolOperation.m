@@ -22,14 +22,15 @@ NSString *const JPEG = @"public.jpeg";
 {
   NSArray<NSString *> *xcrunArguments = [@[@"xcresulttool"] arrayByAddingObjectsFromArray:arguments];
   return [[[[[[FBProcessBuilder
-    withLaunchPath:XcrunPath]
-    withArguments:xcrunArguments]
-    withStdErrToLogger:logger]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(FBSubprocess *task) {
-      return task;
-    }];
+               withLaunchPath:XcrunPath]
+              withArguments:xcrunArguments]
+             withStdErrToLogger:logger]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          onQueue:queue
+          map:^(FBSubprocess *task) {
+            return task;
+          }];
 }
 
 + (FBFuture<FBSubprocess *> *)exportFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId withType:(NSString *)exportType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
@@ -55,9 +56,10 @@ NSString *const JPEG = @"public.jpeg";
     [arguments addObjectsFromArray:@[@"--id", bundleObjectId]];
   }
   return [[FBXCTestResultToolOperation internalOperationWithArguments:arguments queue:queue logger:logger]
-    onQueue:queue map:^(FBSubprocess *task) {
-      return [FBXCTestResultToolOperation getJSONFromTask:task];
-    }];
+          onQueue:queue
+          map:^(FBSubprocess *task) {
+            return [FBXCTestResultToolOperation getJSONFromTask:task];
+          }];
 }
 
 + (FBFuture<FBSubprocess *> *)exportFileFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
@@ -68,22 +70,27 @@ NSString *const JPEG = @"public.jpeg";
 + (FBFuture<FBSubprocess *> *)exportJPEGFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId type:(NSString *)encodeType queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   return [[FBXCTestResultToolOperation
-   exportFileFrom:path to:destination forId:bundleObjectId queue:queue logger:logger]
-   onQueue:queue fmap:^ FBFuture * (FBSubprocess *task) {
-     if ([encodeType isEqualToString:HEIC]) {
-       NSArray<NSString *> *arguments = @[@"-s", @"format", @"jpeg", destination, @"--out", destination];
-       return [[[[[FBProcessBuilder
-         withLaunchPath:SipsPath]
-         withArguments:arguments]
-         withStdErrToLogger:logger]
-         withTaskLifecycleLoggingTo:logger]
-         runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]];
-     } else if ([encodeType isEqualToString:JPEG]) {
-       return [FBFuture futureWithResult:task];
-     } else {
-       return [[FBControlCoreError describeFormat:@"Unrecognized XCTest screenshot encoding: %@", encodeType] failFuture];
-     }
-  }];
+           exportFileFrom:path
+           to:destination
+           forId:bundleObjectId
+           queue:queue
+           logger:logger]
+          onQueue:queue
+          fmap:^FBFuture *(FBSubprocess *task) {
+            if ([encodeType isEqualToString:HEIC]) {
+              NSArray<NSString *> *arguments = @[@"-s", @"format", @"jpeg", destination, @"--out", destination];
+              return [[[[[FBProcessBuilder
+                          withLaunchPath:SipsPath]
+                         withArguments:arguments]
+                        withStdErrToLogger:logger]
+                       withTaskLifecycleLoggingTo:logger]
+                      runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]];
+            } else if ([encodeType isEqualToString:JPEG]) {
+              return [FBFuture futureWithResult:task];
+            } else {
+              return [[FBControlCoreError describeFormat:@"Unrecognized XCTest screenshot encoding: %@", encodeType] failFuture];
+            }
+          }];
 }
 
 + (FBFuture<FBSubprocess *> *)exportDirectoryFrom:(NSString *)path to:(NSString *)destination forId:(NSString *)bundleObjectId queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
@@ -95,9 +102,10 @@ NSString *const JPEG = @"public.jpeg";
 {
   NSArray<NSString *> *arguments = @[@"formatDescription"];
   return [[FBXCTestResultToolOperation internalOperationWithArguments:arguments queue:queue logger:logger]
-    onQueue:queue map:^(FBSubprocess *task) {
-      return [FBXCTestResultToolOperation getJSONFromTask:task];
-    }];
+          onQueue:queue
+          map:^(FBSubprocess *task) {
+            return [FBXCTestResultToolOperation getJSONFromTask:task];
+          }];
 }
 
 @end

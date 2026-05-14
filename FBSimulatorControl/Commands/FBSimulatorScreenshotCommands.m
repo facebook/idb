@@ -13,8 +13,8 @@
 
 @interface FBSimulatorScreenshotCommands ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) FBSimulatorImage *image;
+@property (nonatomic, readonly, strong) FBSimulator *simulator;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorImage *image;
 
 @end
 
@@ -45,21 +45,22 @@
 - (FBFuture<NSData *> *)takeScreenshot:(FBScreenshotFormat)format
 {
   return [[self
-    connectToImage]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorImage *image) {
-      NSData *data = nil;
-      NSError *error = nil;
-      if ([format isEqualToString:FBScreenshotFormatJPEG]) {
-        data = [image jpegImageDataWithError:&error];
-      } else if ([format isEqualToString:FBScreenshotFormatPNG]) {
-        data = [image pngImageDataWithError:&error];
-      } else {
-        return [[FBSimulatorError
-          describeFormat:@"%@ is not a recognized screenshot format", format]
-          failFuture];
-      }
-      return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
-    }];
+           connectToImage]
+          onQueue:self.simulator.workQueue
+          fmap:^(FBSimulatorImage *image) {
+            NSData *data = nil;
+            NSError *error = nil;
+            if ([format isEqualToString:FBScreenshotFormatJPEG]) {
+              data = [image jpegImageDataWithError:&error];
+            } else if ([format isEqualToString:FBScreenshotFormatPNG]) {
+              data = [image pngImageDataWithError:&error];
+            } else {
+              return [[FBSimulatorError
+                       describeFormat:@"%@ is not a recognized screenshot format", format]
+                      failFuture];
+            }
+            return data ? [FBFuture futureWithResult:data] : [FBFuture futureWithError:error];
+          }];
 }
 
 #pragma mark Private Methods
@@ -71,12 +72,13 @@
   }
 
   return [[self.simulator
-    connectToFramebuffer]
-    onQueue:self.simulator.workQueue fmap:^(FBFramebuffer *framebuffer) {
-      FBSimulatorImage *image = [FBSimulatorImage imageWithFramebuffer:framebuffer logger:self.simulator.logger];
-      self.image = image;
-      return [FBFuture futureWithResult:image];
-    }];
+           connectToFramebuffer]
+          onQueue:self.simulator.workQueue
+          fmap:^(FBFramebuffer *framebuffer) {
+            FBSimulatorImage *image = [FBSimulatorImage imageWithFramebuffer:framebuffer logger:self.simulator.logger];
+            self.image = image;
+            return [FBFuture futureWithResult:image];
+          }];
 }
 
 @end

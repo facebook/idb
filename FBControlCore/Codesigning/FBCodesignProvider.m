@@ -15,8 +15,8 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 @interface FBCodesignProvider ()
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -67,23 +67,25 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
-  
+
   return [[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-    withStdOutInMemoryAsString]
-    withStdErrInMemoryAsString]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (FBSubprocess<NSNull *, NSString *, NSString *> *task) {
-      NSNumber *exitCode = task.exitCode.result;
-      if (![exitCode isEqualToNumber:@0]) {
-        return [[FBControlCoreError
-          describeFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
-          failFuture];
-      }
-      [logger logFormat:@"Successfully signed bundle %@", task.stdErr];
-      return FBFuture.empty;
-    }];
+               withLaunchPath:@"/usr/bin/codesign"
+               arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
+              withStdOutInMemoryAsString]
+             withStdErrInMemoryAsString]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:nil]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
+            NSNumber *exitCode = task.exitCode.result;
+            if (![exitCode isEqualToNumber:@0]) {
+              return [[FBControlCoreError
+                       describeFormat:@"Codesigning failed with exit code %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+                      failFuture];
+            }
+            [logger logFormat:@"Successfully signed bundle %@", task.stdErr];
+            return FBFuture.empty;
+          }];
 }
 
 - (void)makeCodesignatureWritable:(NSString *)bundlePath error:(NSError **)error
@@ -137,29 +139,31 @@ static NSString *const CDHashPrefix = @"CDHash=";
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Obtaining CDHash for bundle at path %@", bundlePath];
   return [[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
-    withStdOutInMemoryAsString]
-    withStdErrInMemoryAsString]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:nil]
-    onQueue:self.queue fmap:^ FBFuture<NSString *> * (FBSubprocess<NSNull *,NSString *,NSString *> *task) {
-      NSNumber *exitCode = task.exitCode.result;
-      if (![exitCode isEqualToNumber:@0]) {
-        return [[FBControlCoreError
-          describeFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
-          failFuture];
-      }
-      NSString *output = task.stdErr;
-      NSTextCheckingResult *result = [FBCodesignProvider.cdHashRegex firstMatchInString:task.stdErr options:0 range:NSMakeRange(0, output.length)];
-      if (!result) {
-        return [[FBControlCoreError
-          describeFormat:@"Could not find 'CDHash' in output: %@", output]
-          failFuture];
-      }
-      NSString *cdHash = [output substringWithRange:[result rangeAtIndex:1]];
-      [logger logFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath];
-      return [FBFuture futureWithResult:cdHash];
-    }];
+               withLaunchPath:@"/usr/bin/codesign"
+               arguments:@[@"-dvvvv", bundlePath]]
+              withStdOutInMemoryAsString]
+             withStdErrInMemoryAsString]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:nil]
+          onQueue:self.queue
+          fmap:^FBFuture<NSString *> *(FBSubprocess<NSNull *, NSString *, NSString *> *task) {
+            NSNumber *exitCode = task.exitCode.result;
+            if (![exitCode isEqualToNumber:@0]) {
+              return [[FBControlCoreError
+                       describeFormat:@"Checking CDHash of codesign execution failed %@, %@\n%@", exitCode, task.stdOut, task.stdErr]
+                      failFuture];
+            }
+            NSString *output = task.stdErr;
+            NSTextCheckingResult *result = [FBCodesignProvider.cdHashRegex firstMatchInString:task.stdErr options:0 range:NSMakeRange(0, output.length)];
+            if (!result) {
+              return [[FBControlCoreError
+                       describeFormat:@"Could not find 'CDHash' in output: %@", output]
+                      failFuture];
+            }
+            NSString *cdHash = [output substringWithRange:[result rangeAtIndex:1]];
+            [logger logFormat:@"Successfully obtained hash %@ from bundle %@", cdHash, bundlePath];
+            return [FBFuture futureWithResult:cdHash];
+          }];
 }
 
 @end

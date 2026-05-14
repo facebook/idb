@@ -16,7 +16,7 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
 
 @interface FBSimulatorKeychainCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -46,20 +46,23 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
   FBFuture<NSNull *> *stopServiceFuture = FBFuture.empty;
   if (self.simulator.state == FBiOSTargetStateBooted) {
     stopServiceFuture = [[[self.simulator stopServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
-      timeout:kSecuritydServiceStartupShutdownTimeout waitingFor:@"%@ service to stop", SecuritydServiceName];
+                         timeout:kSecuritydServiceStartupShutdownTimeout
+                         waitingFor:@"%@ service to stop", SecuritydServiceName];
   }
   return [stopServiceFuture
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (id _) {
-      NSError *error = nil;
-      if (![self removeKeychainContentsWithLogger:self.simulator.logger error:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      if (self.simulator.state == FBiOSTargetStateBooted) {
-        return [[[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
-          timeout:kSecuritydServiceStartupShutdownTimeout waitingFor:@"%@ service to restart", SecuritydServiceName];
-      }
-      return FBFuture.empty;
-    }];
+          onQueue:self.simulator.workQueue
+          fmap:^FBFuture<NSNull *> *(id _) {
+            NSError *error = nil;
+            if (![self removeKeychainContentsWithLogger:self.simulator.logger error:&error]) {
+              return [FBFuture futureWithError:error];
+            }
+            if (self.simulator.state == FBiOSTargetStateBooted) {
+              return [[[self.simulator startServiceWithName:SecuritydServiceName] mapReplace:NSNull.null]
+                      timeout:kSecuritydServiceStartupShutdownTimeout
+                      waitingFor:@"%@ service to restart", SecuritydServiceName];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 #pragma mark Private
@@ -77,8 +80,8 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
 - (BOOL)removeKeychainContentsWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSString *keychainDirectory = [[self.simulator.dataDirectory
-    stringByAppendingPathComponent:@"Library"]
-    stringByAppendingPathComponent:@"Keychains"];
+                                  stringByAppendingPathComponent:@"Library"]
+                                 stringByAppendingPathComponent:@"Keychains"];
 
   BOOL isDirectory = NO;
   if (![NSFileManager.defaultManager fileExistsAtPath:keychainDirectory isDirectory:&isDirectory]) {
@@ -87,16 +90,16 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
   }
   if (!isDirectory) {
     return [[FBSimulatorError
-      describeFormat:@"Keychain path %@ is not a directory", keychainDirectory]
-      failBool:error];
+             describeFormat:@"Keychain path %@ is not a directory", keychainDirectory]
+            failBool:error];
   }
 
   NSError *innerError = nil;
   NSArray<NSString *> *paths = [NSFileManager.defaultManager contentsOfDirectoryAtPath:keychainDirectory error:&innerError];
   if (!paths) {
     return [[FBSimulatorError
-      describeFormat:@"Could not list the contents of the keychain directory %@", keychainDirectory]
-      failBool:error];
+             describeFormat:@"Could not list the contents of the keychain directory %@", keychainDirectory]
+            failBool:error];
   }
   for (NSString *path in paths) {
     NSString *fullPath = [keychainDirectory stringByAppendingPathComponent:path];
@@ -107,9 +110,9 @@ static NSTimeInterval const kSecuritydServiceStartupShutdownTimeout = 10.f;
     [logger logFormat:@"Removing keychain at path %@", fullPath];
     if (![NSFileManager.defaultManager removeItemAtPath:fullPath error:&innerError]) {
       return [[[FBSimulatorError
-        describeFormat:@"Failed to delete keychain at path %@", fullPath]
-        causedBy:innerError]
-        failBool:error];
+                describeFormat:@"Failed to delete keychain at path %@", fullPath]
+               causedBy:innerError]
+              failBool:error];
     }
   }
 

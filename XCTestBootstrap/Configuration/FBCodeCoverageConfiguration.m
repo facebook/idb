@@ -7,10 +7,9 @@
 
 #import "FBCodeCoverageConfiguration.h"
 
-
 @implementation FBCodeCoverageConfiguration
 
--(instancetype) initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection
+- (instancetype)initWithDirectory:(NSString *)coverageDirectory format:(FBCodeCoverageFormat)format enableContinuousCoverageCollection:(BOOL)enableContinuousCoverageCollection
 {
   self = [super init];
   if (!self) {
@@ -28,6 +27,5 @@
 {
   return [NSString stringWithFormat:@"Coverage Directory %@ | Format %lu | Enable Continuous Coverage Collection %d", self.coverageDirectory, (unsigned long)self.format, self.shouldEnableContinuousCoverageCollection];
 }
-
 
 @end

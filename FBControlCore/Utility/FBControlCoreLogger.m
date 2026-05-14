@@ -6,10 +6,10 @@
  */
 
 #import "FBControlCoreLogger.h"
+#import "FBControlCoreLogger+OSLog.h"
 
 #import "FBDataConsumer.h"
 #import "FBFileWriter.h"
-#import "FBControlCoreLogger+OSLog.h"
 
 @interface FBControlCoreLogger_NSLog : NSObject <FBControlCoreLogger>
 
@@ -175,8 +175,8 @@
 
 @interface FBControlCoreLogger_Consumer : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
-@property (nonatomic, strong, readonly, nullable) NSDateFormatter *dateFormatter;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nullable, nonatomic, readonly, strong) NSDateFormatter *dateFormatter;
 
 @end
 
@@ -224,7 +224,7 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2)
+- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2)
 {
   va_list args;
   va_start(args, format);
@@ -294,7 +294,7 @@
   return [self compositeLoggerWithLoggers:@[
     systemLogger,
     [self loggerToFileDescriptor:STDERR_FILENO closeOnEndOfFile:NO],
-  ]];
+          ]];
 }
 
 #pragma clang diagnostic pop

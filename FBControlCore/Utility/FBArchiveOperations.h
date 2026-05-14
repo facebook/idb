@@ -31,7 +31,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
 
 /**
  Builds a command to extract from a file on disk
- 
+
  @param path the path to the archive.
  @param extractPath the extraction path.
  @param overrideMTime if YES the archive contests' `mtime` will be ignored. Current timestamp will be used as mtime of extracted files/directories.

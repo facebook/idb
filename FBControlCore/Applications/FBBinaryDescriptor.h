@@ -48,22 +48,22 @@ extern FBBinaryArchitecture const FBBinaryArchitectureArm64;
 /**
  The name of the executable.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The Supported Architectures of the Executable.
  */
-@property (nonatomic, copy, readonly) NSSet<FBBinaryArchitecture> *architectures;
+@property (nonatomic, readonly, copy) NSSet<FBBinaryArchitecture> *architectures;
 
 /**
  The LC_UUID of the binary (if present)
  */
-@property (nonatomic, copy, nullable, readonly) NSUUID *uuid;
+@property (nullable, nonatomic, readonly, copy) NSUUID *uuid;
 
 /**
  The file path to the executable.
  */
-@property (nonatomic, copy, readonly) NSString *path;
+@property (nonatomic, readonly, copy) NSString *path;
 
 #pragma mark Public Methods
 

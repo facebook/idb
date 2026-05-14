@@ -16,4 +16,3 @@
 - (unsigned long long)registerNotificationHandler:(void (^)(NSDictionary *))arg1;
 
 @end
-

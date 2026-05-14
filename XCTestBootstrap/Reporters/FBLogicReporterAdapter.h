@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <XCTestBootstrap/FBLogicXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 

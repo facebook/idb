@@ -9,8 +9,8 @@
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBSubprocess.h"
 #import "FBProcessBuilder.h"
+#import "FBSubprocess.h"
 
 NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 
@@ -25,13 +25,13 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 + (FBFuture<NSString *> *)extractArchiveAtPath:(NSString *)path toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[FBProcessBuilder
-    withLaunchPath:BSDTarPath]
-    withArguments:[self commandToExtractArchiveAtPath:path toPath:extractPath overrideModificationTime:overrideMTime debugLogging:NO]]
-    withStdErrToLoggerAndErrorMessage:logger.debug]
-    withStdOutToLogger:logger.debug]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    mapReplace:extractPath];
+                withLaunchPath:BSDTarPath]
+               withArguments:[self commandToExtractArchiveAtPath:path toPath:extractPath overrideModificationTime:overrideMTime debugLogging:NO]]
+              withStdErrToLoggerAndErrorMessage:logger.debug]
+             withStdOutToLogger:logger.debug]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          mapReplace:extractPath];
 }
 
 + (NSArray<NSString *> *)commandToExtractFromStdInWithExtractPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime compression:(FBCompressionFormat)compression debugLogging:(BOOL)debugLogging
@@ -47,54 +47,52 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 + (FBFuture<NSString *> *)extractArchiveFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression
 {
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:BSDTarPath]
-    withArguments:[self commandToExtractFromStdInWithExtractPath:extractPath overrideModificationTime:overrideMTime compression:compression debugLogging:NO]]
-    withStdIn:stream]
-    withStdErrToLoggerAndErrorMessage:logger.debug]
-    withStdOutToLogger:logger.debug]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    mapReplace:extractPath];
+                 withLaunchPath:BSDTarPath]
+                withArguments:[self commandToExtractFromStdInWithExtractPath:extractPath overrideModificationTime:overrideMTime compression:compression debugLogging:NO]]
+               withStdIn:stream]
+              withStdErrToLoggerAndErrorMessage:logger.debug]
+             withStdOutToLogger:logger.debug]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          mapReplace:extractPath];
 }
 
 + (FBFuture<NSString *> *)extractGzipFromStream:(FBProcessInput *)stream toPath:(NSString *)extractPath logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/gunzip"]
-    withArguments:@[@"--to-stdout"]]
-    withStdIn:stream]
-    withStdErrToLoggerAndErrorMessage:logger.debug]
-    withStdOutPath:extractPath]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    mapReplace:extractPath];
+                 withLaunchPath:@"/usr/bin/gunzip"]
+                withArguments:@[@"--to-stdout"]]
+               withStdIn:stream]
+              withStdErrToLoggerAndErrorMessage:logger.debug]
+             withStdOutPath:extractPath]
+            withTaskLifecycleLoggingTo:logger]
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          mapReplace:extractPath];
 }
 
 + (FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger
 {
   return (FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *) [[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/gzip"]
-    withArguments:@[@"--to-stdout", path]]
-    withStdErrToLoggerAndErrorMessage:logger]
-    withStdOutToInputStream]
-    withTaskLifecycleLoggingTo:logger]
-    start];
+                                                                           withLaunchPath:@"/usr/bin/gzip"]
+                                                                          withArguments:@[@"--to-stdout", path]]
+                                                                         withStdErrToLoggerAndErrorMessage:logger]
+                                                                        withStdOutToInputStream]
+                                                                       withTaskLifecycleLoggingTo:logger]
+                                                                      start];
 }
-
 
 + (FBFuture<FBSubprocess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(FBProcessInput *)input logger:(id<FBControlCoreLogger>)logger
 {
   return (FBFuture<FBSubprocess<id, NSData *, id> *> *) [[[[[[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/gzip"]
-    withArguments:@[@"-", @"--to-stdout"]]
-    withStdIn:input]
-    withStdErrToLoggerAndErrorMessage:logger]
-    withStdOutInMemoryAsData]
-    withTaskLifecycleLoggingTo:logger]
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]
+                                                               withLaunchPath:@"/usr/bin/gzip"]
+                                                              withArguments:@[@"-", @"--to-stdout"]]
+                                                             withStdIn:input]
+                                                            withStdErrToLoggerAndErrorMessage:logger]
+                                                           withStdOutInMemoryAsData]
+                                                          withTaskLifecycleLoggingTo:logger]
+                                                       runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]
   ];
 }
-
 
 + (FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger
 {
@@ -104,8 +102,8 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     return [FBFuture futureWithError:error];
   }
   return [[builder
-    withStdOutToInputStream]
-    start];
+           withStdOutToInputStream]
+          start];
 }
 
 + (FBFuture<NSData *> *)createGzippedTarDataForPath:(NSString *)path queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -116,10 +114,11 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
     return [FBFuture futureWithError:error];
   }
   return [[builder
-    runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
-    onQueue:queue map:^(FBSubprocess<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
-      return [result stdOut];
-    }];
+           runUntilCompletionWithAcceptableExitCodes:[NSSet setWithObject:@0]]
+          onQueue:queue
+          map:^(FBSubprocess<NSNull *, NSData *, id<FBControlCoreLogger>> *result) {
+            return [result stdOut];
+          }];
 }
 
 #pragma mark Private
@@ -141,8 +140,8 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   BOOL isDirectory;
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
     return [[FBControlCoreError
-      describeFormat:@"Path for tarring %@ doesn't exist", path]
-      fail:error];
+             describeFormat:@"Path for tarring %@ doesn't exist", path]
+            fail:error];
   }
 
   NSString *directory;
@@ -166,11 +165,11 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
   }
 
   return (FBProcessBuilder<NSNull *, NSData *, id> *) [[[[[FBProcessBuilder
-    withLaunchPath:BSDTarPath]
-    withArguments:@[@"-zvc", @"-f", @"-", @"-C", directory, fileName]]
-    withStdOutInMemoryAsData]
-    withStdErrToLoggerAndErrorMessage:logger]
-    withTaskLifecycleLoggingTo:logger];
+                                                           withLaunchPath:BSDTarPath]
+                                                          withArguments:@[@"-zvc", @"-f", @"-", @"-C", directory, fileName]]
+                                                         withStdOutInMemoryAsData]
+                                                        withStdErrToLoggerAndErrorMessage:logger]
+                                                     withTaskLifecycleLoggingTo: logger];
 }
 
 @end

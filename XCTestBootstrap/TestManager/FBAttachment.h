@@ -13,11 +13,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBAttachment : NSObject
 
-@property (nonatomic, copy, readonly, nullable) NSData *payload;
-@property (nonatomic, copy, readonly) NSDate *timestamp;
-@property (nonatomic, copy, readonly) NSString *name;
-@property (nonatomic, copy, readonly) NSString *uniformTypeIdentifier;
-@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, id> *userInfo;
+@property (nullable, nonatomic, readonly, copy) NSData *payload;
+@property (nonatomic, readonly, copy) NSDate *timestamp;
+@property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, readonly, copy) NSString *uniformTypeIdentifier;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *userInfo;
 
 /**
  Constructs a attachment  from a XCTAttachment

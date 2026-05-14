@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -59,7 +59,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  Tails the contents of a file path inside the container, to a data consumer.
- 
+
  @param path the source path to tail, relative to the root of the container. Must be a file
  @param consumer the consumer to write to.
  @return a Future that resolves with a Future when the tailing has completed. The wrapped future can be cancelled to end the tailing operation.
@@ -186,13 +186,13 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
  The host path corresponding to this file, if any.
  If the file is remote, this will be nil
  */
-@property (nonatomic, copy, nullable, readonly) NSString *pathOnHostFileSystem;
+@property (nullable, nonatomic, readonly, copy) NSString *pathOnHostFileSystem;
 
 /**
  The host path corresponding to this file, if any.
  If the file is remote, this will be nil
  */
-@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *pathMapping;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *pathMapping;
 
 @end
 
@@ -212,7 +212,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  A contained file relative to the path on the host.
- 
+
  @param basePath the base path to use.
  @return a Contained File implementation
  */
@@ -227,7 +227,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  A file container that relative to a path on the host.
- 
+
  @param basePath the base path to use.
  @return a File Container implementation
  */
@@ -235,7 +235,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  A file container that relative to a path on the host.
- 
+
  @param pathMapping the mapped base paths.
  @return a File Container implementation
  */
@@ -243,7 +243,7 @@ extern FBFileContainerKind const FBFileContainerKindWallpaper;
 
 /**
  Returns an FBFileContainer wrapper around a FBContainedFile
- 
+
  @param containedFile the contained file to wrap.
  @return a File Container implementation.
  */

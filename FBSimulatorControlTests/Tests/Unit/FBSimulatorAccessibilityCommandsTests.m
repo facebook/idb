@@ -51,7 +51,7 @@
     @"accessibilityCustomActions",
     @"accessibilityChildren",
     @"translation",
-  ]];
+          ]];
 }
 
 /// Properties accessed for single-element serialization (no children recursion)
@@ -71,7 +71,7 @@
     @"accessibilityRequired",
     @"accessibilityCustomActions",
     @"translation",
-  ]];
+          ]];
 }
 
 /// Properties accessed for AXLabel and frame key filtering
@@ -82,7 +82,7 @@
     @"accessibilityFrame",
     @"accessibilityChildren",  // Always accessed for recursion
     @"translation",  // Always accessed for pid
-  ]];
+          ]];
 }
 
 /// Properties accessed for AXLabel, type, and frame key filtering
@@ -93,7 +93,7 @@
     @"accessibilityRole",  // Needed for "type" derivation
     @"accessibilityFrame",
     @"translation",  // Always accessed for pid
-  ]];
+          ]];
 }
 
 /// Properties accessed during tap operation (includes action validation)
@@ -115,13 +115,13 @@
     @"accessibilityChildren",
     @"accessibilityActionNames",  // Accessed for action validation
     @"translation",
-  ]];
+          ]];
 }
 
 /// Asserts profiling data metrics with expected counts
 - (void)assertProfilingData:(FBAccessibilityProfilingData *)profilingData
            expectedElements:(NSUInteger)expectedElementCount
-     expectedAttributeFetches:(NSUInteger)expectedAttributeFetchCount
+   expectedAttributeFetches:(NSUInteger)expectedAttributeFetchCount
 {
   XCTAssertNotNil(profilingData, @"Profiling data should be present");
   XCTAssertEqual(profilingData.elementCount, expectedElementCount, @"Element count mismatch");
@@ -163,76 +163,76 @@
   // Expected full output for all 4 elements
   NSArray *expected = @[
     @{
-      @"AXLabel": @"App Window",
-      @"AXFrame": @"{{0, 0}, {390, 844}}",
-      @"AXValue": [NSNull null],
-      @"AXUniqueId": [NSNull null],
-      @"type": @"Application",
-      @"title": [NSNull null],
-      @"frame": @{@"x": @0, @"y": @0, @"width": @390, @"height": @844},
-      @"help": [NSNull null],
-      @"enabled": @YES,
-      @"custom_actions": @[],
-      @"role": @"AXApplication",
-      @"role_description": [NSNull null],
-      @"subrole": [NSNull null],
-      @"content_required": @NO,
-      @"pid": @12345,
-      @"traits": [NSNull null],
+      @"AXLabel" : @"App Window",
+      @"AXFrame" : @"{{0, 0}, {390, 844}}",
+      @"AXValue" : [NSNull null],
+      @"AXUniqueId" : [NSNull null],
+      @"type" : @"Application",
+      @"title" : [NSNull null],
+      @"frame" : @{@"x" : @0, @"y" : @0, @"width" : @390, @"height" : @844},
+      @"help" : [NSNull null],
+      @"enabled" : @YES,
+      @"custom_actions" : @[],
+      @"role" : @"AXApplication",
+      @"role_description" : [NSNull null],
+      @"subrole" : [NSNull null],
+      @"content_required" : @NO,
+      @"pid" : @12345,
+      @"traits" : [NSNull null],
     },
     @{
-      @"AXLabel": @"Confirm Action",
-      @"AXFrame": @"{{20, 100}, {350, 30}}",
-      @"AXValue": [NSNull null],
-      @"AXUniqueId": [NSNull null],
-      @"type": @"StaticText",
-      @"title": [NSNull null],
-      @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
-      @"help": [NSNull null],
-      @"enabled": @YES,
-      @"custom_actions": @[],
-      @"role": @"AXStaticText",
-      @"role_description": [NSNull null],
-      @"subrole": [NSNull null],
-      @"content_required": @NO,
-      @"pid": @12345,
-      @"traits": [NSNull null],
+      @"AXLabel" : @"Confirm Action",
+      @"AXFrame" : @"{{20, 100}, {350, 30}}",
+      @"AXValue" : [NSNull null],
+      @"AXUniqueId" : [NSNull null],
+      @"type" : @"StaticText",
+      @"title" : [NSNull null],
+      @"frame" : @{@"x" : @20, @"y" : @100, @"width" : @350, @"height" : @30},
+      @"help" : [NSNull null],
+      @"enabled" : @YES,
+      @"custom_actions" : @[],
+      @"role" : @"AXStaticText",
+      @"role_description" : [NSNull null],
+      @"subrole" : [NSNull null],
+      @"content_required" : @NO,
+      @"pid" : @12345,
+      @"traits" : [NSNull null],
     },
     @{
-      @"AXLabel": @"OK",
-      @"AXFrame": @"{{20, 750}, {150, 44}}",
-      @"AXValue": [NSNull null],
-      @"AXUniqueId": @"ok_button",
-      @"type": @"Button",
-      @"title": [NSNull null],
-      @"frame": @{@"x": @20, @"y": @750, @"width": @150, @"height": @44},
-      @"help": [NSNull null],
-      @"enabled": @YES,
-      @"custom_actions": @[],
-      @"role": @"AXButton",
-      @"role_description": [NSNull null],
-      @"subrole": [NSNull null],
-      @"content_required": @NO,
-      @"pid": @12345,
-      @"traits": [NSNull null],
+      @"AXLabel" : @"OK",
+      @"AXFrame" : @"{{20, 750}, {150, 44}}",
+      @"AXValue" : [NSNull null],
+      @"AXUniqueId" : @"ok_button",
+      @"type" : @"Button",
+      @"title" : [NSNull null],
+      @"frame" : @{@"x" : @20, @"y" : @750, @"width" : @150, @"height" : @44},
+      @"help" : [NSNull null],
+      @"enabled" : @YES,
+      @"custom_actions" : @[],
+      @"role" : @"AXButton",
+      @"role_description" : [NSNull null],
+      @"subrole" : [NSNull null],
+      @"content_required" : @NO,
+      @"pid" : @12345,
+      @"traits" : [NSNull null],
     },
     @{
-      @"AXLabel": @"Cancel",
-      @"AXFrame": @"{{200, 750}, {150, 44}}",
-      @"AXValue": [NSNull null],
-      @"AXUniqueId": @"cancel_button",
-      @"type": @"Button",
-      @"title": [NSNull null],
-      @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
-      @"help": [NSNull null],
-      @"enabled": @YES,
-      @"custom_actions": @[],
-      @"role": @"AXButton",
-      @"role_description": [NSNull null],
-      @"subrole": [NSNull null],
-      @"content_required": @NO,
-      @"pid": @12345,
-      @"traits": [NSNull null],
+      @"AXLabel" : @"Cancel",
+      @"AXFrame" : @"{{200, 750}, {150, 44}}",
+      @"AXValue" : [NSNull null],
+      @"AXUniqueId" : @"cancel_button",
+      @"type" : @"Button",
+      @"title" : [NSNull null],
+      @"frame" : @{@"x" : @200, @"y" : @750, @"width" : @150, @"height" : @44},
+      @"help" : [NSNull null],
+      @"enabled" : @YES,
+      @"custom_actions" : @[],
+      @"role" : @"AXButton",
+      @"role_description" : [NSNull null],
+      @"subrole" : [NSNull null],
+      @"content_required" : @NO,
+      @"pid" : @12345,
+      @"traits" : [NSNull null],
     },
   ];
 
@@ -240,11 +240,17 @@
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - all serialization properties should be accessed
-  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for root element");
+  XCTAssertEqualObjects(
+    self.fixture.rootElement.accessedProperties,
+    [self allSerializationProperties],
+    @"All serialization properties should be accessed for root element"
+  );
   for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
-    XCTAssertEqualObjects(child.accessedProperties, [self allSerializationProperties],
-      @"All serialization properties should be accessed for child element");
+    XCTAssertEqualObjects(
+      child.accessedProperties,
+      [self allSerializationProperties],
+      @"All serialization properties should be accessed for child element"
+    );
   }
 
   return response;
@@ -252,9 +258,9 @@
 
 /// Core test for element at point - returns response for optional profiling assertions
 - (FBAccessibilityElementsResponse *)assertElementAtPointWithProfiling:(BOOL)enableProfiling
-                                                                  point:(CGPoint)point
-                                                                element:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)elementDouble
-                                                               expected:(NSDictionary *)expected
+                                                                 point:(CGPoint)point
+                                                               element:(FBSimulatorControlTests_AXPMacPlatformElement_Double *)elementDouble
+                                                              expected:(NSDictionary *)expected
 {
   self.fixture.translator.macPlatformElementResult = elementDouble;
 
@@ -281,8 +287,11 @@
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - single element doesn't recurse children
-  XCTAssertEqualObjects(elementDouble.accessedProperties, [self singleElementSerializationProperties],
-    @"Single element at point should access all properties except children");
+  XCTAssertEqualObjects(
+    elementDouble.accessedProperties,
+    [self singleElementSerializationProperties],
+    @"Single element at point should access all properties except children"
+  );
 
   return response;
 }
@@ -315,79 +324,79 @@
   // Expected full nested output
   NSArray *expected = @[
     @{
-      @"AXLabel": @"App Window",
-      @"AXFrame": @"{{0, 0}, {390, 844}}",
-      @"AXValue": [NSNull null],
-      @"AXUniqueId": [NSNull null],
-      @"type": @"Application",
-      @"title": [NSNull null],
-      @"frame": @{@"x": @0, @"y": @0, @"width": @390, @"height": @844},
-      @"help": [NSNull null],
-      @"enabled": @YES,
-      @"custom_actions": @[],
-      @"role": @"AXApplication",
-      @"role_description": [NSNull null],
-      @"subrole": [NSNull null],
-      @"content_required": @NO,
-      @"pid": @12345,
-      @"traits": [NSNull null],
-      @"children": @[
+      @"AXLabel" : @"App Window",
+      @"AXFrame" : @"{{0, 0}, {390, 844}}",
+      @"AXValue" : [NSNull null],
+      @"AXUniqueId" : [NSNull null],
+      @"type" : @"Application",
+      @"title" : [NSNull null],
+      @"frame" : @{@"x" : @0, @"y" : @0, @"width" : @390, @"height" : @844},
+      @"help" : [NSNull null],
+      @"enabled" : @YES,
+      @"custom_actions" : @[],
+      @"role" : @"AXApplication",
+      @"role_description" : [NSNull null],
+      @"subrole" : [NSNull null],
+      @"content_required" : @NO,
+      @"pid" : @12345,
+      @"traits" : [NSNull null],
+      @"children" : @[
         @{
-          @"AXLabel": @"Confirm Action",
-          @"AXFrame": @"{{20, 100}, {350, 30}}",
-          @"AXValue": [NSNull null],
-          @"AXUniqueId": [NSNull null],
-          @"type": @"StaticText",
-          @"title": [NSNull null],
-          @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
-          @"help": [NSNull null],
-          @"enabled": @YES,
-          @"custom_actions": @[],
-          @"role": @"AXStaticText",
-          @"role_description": [NSNull null],
-          @"subrole": [NSNull null],
-          @"content_required": @NO,
-          @"pid": @12345,
-          @"traits": [NSNull null],
-          @"children": @[],
+          @"AXLabel" : @"Confirm Action",
+          @"AXFrame" : @"{{20, 100}, {350, 30}}",
+          @"AXValue" : [NSNull null],
+          @"AXUniqueId" : [NSNull null],
+          @"type" : @"StaticText",
+          @"title" : [NSNull null],
+          @"frame" : @{@"x" : @20, @"y" : @100, @"width" : @350, @"height" : @30},
+          @"help" : [NSNull null],
+          @"enabled" : @YES,
+          @"custom_actions" : @[],
+          @"role" : @"AXStaticText",
+          @"role_description" : [NSNull null],
+          @"subrole" : [NSNull null],
+          @"content_required" : @NO,
+          @"pid" : @12345,
+          @"traits" : [NSNull null],
+          @"children" : @[],
         },
         @{
-          @"AXLabel": @"OK",
-          @"AXFrame": @"{{20, 750}, {150, 44}}",
-          @"AXValue": [NSNull null],
-          @"AXUniqueId": @"ok_button",
-          @"type": @"Button",
-          @"title": [NSNull null],
-          @"frame": @{@"x": @20, @"y": @750, @"width": @150, @"height": @44},
-          @"help": [NSNull null],
-          @"enabled": @YES,
-          @"custom_actions": @[],
-          @"role": @"AXButton",
-          @"role_description": [NSNull null],
-          @"subrole": [NSNull null],
-          @"content_required": @NO,
-          @"pid": @12345,
-          @"traits": [NSNull null],
-          @"children": @[],
+          @"AXLabel" : @"OK",
+          @"AXFrame" : @"{{20, 750}, {150, 44}}",
+          @"AXValue" : [NSNull null],
+          @"AXUniqueId" : @"ok_button",
+          @"type" : @"Button",
+          @"title" : [NSNull null],
+          @"frame" : @{@"x" : @20, @"y" : @750, @"width" : @150, @"height" : @44},
+          @"help" : [NSNull null],
+          @"enabled" : @YES,
+          @"custom_actions" : @[],
+          @"role" : @"AXButton",
+          @"role_description" : [NSNull null],
+          @"subrole" : [NSNull null],
+          @"content_required" : @NO,
+          @"pid" : @12345,
+          @"traits" : [NSNull null],
+          @"children" : @[],
         },
         @{
-          @"AXLabel": @"Cancel",
-          @"AXFrame": @"{{200, 750}, {150, 44}}",
-          @"AXValue": [NSNull null],
-          @"AXUniqueId": @"cancel_button",
-          @"type": @"Button",
-          @"title": [NSNull null],
-          @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
-          @"help": [NSNull null],
-          @"enabled": @YES,
-          @"custom_actions": @[],
-          @"role": @"AXButton",
-          @"role_description": [NSNull null],
-          @"subrole": [NSNull null],
-          @"content_required": @NO,
-          @"pid": @12345,
-          @"traits": [NSNull null],
-          @"children": @[],
+          @"AXLabel" : @"Cancel",
+          @"AXFrame" : @"{{200, 750}, {150, 44}}",
+          @"AXValue" : [NSNull null],
+          @"AXUniqueId" : @"cancel_button",
+          @"type" : @"Button",
+          @"title" : [NSNull null],
+          @"frame" : @{@"x" : @200, @"y" : @750, @"width" : @150, @"height" : @44},
+          @"help" : [NSNull null],
+          @"enabled" : @YES,
+          @"custom_actions" : @[],
+          @"role" : @"AXButton",
+          @"role_description" : [NSNull null],
+          @"subrole" : [NSNull null],
+          @"content_required" : @NO,
+          @"pid" : @12345,
+          @"traits" : [NSNull null],
+          @"children" : @[],
         },
       ],
     },
@@ -397,11 +406,17 @@
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - all serialization properties should be accessed
-  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self allSerializationProperties],
-    @"All serialization properties should be accessed for root element");
+  XCTAssertEqualObjects(
+    self.fixture.rootElement.accessedProperties,
+    [self allSerializationProperties],
+    @"All serialization properties should be accessed for root element"
+  );
   for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
-    XCTAssertEqualObjects(child.accessedProperties, [self allSerializationProperties],
-      @"All serialization properties should be accessed for child element");
+    XCTAssertEqualObjects(
+      child.accessedProperties,
+      [self allSerializationProperties],
+      @"All serialization properties should be accessed for child element"
+    );
   }
 
   return response;
@@ -436,20 +451,20 @@
   // Expected output with only the requested keys
   NSArray *expected = @[
     @{
-      @"AXLabel": @"App Window",
-      @"frame": @{@"x": @0, @"y": @0, @"width": @390, @"height": @844},
+      @"AXLabel" : @"App Window",
+      @"frame" : @{@"x" : @0, @"y" : @0, @"width" : @390, @"height" : @844},
     },
     @{
-      @"AXLabel": @"Confirm Action",
-      @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
+      @"AXLabel" : @"Confirm Action",
+      @"frame" : @{@"x" : @20, @"y" : @100, @"width" : @350, @"height" : @30},
     },
     @{
-      @"AXLabel": @"OK",
-      @"frame": @{@"x": @20, @"y": @750, @"width": @150, @"height": @44},
+      @"AXLabel" : @"OK",
+      @"frame" : @{@"x" : @20, @"y" : @750, @"width" : @150, @"height" : @44},
     },
     @{
-      @"AXLabel": @"Cancel",
-      @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
+      @"AXLabel" : @"Cancel",
+      @"frame" : @{@"x" : @200, @"y" : @750, @"width" : @150, @"height" : @44},
     },
   ];
 
@@ -457,11 +472,17 @@
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - only filtered properties should be accessed
-  XCTAssertEqualObjects(self.fixture.rootElement.accessedProperties, [self labelAndFrameFilteredProperties],
-    @"Only label and frame properties should be accessed for root element");
+  XCTAssertEqualObjects(
+    self.fixture.rootElement.accessedProperties,
+    [self labelAndFrameFilteredProperties],
+    @"Only label and frame properties should be accessed for root element"
+  );
   for (FBSimulatorControlTests_AXPMacPlatformElement_Double *child in childElements) {
-    XCTAssertEqualObjects(child.accessedProperties, [self labelAndFrameFilteredProperties],
-      @"Only label and frame properties should be accessed for child element");
+    XCTAssertEqualObjects(
+      child.accessedProperties,
+      [self labelAndFrameFilteredProperties],
+      @"Only label and frame properties should be accessed for child element"
+    );
   }
 
   return response;
@@ -472,8 +493,8 @@
 {
   // Configure objectAtPointResult to return the title label element
   FBSimulatorControlTests_AXPMacPlatformElement_Double *titleLabel =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
-                                                     frame:NSMakeRect(20, 100, 350, 30)];
+  [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Confirm Action"
+                                                   frame:NSMakeRect(20, 100, 350, 30)];
   self.fixture.translator.macPlatformElementResult = titleLabel;
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
@@ -498,17 +519,20 @@
   NSDictionary *result = (NSDictionary *)response.elements;
 
   NSDictionary *expected = @{
-    @"AXLabel": @"Confirm Action",
-    @"type": @"StaticText",
-    @"frame": @{@"x": @20, @"y": @100, @"width": @350, @"height": @30},
+    @"AXLabel" : @"Confirm Action",
+    @"type" : @"StaticText",
+    @"frame" : @{@"x" : @20, @"y" : @100, @"width" : @350, @"height" : @30},
   };
 
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
 
   // Verify property access tracking - only filtered properties should be accessed
-  XCTAssertEqualObjects(titleLabel.accessedProperties, [self labelTypeFrameFilteredProperties],
-    @"Only label, role (for type), and frame properties should be accessed with key filtering");
+  XCTAssertEqualObjects(
+    titleLabel.accessedProperties,
+    [self labelTypeFrameFilteredProperties],
+    @"Only label, role (for type), and frame properties should be accessed with key filtering"
+  );
 
   return response;
 }
@@ -628,9 +652,9 @@
 
   // Configure objectAtPointResult to return the OK button element
   FBSimulatorControlTests_AXPMacPlatformElement_Double *okButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
-                                            identifier:@"ok_button"
-                                                 frame:NSMakeRect(20, 750, 150, 44)];
+  [FBAccessibilityTestElementBuilder buttonWithLabel:@"OK"
+                                          identifier:@"ok_button"
+                                               frame:NSMakeRect(20, 750, 150, 44)];
   self.fixture.translator.macPlatformElementResult = okButton;
 
   FBSimulatorAccessibilityCommands *commands = [self commands];
@@ -661,23 +685,23 @@
 
   NSDictionary *result = (NSDictionary *)response.elements;
   NSDictionary *expected = @{
-    @"AXLabel": @"OK",
-    @"AXFrame": @"{{20, 750}, {150, 44}}",
-    @"AXValue": [NSNull null],
-    @"AXUniqueId": @"ok_button",
-    @"type": @"Button",
-    @"title": [NSNull null],
-    @"frame": @{@"x": @20, @"y": @750, @"width": @150, @"height": @44},
-    @"help": [NSNull null],
-    @"enabled": @YES,
-    @"custom_actions": @[],
-    @"role": @"AXButton",
-    @"role_description": [NSNull null],
-    @"subrole": [NSNull null],
-    @"content_required": @NO,
-    @"pid": @12345,
-    @"traits": [NSNull null],
-    @"children": @[],
+    @"AXLabel" : @"OK",
+    @"AXFrame" : @"{{20, 750}, {150, 44}}",
+    @"AXValue" : [NSNull null],
+    @"AXUniqueId" : @"ok_button",
+    @"type" : @"Button",
+    @"title" : [NSNull null],
+    @"frame" : @{@"x" : @20, @"y" : @750, @"width" : @150, @"height" : @44},
+    @"help" : [NSNull null],
+    @"enabled" : @YES,
+    @"custom_actions" : @[],
+    @"role" : @"AXButton",
+    @"role_description" : [NSNull null],
+    @"subrole" : [NSNull null],
+    @"content_required" : @NO,
+    @"pid" : @12345,
+    @"traits" : [NSNull null],
+    @"children" : @[],
   };
   XCTAssertEqualObjects(result, expected);
   XCTAssertTrue([NSJSONSerialization isValidJSONObject:result]);
@@ -685,10 +709,14 @@
   [element close];
 
   // Verify property access tracking - tap + serialization accesses
-  XCTAssertTrue([okButton.accessedProperties containsObject:@"accessibilityLabel"],
-    @"Tap operation should access label");
-  XCTAssertTrue([okButton.accessedProperties containsObject:@"accessibilityActionNames"],
-    @"Tap operation should access action names");
+  XCTAssertTrue(
+    [okButton.accessedProperties containsObject:@"accessibilityLabel"],
+    @"Tap operation should access label"
+  );
+  XCTAssertTrue(
+    [okButton.accessedProperties containsObject:@"accessibilityActionNames"],
+    @"Tap operation should access action names"
+  );
 }
 
 - (void)testAccessibilityElementAtPointReturnsElement
@@ -696,27 +724,27 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
-                                            identifier:@"cancel_button"
-                                                 frame:NSMakeRect(200, 750, 150, 44)];
+  [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
+                                          identifier:@"cancel_button"
+                                               frame:NSMakeRect(200, 750, 150, 44)];
 
   NSDictionary *expected = @{
-    @"AXLabel": @"Cancel",
-    @"AXFrame": @"{{200, 750}, {150, 44}}",
-    @"AXValue": [NSNull null],
-    @"AXUniqueId": @"cancel_button",
-    @"type": @"Button",
-    @"title": [NSNull null],
-    @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
-    @"help": [NSNull null],
-    @"enabled": @YES,
-    @"custom_actions": @[],
-    @"role": @"AXButton",
-    @"role_description": [NSNull null],
-    @"subrole": [NSNull null],
-    @"content_required": @NO,
-    @"pid": @12345,
-    @"traits": [NSNull null],
+    @"AXLabel" : @"Cancel",
+    @"AXFrame" : @"{{200, 750}, {150, 44}}",
+    @"AXValue" : [NSNull null],
+    @"AXUniqueId" : @"cancel_button",
+    @"type" : @"Button",
+    @"title" : [NSNull null],
+    @"frame" : @{@"x" : @200, @"y" : @750, @"width" : @150, @"height" : @44},
+    @"help" : [NSNull null],
+    @"enabled" : @YES,
+    @"custom_actions" : @[],
+    @"role" : @"AXButton",
+    @"role_description" : [NSNull null],
+    @"subrole" : [NSNull null],
+    @"content_required" : @NO,
+    @"pid" : @12345,
+    @"traits" : [NSNull null],
   };
 
   [self assertElementAtPointWithProfiling:NO point:CGPointMake(275, 772) element:cancelButton expected:expected];
@@ -727,27 +755,27 @@
   [self setUpWithRootElement:[self defaultElementTree]];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *cancelButton =
-    [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
-                                            identifier:@"cancel_button"
-                                                 frame:NSMakeRect(200, 750, 150, 44)];
+  [FBAccessibilityTestElementBuilder buttonWithLabel:@"Cancel"
+                                          identifier:@"cancel_button"
+                                               frame:NSMakeRect(200, 750, 150, 44)];
 
   NSDictionary *expected = @{
-    @"AXLabel": @"Cancel",
-    @"AXFrame": @"{{200, 750}, {150, 44}}",
-    @"AXValue": [NSNull null],
-    @"AXUniqueId": @"cancel_button",
-    @"type": @"Button",
-    @"title": [NSNull null],
-    @"frame": @{@"x": @200, @"y": @750, @"width": @150, @"height": @44},
-    @"help": [NSNull null],
-    @"enabled": @YES,
-    @"custom_actions": @[],
-    @"role": @"AXButton",
-    @"role_description": [NSNull null],
-    @"subrole": [NSNull null],
-    @"content_required": @NO,
-    @"pid": @12345,
-    @"traits": [NSNull null],
+    @"AXLabel" : @"Cancel",
+    @"AXFrame" : @"{{200, 750}, {150, 44}}",
+    @"AXValue" : [NSNull null],
+    @"AXUniqueId" : @"cancel_button",
+    @"type" : @"Button",
+    @"title" : [NSNull null],
+    @"frame" : @{@"x" : @200, @"y" : @750, @"width" : @150, @"height" : @44},
+    @"help" : [NSNull null],
+    @"enabled" : @YES,
+    @"custom_actions" : @[],
+    @"role" : @"AXButton",
+    @"role_description" : [NSNull null],
+    @"subrole" : [NSNull null],
+    @"content_required" : @NO,
+    @"pid" : @12345,
+    @"traits" : [NSNull null],
   };
 
   FBAccessibilityElementsResponse *response = [self assertElementAtPointWithProfiling:YES point:CGPointMake(275, 772) element:cancelButton expected:expected];
@@ -831,21 +859,21 @@
   // - Bottom toolbar: (0, 700, 390, 144)
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *navBar =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Navigation Bar"
-                                                     frame:NSMakeRect(0, 0, 390, 44)];
+  [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Navigation Bar"
+                                                   frame:NSMakeRect(0, 0, 390, 44)];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *urlBar =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"URL Bar"
-                                                     frame:NSMakeRect(0, 44, 390, 50)];
+  [FBAccessibilityTestElementBuilder staticTextWithLabel:@"URL Bar"
+                                                   frame:NSMakeRect(0, 44, 390, 50)];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *bottomToolbar =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Bottom Toolbar"
-                                                     frame:NSMakeRect(0, 700, 390, 144)];
+  [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Bottom Toolbar"
+                                                   frame:NSMakeRect(0, 700, 390, 144)];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
-    [FBAccessibilityTestElementBuilder applicationWithLabel:@"Safari"
-                                                      frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[navBar, urlBar, bottomToolbar]];
+  [FBAccessibilityTestElementBuilder applicationWithLabel:@"Safari"
+                                                    frame:NSMakeRect(0, 0, 390, 844)
+                                                 children:@[navBar, urlBar, bottomToolbar]];
 
   [self setUpWithRootElement:root];
 
@@ -873,13 +901,13 @@
 {
   // Create an element that covers the entire screen
   FBSimulatorControlTests_AXPMacPlatformElement_Double *fullCoverageElement =
-    [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Full Coverage"
-                                                     frame:NSMakeRect(0, 0, 390, 844)];
+  [FBAccessibilityTestElementBuilder staticTextWithLabel:@"Full Coverage"
+                                                   frame:NSMakeRect(0, 0, 390, 844)];
 
   FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
-    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
-                                                      frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[fullCoverageElement]];
+  [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                    frame:NSMakeRect(0, 0, 390, 844)
+                                                 children:@[fullCoverageElement]];
 
   [self setUpWithRootElement:root];
 
@@ -906,9 +934,9 @@
 {
   // Create a tree with ONLY an Application element (no children)
   FBSimulatorControlTests_AXPMacPlatformElement_Double *root =
-    [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
-                                                      frame:NSMakeRect(0, 0, 390, 844)
-                                                   children:@[]];
+  [FBAccessibilityTestElementBuilder applicationWithLabel:@"App Window"
+                                                    frame:NSMakeRect(0, 0, 390, 844)
+                                                 children:@[]];
 
   [self setUpWithRootElement:root];
 

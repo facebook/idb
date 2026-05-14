@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorControlTests_AXPTranslationObject_Double : NSObject
 
-@property (nonatomic, readwrite, copy, nullable) NSString *bridgeDelegateToken;
+@property (nullable, nonatomic, readwrite, copy) NSString *bridgeDelegateToken;
 @property (nonatomic, readwrite, assign) pid_t pid;
 
 @end
@@ -42,20 +42,20 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSMutableSet<NSString *> *accessedProperties;
 
 // Accessibility properties - all readonly
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityLabel;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityIdentifier;
-@property (nonatomic, readonly, copy, nullable) id accessibilityValue;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityTitle;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityHelp;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityRole;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilityRoleDescription;
-@property (nonatomic, readonly, copy, nullable) NSString *accessibilitySubrole;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityLabel;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityIdentifier;
+@property (nullable, nonatomic, readonly, copy) id accessibilityValue;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityTitle;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityHelp;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityRole;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilityRoleDescription;
+@property (nullable, nonatomic, readonly, copy) NSString *accessibilitySubrole;
 @property (nonatomic, readonly, assign) NSRect accessibilityFrame;
 @property (nonatomic, readonly, assign) BOOL accessibilityEnabled;
 @property (nonatomic, readonly, assign) BOOL accessibilityRequired;
-@property (nonatomic, readonly, copy, nullable) NSArray<id> *accessibilityCustomActions;
-@property (nonatomic, readonly, copy, nullable) NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *accessibilityChildren;
-@property (nonatomic, readonly, copy, nonnull) NSArray<NSString *> *accessibilityActionNames;
+@property (nullable, nonatomic, readonly, copy) NSArray<id> *accessibilityCustomActions;
+@property (nullable, nonatomic, readonly, copy) NSArray<FBSimulatorControlTests_AXPMacPlatformElement_Double *> *accessibilityChildren;
+@property (nonnull, nonatomic, readonly, copy) NSArray<NSString *> *accessibilityActionNames;
 
 @end
 
@@ -65,16 +65,16 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorControlTests_AXPTranslator_Double : NSObject
 
 // Configure what frontmostApplication returns
-@property (nonatomic, readwrite, strong, nullable) FBSimulatorControlTests_AXPTranslationObject_Double *frontmostApplicationResult;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorControlTests_AXPTranslationObject_Double *frontmostApplicationResult;
 
 // Configure what objectAtPoint returns
-@property (nonatomic, readwrite, strong, nullable) FBSimulatorControlTests_AXPTranslationObject_Double *objectAtPointResult;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorControlTests_AXPTranslationObject_Double *objectAtPointResult;
 
 // Configure what macPlatformElementFromTranslation returns
-@property (nonatomic, readwrite, strong, nullable) FBSimulatorControlTests_AXPMacPlatformElement_Double *macPlatformElementResult;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *macPlatformElementResult;
 
 // The delegate that production code sets (captured for proper callback routing)
-@property (nonatomic, readwrite, weak, nullable) id bridgeTokenDelegate;
+@property (nullable, nonatomic, readwrite, weak) id bridgeTokenDelegate;
 
 // Tracking
 @property (nonatomic, readonly) NSMutableArray<NSString *> *methodCalls;
@@ -103,7 +103,7 @@ typedef void (^FBAccessibilityResponseHandler)(id request, void (^completion)(id
 @property (nonatomic, readwrite, assign) unsigned long long state;
 
 // Accessibility support
-@property (nonatomic, readwrite, copy, nullable) FBAccessibilityResponseHandler accessibilityResponseHandler;
+@property (nullable, nonatomic, readwrite, copy) FBAccessibilityResponseHandler accessibilityResponseHandler;
 @property (nonatomic, readonly) NSMutableArray<id> *accessibilityRequests;
 
 - (void)sendAccessibilityRequestAsync:(id)request
@@ -188,10 +188,10 @@ typedef void (^FBAccessibilityResponseHandler)(id request, void (^completion)(id
 @property (nonatomic, assign) unsigned long long state;
 
 /// Logger for debugging (optional)
-@property (nonatomic, strong, nullable) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, strong) id<FBControlCoreLogger> logger;
 
 /// Mock translation dispatcher for accessibility operations (set by test fixture)
-@property (nonatomic, strong, nullable) id mockTranslationDispatcher;
+@property (nullable, nonatomic, strong) id mockTranslationDispatcher;
 
 /// Designated initializer
 - (instancetype)initWithDevice:(FBSimulatorControlTests_SimDevice_Accessibility_Double *)device;
@@ -207,13 +207,13 @@ typedef void (^FBAccessibilityResponseHandler)(id request, void (^completion)(id
 @interface FBAccessibilityTestFixture : NSObject
 
 /// The mock translator (uses existing FBSimulatorControlTests_AXPTranslator_Double)
-@property (nonatomic, strong, readonly) FBSimulatorControlTests_AXPTranslator_Double *translator;
+@property (nonatomic, readonly, strong) FBSimulatorControlTests_AXPTranslator_Double *translator;
 
 /// The mock simulator
-@property (nonatomic, strong, readonly) FBSimulatorControlTests_FBSimulator_Double *simulator;
+@property (nonatomic, readonly, strong) FBSimulatorControlTests_FBSimulator_Double *simulator;
 
 /// The root element tree for serialization (configure before setUp)
-@property (nonatomic, strong, nullable) FBSimulatorControlTests_AXPMacPlatformElement_Double *rootElement;
+@property (nullable, nonatomic, strong) FBSimulatorControlTests_AXPMacPlatformElement_Double *rootElement;
 
 /// Create fixture with default booted simulator
 + (instancetype)bootedSimulatorFixture;

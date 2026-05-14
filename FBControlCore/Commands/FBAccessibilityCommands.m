@@ -41,7 +41,8 @@ FBAXSearchableKey const FBAXSearchableKeySubrole = @"subrole";
 FBAXSearchableKey const FBAXSearchableKeyHelp = @"help";
 FBAXSearchableKey const FBAXSearchableKeyPlaceholder = @"placeholder";
 
-NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
+NSSet<FBAXKeys> *FBAXKeysDefaultSet(void)
+{
   static NSSet<FBAXKeys> *defaultSet;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -51,7 +52,7 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
       FBAXKeysEnabled, FBAXKeysCustomActions, FBAXKeysRole,
       FBAXKeysRoleDescription, FBAXKeysSubrole, FBAXKeysContentRequired,
       FBAXKeysPID, FBAXKeysTraits,
-    ]];
+                  ]];
   });
   return defaultSet;
 }
@@ -148,13 +149,13 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 @implementation FBAccessibilityProfilingData
 
 - (instancetype)initWithElementCount:(int64_t)elementCount
-                  attributeFetchCount:(int64_t)attributeFetchCount
-                         xpcCallCount:(int64_t)xpcCallCount
-                  translationDuration:(CFAbsoluteTime)translationDuration
-            elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
+                 attributeFetchCount:(int64_t)attributeFetchCount
+                        xpcCallCount:(int64_t)xpcCallCount
+                 translationDuration:(CFAbsoluteTime)translationDuration
+           elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
                serializationDuration:(CFAbsoluteTime)serializationDuration
-                     totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
-                          fetchedKeys:(NSSet<NSString *> *)fetchedKeys
+                    totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
+                         fetchedKeys:(NSSet<NSString *> *)fetchedKeys
 {
   self = [super init];
   if (!self) {
@@ -176,13 +177,13 @@ NSSet<FBAXKeys> *FBAXKeysDefaultSet(void) {
 - (NSDictionary<NSString *, NSNumber *> *)asDictionary
 {
   return @{
-    @"element_count": @(self.elementCount),
-    @"attribute_fetch_count": @(self.attributeFetchCount),
-    @"xpc_call_count": @(self.xpcCallCount),
-    @"translation_duration_ms": @(self.translationDuration * 1000),
-    @"element_conversion_duration_ms": @(self.elementConversionDuration * 1000),
-    @"serialization_duration_ms": @(self.serializationDuration * 1000),
-    @"total_xpc_duration_ms": @(self.totalXPCDuration * 1000),
+    @"element_count" : @(self.elementCount),
+    @"attribute_fetch_count" : @(self.attributeFetchCount),
+    @"xpc_call_count" : @(self.xpcCallCount),
+    @"translation_duration_ms" : @(self.translationDuration * 1000),
+    @"element_conversion_duration_ms" : @(self.elementConversionDuration * 1000),
+    @"serialization_duration_ms" : @(self.serializationDuration * 1000),
+    @"total_xpc_duration_ms" : @(self.totalXPCDuration * 1000),
   };
 }
 

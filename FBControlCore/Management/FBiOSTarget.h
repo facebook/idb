@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBCrashLogCommands.h>
@@ -21,6 +20,7 @@
 #import <FBControlCore/FBVideoStreamCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXCTraceRecordCommands.h>
+#import <FBControlCore/FBiOSTargetConstants.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -40,50 +40,50 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Unique Identifier that describes this iOS Target.
  */
-@property (nonatomic, copy, readonly) NSString *uniqueIdentifier;
+@property (nonatomic, readonly, copy) NSString *uniqueIdentifier;
 
 /**
  The "Unique Device Identifier" of the iOS Target.
  This may be distinct from the uniqueIdentifier.
  */
-@property (nonatomic, copy, readonly) NSString *udid;
+@property (nonatomic, readonly, copy) NSString *udid;
 
 /**
  The Name of the iOS Target. This is the name given by the user, such as "Ada's iPhone"
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /**
  The Device Type of the Target.
  */
-@property (nonatomic, copy, readonly) FBDeviceType *deviceType;
+@property (nonatomic, readonly, copy) FBDeviceType *deviceType;
 
 /**
  Available architecture of the iOS Target
  */
-@property (nonatomic, copy, readonly) NSArray<FBArchitecture> *architectures;
+@property (nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
 
 /**
  The OS Version of the Target.
  */
-@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
+@property (nonatomic, readonly, copy) FBOSVersion *osVersion;
 
 /**
  A dictionary containing per-target-type information that is unique to them.
  For example iOS Devices have additional metadata that is not present on Simulators.
  This dictionary must be JSON-Serializable.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
 
 /**
  The Type of the iOS Target
  */
-@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
 
 /**
  The State of the iOS Target. Currently only applies to Simulators.
  */
-@property (nonatomic, assign, readonly) FBiOSTargetState state;
+@property (nonatomic, readonly, assign) FBiOSTargetState state;
 
 @end
 
@@ -95,52 +95,52 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Target's Logger.
  */
-@property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The path to the custom (non-default) device set if applicable.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *customDeviceSetPath;
+@property (nullable, nonatomic, readonly, copy) NSString *customDeviceSetPath;
 
 /**
  The directory that the target uses to store scratch files on the host.
  */
-@property (nonatomic, strong, readonly) FBTemporaryDirectory *temporaryDirectory;
+@property (nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
 
 /**
  The directory that the target uses to store per-target files on the host.
  This should only be used for storing files that need to be preserved over the lifespan of the target.
  For example scratch or temporary files should *not* be stored here and -[FBiOSTarget temporaryDirectory] should be used instead..
  */
-@property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
+@property (nonatomic, readonly, copy) NSString *auxillaryDirectory;
 
 /**
  The root of the "Runtime" where applicable
  */
-@property (nonatomic, copy, readonly) NSString *runtimeRootDirectory;
+@property (nonatomic, readonly, copy) NSString *runtimeRootDirectory;
 
 /**
  The root of the "Runtime" where applicable
  */
-@property (nonatomic, copy, readonly) NSString *platformRootDirectory;
+@property (nonatomic, readonly, copy) NSString *platformRootDirectory;
 
 /**
  The Screen Info for the Target.
  */
-@property (nonatomic, copy, nullable, readonly) FBiOSTargetScreenInfo *screenInfo;
+@property (nullable, nonatomic, readonly, copy) FBiOSTargetScreenInfo *screenInfo;
 
 /**
  The Queue to serialize work on.
  This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
  Mutually Exclusive operations should use this queue.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  A queue for independent operations to execute on.
  Examples of these operations are transforming an immutable data structure.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`
@@ -159,14 +159,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
   Env var replacements
- 
+
   @return a dictionary with the replacements defined
  */
 - (NSDictionary<NSString *, NSString *> *)replacementMapping;
 
 /**
   Env var additions
- 
+
   @return a dictionary with additional env vars to add
  */
 - (NSDictionary<NSString *, NSString *> *)environmentAdditions;
@@ -217,6 +217,5 @@ FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveState(id<FBiOSTarget> ta
  Constructs a future that resolves when the target leaves a provided state.
  */
 FOUNDATION_EXTERN FBFuture<NSNull *> *FBiOSTargetResolveLeavesState(id<FBiOSTarget> target, FBiOSTargetState state);
-
 
 NS_ASSUME_NONNULL_END

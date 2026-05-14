@@ -7,20 +7,20 @@
 
 #import "FBControlCoreError.h"
 
-#import "FBFuture.h"
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
+#import "FBFuture.h"
 
 NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 
 @interface FBControlCoreError ()
 
-@property (nonatomic, copy, readwrite) NSString *domain;
-@property (nonatomic, copy, readwrite) NSString *describedAs;
-@property (nonatomic, copy, readwrite) NSError *cause;
-@property (nonatomic, strong, readwrite) NSMutableDictionary *additionalInfo;
-@property (nonatomic, assign, readwrite) BOOL describeRecursively;
-@property (nonatomic, assign, readwrite) NSInteger code;
+@property (nonatomic, readwrite, copy) NSString *domain;
+@property (nonatomic, readwrite, copy) NSString *describedAs;
+@property (nonatomic, readwrite, copy) NSError *cause;
+@property (nonatomic, readwrite, strong) NSMutableDictionary *additionalInfo;
+@property (nonatomic, readwrite, assign) BOOL describeRecursively;
+@property (nonatomic, readwrite, assign) NSInteger code;
 
 @end
 

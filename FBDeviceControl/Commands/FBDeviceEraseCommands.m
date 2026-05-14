@@ -7,23 +7,23 @@
 
 #import "FBDeviceEraseCommands.h"
 
-#import "FBDevice+Private.h"
 #import "FBAMDevice+Private.h"
-#import "FBDeviceControlError.h"
 #import "FBAMRestorableDeviceManager.h"
+#import "FBDevice+Private.h"
+#import "FBDeviceControlError.h"
 
 @interface FBDeviceEraseOperation : NSObject <FBiOSTargetSetDelegate>
 
-@property (nonatomic, copy, readonly) NSString *udid;
-@property (nonatomic, copy, readonly) NSString *ecid;
-@property (nonatomic, assign, readonly) AMDCalls calls;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBAMRestorableDeviceManager *deviceManager;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNumber *> *eraseCallbackResult;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *deviceDetected;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *deviceWentAway;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *deviceCameBack;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, copy) NSString *udid;
+@property (nonatomic, readonly, copy) NSString *ecid;
+@property (nonatomic, readonly, assign) AMDCalls calls;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) FBAMRestorableDeviceManager *deviceManager;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNumber *> *eraseCallbackResult;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *deviceDetected;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *deviceWentAway;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *deviceCameBack;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -80,31 +80,35 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
   FBFuture<NSNull *> *deviceWentAway = self.deviceWentAway;
   id<FBControlCoreLogger> logger = self.logger;
   return [[[[FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
-      NSError *error = nil;
-      if (![deviceManager startListeningWithError:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      return [[self deviceDetected] timeout:DetectTimeout waitingFor:@"Device to be detected the first time"];
-    }]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id _) {
-      [logger logFormat:@"Device has been detected, starting erase API Call"];
-      return [[self startErase] timeout:APICallbackTimeout waitingFor:@"Device erase API call to resolve"];
-    }]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSNumber *eraseCallbackValueNumber) {
-      const int eraseCallbackValue = eraseCallbackValueNumber.intValue;
-      if (eraseCallbackValue != EraseCallbackValueGood) {
-        return [[FBDeviceControlError
-          describeFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]
-          failFuture];
-      }
-      [logger logFormat:@"Device API call finished, waiting for device to go offline"];
-      return [deviceWentAway timeout:OfflineTimeout waitingFor:@"Device to go offline"];
-    }]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id _) {
-      [logger logFormat:@"Device has gone offline, waiting for it to come back online"];
-      return [deviceCameBack timeout:OnlineTimeout waitingFor:@"Device to come back"];
-    }];
+             onQueue:self.queue
+             resolve:^FBFuture<NSNull *> * {
+               NSError *error = nil;
+               if (![deviceManager startListeningWithError:&error]) {
+                 return [FBFuture futureWithError:error];
+               }
+               return [[self deviceDetected] timeout:DetectTimeout waitingFor:@"Device to be detected the first time"];
+             }]
+            onQueue:self.queue
+            fmap:^FBFuture<NSNull *> *(id _) {
+              [logger logFormat:@"Device has been detected, starting erase API Call"];
+              return [[self startErase] timeout:APICallbackTimeout waitingFor:@"Device erase API call to resolve"];
+            }]
+           onQueue:self.queue
+           fmap:^FBFuture<NSNull *> *(NSNumber *eraseCallbackValueNumber) {
+             const int eraseCallbackValue = eraseCallbackValueNumber.intValue;
+             if (eraseCallbackValue != EraseCallbackValueGood) {
+               return [[FBDeviceControlError
+                        describeFormat:@"Erase callback was %d, not %d. Perhaps the device is not activated?", eraseCallbackValue, EraseCallbackValueGood]
+                       failFuture];
+             }
+             [logger logFormat:@"Device API call finished, waiting for device to go offline"];
+             return [deviceWentAway timeout:OfflineTimeout waitingFor:@"Device to go offline"];
+           }]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(id _) {
+            [logger logFormat:@"Device has gone offline, waiting for it to come back online"];
+            return [deviceCameBack timeout:OnlineTimeout waitingFor:@"Device to come back"];
+          }];
 }
 
 - (FBFuture<NSNumber *> *)startErase
@@ -114,12 +118,13 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
   id<FBControlCoreLogger> logger = self.logger;
   NSString *udid = self.udid;
   return [FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSNumber *> * {
-      calls.AMSInitialize(0);
-      int status = calls.AMSEraseDevice((__bridge CFStringRef)(udid), EraseCallback, (__bridge void *)(self));
-      [logger logFormat:@"AMSEraseDevice had status %d", status];
-      return eraseCallbackResult;
-    }];
+          onQueue:self.queue
+          resolve:^FBFuture<NSNumber *> * {
+            calls.AMSInitialize(0);
+            int status = calls.AMSEraseDevice((__bridge CFStringRef)(udid), EraseCallback, (__bridge void *)(self));
+            [logger logFormat:@"AMSEraseDevice had status %d", status];
+            return eraseCallbackResult;
+          }];
 }
 
 #pragma mark FBiOSTargetSetDelegate
@@ -142,16 +147,14 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
 }
 
 - (void)targetUpdated:(id<FBiOSTargetInfo>)targetInfo inTargetSet:(id<FBiOSTargetSet>)targetSet
-{
-
-}
+{}
 
 @end
 
 @interface FBDeviceEraseCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
-@property (nonatomic, strong, readwrite) FBAMRestorableDeviceManager *restorableDeviceManager;
+@property (nonatomic, readonly, weak) FBDevice *device;
+@property (nonatomic, readwrite, strong) FBAMRestorableDeviceManager *restorableDeviceManager;
 
 @end
 
@@ -182,15 +185,17 @@ static int EraseCallback(NSString *identifier, int progress, void *context)
 {
   id<FBControlCoreLogger> logger = [self.device.logger withName:[NSString stringWithFormat:@"erase_%@", self.device.udid]];
   return [[self.device
-    activate]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      FBDeviceEraseOperation *operation = [FBDeviceEraseOperation operationWithDevice:self.device logger:logger];
-      return [[operation
-        erase]
-        onQueue:self.device.workQueue doOnResolved:^(id __) {
-          [logger logFormat:@"Device erase finished successfully %@", operation];
-        }];
-    }];
+           activate]
+          onQueue:self.device.workQueue
+          fmap:^(id _) {
+            FBDeviceEraseOperation *operation = [FBDeviceEraseOperation operationWithDevice:self.device logger:logger];
+            return [[operation
+                     erase]
+                    onQueue:self.device.workQueue
+                    doOnResolved:^(id __) {
+                      [logger logFormat:@"Device erase finished successfully %@", operation];
+                    }];
+          }];
 }
 
 @end

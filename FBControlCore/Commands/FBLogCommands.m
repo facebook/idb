@@ -11,7 +11,7 @@
 
 @interface FBProcessLogOperation ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -37,11 +37,12 @@
 {
   FBSubprocess *process = self.process;
   return [[[process
-    exitedWithCodes:[NSSet setWithObject:@0]]
-    mapReplace:NSNull.null]
-    onQueue:self.queue respondToCancellation:^{
-      return [process sendSignal:SIGTERM backingOffToKillWithTimeout:5 logger:nil];
-    }];
+            exitedWithCodes:[NSSet setWithObject:@0]]
+           mapReplace:NSNull.null]
+          onQueue:self.queue
+          respondToCancellation:^{
+            return [process sendSignal:SIGTERM backingOffToKillWithTimeout:5 logger:nil];
+          }];
 }
 
 + (NSArray<NSString *> *)osLogArgumentsInsertStreamIfNeeded:(NSArray<NSString *> *)arguments
@@ -70,10 +71,9 @@
       @"show",
       @"stream",
       @"stats",
-    ]];
+                   ]];
   });
   return subcommands;
 }
 
 @end
-

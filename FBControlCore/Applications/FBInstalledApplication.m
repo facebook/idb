@@ -63,17 +63,17 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeySignerIdentity = @"
     return NO;
   }
   return [self.bundle isEqual:object.bundle]
-      && self.installType == object.installType
-      && (self.dataContainer == object.dataContainer || [self.dataContainer isEqualToString:object.dataContainer]);
+  && self.installType == object.installType
+  && (self.dataContainer == object.dataContainer || [self.dataContainer isEqualToString:object.dataContainer]);
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Bundle %@ | Install Type %@ | Container %@",
-    self.bundle.description,
-    self.installTypeString,
-    self.dataContainer
+          @"Bundle %@ | Install Type %@ | Container %@",
+          self.bundle.description,
+          self.installTypeString,
+          self.dataContainer
   ];
 }
 

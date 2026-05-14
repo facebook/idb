@@ -12,4 +12,3 @@
 - (id)_IDE_stopTrackingProcessWithToken:(NSNumber *)arg1;
 - (id)_IDE_processWithBundleID:(NSString *)arg1 path:(NSString *)arg2 pid:(NSNumber *)arg3 crashedUnderSymbol:(NSString *)arg4;
 @end
-

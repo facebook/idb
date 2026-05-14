@@ -21,10 +21,11 @@
 + (FBFuture<NSNull *> *)erase:(FBSimulator *)simulator
 {
   return [[FBSimulatorShutdownStrategy
-    shutdown:simulator]
-    onQueue:simulator.workQueue fmap:^(id _) {
-      return [self eraseContentsAndSettings:simulator];
-    }];
+           shutdown:simulator]
+          onQueue:simulator.workQueue
+          fmap:^(id _) {
+            return [self eraseContentsAndSettings:simulator];
+          }];
 }
 
 #pragma mark Private
@@ -34,15 +35,15 @@
   [simulator.logger logFormat:@"Erasing %@", simulator];
   FBMutableFuture<FBSimulator *> *future = FBMutableFuture.future;
   [simulator.device
-    eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.workQueue
-    completionHandler:^(NSError *error){
-      if (error) {
-        [future resolveWithError:error];
-      } else {
-        [simulator.logger logFormat:@"Erased %@", simulator];
-        [future resolveWithResult:simulator];
-      }
-    }];
+   eraseContentsAndSettingsAsyncWithCompletionQueue:simulator.workQueue
+   completionHandler:^(NSError *error) {
+     if (error) {
+       [future resolveWithError:error];
+     } else {
+       [simulator.logger logFormat:@"Erased %@", simulator];
+       [future resolveWithResult:simulator];
+     }
+   }];
   return future;
 }
 

@@ -26,55 +26,54 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  The Process Idenfifer of the Launched Process.
  */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
+@property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
  A future that resolves with the the value from waitpid(2) on termination.
  This will always resolve on completion, regardless of whether the process was signalled or exited normally.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *statLoc;
+@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *statLoc;
 
 /**
  A future that resolves with the exit code upon termination.
  If the process exited abnormally then this future will error.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *exitCode;
+@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *exitCode;
 
 /**
  A future that resolves when the process terminates with a signal.
  If the process exited normally then this future will error.
  Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *signal;
+@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *signal;
 
 /**
  The IO Object attached to the process.
  */
-@property (nonatomic, strong, readonly) FBProcessSpawnConfiguration *configuration;
+@property (nonatomic, readonly, strong) FBProcessSpawnConfiguration *configuration;
 
 /**
  Returns the stdin of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessInput.
  */
-@property (nonatomic, strong, nullable, readonly) StdInType stdIn;
+@property (nullable, nonatomic, readonly, strong) StdInType stdIn;
 
 /**
  Returns the stdout of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessOutput.
  */
-@property (nonatomic, strong, nullable, readonly) StdOutType stdOut;
+@property (nullable, nonatomic, readonly, strong) StdOutType stdOut;
 
 /**
  Returns the stdout of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessOutput.
  */
-@property (nonatomic, strong, nullable, readonly) StdErrType stdErr;
-
+@property (nullable, nonatomic, readonly, strong) StdErrType stdErr;
 
 #pragma mark Initializers
 
@@ -105,7 +104,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  Confirms that the process exited with a defined set of status codes.
  Cancelling this future will have no effect.
- 
+
  @param acceptableExitCodes the exit codes to check for, must not be nil.
  @return a Future with the same base behaviour as -[FBSubprocess exitCode] with additional checking of codes.
  */

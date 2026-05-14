@@ -11,9 +11,9 @@
 
 @interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, FBAccumulatingBuffer>
 
-@property (nonatomic, strong, readwrite) NSMutableData *buffer;
-@property (nonatomic, assign, readonly) size_t capacity;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishedConsumingFuture;
+@property (nonatomic, readwrite, strong) NSMutableData *buffer;
+@property (nonatomic, readonly, assign) size_t capacity;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
 
@@ -44,7 +44,7 @@
 
 - (NSString *)description
 {
-  @synchronized (self) {
+  @synchronized(self) {
     return [NSString stringWithFormat:@"Accumilating Buffer %lu Bytes", self.data.length];
   }
 }
@@ -53,7 +53,7 @@
 
 - (NSData *)data
 {
-  @synchronized (self) {
+  @synchronized(self) {
     return [self.buffer copy];
   }
 }
@@ -68,7 +68,7 @@
 
 - (void)consumeData:(NSData *)data
 {
-  @synchronized (self) {
+  @synchronized(self) {
     if (self.finishedConsuming.hasCompleted) {
       return;
     }
@@ -84,7 +84,7 @@
 
 - (void)consumeEndOfFile
 {
-  @synchronized (self) {
+  @synchronized(self) {
     if (self.finishedConsuming.hasCompleted) {
       return;
     }
@@ -105,14 +105,14 @@
 
 - (void)run:(id<FBConsumableBuffer>)buffer;
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
 
 @end
 
 @interface FBDataBuffer_Terminal_Forwarder : NSObject <FBDataBuffer_Forwarder>
 
-@property (nonatomic, copy, readonly) NSData *terminal;
-@property (nonatomic, strong, nullable, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, copy) NSData *terminal;
+@property (nullable, nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -155,10 +155,10 @@
 
 @interface FBDataBuffer_Header_Forwarder : NSObject <FBDataBuffer_Forwarder>
 
-@property (nonatomic, assign, readonly) NSUInteger headerLength;
-@property (nonatomic, strong, readonly) NSUInteger(^derivedLength)(NSData *);
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, copy, nullable, readwrite) NSNumber *knownderivedLength;
+@property (nonatomic, readonly, assign) NSUInteger headerLength;
+@property (nonatomic, readonly, strong) NSUInteger (^derivedLength)(NSData *);
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nullable, nonatomic, readwrite, copy) NSNumber *knownderivedLength;
 
 @end
 
@@ -166,7 +166,7 @@
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger(^)(NSData *))derivedLength consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+- (instancetype)initWithHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -208,7 +208,7 @@
 
 @interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, FBNotifyingBuffer>
 
-@property (nonatomic, strong, nullable, readwrite) id<FBDataBuffer_Forwarder> forwarder;
+@property (nullable, nonatomic, readwrite, strong) id<FBDataBuffer_Forwarder> forwarder;
 
 @end
 
@@ -232,7 +232,7 @@
 
 - (NSString *)description
 {
-  @synchronized (self) {
+  @synchronized(self) {
     return [NSString stringWithFormat:@"Consumable Buffer %lu Bytes", self.data.length];
   }
 }
@@ -241,7 +241,7 @@
 
 - (nullable NSData *)consumeCurrentData
 {
-  @synchronized (self) {
+  @synchronized(self) {
     NSData *data = self.data;
     self.buffer.data = NSData.data;
     return data;
@@ -256,7 +256,7 @@
 
 - (nullable NSData *)consumeLength:(NSUInteger)length
 {
-  @synchronized (self) {
+  @synchronized(self) {
     if (length > self.buffer.length) {
       return nil;
     }
@@ -272,7 +272,7 @@
 
 - (nullable NSData *)consumeUntil:(NSData *)terminal
 {
-  @synchronized (self) {
+  @synchronized(self) {
     if (self.buffer.length == 0) {
       return nil;
     }
@@ -321,7 +321,7 @@
   return future;
 }
 
-- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger(^)(NSData *))derivedLength
+- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength
 {
   FBMutableFuture<NSData *> *future = FBMutableFuture.future;
   id<FBDataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
@@ -342,7 +342,7 @@
 - (void)consumeData:(NSData *)data
 {
   [super consumeData:data];
-  @synchronized (self) {
+  @synchronized(self) {
     [self.forwarder run:self];
   }
 }
@@ -351,11 +351,11 @@
 
 - (BOOL)attachForwardingConsumer:(id<FBDataBuffer_Forwarder>)forwarder error:(NSError **)error
 {
-  @synchronized (self) {
+  @synchronized(self) {
     if (self.forwarder) {
       return [[FBControlCoreError
-        describe:@"Cannot listen for the two terminals at the same time"]
-        failBool:error];
+               describe:@"Cannot listen for the two terminals at the same time"]
+              failBool:error];
     }
     self.forwarder = forwarder;
     [self.forwarder run:self];

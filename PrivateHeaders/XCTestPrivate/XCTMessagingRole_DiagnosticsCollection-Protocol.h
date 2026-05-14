@@ -15,4 +15,3 @@
 - (id)_IDE_requestLogArchiveWithStartDate:(NSDate *)arg1;
 - (id)_IDE_collectNewCrashReportsInDirectories:(NSArray *)arg1 matchingProcessNames:(NSArray *)arg2;
 @end
-

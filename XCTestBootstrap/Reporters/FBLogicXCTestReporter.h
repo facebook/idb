@@ -18,7 +18,6 @@
  */
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
 
-
 /**
  Called when the test plan has started executing.
  */

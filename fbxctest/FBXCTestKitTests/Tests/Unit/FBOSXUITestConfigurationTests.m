@@ -5,16 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBXCTestKitFixtures.h"
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBXCTestKit/FBXCTestKit.h>
-#import <XCTest/XCTest.h>
 
+#import "FBControlCoreValueTestCase.h"
+#import "FBXCTestKitFixtures.h"
 #import "FBXCTestReporterDouble.h"
 #import "XCTestCase+FBXCTestKitTests.h"
-#import "FBControlCoreValueTestCase.h"
 
 @interface FBOSXUITestConfigurationTests : FBControlCoreValueTestCase
 
@@ -24,7 +24,7 @@
 
 - (NSString *)appTestArgument
 {
-  NSString *testBundlePath =  FBXCTestKitFixtures.macUnitTestBundlePath;
+  NSString *testBundlePath = FBXCTestKitFixtures.macUnitTestBundlePath;
   NSString *testHostAppPath = FBXCTestKitFixtures.macUITestAppTargetPath;
   return [NSString stringWithFormat:@"%@:%@", testBundlePath, testHostAppPath];
 }
@@ -42,7 +42,7 @@
   NSError *error = nil;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-uiTest", self.uiTestArgument];
+  NSArray *arguments = @[@"run-tests", @"-sdk", @"macosx", @"-uiTest", self.uiTestArgument];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -55,20 +55,20 @@
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeUITest);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-      testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
-      testFilter:nil
-      videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil
-      osLogPath:nil]
-    destination:[[FBXCTestDestinationMacOSX alloc] init]
+                                   commandLineWithConfiguration:[FBTestManagerTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
+                                                                 testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
+                                                                 testFilter:nil
+                                                                 videoRecordingPath:nil
+                                                                 testArtifactsFilenameGlobs:nil
+                                                                 osLogPath:nil]
+                                   destination:[[FBXCTestDestinationMacOSX alloc] init]
   ];
   XCTAssertEqualObjects(commandLine, expected);
 }
@@ -78,7 +78,7 @@
   NSError *error = nil;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-uiTest", self.uiTestArgument];
+  NSArray *arguments = @[@"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-uiTest", self.uiTestArgument];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -90,20 +90,20 @@
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeUITest);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-      testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
-      testFilter:nil
-      videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil
-      osLogPath:nil]
-    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+                                   commandLineWithConfiguration:[FBTestManagerTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 testBundlePath:FBXCTestKitFixtures.macUITestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
+                                                                 testTargetAppPath:FBXCTestKitFixtures.macUITestAppTargetPath
+                                                                 testFilter:nil
+                                                                 videoRecordingPath:nil
+                                                                 testArtifactsFilenameGlobs:nil
+                                                                 osLogPath:nil]
+                                   destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }
 
@@ -112,7 +112,7 @@
   NSError *error = nil;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-appTest", self.appTestArgument];
+  NSArray *arguments = @[@"run-tests", @"-sdk", @"macosx", @"-appTest", self.appTestArgument];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -125,20 +125,20 @@
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeApplicationTest);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-      testTargetAppPath:nil
-      testFilter:nil
-      videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil
-      osLogPath:nil]
-    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+                                   commandLineWithConfiguration:[FBTestManagerTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
+                                                                 testTargetAppPath:nil
+                                                                 testFilter:nil
+                                                                 videoRecordingPath:nil
+                                                                 testArtifactsFilenameGlobs:nil
+                                                                 osLogPath:nil]
+                                   destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }
 
@@ -147,7 +147,7 @@
   NSError *error = nil;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument];
+  NSArray *arguments = @[@"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -159,20 +159,20 @@
   XCTAssertEqualObjects(configuration.testType, FBXCTestTypeApplicationTest);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBTestManagerTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
-      testTargetAppPath:nil
-      testFilter:nil
-      videoRecordingPath:nil
-      testArtifactsFilenameGlobs:nil
-      osLogPath:nil]
-    destination:[[FBXCTestDestinationMacOSX alloc] init]];
+                                   commandLineWithConfiguration:[FBTestManagerTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 testBundlePath:FBXCTestKitFixtures.macUnitTestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 runnerAppPath:FBXCTestKitFixtures.macCommonAppPath
+                                                                 testTargetAppPath:nil
+                                                                 testFilter:nil
+                                                                 videoRecordingPath:nil
+                                                                 testArtifactsFilenameGlobs:nil
+                                                                 osLogPath:nil]
+                                   destination:[[FBXCTestDestinationMacOSX alloc] init]];
   XCTAssertEqualObjects(commandLine, expected);
 }
 

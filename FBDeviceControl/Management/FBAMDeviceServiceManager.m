@@ -8,14 +8,14 @@
 #import "FBAMDeviceServiceManager.h"
 
 #import "FBAMDevice.h"
-#import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
+#import "FBDeviceControlError.h"
 
-@interface FBAMDeviceServiceManager_HouseArrest : NSObject<FBFutureContextManagerDelegate>
+@interface FBAMDeviceServiceManager_HouseArrest : NSObject <FBFutureContextManagerDelegate>
 
-@property (nonatomic, weak, readonly) FBAMDevice *device;
-@property (nonatomic, copy, readonly) NSString *bundleID;
-@property (nonatomic, assign, readonly) AFCCalls calls;
+@property (nonatomic, readonly, weak) FBAMDevice *device;
+@property (nonatomic, readonly, copy) NSString *bundleID;
+@property (nonatomic, readonly, assign) AFCCalls calls;
 
 @end
 
@@ -51,8 +51,8 @@
   if (status != 0) {
     NSString *internalMessage = CFBridgingRelease(self.device.calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]
-      failFuture];
+             describeFormat:@"Failed to start house_arrest service for '%@' with error 0x%x (%@)", self.bundleID, status, internalMessage]
+            failFuture];
   }
   FBAFCConnection *connection = [[FBAFCConnection alloc] initWithConnection:afcConnection calls:self.calls logger:logger];
   return [FBFuture futureWithResult:connection];
@@ -85,10 +85,10 @@
 
 @interface FBAMDeviceServiceManager ()
 
-@property (nonatomic, weak, readonly) FBAMDevice *device;
-@property (nonatomic, copy, nullable, readonly) NSNumber *serviceTimeout;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBFutureContextManager<FBAFCConnection *> *> *houseArrestManagers;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBAMDeviceServiceManager_HouseArrest *> *houseArrestDelegates;
+@property (nonatomic, readonly, weak) FBAMDevice *device;
+@property (nullable, nonatomic, readonly, copy) NSNumber *serviceTimeout;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBFutureContextManager<FBAFCConnection *> *> *houseArrestManagers;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBAMDeviceServiceManager_HouseArrest *> *houseArrestDelegates;
 
 @end
 

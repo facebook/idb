@@ -22,11 +22,11 @@ static NSString *const MobileBackupDomain = @"com.apple.mobile.backup";
 + (BOOL)stopSessionWithDevice:(AMDeviceRef)device calls:(AMDCalls)calls logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 + (NSDictionary<NSString *, id> *)obtainDeviceValues:(AMDeviceRef)device calls:(AMDCalls)calls;
 
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
-@property (nonatomic, assign, readonly) AMDCalls calls;
-@property (nonatomic, copy, nullable, readonly) NSString *ecidFilter;
-@property (nonatomic, assign, readwrite) AMDNotificationSubscription subscription;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonatomic, readonly, assign) AMDCalls calls;
+@property (nullable, nonatomic, readonly, copy) NSString *ecidFilter;
+@property (nonatomic, readwrite, assign) AMDNotificationSubscription subscription;
 
 - (NSString *)identifierForDevice:(AMDeviceRef)device;
 
@@ -62,7 +62,7 @@ static BOOL FB_AMDeviceConnected(AMDeviceRef device, FBAMDeviceManager *manager)
   }
 
   // Now extract all of the values.
-  NSDictionary<NSString *, id> * info = [FBAMDeviceManager obtainDeviceValues:device calls:calls];
+  NSDictionary<NSString *, id> *info = [FBAMDeviceManager obtainDeviceValues:device calls:calls];
 
   // Stop the session if one was created.
   if (pairedWithSession) {
@@ -165,8 +165,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 {
   if (self.subscription) {
     return [[FBDeviceControlError
-      describe:@"An AMDeviceNotification Subscription already exists"]
-      failBool:error];
+             describe:@"An AMDeviceNotification Subscription already exists"]
+            failBool:error];
   }
 
   // Perform a bridging retain, so that the context of the callback can be strongly referenced.
@@ -181,8 +181,8 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
   );
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"AMDeviceNotificationSubscribe failed with %d", result]
-      failBool:error];
+             describeFormat:@"AMDeviceNotificationSubscribe failed with %d", result]
+            failBool:error];
   }
 
   self.subscription = subscription;
@@ -193,15 +193,15 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 {
   if (!self.subscription) {
     return [[FBDeviceControlError
-      describe:@"An AMDeviceNotification Subscription does not exist"]
-      failBool:error];
+             describe:@"An AMDeviceNotification Subscription does not exist"]
+            failBool:error];
   }
 
   int result = self.calls.NotificationUnsubscribe(self.subscription);
   if (result != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"AMDeviceNotificationUnsubscribe failed with %d", result]
-      failBool:error];
+             describeFormat:@"AMDeviceNotificationUnsubscribe failed with %d", result]
+            failBool:error];
   }
 
   // Cleanup after the subscription.
@@ -212,12 +212,18 @@ static void FB_AMDeviceListenerCallback(AMDeviceNotification *notification, FBAM
 
 static const NSTimeInterval ServiceReuseTimeout = 6.0;
 
-- (id)constructPublic:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
+- (id)constructPublic:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
-  return [[FBAMDevice alloc] initWithAllValues:info calls:self.calls connectionReuseTimeout:nil serviceReuseTimeout:@(ServiceReuseTimeout) workQueue:self.workQueue asyncQueue:self.asyncQueue logger:self.logger];
+  return [[FBAMDevice alloc] initWithAllValues:info
+                                         calls:self.calls
+                        connectionReuseTimeout:nil
+                           serviceReuseTimeout:@(ServiceReuseTimeout)
+                                     workQueue:self.workQueue
+                                    asyncQueue:self.asyncQueue
+                                        logger:self.logger];
 }
 
-+ (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
++ (void)updatePublicReference:(FBAMDevice *)publicDevice privateDevice:(AMDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
   publicDevice.amDeviceRef = privateDevice;
   publicDevice.allValues = info;
@@ -248,8 +254,8 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
 {
   if (device == NULL) {
     return [[FBDeviceControlError
-      describe:@"Cannot utilize a non existent AMDeviceRef"]
-      failBool:error];
+             describe:@"Cannot utilize a non existent AMDeviceRef"]
+            failBool:error];
   }
 
   [logger logFormat:@"Connecting to %@", device];
@@ -257,8 +263,8 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   if (status != 0) {
     NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to connect to %@. (%@)", device, errorDescription]
-      failBool:error];
+             describeFormat:@"Failed to connect to %@. (%@)", device, errorDescription]
+            failBool:error];
   }
   return YES;
 }
@@ -273,8 +279,8 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     if (status != 0) {
       NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
       return [[FBDeviceControlError
-        describeFormat:@"%@ is not paired with this host %@", device, errorDescription]
-        failBool:error];
+               describeFormat:@"%@ is not paired with this host %@", device, errorDescription]
+              failBool:error];
     }
     [logger logFormat:@"%@ succeeded pairing request", device];
   }
@@ -284,8 +290,8 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   if (status != 0) {
     NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to validate pairing for %@. (%@)", device, errorDescription]
-      failBool:error];
+             describeFormat:@"Failed to validate pairing for %@. (%@)", device, errorDescription]
+            failBool:error];
   }
 
   // A session may also be required.
@@ -295,8 +301,8 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
     calls.Disconnect(device);
     NSString *errorDescription = CFBridgingRelease(calls.CopyErrorText(status));
     return [[FBDeviceControlError
-      describeFormat:@"Failed to start session with device. (%@)", errorDescription]
-      failBool:error];
+             describeFormat:@"Failed to start session with device. (%@)", errorDescription]
+            failBool:error];
   }
 
   return YES;
@@ -330,7 +336,7 @@ static const NSTimeInterval ServiceReuseTimeout = 6.0;
   info[FBDeviceKeyIsPaired] = @(isPaired);
 
   // Get values from mobile backup, this will only return meaningful information if paired.
-  NSDictionary<NSString *, id> * backupInfo = [CFBridgingRelease(calls.CopyValue(device, (__bridge CFStringRef)(MobileBackupDomain), NULL)) copy] ?: @{};
+  NSDictionary<NSString *, id> *backupInfo = [CFBridgingRelease(calls.CopyValue(device, (__bridge CFStringRef)(MobileBackupDomain), NULL)) copy] ?: @{};
   // Insert the values from subdomains.
   info[MobileBackupDomain] = backupInfo;
 

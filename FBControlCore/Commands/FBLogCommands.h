@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The consumer of the operation.
  */
-@property (nonatomic, strong, readonly) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
 
 @end
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The wrapped launched process.
  */
-@property (nonatomic, strong, readonly) FBSubprocess *process;
+@property (nonatomic, readonly, strong) FBSubprocess *process;
 
 /**
  The Designated Initializer

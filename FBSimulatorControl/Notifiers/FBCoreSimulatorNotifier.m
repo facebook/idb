@@ -36,24 +36,27 @@
 {
   FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.resolve_state", DISPATCH_QUEUE_SERIAL);
-  FBCoreSimulatorNotifier *notifier = [self notifierForSimDevice:device queue:queue block:^(NSDictionary<NSString *, id> *info) {
-    if (![info[@"notification"] isEqualToString:@"device_state"]) {
-      return;
-    }
-    NSNumber *newStateNumber = info[@"new_state"];
-    if (!newStateNumber) {
-      return;
-    }
-    FBiOSTargetState newState = newStateNumber.unsignedIntegerValue;
-    if (newState == state) {
-      return;
-    }
-    [future resolveWithResult:NSNull.null];
-  }];
+  FBCoreSimulatorNotifier *notifier = [self notifierForSimDevice:device
+                                                           queue:queue
+                                                           block:^(NSDictionary<NSString *, id> *info) {
+                                                             if (![info[@"notification"] isEqualToString:@"device_state"]) {
+                                                               return;
+                                                             }
+                                                             NSNumber *newStateNumber = info[@"new_state"];
+                                                             if (!newStateNumber) {
+                                                               return;
+                                                             }
+                                                             FBiOSTargetState newState = newStateNumber.unsignedIntegerValue;
+                                                             if (newState == state) {
+                                                               return;
+                                                             }
+                                                             [future resolveWithResult:NSNull.null];
+                                                           }];
   return [future
-   onQueue:queue notifyOfCompletion:^(id _) {
-     [notifier terminate];
-   }];
+          onQueue:queue
+          notifyOfCompletion:^(id _) {
+            [notifier terminate];
+          }];
 }
 
 - (void)terminate

@@ -13,18 +13,18 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 @interface FBJSONTestReporter ()
 
-@property (nonatomic, strong, readonly) id<FBDataConsumer> dataConsumer;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, copy, readonly) NSString *testBundlePath;
-@property (nonatomic, copy, readonly) NSString *testType;
-@property (nonatomic, copy, readonly) NSMutableArray<NSDictionary<NSString *, id> *> *events;
-@property (nonatomic, copy, readonly) NSMutableDictionary<NSString *, NSMutableArray<NSDictionary<NSString *, id> *> *> *xctestNameExceptionsMapping;
-@property (nonatomic, copy, readonly) NSMutableArray<NSString *> *pendingTestOutput;
+@property (nonatomic, readonly, strong) id<FBDataConsumer> dataConsumer;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, copy) NSString *testBundlePath;
+@property (nonatomic, readonly, copy) NSString *testType;
+@property (nonatomic, readonly, copy) NSMutableArray<NSDictionary<NSString *, id> *> *events;
+@property (nonatomic, readonly, copy) NSMutableDictionary<NSString *, NSMutableArray<NSDictionary<NSString *, id> *> *> *xctestNameExceptionsMapping;
+@property (nonatomic, readonly, copy) NSMutableArray<NSString *> *pendingTestOutput;
 
-@property (nonatomic, copy, readwrite) NSString *currentTestName;
-@property (nonatomic, copy, readwrite) NSError *crashError;
-@property (nonatomic, assign, readwrite) BOOL started;
-@property (nonatomic, assign, readwrite) BOOL finished;
+@property (nonatomic, readwrite, copy) NSString *currentTestName;
+@property (nonatomic, readwrite, copy) NSError *crashError;
+@property (nonatomic, readwrite, assign) BOOL started;
+@property (nonatomic, readwrite, assign) BOOL finished;
 
 @end
 
@@ -114,23 +114,23 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
 {
   NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
-    for (FBExceptionInfo *exception in exceptions) {
-        [self.xctestNameExceptionsMapping[xctestName] addObject:[FBJSONTestReporter exceptionEvent:exception.message
-                                                                                              file:exception.file
-                                                                                              line:exception.line]];
-    }
+  for (FBExceptionInfo *exception in exceptions) {
+    [self.xctestNameExceptionsMapping[xctestName] addObject:[FBJSONTestReporter exceptionEvent:exception.message
+                                                                                          file:exception.file
+                                                                                          line:exception.line]];
+  }
 }
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(NSArray<NSString *> *)logs
 {
   _currentTestName = nil;
   NSDictionary<NSString *, id> *event = [FBJSONTestReporter
-    testCaseDidFinishForTestClass:testClass
-    method:method
-    status:status
-    duration:duration
-    pendingTestOutput:self.pendingTestOutput
-    xctestNameExceptionsMapping:self.xctestNameExceptionsMapping];
+                                         testCaseDidFinishForTestClass:testClass
+                                         method:method
+                                         status:status
+                                         duration:duration
+                                         pendingTestOutput:self.pendingTestOutput
+                                         xctestNameExceptionsMapping:self.xctestNameExceptionsMapping];
   [self printEvent:event];
   [self.pendingTestOutput removeAllObjects];
 }
@@ -143,26 +143,26 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
 {
   [self printEvent:@{
-    @"event" : @"video-recording-finished",
-    @"videoRecordingPath" : videoRecordingPath,
-  }];
+     @"event" : @"video-recording-finished",
+     @"videoRecordingPath" : videoRecordingPath,
+   }];
 }
 
 - (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath
 {
   [self printEvent:@{
-    @"event" : @"os-log-saved",
-    @"osLogPath" : osLogPath,
-  }];
+     @"event" : @"os-log-saved",
+     @"osLogPath" : osLogPath,
+   }];
 }
 
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
 {
   [self printEvent:@{
-    @"event" : @"copy-test-artifact",
-    @"test_artifact_file_name" : testArtifactFilename,
-    @"path" : path,
-  }];
+     @"event" : @"copy-test-artifact",
+     @"test_artifact_file_name" : testArtifactFilename,
+     @"path" : path,
+   }];
 }
 
 - (void)testHadOutput:(NSString *)output
@@ -191,8 +191,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 }
 
 - (void)processUnderTestDidExit
-{
-}
+{}
 
 - (void)didCrashDuringTest:(NSError *)error
 {
@@ -253,18 +252,18 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 + (NSDictionary<NSString *, id> *)testOutputEvent:(NSString *)output
 {
   return @{
-    @"event": @"test-output",
-    @"output": output,
+    @"event" : @"test-output",
+    @"output" : output,
   };
 }
 
 + (NSDictionary<NSString *, id> *)waitingForDebuggerEvent:(pid_t)pid
 {
   return @{
-    @"event": @"begin-status",
-    @"pid": @(pid),
-    @"level": @"Info",
-    @"message": [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
+    @"event" : @"begin-status",
+    @"pid" : @(pid),
+    @"level" : @"Info",
+    @"message" : [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
   };
 }
 
@@ -281,12 +280,12 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 + (NSDictionary<NSString *, id> *)createOCUnitEndEvent:(NSString *)testType testBundlePath:(NSString *)testBundlePath message:(NSString *)message success:(BOOL)success
 {
   NSMutableDictionary<NSString *, id> *event = [NSMutableDictionary dictionaryWithDictionary:@{
-    @"event" : @"end-ocunit",
-    @"testType" : testType,
-    @"bundleName" : [testBundlePath lastPathComponent],
-    @"targetName" : testBundlePath,
-    @"succeeded" : success ? @YES : @NO,
-  }];
+                                                  @"event" : @"end-ocunit",
+                                                  @"testType" : testType,
+                                                  @"bundleName" : [testBundlePath lastPathComponent],
+                                                  @"targetName" : testBundlePath,
+                                                  @"succeeded" : success ? @YES : @NO,
+                                                }];
   if (message) {
     event[@"message"] = message;
   }

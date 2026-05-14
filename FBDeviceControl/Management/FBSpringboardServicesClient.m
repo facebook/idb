@@ -11,15 +11,14 @@
 
 NSString *const FBSpringboardServiceName = @"com.apple.springboardservices";
 
-
 FBWallpaperName const FBWallpaperNameHomescreen = @"homescreen";
 FBWallpaperName const FBWallpaperNameLockscreen = @"lockscreen";
 
 @interface FBSpringboardServicesClient ()
 
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) FBAMDServiceConnection *connection;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -27,8 +26,8 @@ typedef NSArray<NSArray<NSString *> *> *IconLayoutJSONType;
 
 @interface FBSpringboardServicesIconContainer : NSObject <FBFileContainer>
 
-@property (nonatomic, strong, readonly) FBSpringboardServicesClient *client;
-@property (nonatomic, copy, readonly) NSArray<NSString *> *validFilenames;
+@property (nonatomic, readonly, strong) FBSpringboardServicesClient *client;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *validFilenames;
 
 @end
 
@@ -61,133 +60,139 @@ static NSString *const IconJSONFile = @"icons.json";
 {
   NSString *filename = sourcePath.lastPathComponent;
   return [[FBFuture
-    onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
-      if (![self.validFilenames containsObject:filename]) {
-        return [[FBControlCoreError
-          describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
-          failFuture];
-      }
-      return [self.client getIconLayout];
-    }]
-    onQueue:self.client.queue fmap:^ FBFuture<NSString *> * (IconLayoutType layout) {
-      if ([filename isEqualToString:IconJSONFile]) {
-        IconLayoutJSONType jsonLayout = [FBSpringboardServicesIconContainer flattenBaseFormat:layout];
-        NSError *error = nil;
-        NSData *data = [NSJSONSerialization dataWithJSONObject:jsonLayout options:NSJSONWritingPrettyPrinted error:&error];
-        if (!data) {
-          return [FBFuture futureWithError:error];
-        }
-        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
-          return [FBFuture futureWithError:error];
-        }
-        return [FBFuture futureWithResult:destinationPath];
-      } else {
-        NSError *error = nil;
-        NSData *data = [NSPropertyListSerialization dataWithPropertyList:layout format:NSPropertyListXMLFormat_v1_0 options:0 error:&error];
-        if (!data) {
-          return [FBFuture futureWithError:error];
-        }
-        if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
-          return [FBFuture futureWithError:error];
-        }
-        return [FBFuture futureWithResult:destinationPath];
-      }
-    }];
+           onQueue:self.client.queue
+           resolve:^FBFuture<IconLayoutType> * {
+             if (![self.validFilenames containsObject:filename]) {
+               return [[FBControlCoreError
+                        describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
+                       failFuture];
+             }
+             return [self.client getIconLayout];
+           }]
+          onQueue:self.client.queue
+          fmap:^FBFuture<NSString *> *(IconLayoutType layout) {
+            if ([filename isEqualToString:IconJSONFile]) {
+              IconLayoutJSONType jsonLayout = [FBSpringboardServicesIconContainer flattenBaseFormat:layout];
+              NSError *error = nil;
+              NSData *data = [NSJSONSerialization dataWithJSONObject:jsonLayout options:NSJSONWritingPrettyPrinted error:&error];
+              if (!data) {
+                return [FBFuture futureWithError:error];
+              }
+              if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+                return [FBFuture futureWithError:error];
+              }
+              return [FBFuture futureWithResult:destinationPath];
+            } else {
+              NSError *error = nil;
+              NSData *data = [NSPropertyListSerialization dataWithPropertyList:layout format:NSPropertyListXMLFormat_v1_0 options:0 error:&error];
+              if (!data) {
+                return [FBFuture futureWithError:error];
+              }
+              if (![data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
+                return [FBFuture futureWithError:error];
+              }
+              return [FBFuture futureWithResult:destinationPath];
+            }
+          }];
 }
 
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
-    iconLayoutFromSourcePath:sourcePath toDestinationFile:destinationPath.lastPathComponent]
-    onQueue:self.client.queue fmap:^ FBFuture<NSNull *> * (IconLayoutType layout) {
-      return [self.client setIconLayout:layout];
-    }];
+           iconLayoutFromSourcePath:sourcePath
+           toDestinationFile:destinationPath.lastPathComponent]
+          onQueue:self.client.queue
+          fmap:^FBFuture<NSNull *> *(IconLayoutType layout) {
+            return [self.client setIconLayout:layout];
+          }];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+           describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
+          failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
-    failFuture];
+           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+          failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
-    failFuture];
+           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+          failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
-    failFuture];
+           describeFormat:@"%@ does not make sense for Springboard File Containers", NSStringFromSelector(_cmd)]
+          failFuture];
 }
 
 - (FBFuture<IconLayoutType> *)iconLayoutFromSourcePath:(NSString *)sourcePath toDestinationFile:(NSString *)filename
 {
   return [FBFuture
-    onQueue:self.client.queue resolve:^ FBFuture<IconLayoutType> * {
-      if ([filename isEqualToString:IconJSONFile]) {
-        NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
-        if (!data) {
-          return [FBFuture futureWithError:error];
-        }
-        IconLayoutJSONType layout = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if (!layout) {
-          return [FBFuture futureWithError:error];
-        }
-        return [self convertJSONFormatToWireFormat:layout];
-      }
-      if ([filename isEqualToString:IconPlistFile]) {
-        NSError *error = nil;
-        NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
-        if (!data) {
-          return [FBFuture futureWithError:error];
-        }
-        IconLayoutType layout = [NSPropertyListSerialization propertyListWithData:data options:0 format:nil error:&error];
-        if (!layout) {
-          return [FBFuture futureWithError:error];
-        }
-        return [FBFuture futureWithResult:layout];
-      }
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
-        failFuture];
-    }];
+          onQueue:self.client.queue
+          resolve:^FBFuture<IconLayoutType> * {
+            if ([filename isEqualToString:IconJSONFile]) {
+              NSError *error = nil;
+              NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
+              if (!data) {
+                return [FBFuture futureWithError:error];
+              }
+              IconLayoutJSONType layout = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+              if (!layout) {
+                return [FBFuture futureWithError:error];
+              }
+              return [self convertJSONFormatToWireFormat:layout];
+            }
+            if ([filename isEqualToString:IconPlistFile]) {
+              NSError *error = nil;
+              NSData *data = [NSData dataWithContentsOfFile:sourcePath options:0 error:&error];
+              if (!data) {
+                return [FBFuture futureWithError:error];
+              }
+              IconLayoutType layout = [NSPropertyListSerialization propertyListWithData:data options:0 format:nil error:&error];
+              if (!layout) {
+                return [FBFuture futureWithError:error];
+              }
+              return [FBFuture futureWithResult:layout];
+            }
+            return [[FBControlCoreError
+                     describeFormat:@"%@ is not one of %@", filename, [FBCollectionInformation oneLineDescriptionFromArray:self.validFilenames]]
+                    failFuture];
+          }];
 }
 
 - (FBFuture<IconLayoutType> *)convertJSONFormatToWireFormat:(IconLayoutJSONType)jsonFormat
 {
   return [[self.client
-    getIconLayout]
-    onQueue:self.client.queue fmap:^ FBFuture<IconLayoutType> * (IconLayoutType currentApps) {
-      NSDictionary<NSString *, NSDictionary<NSString *, id> *> *iconsByBundleID = [FBSpringboardServicesIconContainer keyIconsByBundleID:currentApps];
-      NSMutableArray<NSArray<NSDictionary<NSString *, id> *> *> *format = NSMutableArray.array;
-      for (NSArray<NSString *> *jsonPage in jsonFormat) {
-        NSMutableArray<NSDictionary<NSString *, id> *> *fullPage = NSMutableArray.array;
-        for (NSString *bundleID in jsonPage) {
-          NSDictionary<NSString *, id> *icon = iconsByBundleID[bundleID];
-          if (!bundleID) {
-            return [[FBControlCoreError
-              describeFormat:@"Cannot use layout %@ is not any of %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:iconsByBundleID.allKeys]]
-              failFuture];
-          }
-          [fullPage addObject:icon];
-        }
-        [format addObject:fullPage];
-      }
-      return [FBFuture futureWithResult:format];
-    }];
+           getIconLayout]
+          onQueue:self.client.queue
+          fmap:^FBFuture<IconLayoutType> *(IconLayoutType currentApps) {
+            NSDictionary<NSString *, NSDictionary<NSString *, id> *> *iconsByBundleID = [FBSpringboardServicesIconContainer keyIconsByBundleID:currentApps];
+            NSMutableArray<NSArray<NSDictionary<NSString *, id> *> *> *format = NSMutableArray.array;
+            for (NSArray<NSString *> *jsonPage in jsonFormat) {
+              NSMutableArray<NSDictionary<NSString *, id> *> *fullPage = NSMutableArray.array;
+              for (NSString *bundleID in jsonPage) {
+                NSDictionary<NSString *, id> *icon = iconsByBundleID[bundleID];
+                if (!bundleID) {
+                  return [[FBControlCoreError
+                           describeFormat:@"Cannot use layout %@ is not any of %@", bundleID, [FBCollectionInformation oneLineDescriptionFromArray:iconsByBundleID.allKeys]]
+                          failFuture];
+                }
+                [fullPage addObject:icon];
+              }
+              [format addObject:fullPage];
+            }
+            return [FBFuture futureWithResult:format];
+          }];
 }
 
 + (IconLayoutJSONType)flattenBaseFormat:(IconLayoutType)baseFormat
@@ -244,25 +249,26 @@ static NSString *const IconJSONFile = @"icons.json";
 
 #pragma mark Public Methods
 
-
 - (FBFuture<IconLayoutType> *)getIconLayout
 {
-  return [[self getRawIconState:2] onQueue:self.queue map:^(id result) {
-    return (IconLayoutType)result;
-  }];
+  return [[self getRawIconState:2] onQueue:self.queue
+                                       map:^(id result) {
+                                         return (IconLayoutType)result;
+                                       }];
 }
 
 - (FBFuture<id> *)getRawIconState:(NSUInteger)formatVersion
 {
   NSString *formatVersionString = [NSString stringWithFormat:@"%lu", (unsigned long)formatVersion];
   return [FBFuture
-    onQueue:self.queue resolveValue:^ id (NSError **error) {
-      id result = [self.connection sendAndReceiveMessage:@{@"command": @"getIconState", @"formatVersion": formatVersionString} error:error];
-      if (!result) {
-        return nil;
-      }
-      return result;
-    }];
+          onQueue:self.queue
+          resolveValue:^id (NSError **error) {
+            id result = [self.connection sendAndReceiveMessage:@{@"command" : @"getIconState", @"formatVersion" : formatVersionString} error:error];
+            if (!result) {
+              return nil;
+            }
+            return result;
+          }];
 }
 
 static size_t IconLayoutSize = 4;
@@ -270,48 +276,51 @@ static size_t IconLayoutSize = 4;
 - (FBFuture<NSNull *> *)setIconLayout:(IconLayoutType)iconLayout
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
-      // A message is not returned upon the connection, so we just have to send the data itself and check it was acked.
-      if (![self.connection sendMessage:@{@"command": @"setIconState", @"iconState": iconLayout} error:error]) {
-        return nil;
-      }
-      // Recieve some data to know that it reached the other side, in the event of a failure we will receive no bytes. 
-      NSData *data = [self.connection receive:IconLayoutSize error:error];
-      if (!data) {
-        return nil;
-      }
-      return NSNull.null;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSNull *(NSError **error) {
+            // A message is not returned upon the connection, so we just have to send the data itself and check it was acked.
+            if (![self.connection sendMessage:@{@"command" : @"setIconState", @"iconState" : iconLayout} error:error]) {
+              return nil;
+            }
+            // Recieve some data to know that it reached the other side, in the event of a failure we will receive no bytes.
+            NSData *data = [self.connection receive:IconLayoutSize error:error];
+            if (!data) {
+              return nil;
+            }
+            return NSNull.null;
+          }];
 }
 
 - (FBFuture<NSDictionary<NSString *, id> *> *)getHomeScreenIconMetrics
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"command": @"getHomeScreenIconMetrics"} error:error];
-      if (!result) {
-        return nil;
-      }
-      return result;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSDictionary<NSString *, id> *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"command" : @"getHomeScreenIconMetrics"} error:error];
+            if (!result) {
+              return nil;
+            }
+            return result;
+          }];
 }
 
 - (FBFuture<NSData *> *)wallpaperImageDataForKind:(FBWallpaperName)name
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSData * (NSError **error) {
-      NSDictionary<NSString *, id> *response = [self.connection sendAndReceiveMessage:@{@"command": @"getWallpaperPreviewImage", @"wallpaperName": name} error:error];
-      if (!response) {
-        return nil;
-      }
-      NSData *data = response[@"pngData"];
-      if (![data isKindOfClass:NSData.class]) {
-        return [[FBControlCoreError
-          describeFormat:@"No pngData in response %@", response]
-          fail:error];
-      }
-      return data;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSData *(NSError **error) {
+            NSDictionary<NSString *, id> *response = [self.connection sendAndReceiveMessage:@{@"command" : @"getWallpaperPreviewImage", @"wallpaperName" : name} error:error];
+            if (!response) {
+              return nil;
+            }
+            NSData *data = response[@"pngData"];
+            if (![data isKindOfClass:NSData.class]) {
+              return [[FBControlCoreError
+                       describeFormat:@"No pngData in response %@", response]
+                      fail:error];
+            }
+            return data;
+          }];
 }
 
 - (id<FBFileContainer>)iconContainer

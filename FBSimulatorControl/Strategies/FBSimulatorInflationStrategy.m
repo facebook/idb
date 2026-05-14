@@ -15,7 +15,7 @@
 
 @interface FBSimulatorInflationStrategy ()
 
-@property (nonatomic, weak, readonly) FBSimulatorSet *set;
+@property (nonatomic, readonly, weak) FBSimulatorSet *set;
 
 @end
 
@@ -43,8 +43,8 @@
   // Inflate new simulators that have come along since last time this method was called.
   NSSet<NSString *> *existingSimulatorUDIDs = [NSSet setWithArray:[simulators valueForKeyPath:@"udid"]];
   NSDictionary<NSString *, SimDevice *> *availableDevices = [NSDictionary
-    dictionaryWithObjects:simDevices
-    forKeys:[simDevices valueForKeyPath:@"UDID.UUIDString"]];
+                                                             dictionaryWithObjects:simDevices
+                                                             forKeys:[simDevices valueForKeyPath:@"UDID.UUIDString"]];
 
   // Calculate the new Devices that are available.
   NSMutableSet<NSString *> *simulatorsToInflate = [NSMutableSet setWithArray:availableDevices.allKeys];
@@ -78,9 +78,9 @@
   for (NSString *udid in simulatorsToInflate) {
     SimDevice *device = availableDevices[udid];
     FBSimulator *simulator = [FBSimulator
-      fromSimDevice:device
-      configuration:nil
-      set:self.set];
+                              fromSimDevice:device
+                              configuration:nil
+                              set:self.set];
     [inflatedSimulators addObject:simulator];
   }
   return [inflatedSimulators copy];

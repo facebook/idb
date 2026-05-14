@@ -7,11 +7,11 @@
 
 #import "FBSimulatorImage.h"
 
+#import <objc/runtime.h>
+
 #import <CoreImage/CoreImage.h>
 
 #import <FBControlCore/FBControlCore.h>
-
-#import <objc/runtime.h>
 
 #import "FBFramebuffer.h"
 #import "FBSimulatorError.h"
@@ -19,11 +19,11 @@
 
 @interface FBSimulatorImage ()
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
-@property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
-@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
-@property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t writeQueue;
+@property (nonatomic, readonly, strong) FBSurfaceImageGenerator *imageGenerator;
+@property (nonatomic, readonly, strong) FBFramebuffer *framebuffer;
+@property (nonatomic, readwrite, strong) NSUUID *consumerUUID;
 
 @end
 
@@ -105,8 +105,8 @@
 {
   if (!image) {
     return [[FBSimulatorError
-      describe:@"No Image available to encode"]
-      fail:error];
+             describe:@"No Image available to encode"]
+            fail:error];
   }
 
   NSMutableData *data = [NSMutableData data];
@@ -120,8 +120,8 @@
   if (!CGImageDestinationFinalize(destination)) {
     CFRelease(destination);
     return [[FBSimulatorError
-      describe:@"Could not finalize the creation of the Image"]
-      fail:error];
+             describe:@"Could not finalize the creation of the Image"]
+            fail:error];
   }
   CFRelease(destination);
   return data;

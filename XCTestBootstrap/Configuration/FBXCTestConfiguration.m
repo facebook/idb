@@ -9,7 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBXCTestConfiguration.h"
 #import "FBCodeCoverageConfiguration.h"
 #import "FBXCTestProcess.h"
 #import "XCTestBootstrapError.h"
@@ -44,8 +43,8 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
 
   return self;
 }
-#pragma mark Public
 
+#pragma mark Public
 
 - (NSTimeInterval)defaultTimeout
 {
@@ -67,7 +66,7 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
   NSMutableDictionary<NSString *, NSString *> *parentEnvironment = NSProcessInfo.processInfo.environment.mutableCopy;
   [parentEnvironment removeObjectsForKeys:@[
     @"XCTestConfigurationFilePath",
-  ]];
+   ]];
 
   NSMutableDictionary<NSString *, NSString *> *environmentOverrides = [NSMutableDictionary dictionary];
   NSString *xctoolTestEnvPrefix = @"XCTOOL_TEST_ENV_";
@@ -102,11 +101,11 @@ FBXCTestType const FBXCTestTypeUITest = @"ui-test";
     return NO;
   }
   return (self.processUnderTestEnvironment == object.processUnderTestEnvironment || [self.processUnderTestEnvironment isEqualToDictionary:object.processUnderTestEnvironment])
-      && (self.workingDirectory == object.workingDirectory || [self.workingDirectory isEqualToString:object.workingDirectory])
-      && (self.testBundlePath == object.testBundlePath || [self.testBundlePath isEqualToString:object.testBundlePath])
-      && (self.testType == object.testType || [self.testType isEqualToString:object.testType])
-      && (self.waitForDebugger == object.waitForDebugger)
-      && (self.testTimeout == object.testTimeout);
+  && (self.workingDirectory == object.workingDirectory || [self.workingDirectory isEqualToString:object.workingDirectory])
+  && (self.testBundlePath == object.testBundlePath || [self.testBundlePath isEqualToString:object.testBundlePath])
+  && (self.testType == object.testType || [self.testType isEqualToString:object.testType])
+  && (self.waitForDebugger == object.waitForDebugger)
+  && (self.testTimeout == object.testTimeout);
 }
 
 - (NSUInteger)hash
@@ -134,13 +133,13 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 - (id)jsonSerializableRepresentation
 {
   return @{
-    KeyEnvironment: self.processUnderTestEnvironment,
-    KeyWorkingDirectory: self.workingDirectory,
-    KeyTestBundlePath: self.testBundlePath,
-    KeyTestType: self.testType,
-    KeyListTestsOnly: @NO,
-    KeyWaitForDebugger: @(self.waitForDebugger),
-    KeyTestTimeout: @(self.testTimeout),
+    KeyEnvironment : self.processUnderTestEnvironment,
+    KeyWorkingDirectory : self.workingDirectory,
+    KeyTestBundlePath : self.testBundlePath,
+    KeyTestType : self.testType,
+    KeyListTestsOnly : @NO,
+    KeyWaitForDebugger : @(self.waitForDebugger),
+    KeyTestTimeout : @(self.testTimeout),
   };
 }
 
@@ -159,7 +158,13 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures
 {
-  return [[FBListTestConfiguration alloc] initWithEnvironment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath runnerAppPath:runnerAppPath waitForDebugger:waitForDebugger timeout:timeout architectures:architectures];
+  return [[FBListTestConfiguration alloc] initWithEnvironment:environment
+                                             workingDirectory:workingDirectory
+                                               testBundlePath:testBundlePath
+                                                runnerAppPath:runnerAppPath
+                                              waitForDebugger:waitForDebugger
+                                                      timeout:timeout
+                                                architectures:architectures];
 }
 
 - (instancetype)initWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath runnerAppPath:(nullable NSString *)runnerAppPath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout architectures:(nonnull NSSet<NSString *> *)architectures
@@ -200,7 +205,17 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(nullable NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath
 {
-  return [[FBTestManagerTestConfiguration alloc] initWithEnvironment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testTargetAppPath:testTargetAppPath testFilter:testFilter videoRecordingPath:videoRecordingPath testArtifactsFilenameGlobs:testArtifactsFilenameGlobs osLogPath:osLogPath];
+  return [[FBTestManagerTestConfiguration alloc] initWithEnvironment:environment
+                                                    workingDirectory:workingDirectory
+                                                      testBundlePath:testBundlePath
+                                                     waitForDebugger:waitForDebugger
+                                                             timeout:timeout
+                                                       runnerAppPath:runnerAppPath
+                                                   testTargetAppPath:testTargetAppPath
+                                                          testFilter:testFilter
+                                                  videoRecordingPath:videoRecordingPath
+                                          testArtifactsFilenameGlobs:testArtifactsFilenameGlobs
+                                                           osLogPath:osLogPath];
 }
 
 - (instancetype)initWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testTargetAppPath:(NSString *)testTargetAppPath testFilter:(NSString *)testFilter videoRecordingPath:(NSString *)videoRecordingPath testArtifactsFilenameGlobs:(NSArray<NSString *> *)testArtifactsFilenameGlobs osLogPath:(nullable NSString *)osLogPath
@@ -237,7 +252,7 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
   json[KeyTestFilter] = self.testFilter ?: NSNull.null;
   json[KeyVideoRecordingPath] = self.videoRecordingPath ?: NSNull.null;
   json[KeyTestArtifactsFilenameGlobs] = self.testArtifactsFilenameGlobs ?: NSNull.null;
-  json[KeyOSLogPath] =  self.osLogPath ?: NSNull.null;
+  json[KeyOSLogPath] = self.osLogPath ?: NSNull.null;
   return [json copy];
 }
 
@@ -249,7 +264,17 @@ static NSString *const KeyWorkingDirectory = @"working_directory";
 
 + (instancetype)configurationWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures
 {
-  return [[FBLogicTestConfiguration alloc] initWithEnvironment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout testFilter:testFilter  mirroring:mirroring coverageConfiguration:coverageConfiguration binaryPath:binaryPath logDirectoryPath:logDirectoryPath architectures:architectures];
+  return [[FBLogicTestConfiguration alloc] initWithEnvironment:environment
+                                              workingDirectory:workingDirectory
+                                                testBundlePath:testBundlePath
+                                               waitForDebugger:waitForDebugger
+                                                       timeout:timeout
+                                                    testFilter:testFilter
+                                                     mirroring:mirroring
+                                         coverageConfiguration:coverageConfiguration
+                                                    binaryPath:binaryPath
+                                              logDirectoryPath:logDirectoryPath
+                                                 architectures:architectures];
 }
 
 - (instancetype)initWithEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter mirroring:(FBLogicTestMirrorLogs)mirroring coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration binaryPath:(nullable NSString *)binaryPath logDirectoryPath:(NSString *)logDirectoryPath architectures:(nonnull NSSet<NSString *> *)architectures

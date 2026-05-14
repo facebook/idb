@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
 
 @class FBSimulator;
@@ -46,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Disconnects from the remote HID.
- 
+
  @return A future that resolves when disconnected
  */
 - (FBFuture<NSNull *> *)disconnect;
@@ -64,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Sends the event payload, synchronously.
  This should only be used when the caller can guarantee that all calls to this API are performed from the same queue.
- 
+
  @param data the payload data
  @param completionQueue the queue to call back on
  @param completion the completion block to invoke
@@ -76,22 +75,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Queue on which messages are sent to the HID Server.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 /**
  The Indigo event translator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
+@property (nonatomic, readonly, strong) FBSimulatorIndigoHID *indigo;
 
 /**
  The dimensions of the main screen.
  */
-@property (nonatomic, assign, readonly) CGSize mainScreenSize;
+@property (nonatomic, readonly, assign) CGSize mainScreenSize;
 
 /**
  The scale of the main screen.
  */
-@property (nonatomic, assign, readonly) float mainScreenScale;
+@property (nonatomic, readonly, assign) float mainScreenScale;
 
 @end
 

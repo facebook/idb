@@ -12,13 +12,13 @@
 
 @interface SimPasteboardPortMap : NSObject
 {
-    NSMutableDictionary *_portToProxyMap;
-    NSObject<OS_dispatch_queue> *_concurrentQueue;
+  NSMutableDictionary *_portToProxyMap;
+  NSObject<OS_dispatch_queue> *_concurrentQueue;
 }
 
 + (id)sharedManager;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *concurrentQueue;
-@property (retain, nonatomic) NSMutableDictionary *portToProxyMap;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *concurrentQueue;
+@property (nonatomic, retain) NSMutableDictionary *portToProxyMap;
 
 - (id)createPortKey:(unsigned int)arg1;
 - (void)setValue:(id)arg1 forPort:(unsigned int)arg2;

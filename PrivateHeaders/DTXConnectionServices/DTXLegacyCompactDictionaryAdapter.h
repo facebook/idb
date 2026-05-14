@@ -8,11 +8,9 @@
 #import <Foundation/Foundation.h>
 
 @interface DTXLegacyCompactDictionaryAdapter : NSObject <NSCoding>
-{
-}
+{}
 
 - (id)initWithCoder:(id)arg1;
 - (void)encodeWithCoder:(id)arg1;
 
 @end
-

@@ -5,15 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import "FBCrashLogParser.h"
+
 #import <Foundation/Foundation.h>
 
-#import "FBCrashLogParser.h"
 #import "FBConcatedJsonParser.h"
 #import "FBCrashLog.h"
 
 @implementation FBConcatedJSONCrashLogParser
 
--(void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut  exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error {
+- (void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error
+{
   NSDictionary<NSString *, id> *parsedReport = [FBConcatedJsonParser parseConcatenatedJSONFromString:str error:error];
   if (!parsedReport) {
     return;
@@ -59,7 +61,7 @@
   }
 
   NSMutableArray *imageNames = [NSMutableArray new];
-  NSArray<NSDictionary*> *imageDictionaries = parsedReport[@"usedImages"];
+  NSArray<NSDictionary *> *imageDictionaries = parsedReport[@"usedImages"];
   if ([imageDictionaries isKindOfClass:[NSArray class]]) {
     for (NSDictionary *imageDictionary in imageDictionaries) {
       NSString *imageName = imageDictionary[@"name"];
@@ -69,7 +71,7 @@
     }
   }
 
-  NSArray<NSDictionary*> *threads = parsedReport[@"threads"];
+  NSArray<NSDictionary *> *threads = parsedReport[@"threads"];
 
   if ([threads isKindOfClass:[NSArray class]]) {
     for (NSDictionary *threadDictionary in threads) {
@@ -78,7 +80,7 @@
       }
       // This thread crashed
       if ([[threadDictionary objectForKey:@"triggered"] boolValue]) {
-        NSArray<NSDictionary*> *frames = threadDictionary[@"frames"];
+        NSArray<NSDictionary *> *frames = threadDictionary[@"frames"];
         if ([frames isKindOfClass:[NSArray class]]) {
           NSMutableString *crashedThreadDescriptionMutable = [NSMutableString new];
           for (NSDictionary *frameDictionary in frames) {
@@ -99,26 +101,24 @@
                 [crashedThreadDescriptionMutable appendString:symbol];
                 [crashedThreadDescriptionMutable appendString:@"\n"];
               }
-           }
-         }
-         *crashedThreadDescription = [NSString stringWithString:[crashedThreadDescriptionMutable stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
-       }
-       break;
-     }
-   }
+            }
+          }
+          *crashedThreadDescription = [NSString stringWithString:[crashedThreadDescriptionMutable stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        }
+        break;
+      }
+    }
   }
-
 }
 
 @end
-
 
 @implementation FBPlainTextCrashLogParser
 
 static NSUInteger MaxLineSearch = 20;
 
--(void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut  exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error {
-
+- (void)parseCrashLogFromString:(NSString *)str executablePathOut:(NSString *_Nonnull * _Nonnull)executablePathOut identifierOut:(NSString *_Nonnull * _Nonnull)identifierOut processNameOut:(NSString *_Nonnull * _Nonnull)processNameOut parentProcessNameOut:(NSString *_Nonnull * _Nonnull)parentProcessNameOut processIdentifierOut:(pid_t *)processIdentifierOut parentProcessIdentifierOut:(pid_t *)parentProcessIdentifierOut dateOut:(NSDate *_Nonnull * _Nonnull)dateOut exceptionDescription:(NSString *_Nonnull * _Nonnull)exceptionDescription crashedThreadDescription:(NSString *_Nonnull * _Nonnull)crashedThreadDescription error:(NSError **)error
+{
   // Buffers for the sscanf
   size_t lineSize = sizeof(char) * 4098;
   const char *line = malloc(lineSize);
@@ -129,8 +129,7 @@ static NSUInteger MaxLineSearch = 20;
   NSRange currentRange;
   NSUInteger linesParsed = 0;
 
-  while (paraEnd < length && linesParsed < MaxLineSearch)
-  {
+  while (paraEnd < length && linesParsed < MaxLineSearch) {
     linesParsed += 1;
     [str getParagraphStart:&paraStart end:&paraEnd contentsEnd:&contentsEnd forRange:NSMakeRange(paraEnd, 0)];
     currentRange = NSMakeRange(paraStart, contentsEnd - paraStart);

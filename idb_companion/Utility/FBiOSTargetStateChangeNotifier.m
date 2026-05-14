@@ -7,16 +7,17 @@
 
 #import "FBiOSTargetStateChangeNotifier.h"
 
-#import "FBiOSTargetDescription.h"
 #import <CompanionLib/FBIDBError.h>
+
+#import "FBiOSTargetDescription.h"
 
 @interface FBiOSTargetStateChangeNotifier () <FBiOSTargetSetDelegate>
 
-@property (nonatomic, strong, readonly, nullable) NSString *filePath;
-@property (nonatomic, strong, readonly) NSArray<id<FBiOSTargetSet>> *targetSets;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBiOSTargetDescription *> *current;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finished;
+@property (nullable, nonatomic, readonly, strong) NSString *filePath;
+@property (nonatomic, readonly, strong) NSArray<id<FBiOSTargetSet>> *targetSets;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBiOSTargetDescription *> *current;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finished;
 
 @end
 
@@ -28,20 +29,19 @@
 {
   if (targetSets.count == 0) {
     return [[FBIDBError
-      describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
-      failFuture];
+             describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
+            failFuture];
   }
 
-
   BOOL didCreateFile = [NSFileManager.defaultManager
-    createFileAtPath:filePath
-    contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
-    attributes:@{NSFilePosixPermissions: [NSNumber numberWithShort:0666]}];
+                        createFileAtPath:filePath
+                        contents:[@"[]" dataUsingEncoding:NSUTF8StringEncoding]
+                        attributes:@{NSFilePosixPermissions : [NSNumber numberWithShort:0666]}];
 
   if (!didCreateFile) {
     return [[FBIDBError
-      describeFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]
-      failFuture];
+             describeFormat:@"Failed to create local targets file: %@ %s", filePath, strerror(errno)]
+            failFuture];
   }
   FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:filePath targetSets:targetSets logger:logger];
   for (id<FBiOSTargetSet> targetSet in targetSets) {
@@ -54,8 +54,8 @@
 {
   if (targetSets.count == 0) {
     return [[FBIDBError
-      describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
-      failFuture];
+             describe:@"Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"]
+            failFuture];
   }
 
   FBiOSTargetStateChangeNotifier *notifier = [[self alloc] initWithFilePath:nil targetSets:targetSets logger:logger];
@@ -95,7 +95,7 @@
   }
   // If we're writing to a file, we also need to signal to stdout on the first update
   if (self.filePath) {
-    NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state": @YES} options:0 error:nil];
+    NSData *jsonOutput = [NSJSONSerialization dataWithJSONObject:@{@"report_initial_state" : @YES} options:0 error:nil];
     NSMutableData *readyOutput = [NSMutableData dataWithData:jsonOutput];
     [readyOutput appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
     write(STDOUT_FILENO, readyOutput.bytes, readyOutput.length);

@@ -5,23 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBControlCore/FBControlCore.h>
-#import <FBControlCore/FBCollectionInformation.h>
+#import "FBDeviceXCTestCommands.h"
 
+#import <FBControlCore/FBCollectionInformation.h>
+#import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBDevice+Private.h"
-#import "FBDevice.h"
-#import "FBDeviceControlError.h"
-#import "FBDeviceXCTestCommands.h"
 #import "FBAMDServiceConnection.h"
+#import "FBDevice.h"
+#import "FBDevice+Private.h"
+#import "FBDeviceControlError.h"
 
 @interface FBDeviceXCTestCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
-@property (nonatomic, copy, readonly) NSString *workingDirectory;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, assign, readwrite) BOOL runningXcodeBuildOperation;
+@property (nonatomic, readonly, weak) FBDevice *device;
+@property (nonatomic, readonly, copy) NSString *workingDirectory;
+@property (nonatomic, readonly, strong) FBProcessFetcher *processFetcher;
+@property (nonatomic, readwrite, assign) BOOL runningXcodeBuildOperation;
 
 @end
 
@@ -56,25 +56,31 @@
   // There should only ever be one test run per-device.
   if (self.runningXcodeBuildOperation) {
     return [[FBDeviceControlError
-      describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
-      failFuture];
+             describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
+            failFuture];
   }
   // Terminate the reparented xcodebuild invocations.
   return [[[[FBXcodeBuildOperation
-    terminateAbandonedXcodebuildProcessesForUDID:self.device.udid processFetcher:self.processFetcher queue:self.device.workQueue logger:logger]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      self.runningXcodeBuildOperation = YES;
-      // Then start the task. This future will yield when the task has *started*.
-      return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
-    }]
-    onQueue:self.device.workQueue fmap:^(FBSubprocess *task) {
-      // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
-      return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.device logger:logger];
-    }]
-    onQueue:self.device.workQueue chain:^(FBFuture *future) {
-      self.runningXcodeBuildOperation = NO;
-      return future;
-    }];
+             terminateAbandonedXcodebuildProcessesForUDID:self.device.udid
+             processFetcher:self.processFetcher
+             queue:self.device.workQueue
+             logger:logger]
+            onQueue:self.device.workQueue
+            fmap:^(id _) {
+              self.runningXcodeBuildOperation = YES;
+              // Then start the task. This future will yield when the task has *started*.
+              return [self _startTestWithLaunchConfiguration:testLaunchConfiguration logger:logger];
+            }]
+           onQueue:self.device.workQueue
+           fmap:^(FBSubprocess *task) {
+             // Then wrap the started task, so that we can augment it with logging and adapt it to the FBiOSTargetOperation interface.
+             return [FBXcodeBuildOperation confirmExitOfXcodebuildOperation:task configuration:testLaunchConfiguration reporter:reporter target:self.device logger:logger];
+           }]
+          onQueue:self.device.workQueue
+          chain:^(FBFuture *future) {
+            self.runningXcodeBuildOperation = NO;
+            return future;
+          }];
 }
 
 #pragma mark Private
@@ -103,14 +109,14 @@
 
   // Create the Task, wrap it and store it.
   return [FBXcodeBuildOperation
-    operationWithUDID:udid
-    configuration:configuration
-    xcodeBuildPath:xcodeBuildPath
-    testRunFilePath:filePath
-    simDeviceSet:nil
-    macOSTestShimPath:nil
-    queue:self.device.workQueue
-    logger:[logger withName:@"xcodebuild"]];
+          operationWithUDID:udid
+          configuration:configuration
+          xcodeBuildPath:xcodeBuildPath
+          testRunFilePath:filePath
+          simDeviceSet:nil
+          macOSTestShimPath:nil
+          queue:self.device.workQueue
+          logger:[logger withName:@"xcodebuild"]];
 }
 
 @end

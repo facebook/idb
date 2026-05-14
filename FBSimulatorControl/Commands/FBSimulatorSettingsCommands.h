@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param scheme the deeplink scheme to allow
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
+- (FBFuture<NSNull *> *)grantAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme;
 
 /**
  Revokes access to the provided deeplink scheme.
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param scheme the deeplink scheme
  @return A future that resolves when the setting change is complete.
  */
-- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString*)scheme;
+- (FBFuture<NSNull *> *)revokeAccess:(NSSet<NSString *> *)bundleIDs toDeeplink:(NSString *)scheme;
 
 /**
  Updates the contacts on the target, using the provided local databases.

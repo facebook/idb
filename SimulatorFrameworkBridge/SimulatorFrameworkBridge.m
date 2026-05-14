@@ -6,10 +6,12 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import "ContactsService.h"
 #import "PhotoLibraryService.h"
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[])
+{
   @autoreleasepool {
     if (argc < 3) {
       NSLog(@"Usage: %s <service> <action>", argv[0]);

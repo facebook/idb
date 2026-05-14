@@ -7,20 +7,19 @@
 
 #import "FBSurfaceImageGenerator.h"
 
-#import <IOSurface/IOSurface.h>
-
-#import <CoreMedia/CoreMedia.h>
 #import <CoreImage/CoreImage.h>
+#import <CoreMedia/CoreMedia.h>
+#import <IOSurface/IOSurface.h>
 
 #import <FBControlCore/FBControlCore.h>
 
 @interface FBSurfaceImageGenerator ()
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) CIFilter *scaleFilter;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) CIFilter *scaleFilter;
 
-@property (nonatomic, strong, readwrite) IOSurface *surface;
-@property (nonatomic, assign, readwrite) uint32_t lastSeedValue;
+@property (nonatomic, readwrite, strong) IOSurface *surface;
+@property (nonatomic, readwrite, assign) uint32_t lastSeedValue;
 
 @end
 
@@ -99,8 +98,6 @@
 }
 
 - (void)didReceiveDamageRect
-{
-
-}
+{}
 
 @end

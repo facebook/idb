@@ -18,7 +18,7 @@ typedef CFTypeRef PrivateDevice;
 /**
  Abstract class for device-based discovery.
  */
-@interface FBDeviceManager<PublicDevice : id> : NSObject <FBiOSTargetSet>
+@interface FBDeviceManager <PublicDevice : id> : NSObject <FBiOSTargetSet>
 
 #pragma mark Initializers
 
@@ -35,7 +35,7 @@ typedef CFTypeRef PrivateDevice;
 /**
  The current set of devices
  */
-@property (nonatomic, copy, readonly)  NSArray<PublicDevice> *currentDeviceList;
+@property (nonatomic, readonly, copy)  NSArray<PublicDevice> *currentDeviceList;
 
 #pragma mark Implemented in Subclasses
 
@@ -105,12 +105,12 @@ typedef CFTypeRef PrivateDevice;
 /**
  The logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Storage of Device instances.
  */
-@property (nonatomic, strong, readonly) FBDeviceStorage<PublicDevice> *storage;
+@property (nonatomic, readonly, strong) FBDeviceStorage<PublicDevice> *storage;
 
 @end
 

@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBSimulatorControl/FBFramebuffer.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -25,10 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
  Each edge adds opaque pixels for overlay content (label bars, diagnostic stats, etc.).
  */
 typedef struct {
-    NSUInteger top;
-    NSUInteger bottom;
-    NSUInteger left;
-    NSUInteger right;
+  NSUInteger top;
+  NSUInteger bottom;
+  NSUInteger left;
+  NSUInteger right;
 } FBVideoStreamEdgeInsets;
 
 /**
@@ -36,14 +35,14 @@ typedef struct {
  Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
  */
 typedef struct {
-    NSUInteger callbackCount;
-    NSUInteger writeCount;
-    NSUInteger dropCount;
-    NSUInteger writeFailureCount;
-    NSUInteger encodeErrorCount;
-    NSUInteger tornFrameCount;
-    NSUInteger totalEncodedBytes;
-    CFTimeInterval totalEncodeSubmitSeconds;
+  NSUInteger callbackCount;
+  NSUInteger writeCount;
+  NSUInteger dropCount;
+  NSUInteger writeFailureCount;
+  NSUInteger encodeErrorCount;
+  NSUInteger tornFrameCount;
+  NSUInteger totalEncodedBytes;
+  CFTimeInterval totalEncodeSubmitSeconds;
 } FBVideoEncoderStats;
 
 /**

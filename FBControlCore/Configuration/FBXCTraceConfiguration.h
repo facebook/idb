@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
                            targetStdin:(nullable NSString *)targetStdin
                           targetStdout:(nullable NSString *)targetStdout
                             processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
-                                 shim:(nullable FBXCTestShimConfiguration *)shim;
+                                  shim:(nullable FBXCTestShimConfiguration *)shim;
 
 - (instancetype)initWithTemplateName:(NSString *)templateName
                            timeLimit:(NSTimeInterval)timeLimit
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
                          targetStdin:(nullable NSString *)targetStdin
                         targetStdout:(nullable NSString *)targetStdout
                           processEnv:(nullable NSDictionary<NSString *, NSString *> *)processEnv
-                               shim:(nullable FBXCTestShimConfiguration *)shim;
+                                shim:(nullable FBXCTestShimConfiguration *)shim;
 /**
  Add shim to xctrace
 
@@ -57,57 +57,57 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Trace template name or path for recording
  */
-@property (nonatomic, copy, readonly) NSString *templateName;
+@property (nonatomic, readonly, copy) NSString *templateName;
 
 /**
  Limit recording time to the specified value
  */
-@property (nonatomic, assign, readonly) NSTimeInterval timeLimit;
+@property (nonatomic, readonly, assign) NSTimeInterval timeLimit;
 
 /**
  Load Instruments Package from given path for duration of the command
  */
-@property (nullable, nonatomic, copy, readonly) NSString *package;
+@property (nullable, nonatomic, readonly, copy) NSString *package;
 
 /**
  Record all processes
  */
-@property (nonatomic, assign, readonly) BOOL allProcesses;
+@property (nonatomic, readonly, assign) BOOL allProcesses;
 
 /**
  Attach and record process with the given name or pid
  */
-@property (nullable, nonatomic, copy, readonly) NSString *processToAttach;
+@property (nullable, nonatomic, readonly, copy) NSString *processToAttach;
 
 /**
  Launch process with the given name or path
  */
-@property (nullable, nonatomic, copy, readonly) NSString *processToLaunch;
+@property (nullable, nonatomic, readonly, copy) NSString *processToLaunch;
 
 /**
  The arguments to the target application
  */
-@property (nullable, nonatomic, copy, readonly) NSArray<NSString *> *launchArgs;
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *launchArgs;
 
 /**
  Redirect standard input of the launched process
  */
-@property (nullable, nonatomic, copy, readonly) NSString *targetStdin;
+@property (nullable, nonatomic, readonly, copy) NSString *targetStdin;
 
 /**
  Redirect standard output of the launched process
  */
-@property (nullable, nonatomic, copy, readonly) NSString *targetStdout;
+@property (nullable, nonatomic, readonly, copy) NSString *targetStdout;
 
 /**
  Set specified environment variable for the launched process
  */
-@property (nullable, nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processEnv;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *processEnv;
 
 /**
  Shim to be applied to xctrace
  */
-@property (nonatomic, copy, readonly, nullable) FBXCTestShimConfiguration *shim;
+@property (nullable, nonatomic, readonly, copy) FBXCTestShimConfiguration *shim;
 
 @end
 

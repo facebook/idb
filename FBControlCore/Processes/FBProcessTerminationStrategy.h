@@ -32,7 +32,6 @@ typedef struct {
   FBProcessTerminationStrategyOptions options;
 } FBProcessTerminationStrategyConfiguration;
 
-
 /**
  A Strategy that defines how to terminate Processes.
  */

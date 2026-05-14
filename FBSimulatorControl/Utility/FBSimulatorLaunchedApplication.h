@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Configuration Launched with.
  */
-@property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *configuration;
+@property (nonatomic, readonly, copy) FBApplicationLaunchConfiguration *configuration;
 
 @end
 

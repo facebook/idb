@@ -17,7 +17,7 @@
   NSFileManager *fileManager = [NSFileManager defaultManager];
 
   NSString *temporaryDirectory =
-      [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
+  [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSProcessInfo processInfo] globallyUniqueString]];
   [fileManager createDirectoryAtPath:temporaryDirectory withIntermediateDirectories:YES attributes:nil error:&error];
   NSAssert(!error, @"Could not create temporary directory");
 
@@ -27,7 +27,7 @@
 + (NSString *)tableSearchApplicationPath
 {
   return [[[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"]
-      stringByAppendingPathComponent:@"TableSearch"];
+          stringByAppendingPathComponent:@"TableSearch"];
 }
 
 + (NSString *)testRunnerApp
@@ -64,7 +64,7 @@
 + (NSString *)iOSUITestAppTargetPath
 {
   return [[[NSBundle bundleForClass:self] pathForResource:@"iOSAppFixture" ofType:@"app"]
-      stringByAppendingPathComponent:@"iOSAppFixture"];
+          stringByAppendingPathComponent:@"iOSAppFixture"];
 }
 
 + (NSString *)iOSUITestBundlePath

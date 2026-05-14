@@ -27,28 +27,28 @@ NS_ASSUME_NONNULL_BEGIN
  @param testedApplicationAdditionalEnvironment Additional environment for the app-under-test.
  @return a new FBTestManagerContext instance.
  */
-- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration  testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration;
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier timeout:(NSTimeInterval)timeout testHostLaunchConfiguration:(FBApplicationLaunchConfiguration *)testHostLaunchConfiguration testedApplicationAdditionalEnvironment:(nullable NSDictionary<NSString *, NSString *> *)testedApplicationAdditionalEnvironment testConfiguration:(FBTestConfiguration *)testConfiguration;
 
 /**
  A session identifier of test that should be started
  */
-@property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
+@property (nonatomic, readonly, copy) NSUUID *sessionIdentifier;
 
 /**
  The maximum amount of time permitted for the test execution to finish
  */
-@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+@property (nonatomic, readonly, assign) NSTimeInterval timeout;
 
 /**
  The launch configuration for the test host.
  */
-@property (nonatomic, strong, readonly) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
+@property (nonatomic, readonly, strong) FBApplicationLaunchConfiguration *testHostLaunchConfiguration;
 /**
  Additional environment for the app-under-test.
  */
-@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
-@property (nonatomic, strong, readonly) FBTestConfiguration *testConfiguration;
+@property (nonatomic, readonly, strong) FBTestConfiguration *testConfiguration;
 
 @end
 

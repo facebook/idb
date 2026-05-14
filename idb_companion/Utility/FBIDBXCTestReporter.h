@@ -7,9 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <idbGRPC/idb.grpc.pb.h>
-#import <XCTestBootstrap/FBXCTestReporter.h>
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/FBXCTestReporter.h>
+#import <idbGRPC/idb.grpc.pb.h>
 
 using idb::CompanionService;
 using grpc::Status;
@@ -41,12 +41,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Future that resolves with an integer representation of XctestRunResponse_TestRunInfo_Status upon termination.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *reportingTerminated;
+@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *reportingTerminated;
 
 /**
  The configuration for the xctest reporter.
  */
-@property (nonatomic, strong, readwrite) FBXCTestReporterConfiguration *configuration;
+@property (nonatomic, readwrite, strong) FBXCTestReporterConfiguration *configuration;
 
 @end
 

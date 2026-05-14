@@ -10,4 +10,3 @@
 @interface NSUserDefaults (SimDefaults)
 + (id)simulatorDefaults;
 @end
-

@@ -11,4 +11,3 @@
 - (id)initWithCoder:(NSCoder *)arg1;
 - (void)encodeWithCoder:(NSCoder *)arg1;
 @end
-

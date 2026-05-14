@@ -10,6 +10,6 @@
 @class NSString, NSUUID;
 
 @protocol SimDeviceIOPortConsumer <FoundationXPCProtocolProxyable>
-@property (readonly, nonatomic) NSUUID *consumerUUID;
-@property(nonatomic, copy, readonly) NSString *consumerIdentifier;
+@property (nonatomic, readonly) NSUUID *consumerUUID;
+@property (nonatomic, readonly, copy) NSString *consumerIdentifier;
 @end

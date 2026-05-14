@@ -5,16 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBXCTestKitFixtures.h"
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBXCTestKit/FBXCTestKit.h>
-#import <XCTest/XCTest.h>
 
+#import "FBControlCoreValueTestCase.h"
+#import "FBXCTestKitFixtures.h"
 #import "FBXCTestReporterDouble.h"
 #import "XCTestCase+FBXCTestKitTests.h"
-#import "FBControlCoreValueTestCase.h"
 
 @interface FBiOSApplicationTestConfigurationTests : FBControlCoreValueTestCase
 

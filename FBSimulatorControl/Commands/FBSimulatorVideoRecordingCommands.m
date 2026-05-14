@@ -10,17 +10,17 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+#import "FBFramebuffer.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
-#import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
 #import "FBSimulatorVideoStream.h"
 
 @interface FBSimulatorVideoRecordingCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) FBSimulatorVideo *video;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
+@property (nullable, nonatomic, readwrite, strong) FBSimulatorVideo *video;
 
 @end
 
@@ -49,20 +49,23 @@
 {
   if (self.video) {
     return [[FBSimulatorError
-      describe:@"Cannot create a new video recording session, one is already active"]
-      failFuture];
+             describe:@"Cannot create a new video recording session, one is already active"]
+            failFuture];
   }
 
   return [[FBSimulatorVideoRecordingCommands
-    videoImplementationForSimulator:self.simulator filePath:filePath]
-    onQueue:self.simulator.workQueue fmap:^(FBSimulatorVideo *video) {
-      return [[video
-        startRecording]
-        onQueue:self.simulator.workQueue map:^(id _) {
-          self.video = video;
-          return video;
-        }];
-    }];
+           videoImplementationForSimulator:self.simulator
+           filePath:filePath]
+          onQueue:self.simulator.workQueue
+          fmap:^(FBSimulatorVideo *video) {
+            return [[video
+                     startRecording]
+                    onQueue:self.simulator.workQueue
+                    map:^(id _) {
+                      self.video = video;
+                      return video;
+                    }];
+          }];
 }
 
 - (FBFuture<NSNull *> *)stopRecording
@@ -71,8 +74,8 @@
   self.video = nil;
   if (!video) {
     return [[FBSimulatorError
-      describeFormat:@"There was no existing video instance for %@", self.simulator]
-      failFuture];
+             describeFormat:@"There was no existing video instance for %@", self.simulator]
+            failFuture];
   }
 
   return [video stopRecording];
@@ -84,10 +87,11 @@
 {
   id<FBControlCoreLogger> logger = self.simulator.logger;
   return [[self.simulator
-    connectToFramebuffer]
-    onQueue:self.simulator.workQueue map:^ FBSimulatorVideoStream * (FBFramebuffer *framebuffer) {
-      return [FBSimulatorVideoStream streamWithFramebuffer:framebuffer configuration:configuration logger:logger];
-    }];
+           connectToFramebuffer]
+          onQueue:self.simulator.workQueue
+          map:^FBSimulatorVideoStream *(FBFramebuffer *framebuffer) {
+            return [FBSimulatorVideoStream streamWithFramebuffer:framebuffer configuration:configuration logger:logger];
+          }];
 }
 
 #pragma mark Private

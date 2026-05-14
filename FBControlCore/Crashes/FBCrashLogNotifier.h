@@ -24,12 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Shared Notifier.
  */
-@property (nonatomic, strong, readonly, class) FBCrashLogNotifier *sharedInstance;
+@property (class, nonatomic, readonly, strong) FBCrashLogNotifier *sharedInstance;
 
 /**
  The store of crash logs.
  */
-@property (nonatomic, strong, readonly) FBCrashLogStore *store;
+@property (nonatomic, readonly, strong) FBCrashLogStore *store;
 
 #pragma mark Notifications
 

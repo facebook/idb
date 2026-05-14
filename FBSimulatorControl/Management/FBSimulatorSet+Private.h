@@ -14,7 +14,7 @@
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet delegate:(id<FBiOSTargetSetDelegate>)delegate logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter;
 
-@property (nonatomic, strong, readonly) FBSimulatorInflationStrategy *inflationStrategy;
-@property (nonatomic, strong, readonly) FBSimulatorNotificationUpdateStrategy *notificationUpdateStrategy;
+@property (nonatomic, readonly, strong) FBSimulatorInflationStrategy *inflationStrategy;
+@property (nonatomic, readonly, strong) FBSimulatorNotificationUpdateStrategy *notificationUpdateStrategy;
 
 @end

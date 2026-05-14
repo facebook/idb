@@ -7,12 +7,12 @@
 
 #import "FBDeviceLifecycleCommands.h"
 
-#import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
+#import "FBDevice.h"
 
 @interface FBDeviceLifecycleCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 

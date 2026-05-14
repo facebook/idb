@@ -124,37 +124,37 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Logger to use.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The event reporter to use.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBEventReporter> reporter;
+@property (nullable, nonatomic, readonly, strong) id<FBEventReporter> reporter;
 
 /**
  Returns the configuration for the receiver.
  */
-@property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
+@property (nonatomic, readonly, copy) FBSimulatorControlConfiguration *configuration;
 
 /**
  The SimDeviceSet to that is owned by the receiver.
  */
-@property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
+@property (nonatomic, readonly, strong) SimDeviceSet *deviceSet;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.
 */
-@property (nonatomic, copy, readonly) NSArray<FBSimulator *> *allSimulators;
+@property (nonatomic, readonly, copy) NSArray<FBSimulator *> *allSimulators;
 
 /**
  The work queue that will be used by all simulators within the set.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  The async queue that will be used by all simulators within the set.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 
 @end
 

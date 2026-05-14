@@ -54,29 +54,29 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Test session identifier
  */
-@property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
+@property (nonatomic, readonly, copy) NSUUID *sessionIdentifier;
 
 /**
  Test runner app used for testing
  */
-@property (nonatomic, strong, readonly) FBBundleDescriptor *testRunner;
+@property (nonatomic, readonly, strong) FBBundleDescriptor *testRunner;
 
 /**
   Launch arguments for test runner
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *launchArguments;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *launchArguments;
 
 /**
  Launch environment variables for test runner
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *launchEnvironment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *launchEnvironment;
 
 /**
  Launch environment variables added to test target application
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *testedApplicationAdditionalEnvironment;
 
-@property (nonatomic, strong, readonly) FBTestConfiguration *testConfiguration;
+@property (nonatomic, readonly, strong) FBTestConfiguration *testConfiguration;
 
 @end
 

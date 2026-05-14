@@ -65,16 +65,16 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Instruments %@ | %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
-    self.templateName,
-    self.targetApplication,
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.appEnvironment],
-    [FBCollectionInformation oneLineDescriptionFromArray:self.appArguments],
-    [FBCollectionInformation oneLineDescriptionFromArray:self.toolArguments],
-    self.timings.operationDuration,
-    self.timings.terminateTimeout,
-    self.timings.launchRetryTimeout,
-    self.timings.launchErrorTimeout
+          @"Instruments %@ | %@ | %@ | %@ | %@ | duration %f | terminate timeout %f | launch retry timeout %f | launch error timeout %f",
+          self.templateName,
+          self.targetApplication,
+          [FBCollectionInformation oneLineDescriptionFromDictionary:self.appEnvironment],
+          [FBCollectionInformation oneLineDescriptionFromArray:self.appArguments],
+          [FBCollectionInformation oneLineDescriptionFromArray:self.toolArguments],
+          self.timings.operationDuration,
+          self.timings.terminateTimeout,
+          self.timings.launchRetryTimeout,
+          self.timings.launchErrorTimeout
   ];
 }
 

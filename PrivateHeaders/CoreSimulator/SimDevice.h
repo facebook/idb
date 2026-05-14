@@ -8,35 +8,35 @@
 #import <Foundation/Foundation.h>
 
 #import <CoreSimulator/CDStructures.h>
-#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 #import <CoreSimulator/CoreSimulator+BlockDefines.h>
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
 @class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime, SimDeviceBootInfo, AXPTranslatorRequest, AXPTranslatorResponse;
 @protocol OS_dispatch_queue, OS_dispatch_source, SimDeviceIOProtocol;
 
 @interface SimDevice : NSObject <SimDeviceNotifier>
 {
-    unsigned long long _state;
-    SimDeviceBootInfo *_bootStatus;
-    NSString *_name;
-    NSString *_runtimeIdentifier;
-    NSMachPort *_hostSupportPort;
-    NSString *_deviceTypeIdentifier;
-    NSUUID *_UDID;
-    SimDevicePasteboard *_pasteboard;
-    NSObject<SimDeviceIOProtocol> *_io;
-    SimDeviceSet *_deviceSet;
-    SimDeviceNotificationManager *_notificationManager;
-    NSObject<OS_dispatch_queue> *_bootstrapQueue;
-    NSMutableDictionary *_registeredServices;
-    NSObject<OS_dispatch_queue> *_stateVariableQueue;
-    NSMachPort *_deathTriggerPort;
-    unsigned long long _pasteboardNotificationRegistrationID;
-    NSObject<OS_dispatch_source> *_bootMonitorTimer;
-    NSObject<OS_dispatch_queue> *_bootMonitorQueue;
-    NSDate *_bootStartedAt;
-    NSMutableArray *_darwinNotificationTokens;
-    NSDictionary *_bootEnvironmentExtra;
+  unsigned long long _state;
+  SimDeviceBootInfo *_bootStatus;
+  NSString *_name;
+  NSString *_runtimeIdentifier;
+  NSMachPort *_hostSupportPort;
+  NSString *_deviceTypeIdentifier;
+  NSUUID *_UDID;
+  SimDevicePasteboard *_pasteboard;
+  NSObject<SimDeviceIOProtocol> *_io;
+  SimDeviceSet *_deviceSet;
+  SimDeviceNotificationManager *_notificationManager;
+  NSObject<OS_dispatch_queue> *_bootstrapQueue;
+  NSMutableDictionary *_registeredServices;
+  NSObject<OS_dispatch_queue> *_stateVariableQueue;
+  NSMachPort *_deathTriggerPort;
+  unsigned long long _pasteboardNotificationRegistrationID;
+  NSObject<OS_dispatch_source> *_bootMonitorTimer;
+  NSObject<OS_dispatch_queue> *_bootMonitorQueue;
+  NSDate *_bootStartedAt;
+  NSMutableArray *_darwinNotificationTokens;
+  NSDictionary *_bootEnvironmentExtra;
 }
 
 + (BOOL)supportsFeature:(id)arg1 deviceType:(id)arg2 runtime:(id)arg3;
@@ -44,26 +44,26 @@
 + (id)simDevice:(id)arg1 UDID:(id)arg2 deviceTypeIdentifier:(id)arg3 runtimeIdentifier:(id)arg4 state:(unsigned long long)arg5 deviceSet:(id)arg6;
 + (id)simDeviceAtPath:(id)arg1 deviceSet:(id)arg2;
 + (id)createDeviceWithName:(id)arg1 deviceSet:(id)arg2 deviceType:(id)arg3 runtime:(id)arg4 initialDataPath:(id)arg5;
-@property (copy, nonatomic) NSDictionary *bootEnvironmentExtra;
-@property (retain, nonatomic) NSMutableArray *darwinNotificationTokens;
-@property (retain, nonatomic) NSDate *bootStartedAt;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *bootMonitorQueue;
-@property (retain, nonatomic) NSObject<OS_dispatch_source> *bootMonitorTimer;
+@property (nonatomic, copy) NSDictionary *bootEnvironmentExtra;
+@property (nonatomic, retain) NSMutableArray *darwinNotificationTokens;
+@property (nonatomic, retain) NSDate *bootStartedAt;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *bootMonitorQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_source> *bootMonitorTimer;
 @property (nonatomic, assign) unsigned long long pasteboardNotificationRegistrationID;
-@property (retain, nonatomic) NSMachPort *deathTriggerPort;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *stateVariableQueue;
-@property (retain, nonatomic) NSMutableDictionary *registeredServices;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *bootstrapQueue;
-@property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
+@property (nonatomic, retain) NSMachPort *deathTriggerPort;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *stateVariableQueue;
+@property (nonatomic, retain) NSMutableDictionary *registeredServices;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *bootstrapQueue;
+@property (nonatomic, retain) SimDeviceNotificationManager *notificationManager;
 @property (nonatomic, assign) SimDeviceSet *deviceSet;
-@property (retain, nonatomic) NSObject<SimDeviceIOProtocol> *io;
-@property (retain, nonatomic) SimDevicePasteboard *pasteboard;
-@property (copy, nonatomic) NSUUID *UDID;
-@property (copy, nonatomic) NSString *deviceTypeIdentifier;
+@property (nonatomic, retain) NSObject<SimDeviceIOProtocol> *io;
+@property (nonatomic, retain) SimDevicePasteboard *pasteboard;
+@property (nonatomic, copy) NSUUID *UDID;
+@property (nonatomic, copy) NSString *deviceTypeIdentifier;
 - (BOOL)bootstrapQueueSync:(CDUnknownBlockType)arg1;
 - (void)bootstrapQueueAsync:(CDUnknownBlockType)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (BOOL)isAvailableWithError:(id *)arg1;
-@property (readonly, nonatomic) BOOL available;
+@property (nonatomic, readonly) BOOL available;
 - (BOOL)syncUnpairedDevicesWithError:(id *)arg1;
 - (BOOL)triggerCloudSyncWithError:(id *)arg1;
 - (void)triggerCloudSyncWithCompletionQueue:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
@@ -72,7 +72,7 @@
 - (BOOL)postDarwinNotification:(id)arg1 error:(id *)arg2;
 - (BOOL)terminateApplicationWithID:(NSString *)arg1 error:(NSError **)arg2;
 - (int)launchApplicationWithID:(id)arg1 options:(id)arg2 error:(id *)arg3;
-- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(void(^)(NSError *, pid_t))arg4;
+- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(void (^)(NSError *, pid_t))arg4;
 - (id)installedAppsWithError:(id *)arg1;
 - (NSDictionary<NSString *, id> *)propertiesOfApplication:(NSString *)bundleID error:(NSError **)error;
 - (BOOL)applicationIsInstalled:(NSString *)bundleID type:(NSString **)typeOut error:(NSError **)error;
@@ -106,17 +106,17 @@
 - (void)handleXPCNotificationDeviceBootStatusChanged:(NSDictionary *)arg1;
 - (void)handleXPCNotificationDeviceStateChanged:(NSDictionary *)arg1;
 - (void)handleXPCNotification:(NSDictionary *)arg1;
-@property (nonatomic, copy, readonly) NSString *runtimeIdentifier;
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, readonly, copy) NSString *runtimeIdentifier;
+@property (nonatomic, readonly, copy) NSString *name;
 - (SimDeviceBootInfo *)bootStatus;
-@property (readonly, nonatomic) unsigned long long state;
+@property (nonatomic, readonly) unsigned long long state;
 - (id)stateString;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
 - (unsigned long long)registerNotificationHandlerOnQueue:(id)arg1 handler:(CDUnknownBlockType)arg2;
 - (unsigned long long)registerNotificationHandler:(CDUnknownBlockType)arg1;
 - (void)simulateMemoryWarning;
 - (id)memoryWarningFilePath;
-@property (nonatomic, copy, readonly) NSString *logPath;
+@property (nonatomic, readonly, copy) NSString *logPath;
 - (id)dataPath;
 - (id)devicePath;
 - (id)environment;
@@ -137,7 +137,7 @@
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (BOOL)_onBootstrapQueue_eraseContentsAndSettingsUsingInitialDataPath:(id)arg1 error:(id *)arg2;
 - (BOOL)eraseContentsAndSettingsWithError:(id *)arg1;
-- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(dispatch_queue_t)arg1 completionHandler:(void(^)(NSError *))arg2;
+- (void)eraseContentsAndSettingsAsyncWithCompletionQueue:(dispatch_queue_t)arg1 completionHandler:(void (^)(NSError *))arg2;
 - (BOOL)_onBootstrapQueue_upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (BOOL)upgradeToRuntime:(id)arg1 error:(id *)arg2;
 - (void)upgradeAsyncToRuntime:(id)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
@@ -147,17 +147,17 @@
 - (BOOL)_onBootstrapQueue_shutdownIOAndNotifyWithError:(id *)arg1;
 - (BOOL)_onBootstrapQueue_shutdownWithError:(id *)arg1;
 - (BOOL)shutdownWithError:(id *)arg1;
-- (void)shutdownAsyncWithCompletionQueue:(id)arg1 completionHandler:(void(^)(NSError *))arg2;
+- (void)shutdownAsyncWithCompletionQueue:(id)arg1 completionHandler:(void (^)(NSError *))arg2;
 - (BOOL)_sendBridgeRequest:(CDUnknownBlockType)arg1 error:(id *)arg2;
 - (void)_onBootMonitorQueue_bootStatusTimerFired;
 - (BOOL)_onBootstrapQueue_bootWithOptions:(id)arg1 deathMonitorPort:(id)arg2 deathTriggerPort:(id)arg3 error:(id *)arg4;
 - (BOOL)_onBootstrapQueue_bootWithOptions:(id)arg1 error:(id *)arg2;
 - (BOOL)bootWithOptions:(id)arg1 error:(id *)arg2;
-- (void)bootAsyncWithOptions:(id)arg1 completionQueue:(id)arg2 completionHandler:(void(^)(NSError *))arg3;
+- (void)bootAsyncWithOptions:(id)arg1 completionQueue:(id)arg2 completionHandler:(void (^)(NSError *))arg3;
 - (void)launchdDeathHandlerWithDeathPort:(id)arg1;
 - (BOOL)startLaunchdWithDeathPort:(id)arg1 deathHandler:(CDUnknownBlockType)arg2 error:(id *)arg3;
 - (void)registerPortsWithLaunchd;
-@property (nonatomic, copy, readonly) NSArray *launchDaemonsPaths;
+@property (nonatomic, readonly, copy) NSArray *launchDaemonsPaths;
 - (BOOL)removeLaunchdJobWithError:(id *)arg1;
 - (BOOL)createLaunchdJobWithError:(id *)arg1 extraEnvironment:(id)arg2 disabledJobs:(id)arg3;
 - (BOOL)createDarwinNotificationProxiesWithError:(id *)arg1;
@@ -165,19 +165,19 @@
 - (BOOL)clearTmpWithError:(id *)arg1;
 - (BOOL)ensureLogPathsWithError:(id *)arg1;
 - (BOOL)supportsFeature:(id)arg1;
-@property (nonatomic, copy, readonly) NSString *launchdJobName;
+@property (nonatomic, readonly, copy) NSString *launchdJobName;
 - (void)saveToDisk;
 - (id)saveStateDict;
 - (void)validateAndFixStateUsingInitialDataPath:(id)arg1;
-@property (readonly, nonatomic) SimRuntime *runtime;
-@property (readonly, nonatomic) SimDeviceType *deviceType;
-@property (nonatomic, copy, readonly) NSString *descriptiveName;
+@property (nonatomic, readonly) SimRuntime *runtime;
+@property (nonatomic, readonly) SimDeviceType *deviceType;
+@property (nonatomic, readonly, copy) NSString *descriptiveName;
 - (id)description;
 - (void)dealloc;
 - (BOOL)_onBootstrapQueue_initializeDeviceIO:(id *)arg1;
 - (id)initDevice:(id)arg1 UDID:(id)arg2 deviceTypeIdentifier:(id)arg3 runtimeIdentifier:(id)arg4 state:(unsigned long long)arg5 initialDataPath:(id)arg6 deviceSet:(id)arg7;
 - (void)triggerCloudSyncWithCompletionHandler:(CDUnknownBlockType)arg1;
-- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(void(^)(NSError *, pid_t))arg3;
+- (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(void (^)(NSError *, pid_t))arg3;
 - (int)spawnWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 error:(id *)arg4;
 - (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
@@ -206,4 +206,3 @@
 - (BOOL)resetPrivacyAccessForService:(NSString *)service bundleID:(NSString *)bundleID error:(NSError **)error;
 
 @end
-

@@ -11,9 +11,9 @@
 
 @interface FBSimulatorCrashLogCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBCrashLogNotifier *notifier;
-@property (nonatomic, assign, readwrite) BOOL hasPerformedInitialIngestion;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
+@property (nonatomic, readonly, strong) FBCrashLogNotifier *notifier;
+@property (nonatomic, readwrite, assign) BOOL hasPerformedInitialIngestion;
 
 @end
 
@@ -69,15 +69,15 @@
   NSPredicate *simulatorPredicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [FBCrashLogInfo predicateForExecutablePathContains:self.simulator.udid],
     predicate,
-  ]];
+                                     ]];
   return [FBFuture futureWithResult:[self.notifier.store pruneCrashLogsMatchingPredicate:simulatorPredicate]];
 }
 
 - (FBFutureContext<id<FBFileContainer>> *)crashLogFiles
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
-    failFutureContext];
+           describeFormat:@"%@ not supported on simulators", NSStringFromSelector(_cmd)]
+          failFutureContext];
 }
 
 @end

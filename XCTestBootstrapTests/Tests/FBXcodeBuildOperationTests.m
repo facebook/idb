@@ -24,31 +24,31 @@
   FBBundleDescriptor *testBundle = [[FBBundleDescriptor alloc] initWithName:@"test.bundle" identifier:@"test.bundle" path:testBundlePath binary:nil];
 
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration alloc]
-    initWithBundleID:@"com.bundle.id"
-    bundleName:@"BundleName"
-    arguments:@[]
-    environment:@{}
-    waitForDebugger:NO
-    io:FBProcessIO.outputToDevNull
-    launchMode:FBApplicationLaunchModeFailIfRunning];
+                                                 initWithBundleID:@"com.bundle.id"
+                                                 bundleName:@"BundleName"
+                                                 arguments:@[]
+                                                 environment:@{}
+                                                 waitForDebugger:NO
+                                                 io:FBProcessIO.outputToDevNull
+                                                 launchMode:FBApplicationLaunchModeFailIfRunning];
 
   FBTestLaunchConfiguration *configuration = [[FBTestLaunchConfiguration alloc]
-    initWithTestBundle:testBundle
-    applicationLaunchConfiguration:appLaunch
-    testHostBundle:testHostBundle
-    timeout:0
-    initializeUITesting:NO
-    useXcodebuild:NO
-    testsToRun:nil
-    testsToSkip:nil
-    targetApplicationBundle:nil
-    xcTestRunProperties:nil
-    resultBundlePath:nil
-    reportActivities:NO
-    coverageDirectoryPath:nil
-    enableContinuousCoverageCollection:NO
-    logDirectoryPath:nil
-    reportResultBundle:NO];
+                                              initWithTestBundle:testBundle
+                                              applicationLaunchConfiguration:appLaunch
+                                              testHostBundle:testHostBundle
+                                              timeout:0
+                                              initializeUITesting:NO
+                                              useXcodebuild:NO
+                                              testsToRun:nil
+                                              testsToSkip:nil
+                                              targetApplicationBundle:nil
+                                              xcTestRunProperties:nil
+                                              resultBundlePath:nil
+                                              reportActivities:NO
+                                              coverageDirectoryPath:nil
+                                              enableContinuousCoverageCollection:NO
+                                              logDirectoryPath:nil
+                                              reportResultBundle:NO];
 
   NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];

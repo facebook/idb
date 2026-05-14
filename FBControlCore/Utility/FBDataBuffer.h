@@ -92,7 +92,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBNotifyingBuffer <FBConsumableBuffer>
 
-
 /**
  Forwards to another data consumer, notifying every time a terminal is passed.
  The consumer is called asynchronously on the queue.
@@ -121,7 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param derivedLength the derived length of the payload
  @return a Future wrapping the payload, based on the derived length.
  */
-- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger(^)(NSData *))derivedLength;
+- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength;
 
 @end
 

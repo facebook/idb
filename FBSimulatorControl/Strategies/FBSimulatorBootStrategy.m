@@ -8,13 +8,12 @@
 #import "FBSimulatorBootStrategy.h"
 
 #import <CoreSimulator/SimDevice.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorError.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootVerificationStrategy.h"
+#import "FBSimulatorError.h"
 
 @implementation FBSimulatorBootStrategy
 
@@ -28,16 +27,18 @@
   }
   if (simulator.state != FBiOSTargetStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]
-      failFuture];
+             describeFormat:@"Cannot Boot Simulator when in %@ state", simulator.stateString]
+            failFuture];
   }
 
   // Boot via CoreSimulator.
   return [[self
-    performSimulatorBoot:simulator withConfiguration:configuration]
-    onQueue:simulator.workQueue fmap:^(id _) {
-      return [self verifySimulatorIsBooted:simulator withConfiguration:configuration];
-    }];
+           performSimulatorBoot:simulator
+           withConfiguration:configuration]
+          onQueue:simulator.workQueue
+          fmap:^(id _) {
+            return [self verifySimulatorIsBooted:simulator withConfiguration:configuration];
+          }];
 }
 
 #pragma mark Private
@@ -64,19 +65,21 @@
   // If `FBSimulatorBootOptionsTieToProcessLifecycle` is enabled we *do not* want the Simulator to live beyond the lifecycle of the process calling boot.
   // This behaviour is useful for automated scenarios, where terminating the process that performs the boot gives us clean teardown semantics, without the need to call 'shutdown'.
   BOOL persist = (configuration.options & FBSimulatorBootOptionsTieToProcessLifecycle) != FBSimulatorBootOptionsTieToProcessLifecycle;
-  NSDictionary<NSString *, id> * options = @{
-    @"persist": @(persist),
+  NSDictionary<NSString *, id> *options = @{
+    @"persist" : @(persist),
     @"env" : configuration.environment ?: @{},
   };
 
   FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-  [simulator.device bootAsyncWithOptions:options completionQueue:simulator.workQueue completionHandler:^(NSError *error){
-    if (error) {
-      [future resolveWithError:error];
-    } else {
-      [future resolveWithResult:NSNull.null];
-    }
-  }];
+  [simulator.device bootAsyncWithOptions:options
+                         completionQueue:simulator.workQueue
+                       completionHandler:^(NSError *error) {
+                         if (error) {
+                           [future resolveWithError:error];
+                         } else {
+                           [future resolveWithResult:NSNull.null];
+                         }
+                       }];
   return future;
 }
 

@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 #import <Foundation/Foundation.h>
+
+#import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
 @protocol SimDisplayRenderable <FoundationXPCProtocolProxyable, NSObject>
 @property (nonatomic, readonly) long long displaySizeInBytes;

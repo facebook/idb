@@ -8,8 +8,8 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetConstants.h>
 #import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBiOSTargetConstants.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

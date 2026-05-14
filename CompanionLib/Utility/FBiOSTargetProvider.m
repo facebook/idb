@@ -47,8 +47,8 @@
   }
 
   return [[lifecycle
-    connectToBridge]
-    mapReplace:target];
+           connectToBridge]
+          mapReplace:target];
 }
 
 #pragma mark Private
@@ -67,15 +67,15 @@
     }
     if (![targetInfo conformsToProtocol:@protocol(FBiOSTarget)]) {
       return [[FBDeviceControlError
-        describeFormat:@"UDID %@ exists, but the target is not usable %@", udid, targetInfo]
-        fail:error];
+               describeFormat:@"UDID %@ exists, but the target is not usable %@", udid, targetInfo]
+              fail:error];
     }
     return (id<FBiOSTarget>) targetInfo;
   }
 
   return [[FBIDBError
-    describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]
-    fail:error];
+           describeFormat:@"%@ could not be resolved to any target in %@", udid, targetSets]
+          fail:error];
 }
 
 + (id<FBiOSTarget>)fetchSoleTargetForTargetSets:(NSArray<id<FBiOSTargetSet>> *)targetSets logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
@@ -86,13 +86,13 @@
   }
   if (targets.count > 1) {
     return [[FBIDBError
-      describeFormat:@"Cannot get a sole target when multiple found %@", [FBCollectionInformation oneLineDescriptionFromArray:targets]]
-      fail:error];
+             describeFormat:@"Cannot get a sole target when multiple found %@", [FBCollectionInformation oneLineDescriptionFromArray:targets]]
+            fail:error];
   }
   if (targets.count == 0) {
     return [[FBIDBError
-      describeFormat:@"Cannot get a sole target when none were found in target sets %@", [FBCollectionInformation oneLineDescriptionFromArray:targetSets]]
-      fail:error];
+             describeFormat:@"Cannot get a sole target when none were found in target sets %@", [FBCollectionInformation oneLineDescriptionFromArray:targetSets]]
+            fail:error];
   }
   return targets.firstObject;
 }

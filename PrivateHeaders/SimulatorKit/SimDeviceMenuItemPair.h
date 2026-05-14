@@ -11,13 +11,11 @@
 
 @interface SimDeviceMenuItemPair : NSObject
 {
-    NSMenuItem *_primaryMenuItem;
-    NSMenuItem *_alternateMenuItem;
+  NSMenuItem *_primaryMenuItem;
+  NSMenuItem *_alternateMenuItem;
 }
 
-@property (retain, nonatomic) NSMenuItem *alternateMenuItem;
-@property (retain, nonatomic) NSMenuItem *primaryMenuItem;
-
+@property (nonatomic, retain) NSMenuItem *alternateMenuItem;
+@property (nonatomic, retain) NSMenuItem *primaryMenuItem;
 
 @end
-

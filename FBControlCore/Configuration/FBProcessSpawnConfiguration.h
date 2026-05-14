@@ -40,17 +40,17 @@ typedef NS_ENUM(NSUInteger, FBProcessSpawnMode) {
 /**
  The Binary Path of the process to Launch.
  */
-@property (nonatomic, copy, readonly) NSString *launchPath;
+@property (nonatomic, readonly, copy) NSString *launchPath;
 
 /**
  How the process should be launched.
  */
-@property (nonatomic, assign, readonly) FBProcessSpawnMode mode;
+@property (nonatomic, readonly, assign) FBProcessSpawnMode mode;
 
 /**
  The name of the launched process, effectively the argv[0] of the launched process.
  */
-@property (nonatomic, copy, readonly) NSString *processName;
+@property (nonatomic, readonly, copy) NSString *processName;
 
 @end
 

@@ -67,7 +67,7 @@
 + (NSArray *)arrayWithObject:(id)object count:(NSUInteger)count
 {
   NSMutableArray *array = [NSMutableArray arrayWithCapacity:count];
-  for (NSUInteger index = 0; index < count; index ++) {
+  for (NSUInteger index = 0; index < count; index++) {
     array[index] = object;
   }
   return [array copy];

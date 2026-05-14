@@ -7,12 +7,13 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
-#import <Carbon/Carbon.h>
 
-#import "FBSimulatorControlTestCase.h"
-#import "FBSimulatorControlFixtures.h"
+#import <Carbon/Carbon.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
+
 #import "FBControlCoreValueTestCase.h"
+#import "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorControlValueTypeTests : FBControlCoreValueTestCase
 

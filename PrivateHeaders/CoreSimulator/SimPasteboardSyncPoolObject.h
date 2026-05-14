@@ -9,8 +9,8 @@
 
 @interface SimPasteboardSyncPoolObject : NSObject
 {
-    unsigned long long _lastSeenChangeCount;
-    unsigned long long _regID;
+  unsigned long long _lastSeenChangeCount;
+  unsigned long long _regID;
 }
 
 @property (nonatomic, assign) unsigned long long regID;

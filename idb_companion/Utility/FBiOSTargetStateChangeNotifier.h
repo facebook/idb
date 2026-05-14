@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Future that resolves when the notifier has stopped notifying.
 */
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *notifierDone;
+@property (nonatomic, readonly, strong) FBFuture<NSNull *> *notifierDone;
 
 @end
 

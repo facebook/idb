@@ -14,10 +14,10 @@
 
 @interface FBAppleSimctlCommandExecutor ()
 
-@property (nonatomic, copy, readonly) NSString *deviceSetPath;
-@property (nonatomic, copy, nullable, readonly) NSString *deviceUUID;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, copy) NSString *deviceSetPath;
+@property (nullable, nonatomic, readonly, copy) NSString *deviceUUID;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -59,17 +59,17 @@
     @"--set",
     self.deviceSetPath,
     command,
-  ]];
+                                         ]];
   if (self.deviceUUID) {
     [derived addObject:self.deviceUUID];
   }
   [derived addObjectsFromArray:arguments];
 
   return [[[FBProcessBuilder
-    withLaunchPath:@"/usr/bin/xcrun"
-    arguments:derived]
-    withStdOutToLogger:self.logger]
-    withStdErrToLogger:self.logger];
+            withLaunchPath:@"/usr/bin/xcrun"
+            arguments:derived]
+           withStdOutToLogger:self.logger]
+          withStdErrToLogger:self.logger];
 }
 
 @end

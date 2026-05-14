@@ -9,7 +9,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceBootInfo.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
@@ -17,9 +16,9 @@
 
 @interface FBSimulatorBootVerificationStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, nullable, readwrite) SimDeviceBootInfo *lastBootInfo;
-@property (nonatomic, strong, nullable, readwrite) NSDate *lastInfoUpdateDate;
+@property (nonatomic, readonly, strong) FBSimulator *simulator;
+@property (nullable, nonatomic, readwrite, strong) SimDeviceBootInfo *lastBootInfo;
+@property (nullable, nonatomic, readwrite, strong) NSDate *lastInfoUpdateDate;
 
 @end
 
@@ -54,12 +53,14 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
   FBSimulator *simulator = self.simulator;
 
   return [[simulator
-    resolveState:FBiOSTargetStateBooted]
-    onQueue:simulator.workQueue fmap:^FBFuture *(NSNull *_) {
-      return [FBFuture onQueue:simulator.workQueue resolveUntil:^{
-        return [[self performBootVerification] delay:BootVerificationWaitInterval];
-      }];
-    }];
+           resolveState:FBiOSTargetStateBooted]
+          onQueue:simulator.workQueue
+          fmap:^FBFuture *(NSNull *_) {
+            return [FBFuture onQueue:simulator.workQueue
+                        resolveUntil:^{
+                          return [[self performBootVerification] delay:BootVerificationWaitInterval];
+                        }];
+          }];
 }
 
 #pragma mark Private
@@ -69,14 +70,14 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
   SimDeviceBootInfo *bootInfo = self.simulator.device.bootStatus;
   if (!bootInfo) {
     return [[FBSimulatorError
-      describeFormat:@"No bootInfo for %@", self.simulator]
-      failFuture];
+             describeFormat:@"No bootInfo for %@", self.simulator]
+            failFuture];
   }
   [self updateBootInfo:bootInfo];
   if (bootInfo.isTerminalStatus == NO) {
     return [[FBSimulatorError
-      describeFormat:@"Not terminal status, status is %@", bootInfo]
-      failFuture];
+             describeFormat:@"Not terminal status, status is %@", bootInfo]
+            failFuture];
   }
   return FBFuture.empty;
 }
@@ -117,9 +118,9 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
 + (NSString *)regularBootInfo:(SimDeviceBootInfo *)bootInfo
 {
   return [NSString stringWithFormat:
-    @"%@ | Elapsed %f",
-    [self bootStatusString:bootInfo.status],
-    bootInfo.bootElapsedTime
+          @"%@ | Elapsed %f",
+          [self bootStatusString:bootInfo.status],
+          bootInfo.bootElapsedTime
   ];
 }
 
@@ -149,9 +150,9 @@ static NSTimeInterval BootVerificationStallInterval = 1.5; // 60s
     return nil;
   }
   return [NSString stringWithFormat:
-    @"Migration Phase '%@' | Migration Elapsed %f",
-    bootInfo.migrationPhaseDescription,
-    bootInfo.migrationElapsedTime
+          @"Migration Phase '%@' | Migration Elapsed %f",
+          bootInfo.migrationPhaseDescription,
+          bootInfo.migrationElapsedTime
   ];
 }
 

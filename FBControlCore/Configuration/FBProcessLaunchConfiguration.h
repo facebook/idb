@@ -19,17 +19,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  A NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Will not be nil.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 /**
  The Process Output Configuration.
  */
-@property (nonatomic, strong, readonly) FBProcessIO<StdInType, StdOutType, StdErrType> *io;
+@property (nonatomic, readonly, strong) FBProcessIO<StdInType, StdOutType, StdErrType> *io;
 
 /**
  The Designated Initializer.

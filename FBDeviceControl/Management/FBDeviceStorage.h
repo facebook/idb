@@ -12,19 +12,19 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FBDeviceStorage<PublicDevice : id> : NSObject
+@interface FBDeviceStorage <PublicDevice : id> : NSObject
 
 #pragma mark Properties
 
 /**
  A mapping of all referenced devices, keyed by identifier.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, PublicDevice> *attached;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *attached;
 
 /**
  A mapping of all referenced devices, keyed by identifier.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, PublicDevice> *referenced;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, PublicDevice> *referenced;
 
 #pragma mark Public Methods
 

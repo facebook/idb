@@ -5,16 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBXCTestKitFixtures.h"
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBXCTestKit/FBXCTestKit.h>
-#import <XCTest/XCTest.h>
 
+#import "FBControlCoreValueTestCase.h"
+#import "FBXCTestKitFixtures.h"
 #import "FBXCTestReporterDouble.h"
 #import "XCTestCase+FBXCTestKitTests.h"
-#import "FBControlCoreValueTestCase.h"
 
 @interface FBiOSLogicTestConfigurationTests : FBControlCoreValueTestCase
 
@@ -43,7 +43,7 @@
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+  NSArray<NSString *> *arguments = @[@"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -56,17 +56,17 @@
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBLogicTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      logDirectoryPath:nil
-      testBundlePath:self.iOSUnitTestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      testFilter:nil
-      mirroring:FBLogicTestMirrorFileLogs]
-    destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
+                                   commandLineWithConfiguration:[FBLogicTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 logDirectoryPath:nil
+                                                                 testBundlePath:self.iOSUnitTestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 testFilter:nil
+                                                                 mirroring:FBLogicTestMirrorFileLogs]
+                                   destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }
 
@@ -81,7 +81,7 @@
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+  NSArray<NSString *> *arguments = @[@"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -95,19 +95,18 @@
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBLogicTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      logDirectoryPath:nil
-      testBundlePath:self.iOSUnitTestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      testFilter:nil
-      mirroring:FBLogicTestMirrorFileLogs]
-    destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
+                                   commandLineWithConfiguration:[FBLogicTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 logDirectoryPath:nil
+                                                                 testBundlePath:self.iOSUnitTestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 testFilter:nil
+                                                                 mirroring:FBLogicTestMirrorFileLogs]
+                                   destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
-
 }
 
 - (void)testiOSLogicTestsWithSDKWithoutDestination
@@ -121,7 +120,7 @@
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-logicTest", testBundlePath ];
+  NSArray<NSString *> *arguments = @[@"run-tests", @"-sdk", @"iphonesimulator", @"-logicTest", testBundlePath];
 
   FBXCTestCommandLine *commandLine = [FBXCTestCommandLine commandLineFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
@@ -136,17 +135,17 @@
   XCTAssertTrue([commandLine.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 
   FBXCTestCommandLine *expected = [FBXCTestCommandLine
-    commandLineWithConfiguration:[FBLogicTestConfiguration
-      configurationWithShims:configuration.shims
-      environment:processEnvironment
-      workingDirectory:workingDirectory
-      logDirectoryPath:nil
-      testBundlePath:self.iOSUnitTestBundlePath
-      waitForDebugger:NO
-      timeout:0
-      testFilter:nil
-      mirroring:FBLogicTestMirrorFileLogs]
-    destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]];
+                                   commandLineWithConfiguration:[FBLogicTestConfiguration
+                                                                 configurationWithShims:configuration.shims
+                                                                 environment:processEnvironment
+                                                                 workingDirectory:workingDirectory
+                                                                 logDirectoryPath:nil
+                                                                 testBundlePath:self.iOSUnitTestBundlePath
+                                                                 waitForDebugger:NO
+                                                                 timeout:0
+                                                                 testFilter:nil
+                                                                 mirroring:FBLogicTestMirrorFileLogs]
+                                   destination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]];
   XCTAssertEqualObjects(commandLine, expected);
 }
 

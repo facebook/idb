@@ -13,9 +13,9 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
 
 @interface FBManagedConfigClient ()
 
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) FBAMDServiceConnection *connection;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -48,13 +48,14 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
 - (FBFuture<NSDictionary<NSString *, id> *> *)getCloudConfiguration
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"GetCloudConfiguration"} error:error];
-      if (!result) {
-        return nil;
-      }
-      return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result];
-    }];
+          onQueue:self.queue
+          resolveValue:^NSDictionary<NSString *, id> *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"GetCloudConfiguration"} error:error];
+            if (!result) {
+              return nil;
+            }
+            return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result];
+          }];
 }
 
 - (FBFuture<NSNull *> *)changeWallpaperWithName:(FBWallpaperName)name data:(NSData *)data
@@ -62,12 +63,12 @@ NSString *const FBManagedConfigService = @"com.apple.mobile.MCInstall";
   NSNumber *whereNumber = FBManagedConfigClient.wallpaperWhereForName[name];
   if (!whereNumber) {
     return [[FBControlCoreError
-      describeFormat:@"%@ is not a valid Wallpaper Name", name]
-      failFuture];
+             describeFormat:@"%@ is not a valid Wallpaper Name", name]
+            failFuture];
   }
   return [self changeSettings:@[
-    @{@"Item": @"Wallpaper", @"Image": data, @"Where": whereNumber}
-  ]];
+    @{@"Item" : @"Wallpaper", @"Image" : data, @"Where" : whereNumber}
+          ]];
 }
 
 static NSString * const OrderedIdentifiers = @"OrderedIdentifiers";
@@ -78,69 +79,72 @@ static NSString * const PayloadVersion = @"PayloadVersion";
 - (FBFuture<NSArray<NSString *> *> *)getProfileList
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSArray<NSString *> * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"GetProfileList"} error:error];
-      if (!result) {
-        return nil;
-      }
-      NSArray<NSString *> *orderedIdentifiers = result[OrderedIdentifiers];
-      if (![FBCollectionInformation isArrayHeterogeneous:orderedIdentifiers withClass:NSString.class]) {
-        return [[FBControlCoreError
-          describeFormat:@"%@ is not an Array<String>", OrderedIdentifiers]
-          fail:error];
-      }
-      return orderedIdentifiers;
-  }];
+          onQueue:self.queue
+          resolveValue:^NSArray<NSString *> *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"GetProfileList"} error:error];
+            if (!result) {
+              return nil;
+            }
+            NSArray<NSString *> *orderedIdentifiers = result[OrderedIdentifiers];
+            if (![FBCollectionInformation isArrayHeterogeneous:orderedIdentifiers withClass:NSString.class]) {
+              return [[FBControlCoreError
+                       describeFormat:@"%@ is not an Array<String>", OrderedIdentifiers]
+                      fail:error];
+            }
+            return orderedIdentifiers;
+          }];
 }
 
 - (FBFuture<NSNull *> *)installProfile:(NSData *)payload
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSDictionary<NSString *, id> * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"InstallProfile", @"Payload": payload} error:error];
-      if (!result) {
-        return nil;
-      }
-      return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result];
-  }];
+          onQueue:self.queue
+          resolveValue:^NSDictionary<NSString *, id> *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"InstallProfile", @"Payload" : payload} error:error];
+            if (!result) {
+              return nil;
+            }
+            return [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:result];
+          }];
 }
 
 - (FBFuture<NSNull *> *)removeProfile:(NSString *)profileName
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"GetProfileList"} error:error];
-      if (!result) {
-        return nil;
-      }
-      NSDictionary<NSString *, id> *profileMetadata = result[ProfileMetadata][profileName];
-      if (!profileMetadata) {
-        return [[FBControlCoreError
-          describeFormat:@"%@ is not one of %@", profileName, [FBCollectionInformation oneLineDescriptionFromArray:result[OrderedIdentifiers]]]
-          fail:error];
-      }
-      NSDictionary<NSString *, id> *profileIdentifier = @{
-        @"PayloadType": @"Configuration",
-        @"PayloadIdentifier": profileName,
-        PayloadUUID: profileMetadata[PayloadUUID],
-        PayloadVersion: profileMetadata[PayloadVersion]
-      };
-      NSData *payload = [NSPropertyListSerialization dataWithPropertyList:profileIdentifier format:0xc8 options:0 error:error];
-      if (!payload) {
-        return nil;
-      }
-      result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"RemoveProfile", @"ProfileIdentifier": payload} error:error];
-      if (!result) {
-        return nil;
-      }
-      NSString *status = result[@"Status"];
-      if ([status isEqualToString:@"Error"]) {
-        return [[FBControlCoreError
-          describeFormat:@"Status is Error: %@", result]
-          fail:error];
-      }
-      return NSNull.null;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSNull *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"GetProfileList"} error:error];
+            if (!result) {
+              return nil;
+            }
+            NSDictionary<NSString *, id> *profileMetadata = result[ProfileMetadata][profileName];
+            if (!profileMetadata) {
+              return [[FBControlCoreError
+                       describeFormat:@"%@ is not one of %@", profileName, [FBCollectionInformation oneLineDescriptionFromArray:result[OrderedIdentifiers]]]
+                      fail:error];
+            }
+            NSDictionary<NSString *, id> *profileIdentifier = @{
+              @"PayloadType" : @"Configuration",
+              @"PayloadIdentifier" : profileName,
+              PayloadUUID : profileMetadata[PayloadUUID],
+              PayloadVersion : profileMetadata[PayloadVersion]
+            };
+            NSData *payload = [NSPropertyListSerialization dataWithPropertyList:profileIdentifier format:0xc8 options:0 error:error];
+            if (!payload) {
+              return nil;
+            }
+            result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"RemoveProfile", @"ProfileIdentifier" : payload} error:error];
+            if (!result) {
+              return nil;
+            }
+            NSString *status = result[@"Status"];
+            if ([status isEqualToString:@"Error"]) {
+              return [[FBControlCoreError
+                       describeFormat:@"Status is Error: %@", result]
+                      fail:error];
+            }
+            return NSNull.null;
+          }];
 }
 
 #pragma mark Private Methods
@@ -148,13 +152,14 @@ static NSString * const PayloadVersion = @"PayloadVersion";
 - (FBFuture<NSNull *> *)changeSettings:(NSArray<NSDictionary<NSString *, id> *> *)settings
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
-      NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType": @"Settings", @"Settings": settings} error:error];
-      if (!result) {
-        return nil;
-      }
-      return NSNull.null;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSNull *(NSError **error) {
+            NSDictionary<NSString *, id> *result = [self.connection sendAndReceiveMessage:@{@"RequestType" : @"Settings", @"Settings" : settings} error:error];
+            if (!result) {
+              return nil;
+            }
+            return NSNull.null;
+          }];
 }
 
 + (NSDictionary<FBWallpaperName, NSNumber *> *)wallpaperWhereForName
@@ -162,7 +167,7 @@ static NSString * const PayloadVersion = @"PayloadVersion";
   static dispatch_once_t onceToken;
   static NSDictionary<FBWallpaperName, NSNumber *> *value;
   dispatch_once(&onceToken, ^{
-    value = @{FBWallpaperNameHomescreen: @0, FBWallpaperNameLockscreen: @1};
+    value = @{FBWallpaperNameHomescreen : @0, FBWallpaperNameLockscreen : @1};
   });
   return value;
 }

@@ -10,4 +10,3 @@
 @protocol NSSecureCoding <NSCoding>
 + (BOOL)supportsSecureCoding;
 @end
-

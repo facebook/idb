@@ -33,11 +33,11 @@
 
 - (BOOL)isEqual:(FBApplicationLaunchConfiguration *)object
 {
-  return [super isEqual:object] &&
-    [self.bundleID isEqualToString:object.bundleID] &&
-    (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]) &&
-    self.waitForDebugger == self.waitForDebugger &&
-    self.launchMode == object.launchMode;
+  return [super isEqual:object]
+  && [self.bundleID isEqualToString:object.bundleID]
+  && (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName])
+  && self.waitForDebugger == self.waitForDebugger
+  && self.launchMode == object.launchMode;
 }
 
 - (NSString *)description

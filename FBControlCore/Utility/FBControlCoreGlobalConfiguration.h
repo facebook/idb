@@ -30,37 +30,37 @@ extern NSString *const FBControlCoreDebugLogging;
 /**
  A Timeout Value when waiting on events that should happen 'fast'
  */
-@property (nonatomic, assign, readonly, class) NSTimeInterval fastTimeout;
+@property (class, nonatomic, readonly, assign) NSTimeInterval fastTimeout;
 
 /**
  A Timeout Value when waiting on events that will take some time longer than 'fast' events.
  */
-@property (nonatomic, assign, readonly, class) NSTimeInterval regularTimeout;
+@property (class, nonatomic, readonly, assign) NSTimeInterval regularTimeout;
 
 /**
  A Timeout Value when waiting on events that will a longer period of time.
  */
-@property (nonatomic, assign, readonly, class) NSTimeInterval slowTimeout;
+@property (class, nonatomic, readonly, assign) NSTimeInterval slowTimeout;
 
 /**
  A Description of the Current Configuration.
  */
-@property (nonatomic, copy, readonly, class) NSString *description;
+@property (class, nonatomic, readonly, copy) NSString *description;
 
 /**
  The default logger to send log messages to.
  */
-@property (nonatomic, strong, readwrite, class) id<FBControlCoreLogger> defaultLogger;
+@property (class, nonatomic, readwrite, strong) id<FBControlCoreLogger> defaultLogger;
 
 /**
  Confirm the existence of code signatures, where relevant.
  */
-@property (nonatomic, assign, readonly, class) BOOL confirmCodesignaturesAreValid;
+@property (class, nonatomic, readonly, assign) BOOL confirmCodesignaturesAreValid;
 
 /**
  Environment in this process that should be passed down to child processes.
  */
-@property (nonatomic, copy, readonly, class) NSDictionary<NSString *, NSString *> *safeSubprocessEnvironment;
+@property (class, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *safeSubprocessEnvironment;
 
 @end
 

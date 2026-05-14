@@ -7,17 +7,17 @@
 
 #import "FBAMRestorableDeviceManager.h"
 
+#import "FBAMRestorableDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBAMRestorableDevice.h"
 
 @interface FBAMRestorableDeviceManager ()
 
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
-@property (nonatomic, assign, readonly) AMDCalls calls;
-@property (nonatomic, assign, readwrite) int registrationID;
-@property (nonatomic, copy, readonly) NSString *ecidFilter;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+@property (nonatomic, readonly, assign) AMDCalls calls;
+@property (nonatomic, readwrite, assign) int registrationID;
+@property (nonatomic, readonly, copy) NSString *ecidFilter;
 
 - (NSDictionary<NSString *, id> *)infoForRestorableDevice:(AMRestorableDeviceRef)device;
 
@@ -94,8 +94,8 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   );
   if (registrationID < 1) {
     return [[FBDeviceControlError
-      describeFormat:@"AMRestorableDeviceRegisterForNotifications failed with %d", registrationID]
-      failBool:error];
+             describeFormat:@"AMRestorableDeviceRegisterForNotifications failed with %d", registrationID]
+            failBool:error];
   }
   self.registrationID = registrationID;
   return YES;
@@ -107,8 +107,8 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   self.registrationID = 0;
   if (registrationID < 1) {
     return [[FBDeviceControlError
-      describe:@"Cannot unregister from AMRestorableDevice notifications, no subscription"]
-      failBool:error];
+             describe:@"Cannot unregister from AMRestorableDevice notifications, no subscription"]
+            failBool:error];
   }
 
   // Return of AMRestorableDeviceUnregisterForNotifications seems to be some random number.
@@ -117,12 +117,17 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
   return YES;
 }
 
-- (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
+- (FBAMRestorableDevice *)constructPublic:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
-  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls restorableDevice:privateDevice allValues:info workQueue:self.workQueue asyncQueue:self.asyncQueue logger:[self.logger withName:identifier]];
+  return [[FBAMRestorableDevice alloc] initWithCalls:self.calls
+                                    restorableDevice:privateDevice
+                                           allValues:info
+                                           workQueue:self.workQueue
+                                          asyncQueue:self.asyncQueue
+                                              logger:[self.logger withName:identifier]];
 }
 
-+ (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *,id> *)info
++ (void)updatePublicReference:(FBAMRestorableDevice *)publicDevice privateDevice:(AMRestorableDeviceRef)privateDevice identifier:(NSString *)identifier info:(NSDictionary<NSString *, id> *)info
 {
   publicDevice.restorableDevice = privateDevice;
   publicDevice.allValues = info;
@@ -136,13 +141,13 @@ static void FB_AMRestorableDeviceListenerCallback(AMRestorableDeviceRef device, 
 - (NSDictionary<NSString *, id> *)infoForRestorableDevice:(AMRestorableDeviceRef)device
 {
   return @{
-    FBDeviceKeyChipID: @(self.calls.RestorableDeviceGetChipID(device)),
-    FBDeviceKeyDeviceClass: @(self.calls.RestorableDeviceGetDeviceClass(device)),
-    FBDeviceKeyLocationID: @(self.calls.RestorableDeviceGetLocationID(device)),
-    FBDeviceKeySerialNumber: CFBridgingRelease(self.calls.RestorableDeviceCopySerialNumber(device)) ?: NSNull.null,
-    FBDeviceKeyDeviceName: CFBridgingRelease(self.calls.RestorableDeviceCopyUserFriendlyName(device)) ?: NSNull.null,
-    FBDeviceKeyProductType: CFBridgingRelease(self.calls.RestorableDeviceCopyProductString(device)) ?: NSNull.null,
-    FBDeviceKeyUniqueChipID: @(self.calls.RestorableDeviceGetECID(device)),
+    FBDeviceKeyChipID : @(self.calls.RestorableDeviceGetChipID(device)),
+    FBDeviceKeyDeviceClass : @(self.calls.RestorableDeviceGetDeviceClass(device)),
+    FBDeviceKeyLocationID : @(self.calls.RestorableDeviceGetLocationID(device)),
+    FBDeviceKeySerialNumber : CFBridgingRelease(self.calls.RestorableDeviceCopySerialNumber(device)) ?: NSNull.null,
+    FBDeviceKeyDeviceName : CFBridgingRelease(self.calls.RestorableDeviceCopyUserFriendlyName(device)) ?: NSNull.null,
+    FBDeviceKeyProductType : CFBridgingRelease(self.calls.RestorableDeviceCopyProductString(device)) ?: NSNull.null,
+    FBDeviceKeyUniqueChipID : @(self.calls.RestorableDeviceGetECID(device)),
   };
 }
 

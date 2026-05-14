@@ -26,7 +26,7 @@
   BOOL success = [[[FBSimulatorMediaCommands commandsWithTarget:simulator] addMedia:@[
     [NSURL fileURLWithPath:FBSimulatorControlFixtures.photo0Path],
     [NSURL fileURLWithPath:FBSimulatorControlFixtures.photo1Path]]]
-  await:&error] != nil;
+                  await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -37,7 +37,7 @@
   NSError *error = nil;
   BOOL success = [[[FBSimulatorMediaCommands commandsWithTarget:simulator] addMedia:@[
     [NSURL fileURLWithPath:FBSimulatorControlFixtures.video0Path],
-  ]] await:&error] != nil;
+                   ]] await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

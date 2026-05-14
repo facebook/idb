@@ -10,43 +10,43 @@
 #import <DTXConnectionServices/CDStructures.h>
 
 @class DTXChannel, DTXProxyChannel, DTXMessageParser, DTXMessageTransmitter, DTXResourceTracker, DTXTransport, DTXMessage;
-@protocol DTXRateLimiter,  DTXBlockCompressor;
+@protocol DTXRateLimiter, DTXBlockCompressor;
 
 @interface DTXConnection : NSObject
 {
-    dispatch_queue_t _outgoing_message_queue;
-    dispatch_queue_t _outgoing_control_queue;
-    DTXTransport *_controlTransport;
-    NSArray *_permittedBlockCompressors;
-    dispatch_queue_t _receive_queue;
-    dispatch_queue_t _handler_queue;
-    unsigned int _nextChannelCode;
-    NSMutableDictionary *_channelsByCode;
-    NSMutableDictionary *_unconfiguredChannelsByCode;
-    NSMutableDictionary *_capabilitiesByChannelCode;
-    NSMutableDictionary *_handlersByIdentifier;
-    NSMutableDictionary *_protocolHandlers;
-    NSMutableDictionary *_localCapabilityVersions;
-    NSMutableDictionary *_localCapabilityClasses;
-    NSDictionary *_remoteCapabilityVersions;
-    DTXResourceTracker *_resourceTracker;
-    DTXResourceTracker *_incomingResourceTracker;
-    dispatch_semaphore_t _firstMessageSem;
-    DTXMessageParser *_incomingParser;
-    DTXMessageTransmitter *_outgoingTransmitter;
-    DTXChannel *_defaultChannel;
-    BOOL _legacyMode;
-    BOOL _tracer;
-    BOOL _remoteTracer;
-    int _connectionIndex;
-    CDUnknownBlockType _channelHandler;
-    id <DTXRateLimiter> _defaultRateLimiter;
-    unsigned long long _logMessageCallstackSizeThreshold;
-    long long _remoteCompressionCapabilityVersion;
-    int _newChannelCompressionHint;
-    int _compressionTypeForUnspecified;
-    unsigned long long _compressionMinSizeThreshold;
-    id <DTXBlockCompressor> _compressor;
+  dispatch_queue_t _outgoing_message_queue;
+  dispatch_queue_t _outgoing_control_queue;
+  DTXTransport *_controlTransport;
+  NSArray *_permittedBlockCompressors;
+  dispatch_queue_t _receive_queue;
+  dispatch_queue_t _handler_queue;
+  unsigned int _nextChannelCode;
+  NSMutableDictionary *_channelsByCode;
+  NSMutableDictionary *_unconfiguredChannelsByCode;
+  NSMutableDictionary *_capabilitiesByChannelCode;
+  NSMutableDictionary *_handlersByIdentifier;
+  NSMutableDictionary *_protocolHandlers;
+  NSMutableDictionary *_localCapabilityVersions;
+  NSMutableDictionary *_localCapabilityClasses;
+  NSDictionary *_remoteCapabilityVersions;
+  DTXResourceTracker *_resourceTracker;
+  DTXResourceTracker *_incomingResourceTracker;
+  dispatch_semaphore_t _firstMessageSem;
+  DTXMessageParser *_incomingParser;
+  DTXMessageTransmitter *_outgoingTransmitter;
+  DTXChannel *_defaultChannel;
+  BOOL _legacyMode;
+  BOOL _tracer;
+  BOOL _remoteTracer;
+  int _connectionIndex;
+  CDUnknownBlockType _channelHandler;
+  id<DTXRateLimiter> _defaultRateLimiter;
+  unsigned long long _logMessageCallstackSizeThreshold;
+  long long _remoteCompressionCapabilityVersion;
+  int _newChannelCompressionHint;
+  int _compressionTypeForUnspecified;
+  unsigned long long _compressionMinSizeThreshold;
+  id<DTXBlockCompressor> _compressor;
 }
 
 + (id)connectionPublishingAddress:(id)arg1;
@@ -54,11 +54,11 @@
 + (void)registerTransport:(Class)arg1 forScheme:(id)arg2;
 + (void)initialize;
 + (void)observeDecompressionExceptionLogging:(CDUnknownBlockType)arg1;
-@property(readonly, nonatomic) int atomicConnectionNumber; // @synthesize atomicConnectionNumber=_connectionIndex;
-@property(copy) CDUnknownBlockType channelHandler; // @synthesize channelHandler=_channelHandler;
-@property(nonatomic) BOOL remoteTracer; // @synthesize remoteTracer=_remoteTracer;
-@property(nonatomic) BOOL tracer; // @synthesize tracer=_tracer;
-@property(nonatomic) BOOL legacyMode; // @synthesize legacyMode=_legacyMode;
+@property (nonatomic, readonly) int atomicConnectionNumber; // @synthesize atomicConnectionNumber=_connectionIndex;
+@property (copy) CDUnknownBlockType channelHandler; // @synthesize channelHandler=_channelHandler;
+@property (nonatomic) BOOL remoteTracer; // @synthesize remoteTracer=_remoteTracer;
+@property (nonatomic) BOOL tracer; // @synthesize tracer=_tracer;
+@property (nonatomic) BOOL legacyMode; // @synthesize legacyMode=_legacyMode;
 - (void)_notifyCompressionHint:(unsigned int)arg1 forChannelCode:(unsigned int)arg2;
 - (void)_receiveQueueSetCompressionHint:(unsigned int)arg1 onChannel:(id)arg2;
 - (void)_setTracerState:(unsigned int)arg1;
@@ -86,7 +86,7 @@
 - (long long)remoteCapabilityVersion:(id)arg1;
 - (id)localCapabilities;
 - (void)publishCapability:(id)arg1 withVersion:(long long)arg2 forClass:(Class)arg3;
-@property(nonatomic) unsigned long long maximumEnqueueSize;
+@property (nonatomic) unsigned long long maximumEnqueueSize;
 
 - (id)publishedAddresses;
 - (void)dealloc;
@@ -96,17 +96,14 @@
 - (void)setCompressionHint:(int)arg1 forChannel:(id)arg2;
 - (void)publishServicesInImagePath:(id)arg1;
 - (DTXProxyChannel *)makeProxyChannelWithRemoteInterface:(id)arg1 exportedInterface:(id)arg2;
-- (void)handleProxyRequestForInterface:(id)arg1 peerInterface:(id)arg2 handler:(void(^)(id arg1))arg3;
-@property(readonly, retain, nonatomic) DTXChannel *defaultChannel;
+- (void)handleProxyRequestForInterface:(id)arg1 peerInterface:(id)arg2 handler:(void (^)(id arg1))arg3;
+@property (nonatomic, readonly, retain) DTXChannel *defaultChannel;
 - (void)replaceCompressorForDecompression:(id)arg1;
 - (void)replaceCompressorForCompression:(id)arg1;
 - (void)overridePermittedBlockCompressors:(id)arg1;
 - (id)_testing_remoteCapabilityVersions;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-
-
+@property (readonly, copy) NSString *debugDescription;
 
 @end
-

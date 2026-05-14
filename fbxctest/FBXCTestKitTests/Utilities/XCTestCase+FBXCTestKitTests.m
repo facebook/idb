@@ -7,9 +7,8 @@
 
 #import "XCTestCase+FBXCTestKitTests.h"
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
 #import <FBXCTestKit/FBXCTestKit.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation XCTestCase (Test)
 

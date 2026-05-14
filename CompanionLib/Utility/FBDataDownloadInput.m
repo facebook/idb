@@ -9,8 +9,8 @@
 
 @interface FBDataDownloadInput () <NSURLSessionDataDelegate>
 
-@property (nonatomic, strong, readonly) NSURLSessionTask *task;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) NSURLSessionTask *task;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 

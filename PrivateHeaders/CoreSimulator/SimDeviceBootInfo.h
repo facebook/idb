@@ -20,10 +20,10 @@ typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
 
 @interface SimDeviceBootInfo : NSObject
 {
-    BOOL _isTerminalStatus;
-    SimDeviceBootInfoStatus _status;
-    double _bootElapsedTime;
-    NSDictionary *_info;
+  BOOL _isTerminalStatus;
+  SimDeviceBootInfoStatus _status;
+  double _bootElapsedTime;
+  NSDictionary *_info;
 }
 
 + (BOOL)supportsSecureCoding;
@@ -31,8 +31,8 @@ typedef NS_ENUM(NSUInteger, SimDeviceBootInfoStatus) {
 @property (nonatomic, assign) BOOL isTerminalStatus;
 @property (nonatomic, assign) double bootElapsedTime;
 @property (nonatomic, assign) SimDeviceBootInfoStatus status;
-@property (readonly, nonatomic) double migrationElapsedTime;
-@property (nonatomic, copy, readonly) NSString *migrationPhaseDescription;
+@property (nonatomic, readonly) double migrationElapsedTime;
+@property (nonatomic, readonly, copy) NSString *migrationPhaseDescription;
 - (void)encodeWithCoder:(id)arg1;
 - (unsigned long long)hash;
 - (BOOL)isEqual:(id)arg1;

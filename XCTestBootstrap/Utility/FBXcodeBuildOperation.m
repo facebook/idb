@@ -9,9 +9,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "XCTestBootstrapError.h"
 #import "FBXCTestReporter.h"
 #import "FBXCTestResultBundleParser.h"
+#import "XCTestBootstrapError.h"
 
 static NSString *const XcodebuildEnvironmentTargetUDID = @"XCTESTBOOTSTRAP_TARGET_UDID";
 static NSString *const XcodebuildEnvironmentDeviceSetPath = @"SIM_DEVICE_SET_PATH";
@@ -28,13 +28,13 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
     @"-xctestrun", testRunFilePath,
     @"-destination", [NSString stringWithFormat:@"id=%@", udid],
     @"-destination-timeout", XcodebuildDestinationTimeoutSecs,
-  ]];
+   ]];
 
   if (configuration.resultBundlePath) {
     [arguments addObjectsFromArray:@[
       @"-resultBundlePath",
       configuration.resultBundlePath,
-    ]];
+     ]];
   }
 
   for (NSString *test in configuration.testsToRun) {
@@ -56,27 +56,28 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
     environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath;
     if (environment[XcodebuildEnvironmentInsertDylib]) {
       environment[XcodebuildEnvironmentInsertDylib] = [NSString stringWithFormat:@"%@%@%@", environment[XcodebuildEnvironmentInsertDylib], @":", macOSTestShimPath];
-    }
-    else {
+    } else {
       environment[XcodebuildEnvironmentInsertDylib] = macOSTestShimPath;
     }
   }
 
   [logger logFormat:@"Starting test with xcodebuild | Arguments: %@ | Environments: %@", [arguments componentsJoinedByString:@" "], [environment description]];
   FBProcessBuilder *builder = [[[FBProcessBuilder
-    withLaunchPath:xcodeBuildPath arguments:arguments]
-    withEnvironment:environment]
-    withTaskLifecycleLoggingTo:logger];
+                                 withLaunchPath:xcodeBuildPath
+                                 arguments:arguments]
+                                withEnvironment:environment]
+                               withTaskLifecycleLoggingTo:logger];
   if (logger) {
     [builder withStdOutToLoggerAndErrorMessage:logger];
     [builder withStdErrToLoggerAndErrorMessage:logger];
   }
   return [[builder
-    start]
-    onQueue:queue map:^(FBSubprocess *task) {
-      [logger logFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]];
-      return task;
-    }];
+           start]
+          onQueue:queue
+          map:^(FBSubprocess *task) {
+            [logger logFormat:@"Task started %@ for xcodebuild %@", task, [arguments componentsJoinedByString:@" "]];
+            return task;
+          }];
 }
 
 #pragma mark Public
@@ -89,11 +90,11 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
       @"TestBundlePath" : testLaunch.testBundle.path,
       @"UseUITargetAppProvidedByTests" : @YES,
       @"IsUITestBundle" : @YES,
-      @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
-      @"EnvironmentVariables": testLaunch.applicationLaunchConfiguration.environment,
-      @"TestingEnvironmentVariables": @{
-        @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
-        @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+      @"CommandLineArguments" : testLaunch.applicationLaunchConfiguration.arguments,
+      @"EnvironmentVariables" : testLaunch.applicationLaunchConfiguration.environment,
+      @"TestingEnvironmentVariables" : @{
+        @"DYLD_FRAMEWORK_PATH" : @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+        @"DYLD_LIBRARY_PATH" : @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
       },
     }
   };
@@ -108,12 +109,12 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 
   NSDictionary<NSString *, id> *testRunProperties = configuration.xcTestRunProperties
   ? [self overwriteXCTestRunPropertiesWithBaseProperties:configuration.xcTestRunProperties newProperties:defaultTestRunProperties]
-    : defaultTestRunProperties;
+  : defaultTestRunProperties;
 
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[XCTestBootstrapError
-      describeFormat:@"Failed to write to file %@", path]
-      fail:error];
+             describeFormat:@"Failed to write to file %@", path]
+            fail:error];
   }
   return path;
 }
@@ -140,8 +141,8 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[XCTestBootstrapError
-      describeFormat:@"xcodebuild does not exist at expected path %@", path]
-      fail:error];
+             describeFormat:@"xcodebuild does not exist at expected path %@", path]
+            fail:error];
   }
   return path;
 }
@@ -154,7 +155,7 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
     NSMutableDictionary<NSString *, id> *mutableTestProperties = [[baseProperties objectForKey:testId] mutableCopy];
     for (id key in defaultTestProperties) {
       if ([mutableTestProperties objectForKey:key]) {
-        mutableTestProperties[key] =  [defaultTestProperties objectForKey:key];
+        mutableTestProperties[key] = [defaultTestProperties objectForKey:key];
       }
     }
     mutableTestRunProperties[testId] = mutableTestProperties;
@@ -165,25 +166,28 @@ static NSString *const XcodebuildDestinationTimeoutSecs = @"180"; // How long xc
 + (FBFuture<NSNull *> *)confirmExitOfXcodebuildOperation:(FBSubprocess *)task configuration:(FBTestLaunchConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter target:(id<FBiOSTarget>)target logger:(id<FBControlCoreLogger>)logger
 {
   return [[[[task
-    exitedWithCodes:[NSSet setWithObjects:@0, @65, nil]]
-    onQueue:target.workQueue respondToCancellation:^{
-      return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:logger];
-    }]
-    onQueue:target.workQueue fmap:^(id _) {
-      // This will execute only if the operation completes successfully.
-      [logger logFormat:@"xcodebuild operation completed successfully %@", task];
-      if (configuration.resultBundlePath) {
-        // If we don't want to return result bundle in payload, there is no need to do expensive screenshot extraction
-        return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger extractScreenshots:configuration.reportResultBundle];
-      }
-      [logger log:@"No result bundle to parse"];
-      return FBFuture.empty;
-    }]
-    onQueue:target.workQueue fmap:^(id _) {
-      [logger log:@"Reporting test results"];
-      [reporter didFinishExecutingTestPlan];
-      return FBFuture.empty;
-    }];
+             exitedWithCodes:[NSSet setWithObjects:@0, @65, nil]]
+            onQueue:target.workQueue
+            respondToCancellation:^{
+              return [task sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:logger];
+            }]
+           onQueue:target.workQueue
+           fmap:^(id _) {
+             // This will execute only if the operation completes successfully.
+             [logger logFormat:@"xcodebuild operation completed successfully %@", task];
+             if (configuration.resultBundlePath) {
+               // If we don't want to return result bundle in payload, there is no need to do expensive screenshot extraction
+               return [FBXCTestResultBundleParser parse:configuration.resultBundlePath target:target reporter:reporter logger:logger extractScreenshots:configuration.reportResultBundle];
+             }
+             [logger log:@"No result bundle to parse"];
+             return FBFuture.empty;
+           }]
+          onQueue:target.workQueue
+          fmap:^(id _) {
+            [logger log:@"Reporting test results"];
+            [reporter didFinishExecutingTestPlan];
+            return FBFuture.empty;
+          }];
 }
 
 #pragma mark Private

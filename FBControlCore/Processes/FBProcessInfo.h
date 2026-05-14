@@ -27,27 +27,27 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Process Identifier for the running process
  */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
+@property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
  The Name of the Process.
  */
-@property (nonatomic, copy, readonly) NSString *processName;
+@property (nonatomic, readonly, copy) NSString *processName;
 
 /**
  The Launch Path of the running process
  */
-@property (nonatomic, copy, readonly) NSString *launchPath;
+@property (nonatomic, readonly, copy) NSString *launchPath;
 
 /**
  An NSArray<NSString *> of the launch arguments of the process.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  An NSDictionary<NSString *, NSString *> of the environment of the process.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 @end
 

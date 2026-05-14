@@ -7,15 +7,15 @@
 
 #import "FBDeviceActivationCommands.h"
 
-#import "FBDevice.h"
 #import "FBAMDServiceConnection.h"
+#import "FBDevice.h"
 
 static NSString *const DefaultDRMHandshakeURL = @"https://albert.apple.com/deviceservices/drmHandshake";
 static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/deviceservices/deviceActivation";
 
 @interface FBDeviceActivationCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -46,20 +46,21 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
 {
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[self
-    activationState]
-    onQueue:self.device.asyncQueue fmap:^ FBFuture<NSNull *> * (FBDeviceActivationState activationState) {
-      if ([activationState isEqualToString:FBDeviceActivationStateActivated]) {
-        [logger logFormat:@"Device is already activated, nothing to activate"];
-        return FBFuture.empty;
-      }
-      if ([activationState isEqualToString:FBDeviceActivationStateUnactivated]) {
-        [logger logFormat:@"Device is not activated, starting activation"];
-        return [self performActivation];
-      }
-      return [[FBControlCoreError
-        describeFormat:@"%@ is not a valid activation state", activationState]
-        failFuture];
-    }];
+           activationState]
+          onQueue:self.device.asyncQueue
+          fmap:^FBFuture<NSNull *> *(FBDeviceActivationState activationState) {
+            if ([activationState isEqualToString:FBDeviceActivationStateActivated]) {
+              [logger logFormat:@"Device is already activated, nothing to activate"];
+              return FBFuture.empty;
+            }
+            if ([activationState isEqualToString:FBDeviceActivationStateUnactivated]) {
+              [logger logFormat:@"Device is not activated, starting activation"];
+              return [self performActivation];
+            }
+            return [[FBControlCoreError
+                     describeFormat:@"%@ is not a valid activation state", activationState]
+                    failFuture];
+          }];
 }
 
 #pragma mark Private
@@ -67,38 +68,43 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
 - (FBFuture<NSNull *> *)confirmActivationState:(FBDeviceActivationState)activationState
 {
   return [[self
-    activationState]
-    onQueue:self.device.asyncQueue fmap:^ FBFuture<NSNull *> * (FBDeviceActivationState actualActivationState) {
-      if (![activationState isEqualToString:actualActivationState]) {
-        return [[FBControlCoreError
-          describeFormat:@"Activation State %@ is not equal to actual activation state %@", activationState, actualActivationState]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           activationState]
+          onQueue:self.device.asyncQueue
+          fmap:^FBFuture<NSNull *> *(FBDeviceActivationState actualActivationState) {
+            if (![activationState isEqualToString:actualActivationState]) {
+              return [[FBControlCoreError
+                       describeFormat:@"Activation State %@ is not equal to actual activation state %@", activationState, actualActivationState]
+                      failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSNull *> *)performActivation
 {
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[[[[self
-    confirmActivationState:FBDeviceActivationStateUnactivated]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      [logger logFormat:@"Building DRM Handshake Payload"];
-      return [self buildDRMHandshakePayload];
-    }]
-    onQueue:self.device.workQueue fmap:^(NSData *drmHandhakePayload) {
-      [logger logFormat:@"Obtaining Activation record from DRM Handshake Payload"];
-      return [self activationRecordFromDRMHandshakePayload:drmHandhakePayload];
-    }]
-    onQueue:self.device.workQueue fmap:^(NSData *activationRecordPayload) {
-      [logger logFormat:@"Performing activation from activation record"];
-      return [self activateFromActivationRecord:activationRecordPayload];
-    }]
-    onQueue:self.device.workQueue fmap:^(id _) {
-      [logger logFormat:@"Confirming activation state is Activated"];
-      return [self confirmActivationState:FBDeviceActivationStateActivated];
-    }];
+              confirmActivationState:FBDeviceActivationStateUnactivated]
+             onQueue:self.device.workQueue
+             fmap:^(id _) {
+               [logger logFormat:@"Building DRM Handshake Payload"];
+               return [self buildDRMHandshakePayload];
+             }]
+            onQueue:self.device.workQueue
+            fmap:^(NSData *drmHandhakePayload) {
+              [logger logFormat:@"Obtaining Activation record from DRM Handshake Payload"];
+              return [self activationRecordFromDRMHandshakePayload:drmHandhakePayload];
+            }]
+           onQueue:self.device.workQueue
+           fmap:^(NSData *activationRecordPayload) {
+             [logger logFormat:@"Performing activation from activation record"];
+             return [self activateFromActivationRecord:activationRecordPayload];
+           }]
+          onQueue:self.device.workQueue
+          fmap:^(id _) {
+            [logger logFormat:@"Confirming activation state is Activated"];
+            return [self confirmActivationState:FBDeviceActivationStateActivated];
+          }];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)mobileActivationService
@@ -109,75 +115,79 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
 - (FBFuture<FBDeviceActivationState> *)activationState
 {
   return [[self
-    mobileActivationService]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSData *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      id response = [connection sendAndReceiveMessage:@{@"Command": @"GetActivationStateRequest"} error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      NSString *activationState = response[@"Value"];
-      if (![activationState isKindOfClass:NSString.class]) {
-        return [[FBControlCoreError
-          describeFormat:@"No Activation State in %@", response]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:FBDeviceActivationStateCoerceFromString(activationState)];
-    }];
+           mobileActivationService]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSData *> *(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            id response = [connection sendAndReceiveMessage:@{@"Command" : @"GetActivationStateRequest"} error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            NSString *activationState = response[@"Value"];
+            if (![activationState isKindOfClass:NSString.class]) {
+              return [[FBControlCoreError
+                       describeFormat:@"No Activation State in %@", response]
+                      failFuture];
+            }
+            return [FBFuture futureWithResult:FBDeviceActivationStateCoerceFromString(activationState)];
+          }];
 }
 
 - (FBFuture<NSData *> *)buildDRMHandshakePayload
 {
   return [[self
-    mobileActivationService]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSData *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      id response = [connection sendAndReceiveMessage:@{@"Command": @"CreateTunnel1SessionInfoRequest"} error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      id responsePayload = response[@"Value"];
-      if (!responsePayload) {
-        return [[FBControlCoreError
-          describeFormat:@"No 'Value' in %@", response]
-          failFuture];
-      }
-      return [FBDeviceActivationCommands mobileActivationRequestForRequestPayload:responsePayload queue:self.device.workQueue];
-    }];
+           mobileActivationService]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSData *> *(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            id response = [connection sendAndReceiveMessage:@{@"Command" : @"CreateTunnel1SessionInfoRequest"} error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            id responsePayload = response[@"Value"];
+            if (!responsePayload) {
+              return [[FBControlCoreError
+                       describeFormat:@"No 'Value' in %@", response]
+                      failFuture];
+            }
+            return [FBDeviceActivationCommands mobileActivationRequestForRequestPayload:responsePayload queue:self.device.workQueue];
+          }];
 }
 
 - (FBFuture<NSData *> *)activationRecordFromDRMHandshakePayload:(NSData *)handshakePayload
 {
   return [[self
-    mobileActivationService]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSData *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      id response = [connection sendAndReceiveMessage:@{@"Command": @"CreateTunnel1ActivationInfoRequest", @"Value": handshakePayload} error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      NSDictionary<NSString *, id> *responsePayload = response[@"Value"];
-      if (!responsePayload) {
-        return [[FBControlCoreError
-          describeFormat:@"No 'Value' in %@", response]
-          failFuture];
-      }
-      return [FBDeviceActivationCommands mobileActivationActivateForRequestPayload:responsePayload queue:self.device.workQueue];
-    }];
+           mobileActivationService]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSData *> *(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            id response = [connection sendAndReceiveMessage:@{@"Command" : @"CreateTunnel1ActivationInfoRequest", @"Value" : handshakePayload} error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            NSDictionary<NSString *, id> *responsePayload = response[@"Value"];
+            if (!responsePayload) {
+              return [[FBControlCoreError
+                       describeFormat:@"No 'Value' in %@", response]
+                      failFuture];
+            }
+            return [FBDeviceActivationCommands mobileActivationActivateForRequestPayload:responsePayload queue:self.device.workQueue];
+          }];
 }
 
 - (FBFuture<NSNull *> *)activateFromActivationRecord:(NSData *)activationRecord
 {
   return [[self
-    mobileActivationService]
-    onQueue:self.device.workQueue pop:^ FBFuture<NSNull *> * (FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      id response = [connection sendAndReceiveMessage:@{@"Command": @"HandleActivationInfoWithSessionRequest", @"Value": activationRecord} error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      return FBFuture.empty;
-    }];
+           mobileActivationService]
+          onQueue:self.device.workQueue
+          pop:^FBFuture<NSNull *> *(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            id response = [connection sendAndReceiveMessage:@{@"Command" : @"HandleActivationInfoWithSessionRequest", @"Value" : activationRecord} error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 + (FBFuture<NSData *> *)mobileActivationRequestForRequestPayload:(NSDictionary<NSString *, id> *)requestPayload queue:(dispatch_queue_t)queue
@@ -197,22 +207,23 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
   [request setValue:@"idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
 
   return [[self
-    responseForRequest:request]
-    onQueue:queue fmap:^(NSArray<id> *result) {
-      NSHTTPURLResponse *httpResponse = result[0];
-      if (httpResponse.statusCode != 200) {
-        return [[FBControlCoreError
-          describeFormat:@"%@ no 200", httpResponse]
-          failFuture];
-      }
-      NSData *responseData = result[1];
-      NSError *innerError = nil;
-      NSDictionary<NSString *, id> *response = [NSPropertyListSerialization propertyListWithData:responseData options:0 format:nil error:&innerError];
-      if (!response) {
-        return [FBFuture futureWithError:innerError];
-      }
-      return [FBFuture futureWithResult:responseData];
-    }];
+           responseForRequest:request]
+          onQueue:queue
+          fmap:^(NSArray<id> *result) {
+            NSHTTPURLResponse *httpResponse = result[0];
+            if (httpResponse.statusCode != 200) {
+              return [[FBControlCoreError
+                       describeFormat:@"%@ no 200", httpResponse]
+                      failFuture];
+            }
+            NSData *responseData = result[1];
+            NSError *innerError = nil;
+            NSDictionary<NSString *, id> *response = [NSPropertyListSerialization propertyListWithData:responseData options:0 format:nil error:&innerError];
+            if (!response) {
+              return [FBFuture futureWithError:innerError];
+            }
+            return [FBFuture futureWithResult:responseData];
+          }];
 }
 
 + (FBFuture<NSData *> *)mobileActivationActivateForRequestPayload:(NSDictionary<NSString *, id> *)requestPayload queue:(dispatch_queue_t)queue
@@ -235,49 +246,51 @@ static NSString *const DefaultDeviceActivationURL = @"https://albert.apple.com/d
   [request setValue:@"idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.m)" forHTTPHeaderField:@"User-Agent"];
 
   return [[self
-    responseForRequest:request]
-    onQueue:queue fmap:^(NSArray<id> *result) {
-      NSHTTPURLResponse *httpResponse = result[0];
-      if (httpResponse.statusCode != 200) {
-        return [[FBControlCoreError
-          describeFormat:@"%@ no 200", httpResponse]
-          failFuture];
-      }
-      NSData *responseData = result[1];
-      NSError *innerError = nil;
-      id response = [NSPropertyListSerialization propertyListWithData:responseData options:0 format:nil error:&innerError];
-      if (!response) {
-        return [FBFuture futureWithError:innerError];
-      }
-      id activationRecord = response[@"ActivationRecord"];
-      if (!activationRecord) {
-        return [[FBControlCoreError
-          describeFormat:@"No 'ActivationRecord' in %@", activationRecord]
-          failFuture];
-      }
-      NSData *activationRecordData = [NSPropertyListSerialization dataWithPropertyList:activationRecord format:NSPropertyListXMLFormat_v1_0 options:0 error:&innerError];
-      if (!activationRecordData) {
-        return [FBFuture futureWithError:innerError];
-      }
-      return [FBFuture futureWithResult:activationRecordData];
-    }];
+           responseForRequest:request]
+          onQueue:queue
+          fmap:^(NSArray<id> *result) {
+            NSHTTPURLResponse *httpResponse = result[0];
+            if (httpResponse.statusCode != 200) {
+              return [[FBControlCoreError
+                       describeFormat:@"%@ no 200", httpResponse]
+                      failFuture];
+            }
+            NSData *responseData = result[1];
+            NSError *innerError = nil;
+            id response = [NSPropertyListSerialization propertyListWithData:responseData options:0 format:nil error:&innerError];
+            if (!response) {
+              return [FBFuture futureWithError:innerError];
+            }
+            id activationRecord = response[@"ActivationRecord"];
+            if (!activationRecord) {
+              return [[FBControlCoreError
+                       describeFormat:@"No 'ActivationRecord' in %@", activationRecord]
+                      failFuture];
+            }
+            NSData *activationRecordData = [NSPropertyListSerialization dataWithPropertyList:activationRecord format:NSPropertyListXMLFormat_v1_0 options:0 error:&innerError];
+            if (!activationRecordData) {
+              return [FBFuture futureWithError:innerError];
+            }
+            return [FBFuture futureWithResult:activationRecordData];
+          }];
 }
 
 + (FBFuture<id> *)responseForRequest:(NSURLRequest *)request
 {
   NSURLSession *session = NSURLSession.sharedSession;
   FBMutableFuture<id> *future = FBMutableFuture.future;
-  NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData *responseData, NSURLResponse *response, NSError *error) {
-    if (error) {
-      [future resolveWithError:error];
-      return;
-    }
-    if (responseData == nil) {
-      [future resolveWithError:[[FBControlCoreError describeFormat:@"No response data in response %@", response] build]];
-      return;
-    }
-    [future resolveWithResult:@[response, responseData]];
-  }];
+  NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+                                          completionHandler:^(NSData *responseData, NSURLResponse *response, NSError *error) {
+                                            if (error) {
+                                              [future resolveWithError:error];
+                                              return;
+                                            }
+                                            if (responseData == nil) {
+                                              [future resolveWithError:[[FBControlCoreError describeFormat:@"No response data in response %@", response] build]];
+                                              return;
+                                            }
+                                            [future resolveWithResult:@[response, responseData]];
+                                          }];
   [task resume];
   return future;
 }

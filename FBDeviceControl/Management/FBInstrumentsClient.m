@@ -14,8 +14,7 @@
 /**
  Understanding of the DTXMessage protocol is informed by the [ios_instruments_client project](https://github.com/troybowman/ios_instruments_client)
  */
-typedef struct
-{
+typedef struct {
   uint32 magic;
   uint32 cb;
   uint16 fragmentId;
@@ -27,8 +26,7 @@ typedef struct
   uint32 expectsReply;
 } DTXMessageHeader;
 
-typedef struct
-{
+typedef struct {
   uint32 flags;
   uint32 auxiliaryLength;
   uint64 totalLength;
@@ -62,12 +60,12 @@ static const ResponsePayload InvalidResponsePayload = {
 
 @interface FBInstrumentsClient ()
 
-@property (nonatomic, assign, readwrite) uint32 lastMessageIdentifier;
-@property (nonatomic, assign, readwrite) int32_t lastChannelIdentifier;
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *channels;
-@property (nonatomic, strong, readonly) FBAMDServiceConnection *connection;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readwrite, assign) uint32 lastMessageIdentifier;
+@property (nonatomic, readwrite, assign) int32_t lastChannelIdentifier;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *channels;
+@property (nonatomic, readonly, strong) FBAMDServiceConnection *connection;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -79,14 +77,15 @@ static const ResponsePayload InvalidResponsePayload = {
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbdevicecontrol.fbinstrumentsclient", DISPATCH_QUEUE_SERIAL);
   return [FBFuture
-    onQueue:queue resolveValue:^ FBInstrumentsClient * (NSError **error) {
-      uint32 responseMessageIdentifier = 0;
-      NSDictionary<NSString *, id> *channels = [FBInstrumentsClient getAvailableChannels:connection responseMessageIdentifierOut:&responseMessageIdentifier error:error];
-      if (!channels) {
-        return nil;
-      }
-      return [[self alloc] initWithConnection:connection channels:channels lastMessageIdentifier:responseMessageIdentifier queue:queue logger:logger];
-    }];
+          onQueue:queue
+          resolveValue:^FBInstrumentsClient *(NSError **error) {
+            uint32 responseMessageIdentifier = 0;
+            NSDictionary<NSString *, id> *channels = [FBInstrumentsClient getAvailableChannels:connection responseMessageIdentifierOut:&responseMessageIdentifier error:error];
+            if (!channels) {
+              return nil;
+            }
+            return [[self alloc] initWithConnection:connection channels:channels lastMessageIdentifier:responseMessageIdentifier queue:queue logger:logger];
+          }];
 }
 
 - (instancetype)initWithConnection:(FBAMDServiceConnection *)connection channels:(NSDictionary<NSString *, id> *)channels lastMessageIdentifier:(uint32)lastMessageIdentifier queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
@@ -113,45 +112,47 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
 - (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNumber * (NSError **error) {
-      NSDictionary<NSString *, NSNumber *> *options = @{
-        @"StartSuspendedKey": @(configuration.waitForDebugger),
-        @"KillExisting": @(configuration.launchMode != FBApplicationLaunchModeFailIfRunning),
-      };
-      ResponsePayload response = [self
-        onChannelIdentifier:ProcessControlChannel
-        performSelector:@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:"
-        argumentsData:@[
-          [FBInstrumentsClient argumentDataForArgument:@""], // devicePath:
-          [FBInstrumentsClient argumentDataForArgument:configuration.bundleID], // bundleIdentifier:
-          [FBInstrumentsClient argumentDataForArgument:configuration.environment], // environment:
-          [FBInstrumentsClient argumentDataForArgument:configuration.arguments], // arguments:
-          [FBInstrumentsClient argumentDataForArgument:options], // options:
-        ]
-        error:error];
-      if (response.success == NO) {
-        return nil;
-      }
-      return response.returnValue;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSNumber *(NSError **error) {
+            NSDictionary<NSString *, NSNumber *> *options = @{
+              @"StartSuspendedKey" : @(configuration.waitForDebugger),
+              @"KillExisting" : @(configuration.launchMode != FBApplicationLaunchModeFailIfRunning),
+            };
+            ResponsePayload response = [self
+                                        onChannelIdentifier:ProcessControlChannel
+                                        performSelector:@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:"
+                                        argumentsData:@[
+                                          [FBInstrumentsClient argumentDataForArgument:@""], // devicePath:
+                                          [FBInstrumentsClient argumentDataForArgument:configuration.bundleID], // bundleIdentifier:
+                                          [FBInstrumentsClient argumentDataForArgument:configuration.environment], // environment:
+                                          [FBInstrumentsClient argumentDataForArgument:configuration.arguments], // arguments:
+                                          [FBInstrumentsClient argumentDataForArgument:options], // options:
+                                        ]
+                                        error:error];
+            if (response.success == NO) {
+              return nil;
+            }
+            return response.returnValue;
+          }];
 }
 
 - (FBFuture<NSNull *> *)killProcess:(pid_t)processIdentifier
 {
   return [FBFuture
-    onQueue:self.queue resolveValue:^ NSNull * (NSError **error) {
-      ResponsePayload response = [self
-        onChannelIdentifier:ProcessControlChannel
-        performSelector:@"killPid:"
-        argumentsData:@[
-          [FBInstrumentsClient argumentDataForArgument:@(processIdentifier)], // pid:
-        ]
-        error:error];
-      if (response.success == NO) {
-        return nil;
-      }
-      return NSNull.null;
-    }];
+          onQueue:self.queue
+          resolveValue:^NSNull *(NSError **error) {
+            ResponsePayload response = [self
+                                        onChannelIdentifier:ProcessControlChannel
+                                        performSelector:@"killPid:"
+                                        argumentsData:@[
+                                          [FBInstrumentsClient argumentDataForArgument:@(processIdentifier)], // pid:
+                                        ]
+                                        error:error];
+            if (response.success == NO) {
+              return nil;
+            }
+            return NSNull.null;
+          }];
 }
 
 #pragma mark Private Class Methods
@@ -161,7 +162,7 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
   static dispatch_once_t onceToken;
   static NSData *data;
   dispatch_once(&onceToken, ^{
-     data = [self argumentDataForArgument:@{@"com.apple.private.DTXBlockCompression": @2, @"com.apple.private.DTXConnection": @1}];
+    data = [self argumentDataForArgument:@{@"com.apple.private.DTXBlockCompression" : @2, @"com.apple.private.DTXConnection" : @1}];
   });
   return data;
 }
@@ -171,7 +172,7 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
   static dispatch_once_t onceToken;
   static NSSet<Class> *classes;
   dispatch_once(&onceToken, ^{
-     classes = [NSSet setWithArray:@[NSString.class, NSNumber.class, NSDate.class, NSError.class, NSData.class, NSDictionary.class, NSArray.class]];
+    classes = [NSSet setWithArray:@[NSString.class, NSNumber.class, NSDate.class, NSError.class, NSData.class, NSDictionary.class, NSArray.class]];
   });
   return classes;
 }
@@ -192,8 +193,8 @@ static NSString *const ProcessControlChannel = @"com.apple.instruments.server.se
   NSDictionary<NSString *, NSNumber *> *channels = response.auxillaryValues.firstObject;
   if (![channels isKindOfClass:NSDictionary.class]) {
     return [[FBControlCoreError
-      describeFormat:@"%@ is not a dictionary", channels]
-      fail:error];
+             describeFormat:@"%@ is not a dictionary", channels]
+            fail:error];
   }
   return channels;
 }
@@ -301,8 +302,8 @@ static const uint32 Int32ArgumentType = 3;
 {
   if (data.length < 16) {
     return [[FBControlCoreError
-      describeFormat:@"Data is of insufficient length %@", data]
-      fail:error];
+             describeFormat:@"Data is of insufficient length %@", data]
+            fail:error];
   }
   uint64 magic = 0;
   data = [self advanceData:data buffer:&magic length:sizeof(magic)];
@@ -319,8 +320,8 @@ static const uint32 Int32ArgumentType = 3;
     data = [self advanceData:data buffer:&argumentType length:sizeof(argumentType)];
     if (argumentType != 2) {
       return [[FBControlCoreError
-        describeFormat:@"Canot decode argument of type %d", argumentType]
-        fail:error];
+               describeFormat:@"Canot decode argument of type %d", argumentType]
+              fail:error];
     }
     data = [self advanceData:data buffer:&argumentLength length:sizeof(argumentLength)];
     NSData *argumentData = nil;
@@ -328,8 +329,8 @@ static const uint32 Int32ArgumentType = 3;
     id argument = [NSKeyedUnarchiver unarchivedObjectOfClasses:self.supportedReturnSerializerValues fromData:argumentData error:error];
     if (!argument) {
       return [[FBControlCoreError
-        describeFormat:@"Failed to decode argument %@", data]
-        fail:error];
+               describeFormat:@"Failed to decode argument %@", data]
+              fail:error];
     }
     [arguments addObject:argument];
   }
@@ -380,13 +381,13 @@ static const uint32 Int32ArgumentType = 3;
     if (messageHeader.conversationIndex == 0 && messageHeader.identifier < request.messageIdentifier) {
       [[FBControlCoreError
         describeFormat:@"Response identifier %d with lower identifier than that requested (%d)", messageHeader.identifier, request.messageIdentifier]
-        fail:error];
+       fail:error];
       return InvalidResponsePayload;
     }
     if (messageHeader.conversationIndex == 1 && messageHeader.identifier != request.messageIdentifier) {
       [[FBControlCoreError
         describeFormat:@"Response identifier %d is not the same as requested identifier (%d)", messageHeader.identifier, request.messageIdentifier]
-        fail:error];
+       fail:error];
       return InvalidResponsePayload;
     }
     // First message in a multi-part fragment has no payload, move onto the next fragment which does.
@@ -493,8 +494,8 @@ static const uint32 Int32ArgumentType = 3;
 {
   if (self.channels[identifier] == nil) {
     return [[FBControlCoreError
-      describeFormat:@"Could not make a channel %@ as it is not one of %@", identifier, self.channels.allKeys]
-      fail:error];
+             describeFormat:@"Could not make a channel %@ as it is not one of %@", identifier, self.channels.allKeys]
+            fail:error];
   }
   int32_t channelIdentifier = [self nextChannelIdentifier];
   RequestPayload request = {

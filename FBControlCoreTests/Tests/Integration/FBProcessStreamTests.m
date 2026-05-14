@@ -86,15 +86,18 @@
   __block FBFuture<FBProcessStreamAttachment *> *secondAttempt = nil;
   __block FBFuture<FBProcessStreamAttachment *> *thirdAttempt = nil;
 
-  dispatch_group_async(group, concurrentQueue, ^{
-    firstAttempt = [output attach];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    secondAttempt = [output attach];
-  });
-  dispatch_group_async(group, concurrentQueue, ^{
-    thirdAttempt = [output attach];
-  });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      firstAttempt = [output attach];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      secondAttempt = [output attach];
+    });
+  dispatch_group_async(group,
+    concurrentQueue, ^{
+      thirdAttempt = [output attach];
+    });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
   [firstAttempt await:nil];

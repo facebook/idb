@@ -26,21 +26,23 @@
 
   NSError *error = nil;
   BOOL success = [[[simulator
-    fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
-    onQueue:simulator.asyncQueue pop:^(id<FBFileContainer> container) {
-      return [container copyFromHost:fixturePath toContainer:@"Documents"];
-    }]
-    await:&error] != nil;
+                    fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
+                   onQueue:simulator.asyncQueue
+                   pop:^(id<FBFileContainer> container) {
+                     return [container copyFromHost:fixturePath toContainer:@"Documents"];
+                   }]
+                  await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
   NSString *destinationPath = [NSTemporaryDirectory() stringByAppendingPathComponent:fixturePath.lastPathComponent];
   success = [[[simulator
-    fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
-    onQueue:simulator.asyncQueue pop:^(id<FBFileContainer> container) {
-      return [container copyFromContainer:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent] toHost:destinationPath];
-   }]
-   await:&error] != nil;
+               fileCommandsForContainerApplication:self.safariAppLaunch.bundleID]
+              onQueue:simulator.asyncQueue
+              pop:^(id<FBFileContainer> container) {
+                return [container copyFromContainer:[@"Documents" stringByAppendingPathComponent:fixturePath.lastPathComponent] toHost:destinationPath];
+              }]
+             await:&error] != nil;
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }

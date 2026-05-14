@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
-
 #import "FBExceptionInfo.h"
 
 @implementation FBExceptionInfo
@@ -43,7 +41,7 @@
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"Message %@ | File %@ | Line %lu", self.message, self.file, self.line];
+  return [NSString stringWithFormat:@"Message %@ | File %@ | Line %lu", self.message, self.file, self.line];
 }
 
 @end

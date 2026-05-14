@@ -14,24 +14,24 @@
 
 @interface SimNSPasteboard : NSObject <SimPasteboard>
 {
-    unsigned long long _refreshResolveCount;
-    NSObject<OS_dispatch_queue> *_nsPasteboardQueue;
-    NSObject<OS_dispatch_source> *_pollPastboardChangeTimer;
-    NSObject<OS_dispatch_queue> *_pollPastboardChangeTimerQueue;
-    NSArray *_items;
-    unsigned long long _changeCount;
-    NSPasteboard *_nsPasteboard;
-    SimDeviceNotificationManager *_notificationManager;
+  unsigned long long _refreshResolveCount;
+  NSObject<OS_dispatch_queue> *_nsPasteboardQueue;
+  NSObject<OS_dispatch_source> *_pollPastboardChangeTimer;
+  NSObject<OS_dispatch_queue> *_pollPastboardChangeTimerQueue;
+  NSArray *_items;
+  unsigned long long _changeCount;
+  NSPasteboard *_nsPasteboard;
+  SimDeviceNotificationManager *_notificationManager;
 }
 
 + (id)pasteboardForNSPasteboard:(id)arg1 refreshResolveCount:(unsigned long long)arg2;
-@property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
-@property (retain, nonatomic) NSPasteboard *nsPasteboard;
+@property (nonatomic, retain) SimDeviceNotificationManager *notificationManager;
+@property (nonatomic, retain) NSPasteboard *nsPasteboard;
 @property (atomic, assign) unsigned long long changeCount; // @synthesize changeCount=_changeCount;
 @property (atomic, copy) NSArray *items;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *pollPastboardChangeTimerQueue;
-@property (retain, nonatomic) NSObject<OS_dispatch_source> *pollPastboardChangeTimer;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *nsPasteboardQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *pollPastboardChangeTimerQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_source> *pollPastboardChangeTimer;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *nsPasteboardQueue;
 @property (atomic, assign) unsigned long long refreshResolveCount; // @synthesize refreshResolveCount=_refreshResolveCount;
 
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;

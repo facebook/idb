@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBProcessLaunchConfiguration.h"
-
 #import <FBControlCore/FBControlCore.h>
+
+#import "FBProcessLaunchConfiguration.h"
 
 @implementation FBProcessSpawnConfiguration
 
@@ -41,20 +41,20 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return [self.launchPath isEqual:object.launchPath] &&
-         [self.arguments isEqual:object.arguments] &&
-         [self.environment isEqual:object.environment] &&
-         self.mode == object.mode;
+  return [self.launchPath isEqual:object.launchPath]
+  && [self.arguments isEqual:object.arguments]
+  && [self.environment isEqual:object.environment]
+  && self.mode == object.mode;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Process Launch %@ | Arguments %@ | Environment %@ | Output %@",
-    self.launchPath,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    self.io
+          @"Process Launch %@ | Arguments %@ | Environment %@ | Output %@",
+          self.launchPath,
+          [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+          [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
+          self.io
   ];
 }
 

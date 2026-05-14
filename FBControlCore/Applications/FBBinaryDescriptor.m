@@ -7,10 +7,6 @@
 
 #import "FBBinaryDescriptor.h"
 
-#import "FBControlCoreError.h"
-#import "FBCollectionInformation.h"
-#import "FBControlCoreGlobalConfiguration.h"
-
 #include <mach/machine.h>
 #include <stdio.h>
 
@@ -18,7 +14,9 @@
 #include <mach-o/loader.h>
 #include <mach-o/swap.h>
 
+#import "FBCollectionInformation.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
 
 FBBinaryArchitecture const FBBinaryArchitecturei386 = @"i386";
 FBBinaryArchitecture const FBBinaryArchitecturex86_64 = @"x86_64";
@@ -119,7 +117,7 @@ static inline struct fat_header ReadFatHeader(FILE *file, uint32_t fatMagic)
   return header;
 }
 
-static inline id EnumerateFat(FILE *file, uint32_t fatMagic, id(^block)(struct fat_arch fatArch, uint32_t magic))
+static inline id EnumerateFat(FILE *file, uint32_t fatMagic, id (^block)(struct fat_arch fatArch, uint32_t magic))
 {
   // Get the Fat Header.
   struct fat_header header = ReadFatHeader(file, fatMagic);
@@ -137,7 +135,7 @@ static inline id EnumerateFat(FILE *file, uint32_t fatMagic, id(^block)(struct f
     // Seek to the start position of the arch
     fseek(file, fatArch.offset, SEEK_SET);
     uint32_t magic = GetMagic(file);
-    if (!IsMagic(magic)){
+    if (!IsMagic(magic)) {
       return nil;
     }
 
@@ -189,33 +187,34 @@ static inline id EnumerateLoadCommands32(FILE *file, uint32_t magic, id (^block)
   return nil;
 }
 
-static inline NSArray<NSString *> *ReadRPathsSpecific(FILE *file, uint32_t magic, id(*Enumerator)(FILE *, uint32_t magic, id (^)(FILE *, struct load_command, uint32_t)))
+static inline NSArray<NSString *> *ReadRPathsSpecific(FILE *file, uint32_t magic, id (*Enumerator)(FILE *, uint32_t magic, id (^)(FILE *, struct load_command, uint32_t)))
 {
   NSMutableArray<NSString *> *rpaths = NSMutableArray.array;
-  Enumerator(file, magic, ^ id (FILE *_, struct load_command command, uint32_t offset) {
-    if (command.cmd != LC_RPATH) {
+  Enumerator(file,
+    magic, ^id (FILE *_, struct load_command command, uint32_t offset) {
+      if (command.cmd != LC_RPATH) {
+        return nil;
+      }
+      // Offset is calculated from the start of the command
+      struct rpath_command rpathCommand;
+      fseek(file, offset, SEEK_SET);
+      fread(&rpathCommand, sizeof(rpathCommand), 1, file);
+
+      // Calculate the offset and move back
+      const uint32_t pathOffset = offset + rpathCommand.path.offset;
+      const uint32_t pathLength = command.cmdsize;
+
+      // Extract the path
+      char *path = alloca(command.cmdsize);
+      fseek(file, pathOffset, SEEK_SET);
+      fread(path, pathLength, 1, file);
+
+      // Create an NSString for the rpaths
+      NSString *string = [[NSString alloc] initWithBytes:path length:strlen(path) encoding:NSASCIIStringEncoding];
+      [rpaths addObject:string];
+
       return nil;
-    }
-    // Offset is calculated from the start of the command
-    struct rpath_command rpathCommand;
-    fseek(file, offset, SEEK_SET);
-    fread(&rpathCommand, sizeof(rpathCommand), 1, file);
-
-    // Calculate the offset and move back
-    const uint32_t pathOffset = offset + rpathCommand.path.offset;
-    const uint32_t pathLength = command.cmdsize;
-
-    // Extract the path
-    char *path = alloca(command.cmdsize);
-    fseek(file, pathOffset, SEEK_SET);
-    fread(path, pathLength, 1, file);
-
-    // Create an NSString for the rpaths
-    NSString *string = [[NSString alloc] initWithBytes:path length:strlen(path) encoding:NSASCIIStringEncoding];
-    [rpaths addObject:string];
-
-    return nil;
-  });
+    });
   return rpaths;
 }
 
@@ -223,14 +222,15 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic);
 
 static inline NSArray<NSString *> *ReadRPathsFat(FILE *file, uint32_t fatMagic)
 {
-  return EnumerateFat(file, fatMagic, ^id(struct fat_arch fatArch, uint32_t magic) {
-    return ReadRPaths(file, magic);
-  });
+  return EnumerateFat(file,
+    fatMagic, ^id (struct fat_arch fatArch, uint32_t magic) {
+      return ReadRPaths(file, magic);
+    });
 }
 
 static inline NSUUID *ReadUUID(FILE *file, uint32_t magic);
 
-static id (^UUIDEnumerator)(FILE *, struct load_command, uint32_t) = ^id (FILE *file, struct load_command command, uint32_t offset){
+static id (^UUIDEnumerator)(FILE *, struct load_command, uint32_t) = ^id (FILE *file, struct load_command command, uint32_t offset) {
   if (command.cmd != LC_UUID) {
     return nil;
   }
@@ -252,10 +252,11 @@ static inline NSUUID *ReadUUID32(FILE *file, uint32_t magic)
 
 static inline NSUUID *ReadUUIDFat(FILE *file, uint32_t fatMagic)
 {
-  return EnumerateFat(file, fatMagic, ^ id (struct fat_arch fatArch, uint32_t magic) {
-    // Get the Arch
-    return ReadUUID(file, magic);
-  });
+  return EnumerateFat(file,
+    fatMagic, ^id (struct fat_arch fatArch, uint32_t magic) {
+      // Get the Arch
+      return ReadUUID(file, magic);
+    });
 }
 
 static inline NSUUID *ReadUUID(FILE *file, uint32_t magic)
@@ -298,15 +299,16 @@ static inline FBBinaryArchitecture ReadArch(FILE *file, uint32_t magic)
 static inline NSArray<FBBinaryArchitecture> *ReadArchsFat(FILE *file, uint32_t fatMagic)
 {
   NSMutableArray<FBBinaryArchitecture> *array = [NSMutableArray array];
-  EnumerateFat(file, fatMagic, ^id(struct fat_arch fatArch, uint32_t magic) {
-    // Get the Arch
-    NSString *arch = ReadArch(file, magic);
-    if (!arch) {
+  EnumerateFat(file,
+    fatMagic, ^id (struct fat_arch fatArch, uint32_t magic) {
+      // Get the Arch
+      NSString *arch = ReadArch(file, magic);
+      if (!arch) {
+        return nil;
+      }
+      [array addObject:arch];
       return nil;
-    }
-    [array addObject:arch];
-    return nil;
-  });
+    });
   return array;
 }
 
@@ -365,8 +367,8 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
     return [[FBControlCoreError
-      describeFormat:@"Binary does not exist at path %@", binaryPath]
-      fail:error];
+             describeFormat:@"Binary does not exist at path %@", binaryPath]
+            fail:error];
   }
 
   FILE *file = fopen(binaryPath.UTF8String, "rb");
@@ -396,10 +398,10 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
   fclose(file);
 
   return [[FBBinaryDescriptor alloc]
-    initWithName:[self binaryNameForBinaryPath:binaryPath]
-    architectures:[NSSet setWithArray:archs]
-    uuid:uuid
-    path:binaryPath];
+          initWithName:[self binaryNameForBinaryPath:binaryPath]
+          architectures:[NSSet setWithArray:archs]
+          uuid:uuid
+          path:binaryPath];
 }
 
 #pragma mark NSCopying
@@ -417,9 +419,9 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
   if (![object isMemberOfClass:self.class]) {
     return NO;
   }
-  return [object.name isEqual:self.name] &&
-    [object.path isEqual:self.path] &&
-    [object.architectures isEqual:self.architectures];
+  return [object.name isEqual:self.name]
+  && [object.path isEqual:self.path]
+  && [object.architectures isEqual:self.architectures];
 }
 
 - (NSUInteger)hash
@@ -430,10 +432,10 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Name: %@ | Path: %@ | Architectures: %@",
-    self.name,
-    self.path,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
+          @"Name: %@ | Path: %@ | Architectures: %@",
+          self.name,
+          self.path,
+          [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
   ];
 }
 

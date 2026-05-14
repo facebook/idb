@@ -7,19 +7,20 @@
 
 #import "FBVideoFileWriter.h"
 
-#import <FBControlCore/FBControlCore.h>
 #import <AVFoundation/AVFoundation.h>
+
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBControlCoreError.h"
 
 @interface FBVideoFileWriter () <AVCaptureFileOutputRecordingDelegate>
 
-@property (nonatomic, strong, readonly) AVCaptureSession *session;
-@property (nonatomic, strong, readonly) AVCaptureMovieFileOutput *output;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *startFuture;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *finishFuture;
-@property (nonatomic, copy, readonly) NSString *filePath;
+@property (nonatomic, readonly, strong) AVCaptureSession *session;
+@property (nonatomic, readonly, strong) AVCaptureMovieFileOutput *output;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *startFuture;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishFuture;
+@property (nonatomic, readonly, copy) NSString *filePath;
 
 @end
 
@@ -31,8 +32,8 @@
   AVCaptureMovieFileOutput *output = [[AVCaptureMovieFileOutput alloc] init];
   if (![session canAddOutput:output]) {
     return [[FBControlCoreError
-      describeFormat:@"Cannot add File Output to session for %@", filePath]
-      fail:error];
+             describeFormat:@"Cannot add File Output to session for %@", filePath]
+            fail:error];
   }
   [session addOutput:output];
 
@@ -65,17 +66,17 @@
     [self.logger logFormat:@"File already exists at %@, deleting", self.filePath];
     if (![NSFileManager.defaultManager removeItemAtPath:self.filePath error:&innerError]) {
       return [[[FBControlCoreError
-        describeFormat:@"Failed to remove existing device video at %@", self.filePath]
-        causedBy:innerError]
-        failFuture];
+                describeFormat:@"Failed to remove existing device video at %@", self.filePath]
+               causedBy:innerError]
+              failFuture];
     }
     [self.logger logFormat:@"Removed video file at %@", self.filePath];
   }
   if (![NSFileManager.defaultManager createDirectoryAtPath:self.filePath.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBControlCoreError
-      describeFormat:@"Failed to remove create auxillary directory for device at %@", self.filePath]
-      causedBy:innerError]
-      failFuture];
+              describeFormat:@"Failed to remove create auxillary directory for device at %@", self.filePath]
+             causedBy:innerError]
+            failFuture];
   }
   NSURL *file = [NSURL fileURLWithPath:self.filePath];
   [self.session startRunning];

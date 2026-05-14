@@ -10,4 +10,4 @@
 /*
  Logs shims debug messages in case SHIMULATOR_DEBUG is set
 */
-void FBDebugLog(NSString *format, ...) NS_FORMAT_FUNCTION(1,2);
+void FBDebugLog(NSString *format, ...) NS_FORMAT_FUNCTION(1, 2);

@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device Set to which the Device Belongs.
  */
-@property (nonatomic, weak, readonly) FBDeviceSet *set;
+@property (nonatomic, readonly, weak) FBDeviceSet *set;
 
 /**
  Constructs an Operating System Version from a string.

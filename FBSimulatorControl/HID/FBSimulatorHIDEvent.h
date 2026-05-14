@@ -8,7 +8,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -39,7 +38,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 
 /**
  Constructs the Indigo event data for the reciever.
- 
+
  @param hid the hid to perform on.
  @return the data produced by the reciever.
  */
@@ -55,7 +54,7 @@ extern double const DEFAULT_SWIPE_DELTA;
 /**
  The duration of the delay.
  */
-@property (nonatomic, assign, readonly) NSTimeInterval duration;
+@property (nonatomic, readonly, assign) NSTimeInterval duration;
 
 @end
 
@@ -129,7 +128,6 @@ extern double const DEFAULT_SWIPE_DELTA;
  @return a new HID Event.
  */
 + (id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode;
-
 
 #pragma mark Multiple Payload Events
 

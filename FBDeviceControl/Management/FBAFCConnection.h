@@ -117,22 +117,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The wrapped 'Apple File Conduit'.
  */
-@property (nonatomic, assign, readonly, nullable) AFCConnectionRef connection;
+@property (nullable, nonatomic, readonly, assign) AFCConnectionRef connection;
 
 /**
  The Calls to use.
  */
-@property (nonatomic, assign, readonly) AFCCalls calls;
+@property (nonatomic, readonly, assign) AFCCalls calls;
 
 /**
  The logger to use
  */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Default Calls.
  */
-@property (nonatomic, assign, readonly, class) AFCCalls defaultCalls;
+@property (class, nonatomic, readonly, assign) AFCCalls defaultCalls;
 
 @end
 

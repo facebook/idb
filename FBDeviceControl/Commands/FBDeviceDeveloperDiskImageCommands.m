@@ -26,7 +26,7 @@ static void MountCallback(NSDictionary<NSString *, id> *callbackDictionary, id<F
 
 @interface FBDeviceDeveloperDiskImageCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -58,10 +58,11 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
 - (FBFuture<NSArray<FBDeveloperDiskImage *> *> *)mountedDiskImages
 {
   return [[self
-    mountInfoToDiskImage]
-    onQueue:self.device.asyncQueue map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
-      return [mountInfoToDiskImage allValues];
-    }];
+           mountInfoToDiskImage]
+          onQueue:self.device.asyncQueue
+          map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
+            return [mountInfoToDiskImage allValues];
+          }];
 }
 
 - (FBFuture<FBDeveloperDiskImage *> *)mountDiskImage:(FBDeveloperDiskImage *)diskImage
@@ -72,20 +73,21 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
 - (FBFuture<NSNull *> *)unmountDiskImage:(FBDeveloperDiskImage *)diskImage
 {
   return [[self
-    mountedImageEntries]
-    onQueue:self.device.workQueue fmap:^ FBFuture<NSNull *> * (NSArray<NSDictionary<NSString *, id> *> *mountEntries) {
-      for (NSDictionary<NSString *, id> *mountEntry in mountEntries) {
-        NSData *mountSingature = mountEntry[ImageSignatureKey];
-        if (![mountSingature isEqualToData:diskImage.signature]) {
-          continue;
-        }
-        NSString *mountPath = mountEntry[MountPathKey];
-        return [self unmountDiskImageAtPath:mountPath];
-      }
-      return [[FBDeviceControlError
-        describeFormat:@"%@ does not appear to be mounted", diskImage]
-        failFuture];
-    }];
+           mountedImageEntries]
+          onQueue:self.device.workQueue
+          fmap:^FBFuture<NSNull *> *(NSArray<NSDictionary<NSString *, id> *> *mountEntries) {
+            for (NSDictionary<NSString *, id> *mountEntry in mountEntries) {
+              NSData *mountSingature = mountEntry[ImageSignatureKey];
+              if (![mountSingature isEqualToData:diskImage.signature]) {
+                continue;
+              }
+              NSString *mountPath = mountEntry[MountPathKey];
+              return [self unmountDiskImageAtPath:mountPath];
+            }
+            return [[FBDeviceControlError
+                     describeFormat:@"%@ does not appear to be mounted", diskImage]
+                    failFuture];
+          }];
 }
 
 - (NSArray<FBDeveloperDiskImage *> *)mountableDiskImages
@@ -110,122 +112,127 @@ static const int DiskImageMountingError = -402653066;  // 0xe8000076 in hex
 {
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[self
-    mountedImageEntries]
-    onQueue:self.device.asyncQueue map:^(NSArray<NSDictionary<NSString *,id> *> *mountEntries) {
-      NSArray<FBDeveloperDiskImage *> *images = FBDeveloperDiskImage.allDiskImages;
-      NSDictionary<NSData *, FBDeveloperDiskImage *> *imagesBySignature = [NSDictionary dictionaryWithObjects:images forKeys:[images valueForKey:@"signature"]];
-      NSMutableDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountEntryToDiskImage = NSMutableDictionary.dictionary;
-      for (NSDictionary<NSString *, id> *mountEntry in mountEntries) {
-        NSData *signature = mountEntry[ImageSignatureKey];
-        FBDeveloperDiskImage *image = imagesBySignature[signature];
-        if (!image) {
-          [logger logFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage];
-          image = [FBDeveloperDiskImage unknownDiskImageWithSignature:signature];
-        }
-        mountEntryToDiskImage[mountEntry] = image;
-      }
-      return [mountEntryToDiskImage copy];
-    }];
+           mountedImageEntries]
+          onQueue:self.device.asyncQueue
+          map:^(NSArray<NSDictionary<NSString *, id> *> *mountEntries) {
+            NSArray<FBDeveloperDiskImage *> *images = FBDeveloperDiskImage.allDiskImages;
+            NSDictionary<NSData *, FBDeveloperDiskImage *> *imagesBySignature = [NSDictionary dictionaryWithObjects:images forKeys:[images valueForKey:@"signature"]];
+            NSMutableDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountEntryToDiskImage = NSMutableDictionary.dictionary;
+            for (NSDictionary<NSString *, id> *mountEntry in mountEntries) {
+              NSData *signature = mountEntry[ImageSignatureKey];
+              FBDeveloperDiskImage *image = imagesBySignature[signature];
+              if (!image) {
+                [logger logFormat:@"Could not find the location of the image mounted on the device %@", mountEntryToDiskImage];
+                image = [FBDeveloperDiskImage unknownDiskImageWithSignature:signature];
+              }
+              mountEntryToDiskImage[mountEntry] = image;
+            }
+            return [mountEntryToDiskImage copy];
+          }];
 }
 
 - (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)mountedImageEntries
 {
   return [[self.device
-    startService:ImageMounterService]
-    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSDictionary<NSString *, id> *request = @{
-        CommandKey: @"CopyDevices",
-      };
-      NSError *error = nil;
-      NSDictionary<NSString *, id> *response = [connection sendAndReceiveMessage:request error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      NSString *errorString = response[@"Error"];
-      if (errorString) {
-        return [[FBDeviceControlError
-          describeFormat:@"Could not get mounted image info: %@", errorString]
-          failFuture];
-      }
-      NSArray<NSDictionary<NSString *, id> *> *entries = response[@"EntryList"];
-      return [FBFuture futureWithResult:entries];
-    }];
+           startService:ImageMounterService]
+          onQueue:self.device.asyncQueue
+          pop:^(FBAMDServiceConnection *connection) {
+            NSDictionary<NSString *, id> *request = @{
+              CommandKey : @"CopyDevices",
+            };
+            NSError *error = nil;
+            NSDictionary<NSString *, id> *response = [connection sendAndReceiveMessage:request error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            NSString *errorString = response[@"Error"];
+            if (errorString) {
+              return [[FBDeviceControlError
+                       describeFormat:@"Could not get mounted image info: %@", errorString]
+                      failFuture];
+            }
+            NSArray<NSDictionary<NSString *, id> *> *entries = response[@"EntryList"];
+            return [FBFuture futureWithResult:entries];
+          }];
 }
 
 - (FBFuture<NSDictionary<NSData *, FBDeveloperDiskImage *> *> *)signatureToDiskImageOfMountedDisks
 {
   return [[self
-    mountInfoToDiskImage]
-    onQueue:self.device.asyncQueue map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
-      NSMutableDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage = NSMutableDictionary.dictionary;
-      for (FBDeveloperDiskImage *image in mountInfoToDiskImage.allValues) {
-        signatureToDiskImage[image.signature] = image;
-      }
-      return signatureToDiskImage;
-    }];
+           mountInfoToDiskImage]
+          onQueue:self.device.asyncQueue
+          map:^(NSDictionary<NSDictionary<NSString *, id> *, FBDeveloperDiskImage *> *mountInfoToDiskImage) {
+            NSMutableDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage = NSMutableDictionary.dictionary;
+            for (FBDeveloperDiskImage *image in mountInfoToDiskImage.allValues) {
+              signatureToDiskImage[image.signature] = image;
+            }
+            return signatureToDiskImage;
+          }];
 }
 
 - (FBFuture<FBDeveloperDiskImage *> *)mountDeveloperDiskImage:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
 {
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[self
-    signatureToDiskImageOfMountedDisks]
-    onQueue:self.device.asyncQueue fmap:^ FBFuture<FBDeveloperDiskImage *> * (NSDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage) {
-      if (signatureToDiskImage[diskImage.signature]) {
-        [logger logFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage];
-        return [FBFuture futureWithResult:diskImage];
-      }
-      return [self performDiskImageMount:diskImage imageType:imageType];
-    }];
+           signatureToDiskImageOfMountedDisks]
+          onQueue:self.device.asyncQueue
+          fmap:^FBFuture<FBDeveloperDiskImage *> *(NSDictionary<NSData *, FBDeveloperDiskImage *> *signatureToDiskImage) {
+            if (signatureToDiskImage[diskImage.signature]) {
+              [logger logFormat:@"Disk Image %@ is already mounted, avoiding re-mounting it", diskImage];
+              return [FBFuture futureWithResult:diskImage];
+            }
+            return [self performDiskImageMount:diskImage imageType:imageType];
+          }];
 }
 
 - (FBFuture<FBDeveloperDiskImage *> *)performDiskImageMount:(FBDeveloperDiskImage *)diskImage imageType:(NSString *)imageType
 {
   return [[self.device
-    connectToDeviceWithPurpose:@"mount_disk_image"]
-    onQueue:self.device.asyncQueue pop:^ FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> * (id<FBDeviceCommands> device) {
-      NSDictionary<NSString *, id> *options = @{
-        ImageSignatureKey: diskImage.signature,
-        ImageTypeKey: imageType,
-      };
-      int status = device.calls.MountImage(
-        device.amDeviceRef,
-        (__bridge CFStringRef)(diskImage.diskImagePath),
-        (__bridge CFDictionaryRef)(options),
-        (AMDeviceProgressCallback) MountCallback,
-        (__bridge void *) (device)
-      );
-      if (status == DiskImageMountingError) {
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]
-          failFuture];
-      }
-      else if (status != 0) {
-        NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:diskImage];
-    }];
+           connectToDeviceWithPurpose:@"mount_disk_image"]
+          onQueue:self.device.asyncQueue
+          pop:^FBFuture<NSDictionary<NSString *, NSDictionary<NSString *, id> *> *> *(id<FBDeviceCommands> device) {
+            NSDictionary<NSString *, id> *options = @{
+              ImageSignatureKey : diskImage.signature,
+              ImageTypeKey : imageType,
+            };
+            int status = device.calls.MountImage(
+              device.amDeviceRef,
+              (__bridge CFStringRef)(diskImage.diskImagePath),
+              (__bridge CFDictionaryRef)(options),
+              (AMDeviceProgressCallback) MountCallback,
+              (__bridge void *) (device)
+            );
+            if (status == DiskImageMountingError) {
+              return [[FBDeviceControlError
+                       describeFormat:@"Failed to mount image '%@', this can occur when the wrong disk image is mounted for the target OS, or a disk image of the same type is already mounted.", diskImage]
+                      failFuture];
+            } else if (status != 0) {
+              NSString *internalMessage = CFBridgingRelease(device.calls.CopyErrorText(status));
+              return [[FBDeviceControlError
+                       describeFormat:@"Failed to mount image '%@' with error 0x%x (%@)", diskImage.diskImagePath, status, internalMessage]
+                      failFuture];
+            }
+            return [FBFuture futureWithResult:diskImage];
+          }];
 }
 
 - (FBFuture<NSNull *> *)unmountDiskImageAtPath:(NSString *)mountPath
 {
   return [[self.device
-    startService:ImageMounterService]
-    onQueue:self.device.asyncQueue pop:^ FBFuture<NSNull *> * (FBAMDServiceConnection *connection) {
-      NSDictionary<NSString *, id> *request = @{
-        CommandKey: @"UnmountImage",
-        MountPathKey: mountPath,
-      };
-      NSError *error = nil;
-      NSDictionary<NSString *, id> *response = [connection sendAndReceiveMessage:request error:&error];
-      if (!response) {
-        return [FBFuture futureWithError:error];
-      }
-      return FBFuture.empty;
-    }];
+           startService:ImageMounterService]
+          onQueue:self.device.asyncQueue
+          pop:^FBFuture<NSNull *> *(FBAMDServiceConnection *connection) {
+            NSDictionary<NSString *, id> *request = @{
+              CommandKey : @"UnmountImage",
+              MountPathKey : mountPath,
+            };
+            NSError *error = nil;
+            NSDictionary<NSString *, id> *response = [connection sendAndReceiveMessage:request error:&error];
+            if (!response) {
+              return [FBFuture futureWithError:error];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 @end

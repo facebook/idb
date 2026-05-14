@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Identity used to codesign bundle.
  */
-@property (nonatomic, copy, readonly) NSString *identityName;
+@property (nonatomic, readonly, copy) NSString *identityName;
 
 #pragma mark Public Methods
 

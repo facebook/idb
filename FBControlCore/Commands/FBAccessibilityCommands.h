@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBFuture.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -105,7 +105,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  Default: FBAXKeysDefaultSet() (all standard keys).
  Set to nil to use all default keys.
  */
-@property (nonatomic, copy, nullable) NSSet<NSString *> *keys;
+@property (nullable, nonatomic, copy) NSSet<NSString *> *keys;
 
 /**
  Log accessibility requests and responses to the simulator's logger.
@@ -131,7 +131,7 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
  Remote elements are in separate processes (e.g., WebKit content in Safari) and require
  grid-based hit-testing to discover, which adds ~270ms overhead.
  */
-@property (nonatomic, strong, nullable) FBAccessibilityRemoteContentOptions *remoteContentOptions;
+@property (nullable, nonatomic, strong) FBAccessibilityRemoteContentOptions *remoteContentOptions;
 
 /**
  Creates options with default values.
@@ -149,56 +149,56 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  The number of accessibility elements that were serialized.
  */
-@property (nonatomic, assign, readonly) int64_t elementCount;
+@property (nonatomic, readonly, assign) int64_t elementCount;
 
 /**
  The number of attribute fetches made on accessibility elements.
  Each property access (accessibilityLabel, accessibilityFrame, etc.) counts as one fetch.
  */
-@property (nonatomic, assign, readonly) int64_t attributeFetchCount;
+@property (nonatomic, readonly, assign) int64_t attributeFetchCount;
 
 /**
  The number of XPC calls made to the simulator's accessibility service.
  */
-@property (nonatomic, assign, readonly) int64_t xpcCallCount;
+@property (nonatomic, readonly, assign) int64_t xpcCallCount;
 
 /**
  The time spent in performWithTranslator (getting the translation object).
  */
-@property (nonatomic, assign, readonly) CFAbsoluteTime translationDuration;
+@property (nonatomic, readonly, assign) CFAbsoluteTime translationDuration;
 
 /**
  The time spent converting the translation object to a platform element.
  */
-@property (nonatomic, assign, readonly) CFAbsoluteTime elementConversionDuration;
+@property (nonatomic, readonly, assign) CFAbsoluteTime elementConversionDuration;
 
 /**
  The time spent serializing the accessibility tree.
  */
-@property (nonatomic, assign, readonly) CFAbsoluteTime serializationDuration;
+@property (nonatomic, readonly, assign) CFAbsoluteTime serializationDuration;
 
 /**
  The total time spent in XPC calls.
  */
-@property (nonatomic, assign, readonly) CFAbsoluteTime totalXPCDuration;
+@property (nonatomic, readonly, assign) CFAbsoluteTime totalXPCDuration;
 
 /**
  The set of keys that were fetched during serialization.
  Useful for tests to verify which attributes were actually accessed.
  */
-@property (nonatomic, strong, readonly) NSSet<NSString *> *fetchedKeys;
+@property (nonatomic, readonly, strong) NSSet<NSString *> *fetchedKeys;
 
 /**
  Designated initializer.
  */
 - (instancetype)initWithElementCount:(int64_t)elementCount
-                  attributeFetchCount:(int64_t)attributeFetchCount
-                         xpcCallCount:(int64_t)xpcCallCount
-                  translationDuration:(CFAbsoluteTime)translationDuration
-            elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
+                 attributeFetchCount:(int64_t)attributeFetchCount
+                        xpcCallCount:(int64_t)xpcCallCount
+                 translationDuration:(CFAbsoluteTime)translationDuration
+           elementConversionDuration:(CFAbsoluteTime)elementConversionDuration
                serializationDuration:(CFAbsoluteTime)serializationDuration
-                     totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
-                          fetchedKeys:(NSSet<NSString *> *)fetchedKeys;
+                    totalXPCDuration:(CFAbsoluteTime)totalXPCDuration
+                         fetchedKeys:(NSSet<NSString *> *)fetchedKeys;
 
 /**
  Returns the profiling data as a JSON-serializable dictionary.
@@ -216,26 +216,26 @@ extern NSSet<FBAXKeys> *FBAXKeysDefaultSet(void);
 /**
  The accessibility elements. May be an NSArray (flat/nested) or NSDictionary (single element).
  */
-@property (nonatomic, strong, readonly) id elements;
+@property (nonatomic, readonly, strong) id elements;
 
 /**
  Profiling data collected during the operation, if profiling was enabled.
  */
-@property (nonatomic, strong, readonly, nullable) FBAccessibilityProfilingData *profilingData;
+@property (nullable, nonatomic, readonly, strong) FBAccessibilityProfilingData *profilingData;
 
 /**
  The proportion of the screen covered by accessibility element frames (0.0 - 1.0).
  Nil if coverage calculation was not requested (collectFrameCoverage = NO).
  Low values (e.g., < 0.1) suggest potential remote content like WebViews.
  */
-@property (nonatomic, strong, readonly, nullable) NSNumber *frameCoverage;
+@property (nullable, nonatomic, readonly, strong) NSNumber *frameCoverage;
 
 /**
  Additional coverage discovered via grid-based hit-testing for remote content.
  This is the coverage added by remote elements not found in the main traversal.
  Nil if remote content discovery was not performed or found no additional elements.
  */
-@property (nonatomic, strong, readonly, nullable) NSNumber *additionalFrameCoverage;
+@property (nullable, nonatomic, readonly, strong) NSNumber *additionalFrameCoverage;
 
 /**
  Designated initializer.
@@ -368,7 +368,6 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
                                                                     depth:(NSUInteger)depth;
 
 @end
-
 
 /**
  Commands relating to Accessibility.

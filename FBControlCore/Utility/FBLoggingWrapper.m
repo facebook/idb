@@ -9,11 +9,11 @@
 
 @interface FBLoggingWrapper ()
 
-@property (nonatomic, strong, readonly) id wrappedObject;
-@property (nonatomic, strong, readonly) id<FBEventReporter> eventReporter;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, assign, readonly) BOOL simplifiedNaming;
+@property (nonatomic, readonly, strong) id wrappedObject;
+@property (nonatomic, readonly, strong) id<FBEventReporter> eventReporter;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, assign) BOOL simplifiedNaming;
 
 @end
 
@@ -74,7 +74,7 @@
   // Extract the first method argument and retain it, if it exists
   id firstMethodArgument = nil;
   if (invocation.methodSignature.numberOfArguments > 2 && strcmp([invocation.methodSignature getArgumentTypeAtIndex:2], "@") == 0) {
-      __unsafe_unretained id argument = nil;
+    __unsafe_unretained id argument = nil;
     [invocation getArgument:&argument atIndex:2];
     firstMethodArgument = argument;
   }
@@ -87,10 +87,16 @@
 
   // Log the end of the call when the future resolves.
   if ([future isKindOfClass:FBFuture.class]) {
-    [future onQueue:self.queue notifyOfCompletion:^(FBFuture *completedFuture) {
-      FBEventReporterSubject *afterSubject = [self.class subjectAfterCompletion:completedFuture methodName:methodName descriptionOfArguments:descriptionOfArguments startDate:startDate firstMethodArgument:firstMethodArgument logger:self.logger];
-      [self.eventReporter report:afterSubject];
-    }];
+    [future onQueue:self.queue
+     notifyOfCompletion:^(FBFuture *completedFuture) {
+       FBEventReporterSubject *afterSubject = [self.class subjectAfterCompletion:completedFuture
+                                                                      methodName:methodName
+                                                          descriptionOfArguments:descriptionOfArguments
+                                                                       startDate:startDate
+                                                             firstMethodArgument:firstMethodArgument
+                                                                          logger:self.logger];
+       [self.eventReporter report:afterSubject];
+     }];
   }
 }
 
@@ -150,81 +156,81 @@
   }
   const char typeChar = *typeString;
   switch (typeChar) {
-      case 'c': {
-          char argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%c", argument];
-      }
-      case 'i': {
-          int argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%d", argument];
-      }
-      case 's': {
-          short argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%d", argument];
-      }
-      case 'l': {
-          long argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%ld", argument];
-      }
-      case 'q': {
-          long long argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%lld", argument];
-      }
-      case 'C': {
-          unsigned char argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%c", argument];
-      }
-      case 'I': {
-          unsigned int argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%d", argument];
-      }
-      case 'S': {
-          unsigned short argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%d", argument];
-      }
-      case 'L': {
-          unsigned long argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%ld", argument];
-      }
-      case 'Q': {
-          unsigned long long argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%lld", argument];
-      }
-      case 'f': {
-          float argument = 0.0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%f", argument];
-      }
-      case 'd': {
-          double argument = 0.0;
-          [invocation getArgument:&argument atIndex:index];
-          return [NSString stringWithFormat:@"%f", argument];
-      }
-      case 'v':
-          return @"void";
-      case 'B': {
-          BOOL argument = 0;
-          [invocation getArgument:&argument atIndex:index];
-          return argument ? @"YES" : @"NO";
-      }
-      case '@': {
-          __unsafe_unretained id argument = nil;
-          [invocation getArgument:&argument atIndex:index];
-          return [self descriptionForObject:argument];
-      }
-      default:
-          // Handle unknown type
-          return @"Unrecognised type";
+    case 'c': {
+      char argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%c", argument];
+    }
+    case 'i': {
+      int argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%d", argument];
+    }
+    case 's': {
+      short argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%d", argument];
+    }
+    case 'l': {
+      long argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%ld", argument];
+    }
+    case 'q': {
+      long long argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%lld", argument];
+    }
+    case 'C': {
+      unsigned char argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%c", argument];
+    }
+    case 'I': {
+      unsigned int argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%d", argument];
+    }
+    case 'S': {
+      unsigned short argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%d", argument];
+    }
+    case 'L': {
+      unsigned long argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%ld", argument];
+    }
+    case 'Q': {
+      unsigned long long argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%lld", argument];
+    }
+    case 'f': {
+      float argument = 0.0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%f", argument];
+    }
+    case 'd': {
+      double argument = 0.0;
+      [invocation getArgument:&argument atIndex:index];
+      return [NSString stringWithFormat:@"%f", argument];
+    }
+    case 'v':
+      return @"void";
+    case 'B': {
+      BOOL argument = 0;
+      [invocation getArgument:&argument atIndex:index];
+      return argument ? @"YES" : @"NO";
+    }
+    case '@': {
+      __unsafe_unretained id argument = nil;
+      [invocation getArgument:&argument atIndex:index];
+      return [self descriptionForObject:argument];
+    }
+    default:
+      // Handle unknown type
+      return @"Unrecognised type";
   }
 }
 
@@ -247,7 +253,7 @@
     return [self implodeDescription:(NSSet<id> *)object prefix:@"NSSet"];
   }
   if ([object isKindOfClass:NSDictionary.class]) {
-    NSDictionary<id, id> *dict = (NSDictionary<id, id> *)object;
+    NSDictionary<id, id> *dict = (NSDictionary<id, id> *) object;
     NSMutableString *description = NSMutableString.string;
     [description appendString:@"NSDictionary{"];
     for (NSObject *key in dict) {

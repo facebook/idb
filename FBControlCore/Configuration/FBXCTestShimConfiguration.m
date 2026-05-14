@@ -29,16 +29,16 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 + (NSDictionary<NSString *, NSString *> *)canonicalShimNameToShimFilenames
 {
   return @{
-    KeySimulatorTestShim: shimulatorFileName,
-    KeyMacTestShim: maculatorShimFileName,
+    KeySimulatorTestShim : shimulatorFileName,
+    KeyMacTestShim : maculatorShimFileName,
   };
 }
 
 + (NSDictionary<NSString *, NSNumber *> *)canonicalShimNameToCodesigningRequired
 {
   return @{
-    KeySimulatorTestShim: @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid),
-    KeyMacTestShim: @NO,
+    KeySimulatorTestShim : @(FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid),
+    KeyMacTestShim : @NO,
   };
 }
 
@@ -51,69 +51,71 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   NSString *shimPath = [directory stringByAppendingPathComponent:filename];
   if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
     return [[FBControlCoreError
-      describeFormat:@"No shim located at expected location of %@", shimPath]
-      failFuture];
+             describeFormat:@"No shim located at expected location of %@", shimPath]
+            failFuture];
   }
   if (!signingRequired) {
     return [FBFuture futureWithResult:shimPath];
   }
   return [[[codesign
-    cdHashForBundleAtPath:shimPath]
-    rephraseFailure:@"Shim at path %@ was required to be signed, but it was not", shimPath]
-    mapReplace:shimPath];
+            cdHashForBundleAtPath:shimPath]
+           rephraseFailure:@"Shim at path %@ was required to be signed, but it was not", shimPath]
+          mapReplace:shimPath];
 }
 
 + (FBFuture<NSString *> *)findShimDirectoryOnQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   return [FBFuture
-    onQueue:queue resolve:^ FBFuture<NSString *> * {
-      NSMutableArray<NSString *> *searchPaths = NSMutableArray.array;
-      NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride];
-      if (environmentDefinedDirectory) {
-        [searchPaths addObject:environmentDefinedDirectory];
-      } else {
-        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
-        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
-        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
-        [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
-        [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
-      }
-
-      NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
-      for (NSString *path in searchPaths) {
-        [futures addObject:[[self confirmExistenceOfRequiredShimsInDirectory:path logger:logger] fallback:@""]];
-      }
-      return [[FBFuture
-        futureWithFutures:futures]
-        onQueue:queue fmap:^(NSArray<NSString *> *paths) {
-          for (NSString *path in paths) {
-            if (path.length == 0) {
-              continue;
+          onQueue:queue
+          resolve:^FBFuture<NSString *> * {
+            NSMutableArray<NSString *> *searchPaths = NSMutableArray.array;
+            NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[FBXCTestShimDirectoryEnvironmentOverride];
+            if (environmentDefinedDirectory) {
+              [searchPaths addObject:environmentDefinedDirectory];
+            } else {
+              [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"]];
+              [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"bin"]];
+              [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb"]];
+              [searchPaths addObject:[self.fbxctestInstallationRoot stringByAppendingPathComponent:@"idb/bin"]];
+              [searchPaths addObject:[NSBundle bundleForClass:self].resourcePath];
             }
-            return [FBFuture futureWithResult:path];
-          }
-          NSArray<NSString *> *shimNames = self.canonicalShimNameToShimFilenames.allValues;
-          return [[FBControlCoreError
-            describeFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
-            failFuture];
-        }];
-    }];
+
+            NSMutableArray<FBFuture<NSString *> *> *futures = NSMutableArray.array;
+            for (NSString *path in searchPaths) {
+              [futures addObject:[[self confirmExistenceOfRequiredShimsInDirectory:path logger:logger] fallback:@""]];
+            }
+            return [[FBFuture
+                     futureWithFutures:futures]
+                    onQueue:queue
+                    fmap:^(NSArray<NSString *> *paths) {
+                      for (NSString *path in paths) {
+                        if (path.length == 0) {
+                          continue;
+                        }
+                        return [FBFuture futureWithResult:path];
+                      }
+                      NSArray<NSString *> *shimNames = self.canonicalShimNameToShimFilenames.allValues;
+                      return [[FBControlCoreError
+                               describeFormat:@"Could not find all shims %@ in any of the expected directories %@", [FBCollectionInformation oneLineDescriptionFromArray:shimNames], [FBCollectionInformation oneLineDescriptionFromArray:searchPaths]]
+                              failFuture];
+                    }];
+          }];
 }
 
 + (FBFuture<NSString *> *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
     return [[FBControlCoreError
-      describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
-      failFuture];
+             describeFormat:@"A shim directory was searched for at '%@', but it was not there", directory]
+            failFuture];
   }
   NSMutableArray<FBFuture<NSString *> *> *futures = [NSMutableArray array];
   for (NSString *canonicalName in self.canonicalShimNameToShimFilenames.allKeys) {
     [futures addObject:[self pathForCanonicallyNamedShim:canonicalName inDirectory:directory logger:logger]];
   }
   return [[FBFuture
-    futureWithFutures:futures]
-    mapReplace:directory];
+           futureWithFutures:futures]
+          mapReplace:directory];
 }
 
 + (FBFuture<FBXCTestShimConfiguration *> *)sharedShimConfigurationWithLogger:(id<FBControlCoreLogger>)logger
@@ -130,26 +132,31 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 {
   dispatch_queue_t queue = self.createWorkQueue;
   return [[self
-    findShimDirectoryOnQueue:queue logger:logger]
-    onQueue:queue fmap:^(NSString *directory) {
-      return [self shimConfigurationWithDirectory:directory logger:logger];
-    }];
+           findShimDirectoryOnQueue:queue
+           logger:logger]
+          onQueue:queue
+          fmap:^(NSString *directory) {
+            return [self shimConfigurationWithDirectory:directory logger:logger];
+          }];
 }
 
 + (FBFuture<FBXCTestShimConfiguration *> *)shimConfigurationWithDirectory:(NSString *)directory logger:(id<FBControlCoreLogger>)logger
 {
   dispatch_queue_t queue = self.createWorkQueue;
   return [[[self
-    confirmExistenceOfRequiredShimsInDirectory:directory logger:logger]
-    onQueue:queue fmap:^(NSString *shimDirectory) {
-      return [FBFuture futureWithFutures:@[
-        [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory logger:logger],
-        [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory logger:logger],
-      ]];
-    }]
-    onQueue:queue map:^(NSArray<NSString *> *shims) {
-      return [[self alloc] initWithiOSSimulatorTestShimPath:shims[0] macOSTestShimPath:shims[1]];
-    }];
+            confirmExistenceOfRequiredShimsInDirectory:directory
+            logger:logger]
+           onQueue:queue
+           fmap:^(NSString *shimDirectory) {
+             return [FBFuture futureWithFutures:@[
+               [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory logger:logger],
+               [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory logger:logger],
+                     ]];
+           }]
+          onQueue:queue
+          map:^(NSArray<NSString *> *shims) {
+            return [[self alloc] initWithiOSSimulatorTestShimPath:shims[0] macOSTestShimPath:shims[1]];
+          }];
 }
 
 + (NSString *)fbxctestInstallationRoot
@@ -160,8 +167,8 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
   }
   executablePath = [executablePath stringByStandardizingPath];
   NSString *path = [[executablePath
-    stringByDeletingLastPathComponent]
-    stringByDeletingLastPathComponent];
+                     stringByDeletingLastPathComponent]
+                    stringByDeletingLastPathComponent];
   return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
@@ -196,7 +203,7 @@ static NSString *const maculatorShimFileName = @"libMaculator.dylib";
     return NO;
   }
   return [self.iOSSimulatorTestShimPath isEqualToString:object.iOSSimulatorTestShimPath]
-      && [self.macOSTestShimPath isEqualToString:object.macOSTestShimPath];
+  && [self.macOSTestShimPath isEqualToString:object.macOSTestShimPath];
 }
 
 - (NSUInteger)hash

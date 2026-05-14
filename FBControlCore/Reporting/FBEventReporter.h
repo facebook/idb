@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Gets the total metadata.
  */
-@property (nonatomic, strong, readonly) NSDictionary<NSString *, NSString *> *metadata;
+@property (nonatomic, readonly, strong) NSDictionary<NSString *, NSString *> *metadata;
 
 @end
 

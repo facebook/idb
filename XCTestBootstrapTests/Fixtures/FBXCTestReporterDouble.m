@@ -9,13 +9,13 @@
 
 @interface FBXCTestReporterDouble ()
 
-@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *mutableStartedSuites;
-@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *mutableEndedSuites;
-@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
-@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
-@property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
-@property (nonatomic, strong, readonly) NSMutableArray<NSDictionary *> *mutableExternalEvents;
-@property (nonatomic, assign, readwrite) BOOL printReportWasCalled;
+@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *mutableStartedSuites;
+@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *mutableEndedSuites;
+@property (nonatomic, readonly, strong) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
+@property (nonatomic, readonly, strong) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
+@property (nonatomic, readonly, strong) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
+@property (nonatomic, readonly, strong) NSMutableArray<NSDictionary *> *mutableExternalEvents;
+@property (nonatomic, readwrite, assign) BOOL printReportWasCalled;
 
 @end
 
@@ -66,9 +66,7 @@
 #pragma mark Stubbed Methods
 
 - (void)didBeginExecutingTestPlan
-{
-
-}
+{}
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
@@ -81,39 +79,25 @@
 }
 
 - (void)didFinishExecutingTestPlan
-{
-
-}
+{}
 
 - (void)testHadOutput:(NSString *)output
-{
-
-}
+{}
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
-{
-
-}
+{}
 
 - (void)didRecordVideoAtPath:(nonnull NSString *)videoRecordingPath
-{
-
-}
+{}
 
 - (void)didSaveOSLogAtPath:(nonnull NSString *)osLogPath
-{
-
-}
+{}
 
 - (void)didCopiedTestArtifact:(nonnull NSString *)testArtifactFilename toPath:(nonnull NSString *)path
-{
-
-}
+{}
 
 - (void)processUnderTestDidExit
-{
-
-}
+{}
 
 - (void)testCaseDidFinishForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration logs:(nullable NSArray<NSString *> *)logs
 {
@@ -132,14 +116,10 @@
 }
 
 - (void)didCrashDuringTest:(NSError *)error
-{
-  
-}
+{}
 
-- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions {
-  
-}
-
+- (void)testCaseDidFailForTestClass:(nonnull NSString *)testClass method:(nonnull NSString *)method exceptions:(nonnull NSArray<FBExceptionInfo *> *)exceptions
+{}
 
 #pragma mark Accessors
 
@@ -170,7 +150,7 @@
 
 - (NSArray<NSDictionary *> *)eventsWithName:(NSString *)name
 {
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (NSDictionary<NSString *, id> *event, id _) {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL (NSDictionary<NSString *, id> *event, id _) {
     return [event[@"event"] isEqualToString:name];
   }];
   return [self.mutableExternalEvents filteredArrayUsingPredicate:predicate];

@@ -19,32 +19,32 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Result Bundle Path (if any)
  */
-@property (nonatomic, copy, nullable, readonly) NSString *resultBundlePath;
+@property (nullable, nonatomic, readonly, copy) NSString *resultBundlePath;
 
 /**
  Coverage directory path
  */
-@property (nonatomic, retain, nullable, readonly) FBCodeCoverageConfiguration *coverageConfiguration;
+@property (nullable, nonatomic, readonly, retain) FBCodeCoverageConfiguration *coverageConfiguration;
 
 /**
  Log directory path
  */
-@property (nonatomic, copy, nullable, readonly) NSString *logDirectoryPath;
+@property (nullable, nonatomic, readonly, copy) NSString *logDirectoryPath;
 
 /**
  App binary path
  */
-@property (nonatomic, copy, nullable, readonly) NSArray<NSString *> *binariesPaths;
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *binariesPaths;
 
 /**
  Whether to report attachments or not.
  */
-@property (nonatomic, assign, readonly) BOOL reportAttachments;
+@property (nonatomic, readonly, assign) BOOL reportAttachments;
 
 /**
  Whether to report return result bundle or not.
  */
-@property (nonatomic, assign, readonly) BOOL reportResultBundle;
+@property (nonatomic, readonly, assign) BOOL reportResultBundle;
 
 - (instancetype)initWithResultBundlePath:(nullable NSString *)resultBundlePath coverageConfiguration:(nullable FBCodeCoverageConfiguration *)coverageConfiguration logDirectoryPath:(nullable NSString *)logDirectoryPath binariesPaths:(nullable NSArray<NSString *> *)binariesPaths reportAttachments:(BOOL)reportAttachments reportResultBundle:(BOOL)reportResultBundle;
 

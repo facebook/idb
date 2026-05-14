@@ -5,15 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <CoreSimulator/SimDevice.h>
 #import "FBSimulatorLocationCommands.h"
+
+#import <CoreSimulator/SimDevice.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
 
 @interface FBSimulatorLocationCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -43,22 +44,24 @@
 - (FBFuture<NSNull *> *)overrideLocationWithLongitude:(double)longitude latitude:(double)latitude
 {
   if ([self.simulator.device respondsToSelector:(@selector(setLocationWithLatitude:andLongitude:error:))]) {
-    return [FBFuture onQueue:self.simulator.workQueue resolve:^ FBFuture<NSNull *> * () {
-      NSError *error = nil;
-      BOOL succeeded = [self.simulator.device setLocationWithLatitude:latitude andLongitude:longitude error:&error];
-      if (!succeeded) {
-        return [FBFuture futureWithError:error];
-      }
-      
-      return FBFuture.empty;
-    }];
+    return [FBFuture onQueue:self.simulator.workQueue
+                     resolve:^FBFuture<NSNull *> *() {
+                       NSError *error = nil;
+                       BOOL succeeded = [self.simulator.device setLocationWithLatitude:latitude andLongitude:longitude error:&error];
+                       if (!succeeded) {
+                         return [FBFuture futureWithError:error];
+                       }
+
+                       return FBFuture.empty;
+                     }];
   }
-  
+
   return [[self.simulator
-    connectToBridge]
-    onQueue:self.simulator.workQueue fmap:^ FBFuture<NSNull *> * (FBSimulatorBridge *bridge) {
-      return [bridge setLocationWithLatitude:latitude longitude:longitude];
-    }];
+           connectToBridge]
+          onQueue:self.simulator.workQueue
+          fmap:^FBFuture<NSNull *> *(FBSimulatorBridge *bridge) {
+            return [bridge setLocationWithLatitude:latitude longitude:longitude];
+          }];
 }
 
 @end

@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBiOSTarget.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -52,12 +53,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Delegate of the Target Set.
  Used to report updates out.
  */
-@property (nonatomic, weak, readwrite) id<FBiOSTargetSetDelegate> delegate;
+@property (nonatomic, readwrite, weak) id<FBiOSTargetSetDelegate> delegate;
 
 /**
  Obtains all current targets infos within a set.
  */
-@property (nonatomic, copy, readonly) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
+@property (nonatomic, readonly, copy) NSArray<id<FBiOSTargetInfo>> *allTargetInfos;
 
 /**
  Fetches a Target with by a UDID.

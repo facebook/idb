@@ -21,17 +21,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The attachment for stdin.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessStreamAttachment *stdIn;
+@property (nullable, nonatomic, readonly, strong) FBProcessStreamAttachment *stdIn;
 
 /**
  The attachment for stdout.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessStreamAttachment *stdOut;
+@property (nullable, nonatomic, readonly, strong) FBProcessStreamAttachment *stdOut;
 
 /**
  The attachment for stderr.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessStreamAttachment *stdErr;
+@property (nullable, nonatomic, readonly, strong) FBProcessStreamAttachment *stdErr;
 
 /**
  Detach from all the streams.
@@ -49,12 +49,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The attachment for stdout.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdOut;
+@property (nullable, nonatomic, readonly, strong) id<FBProcessFileOutput> stdOut;
 
 /**
  The attachment for stderr.
  */
-@property (nonatomic, strong, nullable, readonly) id<FBProcessFileOutput> stdErr;
+@property (nullable, nonatomic, readonly, strong) id<FBProcessFileOutput> stdErr;
 
 /**
  Detach from all the streams.
@@ -91,22 +91,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBProcessInput for stdin.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessInput<StdInType> *stdIn;
+@property (nullable, nonatomic, readonly, strong) FBProcessInput<StdInType> *stdIn;
 
 /**
 The FBProcessOutput for stdout.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput<StdOutType> *stdOut;
+@property (nullable, nonatomic, readonly, strong) FBProcessOutput<StdOutType> *stdOut;
 
 /**
  The FBProcessOutput for stderr.
  */
-@property (nonatomic, strong, nullable, readonly) FBProcessOutput<StdErrType> *stdErr;
+@property (nullable, nonatomic, readonly, strong) FBProcessOutput<StdErrType> *stdErr;
 
 /**
  The queue to use.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 #pragma mark Methods
 

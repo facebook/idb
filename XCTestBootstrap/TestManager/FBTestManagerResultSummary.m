@@ -20,13 +20,13 @@
   NSParameterAssert(totalDuration);
 
   return [[FBTestManagerResultSummary alloc]
-    initWithTestSuite:testSuite
-    finishTime:[[self dateFormatter] dateFromString:finishTime]
-    runCount:runCount.integerValue
-    failureCount:failuresCount.integerValue
-    unexpected:unexpectedFailureCount.integerValue
-    testDuration:testDuration.doubleValue
-    totalDuration:totalDuration.doubleValue];
+          initWithTestSuite:testSuite
+          finishTime:[[self dateFormatter] dateFromString:finishTime]
+          runCount:runCount.integerValue
+          failureCount:failuresCount.integerValue
+          unexpected:unexpectedFailureCount.integerValue
+          testDuration:testDuration.doubleValue
+          totalDuration:totalDuration.doubleValue];
 }
 
 - (instancetype)initWithTestSuite:(NSString *)testSuite finishTime:(NSDate *)finishTime runCount:(NSInteger)runCount failureCount:(NSInteger)failureCount unexpected:(NSInteger)unexpected testDuration:(NSTimeInterval)testDuration totalDuration:(NSTimeInterval)totalDuration
@@ -50,14 +50,14 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Suite %@ | Finish Time %@ | Run Count %lu | Failures %lu | Unexpected %lu | Test Duration %f | Total Duration %f",
-    self.testSuite,
-    self.finishTime,
-    self.runCount,
-    self.failureCount,
-    self.unexpected,
-    self.testDuration,
-    self.totalDuration
+          @"Suite %@ | Finish Time %@ | Run Count %lu | Failures %lu | Unexpected %lu | Test Duration %f | Total Duration %f",
+          self.testSuite,
+          self.finishTime,
+          self.runCount,
+          self.failureCount,
+          self.unexpected,
+          self.testDuration,
+          self.totalDuration
   ];
 }
 
@@ -71,13 +71,13 @@
     return YES;
   }
 
-  return (self.runCount == object.runCount &&
-          self.failureCount == object.failureCount &&
-          self.unexpected == object.unexpected &&
-          self.testDuration == object.testDuration &&
-          self.totalDuration == object.totalDuration &&
-          [self.testSuite isEqualToString:object.testSuite] &&
-          [self.finishTime isEqualToDate:object.finishTime]);
+  return (self.runCount == object.runCount
+    && self.failureCount == object.failureCount
+    && self.unexpected == object.unexpected
+    && self.testDuration == object.testDuration
+    && self.totalDuration == object.totalDuration
+    && [self.testSuite isEqualToString:object.testSuite]
+    && [self.finishTime isEqualToDate:object.finishTime]);
 }
 
 + (FBTestReportStatus)statusForStatusString:(NSString *)statusString
@@ -93,13 +93,13 @@
 + (NSString *)statusStringForStatus:(FBTestReportStatus)status
 {
   switch (status) {
-  case FBTestReportStatusPassed:
-    return @"Passed";
-  case FBTestReportStatusFailed:
-    return @"Failed";
-  case FBTestReportStatusUnknown:
-  default:
-    return @"Unknown";
+    case FBTestReportStatusPassed:
+      return @"Passed";
+    case FBTestReportStatusFailed:
+      return @"Failed";
+    case FBTestReportStatusUnknown:
+    default:
+      return @"Unknown";
   }
 }
 
@@ -111,6 +111,5 @@
   dateFormatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
   return dateFormatter;
 }
-
 
 @end

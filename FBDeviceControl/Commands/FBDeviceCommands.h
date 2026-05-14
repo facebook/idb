@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/FBAMDefines.h>
 
@@ -58,44 +59,44 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
 /**
  The AMDevice Calls to use.
  */
-@property (nonatomic, assign, readonly) AMDCalls calls;
+@property (nonatomic, readonly, assign) AMDCalls calls;
 
 /**
  The underlying AMDeviceRef.
  This may be NULL.
  */
-@property (nonatomic, nullable, assign, readonly) AMDeviceRef amDeviceRef;
+@property (nullable, nonatomic, readonly, assign) AMDeviceRef amDeviceRef;
 
 /**
  The underlying AMRecoveryModeDeviceRef if in recovery.
  This may be NULL.
  */
-@property (nonatomic, nullable, assign, readonly) AMRecoveryModeDeviceRef recoveryModeDeviceRef;
+@property (nullable, nonatomic, readonly, assign) AMRecoveryModeDeviceRef recoveryModeDeviceRef;
 
 /**
  The Device's Logger.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The Device's 'Product Version'.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *productVersion;
+@property (nullable, nonatomic, readonly, copy) NSString *productVersion;
 
 /**
  The Device's 'Build Version'.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *buildVersion;
+@property (nullable, nonatomic, readonly, copy) NSString *buildVersion;
 
 /**
  The Device's 'Activation State'.
  */
-@property (nonatomic, assign, readonly) FBDeviceActivationState activationState;
+@property (nonatomic, readonly, assign) FBDeviceActivationState activationState;
 
 /**
  All of the Device Values available.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *allValues;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, id> *allValues;
 
 @end
 
@@ -110,7 +111,7 @@ extern FBDeviceActivationState FBDeviceActivationStateCoerceFromString(NSString 
  @param format the purpose of the connection
  @return a connection wrapped in an async context.
  */
-- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
  Starts a Service on the AMDevice.

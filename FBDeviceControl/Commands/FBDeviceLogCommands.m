@@ -7,17 +7,17 @@
 
 #import "FBDeviceLogCommands.h"
 
+#import "FBAMDServiceConnection.h"
 #import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
-#import "FBAMDServiceConnection.h"
 
 #pragma mark Protocol Adaptor
 
 @interface FBDeviceLogOperation : NSObject <FBLogOperation>
 
-@property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) FBFuture<NSNull *> *readCompleted;
-@property (nonatomic, strong, readonly) FBMutableFuture<NSNull *> *serviceCompleted;
+@property (nonatomic, readonly, strong) FBFileReader *reader;
+@property (nonatomic, readonly, strong) FBFuture<NSNull *> *readCompleted;
+@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *serviceCompleted;
 
 @end
 
@@ -48,9 +48,9 @@
 
 #pragma mark FBDeviceLogCommands Implementation
 
-@interface FBDeviceLogCommands()
+@interface FBDeviceLogCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -87,15 +87,17 @@
   dispatch_queue_t queue = self.device.asyncQueue;
   dispatch_queue_t readQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.device_log_consumer", DISPATCH_QUEUE_SERIAL);
   return [[[self.device
-    startService:@"com.apple.syslog_relay"]
-    onQueue:queue pend:^(FBAMDServiceConnection *connection) {
-      id<FBFileReader> reader = [connection readFromConnectionWritingToConsumer:consumer onQueue:readQueue];
-      return [[reader startReading] mapReplace:reader];
-    }]
-    onQueue:queue enter:^(id<FBFileReader> reader, FBMutableFuture<NSNull *> *teardown) {
-      FBFuture<NSNull *> *readCompleted = [[reader finishedReading] mapReplace:NSNull.null];
-      return [[FBDeviceLogOperation alloc] initWithConsumer:consumer readCompleted:readCompleted serviceCompleted:teardown];
-    }];
+            startService:@"com.apple.syslog_relay"]
+           onQueue:queue
+           pend:^(FBAMDServiceConnection *connection) {
+             id<FBFileReader> reader = [connection readFromConnectionWritingToConsumer:consumer onQueue:readQueue];
+             return [[reader startReading] mapReplace:reader];
+           }]
+          onQueue:queue
+          enter:^(id<FBFileReader> reader, FBMutableFuture<NSNull *> *teardown) {
+            FBFuture<NSNull *> *readCompleted = [[reader finishedReading] mapReplace:NSNull.null];
+            return [[FBDeviceLogOperation alloc] initWithConsumer:consumer readCompleted:readCompleted serviceCompleted:teardown];
+          }];
 }
 
 @end

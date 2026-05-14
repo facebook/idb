@@ -12,13 +12,13 @@
 
 @interface SimDeviceIOLoadedBundle : NSObject
 {
-    NSBundle *_bundle;
-    id<SimDeviceIOBundleInterface> _bundleInterface;
+  NSBundle *_bundle;
+  id<SimDeviceIOBundleInterface> _bundleInterface;
 }
 
 + (id)loadedBundleForURL:(id)arg1;
-@property (retain, nonatomic) id<SimDeviceIOBundleInterface> bundleInterface;
-@property (retain, nonatomic) NSBundle *bundle;
+@property (nonatomic, retain) id<SimDeviceIOBundleInterface> bundleInterface;
+@property (nonatomic, retain) NSBundle *bundle;
 
 - (id)initWithURL:(id)arg1;
 

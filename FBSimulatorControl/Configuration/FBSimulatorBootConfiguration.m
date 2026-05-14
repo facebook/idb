@@ -53,10 +53,10 @@
     return NO;
   }
 
-  return self.options == configuration.options &&
-    (self.environment == configuration.environment || [self.environment isEqualToDictionary:configuration.environment]);
+  return self.options == configuration.options
+  && (self.environment == configuration.environment || [self.environment isEqualToDictionary:configuration.environment]);
 }
-  
+
 - (NSUInteger)hash
 {
   return self.options ^ self.environment.hash;
@@ -65,9 +65,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Boot Environment %@ | Options %@",
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]]
+          @"Boot Environment %@ | Options %@",
+          [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
+          [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]]
   ];
 }
 

@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param signature Signature of the mounted image.
  @return the path of the disk image.
  */
-+ (FBDeveloperDiskImage *) unknownDiskImageWithSignature:(NSData *)signature;
++ (FBDeveloperDiskImage *)unknownDiskImageWithSignature:(NSData *)signature;
 
 /**
  Finds the Disk Image for the given device, if one can be found.
@@ -46,22 +46,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The path of the disk image.
  */
-@property (nonatomic, copy, readonly) NSString *diskImagePath;
+@property (nonatomic, readonly, copy) NSString *diskImagePath;
 
 /**
  The path of the signature.
  */
-@property (nonatomic, copy, readonly) NSData *signature;
+@property (nonatomic, readonly, copy) NSData *signature;
 
 /**
  The OS Version that the Disk Image is intended for.
  */
-@property (nonatomic, assign, readonly) NSOperatingSystemVersion version;
+@property (nonatomic, readonly, assign) NSOperatingSystemVersion version;
 
 /**
  The Xcode version associated with the disk image.
  */
-@property (nonatomic, assign, readonly) NSOperatingSystemVersion xcodeVersion;
+@property (nonatomic, readonly, assign) NSOperatingSystemVersion xcodeVersion;
 
 #pragma mark Public
 

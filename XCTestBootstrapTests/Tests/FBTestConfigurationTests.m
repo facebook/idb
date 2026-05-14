@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTest/XCTest.h>
-
 #import <objc/runtime.h>
 
+#import <XCTest/XCTest.h>
+
 #import <XCTestBootstrap/XCTestBootstrap.h>
-#import <XCTestPrivate/XCTestConfiguration.h>
 #import <XCTestPrivate/XCTCapabilities.h>
+#import <XCTestPrivate/XCTestConfiguration.h>
 
 @interface FBTestConfigurationTests : XCTestCase
 
@@ -21,15 +21,15 @@
 
 - (void)testSimpleConstructor
 {
-  XCTestConfiguration * xcTestConfig = [objc_lookUpClass("XCTestConfiguration") new];
+  XCTestConfiguration *xcTestConfig = [objc_lookUpClass("XCTestConfiguration") new];
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
   FBTestConfiguration *testConfiguration = [FBTestConfiguration
-    configurationWithSessionIdentifier:sessionIdentifier
-    moduleName:@"Franek"
-    testBundlePath:@"BundlePath"
-    path:@"ConfigPath"
-    uiTesting:YES
-    xcTestConfiguration:xcTestConfig];
+                                            configurationWithSessionIdentifier:sessionIdentifier
+                                            moduleName:@"Franek"
+                                            testBundlePath:@"BundlePath"
+                                            path:@"ConfigPath"
+                                            uiTesting:YES
+                                            xcTestConfiguration:xcTestConfig];
 
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier);
@@ -38,7 +38,6 @@
   XCTAssertEqual(testConfiguration.path, @"ConfigPath");
   XCTAssertTrue(testConfiguration.shouldInitializeForUITesting);
   XCTAssertEqual(testConfiguration.xcTestConfiguration, xcTestConfig);
-    
 }
 
 - (void)testSaveAs
@@ -48,18 +47,18 @@
   NSString *someRandomPath = NSTemporaryDirectory();
 
   FBTestConfiguration *testConfiguration = [FBTestConfiguration
-    configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
-    moduleName:@"ModuleName"
-    testBundlePath:someRandomPath
-    uiTesting:YES
-    testsToRun:[NSSet set]
-    testsToSkip:[NSSet set]
-    targetApplicationPath:@"targetAppPath"
-    targetApplicationBundleID:@"targetBundleID"
-    testApplicationDependencies: nil
-    automationFrameworkPath:nil
-    reportActivities:NO
-    error:&error];
+                                            configurationByWritingToFileWithSessionIdentifier:sessionIdentifier
+                                            moduleName:@"ModuleName"
+                                            testBundlePath:someRandomPath
+                                            uiTesting:YES
+                                            testsToRun:[NSSet set]
+                                            testsToSkip:[NSSet set]
+                                            targetApplicationPath:@"targetAppPath"
+                                            targetApplicationBundleID:@"targetBundleID"
+                                            testApplicationDependencies:nil
+                                            automationFrameworkPath:nil
+                                            reportActivities:NO
+                                            error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(testConfiguration);
@@ -75,8 +74,8 @@
   XCTAssertEqual(xcTestConfig.targetApplicationBundleID, @"targetBundleID");
   XCTAssertEqual(xcTestConfig.reportActivities, NO);
   XCTAssertEqual(xcTestConfig.reportResultsToIDE, YES);
-  
-  NSDictionary *capabilities = @{@"XCTIssue capability": @1, @"ubiquitous test identifiers": @1};
+
+  NSDictionary *capabilities = @{@"XCTIssue capability" : @1, @"ubiquitous test identifiers" : @1};
   XCTAssertEqualObjects(xcTestConfig.IDECapabilities.capabilitiesDictionary, capabilities);
 }
 

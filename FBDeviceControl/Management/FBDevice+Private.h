@@ -17,9 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBDevice ()
 
-@property (nonatomic, strong, nullable, readwrite) FBAMDevice *amDevice;
-@property (nonatomic, strong, nullable, readwrite) FBAMRestorableDevice *restorableDevice;
-@property (nonatomic, strong, readonly) FBiOSTargetCommandForwarder *forwarder;
+@property (nullable, nonatomic, readwrite, strong) FBAMDevice *amDevice;
+@property (nullable, nonatomic, readwrite, strong) FBAMRestorableDevice *restorableDevice;
+@property (nonatomic, readonly, strong) FBiOSTargetCommandForwarder *forwarder;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(nullable FBAMDevice *)amDevice restorableDevice:(nullable FBAMRestorableDevice *)restorableDevice logger:(id<FBControlCoreLogger>)logger;
 

@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The commands to execute within lldb to start a debug server.
  */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *lldbBootstrapCommands;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *lldbBootstrapCommands;
 
 @end
 

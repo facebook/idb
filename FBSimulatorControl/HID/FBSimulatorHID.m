@@ -7,26 +7,23 @@
 
 #import "FBSimulatorHID.h"
 
+#import <mach/mach.h>
+#import <mach/mach_time.h>
 #import <objc/runtime.h>
-
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceType.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceType.h>
 #import <SimulatorApp/Indigo.h>
-
 #import <SimulatorKit/SimDeviceLegacyClient.h>
-
-#import <mach/mach.h>
-#import <mach/mach_time.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorHID ()
 
-@property (nonatomic, strong, readonly) SimDeviceLegacyClient *client;
+@property (nonatomic, readonly, strong) SimDeviceLegacyClient *client;
 
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo client:(SimDeviceLegacyClient *)client mainScreenSize:(CGSize)mainScreenSize mainScreenScale:(float)mainScreenScale queue:(dispatch_queue_t)queue;
 
@@ -51,9 +48,9 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&error];
   if (!client) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
-      causedBy:error]
-      failFuture];
+              describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
+             causedBy:error]
+            failFuture];
   }
   FBSimulatorIndigoHID *indigo = [FBSimulatorIndigoHID simulatorKitHIDWithError:&error];
   if (!indigo) {
@@ -85,17 +82,20 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (FBFuture<NSNull *> *)sendEvent:(NSData *)data
 {
-  return [FBFuture onQueue:self.queue resolve:^{
-    FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
-    [self sendIndigoMessageData:data completionQueue:self.queue completion:^(NSError *error) {
-      if (error) {
-        [future resolveWithError:error];
-      } else {
-        [future resolveWithResult:NSNull.null];
-      }
-    }];
-    return future;
-  }];
+  return [FBFuture onQueue:self.queue
+                   resolve:^{
+                     FBMutableFuture<NSNull *> *future = FBMutableFuture.future;
+                     [self sendIndigoMessageData:data
+                                 completionQueue:self.queue
+                                      completion:^(NSError *error) {
+                               if (error) {
+                                 [future resolveWithError:error];
+                               } else {
+                                 [future resolveWithResult:NSNull.null];
+                               }
+                             }];
+                     return future;
+                   }];
 }
 
 - (void)sendIndigoMessageData:(NSData *)data completionQueue:(dispatch_queue_t)completionQueue completion:(void (^)(NSError *))completion
@@ -122,8 +122,8 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 {
   if (!self.client) {
     return [[FBSimulatorError
-      describe:@"Cannot Connect, HID client has already been disposed of"]
-      failFuture];
+             describe:@"Cannot Connect, HID client has already been disposed of"]
+            failFuture];
   }
   return FBFuture.empty;
 }
@@ -133,6 +133,5 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   _client = nil;
   return FBFuture.empty;
 }
-
 
 @end

@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Returns the Installed Application Info associated with the given Bundle ID
- 
+
  @param bundleID the Bundle ID to fetch for
  @param error an error out for any error that occurws
  @return the FBInstalledApplication if successful, nil on failure

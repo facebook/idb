@@ -71,7 +71,6 @@ The Initializer for App Tests.
 */
 + (instancetype)applicationTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs waitForDebugger:(BOOL)waitForDebugger collectResultBundle:(BOOL)collectResultBundle;
 
-
 /**
 The Initializer for App Tests from a test path.
 
@@ -104,7 +103,6 @@ The Initializer for UI Tests.
 */
 + (instancetype)uiTestWithTestBundleID:(NSString *)testBundleID testHostAppBundleID:(NSString *)testHostAppBundleID testTargetAppBundleID:(NSString *)testTargetAppBundleID environment:(NSDictionary<NSString *, NSString *> *)environment arguments:(NSArray<NSString *> *)arguments testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip testTimeout:(NSNumber *)testTimeout reportActivities:(BOOL)reportActivities reportAttachments:(BOOL)reportAttachments coverageRequest:(FBCodeCoverageRequest *)coverageRequest collectLogs:(BOOL)collectLogs collectResultBundle:(BOOL)collectResultBundle;
 
-
 /**
 The Initializer for UI Tests.
 
@@ -126,87 +124,87 @@ The Initializer for UI Tests.
 /**
  YES if a logic test, NO otherwise
  */
-@property (nonatomic, assign, readonly) BOOL isLogicTest;
+@property (nonatomic, readonly, assign) BOOL isLogicTest;
 
 /**
  YES if a UI Test, NO otherwise.
  */
-@property (nonatomic, assign, readonly) BOOL isUITest;
+@property (nonatomic, readonly, assign) BOOL isUITest;
 
 /**
  The Bundle ID of the Test bundle.
  */
-@property (nonatomic, copy, readonly) NSString *testBundleID;
+@property (nonatomic, readonly, copy) NSString *testBundleID;
 
 /**
  The path of the .xctest or .xctestrun file.
  */
- @property (nonatomic, copy, readonly) NSURL *testPath;
+@property (nonatomic, readonly, copy) NSURL *testPath;
 
 /**
  The Bundle ID of the Test Host, if relevant.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *testHostAppBundleID;
+@property (nullable, nonatomic, readonly, copy) NSString *testHostAppBundleID;
 
 /**
  The Bundle ID of the Test Target (a.k.a. App Under Test), if relevant.
  */
-@property (nonatomic, copy, nullable, readonly) NSString *testTargetAppBundleID;
+@property (nullable, nonatomic, readonly, copy) NSString *testTargetAppBundleID;
 
 /**
  The environment variables for the application, if relevant
  */
-@property (nonatomic, copy, nullable, readonly) NSDictionary<NSString *, NSString *> *environment;
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
 
 /**
  The arguments for the application, if relevant
  */
-@property (nonatomic, copy, nullable, readonly) NSArray<NSString *> *arguments;
+@property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *arguments;
 
 /**
  The set of tests to run, if relevant.
  */
-@property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *testsToRun;
+@property (nullable, nonatomic, readonly, copy) NSSet<NSString *> *testsToRun;
 
 /**
  The set of tests to skip, if relevant.
  */
-@property (nonatomic, copy, nullable, readonly) NSSet<NSString *> *testsToSkip;
+@property (nullable, nonatomic, readonly, copy) NSSet<NSString *> *testsToSkip;
 
 /**
  The timeout of the entire execution, if relevant.
  */
-@property (nonatomic, copy, nullable, readonly) NSNumber *testTimeout;
+@property (nullable, nonatomic, readonly, copy) NSNumber *testTimeout;
 
 /**
  If set activities and their data will be reported
  */
-@property (nonatomic, assign, readonly) BOOL reportActivities;
+@property (nonatomic, readonly, assign) BOOL reportActivities;
 
 /**
  Whether to report activities or not.
  */
-@property (nonatomic, assign, readonly) BOOL reportAttachments;
+@property (nonatomic, readonly, assign) BOOL reportAttachments;
 
 /**
  If set llvm coverage data will be collected
  */
-@property (nonatomic, retain, readonly) FBCodeCoverageRequest *coverageRequest;
+@property (nonatomic, readonly, retain) FBCodeCoverageRequest *coverageRequest;
 
 /**
  If set tests' output logs will be collected
  */
-@property (nonatomic, assign, readonly) BOOL collectLogs;
+@property (nonatomic, readonly, assign) BOOL collectLogs;
 
 /**
  If set tests' would stop after Run and wait for a debugger to be attached.
  */
-@property (nonatomic, assign, readonly) BOOL waitForDebugger;
+@property (nonatomic, readonly, assign) BOOL waitForDebugger;
 
 /**
  If set tests' result bundle will be collected
  */
-@property (nonatomic, assign, readonly) BOOL collectResultBundle;
+@property (nonatomic, readonly, assign) BOOL collectResultBundle;
 
 /**
  Starts the test operation.

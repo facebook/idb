@@ -62,7 +62,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
 /**
  The current state of the file reader.
  */
-@property (atomic, assign, readonly) FBFileReaderState state;
+@property (atomic, readonly, assign) FBFileReaderState state;
 
 /**
  A Future that resolves when the the reading of the file handle and has no pending operations on the file descriptor.
@@ -71,7 +71,7 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
  This will not cancel any in-flight reading and can instead be used to observe when reading has finished.
  Cancelling the future will cause reading to be cancelled.
  */
-@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *finishedReading;
+@property (nonatomic, readonly, strong) FBFuture<NSNumber *> *finishedReading;
 
 @end
 

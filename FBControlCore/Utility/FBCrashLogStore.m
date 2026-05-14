@@ -7,8 +7,8 @@
 
 #import "FBCrashLogStore.h"
 
-#import "FBCrashLog.h"
 #import "FBControlCoreLogger.h"
+#import "FBCrashLog.h"
 
 typedef NSString *FBCrashLogNotificationName NS_STRING_ENUM;
 
@@ -16,10 +16,10 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 
 @interface FBCrashLogStore ()
 
-@property (nonatomic, copy, readonly) NSArray<NSString *> *directories;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, FBCrashLogInfo *> *ingestedCrashLogs;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *directories;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBCrashLogInfo *> *ingestedCrashLogs;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -71,7 +71,7 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
     [self.logger logFormat:@"Could not obtain crash info %@", error];
     return nil;
   }
-  return  [self ingestCrashLog:crashLog];
+  return [self ingestCrashLog:crashLog];
 }
 
 - (nullable FBCrashLogInfo *)ingestCrashLogData:(NSData *)data name:(NSString *)name
@@ -124,9 +124,10 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
 - (FBFuture<FBCrashLogInfo *> *)nextCrashLogForMatchingPredicate:(NSPredicate *)predicate
 {
   return [FBFuture
-    onQueue:self.queue resolve:^ FBFuture<FBCrashLogInfo *> * {
-      return [FBCrashLogStore oneshotCrashLogNotificationForPredicate:predicate queue:self.queue];
-    }];
+          onQueue:self.queue
+          resolve:^FBFuture<FBCrashLogInfo *> * {
+            return [FBCrashLogStore oneshotCrashLogNotificationForPredicate:predicate queue:self.queue];
+          }];
 }
 
 - (NSArray<FBCrashLogInfo *> *)ingestedCrashLogsMatchingPredicate:(NSPredicate *)predicate
@@ -170,22 +171,23 @@ FBCrashLogNotificationName const FBCrashLogAppeared = @"FBCrashLogAppeared";
   FBMutableFuture<FBCrashLogInfo *> *future = [FBMutableFuture future];
 
   id __block observer = [notificationCenter
-    addObserverForName:FBCrashLogAppeared
-    object:nil
-    queue:NSOperationQueue.mainQueue
-    usingBlock:^(NSNotification *notification) {
-      FBCrashLogInfo *crashLog = notification.object;
-      if (![predicate evaluateWithObject:crashLog]) {
-        return;
-      }
-      [future resolveWithResult:crashLog];
-      [notificationCenter removeObserver:observer];
-    }];
+                         addObserverForName:FBCrashLogAppeared
+                         object:nil
+                         queue:NSOperationQueue.mainQueue
+                         usingBlock:^(NSNotification *notification) {
+                           FBCrashLogInfo *crashLog = notification.object;
+                           if (![predicate evaluateWithObject:crashLog]) {
+                             return;
+                           }
+                           [future resolveWithResult:crashLog];
+                           [notificationCenter removeObserver:observer];
+                         }];
 
-  return [future onQueue:queue respondToCancellation:^{
-    [notificationCenter removeObserver:observer];
-    return FBFuture.empty;
-  }];
+  return [future onQueue:queue
+          respondToCancellation:^{
+            [notificationCenter removeObserver:observer];
+            return FBFuture.empty;
+          }];
 }
 
 - (NSArray<FBCrashLogInfo *> *)ingestCrashLogInDirectory:(NSString *)directory

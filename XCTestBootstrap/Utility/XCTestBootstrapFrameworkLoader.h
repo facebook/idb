@@ -17,6 +17,6 @@
 /**
  All of the Frameworks for XCTestBootstrap.
  */
-@property (nonatomic, strong, class, readonly) XCTestBootstrapFrameworkLoader *allDependentFrameworks;
+@property (class, nonatomic, readonly, strong) XCTestBootstrapFrameworkLoader *allDependentFrameworks;
 
 @end

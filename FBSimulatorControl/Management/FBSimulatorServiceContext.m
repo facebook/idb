@@ -7,8 +7,6 @@
 
 #import "FBSimulatorServiceContext.h"
 
-#import <FBControlCore/FBControlCore.h>
-
 #import <objc/runtime.h>
 
 #import <CoreSimulator/SimDevice.h>
@@ -19,14 +17,15 @@
 #import <CoreSimulator/SimRuntime.h>
 #import <CoreSimulator/SimRuntime+Removed.h>
 #import <CoreSimulator/SimServiceContext.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorServiceContext ()
 
-@property (nonatomic, strong, readonly) SimServiceContext *serviceContext;
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) SimServiceContext *serviceContext;
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 - (instancetype)initWithServiceContext:(SimServiceContext *)serviceContext;
 
@@ -110,9 +109,9 @@
   SimDeviceSet *deviceSet = [self.serviceContext deviceSetWithPath:deviceSetPath error:&innerError];
   if (!deviceSet) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not create underlying device set for configuration %@", configuration]
-      causedBy:innerError]
-      fail:error];
+              describeFormat:@"Could not create underlying device set for configuration %@", configuration]
+             causedBy:innerError]
+            fail:error];
   }
   return deviceSet;
 }
@@ -126,9 +125,9 @@
   NSError *innerError = nil;
   if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
     return [[[FBSimulatorError
-      describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]
-      causedBy:innerError]
-      fail:error];
+              describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath]
+             causedBy:innerError]
+            fail:error];
   }
 
   // -[NSString stringByResolvingSymlinksInPath] doesn't resolve /var to /private/var.
@@ -137,11 +136,10 @@
   char *result = realpath(deviceSetPath.UTF8String, pathBuffer);
   if (!result) {
     return [[FBSimulatorError
-      describeFormat:@"Failed to get realpath for %@ '%s'", deviceSetPath, strerror(errno)]
-      fail:error];
+             describeFormat:@"Failed to get realpath for %@ '%s'", deviceSetPath, strerror(errno)]
+            fail:error];
   }
   return [[NSString alloc] initWithCString:pathBuffer encoding:NSASCIIStringEncoding];
 }
-
 
 @end

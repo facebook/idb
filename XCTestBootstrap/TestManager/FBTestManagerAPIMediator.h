@@ -18,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBXCTestExtendedCommands;
 @protocol FBXCTestReporter;
 
-
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
  This class 'takes over' after an Application Process has been started.

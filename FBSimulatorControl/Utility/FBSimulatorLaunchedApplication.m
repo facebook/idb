@@ -7,13 +7,13 @@
 
 #import "FBSimulatorLaunchedApplication.h"
 
-#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Private.h"
 
 @interface FBSimulatorLaunchedApplication ()
 
-@property (nonatomic, strong, readonly) FBProcessFileAttachment *attachment;
-@property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, strong) FBProcessFileAttachment *attachment;
+@property (nullable, nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -27,12 +27,17 @@
 + (FBFuture<FBSimulatorLaunchedApplication *> *)applicationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment launchFuture:(FBFuture<NSNumber *> *)launchFuture
 {
   return [launchFuture
-    onQueue:simulator.workQueue map:^(NSNumber *processIdentifierNumber) {
-      pid_t processIdentifier = processIdentifierNumber.intValue;
-      FBFuture<NSNull *> *terminationFuture = [FBSimulatorLaunchedApplication terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
-      FBSimulatorLaunchedApplication *operation = [[self alloc] initWithSimulator:simulator configuration:configuration attachment:attachment processIdentifier:processIdentifier terminationFuture:terminationFuture];
-      return operation;
-    }];
+          onQueue:simulator.workQueue
+          map:^(NSNumber *processIdentifierNumber) {
+            pid_t processIdentifier = processIdentifierNumber.intValue;
+            FBFuture<NSNull *> *terminationFuture = [FBSimulatorLaunchedApplication terminationFutureForSimulator:simulator processIdentifier:processIdentifier];
+            FBSimulatorLaunchedApplication *operation = [[self alloc] initWithSimulator:simulator
+                                                                          configuration:configuration
+                                                                             attachment:attachment
+                                                                      processIdentifier:processIdentifier
+                                                                      terminationFuture:terminationFuture];
+            return operation;
+          }];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration attachment:(FBProcessFileAttachment *)attachment processIdentifier:(pid_t)processIdentifier terminationFuture:(FBFuture<NSNull *> *)terminationFuture
@@ -47,9 +52,10 @@
   _attachment = attachment;
   _processIdentifier = processIdentifier;
   _applicationTerminated = [terminationFuture
-    onQueue:simulator.workQueue chain:^(FBFuture *future) {
-      return [[attachment detach] chainReplace:future];
-    }];
+                            onQueue:simulator.workQueue
+                            chain:^(FBFuture *future) {
+                              return [[attachment detach] chainReplace:future];
+                            }];
   return self;
 }
 
@@ -75,13 +81,16 @@
 + (FBFuture<NSNull *> *)terminationFutureForSimulator:(FBSimulator *)simulator processIdentifier:(pid_t)processIdentifier
 {
   return [[[self
-    processTerminationFutureNotifierForProcessIdentifier:processIdentifier]
-    mapReplace:NSNull.null]
-    onQueue:simulator.workQueue respondToCancellation:^{
-      return [[FBProcessTerminationStrategy
-        strategyWithProcessFetcher:FBProcessFetcher.new workQueue:simulator.workQueue logger:simulator.logger]
-        killProcessIdentifier:processIdentifier];
-    }];
+            processTerminationFutureNotifierForProcessIdentifier:processIdentifier]
+           mapReplace:NSNull.null]
+          onQueue:simulator.workQueue
+          respondToCancellation:^{
+            return [[FBProcessTerminationStrategy
+                     strategyWithProcessFetcher:FBProcessFetcher.new
+                     workQueue:simulator.workQueue
+                     logger:simulator.logger]
+                    killProcessIdentifier:processIdentifier];
+          }];
 }
 
 + (FBFuture<NSNumber *> *)processTerminationFutureNotifierForProcessIdentifier:(pid_t)processIdentifier
@@ -95,11 +104,12 @@
   );
 
   FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
-  [future onQueue:queue respondToCancellation:^ FBFuture<NSNull *> * {
-    dispatch_source_cancel(source);
-    return FBFuture.empty;
-  }];
-  dispatch_source_set_event_handler(source, ^(){
+  [future onQueue:queue
+   respondToCancellation:^FBFuture<NSNull *> * {
+     dispatch_source_cancel(source);
+     return FBFuture.empty;
+   }];
+  dispatch_source_set_event_handler(source, ^() {
     [future resolveWithResult:@(processIdentifier)];
     dispatch_source_cancel(source);
   });

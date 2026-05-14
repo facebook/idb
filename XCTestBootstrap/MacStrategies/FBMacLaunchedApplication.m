@@ -9,7 +9,7 @@
 
 #import "FBMacDevice.h"
 
-@interface FBMacLaunchedApplication()
+@interface FBMacLaunchedApplication ()
 @property (nonatomic, strong) FBSubprocess *process;
 @property (nonatomic, weak) FBMacDevice *device;
 @property (nonatomic, assign) dispatch_queue_t queue;
@@ -38,9 +38,10 @@
   NSString *bundleID = self.bundleID;
   FBMacDevice *device = self.device;
   return [FBMutableFuture.future
-    onQueue:self.queue respondToCancellation:^ FBFuture<NSNull *> *{
-      return [device killApplicationWithBundleID:bundleID];
-    }];
+          onQueue:self.queue
+          respondToCancellation:^FBFuture<NSNull *> *{
+            return [device killApplicationWithBundleID:bundleID];
+          }];
 }
 
 @end

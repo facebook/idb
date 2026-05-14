@@ -7,13 +7,12 @@
 
 #import "FBDeviceVideo.h"
 
-#import <FBControlCore/FBControlCore.h>
-
 #import <AVFoundation/AVFoundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 
 #import <CoreMediaIO/CMIOHardwareObject.h>
 #import <CoreMediaIO/CMIOHardwareSystem.h>
-#import <CoreFoundation/CoreFoundation.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
@@ -21,8 +20,8 @@
 
 @interface FBDeviceVideo ()
 
-@property (nonatomic, strong, readonly) FBVideoFileWriter *encoder;
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonatomic, readonly, strong) FBVideoFileWriter *encoder;
+@property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 @end
 
@@ -33,16 +32,18 @@
 + (FBFuture<AVCaptureDevice *> *)findCaptureDeviceForDevice:(FBDevice *)device
 {
   return [[FBFuture
-    onQueue:device.workQueue resolveUntil:^{
-      AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
-      if (!captureDevice) {
-        return [[FBDeviceControlError
-          describeFormat:@"Capture Device %@ not available", device.udid]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:captureDevice];
-    }]
-    timeout:FBControlCoreGlobalConfiguration.fastTimeout waitingFor:@"Device %@ to have an associated capture device appear", device];
+           onQueue:device.workQueue
+           resolveUntil:^{
+             AVCaptureDevice *captureDevice = [AVCaptureDevice deviceWithUniqueID:device.udid];
+             if (!captureDevice) {
+               return [[FBDeviceControlError
+                        describeFormat:@"Capture Device %@ not available", device.udid]
+                       failFuture];
+             }
+             return [FBFuture futureWithResult:captureDevice];
+           }]
+          timeout:FBControlCoreGlobalConfiguration.fastTimeout
+          waitingFor:@"Device %@ to have an associated capture device appear", device];
 }
 
 + (BOOL)allowAccessToScreenCaptureDevicesWithError:(NSError **)error
@@ -63,8 +64,8 @@
   );
   if (status != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to enable Screen Capture devices with status %d", status]
-      failBool:error];
+             describeFormat:@"Failed to enable Screen Capture devices with status %d", status]
+            failBool:error];
   }
   return YES;
 }
@@ -80,45 +81,47 @@
   }
   // Obtain the Capture Device
   return [[self
-    findCaptureDeviceForDevice:device]
-    onQueue:device.workQueue fmap:^(AVCaptureDevice *captureDevice) {
-      // Get the Input instance for this Device.
-      NSError *innerError = nil;
-      AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
-      if (!deviceInput) {
-        return [[[FBDeviceControlError
-          describeFormat:@"Failed to create Device Input for %@", captureDevice]
-          causedBy:innerError]
-          failFuture];
-      }
-      // Add the Input to a new Session.
-      AVCaptureSession *session = [[AVCaptureSession alloc] init];
-      if (![session canAddInput:deviceInput]) {
-        return [[FBDeviceControlError
-          describeFormat:@"Cannot add Device Input to session for %@", captureDevice]
-          failFuture];
-      }
-      [session addInput:deviceInput];
+           findCaptureDeviceForDevice:device]
+          onQueue:device.workQueue
+          fmap:^(AVCaptureDevice *captureDevice) {
+            // Get the Input instance for this Device.
+            NSError *innerError = nil;
+            AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&innerError];
+            if (!deviceInput) {
+              return [[[FBDeviceControlError
+                        describeFormat:@"Failed to create Device Input for %@", captureDevice]
+                       causedBy:innerError]
+                      failFuture];
+            }
+            // Add the Input to a new Session.
+            AVCaptureSession *session = [[AVCaptureSession alloc] init];
+            if (![session canAddInput:deviceInput]) {
+              return [[FBDeviceControlError
+                       describeFormat:@"Cannot add Device Input to session for %@", captureDevice]
+                      failFuture];
+            }
+            [session addInput:deviceInput];
 
-      return [FBFuture futureWithResult:session];
-    }];
+            return [FBFuture futureWithResult:session];
+          }];
 }
 
 + (FBFuture<FBDeviceVideo *> *)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath
 {
   // Add the Input to a new Session.
   return [[self
-    captureSessionForDevice:device]
-    onQueue:device.workQueue fmap:^(AVCaptureSession *session) {
-      // Construct the Device Video instance.
-      NSError *error = nil;
-      FBVideoFileWriter *encoder = [FBVideoFileWriter writerWithSession:session filePath:filePath logger:device.logger error:&error];
-      if (!encoder) {
-        return [FBFuture futureWithError:error];
-      }
-      FBDeviceVideo *video = [[FBDeviceVideo alloc] initWithEncoder:encoder workQueue:device.workQueue];
-      return [FBFuture futureWithResult:video];
-    }];
+           captureSessionForDevice:device]
+          onQueue:device.workQueue
+          fmap:^(AVCaptureSession *session) {
+            // Construct the Device Video instance.
+            NSError *error = nil;
+            FBVideoFileWriter *encoder = [FBVideoFileWriter writerWithSession:session filePath:filePath logger:device.logger error:&error];
+            if (!encoder) {
+              return [FBFuture futureWithError:error];
+            }
+            FBDeviceVideo *video = [[FBDeviceVideo alloc] initWithEncoder:encoder workQueue:device.workQueue];
+            return [FBFuture futureWithResult:video];
+          }];
 }
 
 - (instancetype)initWithEncoder:(FBVideoFileWriter *)encoder workQueue:(dispatch_queue_t)workQueue
@@ -152,10 +155,11 @@
 {
   FBVideoFileWriter *encoder = self.encoder;
   return [[encoder
-    completed]
-    onQueue:self.workQueue respondToCancellation:^{
-      return [encoder stopRecording];
-    }];
+           completed]
+          onQueue:self.workQueue
+          respondToCancellation:^{
+            return [encoder stopRecording];
+          }];
 }
 
 @end

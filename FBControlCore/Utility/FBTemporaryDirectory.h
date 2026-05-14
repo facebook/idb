@@ -132,12 +132,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The logger to log to.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 
 /**
  The queue to use.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 

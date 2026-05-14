@@ -7,20 +7,19 @@
 
 #import "FBSimulatorControlConfiguration.h"
 
+#import <objc/runtime.h>
+
 #import <CoreSimulator/CDStructures.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceSet+Removed.h>
-
 #import <FBControlCore/FBControlCore.h>
-
-#import <objc/runtime.h>
 
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 
 @interface FBSimulatorControlConfiguration ()
 
-@property (nonatomic, copy, readwrite) NSString *deviceSetPath;
+@property (nonatomic, readwrite, copy) NSString *deviceSetPath;
 
 @end
 
@@ -77,8 +76,8 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Pool Config | Set Path %@",
-    self.deviceSetPath
+          @"Pool Config | Set Path %@",
+          self.deviceSetPath
   ];
 }
 
