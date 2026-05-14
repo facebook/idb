@@ -7,10 +7,13 @@
 # pyre-strict
 
 from datetime import timedelta
-from typing import Any
+from typing import Any, Dict
 
 
 # Subject to change
+DEFAULT_DAEMON_PORT: int = 9888
+DEFAULT_DAEMON_GRPC_PORT: int = 9889
+DEFAULT_DAEMON_HOST: str = "localhost"
 LONG_THRIFT_TIMEOUT: float = timedelta(hours=2).total_seconds()
 LOG_POLL_INTERVAL: float = 1.0
 TESTS_POLL_INTERVAL: float = 0.5

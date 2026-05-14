@@ -51,17 +51,17 @@ DIRECTION_PAIRS: "List[Tuple[HIDDirection, GrpcHIDDirection]]" = [
 ]
 
 
-def _translation_from_pairs(pairs: list[tuple[_A, _B]], item: _A) -> _B:
+def _tanslation_from_pairs(pairs: list[tuple[_A, _B]], item: _A) -> _B:
     pair_map = {py: grpc for (py, grpc) in pairs}
     return pair_map[item]
 
 
 def button_type_to_grpc(button_type: HIDButtonType) -> GrpcHIDButtonType:
-    return _translation_from_pairs(BUTTON_TYPE_PAIRS, button_type)
+    return _tanslation_from_pairs(BUTTON_TYPE_PAIRS, button_type)
 
 
 def direction_to_grpc(direction: HIDDirection) -> GrpcHIDDirection:
-    return _translation_from_pairs(DIRECTION_PAIRS, direction)
+    return _tanslation_from_pairs(DIRECTION_PAIRS, direction)
 
 
 def point_to_grpc(point: Point) -> GrpcPoint:

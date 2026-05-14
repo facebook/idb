@@ -38,10 +38,10 @@ extern double const DEFAULT_SWIPE_DELTA;
 @protocol FBSimulatorHIDEventPayload <FBSimulatorHIDEvent>
 
 /**
- Constructs the event payload data for the receiver.
-
+ Constructs the Indigo event data for the reciever.
+ 
  @param hid the hid to perform on.
- @return the data produced by the receiver.
+ @return the data produced by the reciever.
  */
 - (NSData *)payloadForHID:(FBSimulatorHID *)hid;
 
@@ -130,14 +130,6 @@ extern double const DEFAULT_SWIPE_DELTA;
  */
 + (id<FBSimulatorHIDEventPayload>)keyDown:(unsigned int)keyCode;
 
-/**
- A HID Event that sets the device orientation.
- Sent via PurpleWorkspacePort as a GSEvent type 50, not through Indigo.
-
- @param orientation the desired device orientation.
- @return a new HID Event.
- */
-+ (id<FBSimulatorHIDEventPayload>)setOrientation:(FBSimulatorHIDDeviceOrientation)orientation;
 
 #pragma mark Multiple Payload Events
 

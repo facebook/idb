@@ -7,15 +7,14 @@
 
 #import <Foundation/Foundation.h>
 #import "ContactsService.h"
-#import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
 
 int main(int argc, const char * argv[]) {
   @autoreleasepool {
     if (argc < 3) {
-      NSLog(@"Usage: %s <service> <action> [args...]", argv[0]);
-      NSLog(@"Services: contacts, photos, notifications");
-      NSLog(@"Actions: clear, approve, revoke, check");
+      NSLog(@"Usage: %s <service> <action>", argv[0]);
+      NSLog(@"Services: contacts, photos");
+      NSLog(@"Actions: clear");
       return 1;
     }
 
@@ -26,12 +25,9 @@ int main(int argc, const char * argv[]) {
       return handleContactsAction(action);
     } else if ([service isEqualToString:@"photos"]) {
       return handlePhotoLibraryAction(action);
-    } else if ([service isEqualToString:@"notifications"]) {
-      NSString *bundleID = argc >= 4 ? [NSString stringWithUTF8String:argv[3]] : nil;
-      return handleNotificationSettingsAction(action, bundleID);
     } else {
       NSLog(@"Unknown service: %@", service);
-      NSLog(@"Available services: contacts, photos, notifications");
+      NSLog(@"Available services: contacts, photos");
       return 1;
     }
     return 0;

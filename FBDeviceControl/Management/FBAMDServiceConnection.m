@@ -301,8 +301,8 @@ static size_t SendBufferSize = 1024 * 4;
   void(^enumerator)(NSData *) = ^(NSData *chunk){
     [data appendData:[chunk copy]];
   };
-  // Start the byte receive.
-  BOOL success = [self enumerateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
+  // Start the byte recieve.
+  BOOL success = [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
   if (!success) {
     return nil;
   }
@@ -314,7 +314,7 @@ static size_t SendBufferSize = 1024 * 4;
   void(^enumerator)(NSData *) = ^(NSData *chunk){
     [fileHandle writeData:chunk];
   };
-  return [self enumerateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
+  return [self enumateReceiveOfLength:size chunkSize:ReadBufferSize enumerator:enumerator error:error];
 }
 
 - (BOOL)receive:(void *)destination ofSize:(size_t)size error:(NSError **)error
@@ -381,7 +381,7 @@ static size_t SendBufferSize = 1024 * 4;
   return self.calls.ServiceConnectionReceive(self.connection, buffer, size);
 }
 
-- (BOOL)enumerateReceiveOfLength:(size_t)size chunkSize:(size_t)chunkSize enumerator:(void(^)(NSData *))enumerator error:(NSError **)error
+- (BOOL)enumateReceiveOfLength:(size_t)size chunkSize:(size_t)chunkSize enumerator:(void(^)(NSData *))enumerator error:(NSError **)error
 {
   // Create a buffer that contains the incremental enumerated data.
   void *buffer = alloca(chunkSize);

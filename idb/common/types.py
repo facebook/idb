@@ -8,7 +8,7 @@
 
 import asyncio
 import json
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from asyncio import StreamReader, StreamWriter
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mapping
 from contextlib import asynccontextmanager
@@ -405,7 +405,6 @@ class Companion(ABC):
     async def tail_targets(
         self, only: OnlyFilter | None = None
     ) -> AsyncGenerator[list[TargetDescription], None]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -422,7 +421,6 @@ class Companion(ABC):
     async def unix_domain_server(
         self, udid: str, path: str, only: OnlyFilter | None = None
     ) -> AsyncGenerator[str, None]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
 
@@ -472,7 +470,6 @@ class Client(ABC):
         log_directory_path: str | None = None,
         wait_for_debugger: bool = False,
     ) -> AsyncIterator[TestRunInfo]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -483,14 +480,12 @@ class Client(ABC):
         make_debuggable: bool | None = None,
         override_modification_time: bool | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_dylib(
         self, dylib: str | IO[bytes]
     ) -> AsyncIterator[InstalledArtifact]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -501,21 +496,18 @@ class Client(ABC):
         compression: Compression | None,
         bundle_type: FileContainerType | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_xctest(
         self, xctest: str | IO[bytes], skip_signing_bundles: bool | None = None
     ) -> AsyncIterator[InstalledArtifact]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_framework(
         self, framework_path: str | IO[bytes]
     ) -> AsyncIterator[InstalledArtifact]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -538,12 +530,10 @@ class Client(ABC):
     async def tail_logs(
         self, stop: asyncio.Event, arguments: list[str] | None = None
     ) -> AsyncIterator[str]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def tail_companion_logs(self, stop: asyncio.Event) -> AsyncIterator[str]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -617,7 +607,6 @@ class Client(ABC):
         compression_quality: float,
         scale_factor: float = 1,
     ) -> AsyncGenerator[bytes, None]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
@@ -816,7 +805,6 @@ class Client(ABC):
     async def tail(
         self, stop: asyncio.Event, container: FileContainer, path: str
     ) -> AsyncIterator[bytes]:
-        # pyrefly: ignore [invalid-yield]
         yield
 
 
@@ -852,7 +840,6 @@ class Server(ABC):
     async def wait_closed(self) -> None:
         pass
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def ports(self) -> dict[str, str]:
         pass
