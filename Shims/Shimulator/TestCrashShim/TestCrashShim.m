@@ -28,13 +28,13 @@ static NSString *ArchName(void)
 #elif TARGET_CPU_X86_64
   return @"x86_64";
 #else
-  return @"not supported");
+  return @"not supported";
 #endif
 }
 
 static void PrintProcessInfo(void)
 {
-  FBDebugLog(@"Architecture %@",ArchName());
+  FBDebugLog(@"Architecture %@", ArchName());
 
   NSProcessInfo *processInfo = NSProcessInfo.processInfo;
   NSLog(@"Arguments [%@]", [processInfo.arguments componentsJoinedByString:@" "]);
@@ -42,7 +42,7 @@ static void PrintProcessInfo(void)
   FBDebugLog(@"Environment %@", processInfo.environment);
 }
 
-__attribute__((constructor)) static void EntryPoint()
+__attribute__((constructor)) static void EntryPoint(void)
 {
   NSLog(@"Start of Shimulator");
 
