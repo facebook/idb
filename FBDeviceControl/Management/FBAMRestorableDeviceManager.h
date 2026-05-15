@@ -7,17 +7,15 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBDeviceControl/FBDeviceManager.h>
 #import <FBDeviceControl/FBAMDefines.h>
-
-NS_ASSUME_NONNULL_BEGIN
+#import <FBDeviceControl/FBDeviceManager.h>
 
 @class FBAMRestorableDevice;
 
 /**
  Class for obtaining FBAMRestorableDevice instances.
  */
-@interface FBAMRestorableDeviceManager : FBDeviceManager<FBAMRestorableDevice *>
+@interface FBAMRestorableDeviceManager : FBDeviceManager <FBAMRestorableDevice *>
 
 /**
  The Designated Initializer
@@ -29,8 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new FBAMRestorableDeviceManager instance
  */
-- (instancetype)initWithCalls:(AMDCalls)calls workQueue:(dispatch_queue_t)workQueue asyncQueue:(dispatch_queue_t)asyncQueue ecidFilter:(NSString *)ecidFilter logger:(id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithCalls:(AMDCalls)calls workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue ecidFilter:(nonnull NSString *)ecidFilter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

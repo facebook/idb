@@ -5,28 +5,31 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <objc/NSObject.h>
+#import <SimulatorBridge/AXPTranslationRuntimeHelper-Protocol.h>
+#import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
-#import "AXPTranslationRuntimeHelper-Protocol.h"
-#import "SimulatorBridge-Protocol.h"
+#import <objc/NSObject.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+struct __AXUIElement;
+struct __AXObserver;
 
 @class CLSimulationManager, NSDistantObject, NSString;
 @protocol AccessibilityNotificationUpstream, OS_dispatch_queue;
 
 @interface SimulatorBridge : NSObject <AXPTranslationRuntimeHelper, SimulatorBridge>
 {
-    _Bool _accessibilityEnabled;
-    NSDistantObject<AccessibilityNotificationUpstream> *_accessibilityUpstreamProxy;
-    NSObject<OS_dispatch_queue> *_accessibilityUpstreamQueue;
-    struct __AXObserver *_axEventObserver;
-    CLSimulationManager *_locationSimulationManager;
+  _Bool _accessibilityEnabled;
+  NSDistantObject<AccessibilityNotificationUpstream> *_accessibilityUpstreamProxy;
+  NSObject<OS_dispatch_queue> *_accessibilityUpstreamQueue;
+  struct __AXObserver *_axEventObserver;
+  CLSimulationManager *_locationSimulationManager;
 }
 
-@property(retain, nonatomic) CLSimulationManager *locationSimulationManager; // @synthesize locationSimulationManager=_locationSimulationManager;
-@property(nonatomic) struct __AXObserver *axEventObserver; // @synthesize axEventObserver=_axEventObserver;
+@property (nonatomic, retain) CLSimulationManager *locationSimulationManager; // @synthesize locationSimulationManager=_locationSimulationManager;
+@property (nonatomic) struct __AXObserver *axEventObserver; // @synthesize axEventObserver=_axEventObserver;
 - (void)sendRemoteButtonInput:(float)arg1 toButtonA:(_Bool)arg2;
 - (void)sendGameControllerPausedEvent:(_Bool)arg1;
 - (void)sendGameControllerData:(in bycopy id)arg1;
@@ -58,9 +61,9 @@
 - (void)setHardwareKeyboardEnabled:(_Bool)arg1 keyboardType:(unsigned char)arg2;
 
 // Remaining properties
-@property(readonly, copy) NSString *debugDescription;
-@property(readonly, copy) NSString *description;
-@property(readonly) Class superclass;
+@property (readonly, copy) NSString *debugDescription;
+@property (readonly, copy) NSString *description;
+@property (readonly) Class superclass;
 
 @end
 

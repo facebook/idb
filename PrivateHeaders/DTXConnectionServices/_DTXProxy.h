@@ -11,7 +11,7 @@
 
 @interface _DTXProxy : NSObject
 {
-    DTXProxyChannel *_proxyChannel;
+  DTXProxyChannel *_proxyChannel;
 }
 
 - (id)methodSignatureForSelector:(SEL)arg1;
@@ -20,4 +20,3 @@
 - (id)initWithChannel:(id)arg1;
 
 @end
-

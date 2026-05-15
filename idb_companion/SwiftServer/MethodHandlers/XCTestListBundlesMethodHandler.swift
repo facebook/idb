@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC
@@ -17,9 +18,7 @@ struct XCTestListBundlesMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
-    let descriptors: [FBXCTestDescriptor] = try await BridgeFuture.value(
-      commandExecutor.list_test_bundles()
-    )
+    let descriptors = try await commandExecutor.list_test_bundles()
     return .with {
       $0.bundles = descriptors.map(toBundle(descriptor:))
     }

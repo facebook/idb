@@ -6,11 +6,14 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBAMDefines.h>
 #import <FBDeviceControl/FBDeviceCommands.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
+@class FBAFCConnection;
+@class FBAMDServiceConnection;
+@class FBAMDeviceServiceManager;
 @class FBDeviceType;
 @class FBOSVersion;
 
@@ -37,18 +40,66 @@ NS_ASSUME_NONNULL_BEGIN
  - Starting / stopping the same service on the phone (e.g. house_arrest) many times in a short period will cause the error 0xe800005b (Too many instances of this service are already running.)
    Because of this, we pool service connections with a short cooldown to avoid reopening the same service repeatedly during bursts of operations using that service (e.g. recursively enumerating a directory)
  */
-@interface FBAMDevice : NSObject <FBiOSTargetInfo, FBDeviceCommands>
+@interface FBAMDevice : NSObject <FBiOSTargetInfo, FBDeviceCommands, FBFutureContextManagerDelegate>
+
+#pragma mark - FBiOSTargetInfo Protocol Members
+// These are implemented in FBAMDevice.m but must be declared explicitly for Swift visibility
+// since the FBiOSTargetInfo protocol is Swift-defined.
+@property (nonnull, nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *udid;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceType *deviceType;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, strong) FBOSVersion *osVersion;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
+@property (nonatomic, readonly, assign) FBiOSTargetState state;
 
 /**
  The queue on which work should be serialized.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
 
 /**
  The queue on which asynchronous work can be performed sequentially.
  */
-@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+
+#pragma mark - Should be marked private when converting to Swift
+
+/**
+ The underyling AMDeviceRef.
+ May be NULL.
+ */
+@property (nonatomic, readwrite, assign) AMDeviceRef _Nullable amDeviceRef;
+
+/**
+ All of the Device Values available.
+ */
+@property (nonnull, nonatomic, readwrite, copy) NSDictionary<NSString *, id> *allValues;
+
+/**
+ The Context Manager for the Connection
+ */
+@property (nonnull, nonatomic, readonly, strong) FBFutureContextManager<FBAMDevice *> *connectionContextManager;
+
+/**
+ The Service Manager.
+ */
+@property (nonnull, nonatomic, readonly, strong) FBAMDeviceServiceManager *serviceManager;
+
+/**
+ The Designated Initializer
+
+ @param allValues the values from the AMDevice.
+ @param calls the calls to use.
+ @param connectionReuseTimeout the time to wait before releasing a connection
+ @param serviceReuseTimeout the time to wait before releasing a service
+ @param workQueue the queue on which work should be serialized.
+ @param asyncQueue the queue on which asynchronous work can be performed sequentially.
+ @param logger the logger to use.
+ @return a new FBAMDevice instance.
+ */
+- (nonnull instancetype)initWithAllValues:(nonnull NSDictionary<NSString *, id> *)allValues calls:(AMDCalls)calls connectionReuseTimeout:(nullable NSNumber *)connectionReuseTimeout serviceReuseTimeout:(nullable NSNumber *)serviceReuseTimeout workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
-
-NS_ASSUME_NONNULL_END

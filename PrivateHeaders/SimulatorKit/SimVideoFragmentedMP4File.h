@@ -9,8 +9,8 @@
 
 @interface SimVideoFragmentedMP4File : SimVideoMP4File
 {
-    BOOL _firstFrame;
-    unsigned long long _sequenceNumber;
+  BOOL _firstFrame;
+  unsigned long long _sequenceNumber;
 }
 
 @property (nonatomic, assign) unsigned long long sequenceNumber;

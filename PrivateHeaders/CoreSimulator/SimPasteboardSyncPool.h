@@ -14,15 +14,14 @@
 
 @interface SimPasteboardSyncPool : NSObject <SimPasteboardSyncPoolProtocol>
 {
-    NSMapTable *_pasteboards;
-    NSObject<OS_dispatch_queue> *_processing_queue;
-    NSUUID *_poolIdentifier;
+  NSMapTable *_pasteboards;
+  NSObject<OS_dispatch_queue> *_processing_queue;
+  NSUUID *_poolIdentifier;
 }
 
-@property (retain, nonatomic) NSUUID *poolIdentifier;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *processing_queue;
-@property (retain, nonatomic) NSMapTable *pasteboards;
-- (void).cxx_destruct;
+@property (nonatomic, retain) NSUUID *poolIdentifier;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *processing_queue;
+@property (nonatomic, retain) NSMapTable *pasteboards;
 - (void)unregisterAndRemoveAll;
 - (BOOL)removePasteboard:(id)arg1 withError:(id *)arg2;
 - (BOOL)addPasteboard:(id)arg1 withError:(id *)arg2;

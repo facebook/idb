@@ -11,28 +11,28 @@
 
 @interface SimVideoMP4File : SimVideoFile
 {
-    BOOL _wroteHeader;
-    SimVideoQuicktimeFormat *_qtFormat;
-    unsigned long long _bytesWritten;
-    NSMutableData *_mediaData;
-    NSMutableArray *_mediaSizes;
-    NSMutableArray *_mediaDecodeTimes;
-    NSMutableArray *_mediaDurationTimes;
-    NSMutableArray *_mediaPresentationTimes;
-    NSMutableArray *_syncSampleNumbers;
+  BOOL _wroteHeader;
+  SimVideoQuicktimeFormat *_qtFormat;
+  unsigned long long _bytesWritten;
+  NSMutableData *_mediaData;
+  NSMutableArray *_mediaSizes;
+  NSMutableArray *_mediaDecodeTimes;
+  NSMutableArray *_mediaDurationTimes;
+  NSMutableArray *_mediaPresentationTimes;
+  NSMutableArray *_syncSampleNumbers;
 }
 
 + (void)parameterSetsForFormatDescription:(const struct opaqueCMFormatDescription *)arg1 sequenceParameterSetData:(id *)arg2 pictureParameterSetData:(id *)arg3;
 + (BOOL)isSampleBufferIFrame:(struct opaqueCMSampleBuffer *)arg1;
-@property (retain, nonatomic) NSMutableArray *syncSampleNumbers;
-@property (retain, nonatomic) NSMutableArray *mediaPresentationTimes;
-@property (retain, nonatomic) NSMutableArray *mediaDurationTimes;
-@property (retain, nonatomic) NSMutableArray *mediaDecodeTimes;
-@property (retain, nonatomic) NSMutableArray *mediaSizes;
-@property (retain, nonatomic) NSMutableData *mediaData;
+@property (nonatomic, retain) NSMutableArray *syncSampleNumbers;
+@property (nonatomic, retain) NSMutableArray *mediaPresentationTimes;
+@property (nonatomic, retain) NSMutableArray *mediaDurationTimes;
+@property (nonatomic, retain) NSMutableArray *mediaDecodeTimes;
+@property (nonatomic, retain) NSMutableArray *mediaSizes;
+@property (nonatomic, retain) NSMutableData *mediaData;
 @property (nonatomic, assign) unsigned long long bytesWritten;
 @property (nonatomic, assign) BOOL wroteHeader;
-@property (retain, nonatomic) SimVideoQuicktimeFormat *qtFormat;
+@property (nonatomic, retain) SimVideoQuicktimeFormat *qtFormat;
 
 - (void)writeSampleBuffer:(struct opaqueCMSampleBuffer *)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (void)writeMovieWithMedia:(BOOL)arg1;

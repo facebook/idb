@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -35,12 +36,12 @@ struct TailMethodHandler {
     }
 
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: start.container)
-    let tail = try await BridgeFuture.value(commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer))
+    let tail = try await commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer)
 
     guard case .stop = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
-    try await BridgeFuture.await(tail.cancel())
+    try await tail.cancelAsync()
     _finished.set(true)
   }
 }

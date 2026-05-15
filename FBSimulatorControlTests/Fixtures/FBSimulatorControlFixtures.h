@@ -12,8 +12,6 @@
 @class FBBundleDescriptor;
 @class FBProcessInfo;
 @class FBProcessSpawnConfiguration;
-@class FBTestLaunchConfiguration;
-
 typedef NS_ENUM(NSUInteger, FBApplicationLaunchMode);
 
 NS_ASSUME_NONNULL_BEGIN
@@ -46,16 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XCTestCase (FBSimulatorControlFixtures)
 
 /**
- A XCTest launch configuration with injection inside TableSearch.app.
- */
-- (FBTestLaunchConfiguration *)testLaunchTableSearch;
-
-/**
- A XCTest launch configuration with injection inside Safari.app.
- */
-- (FBTestLaunchConfiguration *)testLaunchSafari;
-
-/**
  An App Launch for the built in Mobile Safari.
  */
 - (FBApplicationLaunchConfiguration *)safariAppLaunch;
@@ -81,14 +69,6 @@ NS_ASSUME_NONNULL_BEGIN
  An Agent Launch Config. Not to be used to launch agents for real.
  */
 - (FBProcessSpawnConfiguration *)agentLaunch1;
-
-/**
- An iOS Unit Test XCTest Target.
- Will check that the bundle is codesigned, and sign it if is not.
-
- @return Unit Test Bundle Descriptor.
- */
-- (nullable FBBundleDescriptor *)iOSUnitTestBundle;
 
 @end
 

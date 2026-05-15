@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC
@@ -33,16 +34,14 @@ struct PullMethodHandler {
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()
     let tempPath = url.appendingPathComponent(path.lastPathComponent).path
 
-    let filePath = try await BridgeFuture.value(
-      commandExecutor.pull_file_path(
-        request.srcPath,
-        destination_path: tempPath,
-        containerType: fileContainer)
-    )
+    let filePath = try await commandExecutor.pull_file_path(
+      request.srcPath,
+      destination_path: tempPath,
+      containerType: fileContainer)
 
-    let archiveFuture = FBArchiveOperations.createGzippedTar(forPath: filePath as String, logger: logger)
+    let archive = try await FBArchiveOperations.createGzippedTarAsync(forPath: filePath, logger: logger)
 
-    try await FileDrainWriter.performDrain(taskFuture: archiveFuture) { data in
+    try await FileDrainWriter.performDrain(task: archive) { data in
       let response = Idb_PullResponse.with { $0.payload.data = data }
       try await responseStream.send(response)
     }
@@ -51,13 +50,10 @@ struct PullMethodHandler {
   private func sendFilePath(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>) async throws {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 
-    let filePath =
-      try await BridgeFuture.value(
-        commandExecutor.pull_file_path(
-          request.srcPath,
-          destination_path: request.dstPath,
-          containerType: fileContainer)
-      ) as String
+    let filePath = try await commandExecutor.pull_file_path(
+      request.srcPath,
+      destination_path: request.dstPath,
+      containerType: fileContainer)
     let response = Idb_PullResponse.with {
       $0.payload = .with { $0.source = .filePath(filePath) }
     }

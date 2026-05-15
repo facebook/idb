@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct ContactsUpdateMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_ContactsUpdateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsUpdateResponse {
-    try await BridgeFuture.await(commandExecutor.update_contacts(request.payload.data))
+    try await commandExecutor.update_contacts(request.payload.data)
     return .init()
   }
 }

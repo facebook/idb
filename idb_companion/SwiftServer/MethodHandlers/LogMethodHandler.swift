@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -34,18 +35,33 @@ struct LogMethodHandler {
       }
     }
 
-    let operationFuture =
-      request.source == .companion
-      ? commandExecutor.tail_companion_logs(consumer)
-      : target.tailLog(request.arguments, consumer: consumer)
+    if request.source == .companion {
+      let operation: FBLogOperation = try await commandExecutor.tail_companion_logs(consumer)
+      let observeWritingDone = Task<Void, Error> {
+        try await awaitMutableFutureVoid(writingDone)
+      }
+      let observeOperationCompletion = Task<Void, Error> {
+        try await operation.awaitCompletionAsync()
+      }
+      try await Task.select(observeWritingDone, observeOperationCompletion).value
+      writingDone.resolve(withResult: NSNull())
+      try await operation.cancelAsync()
+      return
+    }
 
-    let operation = try await BridgeFuture.value(operationFuture)
-
-    let completed = FBFuture(race: [BridgeFuture.convertToFuture(writingDone), operation.completed])
-
-    try await BridgeFuture.await(completed)
+    guard let asyncTarget = target as? any AsyncLogCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncLogCommands")
+    }
+    let operation = try await asyncTarget.tailLog(arguments: request.arguments, consumer: consumer)
+    let observeWritingDone = Task<Void, Error> {
+      try await awaitMutableFutureVoid(writingDone)
+    }
+    let observeOperationCompletion = Task<Void, Error> {
+      try await operation.waitUntilCompleted()
+    }
+    try await Task.select(observeWritingDone, observeOperationCompletion).value
     writingDone.resolve(withResult: NSNull())
 
-    try await BridgeFuture.await(operation.completed.cancel())
+    observeOperationCompletion.cancel()
   }
 }

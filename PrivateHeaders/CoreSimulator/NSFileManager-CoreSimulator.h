@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSFileManager.h>
+#import <Foundation/Foundation.h>
 
 @interface NSFileManager (CoreSimulator)
 - (BOOL)sim_copyItemAtPath:(id)arg1 toCreatedPath:(id)arg2 error:(id *)arg3;

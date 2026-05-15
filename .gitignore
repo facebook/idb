@@ -2,6 +2,13 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
+## Generated Xcode Projects (use xcodegen generate)
+*.xcodeproj/
+*.xcworkspace/
+
+## Generated gRPC Swift code (generated from proto/idb.proto)
+IDBGRPCSwift/*.swift
+
 ## Build & Test Generated
 build/
 fbsimctl/cli-tests/executable-under-test

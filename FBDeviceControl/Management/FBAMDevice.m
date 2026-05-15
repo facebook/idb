@@ -6,21 +6,17 @@
  */
 
 #import "FBAMDevice.h"
-#import "FBAMDevice+Private.h"
-
-#import <FBControlCore/FBControlCore.h>
 
 #include <dlfcn.h>
 
+#import <FBControlCore/FBControlCore.h>
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAFCConnection.h"
-#import "FBAMDeviceManager.h"
-#import "FBAMDeviceServiceManager.h"
 #import "FBAMDServiceConnection.h"
+#import "FBAMDeviceManager.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceActivationCommands.h"
-#import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBDeviceLinkClient.h"
 
 #pragma mark - FBAMDevice Implementation
 
@@ -76,7 +72,7 @@
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{
-    @"device": [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:self.allValues],
+    @"device" : [FBCollectionOperations recursiveFilteredJSONSerializableRepresentationOfDictionary:self.allValues],
   };
 }
 
@@ -145,13 +141,9 @@
 
 #pragma mark FBDeviceCommands Protocol Implementation
 
-- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)format, ...
+- (FBFutureContext<FBAMDevice *> *)connectToDeviceWithPurpose:(NSString *)purpose
 {
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-  return [self.connectionContextManager utilizeWithPurpose:string];
+  return [self.connectionContextManager utilizeWithPurpose:purpose];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)startService:(NSString *)service
@@ -163,65 +155,71 @@
   // NOTE - The pop: after connectToDeviceWithPurpose: is critical to ensure we stop the AMDevice session
   //        immediately after the service is started. See longer description in FBAMDevice.h to understand why.
   return [[[self
-    connectToDeviceWithPurpose:@"start_service_%@", service]
-    onQueue:self.workQueue pop:^ FBFuture<FBAMDServiceConnection *> * (id<FBDeviceCommands> device) {
-      AMDServiceConnectionRef serviceConnection;
-      [self.logger logFormat:@"Starting service %@", service];
-      int status = self.calls.SecureStartService(
-        device.amDeviceRef,
-        (__bridge CFStringRef)(service),
-        (__bridge CFDictionaryRef)(userInfo),
-        &serviceConnection
-      );
-      if (status != 0) {
-        NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
-        return [[FBDeviceControlError
-          describeFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]
-          failFuture];
-      }
-      FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
-      [self.logger logFormat:@"Service %@ started", service];
-      return [FBFuture futureWithResult:connection];
-    }]
-    onQueue:self.workQueue contextualTeardown:^(id connection, FBFutureState __) {
-      [self.logger logFormat:@"Invalidating service %@", service];
-      NSError *error = nil;
-      if (![connection invalidateWithError:&error]) {
-        [self.logger logFormat:@"Failed to invalidate service %@ with error %@", service, error];
-      } else {
-        [self.logger logFormat:@"Invalidated service %@", service];
-      }
-      return FBFuture.empty;
-    }];
+            connectToDeviceWithPurpose:[NSString stringWithFormat:@"start_service_%@", service]]
+           onQueue:self.workQueue
+           pop:^FBFuture<FBAMDServiceConnection *> *(id<FBDeviceCommands> device) {
+             AMDServiceConnectionRef serviceConnection;
+             [self.logger log:[NSString stringWithFormat:@"Starting service %@", service]];
+             int status = self.calls.SecureStartService(
+               device.amDeviceRef,
+               (__bridge CFStringRef)(service),
+               (__bridge CFDictionaryRef)(userInfo),
+               &serviceConnection
+             );
+             if (status != 0) {
+               NSString *errorDescription = CFBridgingRelease(self.calls.CopyErrorText(status));
+               return (FBFuture *)[[FBDeviceControlError
+                                    describe:[NSString stringWithFormat:@"SecureStartService of %@ Failed with 0x%x %@", service, status, errorDescription]]
+                                   failFuture];
+             }
+             FBAMDServiceConnection *connection = [FBAMDServiceConnection connectionWithName:service connection:serviceConnection device:device.amDeviceRef calls:self.calls logger:self.logger];
+             [self.logger log:[NSString stringWithFormat:@"Service %@ started", service]];
+             return [FBFuture futureWithResult:connection];
+           }]
+          onQueue:self.workQueue
+          contextualTeardown:^(id connection, FBFutureState __) {
+            [self.logger log:[NSString stringWithFormat:@"Invalidating service %@", service]];
+            NSError *error = nil;
+            if (![connection invalidateWithError:&error]) {
+              [self.logger log:[NSString stringWithFormat:@"Failed to invalidate service %@ with error %@", service, error]];
+            } else {
+              [self.logger log:[NSString stringWithFormat:@"Invalidated service %@", service]];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFutureContext<FBDeviceLinkClient *> *)startDeviceLinkService:(NSString *)service
 {
   return [[self
-    startService:service]
-    onQueue:self.workQueue pend:^(FBAMDServiceConnection *connection) {
-      return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];
-    }];
+           startService:service]
+          onQueue:self.workQueue
+          pend:^(FBAMDServiceConnection *connection) {
+            return [FBDeviceLinkClient deviceLinkClientWithConnection:connection];
+          }];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)startAFCService:(NSString *)service
 {
   return [[self
-    startService:service]
-    onQueue:self.workQueue push:^(FBAMDServiceConnection *connection) {
-      return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.logger queue:self.workQueue];
-    }];
+           startService:service]
+          onQueue:self.workQueue
+          push:^(FBAMDServiceConnection *connection) {
+            return [FBAFCConnection afcFromServiceConnection:connection calls:FBAFCConnection.defaultCalls logger:self.logger queue:self.workQueue];
+          }];
 }
 
 - (FBFutureContext<FBAFCConnection *> *)houseArrestAFCConnectionForBundleID:(NSString *)bundleID afcCalls:(AFCCalls)afcCalls
 {
   return [[self
-    connectToDeviceWithPurpose:@"house_arrest"]
-    onQueue:self.workQueue replace:^ FBFutureContext<FBAFCConnection *> * (id<FBDeviceCommands> device) {
-      return [[self.serviceManager
-        houseArrestAFCConnectionForBundleID:bundleID afcCalls:afcCalls]
-        utilizeWithPurpose:self.udid];
-    }];
+           connectToDeviceWithPurpose:@"house_arrest"]
+          onQueue:self.workQueue
+          replace:^FBFutureContext<FBAFCConnection *> *(id<FBDeviceCommands> device) {
+            return [[self.serviceManager
+                     houseArrestAFCConnectionForBundleID:bundleID
+                     afcCalls:afcCalls]
+                    utilizeWithPurpose:self.udid];
+          }];
 }
 
 #pragma mark FBFutureContextManager Implementation
@@ -264,9 +262,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"AMDevice %@ | %@",
-    self.udid,
-    self.name
+          @"AMDevice %@ | %@",
+          self.udid,
+          self.name
   ];
 }
 

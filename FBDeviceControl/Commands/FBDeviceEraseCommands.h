@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
 
 /**
@@ -18,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceEraseCommands : NSObject <FBEraseCommands>
 
-@end
+// FBiOSTargetCommand / FBEraseCommands (Swift protocol members declared for visibility)
++ (nonnull instancetype)commandsWithTarget:(nonnull id<FBiOSTarget>)target;
+- (nonnull FBFuture<NSNull *> *)erase;
 
-NS_ASSUME_NONNULL_END
+@end

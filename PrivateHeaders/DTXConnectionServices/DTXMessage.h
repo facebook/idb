@@ -9,22 +9,22 @@
 
 @interface DTXMessage : NSObject
 {
-    int _messageType;
-    int _compressionType;
-    int _status;
-    CDUnknownBlockType _destructor;
-    const char *_internalBuffer;
-    unsigned long long _internalBufferLength;
-    unsigned long long _cost;
-    id <NSCoding,NSObject> _payloadObject;
-    void *_auxiliary;
-    BOOL _deserialized;
-    BOOL _immutable;
-    BOOL _expectsReply;
-    unsigned int _identifier;
-    unsigned int _channelCode;
-    unsigned int _conversationIndex;
-    NSDictionary *_auxiliaryPromoted;
+  int _messageType;
+  int _compressionType;
+  int _status;
+  CDUnknownBlockType _destructor;
+  const char *_internalBuffer;
+  unsigned long long _internalBufferLength;
+  unsigned long long _cost;
+  id<NSCoding, NSObject> _payloadObject;
+  void *_auxiliary;
+  BOOL _deserialized;
+  BOOL _immutable;
+  BOOL _expectsReply;
+  unsigned int _identifier;
+  unsigned int _channelCode;
+  unsigned int _conversationIndex;
+  NSDictionary *_auxiliaryPromoted;
 }
 
 + (_Bool)extractSerializedCompressionInfoFromBuffer:(const char *)arg1 length:(unsigned long long)arg2 compressionType:(int *)arg3 uncompressedLength:(unsigned long long *)arg4 compressedDataOffset:(unsigned long long *)arg5;
@@ -38,22 +38,22 @@
 + (id)messageWithObject:(id)arg1;
 + (void)setReportCompressionBlock:(CDUnknownBlockType)arg1;
 + (void)initialize;
-@property(readonly, nonatomic) unsigned long long cost; // @synthesize cost=_cost;
-@property(nonatomic) int errorStatus; // @synthesize errorStatus=_status;
-@property(readonly, nonatomic) BOOL deserialized; // @synthesize deserialized=_deserialized;
-@property(nonatomic) unsigned int conversationIndex; // @synthesize conversationIndex=_conversationIndex;
-@property(nonatomic) BOOL expectsReply; // @synthesize expectsReply=_expectsReply;
-@property(nonatomic) unsigned int channelCode; // @synthesize channelCode=_channelCode;
-@property(nonatomic) int messageType; // @synthesize messageType=_messageType;
-@property(nonatomic) unsigned int identifier; // @synthesize identifier=_identifier;
-@property(readonly, nonatomic) unsigned long long serializedLength;
+@property (nonatomic, readonly) unsigned long long cost; // @synthesize cost=_cost;
+@property (nonatomic) int errorStatus; // @synthesize errorStatus=_status;
+@property (nonatomic, readonly) BOOL deserialized; // @synthesize deserialized=_deserialized;
+@property (nonatomic) unsigned int conversationIndex; // @synthesize conversationIndex=_conversationIndex;
+@property (nonatomic) BOOL expectsReply; // @synthesize expectsReply=_expectsReply;
+@property (nonatomic) unsigned int channelCode; // @synthesize channelCode=_channelCode;
+@property (nonatomic) int messageType; // @synthesize messageType=_messageType;
+@property (nonatomic) unsigned int identifier; // @synthesize identifier=_identifier;
+@property (nonatomic, readonly) unsigned long long serializedLength;
 - (void)serializedFormExpectingReply:(BOOL)arg1 apply:(CDUnknownBlockType)arg2;
 - (id)initWithSerializedForm:(const char *)arg1 length:(unsigned long long)arg2 destructor:(CDUnknownBlockType)arg3 compressor:(id)arg4;
 - (void)invokeWithTarget:(id)arg1 replyChannel:(id)arg2 validator:(CDUnknownBlockType)arg3;
 - (BOOL)shouldInvokeWithTarget:(id)arg1;
-@property(readonly, nonatomic) BOOL isBarrier;
-@property(readonly, nonatomic) BOOL isDispatch;
-@property(nonatomic) NSError *error;
+@property (nonatomic, readonly) BOOL isBarrier;
+@property (nonatomic, readonly) BOOL isDispatch;
+@property (nonatomic) NSError *error;
 - (id)valueForMessageKey:(id)arg1;
 - (void)setData:(id)arg1 forMessageKey:(id)arg2;
 - (void)setInteger:(long long)arg1 forMessageKey:(id)arg2;
@@ -68,7 +68,7 @@
 - (void)_makeImmutable;
 - (const void *)getBufferWithReturnedLength:(unsigned long long *)arg1;
 - (id)object;
-@property(copy, nonatomic) id <NSCoding, NSObject> payloadObject;
+@property (nonatomic, copy) id<NSCoding, NSObject> payloadObject;
 - (void)_setPayloadBuffer:(const char *)arg1 length:(unsigned long long)arg2 shouldCopy:(BOOL)arg3 destructor:(CDUnknownBlockType)arg4;
 - (void)_clearPayloadBuffer;
 - (void)dealloc;
@@ -83,4 +83,3 @@
 - (void)encodeWithCoder:(id)arg1;
 
 @end
-

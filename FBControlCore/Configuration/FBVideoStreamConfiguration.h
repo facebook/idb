@@ -7,63 +7,45 @@
 
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  The Encoding of the Video Stream.
  */
 typedef NSString *FBVideoStreamEncoding NS_STRING_ENUM;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingH264;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingBGRA;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingMJPEG;
-extern FBVideoStreamEncoding const FBVideoStreamEncodingMinicap;
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingH264 NS_SWIFT_NAME(h264);
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingHEVC NS_SWIFT_NAME(hevc);
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingBGRA NS_SWIFT_NAME(bgra);
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMJPEG NS_SWIFT_NAME(mjpeg);
+extern FBVideoStreamEncoding _Nonnull const FBVideoStreamEncodingMinicap;
 
 /**
- A Configuration Object for a Video Stream.
+ The Video Codec for compressed video streams.
  */
-@interface FBVideoStreamConfiguration : NSObject <NSCopying>
+typedef NSString *FBVideoStreamCodec NS_STRING_ENUM;
+extern FBVideoStreamCodec _Nonnull const FBVideoStreamCodecH264 NS_SWIFT_NAME(h264);
+extern FBVideoStreamCodec _Nonnull const FBVideoStreamCodecHEVC NS_SWIFT_NAME(hevc);
 
 /**
- The Designated Initializer.
-
- @param encoding the stream type to use.
- @param framesPerSecond the number of frames per second for an eager stream. nil if a lazy stream.
- @param compressionQuality the compression quality to use.
- @param scaleFactor the scale factor, between 0-1. nil for no scaling.
+ The Transport/Container format for compressed video streams.
  */
-- (instancetype)initWithEncoding:(FBVideoStreamEncoding)encoding framesPerSecond:(nullable NSNumber *)framesPerSecond compressionQuality:(nullable NSNumber *)compressionQuality scaleFactor:(nullable NSNumber *)scaleFactor avgBitrate:(nullable NSNumber *)avgBitrate keyFrameRate:(nullable NSNumber *)keyFrameRate;
+typedef NSString *FBVideoStreamTransport NS_STRING_ENUM;
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportAnnexB;
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportMPEGTS NS_SWIFT_NAME(mpegts);
+extern FBVideoStreamTransport _Nonnull const FBVideoStreamTransportFMP4 NS_SWIFT_NAME(fmp4);
 
 /**
- The encoding of the stream.
+ The type of video stream format.
  */
-@property (nonatomic, assign, readonly) FBVideoStreamEncoding encoding;
+typedef NS_ENUM(NSUInteger, FBVideoStreamFormatType) {
+  FBVideoStreamFormatTypeCompressedVideo,
+  FBVideoStreamFormatTypeMJPEG NS_SWIFT_NAME(mjpeg),
+  FBVideoStreamFormatTypeMinicap,
+  FBVideoStreamFormatTypeBGRA NS_SWIFT_NAME(bgra),
+};
 
 /**
- The compression quality to use.
+ The rate-control mode for VTCompression.
  */
-@property (nonatomic, copy, readonly) NSNumber *compressionQuality;
-
-/**
- The number of frames per second to use if using an eager stream.
- nil if lazy streaming should be used.
- */
-@property (nonatomic, copy, nullable, readonly) NSNumber *framesPerSecond;
-
-/**
- The scale factor between 0-1. nil for no scaling.
- */
-@property (nonatomic, copy, nullable, readonly) NSNumber *scaleFactor;
-
-/**
- Average bitrate.
- */
-@property (nonatomic, copy, nullable, readonly) NSNumber *avgBitrate;
-
-/**
- Send a key frame every N seconds.
- */
-@property (nonatomic, copy, nullable, readonly) NSNumber *keyFrameRate;
-
-@end
-
-NS_ASSUME_NONNULL_END
+typedef NS_ENUM(NSUInteger, FBVideoStreamRateControlMode) {
+  FBVideoStreamRateControlModeConstantQuality,
+  FBVideoStreamRateControlModeAverageBitrate,
+};

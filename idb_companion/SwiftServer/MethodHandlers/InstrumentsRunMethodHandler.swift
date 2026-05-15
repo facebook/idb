@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -54,7 +55,10 @@ struct InstrumentsRunMethodHandler {
         targetLogger,
       ].compactMap { $0 })
 
-    let operation = try await BridgeFuture.value(target.startInstruments(configuration, logger: logger))
+    guard let asyncTarget = target as? any AsyncInstrumentsCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncInstrumentsCommands")
+    }
+    let operation = try await asyncTarget.startInstruments(configuration: configuration, logger: logger)
 
     let runningStateResponse = Idb_InstrumentsRunResponse.with {
       $0.output = .state(.runningInstruments)
@@ -65,27 +69,24 @@ struct InstrumentsRunMethodHandler {
   }
 
   private func stopInstruments(operation: FBInstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
-    _ = try await BridgeFuture.value(operation.stop())
+    _ = try await operation.stopAsync()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
     }
     try await responseStream.send(response)
 
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
-    let processed = try await BridgeFuture.value(
-      FBInstrumentsOperation.postProcess(
-        postProcessArguments,
-        traceDir: operation.traceDir,
-        queue: BridgeQueues.futureSerialFullfillmentQueue,
-        logger: logger))
-    guard let processedPath = processed.path else {
-      throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
-    }
+    let processed = try await FBInstrumentsOperation.postProcessAsync(
+      arguments: postProcessArguments,
+      traceFile: operation.traceFile,
+      queue: BridgeQueues.futureSerialFullfillmentQueue,
+      logger: logger)
+    let processedPath = processed.path
     finishedWriting.set(true)
 
-    let archiveOperation = FBArchiveOperations.createGzippedTar(forPath: processedPath, logger: logger)
+    let archiveOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: processedPath, logger: logger)
 
-    try await FileDrainWriter.performDrain(taskFuture: archiveOperation) { data in
+    try await FileDrainWriter.performDrain(task: archiveOperation) { data in
       let response = Idb_InstrumentsRunResponse.with {
         $0.payload = .with {
           $0.data = data
@@ -104,7 +105,7 @@ struct InstrumentsRunMethodHandler {
       targetApplication: request.appBundleID,
       appEnvironment: request.environment,
       appArguments: request.arguments,
-      toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments) ?? [],
+      toolArguments: storageManager.interpolateArgumentReplacements(request.toolArguments),
       timings: .init(
         terminateTimeout: withDefaultTimeout(request.timings.terminateTimeout, DefaultInstrumentsTerminateTimeout),
         launchRetryTimeout: withDefaultTimeout(request.timings.launchRetryTimeout, DefaultInstrumentsLaunchRetryTimeout),

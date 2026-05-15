@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSString.h>
+#import <Foundation/Foundation.h>
 
 @interface NSString (SIMPackedVersion)
 + (id)sim_stringForPackedVersion:(unsigned int)arg1;

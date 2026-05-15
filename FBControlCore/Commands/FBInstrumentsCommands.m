@@ -7,7 +7,7 @@
 
 #import "FBInstrumentsCommands.h"
 
-#import "FBInstrumentsConfiguration.h"
+#import "FBControlCore-Swift.h"
 #import "FBInstrumentsOperation.h"
 #import "FBiOSTarget.h"
 
@@ -32,7 +32,7 @@
   return self;
 }
 
-#pragma mark FBInstrumentsCommands
+#pragma mark FBInstrumentsCommandsProtocol
 
 - (FBFuture<FBInstrumentsOperation *> *)startInstruments:(FBInstrumentsConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
 {

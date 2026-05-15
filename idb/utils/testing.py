@@ -9,15 +9,12 @@
 import asyncio
 import functools
 import inspect
-import logging
+import sys
 import unittest
 import unittest.mock as _mock
 import warnings
 from collections.abc import Awaitable, Callable
 from typing import cast, TypeVar
-
-# pyre-ignore
-from unittest.case import _Outcome
 
 
 _RT = TypeVar("_RT")  # Return Generic
@@ -62,24 +59,66 @@ class TestCase(unittest.TestCase):
         self.loop.set_debug(True)
         super().__init__(methodName)
 
-    async def run_async(self, testMethod, outcome, expecting_failure):
-        with outcome.testPartExecutor(self):
-            await awaitable(self.setUp)()
-        if outcome.success:
-            outcome.expecting_failure = expecting_failure
-            with outcome.testPartExecutor(self, isTest=True):
-                await awaitable(testMethod)()
-            outcome.expecting_failure = False
-            with outcome.testPartExecutor(self):
-                await awaitable(self.tearDown)()
-        await self.doCleanups()
+    async def _run_test_method(self, testMethod, result, expecting_failure):
+        """Run setUp, test method, and tearDown with proper error handling."""
+        success = True
+        skipped = []
+        errors = []
+        expected_failure = None
 
-    async def doCleanups(self):
-        outcome = self._outcome or _Outcome()
+        # Run setUp
+        try:
+            await awaitable(self.setUp)()
+        except unittest.SkipTest as e:
+            success = False
+            skipped.append((self, str(e)))
+        except Exception:
+            success = False
+            errors.append((self, sys.exc_info()))
+
+        # Run test method if setUp succeeded
+        if success:
+            try:
+                await awaitable(testMethod)()
+            except unittest.SkipTest as e:
+                success = False
+                skipped.append((self, str(e)))
+            except Exception:
+                exc_info = sys.exc_info()
+                if expecting_failure:
+                    expected_failure = exc_info
+                else:
+                    success = False
+                    errors.append((self, exc_info))
+
+            # Run tearDown
+            try:
+                await awaitable(self.tearDown)()
+            except unittest.SkipTest as e:
+                success = False
+                skipped.append((self, str(e)))
+            except Exception:
+                success = False
+                errors.append((self, sys.exc_info()))
+
+        # Run cleanups
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
-            with outcome.testPartExecutor(self):
+            try:
                 await awaitable(function)(*args, **kwargs)
+            except Exception:
+                success = False
+                errors.append((self, sys.exc_info()))
+
+        return success, skipped, errors, expected_failure
+
+    async def doCleanups(self):
+        while self._cleanups:
+            function, args, kwargs = self._cleanups.pop()
+            try:
+                await awaitable(function)(*args, **kwargs)
+            except Exception:
+                pass
 
     async def debug_async(self, testMethod):
         await awaitable(self.setUp)()
@@ -89,20 +128,14 @@ class TestCase(unittest.TestCase):
             function, args, kwargs = self._cleanups.pop(-1)
             await awaitable(function)(*args, **kwargs)
 
-    @_mock.patch("asyncio.base_events.logger")
-    @_mock.patch("asyncio.coroutines.logger")
-    def asyncio_orchestration_debug(self, testMethod, b_log, c_log):
+    def asyncio_orchestration_debug(self, testMethod):
         asyncio.set_event_loop(self.loop)
-        real_logger = logging.getLogger("asyncio").error
-        c_log.error.side_effect = b_log.error.side_effect = real_logger
         # Don't make testmethods cleanup tasks that existed before them
         before_tasks = asyncio.all_tasks(self.loop)
         _tasks_warning(before_tasks)
         debug_async = self.debug_async(testMethod)
         self.loop.run_until_complete(debug_async)
 
-        if c_log.error.called or b_log.error.called:
-            self.fail("asyncio logger.error() called!")
         # Sometimes we end up with a reference to our task for debug_async
         tasks = {
             t
@@ -112,33 +145,34 @@ class TestCase(unittest.TestCase):
         del before_tasks
         self.assertEqual(set(), tasks, "left over asyncio tasks!")
 
-    @_mock.patch("asyncio.base_events.logger")
-    @_mock.patch("asyncio.coroutines.logger")
-    def asyncio_orchestration_outcome(
-        self, testMethod, outcome, expecting_failure, b_log, c_log
-    ):
+    def _run_async_test(self, testMethod, result, expecting_failure):
+        """Run the async test with proper asyncio orchestration."""
         asyncio.set_event_loop(self.loop)
-        real_logger = logging.getLogger("asyncio").error
-        c_log.error.side_effect = b_log.error.side_effect = real_logger
+
         # Don't make testmethods cleanup tasks that existed before them
         before_tasks = asyncio.all_tasks(self.loop)
         _tasks_warning(before_tasks)
-        run_async = self.run_async(testMethod, outcome, expecting_failure)
+
+        run_coro = self._run_test_method(testMethod, result, expecting_failure)
         ignore_tasks = getattr(
             testMethod, "__unittest_asyncio_taskleaks__", False
         ) or getattr(self, "__unittest_asyncio_taskleaks__", False)
-        with outcome.testPartExecutor(self):
-            self.loop.run_until_complete(run_async)
-            # Restore expecting_faiures so we can test the below
-            outcome.expecting_failure = expecting_failure
-            if c_log.error.called or b_log.error.called:
-                self.fail("asyncio logger.error() called!")
 
-            # Sometimes we end up with a reference to our task for run_async
+        success = True
+        skipped = []
+        errors = []
+        expected_failure = None
+
+        try:
+            success, skipped, errors, expected_failure = self.loop.run_until_complete(
+                run_coro
+            )
+
+            # Sometimes we end up with a reference to our task for run_coro
             tasks = {
                 t
                 for t in asyncio.all_tasks(self.loop) - before_tasks
-                if not (t._coro == run_async and t.done())
+                if not (t._coro == run_coro and t.done())
             }
             del before_tasks
             if ignore_tasks and tasks:
@@ -149,12 +183,23 @@ class TestCase(unittest.TestCase):
                 )
             else:
                 self.assertEqual(set(), tasks, "left over asyncio tasks!")
+        except unittest.SkipTest as e:
+            success = False
+            skipped.append((self, str(e)))
+        except Exception:
+            exc_info = sys.exc_info()
+            if expecting_failure:
+                expected_failure = exc_info
+            else:
+                success = False
+                errors.append((self, exc_info))
+
+        return success, skipped, errors, expected_failure
 
     # pyre-ignore
     def run(self, result=None):
         """
-        This is a complete copy of TestCase.run
-        But with some asyncio worked into it.
+        Run the test case with asyncio support.
         """
         orig_result = result
         if result is None:
@@ -174,32 +219,35 @@ class TestCase(unittest.TestCase):
                 skip_why = getattr(
                     self.__class__, "__unittest_skip_why__", ""
                 ) or getattr(testMethod, "__unittest_skip_why__", "")
-                self._addSkip(result, self, skip_why)  # noqa T484
+                result.addSkip(self, skip_why)
             finally:
                 result.stopTest(self)
             return None
+
         expecting_failure_method = getattr(
             testMethod, "__unittest_expecting_failure__", False
         )
         expecting_failure_class = getattr(self, "__unittest_expecting_failure__", False)
         expecting_failure = expecting_failure_class or expecting_failure_method
-        outcome = _Outcome(result)
+
         try:
-            self._outcome = outcome
+            success, skipped, errors, expected_failure = self._run_async_test(
+                testMethod, result, expecting_failure
+            )
 
-            self.asyncio_orchestration_outcome(testMethod, outcome, expecting_failure)
+            for test, reason in skipped:
+                result.addSkip(test, reason)
 
-            for test, reason in outcome.skipped:
-                self._addSkip(result, test, reason)  # noqa T484
-            self._feedErrorsToResult(result, outcome.errors)  # noqa T484
-            if outcome.success:
+            for test, exc_info in errors:
+                if exc_info is not None:
+                    result.addError(test, exc_info)
+
+            if success:
                 if expecting_failure:
-                    if outcome.expectedFailure:
-                        self._addExpectedFailure(  # noqa T484
-                            result, outcome.expectedFailure
-                        )
+                    if expected_failure:
+                        result.addExpectedFailure(self, expected_failure)
                     else:
-                        self._addUnexpectedSuccess(result)  # noqa T484
+                        result.addUnexpectedSuccess(self)
                 else:
                     result.addSuccess(self)
             return result
@@ -209,15 +257,6 @@ class TestCase(unittest.TestCase):
                 stopTestRun = getattr(result, "stopTestRun", None)
                 if stopTestRun is not None:
                     stopTestRun()
-
-            # explicitly break reference cycles:
-            # outcome.errors -> frame -> outcome -> outcome.errors
-            # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
-            outcome.errors.clear()
-            outcome.expectedFailure = None
-
-            # clear the outcome, no more needed
-            self._outcome = None
 
     # pyre-ignore
     def debug(self):

@@ -1,0 +1,287 @@
+name: FBSimulatorControl
+
+options:
+  deploymentTarget:
+    macOS: "10.14"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: com.facebook
+
+configFiles:
+  Debug: Configuration/Shared.xcconfig
+  Release: Configuration/Shared.xcconfig
+
+settings:
+  base:
+    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders
+
+targets:
+  FBControlCore:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBControlCore/FBControlCore.xcconfig
+      Release: FBControlCore/FBControlCore.xcconfig
+    sources:
+      - path: FBControlCore
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCore/FBControlCore-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
+        PRODUCT_NAME: FBControlCore
+        DEFINES_MODULE: YES
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: Foundation.framework
+      - sdk: ServiceManagement.framework
+
+  FBControlCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBControlCoreTests/FBControlCoreTests.xcconfig
+      Release: FBControlCoreTests/FBControlCoreTests.xcconfig
+    sources:
+      - path: FBControlCoreTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBControlCoreTests/FBControlCoreTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCoreTests
+        PRODUCT_NAME: FBControlCoreTests
+    dependencies:
+      - target: FBControlCore
+      - sdk: XCTest.framework
+
+  XCTestBootstrap:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrap/XCTestBootstrap.xcconfig
+      Release: XCTestBootstrap/XCTestBootstrap.xcconfig
+    sources:
+      - path: XCTestBootstrap
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+          - "**/*.modulemap"
+      - path: Shims/Shimulator/Tools/FBXCTestConstants.h
+        headerVisibility: project
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrap/XCTestBootstrap-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrap
+        PRODUCT_NAME: XCTestBootstrap
+        DEFINES_MODULE: YES
+        MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - sdk: Cocoa.framework
+      - sdk: Foundation.framework
+      - sdk: IOKit.framework
+
+  XCTestBootstrapTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+      Release: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+    sources:
+      - path: XCTestBootstrapTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrapTests
+        PRODUCT_NAME: XCTestBootstrapTests
+    dependencies:
+      - target: XCTestBootstrap
+      - sdk: XCTest.framework
+
+  FBSimulatorControl:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBSimulatorControl/FBSimulatorControl.xcconfig
+      Release: FBSimulatorControl/FBSimulatorControl.xcconfig
+    sources:
+      - path: FBSimulatorControl
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControl
+        PRODUCT_NAME: FBSimulatorControl
+        DEFINES_MODULE: YES
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - sdk: AVFoundation.framework
+      - sdk: Accelerate.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+      - sdk: IOSurface.framework
+      - sdk: Metal.framework
+      - sdk: VideoToolbox.framework
+
+  FBSimulatorControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+    sources:
+      - path: FBSimulatorControlTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+      - path: FBControlCoreTests/Templates
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlTests
+        PRODUCT_NAME: FBSimulatorControlTests
+    dependencies:
+      - target: FBControlCore
+      - target: XCTestBootstrap
+      - target: FBSimulatorControl
+      - sdk: XCTest.framework
+      - sdk: Metal.framework
+
+  FBDeviceControl:
+    type: framework
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControl/FBDeviceControl.xcconfig
+      Release: FBDeviceControl/FBDeviceControl.xcconfig
+    sources:
+      - path: FBDeviceControl
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+          - "**/*.md"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControl
+        PRODUCT_NAME: FBDeviceControl
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.0"
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreMediaIO.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+
+  FBDeviceControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    configFiles:
+      Debug: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+      Release: FBDeviceControlTests/FBDeviceControlTests.xcconfig
+    sources:
+      - path: FBDeviceControlTests
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControlTests
+        PRODUCT_NAME: FBDeviceControlTests
+    dependencies:
+      - target: FBControlCore
+      - target: XCTestBootstrap
+      - target: FBDeviceControl
+      - sdk: XCTest.framework
+
+  IDBCompanionUtilities:
+    type: framework
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: IDBCompanionUtilities
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
+        PRODUCT_NAME: IDBCompanionUtilities
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - sdk: Foundation.framework
+
+  IDBCompanionUtilitiesTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: IDBCompanionUtilitiesTests
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
+        PRODUCT_NAME: IDBCompanionUtilitiesTests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: IDBCompanionUtilities
+      - sdk: XCTest.framework
+
+  CompanionLib:
+    type: framework
+    platform: macOS
+    deploymentTarget: "10.15"
+    sources:
+      - path: CompanionLib
+        excludes:
+          - "**/*-Info.plist"
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
+        PRODUCT_NAME: CompanionLib
+        DEFINES_MODULE: YES
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: FBControlCore
+        embed: true
+      - target: XCTestBootstrap
+        embed: true
+      - target: FBSimulatorControl
+        embed: true
+      - target: FBDeviceControl
+        embed: true
+      - target: IDBCompanionUtilities
+        embed: true
+      - sdk: Foundation.framework

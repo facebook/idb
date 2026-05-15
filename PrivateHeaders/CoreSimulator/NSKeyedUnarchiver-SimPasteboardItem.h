@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSKeyedUnarchiver.h>
+#import <Foundation/Foundation.h>
 
 @interface NSKeyedUnarchiver (SimPasteboardItem)
 + (id)sim_securelyUnarchiveObjectWithData:(id)arg1;

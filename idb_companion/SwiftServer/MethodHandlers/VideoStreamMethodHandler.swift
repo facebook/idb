@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -42,12 +43,12 @@ struct VideoStreamMethodHandler {
     }
 
     let observeVideoStreamStop = Task<Void, Error> {
-      try await BridgeFuture.await(videoStream.completed)
+      try await videoStream.awaitCompletionAsync()
     }
 
     try await Task.select(observeClientCancelStreaming, observeVideoStreamStop).value
 
-    try await BridgeFuture.await(videoStream.stopStreaming())
+    try await videoStream.stopStreamingAsync()
     targetLogger.log("The video stream is terminated")
   }
 
@@ -69,39 +70,54 @@ struct VideoStreamMethodHandler {
         }
       }
     } else {
-      consumer = try FBFileWriter.syncWriter(forFilePath: start.filePath)
+      var writeError: NSError?
+      guard let writer = FBFileWriter.syncWriter(forFilePath: start.filePath, error: &writeError) else {
+        throw writeError ?? NSError(domain: "FBFileWriter", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create sync writer for \(start.filePath)"])
+      }
+      consumer = writer
     }
 
     let framesPerSecond = start.fps > 0 ? NSNumber(value: start.fps) : nil
-    let avgBitrate = start.avgBitrate > 0 ? NSNumber(value: start.avgBitrate) : nil
-    let encoding = try streamEncoding(from: start.format)
+    let format = streamFormat(from: start.format)
+
+    let rateControl: FBVideoStreamRateControl?
+    if start.avgBitrate > 0 {
+      rateControl = .bitrate(NSNumber(value: start.avgBitrate))
+    } else if start.compressionQuality > 0 {
+      rateControl = .quality(NSNumber(value: start.compressionQuality))
+    } else {
+      rateControl = nil
+    }
+
     let config = FBVideoStreamConfiguration(
-      encoding: encoding,
+      format: format,
       framesPerSecond: framesPerSecond,
-      compressionQuality: .init(value: start.compressionQuality),
+      rateControl: rateControl,
       scaleFactor: .init(value: start.scaleFactor),
-      avgBitrate: avgBitrate,
       keyFrameRate: .init(value: start.keyFrameRate))
 
-    let videoStream = try await BridgeFuture.value(target.createStream(with: config))
+    guard let asyncTarget = target as? any AsyncVideoStreamCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncVideoStreamCommands")
+    }
+    let videoStream = try await asyncTarget.createStream(configuration: config)
 
-    try await BridgeFuture.await(videoStream.startStreaming(consumer))
+    try await videoStream.startStreamingAsync(consumer)
 
     return videoStream
   }
 
-  private func streamEncoding(from requestFormat: Idb_VideoStreamRequest.Format) throws -> FBVideoStreamEncoding {
+  private func streamFormat(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {
     switch requestFormat {
     case .h264:
-      return .H264
+      return .compressedVideo(withCodec: .h264, transport: .annexB)
     case .rbga:
-      return .BGRA
+      return .bgra()
     case .mjpeg:
-      return .MJPEG
+      return .mjpeg()
     case .minicap:
-      return .minicap
+      return .minicap()
     case .i420, .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "Unrecognized video format")
+      return .compressedVideo(withCodec: .h264, transport: .annexB)
     }
   }
 }

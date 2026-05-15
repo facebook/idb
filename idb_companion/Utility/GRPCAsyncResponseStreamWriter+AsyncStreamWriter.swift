@@ -8,7 +8,7 @@
 import GRPC
 import IDBCompanionUtilities
 
-extension GRPCAsyncResponseStreamWriter: AsyncStreamWriter {
+extension GRPCAsyncResponseStreamWriter: @retroactive AsyncStreamWriter {
   public typealias Value = Response
 
   @inlinable

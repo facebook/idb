@@ -8,8 +8,7 @@
 #import <SimulatorKit/SimVideoFile.h>
 
 @interface SimVideoH264File : SimVideoFile
-{
-}
+{}
 
 + (BOOL)isSampleBufferIFrame:(struct opaqueCMSampleBuffer *)arg1;
 - (void)writeSampleBuffer:(struct opaqueCMSampleBuffer *)arg1 completionQueue:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;

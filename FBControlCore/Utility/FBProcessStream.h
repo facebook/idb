@@ -10,8 +10,6 @@
 #import <FBControlCore/FBDataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
   FBProcessStreamAttachmentModeInput = 0,
   FBProcessStreamAttachmentModeOutput = 1,
@@ -25,111 +23,34 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 /**
  The file descriptor to attach to.
  */
-@property (nonatomic, assign, readonly) int fileDescriptor;
+@property (nonatomic, readonly, assign) int fileDescriptor;
 
 /**
- Whether the implementor should close when it reaches the end of it's stream.
+ Whether the implementor should close when it reaches the end of its stream.
  */
-@property (nonatomic, assign, readonly) BOOL closeOnEndOfFile;
+@property (nonatomic, readonly, assign) BOOL closeOnEndOfFile;
 
 /**
  Whether the attachment represents an input or an output.
  */
-@property (nonatomic, assign, readonly) FBProcessStreamAttachmentMode mode;
+@property (nonatomic, readonly, assign) FBProcessStreamAttachmentMode mode;
 
 /**
  Checks fileDescriptor status and closes it if necessary;
  */
--(void)close;
+- (void)close;
 
 @end
 
-/**
- A Protocol that wraps the standard stream stdout, stderr, stdin
- */
-@protocol FBStandardStream <NSObject>
-
-/**
- Attaches to the output, returning an FBProcessStreamAttachment.
-
- @return A Future wrapping the FBProcessStreamAttachment.
- */
-- (FBFuture<FBProcessStreamAttachment *> *)attach;
-
-/**
- Tears down the output.
-
- @return A Future that resolves when teardown has completed.
- */
-- (FBFuture<NSNull *> *)detach;
-
-@end
-
-/**
- Provides information about the state of a stream
- */
-@protocol FBStandardStreamTransfer <NSObject>
-
-/**
- The number of bytes transferred.
- */
-@property (nonatomic, assign, readonly) ssize_t bytesTransferred;
-
-/**
- An error, if any has occured in the streaming of data to the input.
- */
-@property (nonatomic, strong, nullable, readonly) NSError *streamError;
-
-@end
-
-/**
- Process Output that can be provided through a file.
- */
-@protocol FBProcessFileOutput <NSObject>
-
-/**
- The File Path to write to.
- */
-@property (nonatomic, copy, readonly) NSString *filePath;
-
-/**
- Should be called just after the the file path has been written to.
- */
-- (FBFuture<NSNull *> *)startReading;
-
-/**
- Should be called just after the the file has stopped being written to.
- */
-- (FBFuture<NSNull *> *)stopReading;
-
-@end
-
-/**
- Process Output that can be provided through a file.
- */
-@protocol FBProcessOutput <NSObject>
-
-/**
- Allows the receiver to be written to via a file instead of via a file handle.
- This is desirable to use when interacting with an API that doesn't support writing to a file handle.
-
- @return A Future wrapping a FBProcessFileOutput instance.
- */
-- (FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
-
-/**
- Allows the receiver to be written to via a Data Consumer.
-
- @return A Future wrapping a FBDataConsumer instance.
- */
-- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer;
-
-@end
+@protocol FBStandardStream;
+@protocol FBStandardStreamTransfer;
+@protocol FBProcessFileOutput;
+@protocol FBProcessOutput;
 
 /**
  A container object for the output of a process.
  */
-@interface FBProcessOutput<WrappedType> : NSObject <FBStandardStream, FBProcessOutput>
+@interface FBProcessOutput <WrappedType> : NSObject
 
 #pragma mark Initializers
 
@@ -138,7 +59,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 
  @return a Process Output instance.
  */
-+ (FBProcessOutput<NSNull *> *)outputForNullDevice;
++ (nonnull FBProcessOutput<NSNull *> *)outputForNullDevice;
 
 /**
  An Output Container for a File Path.
@@ -146,14 +67,14 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param filePath the File Path to write to, may not be nil.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<NSString *> *)outputForFilePath:(NSString *)filePath;
++ (nonnull FBProcessOutput<NSString *> *)outputForFilePath:(nonnull NSString *)filePath;
 
 /**
  An Output Container for an Input Stream
 
  @return a Process Output instance.
  */
-+ (FBProcessOutput<NSInputStream *> *)outputToInputStream;
++ (nonnull FBProcessOutput<NSInputStream *> *)outputToInputStream;
 
 /**
  An Output Container that passes to both a data consumer and a logger.
@@ -162,7 +83,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(nonnull id<FBDataConsumer>)dataConsumer logger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
  An Output Container that passes to Data Consumer.
@@ -170,7 +91,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param dataConsumer the data consumer to write to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer;
++ (nonnull FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(nonnull id<FBDataConsumer>)dataConsumer;
 
 /**
  An Output Container that writes to a logger
@@ -178,37 +99,42 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(nonnull id<FBControlCoreLogger>)logger;
 
 /**
- An Output Container that accumilates data in memory
+ An Output Container that accumulates data in memory
 
  @param data the mutable data to append to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<NSMutableData *> *)outputToMutableData:(NSMutableData *)data;
++ (nonnull FBProcessOutput<NSMutableData *> *)outputToMutableData:(nonnull NSMutableData *)data;
 
 /**
- An Output Container that accumilates data in memory, exposing it as a string.
+ An Output Container that accumulates data in memory, exposing it as a string.
 
  @param data the mutable data to append to.
  @return a Process Output instance.
  */
-+ (FBProcessOutput<NSString *> *)outputToStringBackedByMutableData:(NSMutableData *)data;
++ (nonnull FBProcessOutput<NSString *> *)outputToStringBackedByMutableData:(nonnull NSMutableData *)data;
 
 #pragma mark Properties
 
 /**
  The wrapped contents of the stream.
  */
-@property (nonatomic, strong, readonly) WrappedType contents;
+@property (nonnull, nonatomic, readonly, strong) WrappedType contents;
+
+- (nonnull FBFuture<FBProcessStreamAttachment *> *)attach;
+- (nonnull FBFuture<NSNull *> *)detach;
+- (nonnull FBFuture<id<FBProcessFileOutput>> *)providedThroughFile;
+- (nonnull FBFuture<id<FBDataConsumer>> *)providedThroughConsumer;
 
 @end
 
 /**
  A container object for the input of a process.
  */
-@interface FBProcessInput<WrappedType> : NSObject <FBStandardStream>
+@interface FBProcessInput <WrappedType> : NSObject
 
 #pragma mark Initializers
 
@@ -218,7 +144,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 
  @return a FBProcessInput instance wrapping a data consumer.
  */
-+ (FBProcessInput<id<FBDataConsumer>> *)inputFromConsumer;
++ (nonnull FBProcessInput<id<FBDataConsumer>> *)inputFromConsumer;
 
 /**
  An input container that provides an NSOutputStream.
@@ -226,23 +152,24 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 
  @return a FBProcessInput instance wrapping an NSOutputStream.
  */
-+ (FBProcessInput<NSOutputStream *> *)inputFromStream;
++ (nonnull FBProcessInput<NSOutputStream *> *)inputFromStream;
 
 /**
- An Input container that connects data to the iput.
+ An Input container that connects data to the input.
 
  @param data the data to send.
  @return a Process Input instance.
  */
-+ (FBProcessInput<NSData *> *)inputFromData:(NSData *)data;
++ (nonnull FBProcessInput<NSData *> *)inputFromData:(nonnull NSData *)data;
 
 #pragma mark Properties
 
 /**
  The wrapped contents of the stream.
  */
-@property (nonatomic, strong, readonly) WrappedType contents;
+@property (nonnull, nonatomic, readonly, strong) WrappedType contents;
+
+- (nonnull FBFuture<FBProcessStreamAttachment *> *)attach;
+- (nonnull FBFuture<NSNull *> *)detach;
 
 @end
-
-NS_ASSUME_NONNULL_END

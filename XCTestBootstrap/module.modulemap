@@ -1,0 +1,9 @@
+framework module XCTestBootstrap {
+    umbrella header "XCTestBootstrap.h"
+
+    export *
+    module * { export * }
+
+    // Explicitly exclude headers that import private frameworks
+    exclude header "FBTestReporterAdapter.h"
+}

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSKeyedUnarchiver.h>
+#import <Foundation/Foundation.h>
 
 @interface NSKeyedUnarchiver (SimSecurely)
 + (id)sim_securelyUnarchiveObjectWithClasses:(id)arg1 data:(id)arg2;

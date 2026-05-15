@@ -7,10 +7,9 @@
 
 #import "FBFileContainer.h"
 
-#import "FBCollectionInformation.h"
-#import "FBControlCoreError.h"
+#import "FBControlCore-Swift.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBProcessBuilder.h"
-#import "FBProvisioningProfileCommands.h"
 
 FBFileContainerKind const FBFileContainerKindApplication = @"application";
 FBFileContainerKind const FBFileContainerKindAuxillary = @"auxillary";
@@ -24,11 +23,15 @@ FBFileContainerKind const FBFileContainerKindRoot = @"root";
 FBFileContainerKind const FBFileContainerKindSpringboardIcons = @"springboard_icons";
 FBFileContainerKind const FBFileContainerKindSymbols = @"symbols";
 FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
+FBFileContainerKind const FBFileContainerKindXctest = @"xctest";
+FBFileContainerKind const FBFileContainerKindDylib = @"dylib";
+FBFileContainerKind const FBFileContainerKindDsym = @"dsym";
+FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 @interface FBContainedFile_Host : NSObject <FBContainedFile>
 
-@property (nonatomic, strong, readonly) NSFileManager *fileManager;
-@property (nonatomic, copy, readonly) NSString *path;
+@property (nonatomic, readonly, strong) NSFileManager *fileManager;
+@property (nonatomic, readonly, copy) NSString *path;
 
 @end
 
@@ -70,8 +73,8 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 {
   if (![destination isKindOfClass:FBContainedFile_Host.class]) {
     return [[FBControlCoreError
-      describeFormat:@"Cannot move to %@, it is not on the host filesystem", destination]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Cannot move to %@, it is not on the host filesystem", destination]]
+            failBool:error];
   }
   FBContainedFile_Host *hostDestination = (FBContainedFile_Host *) destination;
   return [self.fileManager moveItemAtPath:self.path toPath:hostDestination.path error:error];
@@ -123,8 +126,8 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @interface FBContainedFile_Mapped_Host : NSObject <FBContainedFile>
 
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *mappingPaths;
-@property (nonatomic, strong, readonly) NSFileManager *fileManager;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *mappingPaths;
+@property (nonatomic, readonly, strong) NSFileManager *fileManager;
 
 @end
 
@@ -148,8 +151,8 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)removeItemWithError:(NSError **)error
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
-    failBool:error];
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
+          failBool:error];
 }
 
 - (NSArray<NSString *> *)contentsOfDirectoryWithError:(NSError **)error
@@ -160,15 +163,15 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)createDirectoryWithError:(NSError **)error
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
-    failBool:error];
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
+          failBool:error];
 }
 
 - (NSData *)contentsOfFileWithError:(NSError **)error
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
-    fail:error];
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
+          fail:error];
 }
 
 - (BOOL)fileExistsIsDirectory:(BOOL *)isDirectoryOut
@@ -179,22 +182,22 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (BOOL)moveTo:(id<FBContainedFile>)destination error:(NSError **)error
 {
   return [[FBControlCoreError
-    describe:@"Moving files does not work on root virtual containers"]
-    failBool:error];
+           describe:@"Moving files does not work on root virtual containers"]
+          failBool:error];
 }
 
 - (BOOL)populateWithContentsOfHostPath:(NSString *)path error:(NSError **)error
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
-    failBool:error];
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
+          failBool:error];
 }
 
 - (BOOL)populateHostPathWithContents:(NSString *)path error:(NSError **)error
 {
   return [[FBControlCoreError
-    describeFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]
-    failBool:error];
+           describe:[NSString stringWithFormat:@"%@ does not operate on root virtual containers", NSStringFromSelector(_cmd)]]
+          failBool:error];
 }
 
 - (id<FBContainedFile>)fileByAppendingPathComponent:(NSString *)component error:(NSError **)error
@@ -209,8 +212,8 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   NSString *mappedPath = self.mappingPaths[firstComponent];
   if (!mappedPath) {
     return [[FBControlCoreError
-      describeFormat:@"'%@' is not a valid root path out of %@", firstComponent, [FBCollectionInformation oneLineDescriptionFromArray:self.mappingPaths.allKeys]]
-      fail:error];
+             describe:[NSString stringWithFormat:@"'%@' is not a valid root path out of %@", firstComponent, [FBCollectionInformation oneLineDescriptionFromArray:self.mappingPaths.allKeys]]]
+            fail:error];
   }
   id<FBContainedFile> mapped = [[FBContainedFile_Host alloc] initWithFileManager:self.fileManager path:mappedPath];
   return [mapped fileByAppendingPathComponent:nextPath error:error];
@@ -267,10 +270,10 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @end
 
-@interface FBContainedFile_ContainedRoot : NSObject <FBFileContainer>
+@interface FBContainedFile_ContainedRoot : NSObject <FBFileContainerProtocol>
 
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBContainedFile> rootFile;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBContainedFile> rootFile;
 
 @end
 
@@ -294,161 +297,170 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {
   return [[self
-    mapToContainedFile:destinationPath]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id<FBContainedFile> destination) {
-      // Attempt to delete first to overwrite
-      NSError *error;
-      destination = [destination fileByAppendingPathComponent:sourcePath.lastPathComponent error:&error];
-      if (!destination) {
-        return [FBFuture futureWithError:error];
-      }
-      [destination removeItemWithError:nil];
-      if (![destination populateWithContentsOfHostPath:sourcePath error:&error]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]
-          causedBy:error]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           mapToContainedFile:destinationPath]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(id<FBContainedFile> destination) {
+            // Attempt to delete first to overwrite
+            NSError *error;
+            destination = [destination fileByAppendingPathComponent:sourcePath.lastPathComponent error:&error];
+            if (!destination) {
+              return [FBFuture futureWithError:error];
+            }
+            [destination removeItemWithError:nil];
+            if (![destination populateWithContentsOfHostPath:sourcePath error:&error]) {
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", sourcePath, destinationPath, error]]
+                                   causedBy:error]
+                                  failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)sourcePath toHost:(NSString *)destinationPath
 {
   return [[self
-    mapToContainedFile:sourcePath]
-    onQueue:self.queue fmap:^ FBFuture<NSString *> * (id<FBContainedFile> source) {
-      BOOL sourceIsDirectory = NO;
-      if (![source fileExistsIsDirectory:&sourceIsDirectory]) {
-        return [[FBControlCoreError
-          describeFormat:@"Source path does not exist: %@", source]
-          failFuture];
-      }
-      NSString *dstPath = destinationPath;
-      if (!sourceIsDirectory) {
-        NSError *createDirectoryError;
-        if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:@{} error:&createDirectoryError]) {
-          return [[[FBControlCoreError
-            describeFormat:@"Could not create temporary directory: %@", createDirectoryError]
-            causedBy:createDirectoryError]
-            failFuture];
-        }
-        dstPath = [dstPath stringByAppendingPathComponent:[sourcePath lastPathComponent]];
-      }
-      // if it already exists at the destination path we should remove it before copying again
-      BOOL destinationIsDirectory = NO;
-      if ([NSFileManager.defaultManager fileExistsAtPath:dstPath isDirectory:&destinationIsDirectory]) {
-        NSError *removeError;
-        if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
-          return [[[FBControlCoreError
-            describeFormat:@"Could not remove %@", dstPath]
-            causedBy:removeError]
-            failFuture];
-        }
-      }
+           mapToContainedFile:sourcePath]
+          onQueue:self.queue
+          fmap:^FBFuture<NSString *> *(id<FBContainedFile> source) {
+            BOOL sourceIsDirectory = NO;
+            if (![source fileExistsIsDirectory:&sourceIsDirectory]) {
+              return (FBFuture *)[[FBControlCoreError
+                                   describe:[NSString stringWithFormat:@"Source path does not exist: %@", source]]
+                                  failFuture];
+            }
+            NSString *dstPath = destinationPath;
+            if (!sourceIsDirectory) {
+              NSError *createDirectoryError;
+              if (![NSFileManager.defaultManager createDirectoryAtPath:dstPath withIntermediateDirectories:YES attributes:@{} error:&createDirectoryError]) {
+                return (FBFuture *)[[[FBControlCoreError
+                                      describe:[NSString stringWithFormat:@"Could not create temporary directory: %@", createDirectoryError]]
+                                     causedBy:createDirectoryError]
+                                    failFuture];
+              }
+              dstPath = [dstPath stringByAppendingPathComponent:[sourcePath lastPathComponent]];
+            }
+            // if it already exists at the destination path we should remove it before copying again
+            BOOL destinationIsDirectory = NO;
+            if ([NSFileManager.defaultManager fileExistsAtPath:dstPath isDirectory:&destinationIsDirectory]) {
+              NSError *removeError;
+              if (![NSFileManager.defaultManager removeItemAtPath:dstPath error:&removeError]) {
+                return (FBFuture *)[[[FBControlCoreError
+                                      describe:[NSString stringWithFormat:@"Could not remove %@", dstPath]]
+                                     causedBy:removeError]
+                                    failFuture];
+              }
+            }
 
-      NSError *copyError;
-      if (![source populateHostPathWithContents:dstPath error:&copyError]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]
-          causedBy:copyError]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:destinationPath];
-    }];
+            NSError *copyError;
+            if (![source populateHostPathWithContents:dstPath error:&copyError]) {
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not copy from %@ to %@: %@", source, dstPath, copyError]]
+                                   causedBy:copyError]
+                                  failFuture];
+            }
+            return [FBFuture futureWithResult:destinationPath];
+          }];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)path toConsumer:(id<FBDataConsumer>)consumer
 {
   return [[[self
-    mapToContainedFile:path]
-    onQueue:self.queue fmap:^ FBFuture<FBProcess<NSNull *, id<FBDataConsumer>, NSData *> *> * (id<FBContainedFile> fileToTail) {
-      NSString *pathOnHostFileSystem = fileToTail.pathOnHostFileSystem;
-      if (!pathOnHostFileSystem) {
-        return [[FBControlCoreError
-          describeFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]
-          failFuture];
-      }
-      return [[[[FBProcessBuilder
-        withLaunchPath:@"/usr/bin/tail"]
-        withArguments:@[@"-c+1", @"-f", pathOnHostFileSystem]]
-        withStdOutConsumer:consumer]
-        start];
-    }]
-    onQueue:self.queue map:^(FBProcess *process) {
-      return [process.statLoc
-        onQueue:self.queue respondToCancellation:^{
-          return [process sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
-        }];
-    }];
+            mapToContainedFile:path]
+           onQueue:self.queue
+           fmap:^FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSData *> *> *(id<FBContainedFile> fileToTail) {
+             NSString *pathOnHostFileSystem = fileToTail.pathOnHostFileSystem;
+             if (!pathOnHostFileSystem) {
+               return (FBFuture *)[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Cannot tail %@, it is not on the local filesystem", fileToTail]]
+                                   failFuture];
+             }
+             return [[[[FBProcessBuilder
+                        withLaunchPath:@"/usr/bin/tail"]
+                       withArguments:@[@"-c+1", @"-f", pathOnHostFileSystem]]
+                      withStdOutConsumer:consumer]
+                     start];
+           }]
+          onQueue:self.queue
+          map:^(FBSubprocess *process) {
+            return [process.statLoc
+                    onQueue:self.queue
+                    respondToCancellation:^{
+                      return [process sendSignal:SIGTERM backingOffToKillWithTimeout:1 logger:nil];
+                    }];
+          }];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
   return [[self
-    mapToContainedFile:directoryPath]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id<FBContainedFile> directory) {
-      NSError *error;
-      if (![directory createDirectoryWithError:&error]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not create directory %@: %@", directory, error]
-          causedBy:error]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           mapToContainedFile:directoryPath]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(id<FBContainedFile> directory) {
+            NSError *error;
+            if (![directory createDirectoryWithError:&error]) {
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not create directory %@: %@", directory, error]]
+                                   causedBy:error]
+                                  failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)sourcePath to:(NSString *)destinationPath
 {
   return [[FBFuture
-    futureWithFutures:@[
-      [self mapToContainedFile:sourcePath],
-      [self mapToContainedFile:destinationPath],
-    ]]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (NSArray<id<FBContainedFile>> *providedFiles) {
-      // If the source and destination are on the same filesystem, they can be moved directly.
-      id<FBContainedFile> source = providedFiles[0];
-      id<FBContainedFile> destination = providedFiles[1];
-      NSError *error = nil;
-      if (![source moveTo:destination error:&error]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not move item at %@ to %@: %@", source, destination, error]
-          causedBy:error]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           futureWithFutures:@[
+             [self mapToContainedFile:sourcePath],
+             [self mapToContainedFile:destinationPath],
+           ]]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(NSArray<id<FBContainedFile>> *providedFiles) {
+            // If the source and destination are on the same filesystem, they can be moved directly.
+            id<FBContainedFile> source = providedFiles[0];
+            id<FBContainedFile> destination = providedFiles[1];
+            NSError *error = nil;
+            if (![source moveTo:destination error:&error]) {
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not move item at %@ to %@: %@", source, destination, error]]
+                                   causedBy:error]
+                                  failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
 {
   return [[self
-    mapToContainedFile:path]
-    onQueue:self.queue fmap:^ FBFuture<NSNull *> * (id<FBContainedFile> file) {
-      NSError *error;
-      if (![file removeItemWithError:&error]) {
-        return [[[FBControlCoreError
-          describeFormat:@"Could not remove item at path %@: %@", file, error]
-          causedBy:error]
-          failFuture];
-      }
-      return FBFuture.empty;
-    }];
+           mapToContainedFile:path]
+          onQueue:self.queue
+          fmap:^FBFuture<NSNull *> *(id<FBContainedFile> file) {
+            NSError *error;
+            if (![file removeItemWithError:&error]) {
+              return (FBFuture *)[[[FBControlCoreError
+                                    describe:[NSString stringWithFormat:@"Could not remove item at path %@: %@", file, error]]
+                                   causedBy:error]
+                                  failFuture];
+            }
+            return FBFuture.empty;
+          }];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
   return [[self
-    mapToContainedFile:path]
-    onQueue:self.queue fmap:^(id<FBContainedFile> directory) {
-      NSError *error;
-      NSArray<NSString *> *contents = [directory contentsOfDirectoryWithError:&error];
-      if (!contents) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:contents];
-    }];
+           mapToContainedFile:path]
+          onQueue:self.queue
+          fmap:^(id<FBContainedFile> directory) {
+            NSError *error;
+            NSArray<NSString *> *contents = [directory contentsOfDirectoryWithError:&error];
+            if (!contents) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:contents];
+          }];
 }
 
 #pragma mark Private
@@ -465,10 +477,10 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 
 @end
 
-@interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainer>
+@interface FBFileContainer_ProvisioningProfile : NSObject <FBFileContainerProtocol>
 
-@property (nonatomic, strong, readonly) id<FBProvisioningProfileCommands> commands;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, readonly, strong) id<FBProvisioningProfileCommands> commands;
+@property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
@@ -492,42 +504,43 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)path toContainer:(NSString *)destinationPath
 {
   return [FBFuture
-    onQueue:self.queue resolve:^ FBFuture<NSNull *> * {
-      NSError *error = nil;
-      NSData *data = [NSData dataWithContentsOfFile:path options:0 error:&error];
-      if (!data) {
-        return [FBFuture futureWithError:error];
-      }
-      return [[self.commands installProvisioningProfile:data] mapReplace:NSNull.null];
-    }];
+          onQueue:self.queue
+          resolve:^FBFuture<NSNull *> * {
+            NSError *error = nil;
+            NSData *data = [NSData dataWithContentsOfFile:path options:0 error:&error];
+            if (!data) {
+              return [FBFuture futureWithError:error];
+            }
+            return [[self.commands installProvisioningProfile:data] mapReplace:NSNull.null];
+          }];
 }
 
 - (FBFuture<NSString *> *)copyFromContainer:(NSString *)containerPath toHost:(NSString *)destinationPath
 {
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<FBFuture<NSNull *> *> *)tail:(NSString *)containerPath toConsumer:(id<FBDataConsumer>)consumer
 {
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)createDirectory:(NSString *)directoryPath
 {
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)moveFrom:(NSString *)originPath to:(NSString *)destinationPath
 {
-  return [[FBControlCoreError
-    describeFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]
-    failFuture];
+  return (FBFuture *)[[FBControlCoreError
+                       describe:[NSString stringWithFormat:@"-[%@ %@] is not implemented", NSStringFromClass(self.class), NSStringFromSelector(_cmd)]]
+                      failFuture];
 }
 
 - (FBFuture<NSNull *> *)remove:(NSString *)path
@@ -538,28 +551,29 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
 - (FBFuture<NSArray<NSString *> *> *)contentsOfDirectory:(NSString *)path
 {
   return [[self.commands
-    allProvisioningProfiles]
-    onQueue:self.queue map:^(NSArray<NSDictionary<NSString *,id> *> *profiles) {
-      NSMutableArray<NSString *> *files = NSMutableArray.array;
-      for (NSDictionary<NSString *,id> *profile in profiles) {
-        [files addObject:profile[@"UUID"]];
-      }
-      return files;
-    }];
+           allProvisioningProfiles]
+          onQueue:self.queue
+          map:^(NSArray<NSDictionary<NSString *, id> *> *profiles) {
+            NSMutableArray<NSString *> *files = NSMutableArray.array;
+            for (NSDictionary<NSString *, id> *profile in profiles) {
+              [files addObject:profile[@"UUID"]];
+            }
+            return files;
+          }];
 }
 
 @end
 
 @implementation FBFileContainer
 
-+ (id<FBFileContainer>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
++ (id<FBFileContainerProtocol>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
 {
   return [[FBFileContainer_ProvisioningProfile alloc] initWithCommands:commands queue:queue];
 }
 
 + (id<FBContainedFile>)containedFileForBasePath:(NSString *)basePath
 {
-  return  [[FBContainedFile_Host alloc] initWithFileManager:NSFileManager.defaultManager path:basePath];
+  return [[FBContainedFile_Host alloc] initWithFileManager:NSFileManager.defaultManager path:basePath];
 }
 
 + (id<FBContainedFile>)containedFileForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
@@ -567,19 +581,19 @@ FBFileContainerKind const FBFileContainerKindWallpaper = @"wallpaper";
   return [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
 }
 
-+ (id<FBFileContainer>)fileContainerForBasePath:(NSString *)basePath
++ (id<FBFileContainerProtocol>)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [self containedFileForBasePath:basePath];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainer>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
++ (id<FBFileContainerProtocol>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
 {
   id<FBContainedFile> rootFile = [self containedFileForPathMapping:pathMapping];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainer>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
++ (id<FBFileContainerProtocol>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.file_container", DISPATCH_QUEUE_SERIAL);
   return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:containedFile queue:queue];

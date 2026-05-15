@@ -7,13 +7,12 @@
 
 #import "FBSimulatorIndigoHID.h"
 
-#import <SimulatorApp/Indigo.h>
-#import <FBControlCore/FBControlCore.h>
-
+#include <dlfcn.h>
 #import <mach/mach.h>
 #import <mach/mach_time.h>
 
-#include <dlfcn.h>
+#import <FBControlCore/FBControlCore.h>
+#import <SimulatorApp/Indigo.h>
 #include <malloc/malloc.h>
 
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -26,7 +25,7 @@ typedef struct {
 
 @interface FBSimulatorIndigoHID ()
 
-@property (nonatomic, assign, readonly) IndigoCalls calls;
+@property (nonatomic, readonly, assign) IndigoCalls calls;
 
 - (instancetype)initWithCalls:(IndigoCalls)calls;
 
@@ -87,6 +86,39 @@ typedef struct {
   return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
 }
 
+- (NSData *)twoFingerTouchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction
+                             finger1:(CGPoint)finger1 finger2:(CGPoint)finger2
+{
+  CGPoint ratio1 = [self.class screenRatioFromPoint:finger1 screenSize:screenSize screenScale:screenScale];
+  CGPoint ratio2 = [self.class screenRatioFromPoint:finger2 screenSize:screenSize screenScale:screenScale];
+
+  // Passing a non-NULL point1 makes IndigoHIDMessageForMouseNSEvent produce a
+  // 3-payload message with eventType=0x03 (multi-touch) instead of 0x02 (single-touch).
+  IndigoMessage *message = self.calls.MessageForMouseNSEvent(&ratio1, &ratio2, 0x32, (int) [FBSimulatorIndigoHID eventTypeForDirection:direction], 0x0);
+  size_t messageSize = malloc_size(message);
+
+  // The function does not store our coordinates directly — patch them manually.
+  // Byte offsets derived from Indigo.h struct layout (IndigoPayload stride = 0xA0):
+  //   Payload 1 (finger 1) at 0x20:  xRatio at 0x3C, yRatio at 0x44
+  //   Payload 2 (digitizer) at 0xC0: xRatio at 0xDC, yRatio at 0xE4
+  //   Payload 3 (finger 2) at 0x160: xRatio at 0x17C, yRatio at 0x184
+  char *bytes = (char *)message;
+
+  // Finger 1
+  memcpy(bytes + 0x3C, &ratio1.x, sizeof(double));
+  memcpy(bytes + 0x44, &ratio1.y, sizeof(double));
+
+  // Digitizer summary (mirrors finger 1)
+  memcpy(bytes + 0xDC, &ratio1.x, sizeof(double));
+  memcpy(bytes + 0xE4, &ratio1.y, sizeof(double));
+
+  // Finger 2
+  memcpy(bytes + 0x17C, &ratio2.x, sizeof(double));
+  memcpy(bytes + 0x184, &ratio2.y, sizeof(double));
+
+  return [NSData dataWithBytesNoCopy:message length:messageSize freeWhenDone:YES];
+}
+
 #pragma mark Event Generation
 
 - (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
@@ -128,8 +160,10 @@ typedef struct {
       return ButtonEventSourceSideButton;
     case FBSimulatorHIDButtonSiri:
       return ButtonEventSourceSiri;
+    default:
+      NSAssert(NO, @"Button Code %lul is not known", (unsigned long)button);
+      abort();
   }
-  NSAssert(NO, @"Button Code %lul is not known", (unsigned long)button);
 }
 
 + (unsigned int)eventTypeForDirection:(FBSimulatorHIDDirection)direction
@@ -138,9 +172,11 @@ typedef struct {
     case FBSimulatorHIDDirectionDown:
       return ButtonEventTypeDown;
     case FBSimulatorHIDDirectionUp:
-      return  ButtonEventTypeUp;
+      return ButtonEventTypeUp;
+    default:
+      NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
+      abort();
   }
-  NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
 }
 
 + (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize screenScale:(float)screenScale
@@ -194,6 +230,4 @@ typedef struct {
   return message;
 }
 
-
 @end
-

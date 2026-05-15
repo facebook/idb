@@ -39,6 +39,8 @@ service CompanionService {
   rpc revoke(RevokeRequest) returns (RevokeResponse) {}
   rpc clear_keychain(ClearKeychainRequest) returns (ClearKeychainResponse) {}
   rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
+  rpc contacts_clear(ContactsClearRequest) returns (ContactsClearResponse) {}
+  rpc photos_clear(PhotosClearRequest) returns (PhotosClearResponse) {}
   rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
   rpc get_setting(GetSettingRequest) returns (GetSettingResponse) {
   } // Gets current setting
@@ -320,6 +322,14 @@ message ContactsUpdateRequest {
 
 message ContactsUpdateResponse {}
 
+message ContactsClearRequest {}
+
+message ContactsClearResponse {}
+
+message PhotosClearRequest {}
+
+message PhotosClearResponse {}
+
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;
 }
@@ -379,10 +389,18 @@ message HIDEvent {
     double duration = 1;
   }
 
+  message HIDPinch {
+    Point center = 1;
+    double scale = 2;
+    double duration = 3;
+    double radius = 4;
+  }
+
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
     HIDDelay delay = 3;
+    HIDPinch pinch = 4;
   }
 }
 

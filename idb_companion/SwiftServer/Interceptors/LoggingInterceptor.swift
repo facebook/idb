@@ -6,6 +6,8 @@
  */
 
 import CompanionLib
+import FBControlCore
+import Foundation
 import GRPC
 import NIO
 
@@ -56,8 +58,6 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
 
   private func reportMethodStart(methodName: String, in context: ServerInterceptorContext<Request, Response>) {
     logger.info().log("Start of \(methodName)")
-    let subject = FBEventReporterSubject(forStartedCall: methodName, arguments: [], reportNativeSwiftMethodCall: true)
-    reporter.report(subject)
   }
 
   // MARK: Request end + outgoing frames
@@ -86,10 +86,10 @@ final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Re
     let subject: FBEventReporterSubject
     if status.isOk {
       logger.debug().log("Success of \(methodName)")
-      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [], reportNativeSwiftMethodCall: true)
+      subject = FBEventReporterSubject(forSuccessfulCall: methodName, duration: duration, size: nil, arguments: [])
     } else {
       logger.info().log("Failure of \(methodName), \(status)")
-      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [], reportNativeSwiftMethodCall: true)
+      subject = FBEventReporterSubject(forFailingCall: methodName, duration: duration, message: status.message ?? "Unknown error with code \(status.code)", size: nil, arguments: [])
     }
 
     reporter.report(subject)

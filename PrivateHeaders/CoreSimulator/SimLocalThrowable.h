@@ -9,11 +9,11 @@
 
 @interface SimLocalThrowable : NSObject
 {
-    id _data;
+  id _data;
 }
 
 + (id)throwableWithData:(id)arg1;
-@property (retain, nonatomic) id data;
+@property (nonatomic, retain) id data;
 
 - (id)initWithData:(id)arg1;
 

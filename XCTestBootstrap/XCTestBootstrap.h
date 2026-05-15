@@ -5,26 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <XCTestBootstrap/FBJSONTestReporter.h>
-#import <XCTestBootstrap/FBListTestStrategy.h>
-#import <XCTestBootstrap/FBLogicReporterAdapter.h>
-#import <XCTestBootstrap/FBLogicTestRunStrategy.h>
-#import <XCTestBootstrap/FBMacDevice.h>
-#import <XCTestBootstrap/FBManagedTestRunStrategy.h>
-#import <XCTestBootstrap/FBTestConfiguration.h>
+#import <XCTestBootstrap/FBActivityRecord.h>
+#import <XCTestBootstrap/FBAttachment.h>
 #import <XCTestBootstrap/FBCodeCoverageConfiguration.h>
+#import <XCTestBootstrap/FBTestBundleConnection.h>
+#import <XCTestBootstrap/FBTestConfiguration.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
-#import <XCTestBootstrap/FBTestRunnerConfiguration.h>
-#import <XCTestBootstrap/FBXcodeBuildOperation.h>
-#import <XCTestBootstrap/FBOToolOperation.h>
-#import <XCTestBootstrap/FBOToolDynamicLibs.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
-#import <XCTestBootstrap/FBXCTestLogger.h>
-#import <XCTestBootstrap/FBXCTestProcess.h>
-#import <XCTestBootstrap/FBXCTestReporter.h>
-#import <XCTestBootstrap/FBXCTestResultBundleParser.h>
-#import <XCTestBootstrap/FBXCTestResultToolOperation.h>
-#import <XCTestBootstrap/FBXCTestRunner.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
-#import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>
+
+// Note: FBTestReporterAdapter.h is intentionally excluded as it imports XCTestPrivate headers
+
+#if __has_include(<XCTestBootstrap/XCTestBootstrap-Swift.h>)
+ #import <XCTestBootstrap/XCTestBootstrap-Swift.h>
+#endif

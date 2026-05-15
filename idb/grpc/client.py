@@ -7,6 +7,7 @@
 # pyre-strict
 
 import asyncio
+import codecs
 import functools
 import inspect
 import logging
@@ -19,7 +20,7 @@ from asyncio import StreamReader, StreamWriter
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Iterable
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import idb.common.plugin as plugin
 from grpclib.client import Channel
@@ -32,6 +33,8 @@ from idb.common.hid import (
     button_press_to_events,
     iterator_to_async_iterator,
     key_press_to_events,
+    multi_tap_to_events,
+    pinch_to_events,
     swipe_to_events,
     tap_to_events,
     text_to_events,
@@ -88,6 +91,7 @@ from idb.grpc.idb_pb2 import (
     ApproveRequest,
     ClearKeychainRequest,
     ConnectRequest,
+    ContactsClearRequest,
     ContactsUpdateRequest,
     CrashShowRequest,
     DebugServerRequest,
@@ -107,6 +111,7 @@ from idb.grpc.idb_pb2 import (
     MvRequest,
     OpenUrlRequest,
     Payload,
+    PhotosClearRequest,
     Point,
     PullRequest,
     PushRequest,
@@ -280,11 +285,11 @@ class Client(ClientBase):
             Channel(
                 host=address.host,
                 port=address.port,
-                loop=asyncio.get_event_loop(),
+                loop=asyncio.get_running_loop(),
                 ssl=ssl_context,
             )
             if isinstance(address, TCPAddress)
-            else Channel(path=address.path, loop=asyncio.get_event_loop())
+            else Channel(path=address.path, loop=asyncio.get_running_loop())
         ) as channel:
             stub = CompanionServiceStub(channel=channel)
             with tempfile.NamedTemporaryFile(mode="w+b") as f:
@@ -325,12 +330,15 @@ class Client(ClientBase):
         with tempfile.NamedTemporaryFile() as temp:
             # Remove the tempfile so we can bind to it first.
             os.remove(temp.name)
-            async with companion.unix_domain_server(
-                udid=udid, path=temp.name, only=only
-            ) as resolved_path, Client.build(
-                address=DomainSocketAddress(path=resolved_path),
-                logger=logger,
-            ) as client:
+            async with (
+                companion.unix_domain_server(
+                    udid=udid, path=temp.name, only=only
+                ) as resolved_path,
+                Client.build(
+                    address=DomainSocketAddress(path=resolved_path),
+                    logger=logger,
+                ) as client,
+            ):
                 yield client
 
     async def _tail_specific_logs(
@@ -343,8 +351,11 @@ class Client(ClientBase):
             await stream.send_message(
                 LogRequest(arguments=arguments, source=source), end=True
             )
+            # Use an incremental decoder to properly handle multi-byte UTF-8
+            # characters that may be split across message boundaries
+            decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
             async for message in cancel_wrapper(stream=stream, stop=stop):
-                yield message.output.decode()
+                yield decoder.decode(message.output)
 
     async def _install_to_destination(
         self,
@@ -367,7 +378,18 @@ class Client(ClientBase):
                     generator = generate_requests([InstallRequest(payload=payload)])
 
                 else:
-                    file_path = str(Path(bundle).resolve(strict=True))
+                    try:
+                        file_path = str(Path(bundle).resolve(strict=True))
+                    except FileNotFoundError:
+                        # For remote companions, raise IdbException instead of
+                        # letting FileNotFoundError propagate. Without this,
+                        # the decorator's broad `except OSError` converts it to
+                        # IdbConnectionException, pruning a healthy remote companion
+                        # making `idb list-targets` return no targets until
+                        # `idb connect` is re-run.
+                        if not self.is_local:
+                            raise IdbException(f"Bundle path does not exist: {bundle}")
+                        raise
                     if self.is_local:
                         self.logger.debug(
                             f"Companion is local, sending local file by path {file_path}"
@@ -548,6 +570,14 @@ class Client(ClientBase):
         await self.stub.contacts_update(
             ContactsUpdateRequest(payload=Payload(data=data))
         )
+
+    @log_and_handle_exceptions("contacts_clear")
+    async def contacts_clear(self) -> None:
+        await self.stub.contacts_clear(ContactsClearRequest())
+
+    @log_and_handle_exceptions("photos_clear")
+    async def photos_clear(self) -> None:
+        await self.stub.photos_clear(PhotosClearRequest())
 
     @log_and_handle_exceptions("screenshot")
     async def screenshot(self) -> bytes:
@@ -860,6 +890,17 @@ class Client(ClientBase):
         await self.send_events(tap_to_events(x, y, duration))
 
     @log_and_handle_exceptions("hid")
+    async def multi_tap(
+        self,
+        x: float,
+        y: float,
+        count: int = 2,
+        duration: float | None = None,
+        pause: float = 0.1,
+    ) -> None:
+        await self.send_events(multi_tap_to_events(x, y, count, duration, pause))
+
+    @log_and_handle_exceptions("hid")
     async def button(
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
@@ -902,6 +943,25 @@ class Client(ClientBase):
                 logger=self.logger,
             )
             await stream.recv_message()
+
+    @log_and_handle_exceptions("hid")
+    async def pinch(
+        self,
+        center_x: float,
+        center_y: float,
+        scale: float,
+        duration: float = 0.5,
+        radius: float = 100.0,
+    ) -> None:
+        await self.send_events(
+            pinch_to_events(
+                center_x=center_x,
+                center_y=center_y,
+                scale=scale,
+                duration=duration,
+                radius=radius,
+            )
+        )
 
     @log_and_handle_exceptions("debugserver")
     async def debug_server(self, request: DebugServerRequest) -> DebugServerResponse:
@@ -1464,7 +1524,7 @@ class Client(ClientBase):
         ls_response = await self.ls(container=FileContainerType.ROOT, paths=["dap"])
         installed_daps = [entry.path for entry in ls_response[0].entries]
         if pkg_id in installed_daps:
-            self.logger.info(f"Dap pkg already exist. Id: f{pkg_id}")
+            self.logger.info(f"Dap pkg already exist. Id: {pkg_id}")
         else:
             self.logger.info(f"Pushing {path.absolute()} to simulator dap subfolder.")
             await self.push(

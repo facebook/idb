@@ -5,7 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@protocol NSCopying
-- (id)copyWithZone:(struct _NSZone *)arg1;
-@end
-
+#import <Foundation/Foundation.h>

@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -16,15 +17,15 @@ struct GetSettingMethodHandler {
   func handle(request: Idb_GetSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_GetSettingResponse {
     switch request.setting {
     case .locale:
-      let localeIdentifier = try await BridgeFuture.value(commandExecutor.get_current_locale_identifier())
+      let localeIdentifier = try await commandExecutor.get_current_locale_identifier()
       return .with {
-        $0.value = localeIdentifier as String
+        $0.value = localeIdentifier
       }
     case .any:
       let domain = request.domain.isEmpty ? nil : request.domain
-      let value = try await BridgeFuture.value(commandExecutor.get_preference(request.name, domain: domain))
+      let value = try await commandExecutor.get_preference(request.name, domain: domain)
       return .with {
-        $0.value = value as String
+        $0.value = value
       }
     case .UNRECOGNIZED:
       throw GRPCStatus(code: .invalidArgument, message: "Unknown setting case")

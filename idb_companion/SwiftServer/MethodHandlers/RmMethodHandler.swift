@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -15,7 +16,7 @@ struct RmMethodHandler {
 
   func handle(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
-    try await BridgeFuture.await(commandExecutor.remove_paths(request.paths, containerType: fileContainer))
+    try await commandExecutor.remove_paths(request.paths, containerType: fileContainer)
     return .init()
   }
 }

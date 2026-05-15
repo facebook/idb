@@ -9,6 +9,10 @@
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
+from idb.common.hid import (
+    iterator_to_async_iterator,
+    key_press_with_modifiers_to_events,
+)
 from idb.common.types import Client, HIDButtonType
 
 
@@ -29,6 +33,43 @@ class TapCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.tap(x=args.x, y=args.y, duration=args.duration)
+
+
+class MultiTapCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Multi Tap On the Screen (default: double tap)"
+
+    @property
+    def name(self) -> str:
+        return "multi-tap"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("x", help="The x-coordinate", type=int)
+        parser.add_argument("y", help="The y-coordinate", type=int)
+        parser.add_argument(
+            "--count",
+            help="Number of taps (default: 2)",
+            type=int,
+            default=2,
+        )
+        parser.add_argument("--duration", help="Press duration", type=float)
+        parser.add_argument(
+            "--pause",
+            help="Pause between taps in seconds (default: 0.1)",
+            type=float,
+            default=0.1,
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.multi_tap(
+            x=args.x,
+            y=args.y,
+            count=args.count,
+            duration=args.duration,
+            pause=args.pause,
+        )
 
 
 class ButtonCommand(ClientCommand):
@@ -59,7 +100,7 @@ class ButtonCommand(ClientCommand):
 class KeyCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "A short press of a keycode"
+        return "A short press of a keycode with optional keyboard modifiers"
 
     @property
     def name(self) -> str:
@@ -68,10 +109,45 @@ class KeyCommand(ClientCommand):
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("key", help="The key code", type=int)
         parser.add_argument("--duration", help="Press duration", type=float)
+        parser.add_argument("--shift", action="store_true", help="Hold Shift modifier")
+        parser.add_argument(
+            "--control", action="store_true", help="Hold Control modifier"
+        )
+        parser.add_argument(
+            "--option", action="store_true", help="Hold Option/Alt modifier"
+        )
+        parser.add_argument(
+            "--command", action="store_true", help="Hold Command/GUI modifier"
+        )
+        parser.add_argument(
+            "--tab",
+            action="store_true",
+            help="Hold Tab modifier (for [iOS Full Keyboard Access](https://support.apple.com/en-gb/guide/iphone/ipha4375873f/ios))",
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        await client.key(keycode=args.key, duration=args.duration)
+        modifiers = []
+        if args.control:
+            modifiers.append("control")
+        if args.option:
+            modifiers.append("option")
+        if args.shift:
+            modifiers.append("shift")
+        if args.command:
+            modifiers.append("command")
+        if args.tab:
+            modifiers.append("tab")
+
+        if modifiers:
+            events = key_press_with_modifiers_to_events(
+                keycode=args.key,
+                modifiers=modifiers,
+                duration=args.duration,
+            )
+            await client.hid(iterator_to_async_iterator(events))
+        else:
+            await client.key(keycode=args.key, duration=args.duration)
 
 
 class KeySequenceCommand(ClientCommand):
@@ -140,7 +216,7 @@ class SwipeCommand(ClientCommand):
         parser.add_argument(
             "--delta",
             dest="delta",
-            help="delta in pixels between every touch point on the line "
+            help="delta in points between every touch point on the line "
             "between start and end points",
             type=int,
             required=False,
@@ -153,4 +229,40 @@ class SwipeCommand(ClientCommand):
             p_end=(args.x_end, args.y_end),
             duration=args.duration,
             delta=args.delta,
+        )
+
+
+class PinchCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Perform a pinch gesture"
+
+    @property
+    def name(self) -> str:
+        return "pinch"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("x", help="X coordinate of pinch center", type=float)
+        parser.add_argument("y", help="Y coordinate of pinch center", type=float)
+        parser.add_argument(
+            "scale", help="Scale factor (>1.0 = zoom in, <1.0 = zoom out)", type=float
+        )
+        parser.add_argument(
+            "--duration", help="Duration in seconds", type=float, default=0.5
+        )
+        parser.add_argument(
+            "--radius",
+            help="Initial finger distance from center in pixels",
+            type=float,
+            default=100.0,
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.pinch(
+            center_x=args.x,
+            center_y=args.y,
+            scale=args.scale,
+            duration=args.duration,
+            radius=args.radius,
         )

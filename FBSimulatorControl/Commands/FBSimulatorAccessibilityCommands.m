@@ -5,29 +5,143 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @lint-ignore-every UNCRUSTIFY
 #import "FBSimulatorAccessibilityCommands.h"
 
 #import <objc/runtime.h>
+#import <stdatomic.h>
 
 #import <CoreSimulator/SimDevice.h>
-#import <AccessibilityPlatformTranslation/AXPTranslator.h>
-#import <AccessibilityPlatformTranslation/AXPTranslationObject.h>
-#import <AccessibilityPlatformTranslation/AXPTranslatorResponse.h>
-#import <AccessibilityPlatformTranslation/AXPTranslatorRequest.h>
 #import <AccessibilityPlatformTranslation/AXPMacPlatformElement.h>
+#import <AccessibilityPlatformTranslation/AXPTranslationObject.h>
+#import <AccessibilityPlatformTranslation/AXPTranslator.h>
+#import <AccessibilityPlatformTranslation/AXPTranslatorRequest.h>
+#import <AccessibilityPlatformTranslation/AXPTranslatorResponse.h>
+#import <FBControlCore/FBAccessibilityTraits.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorControl-Swift.h"
 #import "FBSimulatorControlFrameworkLoader.h"
-#import "FBSimulatorError.h"
+
+/**
+ Mutable collector for profiling data during an accessibility request.
+ This is a per-request object that accumulates timing and count data.
+ Thread-safe via atomic operations for counters that may be incremented from callbacks.
+ */
+@interface FBAccessibilityProfilingCollector : NSObject
+
+@property (nonatomic, assign) CFAbsoluteTime translationDuration;
+@property (nonatomic, assign) CFAbsoluteTime elementConversionDuration;
+@property (nonatomic, assign) CFAbsoluteTime serializationDuration;
+@property (nonatomic, readonly, strong) NSSet<NSString *> *fetchedKeys;
+
+- (void)incrementElementCount;
+- (void)incrementAttributeFetchCountForKey:(nullable NSString *)key;
+- (void)addXPCCallDuration:(CFAbsoluteTime)duration;
+- (int64_t)elementCount;
+- (int64_t)attributeFetchCount;
+- (int64_t)xpcCallCount;
+- (CFAbsoluteTime)totalXPCDuration;
+- (FBAccessibilityProfilingData *)finalizeWithSerializationDuration:(CFAbsoluteTime)serializationDuration;
+
+@end
+
+@implementation FBAccessibilityProfilingCollector
+{
+  _Atomic int64_t _elementCount;
+  _Atomic int64_t _attributeFetchCount;
+  _Atomic int64_t _xpcCallCount;
+  _Atomic double _totalXPCDuration;
+  NSMutableSet<NSString *> *_fetchedKeys;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  atomic_store(&_elementCount, 0);
+  atomic_store(&_attributeFetchCount, 0);
+  atomic_store(&_xpcCallCount, 0);
+  atomic_store(&_totalXPCDuration, 0.0);
+  _fetchedKeys = [NSMutableSet set];
+  return self;
+}
+
+- (void)incrementElementCount
+{
+  atomic_fetch_add(&_elementCount, 1);
+}
+
+- (void)incrementAttributeFetchCountForKey:(nullable NSString *)key
+{
+  atomic_fetch_add(&_attributeFetchCount, 1);
+  if (key) {
+    @synchronized(self) {
+      [_fetchedKeys addObject:key];
+    }
+  }
+}
+
+- (NSSet<NSString *> *)fetchedKeys
+{
+  @synchronized(self) {
+    return [_fetchedKeys copy];
+  }
+}
+
+- (void)addXPCCallDuration:(CFAbsoluteTime)duration
+{
+  atomic_fetch_add(&_xpcCallCount, 1);
+  // For atomic double addition, we use compare-and-swap loop
+  double oldValue, newValue;
+  do {
+    oldValue = atomic_load(&_totalXPCDuration);
+    newValue = oldValue + duration;
+  } while (!atomic_compare_exchange_weak(&_totalXPCDuration, &oldValue, newValue));
+}
+
+- (int64_t)elementCount
+{
+  return atomic_load(&_elementCount);
+}
+
+- (int64_t)attributeFetchCount
+{
+  return atomic_load(&_attributeFetchCount);
+}
+
+- (int64_t)xpcCallCount
+{
+  return atomic_load(&_xpcCallCount);
+}
+
+- (CFAbsoluteTime)totalXPCDuration
+{
+  return atomic_load(&_totalXPCDuration);
+}
+
+- (FBAccessibilityProfilingData *)finalizeWithSerializationDuration:(CFAbsoluteTime)serializationDuration
+{
+  return [[FBAccessibilityProfilingData alloc]
+          initWithElementCount:self.elementCount
+          attributeFetchCount:self.attributeFetchCount
+          xpcCallCount:self.xpcCallCount
+          translationDuration:self.translationDuration
+          elementConversionDuration:self.elementConversionDuration
+          serializationDuration:serializationDuration
+          totalXPCDuration:self.totalXPCDuration
+          fetchedKeys:self.fetchedKeys];
+}
+
+@end
 
 //
 // # About the implementation of Accessibility within CoreSimulator
 //
-// In Xcode 12, using the SimulatorBridge for accessibility is now gone.
-// Instead, this functionality is bridged via CoreSimulator. However, there are more mechanisms in play than just calling a function.
-// The Private Framework AccessibilityPlatformTranslation, is used by Simulator.app via SimulatorKit.
-// In Simulator.app, it uses NSView semantics for obtaining information about a Simulator, in the case of FBSimulatorControl we aren't necessarily view-backed.
+// Accessibility is bridged via CoreSimulator and the Private Framework AccessibilityPlatformTranslation.
+// In Simulator.app, SimulatorKit uses NSView semantics for obtaining information about a Simulator; in FBSimulatorControl we aren't necessarily view-backed.
 // As a result we are using a reverse-engineered implementation of how SimulatorKit functions, based on inputs to this API.
 //
 // For this to work the process is as follows:
@@ -40,9 +154,9 @@
 // - The reason for non-async APIs here is that AXMacPlatformElement has lazy property access; over time each of the values that are referenced will be filled out with this delegation.
 // - The lazy property access can be seen in the logging here, where the AXPTranslatorRequest has a nice description of the object.
 // - Additional methods are required in the delegation, depending on whether there needs to be additional transformation, as is in the case with translating co-ordinate systems.
-// - We smooth over the differences in the values returned in the legacy API by replicating the values returned by the SimulatorBridge, calling the appropriate methods on AXMacPlatformElement.
-// - To get an idea of what methods are usable, take a look as NSAccessibilityElement which is a supertype of AXMacPlatformElement.
-// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be received from all delegate callbacks.s
+// - We smooth over the differences in the values returned by calling the appropriate methods on AXMacPlatformElement.
+// - To get an idea of what methods are usable, take a look at NSAccessibilityElement which is a supertype of AXMacPlatformElement.
+// - The tokenized method appears to be the more recent one. The token isn't significant for us so in this case we can just pass a meaningless token that will be received from all delegate callbacks.
 //
 // All of the above could be implemented without the delegation system. However, this requires dumping large enums and going much lower in the protocol level.
 // Instead having the higher level object, liberated from SimulatorKit (and therefore views) is the best compromise and the lightest touch.
@@ -63,6 +177,192 @@ inline static id ensureJSONSerializable(id obj)
   return [NSJSONSerialization isValidJSONObject:@[obj]] ? obj : [obj description];
 }
 
+/**
+ Category on FBAccessibilityElementsResponse providing a factory method
+ that encapsulates timing calculation and profiling finalization.
+ */
+@implementation FBAccessibilityElementsResponse (ResponseBuilder)
+
++ (instancetype)responseWithElements:(id)elements
+                  serializationStart:(CFAbsoluteTime)serializationStart
+                           collector:(nullable FBAccessibilityProfilingCollector *)collector
+                       frameCoverage:(nullable NSNumber *)frameCoverage
+             additionalFrameCoverage:(nullable NSNumber *)additionalFrameCoverage
+{
+  CFAbsoluteTime serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
+
+  FBAccessibilityProfilingData *profilingData = nil;
+  if (collector) {
+    profilingData = [collector finalizeWithSerializationDuration:serializationDuration];
+  }
+
+  return [[self alloc]
+          initWithElements:elements
+          profilingData:profilingData
+          frameCoverage:frameCoverage
+          additionalFrameCoverage:additionalFrameCoverage];
+}
+
+@end
+
+/**
+ Grid-based coverage tracking for accessibility elements.
+ Uses a coarse grid (default 10px cells) to track which areas of the screen
+ are covered by accessibility elements. This handles overlapping elements correctly
+ (a cell is either filled or not) and is computed incrementally during traversal.
+ */
+@interface FBAccessibilityCoverageGrid : NSObject
+
+/// Initialize with screen bounds and optional cell size (default 10.0)
+- (instancetype)initWithScreenBounds:(CGRect)bounds cellSize:(CGFloat)cellSize;
+- (instancetype)initWithScreenBounds:(CGRect)bounds;
+
+/// Mark cells covered by the given frame. Handles out-of-bounds frames safely.
+- (void)markFilledWithFrame:(CGRect)frame;
+
+/// Calculate coverage ratio for the entire screen.
+/// Returns 0.0-1.0, or -1 if grid is invalid.
+- (CGFloat)coverageRatio;
+
+/// Check if the cell containing the given point is already filled.
+/// Returns YES if the cell is marked, NO if empty or out of bounds.
+- (BOOL)isFilledAtPoint:(CGPoint)point;
+
+@property (nonatomic, readonly) CGRect screenBounds;
+@property (nonatomic, readonly) CGFloat cellSize;
+@property (nonatomic, readonly) NSUInteger width;
+@property (nonatomic, readonly) NSUInteger height;
+
+@end
+
+@implementation FBAccessibilityCoverageGrid
+{
+  uint8_t *_grid;
+}
+
+static const CGFloat kDefaultCellSize = 10.0;
+
+- (instancetype)initWithScreenBounds:(CGRect)bounds cellSize:(CGFloat)cellSize
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _screenBounds = bounds;
+  _cellSize = cellSize > 0 ? cellSize : kDefaultCellSize;
+
+  // Calculate grid dimensions, ensuring at least 1 cell
+  _width = (NSUInteger)ceil(bounds.size.width / _cellSize);
+  _height = (NSUInteger)ceil(bounds.size.height / _cellSize);
+
+  if (_width == 0 || _height == 0) {
+    return nil;
+  }
+
+  // Allocate and zero-initialize grid
+  _grid = (uint8_t *)calloc(_width * _height, sizeof(uint8_t));
+  if (!_grid) {
+    return nil;
+  }
+
+  return self;
+}
+
+- (instancetype)initWithScreenBounds:(CGRect)bounds
+{
+  return [self initWithScreenBounds:bounds cellSize:kDefaultCellSize];
+}
+
+- (void)dealloc
+{
+  if (_grid) {
+    free(_grid);
+    _grid = NULL;
+  }
+}
+
+- (void)markFilledWithFrame:(CGRect)frame
+{
+  if (!_grid || CGRectIsEmpty(frame) || CGRectIsNull(frame)) {
+    return;
+  }
+
+  // Convert frame coordinates to cell indices, clamping to valid range
+  // Use screen bounds origin as reference point
+  CGFloat relativeX = frame.origin.x - _screenBounds.origin.x;
+  CGFloat relativeY = frame.origin.y - _screenBounds.origin.y;
+  CGFloat relativeMaxX = relativeX + frame.size.width;
+  CGFloat relativeMaxY = relativeY + frame.size.height;
+
+  // Calculate cell range, clamping to grid bounds
+  NSInteger minX = (NSInteger)floor(relativeX / _cellSize);
+  NSInteger minY = (NSInteger)floor(relativeY / _cellSize);
+  NSInteger maxX = (NSInteger)floor(relativeMaxX / _cellSize);
+  NSInteger maxY = (NSInteger)floor(relativeMaxY / _cellSize);
+
+  // Clamp to valid grid indices
+  minX = MAX(0, minX);
+  minY = MAX(0, minY);
+  maxX = MIN((NSInteger)_width - 1, maxX);
+  maxY = MIN((NSInteger)_height - 1, maxY);
+
+  // Early exit if completely out of bounds
+  if (minX > maxX || minY > maxY) {
+    return;
+  }
+
+  // Fill cells row by row using memset for efficiency
+  NSUInteger fillWidth = (NSUInteger)(maxX - minX + 1);
+  for (NSInteger y = minY; y <= maxY; y++) {
+    memset(&_grid[(NSUInteger)y * _width + (NSUInteger)minX], 1, fillWidth);
+  }
+}
+
+- (BOOL)isFilledAtPoint:(CGPoint)point
+{
+  if (!_grid) {
+    return NO;
+  }
+
+  // Convert point coordinates to cell indices relative to screen bounds
+  CGFloat relativeX = point.x - _screenBounds.origin.x;
+  CGFloat relativeY = point.y - _screenBounds.origin.y;
+
+  // Calculate cell indices
+  NSInteger cellX = (NSInteger)floor(relativeX / _cellSize);
+  NSInteger cellY = (NSInteger)floor(relativeY / _cellSize);
+
+  // Check bounds - return NO for out-of-bounds points
+  if (cellX < 0 || cellX >= (NSInteger)_width
+      || cellY < 0 || cellY >= (NSInteger)_height) {
+    return NO;
+  }
+
+  // O(1) lookup in the grid array
+  return _grid[(NSUInteger)cellY * _width + (NSUInteger)cellX] != 0;
+}
+
+- (CGFloat)coverageRatio
+{
+  if (!_grid || _width == 0 || _height == 0) {
+    return -1;
+  }
+
+  NSUInteger totalCells = _width * _height;
+  NSUInteger filledCells = 0;
+
+  for (NSUInteger i = 0; i < totalCells; i++) {
+    if (_grid[i]) {
+      filledCells++;
+    }
+  }
+
+  return (CGFloat)filledCells / (CGFloat)totalCells;
+}
+
+@end
+
 @interface FBSimulatorAccessibilitySerializer : NSObject
 
 @end
@@ -71,89 +371,250 @@ inline static id ensureJSONSerializable(id obj)
 
 static NSString *const AXPrefix = @"AX";
 
-+ (NSArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
++ (NSArray<NSString *> *)customActionsFromElement:(AXPMacPlatformElement *)element
 {
-  element.translation.bridgeDelegateToken = token;
-  if (nestedFormat) {
-    return @[[self.class nestedRecursiveDescriptionFromElement:element token:token]];
+  NSMutableArray<NSString *> *customActionsTemp = [[NSMutableArray alloc] init];
+  for (NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
+    [customActionsTemp addObject:ensureJSONSerializable(name)];
   }
-  return [self.class flatRecursiveDescriptionFromElement:element token:token];
+  return [customActionsTemp copy];
 }
 
-+ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat
+// Discovery method constants for is_remote key
+static NSString *const FBAXDiscoveryMethodRecursive = @"recursive";
+static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
+
+// AXTraits is an iOS-specific bitmask that was available in the old SimulatorBridge implementation.
+// Returns nil if traits are not supported (e.g., the element doesn't support the attribute).
+// The caller should convert nil to NSNull to indicate traits are unavailable for this element.
++ (nullable NSArray<NSString *> *)traitsFromElement:(AXPMacPlatformElement *)element
+{
+  if (![element respondsToSelector:@selector(accessibilityAttributeValue:)]) {
+    return nil;
+  }
+  id traitsValue = [element accessibilityAttributeValue:@"AXTraits"];
+  if (![traitsValue isKindOfClass:NSNumber.class]) {
+    return nil;
+  }
+  uint64_t bitmask = [(NSNumber *)traitsValue unsignedLongLongValue];
+  return AXExtractTraits(bitmask).allObjects;
+}
+
++ (NSMutableArray<NSDictionary<NSString *, id> *> *)recursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids applicationElement:(NSMutableDictionary<NSString *, id> * _Nullable * _Nullable)outApplicationElement
 {
   element.translation.bridgeDelegateToken = token;
+  pid_t frontmostPid = element.translation.pid;
   if (nestedFormat) {
-    return [self.class nestedRecursiveDescriptionFromElement:element token:token];
+    NSMutableDictionary<NSString *, id> *appElement = [self.class nestedRecursiveDescriptionFromElement:element
+                                                                                                  token:token
+                                                                                                   keys:keys
+                                                                                              collector:collector
+                                                                                           frontmostPid:frontmostPid
+                                                                                           coverageGrid:coverageGrid
+                                                                                               seenPids:seenPids];
+    if (outApplicationElement) {
+      *outApplicationElement = appElement;
+    }
+    return [@[appElement] mutableCopy];
   }
-  return [self.class accessibilityDictionaryForElement:element token:token];
+  return [self.class flatRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:seenPids];
+}
+
++ (NSDictionary<NSString *, id> *)formattedDescriptionOfElement:(AXPMacPlatformElement *)element token:(NSString *)token nestedFormat:(BOOL)nestedFormat keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
+{
+  element.translation.bridgeDelegateToken = token;
+  pid_t frontmostPid = element.translation.pid;
+  if (nestedFormat) {
+    return [self.class nestedRecursiveDescriptionFromElement:element token:token keys:keys collector:collector frontmostPid:frontmostPid coverageGrid:coverageGrid seenPids:nil];
+  }
+  return [self.class accessibilityDictionaryForElement:element
+                                                 token:token
+                                                  keys:keys
+                                             collector:collector
+                                          frontmostPid:frontmostPid
+                                          coverageGrid:coverageGrid
+                                              seenPids:nil
+                                       discoveryMethod:FBAXDiscoveryMethodRecursive];
 }
 
 // The values here are intended to mirror the values in the old SimulatorBridge implementation for compatibility downstream.
-+ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token
++ (NSDictionary<NSString *, id> *)accessibilityDictionaryForElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<FBAXKeys> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids discoveryMethod:(NSString *)discoveryMethod
 {
   // The token must always be set so that the right callback is called
   element.translation.bridgeDelegateToken = token;
 
+  // Track this element's PID if seenPids is provided
+  pid_t elementPid = element.translation.pid;
+  if (seenPids) {
+    [seenPids addObject:@(elementPid)];
+  }
+
+  // Increment element count if collector is present
+  if (collector) {
+    [collector incrementElementCount];
+  }
+
+  // Helper macro to include key with JSON serialization if needed (also increments profiling counter)
+#define INCLUDE_IF_KEY(key, expr) \
+        do { \
+          if ([keys containsObject:key]) { \
+            if (collector) { [collector incrementAttributeFetchCountForKey:key]; } \
+            values[key] = ensureJSONSerializable(expr); \
+          } \
+        } while (0)
+
+  NSMutableDictionary<NSString *, id> *values = [NSMutableDictionary dictionary];
+
+  // Frame is always computed since it's used by multiple keys and coverage grid
+  if (collector) {
+    [collector incrementAttributeFetchCountForKey:FBAXKeysFrame];
+  }
   NSRect frame = element.accessibilityFrame;
-  // The value returned in accessibilityRole is may be prefixed with "AX".
-  // If that's the case, then let's strip it to make it like the SimulatorBridge implementation.
-  NSString *role = element.accessibilityRole;
-  if ([role hasPrefix:AXPrefix]) {
-    role = [role substringFromIndex:2];
+
+  // Role is used by multiple keys and needs processing
+  // Check FBAXKeysRole first to assign rawRole, then FBAXKeysType can derive from it
+  NSString *role = nil;
+  NSString *rawRole = nil;
+  if ([keys containsObject:FBAXKeysRole]) {
+    if (collector) {
+      [collector incrementAttributeFetchCountForKey:FBAXKeysRole];
+    }
+    rawRole = element.accessibilityRole;
+    values[FBAXKeysRole] = ensureJSONSerializable(rawRole);
   }
-  NSMutableArray<NSString *> *customActions = [[NSMutableArray alloc] init];
-  for (NSString *name in [element.accessibilityCustomActions valueForKey:@"name"]) {
-    [customActions addObject:ensureJSONSerializable(name)];
+  if ([keys containsObject:FBAXKeysType]) {
+    // Fetch rawRole if not already present
+    if (rawRole == nil) {
+      if (collector) {
+        [collector incrementAttributeFetchCountForKey:FBAXKeysType];
+      }
+      rawRole = element.accessibilityRole;
+    }
+    // The value returned in accessibilityRole may be prefixed with "AX".
+    // If that's the case, then let's strip it to make it like the SimulatorBridge implementation.
+    if ([rawRole hasPrefix:AXPrefix]) {
+      role = [rawRole substringFromIndex:2];
+    } else {
+      role = rawRole;
+    }
   }
-  return @{
-    // These values are the "legacy" values that mirror their equivalents in SimulatorBridge
-    @"AXLabel": ensureJSONSerializable(element.accessibilityLabel),
-    @"AXFrame": NSStringFromRect(frame),
-    @"AXValue": ensureJSONSerializable(element.accessibilityValue),
-    @"AXUniqueId": ensureJSONSerializable(element.accessibilityIdentifier),
-    // There are additional synthetic values from the old output.
-    @"type": ensureJSONSerializable(role),
-    // These are new values in this output
-    @"title": ensureJSONSerializable(element.accessibilityTitle),
-    @"frame": @{
-      @"x": @(frame.origin.x),
-      @"y": @(frame.origin.y),
-      @"width": @(frame.size.width),
-      @"height": @(frame.size.height),
-    },
-    @"help": ensureJSONSerializable(element.accessibilityHelp),
-    @"enabled": @(element.accessibilityEnabled),
-    @"custom_actions": [customActions copy],
-    @"role": ensureJSONSerializable(element.accessibilityRole),
-    @"role_description": ensureJSONSerializable(element.accessibilityRoleDescription),
-    @"subrole": ensureJSONSerializable(element.accessibilitySubrole),
-    @"content_required": @(element.accessibilityRequired),
-    @"pid": @(element.translation.pid),
-  };
+
+  // Mark frame in coverage grid if present (for non-Application elements)
+  if (coverageGrid) {
+    // Fetch role if not already fetched (needed to identify Application elements)
+    if (rawRole == nil) {
+      if (collector) {
+        [collector incrementAttributeFetchCountForKey:nil];
+      }
+      rawRole = element.accessibilityRole;
+    }
+    // Skip Application elements when calculating coverage
+    BOOL isApplication = [rawRole isEqualToString:@"AXApplication"] || [rawRole isEqualToString:@"Application"];
+    if (!isApplication) {
+      [coverageGrid markFilledWithFrame:frame];
+    }
+  }
+
+  // Build dictionary with only requested values
+  // Legacy values that mirror SimulatorBridge
+  INCLUDE_IF_KEY(FBAXKeysLabel, element.accessibilityLabel);
+  if ([keys containsObject:FBAXKeysFrame]) {
+    values[FBAXKeysFrame] = NSStringFromRect(frame);
+  }
+  INCLUDE_IF_KEY(FBAXKeysValue, element.accessibilityValue);
+  INCLUDE_IF_KEY(FBAXKeysUniqueID, element.accessibilityIdentifier);
+
+  // Synthetic values
+  if ([keys containsObject:FBAXKeysType]) {
+    values[FBAXKeysType] = ensureJSONSerializable(role);
+  }
+
+  // New values
+  INCLUDE_IF_KEY(FBAXKeysTitle, element.accessibilityTitle);
+  if ([keys containsObject:FBAXKeysFrameDict]) {
+    if (collector) {
+      [collector incrementAttributeFetchCountForKey:FBAXKeysFrameDict];
+    }
+    values[FBAXKeysFrameDict] = @{
+      @"x" : @(frame.origin.x),
+      @"y" : @(frame.origin.y),
+      @"width" : @(frame.size.width),
+      @"height" : @(frame.size.height),
+    };
+  }
+  INCLUDE_IF_KEY(FBAXKeysHelp, element.accessibilityHelp);
+  INCLUDE_IF_KEY(FBAXKeysEnabled, @(element.accessibilityEnabled));
+  INCLUDE_IF_KEY(FBAXKeysCustomActions, [self.class customActionsFromElement:element]);
+  INCLUDE_IF_KEY(FBAXKeysRoleDescription, element.accessibilityRoleDescription);
+  INCLUDE_IF_KEY(FBAXKeysSubrole, element.accessibilitySubrole);
+  INCLUDE_IF_KEY(FBAXKeysContentRequired, @(element.accessibilityRequired));
+  INCLUDE_IF_KEY(FBAXKeysPID, @(element.translation.pid));
+  if ([keys containsObject:FBAXKeysTraits]) {
+    if (collector) {
+      [collector incrementAttributeFetchCountForKey:FBAXKeysTraits];
+    }
+    NSArray<NSString *> *traits = [self.class traitsFromElement:element];
+    values[FBAXKeysTraits] = traits ?: (id)NSNull.null;
+  }
+
+  INCLUDE_IF_KEY(FBAXKeysExpanded, @(element.isAccessibilityExpanded));
+  INCLUDE_IF_KEY(FBAXKeysPlaceholder, element.accessibilityPlaceholderValue);
+  INCLUDE_IF_KEY(FBAXKeysHidden, @(element.isAccessibilityHidden));
+  INCLUDE_IF_KEY(FBAXKeysFocused, @(element.isAccessibilityFocused));
+  INCLUDE_IF_KEY(FBAXKeysIsRemote, discoveryMethod);
+
+#undef INCLUDE_IF_KEY
+
+  return [values copy];
 }
 
 // This replicates the non-hierarchical system that was previously present in SimulatorBridge.
 // In this case the values of frames must be relative to the root, rather than the parent frame.
-+ (NSArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
++ (NSMutableArray<NSDictionary<NSString *, id> *> *)flatRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids
 {
   NSMutableArray<NSDictionary<NSString *, id> *> *values = NSMutableArray.array;
-  [values addObject:[self accessibilityDictionaryForElement:element token:token]];
+  [values addObject:[self accessibilityDictionaryForElement:element
+                                                      token:token
+                                                       keys:keys
+                                                  collector:collector
+                                               frontmostPid:frontmostPid
+                                               coverageGrid:coverageGrid
+                                                   seenPids:seenPids
+                                            discoveryMethod:FBAXDiscoveryMethodRecursive]];
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement token:token];
+    NSArray<NSDictionary<NSString *, id> *> *childValues = [self flatRecursiveDescriptionFromElement:childElement
+                                                                                               token:token
+                                                                                                keys:keys
+                                                                                           collector:collector
+                                                                                        frontmostPid:frontmostPid
+                                                                                        coverageGrid:coverageGrid
+                                                                                            seenPids:seenPids];
     [values addObjectsFromArray:childValues];
   }
   return values;
 }
 
-+ (NSDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token
++ (NSMutableDictionary<NSString *, id> *)nestedRecursiveDescriptionFromElement:(AXPMacPlatformElement *)element token:(NSString *)token keys:(NSSet<NSString *> *)keys collector:(nullable FBAccessibilityProfilingCollector *)collector frontmostPid:(pid_t)frontmostPid coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid seenPids:(nullable NSMutableSet<NSNumber *> *)seenPids
 {
-  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element token:token] mutableCopy];
+  NSMutableDictionary<NSString *, id> *values = [[self accessibilityDictionaryForElement:element
+                                                                                   token:token
+                                                                                    keys:keys
+                                                                               collector:collector
+                                                                            frontmostPid:frontmostPid
+                                                                            coverageGrid:coverageGrid
+                                                                                seenPids:seenPids
+                                                                         discoveryMethod:FBAXDiscoveryMethodRecursive] mutableCopy];
   NSMutableArray<NSDictionary<NSString *, id> *> *childrenValues = NSMutableArray.array;
   for (AXPMacPlatformElement *childElement in element.accessibilityChildren) {
     childElement.translation.bridgeDelegateToken = token;
-    NSDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement token:token];
+    NSMutableDictionary<NSString *, id> *childValues = [self nestedRecursiveDescriptionFromElement:childElement
+                                                                                             token:token
+                                                                                              keys:keys
+                                                                                         collector:collector
+                                                                                      frontmostPid:frontmostPid
+                                                                                      coverageGrid:coverageGrid
+                                                                                          seenPids:seenPids];
     [childrenValues addObject:childValues];
   }
   values[@"children"] = childrenValues;
@@ -162,69 +623,21 @@ static NSString *const AXPrefix = @"AX";
 
 @end
 
-static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDummyBridgeToken";
+@interface FBAXTranslationRequest : NSObject
 
-@interface FBSimulatorAccessibilityCommands_SimulatorBridge : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
-
-@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
-
-@end
-
-@implementation FBSimulatorAccessibilityCommands_SimulatorBridge
-
-- (instancetype)initWithBridge:(FBSimulatorBridge *)bridge
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _bridge = bridge;
-
-  return self;
-}
-
-#pragma mark FBSimulatorAccessibilityCommands Implementation
-
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
-{
-  if (nestedFormat) {
-    return [[FBControlCoreError
-      describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
-      failFuture];
-  }
-  return [self.bridge accessibilityElements];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
-{
-  if (nestedFormat) {
-    return [[FBControlCoreError
-      describe:@"Nested Format is not supported for SimulatorBridge based accessibility"]
-      failFuture];
-  }
-  return [self.bridge accessibilityElementAtPoint:point];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
-{
-  return [[FBControlCoreError
-    describeFormat:@"%@ is not supported for SimulatorBridge based accessibility", NSStringFromSelector(_cmd)]
-    failFuture];
-}
+@property (nonatomic, readonly, copy) NSString *token;
+@property (nullable, nonatomic, strong) SimDevice *device;
+@property (nullable, nonatomic, strong) FBAccessibilityProfilingCollector *collector;
+@property (nullable, nonatomic, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, strong) NSNumber *frameCoverage;
+@property (nullable, nonatomic, strong) NSNumber *additionalFrameCoverage;
+@property (nullable, nonatomic, strong) AXPTranslator *translator;
 
 @end
 
-@interface FBSimulator_TranslationRequest : NSObject
+@implementation FBAXTranslationRequest
 
-@property (nonatomic, assign, readonly) BOOL nestedFormat;
-@property (nonatomic, copy, readonly) NSString *token;
-
-@end
-
-@implementation FBSimulator_TranslationRequest
-
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat
+- (instancetype)init
 {
   self = [super init];
   if (!self) {
@@ -232,7 +645,6 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   }
 
   _token = NSUUID.UUID.UUIDString;
-  _nestedFormat = nestedFormat;
 
   return self;
 }
@@ -243,7 +655,7 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return nil;
 }
 
-- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element options:(FBAccessibilityRequestOptions *)options error:(NSError **)error
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -257,100 +669,266 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 @end
 
-@interface FBSimulator_TranslationRequest_FrontmostApplication : FBSimulator_TranslationRequest
+@interface FBAXTranslationRequest_FrontmostApplication : FBAXTranslationRequest
 
 @end
 
-@implementation FBSimulator_TranslationRequest_FrontmostApplication
+@implementation FBAXTranslationRequest_FrontmostApplication
 
 - (AXPTranslationObject *)performWithTranslator:(AXPTranslator *)translator
 {
   return [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:self.token];
 }
 
-- (nullable id)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+#pragma mark - Remote Element Discovery Helpers
+
+/**
+ Discover remote elements via grid-based hit-testing.
+ Skips PIDs already seen in the main traversal.
+ Returns an array of discovered element dictionaries.
+ */
+- (NSArray<NSDictionary *> *)discoverRemoteElementsWithScreenBounds:(CGRect)screenBounds
+                                                       frontmostPid:(pid_t)frontmostPid
+                                                           seenPids:(NSSet<NSNumber *> *)seenPids
+                                                       coverageGrid:(nullable FBAccessibilityCoverageGrid *)coverageGrid
+                                                            options:(FBAccessibilityRequestOptions *)options
 {
-  return [FBSimulatorAccessibilitySerializer recursiveDescriptionFromElement:element token:self.token nestedFormat:self.nestedFormat];
+  FBAccessibilityRemoteContentOptions *remoteOptions = options.remoteContentOptions;
+  NSMutableArray<NSDictionary *> *discoveredElements = [NSMutableArray array];
+  NSMutableSet<NSValue *> *discoveredFrames = [NSMutableSet set];
+
+  // Always include AXFrame for hit-tested elements (needed for nesting and coverage)
+  NSMutableSet<NSString *> *keysWithFrame = [options.keys mutableCopy];
+  [keysWithFrame addObject:@"AXFrame"];
+
+  CGFloat stepSize = remoteOptions.gridStepSize > 0 ? remoteOptions.gridStepSize : 50.0;
+  CGRect region = CGRectIsNull(remoteOptions.region) ? screenBounds : remoteOptions.region;
+  NSUInteger maxPoints = remoteOptions.maxPoints;
+  NSUInteger pointCount = 0;
+
+  for (CGFloat y = stepSize; y < region.size.height - stepSize; y += stepSize) {
+    for (CGFloat x = stepSize; x < region.size.width - stepSize; x += stepSize) {
+      if (maxPoints > 0 && pointCount >= maxPoints) {
+        break;
+      }
+
+      CGPoint point = CGPointMake(region.origin.x + x, region.origin.y + y);
+
+      // Skip points already covered by native accessibility elements.
+      // This dynamically excludes toolbars, nav bars, and other covered regions.
+      if (coverageGrid && [coverageGrid isFilledAtPoint:point]) {
+        continue;
+      }
+
+      pointCount++;
+
+      AXPTranslationObject *hitTranslation = [self.translator objectAtPoint:point displayId:0 bridgeDelegateToken:self.token];
+      if (!hitTranslation) {
+        continue;
+      }
+
+      hitTranslation.bridgeDelegateToken = self.token;
+      pid_t hitPid = hitTranslation.pid;
+
+      // Skip if PID was already seen in main traversal
+      if ([seenPids containsObject:@(hitPid)]) {
+        continue;
+      }
+
+      if (hitPid <= 0 || hitPid == frontmostPid) {
+        continue;
+      }
+
+      AXPMacPlatformElement *hitElement = [self.translator macPlatformElementFromTranslation:hitTranslation];
+      if (!hitElement) {
+        continue;
+      }
+
+      CGRect hitFrame = hitElement.accessibilityFrame;
+      NSValue *hitFrameValue = [NSValue valueWithRect:hitFrame];
+
+      if ([discoveredFrames containsObject:hitFrameValue]) {
+        continue;
+      }
+
+      [discoveredFrames addObject:hitFrameValue];
+
+      // Mark in coverage grid if provided
+      if (coverageGrid) {
+        [coverageGrid markFilledWithFrame:hitFrame];
+      }
+
+      NSDictionary *elemDict = [FBSimulatorAccessibilitySerializer
+                                accessibilityDictionaryForElement:hitElement
+                                token:self.token
+                                keys:keysWithFrame  // Use keys with AXFrame
+                                collector:self.collector
+                                frontmostPid:frontmostPid
+                                coverageGrid:nil  // Already marked above
+                                seenPids:nil  // Don't track, already filtered
+                                discoveryMethod:FBAXDiscoveryMethodPointGrid];
+      [discoveredElements addObject:elemDict];
+    }
+
+    if (maxPoints > 0 && pointCount >= maxPoints) {
+      break;
+    }
+  }
+
+  return discoveredElements;
+}
+
+#pragma mark - Remote Content Processing
+
+/**
+ Process remote content discovery and merge with main elements.
+ Returns the final response with remote elements merged.
+ */
+- (FBAccessibilityElementsResponse *)processRemoteContentWithMainElements:(NSMutableArray<NSDictionary<NSString *, id> *> *)mainAppElements
+                                                       applicationElement:(NSMutableDictionary<NSString *, id> *)applicationElement
+                                                             screenBounds:(CGRect)screenBounds
+                                                             frontmostPid:(pid_t)frontmostPid
+                                                                 seenPids:(NSSet<NSNumber *> *)seenPids
+                                                             coverageGrid:(FBAccessibilityCoverageGrid *)grid
+                                                            frameCoverage:(NSNumber *)frameCoverage
+                                                       serializationStart:(CFAbsoluteTime)serializationStart
+                                                                  options:(FBAccessibilityRequestOptions *)options
+{
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Record coverage before remote discovery
+  CGFloat coverageBefore = grid ? [grid coverageRatio] : 0;
+
+  // Discover remote elements via grid-based hit-testing
+  NSArray<NSDictionary *> *discoveredElements = [self
+                                                 discoverRemoteElementsWithScreenBounds:screenBounds
+                                                 frontmostPid:frontmostPid
+                                                 seenPids:seenPids
+                                                 coverageGrid:grid
+                                                 options:options];
+
+  // Calculate additional coverage from remote discovery
+  NSNumber *additionalFrameCoverage = nil;
+  if (grid && discoveredElements.count > 0) {
+    CGFloat coverageAfter = [grid coverageRatio];
+    CGFloat additionalCoverage = coverageAfter - coverageBefore;
+    if (additionalCoverage > 0) {
+      additionalFrameCoverage = @(additionalCoverage);
+    }
+  }
+
+  // Merge remote elements directly into mutable structures (no copying needed)
+  if (discoveredElements.count > 0) {
+    if (applicationElement) {
+      // Append to Application element's children for nested format
+      NSMutableArray<NSDictionary<NSString *, id> *> *children = applicationElement[@"children"];
+      if (!children) {
+        children = [NSMutableArray<NSDictionary<NSString *, id> *> new];
+        applicationElement[@"children"] = children;
+      }
+      [children addObjectsFromArray:discoveredElements];
+    } else {
+      // Append to flat array directly
+      [mainAppElements addObjectsFromArray:discoveredElements];
+    }
+  }
+
+  return [FBAccessibilityElementsResponse
+          responseWithElements:mainAppElements
+          serializationStart:serializationStart
+          collector:collector
+          frameCoverage:frameCoverage
+          additionalFrameCoverage:additionalFrameCoverage];
+}
+
+#pragma mark - Serialization
+
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element options:(FBAccessibilityRequestOptions *)options error:(NSError **)error
+{
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Get screen bounds for coverage calculation and remote content fetching
+  CGRect screenBounds = element.accessibilityFrame;
+
+  // Create coverage grid if requested - it will be populated during traversal
+  FBAccessibilityCoverageGrid *grid = nil;
+  if (options.collectFrameCoverage) {
+    grid = [[FBAccessibilityCoverageGrid alloc] initWithScreenBounds:screenBounds];
+  }
+
+  // Track PIDs during traversal for deduplication during remote content discovery
+  NSMutableSet<NSNumber *> *seenPids = [NSMutableSet set];
+
+  // Track serialization timing if profiling
+  CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
+
+  // Serialize elements, passing the grid to be populated during traversal
+  NSMutableDictionary<NSString *, id> *applicationElement = nil;
+  NSMutableArray<NSDictionary<NSString *, id> *> *mainAppElements = [FBSimulatorAccessibilitySerializer
+                                                                     recursiveDescriptionFromElement:element
+                                                                     token:self.token
+                                                                     nestedFormat:options.nestedFormat
+                                                                     keys:options.keys
+                                                                     collector:collector
+                                                                     coverageGrid:grid
+                                                                     seenPids:seenPids
+                                                                     applicationElement:options.nestedFormat ? &applicationElement : nil];
+
+  // Calculate base coverage after main traversal
+  NSNumber *frameCoverage = nil;
+  if (grid) {
+    CGFloat baseCoverage = [grid coverageRatio];
+    if (baseCoverage >= 0) {
+      frameCoverage = @(baseCoverage);
+    }
+  }
+
+  // Check if remote content fetching is enabled
+  FBAccessibilityRemoteContentOptions *remoteOptions = options.remoteContentOptions;
+  if (!remoteOptions || !self.translator) {
+    return [FBAccessibilityElementsResponse
+            responseWithElements:mainAppElements
+            serializationStart:serializationStart
+            collector:collector
+            frameCoverage:frameCoverage
+            additionalFrameCoverage:nil];
+  }
+
+  pid_t frontmostPid = element.translation.pid;
+  return [self processRemoteContentWithMainElements:mainAppElements
+                                 applicationElement:applicationElement
+                                       screenBounds:screenBounds
+                                       frontmostPid:frontmostPid
+                                           seenPids:seenPids
+                                       coverageGrid:grid
+                                      frameCoverage:frameCoverage
+                                 serializationStart:serializationStart
+                                            options:options];
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:self.nestedFormat];
+  return [[FBAXTranslationRequest_FrontmostApplication alloc] init];
 }
 
 @end
 
-@interface FBSimulator_TranslationAction : NSObject
+@interface FBAXTranslationRequest_Point : FBAXTranslationRequest
 
-@property (nonatomic, assign, readonly) BOOL performTap;
-@property (nonatomic, assign, readonly) CGPoint point;
-@property (nonatomic, copy, nullable, readonly) NSString *expectedLabel;
+@property (nonatomic, readonly, assign) CGPoint point;
 
 @end
 
-@implementation FBSimulator_TranslationAction
+@implementation FBAXTranslationRequest_Point
 
-- (instancetype)initWithPerformTap:(BOOL)performTap expectedLabel:(nullable NSString *)expectedLabel point:(CGPoint)point;
+- (instancetype)initWithPoint:(CGPoint)point
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-  
-  _performTap = performTap;
-  _point = point;
-  _expectedLabel = expectedLabel;
-
-  return self;
-}
-
-- (BOOL)performActionOnElement:(AXPMacPlatformElement *)element error:(NSError **)error
-{
-  NSString *expectedLabel = self.expectedLabel;
-  if (expectedLabel) {
-    NSString *actualLabel = element.accessibilityLabel;
-    if (![expectedLabel isEqualToString:actualLabel]) {
-      return [[FBSimulatorError
-        describeFormat:@"The element at point %@ does not have the expected label %@. Actual label %@", NSStringFromPoint(self.point), expectedLabel, actualLabel]
-        failBool:error];
-    }
-  }
-  if (self.performTap) {
-    NSArray<NSString *> *actionNames = element.accessibilityActionNames;
-    if ([actionNames containsObject:@"AXPress"] == NO) {
-      return [[FBSimulatorError
-        describeFormat:@"The element at point %@ with label %@ does not support pressing. Supported actions %@", NSStringFromPoint(self.point), element.accessibilityIdentifier, [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]
-        failBool:error];
-    }
-    if ([element accessibilityPerformPress] == NO) {
-      return [[FBSimulatorError
-        describeFormat:@"Performing accessibilityPerformPress on element at point %@ with label %@ did not succeed", NSStringFromPoint(self.point), element.accessibilityIdentifier]
-        failBool:error];
-    }
-  }
-  return YES;
-}
-
-@end
-
-@interface FBSimulator_TranslationRequest_Point : FBSimulator_TranslationRequest
-
-@property (nonatomic, assign, readonly) CGPoint point;
-@property (nonatomic, strong, nullable, readonly) FBSimulator_TranslationAction *action;
-
-@end
-
-@implementation FBSimulator_TranslationRequest_Point
-
-- (instancetype)initWithNestedFormat:(BOOL)nestedFormat point:(CGPoint)point action:(FBSimulator_TranslationAction *)action
-{
-  self = [super initWithNestedFormat:nestedFormat];
-  if (!self) {
-    return nil;
-  }
 
   _point = point;
-  _action = action;
 
   return self;
 }
@@ -360,34 +938,52 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   return [translator objectAtPoint:self.point displayId:0 bridgeDelegateToken:self.token];
 }
 
-- (NSDictionary<NSString *, id> *)serialize:(AXPMacPlatformElement *)element error:(NSError **)error
+- (nullable FBAccessibilityElementsResponse *)run:(AXPMacPlatformElement *)element options:(FBAccessibilityRequestOptions *)options error:(NSError **)error
 {
-  NSDictionary<NSString *, id> *result = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element token:self.token nestedFormat:self.nestedFormat];
-  FBSimulator_TranslationAction *action = self.action;
-  if (action && [action performActionOnElement:element error:error] == NO) {
-    return nil;
-  }
-  return result;
+  FBAccessibilityProfilingCollector *collector = self.collector;
+
+  // Track serialization timing if profiling
+  CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
+
+  NSDictionary<NSString *, id> *elements = [FBSimulatorAccessibilitySerializer formattedDescriptionOfElement:element
+                                                                                                       token:self.token
+                                                                                                nestedFormat:options.nestedFormat
+                                                                                                        keys:options.keys
+                                                                                                   collector:collector
+                                                                                                coverageGrid:nil];
+
+  return [FBAccessibilityElementsResponse
+          responseWithElements:elements
+          serializationStart:serializationStart
+          collector:collector
+          frameCoverage:nil
+          additionalFrameCoverage:nil];
 }
 
 - (instancetype)cloneWithNewToken
 {
-  return [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:self.nestedFormat point:self.point action:self.action];
+  return [[FBAXTranslationRequest_Point alloc] initWithPoint:self.point];
 }
 
 @end
 
+@interface FBAXTranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
 
-@interface FBSimulator_TranslationDispatcher : NSObject <AXPTranslationTokenDelegateHelper>
-
-@property (nonatomic, weak, readonly) AXPTranslator *translator;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) dispatch_queue_t callbackQueue;
-@property (nonatomic, strong, readonly) NSMapTable<NSString *, FBSimulator *> *tokenToSimulator;
+@property (nonatomic, readonly, weak) AXPTranslator *translator;
+@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) dispatch_queue_t callbackQueue;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSString *, FBAXTranslationRequest *> *tokenToRequest;
 
 @end
 
-@implementation FBSimulator_TranslationDispatcher
+@interface FBAccessibilityElement ()
+- (instancetype)initWithElement:(AXPMacPlatformElement *)element
+                        request:(FBAXTranslationRequest *)request
+                     dispatcher:(FBAXTranslationDispatcher *)dispatcher
+                      simulator:(FBSimulator *)simulator;
+@end
+
+@implementation FBAXTranslationDispatcher
 
 #pragma mark Initializers
 
@@ -401,67 +997,68 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
   _translator = translator;
   _logger = logger;
   _callbackQueue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.accessibility_translator.callback", DISPATCH_QUEUE_SERIAL);
-  _tokenToSimulator = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsCopyIn
-    valueOptions:NSPointerFunctionsWeakMemory];
+  _tokenToRequest = [NSMutableDictionary dictionary];
 
   return self;
 }
 
-+ (instancetype)sharedInstance
-{
-  static dispatch_once_t onceToken;
-  static FBSimulator_TranslationDispatcher *dispatcher;
-  dispatch_once(&onceToken, ^{
-    AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
-    // bridgeTokenDelegate is preferred by AXPTranslator.
-    dispatcher = [[FBSimulator_TranslationDispatcher alloc] initWithTranslator:translator logger:nil];
-    translator.bridgeTokenDelegate = dispatcher;
-  });
-  return dispatcher;
-}
-
 #pragma mark Public
 
-- (FBFutureContext<NSArray<id> *> *)translationObjectAndMacPlatformElementForSimulator:(FBSimulator *)simulator request:(FBSimulator_TranslationRequest *)request
+- (FBFuture<AXPMacPlatformElement *> *)platformElementWithRequest:(FBAXTranslationRequest *)request
+                                                        simulator:(FBSimulator *)simulator
 {
-  return [[FBFuture
-    onQueue:simulator.workQueue resolveValue:^ NSArray<id> * (NSError **error){
-      [self pushSimulator:simulator token:request.token];
-      AXPTranslationObject *translation = [request performWithTranslator:self.translator];
-      if (translation == nil) {
-        return [[FBSimulatorError
-          describeFormat:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
-          fail:error];
-      }
-      translation.bridgeDelegateToken = request.token;
-      AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
-      element.translation.bridgeDelegateToken = request.token;
-      return @[translation, element];
-    }]
-    onQueue:simulator.workQueue contextualTeardown:^ FBFuture<NSNull *> * (id _, FBFutureState __){
-      [self popSimulator:request.token];
-      return FBFuture.empty;
-    }];
+  return [FBFuture
+          onQueue:simulator.workQueue
+          resolveValue:^AXPMacPlatformElement *(NSError **error) {
+            request.device = simulator.device;
+            request.translator = self.translator;
+            [self pushRequest:request];
+            FBAccessibilityProfilingCollector *collector = request.collector;
+
+            // Record translation timing
+            CFAbsoluteTime translationStart = CFAbsoluteTimeGetCurrent();
+            AXPTranslationObject *translation = [request performWithTranslator:self.translator];
+            if (collector) {
+              collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart;
+            }
+
+            if (translation == nil) {
+              [self popRequest:request];
+              return [[FBSimulatorError
+                       describe:@"No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
+                      fail:error];
+            }
+            translation.bridgeDelegateToken = request.token;
+
+            // Record element conversion timing
+            CFAbsoluteTime conversionStart = CFAbsoluteTimeGetCurrent();
+            AXPMacPlatformElement *element = [self.translator macPlatformElementFromTranslation:translation];
+            if (collector) {
+              collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart;
+            }
+
+            element.translation.bridgeDelegateToken = request.token;
+            return element;
+          }];
 }
 
 #pragma mark Private
 
-- (NSString *)pushSimulator:(FBSimulator *)simulator token:(NSString *)token
+- (void)pushRequest:(FBAXTranslationRequest *)request
 {
-  NSParameterAssert([self.tokenToSimulator objectForKey:token] == nil);
-  [self.tokenToSimulator setObject:simulator forKey:token];
-  [self.logger logFormat:@"Simulator %@ backed by token %@", simulator, token];
-  return token;
+  NSParameterAssert([self.tokenToRequest objectForKey:request.token] == nil);
+  [self.tokenToRequest setObject:request forKey:request.token];
+  [self.logger log:[NSString stringWithFormat:@"Registered request with token %@", request.token]];
 }
 
-- (FBSimulator *)popSimulator:(NSString *)token
+- (void)popRequest:(FBAXTranslationRequest *)request
 {
-  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
-  NSParameterAssert(simulator);
-  [self.tokenToSimulator removeObjectForKey:token];
-  [self.logger logFormat:@"Removing token %@", token];
-  return simulator;
+  if ([self.tokenToRequest objectForKey:request.token] == nil) {
+    [self.logger log:[NSString stringWithFormat:@"popRequest: token %@ not found (already popped or replaced by remediation), ignoring", request.token]];
+    return;
+  }
+  [self.tokenToRequest removeObjectForKey:request.token];
+  [self.logger log:[NSString stringWithFormat:@"Removed request with token %@", request.token]];
 }
 
 #pragma mark AXPTranslationTokenDelegateHelper
@@ -471,24 +1068,39 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 // This also means that the queue that this happens on should **never be the main queue**. An async global queue will suffice here.
 - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallbackWithToken:(NSString *)token
 {
-  FBSimulator *simulator = [self.tokenToSimulator objectForKey:token];
-  if (!simulator) {
-    return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request) {
-      [self.logger logFormat:@"Simlator with token %@ is gone for request %@. Returning empty response", token, request];
+  FBAXTranslationRequest *request = [self.tokenToRequest objectForKey:token];
+  if (!request) {
+    return ^AXPTranslatorResponse *(AXPTranslatorRequest *axRequest) {
+      [self.logger log:[NSString stringWithFormat:@"Request with token %@ is gone. Returning empty response", token]];
       return [objc_getClass("AXPTranslatorResponse") emptyResponse];
     };
   }
-  return ^ AXPTranslatorResponse * (AXPTranslatorRequest *request){
-    [simulator.logger logFormat:@"Sending Accessibility Request %@", request];
+  SimDevice *device = request.device;
+  FBAccessibilityProfilingCollector *collector = request.collector;
+  id<FBControlCoreLogger> logger = request.logger;
+  return ^AXPTranslatorResponse *(AXPTranslatorRequest *axRequest) {
+    if (logger) {
+      [logger log:[NSString stringWithFormat:@"Sending Accessibility Request %@", axRequest]];
+    }
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
     __block AXPTranslatorResponse *response = nil;
-    [simulator.device sendAccessibilityRequestAsync:request completionQueue:self.callbackQueue completionHandler:^(AXPTranslatorResponse *innerResponse) {
-      response = innerResponse;
-      dispatch_group_leave(group);
-    }];
+
+    CFAbsoluteTime xpcStart = CFAbsoluteTimeGetCurrent();
+    [device sendAccessibilityRequestAsync:axRequest
+                          completionQueue:self.callbackQueue
+                        completionHandler:^(AXPTranslatorResponse *innerResponse) {
+                          response = innerResponse;
+                          dispatch_group_leave(group);
+                        }];
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-    [simulator.logger logFormat:@"Got Accessibility Response %@", response];
+    if (collector) {
+      [collector addXPCCallDuration:CFAbsoluteTimeGetCurrent() - xpcStart];
+    }
+
+    if (logger) {
+      [logger log:[NSString stringWithFormat:@"Got Accessibility Response %@", response]];
+    }
     return response;
   };
 }
@@ -500,147 +1112,250 @@ static NSString *const DummyBridgeToken = @"FBSimulatorAccessibilityCommandsDumm
 
 - (id)accessibilityTranslationRootParentWithToken:(NSString *)token
 {
-  [self.logger logFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token];
+  [self.logger log:[NSString stringWithFormat:@"Delegate method '%@', with unknown implementation called with token %@. Returning nil.", NSStringFromSelector(_cmd), token]];
   return nil;
 }
 
 @end
 
-@interface FBSimulatorAccessibilityCommands_CoreSimulator : NSObject <FBAccessibilityOperations, FBSimulatorAccessibilityOperations>
+#pragma mark - FBSimulator Instance Method for Translation Dispatcher
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@implementation FBSimulator (FBAccessibilityDispatcher)
+
++ (id)createAccessibilityTranslationDispatcherWithTranslator:(id)translator
+{
+  FBAXTranslationDispatcher *dispatcher =
+  [[FBAXTranslationDispatcher alloc] initWithTranslator:translator logger:nil];
+  ((AXPTranslator *)translator).bridgeTokenDelegate = dispatcher;
+  return dispatcher;
+}
+
+- (id)accessibilityTranslationDispatcher
+{
+  static dispatch_once_t onceToken;
+  static FBAXTranslationDispatcher *dispatcher;
+  dispatch_once(&onceToken, ^{
+    AXPTranslator *translator = [objc_getClass("AXPTranslator") sharedInstance];
+    dispatcher = [FBSimulator createAccessibilityTranslationDispatcherWithTranslator:translator];
+  });
+  return dispatcher;
+}
 
 @end
 
-@implementation FBSimulatorAccessibilityCommands_CoreSimulator
+#pragma mark - FBAccessibilityElement
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+@interface FBAccessibilityElement ()
+@property (nonatomic, readonly, strong) AXPMacPlatformElement *element;
+@property (nonatomic, readonly, strong) FBAXTranslationRequest *request;
+@property (nonatomic, readonly, strong) FBAXTranslationDispatcher *dispatcher;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
+@property (nonatomic, assign) BOOL closed;
+@end
+
+@implementation FBAccessibilityElement
+
+- (instancetype)initWithElement:(AXPMacPlatformElement *)element
+                        request:(FBAXTranslationRequest *)request
+                     dispatcher:(FBAXTranslationDispatcher *)dispatcher
+                      simulator:(FBSimulator *)simulator
 {
   self = [super init];
   if (!self) {
     return nil;
   }
-
+  _element = element;
+  _request = request;
+  _dispatcher = dispatcher;
   _simulator = simulator;
-  _queue = queue;
-  _logger = logger;
-
+  _closed = NO;
   return self;
 }
 
-#pragma mark FBSimulatorAccessibilityCommands Implementation
-
-- (FBFuture<id> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
++ (nullable NSString *)stringValueForKey:(FBAXSearchableKey)key fromElement:(AXPMacPlatformElement *)element
 {
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_FrontmostApplication alloc] initWithNestedFormat:nestedFormat];
-  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:YES];
-}
-
-- (FBFuture<id> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
-{
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:nestedFormat point:point action:nil];
-  return [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
-}
-
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
-{
-  FBSimulator_TranslationAction *action = [[FBSimulator_TranslationAction alloc] initWithPerformTap:YES expectedLabel:expectedLabel point:point];
-  FBSimulator_TranslationRequest *translationRequest = [[FBSimulator_TranslationRequest_Point alloc] initWithNestedFormat:YES point:point action:action];
-  return (FBFuture<NSDictionary<NSString *, id> *> *) [FBSimulatorAccessibilityCommands_CoreSimulator accessibilityElementWithTranslationRequest:translationRequest simulator:self.simulator remediationPermitted:NO];
-}
-
-#pragma mark Private
-
-+ (FBFuture<id> *)accessibilityElementWithTranslationRequest:(FBSimulator_TranslationRequest *)request simulator:(FBSimulator *)simulator remediationPermitted:(BOOL)remediationPermitted
-{
-  return [[[[FBSimulator_TranslationDispatcher.sharedInstance
-    translationObjectAndMacPlatformElementForSimulator:simulator request:request]
-    // This next steps appends remediation information (if required).
-    // The remediation detection has a short circuit so that the common case (no remediation required) is fast.
-    onQueue:simulator.asyncQueue pend:^ FBFuture<NSArray<id> *> * (NSArray<id> *tuple){
-      AXPTranslationObject *translationObject = tuple[0];
-      AXPMacPlatformElement *macPlatformElement = tuple[1];
-      // Only see if remediation is needed if requested. This also ensures that the attempt *after* remediation will not infinitely recurse.
-      if (remediationPermitted) {
-        return [[FBSimulatorAccessibilityCommands_CoreSimulator
-          remediationRequiredForSimulator:simulator
-          translationObject:translationObject
-          macPlatformElement:macPlatformElement]
-          onQueue:simulator.asyncQueue map:^ NSArray<id> * (NSNumber *remediationRequired) {
-            return @[translationObject, macPlatformElement, remediationRequired];
-          }];
-      }
-      return [FBFuture futureWithResult:@[translationObject, macPlatformElement, @NO]];
-    }]
-    onQueue:simulator.workQueue pop:^ id (NSArray<id> *tuple){
-      // If remediation is required, then return an empty value, we pop the context here to finish the translation process.
-      BOOL remediationRequired = [tuple[2] boolValue];
-      if (remediationRequired) {
-        return FBFuture.empty;
-      }
-      // Otherwise serialize now, when the context has popped the token is then deregistered.
-      AXPMacPlatformElement *element = tuple[1];
-      NSError *error = nil;
-      id serialized = [request serialize:element error:&error];
-      if (serialized == nil) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:serialized];
-    }]
-    onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id result) {
-      // At this point we will either have an empty result, or the result.
-      // In the empty (remediation) state, then we should recurse, but not allow further remediation.
-      if ([result isEqual:NSNull.null]) {
-        FBSimulator_TranslationRequest *nextRequest = [request cloneWithNewToken];
-        return [[self
-          remediateSpringBoardForSimulator:simulator]
-          onQueue:simulator.workQueue fmap:^ FBFuture<id> * (id _) {
-            return [self accessibilityElementWithTranslationRequest:nextRequest simulator:simulator remediationPermitted:NO];
-          }];
-      }
-      return [FBFuture futureWithResult:result];
-    }];
-}
-
-static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
-
-+ (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator translationObject:(AXPTranslationObject *)translationObject macPlatformElement:(AXPMacPlatformElement *)macPlatformElement
-{
-  // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
-  if (CGRectEqualToRect(macPlatformElement.accessibilityFrame, CGRectZero) == NO) {
-    return [FBFuture futureWithResult:@(NO)];
+  if ([key isEqualToString:FBAXKeysLabel]) {
+    return element.accessibilityLabel;
+  } else if ([key isEqualToString:FBAXKeysUniqueID]) {
+    return element.accessibilityIdentifier;
+  } else if ([key isEqualToString:FBAXKeysValue]) {
+    id value = element.accessibilityValue;
+    return [value isKindOfClass:NSString.class] ? value : nil;
+  } else if ([key isEqualToString:FBAXKeysTitle]) {
+    return element.accessibilityTitle;
+  } else if ([key isEqualToString:FBAXKeysRole]) {
+    return element.accessibilityRole;
+  } else if ([key isEqualToString:FBAXKeysRoleDescription]) {
+    return element.accessibilityRoleDescription;
+  } else if ([key isEqualToString:FBAXKeysSubrole]) {
+    return element.accessibilitySubrole;
+  } else if ([key isEqualToString:FBAXKeysHelp]) {
+    return element.accessibilityHelp;
+  } else if ([key isEqualToString:FBAXKeysPlaceholder]) {
+    return element.accessibilityPlaceholderValue;
   }
-  // Then confirm whether the pid of the translation object represents a real pid within the simulator.
-  // If it does not, then it likely means that we got the pid of the crashed SpringBoard.
-  // A crashed SpringBoard, means that there is a new one running (or else the Simulator is completely hosed).
-  // In this case, the remediation is to restart CoreSimulatorBridge, since the CoreSimulatorBridge needs restarting upon a crash.
-  // In all likelihood CoreSimulatorBridge contains a constant reference to the pid of SpringBoard and the most effective way of resolving this is to stop it.
-  // The Simulator's launchctl will then make sure that the SimulatorBridge is restarted (just like it does for SpringBoard itself).
-  pid_t processIdentifier = translationObject.pid;
-  return [[[simulator
-    serviceNameForProcessIdentifier:processIdentifier]
-    mapReplace:@(NO)]
-    onQueue:simulator.workQueue handleError:^(NSError *error) {
-      [simulator.logger logFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName];
-      return [FBFuture futureWithResult:@(YES)];
-    }];
+  return nil;
 }
 
-+ (FBFuture<NSNull *> *)remediateSpringBoardForSimulator:(FBSimulator *)simulator
++ (nullable AXPMacPlatformElement *)findElementWithValue:(NSString *)value
+                                                  forKey:(FBAXSearchableKey)key
+                                               inElement:(AXPMacPlatformElement *)element
+                                                   token:(NSString *)token
+                                          remainingDepth:(NSUInteger)remainingDepth
 {
-  return [[[simulator
-    stopServiceWithName:CoreSimulatorBridgeServiceName]
-    mapReplace:NSNull.null]
-    rephraseFailure:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName];
+  element.translation.bridgeDelegateToken = token;
+  NSString *propertyValue = [self stringValueForKey:key fromElement:element];
+  if (propertyValue != nil && [propertyValue containsString:value]) {
+    return element;
+  }
+  if (remainingDepth == 0) {
+    return nil;
+  }
+  for (AXPMacPlatformElement *child in element.accessibilityChildren) {
+    child.translation.bridgeDelegateToken = token;
+    AXPMacPlatformElement *found = [self findElementWithValue:value forKey:key inElement:child token:token remainingDepth:remainingDepth - 1];
+    if (found != nil) {
+      return found;
+    }
+  }
+  return nil;
+}
+
+// Searches the accessibility tree rooted at this element for a descendant matching the given value/key.
+// If found, ownership of the request token is transferred to a new handle wrapping the found element,
+// and the receiver is closed without popping. If not found, the receiver is closed and an error is set.
+- (nullable FBAccessibilityElement *)findElementWithValue:(NSString *)value
+                                                   forKey:(FBAXSearchableKey)key
+                                                    depth:(NSUInteger)depth
+                                                    error:(NSError **)error
+{
+  AXPMacPlatformElement *found = [FBAccessibilityElement
+                                  findElementWithValue:value
+                                  forKey:key
+                                  inElement:_element
+                                  token:_request.token
+                                  remainingDepth:depth];
+  if (found == nil) {
+    [self close];
+    return [[FBSimulatorError
+             describe:[NSString stringWithFormat:@"Element with %@ containing '%@' not found within depth %lu",
+             key, value, (unsigned long)depth]]
+            fail:error];
+  }
+  NSAssert(!_closed, @"Cannot transfer ownership from a closed element");
+  FBAccessibilityElement *newHandle = [[FBAccessibilityElement alloc]
+                                       initWithElement:found
+                                       request:_request
+                                       dispatcher:_dispatcher
+                                       simulator:_simulator];
+  _closed = YES;
+  return newHandle;
+}
+
+- (void)close
+{
+  if (!_closed) {
+    _closed = YES;
+    [_dispatcher popRequest:_request];
+  }
+}
+
+- (void)dealloc
+{
+  [self close];
+}
+
+- (nullable FBAccessibilityElementsResponse *)serializeWithOptions:(FBAccessibilityRequestOptions *)options
+                                                             error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot serialize a closed element"] fail:error];
+  }
+  FBAXTranslationRequest *request = self.request;
+  if (options.enableProfiling && !request.collector) {
+    request.collector = [[FBAccessibilityProfilingCollector alloc] init];
+  }
+  return [request run:self.element options:options error:error];
+}
+
+- (nullable NSString *)stringValueForSearchableKey:(FBAXSearchableKey)key error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot read from a closed element"] fail:error];
+  }
+  return [FBAccessibilityElement stringValueForKey:key fromElement:self.element];
+}
+
+- (BOOL)tapWithError:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot tap a closed element"] failBool:error];
+  }
+  AXPMacPlatformElement *element = self.element;
+
+  NSArray<NSString *> *actionNames = element.accessibilityActionNames;
+  if (![actionNames containsObject:@"AXPress"]) {
+    return [[FBSimulatorError
+             describe:[NSString stringWithFormat:@"Element does not support pressing. Supported: %@",
+             [FBCollectionInformation oneLineDescriptionFromArray:actionNames]]]
+            failBool:error];
+  }
+
+  if (![element accessibilityPerformPress]) {
+    return [[FBSimulatorError
+             describe:@"accessibilityPerformPress did not succeed"]
+            failBool:error];
+  }
+
+  return YES;
+}
+
+- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot scroll a closed element"] failBool:error];
+  }
+  AXPMacPlatformElement *element = self.element;
+  switch (direction) {
+    case FBAccessibilityScrollDirectionDown:
+      [element performScrollDownByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionUp:
+      [element performScrollUpByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionLeft:
+      [element performScrollLeftByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionRight:
+      [element performScrollRightByPageAction];
+      return YES;
+    case FBAccessibilityScrollDirectionToVisible:
+      [element performScrollToVisible];
+      return YES;
+    default:
+      return [[FBSimulatorError
+               describe:[NSString stringWithFormat:@"Unknown scroll direction %lu", (unsigned long)direction]]
+              failBool:error];
+  }
+}
+
+- (BOOL)setValue:(id)value error:(NSError **)error
+{
+  if (_closed) {
+    return [[FBSimulatorError describe:@"Cannot set value on a closed element"] failBool:error];
+  }
+  AXPMacPlatformElement *element = self.element;
+  [element setAccessibilityValue:value];
+  return YES;
 }
 
 @end
 
+static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulator.bridge";
+
 @interface FBSimulatorAccessibilityCommands ()
 
-@property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, readonly, weak) FBSimulator *simulator;
 
 @end
 
@@ -667,65 +1382,151 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 #pragma mark FBSimulatorAccessibilityCommands Protocol Implementation
 
-- (FBFuture<NSArray<NSDictionary<NSString *, id> *> *> *)accessibilityElementsWithNestedFormat:(BOOL)nestedFormat
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point
 {
-  return [[self
-    implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementsWithNestedFormat:nestedFormat];
-    }];
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  FBAXTranslationRequest *request = [[FBAXTranslationRequest_Point alloc] initWithPoint:point];
+  return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:NO];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityElementAtPoint:(CGPoint)point nestedFormat:(BOOL)nestedFormat
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication
 {
-  return [[self
-    implementationWithNestedFormat:nestedFormat]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations> implementation) {
-      return [implementation accessibilityElementAtPoint:point nestedFormat:nestedFormat];
-    }];
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
+  return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES];
 }
 
-- (FBFuture<NSDictionary<NSString *, id> *> *)accessibilityPerformTapOnElementAtPoint:(CGPoint)point expectedLabel:(NSString *)expectedLabel
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(NSString *)value
+                                                                   forKey:(FBAXSearchableKey)key
+                                                                    depth:(NSUInteger)depth
 {
-  return [[self
-    implementationWithNestedFormat:YES]
-    onQueue:self.simulator.asyncQueue fmap:^(id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations> implementation) {
-      return [implementation accessibilityPerformTapOnElementAtPoint:point expectedLabel:expectedLabel];
-    }];
+  FBSimulator *simulator = self.simulator;
+  NSError *error = nil;
+  if (![self validateAccessibilityWithError:&error]) {
+    return [FBFuture futureWithError:error];
+  }
+  FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
+  return [[FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES]
+          onQueue:dispatch_get_main_queue()
+          fmap:^FBFuture *(FBAccessibilityElement *rootElement) {
+            NSError *innerError = nil;
+            FBAccessibilityElement *found = [rootElement findElementWithValue:value forKey:key depth:depth error:&innerError];
+            if (found == nil) {
+              return [FBFuture futureWithError:innerError];
+            }
+            return [FBFuture futureWithResult:found];
+          }];
 }
 
 #pragma mark Private
 
-- (FBFuture<id<FBAccessibilityOperations, FBSimulatorAccessibilityOperations>> *)implementationWithNestedFormat:(BOOL)nestedFormat
+// Uses the CoreSimulator accessibility API via -[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]
+// This API requires Xcode 12+ to have been installed on the host at some point.
+- (BOOL)validateAccessibilityWithError:(NSError **)error
 {
-  // Post Xcode 12, FBSimulatorBridge will not work with accessibility.
-  // Additionally, CoreSimulator **should** be upgraded, but if it hasn't then this will fail.
-  // The CoreSimulator API **is** backwards compatible, since it updates CoreSimulator.framework at the system level.
-  // However, this API is only usable from CoreSimulator if Xcode 12 has been *installed at some point in the past on the host*.
   FBSimulator *simulator = self.simulator;
   if (simulator.state != FBiOSTargetStateBooted) {
     return [[FBControlCoreError
-      describeFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]
-      failFuture];
+             describe:[NSString stringWithFormat:@"Cannot run accessibility commands against %@ as it is not booted", simulator]]
+            failBool:error];
   }
   SimDevice *device = simulator.device;
-  if (nestedFormat || FBXcodeConfiguration.isXcode12OrGreater) {
-    if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
-      return [[FBControlCoreError
-        describeFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use the nested accessibility format.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]
-        failFuture];
-    }
-    NSError *error = nil;
-    if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:&error]) {
-      return [FBFuture futureWithError:error];
-    }
-    return [FBFuture futureWithResult:[[FBSimulatorAccessibilityCommands_CoreSimulator alloc] initWithSimulator:simulator queue:simulator.asyncQueue logger:simulator.logger]];
+  if (![device respondsToSelector:@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:)]) {
+    return [[FBControlCoreError
+             describe:[NSString stringWithFormat:@"-[SimDevice %@] is not present on this host, you must install and/or use Xcode 12 to use accessibility.", NSStringFromSelector(@selector(sendAccessibilityRequestAsync:completionQueue:completionHandler:))]]
+            failBool:error];
   }
-  return [[self.simulator
-    connectToBridge]
-    onQueue:self.simulator.asyncQueue map:^(FBSimulatorBridge *bridge) {
-      return [[FBSimulatorAccessibilityCommands_SimulatorBridge alloc] initWithBridge:bridge];
-    }];
+  if (![FBSimulatorControlFrameworkLoader.accessibilityFrameworks loadPrivateFrameworks:simulator.logger error:error]) {
+    return NO;
+  }
+  return YES;
+}
+
+// Returns an FBAccessibilityElement wrapping the platform element for the given request.
+// The handle owns the request's token and will pop it on close.
+//
+// When remediationPermitted=YES and a stale SpringBoard is detected (zero accessibility frame + dead pid),
+// the original request's token is manually popped (it's not wrapped in a handle yet at that point),
+// CoreSimulatorBridge is restarted, and the method recurses with a fresh request.
+// The recursion is bounded: the retry passes remediationPermitted=NO, so at most one remediation attempt occurs.
++ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
+                                                              simulator:(FBSimulator *)simulator
+                                                   remediationPermitted:(BOOL)remediationPermitted
+{
+  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
+  return [[dispatcher platformElementWithRequest:request simulator:simulator]
+          onQueue:simulator.workQueue
+          fmap:^FBFuture<FBAccessibilityElement *> *(AXPMacPlatformElement *element) {
+            if (!remediationPermitted) {
+              return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
+                                                 initWithElement:element
+                                                 request:request
+                                                 dispatcher:dispatcher
+                                                 simulator:simulator]];
+            }
+            return [[self
+                     remediationRequiredForSimulator:simulator
+                     element:element]
+                    onQueue:simulator.workQueue
+                    fmap:^FBFuture<FBAccessibilityElement *> *(NSNumber *remediationRequired) {
+                      if (!remediationRequired.boolValue) {
+                        return [FBFuture futureWithResult:[[FBAccessibilityElement alloc]
+                                                           initWithElement:element
+                                                           request:request
+                                                           dispatcher:dispatcher
+                                                           simulator:simulator]];
+                      }
+                      // The request's token was pushed by the dispatcher but is not yet wrapped in an
+                      // FBAccessibilityElement, so we must pop it manually before discarding the request.
+                      [dispatcher popRequest:request];
+                      FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
+                      return [[self remediateSpringBoardForSimulator:simulator]
+                              onQueue:simulator.workQueue
+                              fmap:^FBFuture<FBAccessibilityElement *> *(id _) {
+                                // remediationPermitted:NO ensures at most one retry and avoids infinite recursion.
+                                return [self accessibilityElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
+                              }];
+                    }];
+          }];
+}
+
++ (FBFuture<NSNumber *> *)remediationRequiredForSimulator:(FBSimulator *)simulator element:(AXPMacPlatformElement *)element
+{
+  // First perform a quick check, if the accessibility frame is zero, then this is indicative of the problem
+  if (CGRectEqualToRect(element.accessibilityFrame, CGRectZero) == NO) {
+    return [FBFuture futureWithResult:@NO];
+  }
+  // Then confirm whether the pid of the translation object represents a real pid within the simulator.
+  // If it does not, then it likely means that we got the pid of the crashed SpringBoard.
+  // A crashed SpringBoard, means that there is a new one running (or else the Simulator is completely hosed).
+  // In this case, the remediation is to restart CoreSimulatorBridge, since the CoreSimulatorBridge needs restarting upon a crash.
+  // In all likelihood CoreSimulatorBridge contains a constant reference to the pid of SpringBoard and the most effective way of resolving this is to stop it.
+  // The Simulator's launchctl will then make sure that the SimulatorBridge is restarted (just like it does for SpringBoard itself).
+  pid_t processIdentifier = element.translation.pid;
+  return [[[simulator
+            serviceNameForProcessIdentifier:processIdentifier]
+           mapReplace:@NO]
+          onQueue:simulator.workQueue
+          handleError:^(NSError *error) {
+            [simulator.logger log:[NSString stringWithFormat:@"pid %d does not exist, this likely means that SpringBoard has restarted, %@ should be restarted", processIdentifier, CoreSimulatorBridgeServiceName]];
+            return [FBFuture futureWithResult:@YES];
+          }];
+}
+
++ (FBFuture<NSNull *> *)remediateSpringBoardForSimulator:(FBSimulator *)simulator
+{
+  return [[[simulator
+            stopServiceWithName:CoreSimulatorBridgeServiceName]
+           mapReplace:NSNull.null]
+          rephraseFailure:[NSString stringWithFormat:@"Could not restart %@ bridge when attempting to remediate SpringBoard Crash", CoreSimulatorBridgeServiceName]];
 }
 
 @end

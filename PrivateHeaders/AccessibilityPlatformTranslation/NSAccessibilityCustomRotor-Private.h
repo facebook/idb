@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSAccessibilityCustomRotor.h"
+#import <AccessibilityPlatformTranslation/NSAccessibilityCustomRotor.h>
 
 @class NSUUID;
 
 @interface NSAccessibilityCustomRotor (Private)
-@property(copy, nonatomic) NSUUID *uuid;
+@property (nonatomic, copy) NSUUID *uuid;
 @end
-

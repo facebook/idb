@@ -9,8 +9,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBAMDServiceConnection;
 @class FBApplicationLaunchConfiguration;
 
@@ -28,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a Future that resolves with the instruments client.
  */
-+ (FBFuture<FBInstrumentsClient *> *)instrumentsClientWithServiceConnection:(FBAMDServiceConnection *)connection logger:(id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBInstrumentsClient *> *)instrumentsClientWithServiceConnection:(nonnull FBAMDServiceConnection *)connection logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Methods
 
@@ -38,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the app launch configuration.
  @return a Future that resolves with the pid of the app once it has launched.
  */
-- (FBFuture<NSNumber *> *)launchApplication:(FBApplicationLaunchConfiguration *)configuration;
+- (nonnull FBFuture<NSNumber *> *)launchApplication:(nonnull FBApplicationLaunchConfiguration *)configuration;
 
 /**
  Kills an application
@@ -46,8 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param processIdentifier the pid of the process to kill.
  @return a Future that resolves when killed.
  */
-- (FBFuture<NSNull *> *)killProcess:(pid_t)processIdentifier;
+- (nonnull FBFuture<NSNull *> *)killProcess:(pid_t)processIdentifier;
 
 @end
-
-NS_ASSUME_NONNULL_END

@@ -37,7 +37,7 @@ struct DapMethodHandler {
     try await responseStream.send(stoppedResponse)
   }
 
-  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBProcess<AnyObject, FBDataConsumer, NSString> {
+  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
@@ -46,7 +46,7 @@ struct DapMethodHandler {
 
     let tenMinutes: UInt64 = 600 * 1000000000
     let process = try await Task.timeout(nanoseconds: tenMinutes) {
-      try await BridgeFuture.value(commandExecutor.dapServer(withPath: lldbVSCode, stdIn: processInput, stdOut: stdOutConsumer))
+      try await commandExecutor.dapServer(withPath: lldbVSCode, stdIn: processInput, stdOut: stdOutConsumer)
     }
 
     targetLogger.debug().log("Dap server spawn with PID: \(process.processIdentifier)")
@@ -58,7 +58,7 @@ struct DapMethodHandler {
     return process
   }
 
-  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBProcess<AnyObject, FBDataConsumer, NSString>) async throws {
+  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:

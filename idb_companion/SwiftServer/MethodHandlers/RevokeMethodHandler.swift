@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -39,11 +40,11 @@ struct RevokeMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await BridgeFuture.await(commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID))
+      try await commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID)
     }
 
     if !services.isEmpty {
-      try await BridgeFuture.await(commandExecutor.revoke(services, for_application: request.bundleID))
+      try await commandExecutor.revoke(services, for_application: request.bundleID)
     }
     return .init()
   }

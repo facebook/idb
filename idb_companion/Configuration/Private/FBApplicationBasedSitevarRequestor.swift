@@ -1,4 +1,9 @@
-// (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 import Foundation
 
@@ -49,21 +54,18 @@ final class FBApplicationBasedSitevarRequestor: InternGraphRequestor {
       return
     }
 
-    urlSession.dataTask(
-      with: .init(url: sitevarURL),
-      completionHandler: { data, response, error in
-        if let error {
-          handler(.failure(error))
-        } else if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
-          let output = data.flatMap { String(data: $0, encoding: .utf8) } ?? "Empty"
-          handler(.failure(FBInternGraphInternalError.inacceptableStatusCode(output)))
-        } else if let data {
-          handler(.success(data))
-        } else {
-          handler(.failure(FBInternGraphInternalError.notReceiveErrorOrData))
-        }
+    urlSession.dataTask(with: .init(url: sitevarURL)) { data, response, error in
+      if let error {
+        handler(.failure(error))
+      } else if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
+        let output = data.flatMap { String(data: $0, encoding: .utf8) } ?? "Empty"
+        handler(.failure(FBInternGraphInternalError.inacceptableStatusCode(output)))
+      } else if let data {
+        handler(.success(data))
+      } else {
+        handler(.failure(FBInternGraphInternalError.notReceiveErrorOrData))
       }
-    )
+    }
     .resume()
   }
 }

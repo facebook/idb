@@ -9,48 +9,21 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBDeviceControl/FBDeviceCommands.h>
-
-NS_ASSUME_NONNULL_BEGIN
-
 @class FBDevice;
-
-/**
- The Protocol for Debug Symbol related commands.
- */
-@protocol FBDeviceDebugSymbolsCommands <FBiOSTargetCommand>
-
-/**
- Obtains a listing of symbol files on a device.
-
- @return A future that resolves with the listing of symbol files..
- */
-- (FBFuture<NSArray<NSString *> *> *)listSymbols;
-
-/**
- Writes a file out to a destination
-
- @param fileName the file to pull
- @param destinationPath the destination to write to.
- @return a  Future that resolves with the extract path.
- */
-- (FBFuture<NSString *> *)pullSymbolFile:(NSString *)fileName toDestinationPath:(NSString *)destinationPath;
-
-/**
- Pulls and extracts symbols to the provided path.
-
- @param destinationDirectory the destination to write to.
- @return a  Future that resolves with the extract path.
- */
-- (FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(NSString *)destinationDirectory;
-
-@end
+@protocol FBDeviceDebugSymbolsCommandsProtocol;
 
 /**
  An Implementation of FBDeviceDebugSymbolsCommands.
  */
-@interface FBDeviceDebugSymbolsCommands : NSObject <FBDeviceDebugSymbolsCommands>
+@interface FBDeviceDebugSymbolsCommands : NSObject
+
+// Initializer and protocol methods declared explicitly so Swift can see them
+// on the concrete class. Conformance to the Swift-defined
+// FBDeviceDebugSymbolsCommandsProtocol is structural — the class implements
+// every method the protocol requires.
+- (nonnull instancetype)initWithDevice:(nonnull FBDevice *)device;
+- (nonnull FBFuture<NSArray<NSString *> *> *)listSymbols;
+- (nonnull FBFuture<NSString *> *)pullSymbolFile:(nonnull NSString *)fileName toDestinationPath:(nonnull NSString *)destinationPath;
+- (nonnull FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(nonnull NSString *)destinationDirectory;
 
 @end
-
-NS_ASSUME_NONNULL_END

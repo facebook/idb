@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -39,11 +40,11 @@ struct ApproveMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await BridgeFuture.await(commandExecutor.approve_deeplink(request.scheme, for_application: request.bundleID))
+      try await commandExecutor.approve_deeplink(request.scheme, for_application: request.bundleID)
     }
 
     if !services.isEmpty {
-      try await BridgeFuture.await(commandExecutor.approve(services, for_application: request.bundleID))
+      try await commandExecutor.approve(services, for_application: request.bundleID)
     }
     return .init()
   }

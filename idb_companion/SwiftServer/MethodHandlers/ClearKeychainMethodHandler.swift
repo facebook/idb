@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct ClearKeychainMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
-    try await BridgeFuture.await(commandExecutor.clear_keychain())
+    try await commandExecutor.clear_keychain()
     return .init()
   }
 }

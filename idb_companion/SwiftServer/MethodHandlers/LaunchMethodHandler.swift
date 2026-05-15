@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import Foundation
 import GRPC
 import IDBCompanionUtilities
@@ -16,7 +17,7 @@ struct LaunchMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
-    var completions: [FBFuture<NSNull>] = []
+    var consumers: [any FBDataConsumerLifecycle] = []
 
     var request = try await requestStream.requiredNext
     guard case let .start(start) = request.control else {
@@ -28,11 +29,11 @@ struct LaunchMethodHandler {
     let responseWriter = FIFOStreamWriter(stream: responseStream)
     if start.waitFor {
       let stdOutConsumer = pipeOutput(interface: .stdout, responseWriter: responseWriter)
-      completions.append(stdOutConsumer.finishedConsuming)
+      consumers.append(stdOutConsumer)
       stdOut = FBProcessOutput<AnyObject>(for: stdOutConsumer)
 
       let stdErrConsumer = pipeOutput(interface: .stderr, responseWriter: responseWriter)
-      completions.append(stdErrConsumer.finishedConsuming)
+      consumers.append(stdErrConsumer)
       stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
     }
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
@@ -44,7 +45,7 @@ struct LaunchMethodHandler {
       waitForDebugger: start.waitForDebugger,
       io: io,
       launchMode: start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning)
-    let launchedApp = try await BridgeFuture.value(commandExecutor.launch_app(config))
+    let launchedApp = try await commandExecutor.launch_app(config)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }
@@ -57,9 +58,16 @@ struct LaunchMethodHandler {
       throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
     }
 
-    try await BridgeFuture.await(launchedApp.applicationTerminated.cancel())
+    try await launchedApp.terminateAsync()
 
-    _ = try await BridgeFuture.values(completions)
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for consumer in consumers {
+        group.addTask {
+          try await consumer.awaitFinishedConsumingAsync()
+        }
+      }
+      try await group.waitForAll()
+    }
   }
 
   private func processOutputForNullDevice() -> FBProcessOutput<AnyObject> {

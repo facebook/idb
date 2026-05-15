@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Carbon
+@testable import FBSimulatorControl
+import Foundation
+import XCTest
+
+final class FBSimulatorControlValueTypeTests: FBControlCoreValueTestCase {
+
+  func testHIDEvents() {
+    let values: [NSObject] = [
+      FBSimulatorHIDEvent.tapAt(x: 10, y: 20) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.applePay) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.homeButton) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.lock) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.sideButton) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.siri) as! NSObject,
+      FBSimulatorHIDEvent.shortButtonPress(.homeButton) as! NSObject,
+      FBSimulatorHIDEvent.shortKeyPress(UInt32(kVK_ANSI_W)) as! NSObject,
+      FBSimulatorHIDEvent.shortKeyPress(UInt32(kVK_ANSI_A)) as! NSObject,
+      FBSimulatorHIDEvent.shortKeyPress(UInt32(kVK_ANSI_R)) as! NSObject,
+      FBSimulatorHIDEvent.shortKeyPress(UInt32(kVK_ANSI_I)) as! NSObject,
+      FBSimulatorHIDEvent.shortKeyPress(UInt32(kVK_ANSI_O)) as! NSObject,
+    ]
+    assertEquality(ofCopy: values)
+  }
+}

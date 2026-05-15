@@ -7,8 +7,6 @@
 
 #import "FBAMRestorableDevice.h"
 
-#import "FBDeviceControlError.h"
-
 static NSString *const UnknownValue = @"unknown";
 
 @implementation FBAMRestorableDevice
@@ -63,6 +61,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }
@@ -74,10 +74,9 @@ static NSString *const UnknownValue = @"unknown";
   return [FBDeviceType genericWithName:productString];
 }
 
-
 - (NSArray<FBArchitecture> *)architectures
 {
-    return @[UnknownValue];
+  return @[UnknownValue];
 }
 
 - (FBiOSTargetType)targetType
@@ -93,7 +92,7 @@ static NSString *const UnknownValue = @"unknown";
 - (NSDictionary<NSString *, id> *)extendedInformation
 {
   return @{
-    @"device": self.allValues,
+    @"device" : self.allValues,
   };
 }
 
@@ -139,6 +138,8 @@ static NSString *const UnknownValue = @"unknown";
       return FBiOSTargetStateRestoreOS;
     case AMRestorableDeviceStateBootedOS:
       return FBiOSTargetStateBooted;
+    case AMRestorableDeviceStateUnknown:
+      return FBiOSTargetStateUnknown;
     default:
       return FBiOSTargetStateUnknown;
   }

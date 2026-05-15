@@ -115,25 +115,15 @@ struct InstallMethodHandler {
     func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
       switch destination {
       case .app:
-        return try await BridgeFuture.value(
-          commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
-        )
+        return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
       case .xctest:
-        return try await BridgeFuture.value(
-          commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
-        )
+        return try await commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
       case .dsym:
-        return try await BridgeFuture.value(
-          commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
-        )
+        return try await commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
       case .dylib:
-        return try await BridgeFuture.value(
-          commandExecutor.install_dylib_stream(dataStream, name: name)
-        )
+        return try await commandExecutor.install_dylib_stream(dataStream, name: name)
       case .framework:
-        return try await BridgeFuture.value(
-          commandExecutor.install_framework_stream(dataStream)
-        )
+        return try await commandExecutor.install_framework_stream(dataStream)
       case .UNRECOGNIZED:
         throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
       }
@@ -148,33 +138,23 @@ struct InstallMethodHandler {
       guard let url = URL(string: urlString) else {
         throw GRPCStatus(code: .invalidArgument, message: "Invalid url source")
       }
-      let download = FBDataDownloadInput.dataDownload(with: url, logger: targetLogger)
-      let input = download.input as! FBProcessInput<AnyObject>
+      let download = FBDataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
+      let input = download.input
 
       return try await installSource(dataStream: input, skipSigningBundles: skipSigningBundles)
 
     case let .filePath(filePath):
       switch destination {
       case .app:
-        return try await BridgeFuture.value(
-          commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
-        )
+        return try await commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
       case .xctest:
-        return try await BridgeFuture.value(
-          commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
-        )
+        return try await commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
       case .dsym:
-        return try await BridgeFuture.value(
-          commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
-        )
+        return try await commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
       case .dylib:
-        return try await BridgeFuture.value(
-          commandExecutor.install_dylib_file_path(filePath)
-        )
+        return try await commandExecutor.install_dylib_file_path(filePath)
       case .framework:
-        return try await BridgeFuture.value(
-          commandExecutor.install_framework_file_path(filePath)
-        )
+        return try await commandExecutor.install_framework_file_path(filePath)
       case .UNRECOGNIZED:
         throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
       }

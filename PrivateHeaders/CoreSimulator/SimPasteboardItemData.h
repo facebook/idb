@@ -12,11 +12,11 @@
 
 @interface SimPasteboardItemData : NSObject
 {
-    NSString *_type;
-    NSObject<NSSecureCoding> *_value;
+  NSString *_type;
+  NSObject<NSSecureCoding> *_value;
 }
 
-@property (retain, nonatomic) NSObject<NSSecureCoding> *value;
+@property (nonatomic, retain) NSObject<NSSecureCoding> *value;
 @property (nonatomic, copy) NSString *type;
 
 - (id)initWithType:(id)arg1 value:(id)arg2;

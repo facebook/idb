@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -25,17 +26,20 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
-    _ = try await BridgeFuture.value(target.startRecording(toFile: filePath))
+    guard let asyncTarget = target as? any AsyncVideoRecordingCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncVideoRecordingCommands")
+    }
+    _ = try await asyncTarget.startRecording(toFile: filePath)
 
     _ = try await requestStream.requiredNext
-    try await BridgeFuture.await(target.stopRecording())
+    try await asyncTarget.stopRecording()
 
     if start.filePath.isEmpty {
-      let gzipTask = FBArchiveOperations.createGzip(
+      let gzipTask = try await FBArchiveOperations.createGzipAsync(
         forPath: filePath,
         logger: targetLogger)
 
-      try await FileDrainWriter.performDrain(taskFuture: gzipTask) { data in
+      try await FileDrainWriter.performDrain(task: gzipTask) { data in
         let response = Idb_RecordResponse.with { $0.payload.data = data }
         try await responseStream.send(response)
       }

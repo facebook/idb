@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSError.h>
+#import <Foundation/Foundation.h>
 
 @interface NSError (SimError)
 + (id)errorWithSimPairingTestResult:(long long)arg1;
@@ -16,4 +16,3 @@
 + (id)errorWithSimErrno:(int)arg1 userInfo:(id)arg2;
 + (id)errorWithSimErrno:(int)arg1;
 @end
-

@@ -7,5 +7,5 @@
 
 import FBSimulatorControl
 
-extension FBControlCoreError: Error {
+extension FBControlCoreError: @retroactive Error {
 }

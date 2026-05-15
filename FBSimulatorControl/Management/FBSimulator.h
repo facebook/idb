@@ -8,77 +8,155 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorFileCommands.h>
-#import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
-#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
-#import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
-#import <FBSimulatorControl/FBSimulatorMediaCommands.h>
-#import <FBSimulatorControl/FBSimulatorMemoryCommands.h>
-#import <FBSimulatorControl/FBSimulatorNotificationCommands.h>
-#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-
-NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 
 @class FBAppleSimctlCommandExecutor;
 @class FBControlCoreLogger;
+@class FBSimulatorBootConfiguration;
 @class FBSimulatorConfiguration;
 @class FBSimulatorSet;
+@class FBTargetCommandCache;
 @class SimDevice;
+
+// Methods declared here are implemented via Swift extensions on FBSimulator.
 
 /**
  An implementation of FBiOSTarget for iOS Simulators.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBAccessibilityCommands, FBMemoryCommands, FBFileCommands, FBLocationCommands, FBNotificationCommands, FBProcessSpawnCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands, FBSimulatorMediaCommands, FBXCTestExtendedCommands, FBDapServerCommand, FBSimulatorAccessibilityOperations, FBSimulatorApplicationCommands, FBSimulatorFileCommands>
+// Protocol conformances declared in Swift via extensions:
+// FBSimulatorKeychainCommandsProtocol, FBSimulatorSettingsCommandsProtocol,
+// FBSimulatorLifecycleCommandsProtocol, FBSimulatorLaunchCtlCommandsProtocol,
+// FBSimulatorMediaCommandsProtocol, FBSimulatorApplicationCommandsProtocol,
+// FBSimulatorFileCommandsProtocol
+@interface FBSimulator : NSObject <FBiOSTarget>
+
+#pragma mark FBiOSTargetInfo / FBiOSTarget Protocol Members
+
+/**
+ FBiOSTargetInfo protocol members - implemented in FBSimulator.m.
+ Must be declared explicitly for Swift visibility since the protocols are Swift-defined.
+ */
+@property (nonnull, nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonnull, nonatomic, readonly, copy) NSString *udid;
+@property (nonnull, nonatomic, readonly, copy) NSString *name;
+@property (nonnull, nonatomic, readonly, strong) FBDeviceType *deviceType;
+@property (nonnull, nonatomic, readonly, copy) NSArray<FBArchitecture> *architectures;
+@property (nonnull, nonatomic, readonly, strong) FBOSVersion *osVersion;
+@property (nonnull, nonatomic, readonly, copy) NSDictionary<NSString *, id> *extendedInformation;
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
+@property (nonatomic, readonly, assign) FBiOSTargetState state;
+
+/**
+ FBiOSTarget protocol members - implemented in FBSimulator.m.
+ */
+@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, copy) NSString *customDeviceSetPath;
+@property (nonnull, nonatomic, readonly, strong) FBTemporaryDirectory *temporaryDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *auxillaryDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *runtimeRootDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *platformRootDirectory;
+@property (nullable, nonatomic, readonly, strong) FBiOSTargetScreenInfo *screenInfo;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t workQueue;
+@property (nonnull, nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
+- (NSComparisonResult)compare:(nonnull id<FBiOSTarget>)target;
+- (BOOL)requiresBundlesToBeSigned;
+- (nonnull NSDictionary<NSString *, NSString *> *)replacementMapping;
+- (nonnull NSDictionary<NSString *, NSString *> *)environmentAdditions;
+
+// FBSimulatorLifecycleCommandsProtocol- (nonnull FBFuture<NSNull *> *)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture *)connectToBridge;
+- (nonnull FBFuture *)connectToFramebuffer;
+
+// FBSimulatorLaunchCtlCommandsProtocol- (nonnull FBFuture<NSDictionary *> *)serviceNamesAndProcessIdentifiersMatching:(nonnull NSRegularExpression *)regex;
+- (nonnull FBFuture<NSArray *> *)firstServiceNameAndProcessIdentifierMatching:(nonnull NSRegularExpression *)regex;
+- (nonnull FBFuture<NSString *> *)stopServiceWithName:(nonnull NSString *)serviceName;
+- (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)processIdentifier;
+- (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
+
+// FBPowerCommands / FBEraseCommands / FBSimulatorLifecycleCommandsProtocol
+- (nonnull FBFuture<NSNull *> *)shutdown;
+- (nonnull FBFuture<NSNull *> *)reboot;
+- (nonnull FBFuture<NSNull *> *)erase;
+- (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulatorBootConfiguration *)configuration;
 
 #pragma mark Properties
 
 /**
  The Underlying SimDevice.
  */
-@property (nonatomic, strong, readonly, nonnull) SimDevice *device;
+@property (nonnull, nonatomic, readonly, strong) SimDevice *device;
 
 /**
  The Simulator Set that the Simulator belongs to.
  Reference to `FBSimulatorSet` results to a strong-strong reference cycle between `FBSimulatorSet` and `FBSimulator`.
  However, this cycle is explicitly broken by `FBSimulatorSet` when a `FBSimulator` is removed from the set that `FBSimulatorSet` wraps.
  */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorSet *set;
+@property (nonnull, nonatomic, readonly, strong) FBSimulatorSet *set;
 
 /**
  The Product Family of the Simulator.
  */
-@property (nonatomic, assign, readonly) FBControlCoreProductFamily productFamily;
+@property (nonatomic, readonly, assign) FBControlCoreProductFamily productFamily;
 
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly, nonnull) FBiOSTargetStateString stateString;
+@property (nonnull, nonatomic, readonly, copy) FBiOSTargetStateString stateString;
 
 /**
  The Directory that Contains the Simulator's Data
  */
-@property (nonatomic, copy, readonly, nullable) NSString *dataDirectory;
+@property (nullable, nonatomic, readonly, copy) NSString *dataDirectory;
 
 /**
  The FBSimulatorConfiguration representing this Simulator.
+ Should be marked private when converting to Swift (was readwrite in private extension).
  */
-@property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
+@property (nonnull, nonatomic, readwrite, copy) FBSimulatorConfiguration *configuration;
 
 /**
  A command executor for simctl
  */
-@property (nonatomic, strong, readonly) FBAppleSimctlCommandExecutor *simctlExecutor;
+@property (nonnull, nonatomic, readonly, strong) FBAppleSimctlCommandExecutor *simctlExecutor;
 
 /**
  The directory path of the expected location of the CoreSimulator logs directory.
  */
-@property (nonatomic, copy, readonly) NSString *coreSimulatorLogsDirectory;
+@property (nonnull, nonatomic, readonly, copy) NSString *coreSimulatorLogsDirectory;
+
+#pragma mark - Should be marked private when converting to Swift
+
+@property (nonnull, nonatomic, readonly, strong) FBTargetCommandCache *commandCache;
+
++ (nonnull instancetype)fromSimDevice:(nonnull SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(nonnull FBSimulatorSet *)set;
+- (nonnull instancetype)initWithDevice:(nonnull SimDevice *)device configuration:(nonnull FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(nonnull NSString *)auxillaryDirectory logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
+- (nonnull instancetype)initWithDevice:(nonnull id)device logger:(nonnull id<FBControlCoreLogger>)logger reporter:(nonnull id<FBEventReporter>)reporter;
 
 @end
 
-NS_ASSUME_NONNULL_END
+#pragma mark - Accessibility Dispatcher
+
+/**
+ Category for accessibility translation dispatcher access.
+ */
+@interface FBSimulator (FBAccessibilityDispatcher)
+
+/**
+ Creates a translation dispatcher with the given translator.
+ Used by tests to create a dispatcher with a mock translator.
+ @param translator The AXPTranslator (or mock) to use for the dispatcher.
+ @return A new dispatcher instance.
+ */
++ (nonnull id)createAccessibilityTranslationDispatcherWithTranslator:(nonnull id)translator;
+
+/**
+ Returns the translation dispatcher for accessibility operations.
+ In production, creates/returns the shared instance using the real translator.
+ Test doubles can override this to return a mock dispatcher.
+ @return The translation dispatcher.
+ */
+- (nonnull id)accessibilityTranslationDispatcher;
+
+@end

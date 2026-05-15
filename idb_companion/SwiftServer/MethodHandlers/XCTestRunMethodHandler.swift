@@ -6,10 +6,12 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPC
 import IDBGRPCSwift
+import XCTestBootstrap
 
 struct XCTestRunMethodHandler {
 
@@ -26,15 +28,14 @@ struct XCTestRunMethodHandler {
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
 
-    let operationFuture = commandExecutor.xctest_run(
+    let operation = try await commandExecutor.xctest_run(
       request,
       reporter: reporter,
       logger: FBControlCoreLoggerFactory.logger(to: reporter))
-    let operation = try await BridgeFuture.value(operationFuture)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
 
     do {
-      try await BridgeFuture.await(operation.completed)
+      try await operation.awaitCompletionAsync()
     } catch let error as NSError {
       // We should ignore errors that came from test binary. Like when exception is throwed or binary crashed.
       if error.domain != FBTestErrorDomain {
@@ -42,7 +43,7 @@ struct XCTestRunMethodHandler {
       }
     }
 
-    _ = try await BridgeFuture.value(reporter.reportingTerminated)
+    _ = try await reporter.awaitReportingTerminated()
   }
 
   func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {

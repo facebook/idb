@@ -8,10 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-
 #import <FBDeviceControl/FBAMDefines.h>
-
-NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 
@@ -23,8 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The AMDevice Calls to use.
  */
-@property (nonatomic, assign, class, readonly) AMDCalls amDeviceCalls;
+@property (class, nonatomic, readonly, assign) AMDCalls amDeviceCalls;
 
 @end
-
-NS_ASSUME_NONNULL_END

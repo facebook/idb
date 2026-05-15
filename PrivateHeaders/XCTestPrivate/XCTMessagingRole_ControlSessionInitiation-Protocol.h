@@ -16,4 +16,3 @@
 - (id)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1 protocolVersion:(NSNumber *)arg2;
 - (id)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1;
 @end
-

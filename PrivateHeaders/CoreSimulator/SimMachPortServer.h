@@ -12,16 +12,16 @@
 
 @interface SimMachPortServer : NSObject
 {
-    NSMachPort *_port;
-    NSString *_name;
-    NSObject<OS_dispatch_queue> *_serverQueue;
-    NSObject<OS_dispatch_source> *_serverSource;
+  NSMachPort *_port;
+  NSString *_name;
+  NSObject<OS_dispatch_queue> *_serverQueue;
+  NSObject<OS_dispatch_source> *_serverSource;
 }
 
-@property (retain, nonatomic) NSObject<OS_dispatch_source> *serverSource;
-@property (retain, nonatomic) NSObject<OS_dispatch_queue> *serverQueue;
+@property (nonatomic, retain) NSObject<OS_dispatch_source> *serverSource;
+@property (nonatomic, retain) NSObject<OS_dispatch_queue> *serverQueue;
 @property (nonatomic, copy) NSString *name;
-@property (retain, nonatomic) NSMachPort *port;
+@property (nonatomic, retain) NSMachPort *port;
 
 - (id)description;
 - (id)initWithName:(id)arg1 machMessageHandler:(CDUnknownFunctionPointerType)arg2 machMessageSize:(unsigned int)arg3;

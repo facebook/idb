@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "NSObject.h"
+#import <AccessibilityPlatformTranslation/NSObject.h>
 
 @class AXPTranslationObject;
 
 @protocol AXPTranslationElementProtocol <NSObject>
 + (id)platformElementWithTranslationObject:(AXPTranslationObject *)arg1;
-@property(readonly, nonatomic) AXPTranslationObject *translation;
+@property (nonatomic, readonly) AXPTranslationObject *translation;
 @end
-

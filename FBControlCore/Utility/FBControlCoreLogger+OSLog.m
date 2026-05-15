@@ -9,13 +9,13 @@
 
 #if defined(__apple_build_version__)
 
-#include <os/log.h>
+ #include <os/log.h>
 
 static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 @interface FBControlCoreLogger_OSLog : NSObject <FBControlCoreLogger>
 
-@property (nonatomic, strong, readonly) os_log_t client;
+@property (nonatomic, readonly, strong) os_log_t client;
 
 @end
 
@@ -55,16 +55,6 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
       break;
   }
   return self;
-}
-
-- (id<FBControlCoreLogger>)logFormat:(NSString *)format, ...
-{
-  va_list args;
-  va_start(args, format);
-  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
-  va_end(args);
-
-  return [self log:string];
 }
 
 - (id<FBControlCoreLogger>)info

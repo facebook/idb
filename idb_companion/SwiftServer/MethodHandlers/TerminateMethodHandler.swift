@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct TerminateMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_TerminateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TerminateResponse {
-    try await BridgeFuture.await(commandExecutor.kill_application(request.bundleID))
+    try await commandExecutor.kill_application(request.bundleID)
     return .init()
   }
 }

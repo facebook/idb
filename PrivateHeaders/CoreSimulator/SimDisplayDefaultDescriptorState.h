@@ -13,11 +13,11 @@
 
 @interface SimDisplayDefaultDescriptorState : NSObject <SimDisplayDescriptorState>
 {
-    unsigned short _displayClass;
-    int _powerState;
-    unsigned int _defaultWidthForDisplay;
-    unsigned int _defaultHeightForDisplay;
-    unsigned int _defaultPixelFormat;
+  unsigned short _displayClass;
+  int _powerState;
+  unsigned int _defaultWidthForDisplay;
+  unsigned int _defaultHeightForDisplay;
+  unsigned int _defaultPixelFormat;
 }
 
 + (id)defaultDisplayDescriptorStateWithPowerState:(int)arg1 displayClass:(unsigned short)arg2 width:(unsigned int)arg3 height:(unsigned int)arg4 pixelFormat:(unsigned int)arg5;
@@ -29,8 +29,8 @@
 - (id)xpcObject;
 
 // Remaining properties
-@property (atomic, copy, readonly) NSString *debugDescription;
-@property (atomic, readonly) unsigned long long hash;
+@property (atomic, readonly, copy) NSString *debugDescription;
+@property (atomic, readonly) NSUInteger hash;
 @property (atomic, readonly) Class superclass;
 
 @end

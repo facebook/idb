@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -19,7 +20,7 @@ struct CrashShowMethodHandler {
     }
 
     let predicate = FBCrashLogInfo.predicate(forName: request.name)
-    let crash = try await BridgeFuture.value(commandExecutor.crash_show(predicate))
+    let crash = try await commandExecutor.crash_show(predicate)
     return .with {
       $0.info = CrashLogInfoValueTransformer.responseCrashLogInfo(from: crash.info)
       $0.contents = crash.contents

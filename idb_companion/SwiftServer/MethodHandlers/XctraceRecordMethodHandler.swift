@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPC
 import IDBCompanionUtilities
@@ -55,7 +56,10 @@ struct XctraceRecordMethodHandler {
         targetLogger,
       ].compactMap({ $0 }))
 
-    let operation = try await BridgeFuture.value(target.startXctraceRecord(config, logger: logger))
+    guard let asyncTarget = target as? any AsyncXCTraceRecordCommands else {
+      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncXCTraceRecordCommands")
+    }
+    let operation = try await asyncTarget.startXctraceRecord(configuration: config, logger: logger)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .running
     }
@@ -66,33 +70,29 @@ struct XctraceRecordMethodHandler {
 
   private func stopXCTrace(operation: FBXCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
-    _ = try await BridgeFuture.value(operation.stop(withTimeout: stopTimeout))
+    _ = try await operation.stopAsync(withTimeout: stopTimeout)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }
     try await responseStream.send(response)
 
-    let processed = try await BridgeFuture.value(
-      FBInstrumentsOperation.postProcess(
-        stop.args,
-        traceDir: operation.traceDir,
-        queue: BridgeQueues.miscEventReaderQueue,
-        logger: logger)
-    )
+    let processed = try await FBInstrumentsOperation.postProcessAsync(
+      arguments: stop.args,
+      traceFile: operation.traceDir,
+      queue: BridgeQueues.miscEventReaderQueue,
+      logger: logger)
     finishedWriting.set(true)
 
-    guard let path = processed.path else {
-      throw GRPCStatus(code: .internalError, message: "Unable to get post process file path")
-    }
+    let path = processed.path
 
-    let data = try await BridgeFuture.value(FBArchiveOperations.createGzippedTarData(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger))
+    let data = try await FBArchiveOperations.createGzippedTarDataAsync(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger)
     let resp = Idb_XctraceRecordResponse.with {
       $0.payload = .with { $0.data = data as Data }
     }
     try await responseStream.send(resp)
 
-    let createTarOperation = FBArchiveOperations.createGzippedTar(forPath: path, logger: logger)
-    try await FileDrainWriter.performDrain(taskFuture: createTarOperation) { data in
+    let createTarOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: path, logger: logger)
+    try await FileDrainWriter.performDrain(task: createTarOperation) { data in
       let response = Idb_XctraceRecordResponse.with {
         $0.payload = .with { $0.data = data }
       }

@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Foundation
+
+@objc(FBXCTraceRecordCommands)
+public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
+
+  // MARK: Properties
+
+  @objc public let target: any FBiOSTarget
+
+  // MARK: Initializers
+
+  @objc(commandsWithTarget:)
+  public class func commands(with target: any FBiOSTarget) -> Self {
+    return self.init(target: target)
+  }
+
+  required init(target: any FBiOSTarget) {
+    self.target = target
+    super.init()
+  }
+
+  // MARK: Operations
+
+  public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
+    let result = FBXCTestShimConfiguration.sharedShimConfiguration(with: logger)
+      .onQueue(
+        target.workQueue,
+        fmap: { shim in
+          let op = FBXCTraceRecordOperation.operation(with: self.target, configuration: configuration.withShim(shim), logger: logger)
+          return unsafeBitCast(op, to: FBFuture<AnyObject>.self)
+        })
+    return unsafeBitCast(result, to: FBFuture<FBXCTraceRecordOperation>.self)
+  }
+}

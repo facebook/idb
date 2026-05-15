@@ -8,27 +8,28 @@
 #import <Foundation/Foundation.h>
 
 #import <AccessibilityPlatformTranslation/AXPTranslator.h>
+@protocol OS_dispatch_queue;
 
 @class AXUIElement;
 
 @interface AXPTranslator_iOS : AXPTranslator
 {
-    NSMutableDictionary *_translationCache;
-    NSMutableDictionary *_backTranslationCache;
-    NSObject<OS_dispatch_queue> *_cacheQueue;
-    struct __IOHIDEventSystemClient *_ioSystemPostBackClient;
-    BOOL _axAppReadyFlag;
-    id _axEventObserver;
-    AXUIElement *_systemAppElement;
-    AXUIElement *_systemWideElement;
+  NSMutableDictionary *_translationCache;
+  NSMutableDictionary *_backTranslationCache;
+  NSObject<OS_dispatch_queue> *_cacheQueue;
+  struct __IOHIDEventSystemClient *_ioSystemPostBackClient;
+  BOOL _axAppReadyFlag;
+  id _axEventObserver;
+  AXUIElement *_systemAppElement;
+  AXUIElement *_systemWideElement;
 }
 
 + (id)_iosParameterFromPlatformParameter:(id)arg1;
 + (id)translationObjectFromUIKitObject:(id)arg1;
 + (id)sharedInstance;
-@property(retain, nonatomic) AXUIElement *systemWideElement; // @synthesize systemWideElement=_systemWideElement;
-@property(retain, nonatomic) AXUIElement *systemAppElement; // @synthesize systemAppElement=_systemAppElement;
-@property(retain, nonatomic) id axEventObserver; // @synthesize axEventObserver=_axEventObserver;
+@property (nonatomic, retain) AXUIElement *systemWideElement; // @synthesize systemWideElement=_systemWideElement;
+@property (nonatomic, retain) AXUIElement *systemAppElement; // @synthesize systemAppElement=_systemAppElement;
+@property (nonatomic, retain) id axEventObserver; // @synthesize axEventObserver=_axEventObserver;
 - (BOOL)accessibilityEnabled;
 - (id)remoteTranslationDataWithTranslation:(id)arg1 pid:(int)arg2;
 - (id)translationObjectFromData:(id)arg1;
@@ -89,4 +90,3 @@
 - (id)init;
 
 @end
-

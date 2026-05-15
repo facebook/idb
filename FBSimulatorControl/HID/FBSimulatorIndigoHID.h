@@ -8,8 +8,6 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  An Enumeration for the Direction of the Event.
  */
@@ -30,6 +28,17 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
 };
 
 /**
+ An Enumeration for device orientation.
+ Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
+ */
+typedef NS_ENUM(int, FBSimulatorHIDDeviceOrientation) {
+  FBSimulatorHIDDeviceOrientationPortrait = 1,
+  FBSimulatorHIDDeviceOrientationPortraitUpsideDown = 2,
+  FBSimulatorHIDDeviceOrientationLandscapeRight = 3,
+  FBSimulatorHIDDeviceOrientationLandscapeLeft = 4,
+};
+
+/**
  Translates FBSimulatorHID Events into Indigo Structs.
  */
 @interface FBSimulatorIndigoHID : NSObject
@@ -40,7 +49,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param error an error out for any error that occurs in construction.
  @return a new FBSimulatorIndigoHID instance if successful, nil otherwise.
  */
-+ (nullable instancetype)simulatorKitHIDWithError:(NSError **)error;
++ (nullable instancetype)simulatorKitHIDWithError:(NSError * _Nullable * _Nullable)error;
 
 /**
  A Keyboard Event.
@@ -49,7 +58,7 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param keycode the Key Code to send. The keycodes are 'Hardware Independent' as described in <HIToolbox/Events.h>.
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode;
+- (nonnull NSData *)keyboardWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode;
 
 /**
  A Button Event.
@@ -58,20 +67,30 @@ typedef NS_ENUM(int, FBSimulatorHIDButton) {
  @param button the button.
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
-
+- (nonnull NSData *)buttonWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button;
 
 /**
  A Touch Event.
  @param screenSize the size of the screen in pixels.
  @param screenScale the scale of the screen e.g. @2x
  @param direction the direction of the event.
- @param x the X-Coordinate in pixels
- @param y the Y-Coordinate pixels
+ @param x the X-Coordinate in points
+ @param y the Y-Coordinate in points
  @return an NSData-Wrapped IndigoMessage. The data is owned by the receiver and will be freed when the data is deallocated.
  */
-- (NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
+- (nonnull NSData *)touchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y;
+
+/**
+ A Two-Finger Touch Event for multi-touch gestures (pinch, rotate, etc.).
+
+ @param screenSize the size of the screen in pixels.
+ @param screenScale the scale of the screen e.g. @2x
+ @param direction the direction of the event (Down for press/move, Up for lift).
+ @param finger1 the coordinate of finger 1 in pixels.
+ @param finger2 the coordinate of finger 2 in pixels.
+ @return an NSData-Wrapped IndigoMessage.
+ */
+- (nonnull NSData *)twoFingerTouchScreenSize:(CGSize)screenSize screenScale:(float)screenScale direction:(FBSimulatorHIDDirection)direction
+                                     finger1:(CGPoint)finger1 finger2:(CGPoint)finger2;
 
 @end
-
-NS_ASSUME_NONNULL_END

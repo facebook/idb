@@ -71,6 +71,66 @@ $ idb launch com.apple.mobilesafari
 
 Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands. There are also instructions on how to [make changes to `idb` including building it from source](https://www.fbidb.io/docs/development).
 
+## Building from Source
+
+### Prerequisites
+
+- **Xcode 14.0+**
+- **XcodeGen**: `brew install xcodegen`
+- **For idb_companion**: protobuf and gRPC Swift plugins
+  ```
+  brew install protobuf swift-protobuf grpc-swift
+  ```
+
+### Building
+
+```bash
+# Build everything (frameworks + idb_companion)
+./build.sh build
+
+# Build only the frameworks
+./build.sh build frameworks
+
+# Build only idb_companion
+./build.sh build idb_companion
+
+# Build a specific framework
+./build.sh build FBControlCore
+```
+
+The idb_companion binary will be at `build/Build/Products/Release/idb_companion`.
+
+### Running Tests
+
+```bash
+# Run all tests
+./build.sh test
+
+# Test a specific framework
+./build.sh test FBSimulatorControl
+```
+
+### Regenerating Xcode Projects
+
+The Xcode project files are generated from `project.yml` using XcodeGen. To regenerate without building:
+
+```bash
+./build.sh generate
+```
+
+### Build Script Reference
+
+```bash
+./build.sh help                      # Show all options
+./build.sh generate                  # Regenerate Xcode projects
+./build.sh build                     # Build all targets
+./build.sh build frameworks          # Build all frameworks
+./build.sh build idb_companion       # Build idb_companion
+./build.sh build FBControlCore       # Build specific framework
+./build.sh test                      # Run all tests
+./build.sh test FBSimulatorControl   # Test specific framework
+```
+
 ## Documentation
 
 Find the full documentation for this project at [fbidb.io](https://www.fbidb.io/)

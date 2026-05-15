@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
  so checks like `[surface respondsToSelector: @selector(ioSurface)]` may return true, because
  this selector exists in proxy implementation, but underlying object may still not implement that selector
  and we will receive nil result.
- 
+
  To be 100% sure we calling both methods (with plural underlying implementation and not) and one of the implementation
  will succeed.
  */
@@ -32,18 +32,18 @@ NS_ASSUME_NONNULL_BEGIN
 
  Consumers should take this into account.
  */
-@property (readonly, nullable, nonatomic) id ioSurface;
+@property (nullable, nonatomic, readonly) id ioSurface;
 
 /**
  In Xcode 13.2 ioSurface was splitted to two surfaces. Use `framebufferSurface` as primary implementation.
  */
-@property (readonly, nullable, nonatomic) id framebufferSurface;
+@property (nullable, nonatomic, readonly) id framebufferSurface;
 
 /**
  We do not actually use this, but still worth to know that is exists.
  This clips image for devices with face id so image is not square, but in the shape of iPhone with notch
  */
-@property (readonly, nullable, nonatomic) id maskedFramebufferSurface;
+@property (nullable, nonatomic, readonly) id maskedFramebufferSurface;
 
 // Added in Xcode 9 as -[SimDeviceIOClient attachConsumer:] methods have been removed.
 - (void)unregisterIOSurfaceChangeCallbackWithUUID:(NSUUID *)arg1;

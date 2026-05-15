@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct UninstallMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_UninstallRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_UninstallResponse {
-    try await BridgeFuture.await(commandExecutor.uninstall_application(request.bundleID))
+    try await commandExecutor.uninstall_application(request.bundleID)
     return .init()
   }
 }

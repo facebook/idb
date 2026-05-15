@@ -5,20 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @class NSArray, NSDate;
 
 @interface SimVideoQuicktimeFormat : NSObject
 {
-    unsigned char _qtFormatType;
-    BOOL _fragmented;
-    NSDate *_creationDate;
-    NSDate *_modificationDate;
-    NSArray *_sequenceParameterSets;
-    NSArray *_pictureParameterSets;
-    double _timeScale;
-    struct CGSize _frameSize;
+  unsigned char _qtFormatType;
+  BOOL _fragmented;
+  NSDate *_creationDate;
+  NSDate *_modificationDate;
+  NSArray *_sequenceParameterSets;
+  NSArray *_pictureParameterSets;
+  double _timeScale;
+  struct CGSize _frameSize;
 }
 
 + (double)timeIntervalSinceQuicktimeEpochWithDate:(id)arg1;
@@ -28,8 +28,8 @@
 @property (nonatomic, copy) NSArray *pictureParameterSets;
 @property (nonatomic, copy) NSArray *sequenceParameterSets;
 @property (nonatomic, assign) struct CGSize frameSize;
-@property (retain, nonatomic) NSDate *modificationDate;
-@property (retain, nonatomic) NSDate *creationDate;
+@property (nonatomic, retain) NSDate *modificationDate;
+@property (nonatomic, retain) NSDate *creationDate;
 @property (nonatomic, assign) unsigned char qtFormatType;
 
 - (id)dictionaryForMovieFragment;

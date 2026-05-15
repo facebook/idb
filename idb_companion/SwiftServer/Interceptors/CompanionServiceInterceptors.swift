@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+@preconcurrency import FBControlCore
 import Foundation
 import GRPC
 import IDBGRPCSwift
@@ -103,6 +104,14 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
   }
 
   func makecontacts_updateInterceptors() -> [ServerInterceptor<Idb_ContactsUpdateRequest, Idb_ContactsUpdateResponse>] {
+    commonInterceptors()
+  }
+
+  func makecontacts_clearInterceptors() -> [ServerInterceptor<Idb_ContactsClearRequest, Idb_ContactsClearResponse>] {
+    commonInterceptors()
+  }
+
+  func makephotos_clearInterceptors() -> [ServerInterceptor<Idb_PhotosClearRequest, Idb_PhotosClearResponse>] {
     commonInterceptors()
   }
 

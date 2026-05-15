@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct SendNotificationMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_SendNotificationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SendNotificationResponse {
-    try await BridgeFuture.await(commandExecutor.sendPushNotification(forBundleID: request.bundleID, jsonPayload: request.jsonPayload))
+    try await commandExecutor.sendPushNotification(forBundleID: request.bundleID, jsonPayload: request.jsonPayload)
     return .init()
   }
 }

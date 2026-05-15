@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -18,7 +19,7 @@ struct AddMediaMethodHandler {
       try await MultisourceFileReader
       .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true)
 
-    try await BridgeFuture.await(commandExecutor.add_media(extractedFileURLs))
+    try await commandExecutor.add_media(extractedFileURLs)
     return .init()
   }
 }

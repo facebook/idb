@@ -8,3 +8,6 @@ INFOPLIST_FILE = $(SRCROOT)/XCTestBootstrap/XCTestBootstrap-Info.plist
 LD_RUNPATH_SEARCH_PATHS = @loader_path/Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap
 PRODUCT_NAME = XCTestBootstrap
+
+// Suppress incomplete umbrella warning - some headers import private frameworks and can't be in umbrella
+OTHER_CFLAGS = $(inherited) -Wno-incomplete-umbrella

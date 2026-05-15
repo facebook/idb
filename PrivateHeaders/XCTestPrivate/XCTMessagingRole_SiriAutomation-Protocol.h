@@ -14,4 +14,3 @@
 - (void)_XCT_startSiriUIRequestWithText:(NSString *)arg1 completion:(void (^)(_Bool, NSError *))arg2;
 - (void)_XCT_requestSiriEnabledStatus:(void (^)(_Bool, NSError *))arg1;
 @end
-

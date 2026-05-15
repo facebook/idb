@@ -6,40 +6,17 @@
  */
 
 #import "FBSimulator.h"
-#import "FBSimulator+Private.h"
+
+#import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
-
-#import <Foundation/Foundation.h>
-
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBAppleSimctlCommandExecutor.h"
-#import "FBSimulatorApplicationCommands.h"
-#import "FBSimulatorConfiguration+CoreSimulator.h"
-#import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorCrashLogCommands.h"
-#import "FBSimulatorDebuggerCommands.h"
-#import "FBSimulatorDapServerCommands.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorFileCommands.h"
-#import "FBSimulatorHIDEvent.h"
-#import "FBSimulatorLifecycleCommands.h"
-#import "FBSimulatorLocationCommands.h"
-#import "FBSimulatorMemoryCommands.h"
-#import "FBSimulatorNotificationCommands.h"
-#import "FBSimulatorLogCommands.h"
-#import "FBSimulatorMediaCommands.h"
-#import "FBSimulatorProcessSpawnCommands.h"
-#import "FBSimulatorScreenshotCommands.h"
-#import "FBSimulatorSet.h"
-#import "FBSimulatorSettingsCommands.h"
-#import "FBSimulatorVideoRecordingCommands.h"
-#import "FBSimulatorXCTestCommands.h"
+#import "FBSimulatorBootConfiguration.h"
+#import "FBSimulatorControl-Swift.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -52,28 +29,28 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 @synthesize temporaryDirectory = _temporaryDirectory;
 @synthesize logger = _logger;
-@dynamic xctestPath;
 
 #pragma mark Lifecycle
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set
 {
   return [[FBSimulator alloc]
-    initWithDevice:device
-    configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
-    set:set
-    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
-    logger:set.logger
-    reporter:set.reporter];
+          initWithDevice:device
+          configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
+          set:set
+          auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
+          logger:set.logger
+          reporter:set.reporter];
 }
 
-- (instancetype)initWithDevice:(id)device logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter {
-    return [self initWithDevice:device
-                  configuration:[FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
-                            set:nil
-             auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
-                         logger:logger
-                       reporter:reporter];
+- (instancetype)initWithDevice:(id)device logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
+{
+  return [self initWithDevice:device
+                configuration:[FBSimulatorConfiguration inferSimulatorConfigurationFromDeviceSynthesizingMissing:device]
+                          set:nil
+           auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device]
+                       logger:logger
+                     reporter:reporter];
 }
 
 - (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(nullable FBSimulatorSet *)set auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger reporter:(id<FBEventReporter>)reporter
@@ -88,11 +65,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   _set = set;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = [logger withName:device.UDID.UUIDString];
-  _forwarder = [FBLoggingWrapper
-    wrap:[FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders statefulCommands:FBSimulator.statefulCommands]
-    simplifiedNaming:NO
-    eventReporter:reporter
-    logger:logger];
+  _commandCache = [FBTargetCommandCache new];
 
   return self;
 }
@@ -187,7 +160,7 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 - (NSDictionary<NSString *, NSString *> *)replacementMapping
 {
   return @{
-    @"%%SIM_ROOT%%": self.dataDirectory,
+    @"%%SIM_ROOT%%" : self.dataDirectory,
   };
 }
 
@@ -196,7 +169,8 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return @{};
 }
 
-- (BOOL)requiresBundlesToBeSigned {
+- (BOOL)requiresBundlesToBeSigned
+{
   return YES;
 }
 
@@ -242,14 +216,14 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 - (NSString *)coreSimulatorLogsDirectory
 {
   return [[NSHomeDirectory()
-    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
-    stringByAppendingPathComponent:self.udid];
+           stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
+          stringByAppendingPathComponent:self.udid];
 }
 
 - (NSString *)xctestBinaryPath
 {
   return [FBXcodeConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+          stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
 }
 
 #pragma mark NSObject
@@ -272,71 +246,11 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
   return FBiOSTargetDescribe(self);
 }
 
-#pragma mark Forwarding
-
-- (id)forwardingTargetForSelector:(SEL)selector
-{
-  return [self.forwarder forwardingTargetForSelector:selector];
-}
-
-- (void)forwardInvocation:(NSInvocation *)invocation
-{
-  [self.forwarder forwardInvocation:invocation];
-}
-
-+ (NSArray<Class> *)commandResponders
-{
-  static dispatch_once_t onceToken;
-  static NSArray<Class> *commandClasses;
-  dispatch_once(&onceToken, ^{
-    commandClasses = @[
-      FBInstrumentsCommands.class,
-      FBSimulatorAccessibilityCommands.class,
-      FBSimulatorApplicationCommands.class,
-      FBSimulatorCrashLogCommands.class,
-      FBSimulatorDebuggerCommands.class,
-      FBSimulatorDapServerCommand.class,
-      FBSimulatorFileCommands.class,
-      FBSimulatorKeychainCommands.class,
-      FBSimulatorLaunchCtlCommands.class,
-      FBSimulatorLifecycleCommands.class,
-      FBSimulatorLocationCommands.class,
-      FBSimulatorLogCommands.class,
-      FBSimulatorMediaCommands.class,
-      FBSimulatorProcessSpawnCommands.class,
-      FBSimulatorScreenshotCommands.class,
-      FBSimulatorSettingsCommands.class,
-      FBSimulatorVideoRecordingCommands.class,
-      FBSimulatorXCTestCommands.class,
-      FBXCTraceRecordCommands.class,
-      FBSimulatorNotificationCommands.class,
-      FBSimulatorMemoryCommands.class,
-    ];
-  });
-  return commandClasses;
-}
-
 #pragma mark Private
 
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device
 {
   return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
-}
-
-+ (NSSet<Class> *)statefulCommands
-{
-  static dispatch_once_t onceToken;
-  static NSSet<Class> *statefulCommands;
-  dispatch_once(&onceToken, ^{
-    statefulCommands = [NSSet setWithArray:@[
-      FBSimulatorCrashLogCommands.class,
-      FBSimulatorLifecycleCommands.class,
-      FBSimulatorScreenshotCommands.class,
-      FBSimulatorVideoRecordingCommands.class,
-      FBSimulatorXCTestCommands.class,
-    ]];
-  });
-  return statefulCommands;
 }
 
 @end

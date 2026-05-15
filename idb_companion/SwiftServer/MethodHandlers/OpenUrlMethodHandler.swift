@@ -6,6 +6,7 @@
  */
 
 import CompanionLib
+import FBControlCore
 import GRPC
 import IDBGRPCSwift
 
@@ -14,7 +15,7 @@ struct OpenUrlMethodHandler {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
-    try await BridgeFuture.await(commandExecutor.open_url(request.url))
+    try await commandExecutor.open_url(request.url)
     return .init()
   }
 }

@@ -9,17 +9,17 @@
 
 #import <dlfcn.h>
 
-#import "FBDevice.h"
+#import <FBDeviceControl/FBDeviceControl-Swift.h>
+
 #import "FBAMDServiceConnection.h"
-#import "FBDeviceControlError.h"
+#import "FBDevice.h"
 
 // This signature for this function is shown in the OSS release of dyld (ex: https://opensource.apple.com/source/dyld/dyld-433.5/launch-cache/dsc_extractor.cpp.auto.html)
 typedef int (*SharedCacheExtractor)(const char *sharedCachePath, const char *extractionRootDirectory, void (^progressCallback)(int current, int total));
 
 @interface FBDeviceDebugSymbolsCommands ()
 
-@property (nonatomic, weak, readonly) FBDevice *device;
-@property (nonatomic, copy, nullable, readwrite) NSArray<NSString *> *cachedFileListing;
+@property (nonatomic, readonly, weak) FBDevice *device;
 
 @end
 
@@ -44,7 +44,7 @@ typedef int (*SharedCacheExtractor)(const char *sharedCachePath, const char *ext
   return self;
 }
 
-#pragma mark FBDeviceActivationCommands Implementation
+#pragma mark FBDeviceDebugSymbolsCommands Implementation
 
 static const uint32_t ListFilesPlistCommand = 0x30303030;
 static const uint32_t ListFilesPlistAck = ListFilesPlistCommand;
@@ -59,47 +59,50 @@ static const uint32_t GetFileAck = GetFileCommand;
 - (FBFuture<NSString *> *)pullSymbolFile:(NSString *)fileName toDestinationPath:(NSString *)destinationPath
 {
   return [[self
-    indexOfSymbolFile:fileName]
-    onQueue:self.device.asyncQueue fmap:^(NSNumber *indexNumber) {
-      uint32_t index = indexNumber.unsignedIntValue;
-      return [self writeSymbolFileWithIndex:index toFileAtPath:destinationPath];
-    }];
+           indexOfSymbolFile:fileName]
+          onQueue:self.device.asyncQueue
+          fmap:^(NSNumber *indexNumber) {
+            uint32_t index = indexNumber.unsignedIntValue;
+            return [self writeSymbolFileWithIndex:index toFileAtPath:destinationPath];
+          }];
 }
 
 - (FBFuture<NSString *> *)pullAndExtractSymbolsToDestinationDirectory:(NSString *)destinationDirectory
 {
   NSError *error = nil;
   if (![NSFileManager.defaultManager createDirectoryAtPath:destinationDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-    return [[FBDeviceControlError
-      describeFormat:@"Failed to create destination directory for symbol extraction: %@", error]
-      failFuture];
+    return (FBFuture *)[[FBDeviceControlError
+                         describe:[NSString stringWithFormat:@"Failed to create destination directory for symbol extraction: %@", error]]
+                        failFuture];
   }
   id<FBControlCoreLogger> logger = self.device.logger;
   return [[[self
-    indicesAndRemotePathsOfSharedCache]
-    onQueue:self.device.asyncQueue fmap:^(NSDictionary<NSNumber *, NSString *> *indicesToRemotePaths) {
-      NSMutableDictionary<NSNumber *, NSString *> *indicesToLocalPaths = NSMutableDictionary.dictionary;
-      for (NSNumber *fileIndex in indicesToRemotePaths.allKeys) {
-        NSString *localFileName = indicesToRemotePaths[fileIndex].lastPathComponent;
-        indicesToLocalPaths[fileIndex] = [destinationDirectory stringByAppendingPathComponent:localFileName];
-      }
-      [logger logFormat:@"Extracting remote symbols %@", [FBCollectionInformation oneLineDescriptionFromArray:indicesToRemotePaths.allValues]];
-      return [self extractSymbolFilesWithIndicesMap:indicesToLocalPaths extractedPaths:@[]];
-    }]
-    onQueue:self.device.asyncQueue fmap:^(NSArray<NSString *> *extractedSymbolFiles) {
-      NSError *innerError = nil;
-      NSString *sharedCachePath = [FBDeviceDebugSymbolsCommands extractSharedCachePathFromPaths:extractedSymbolFiles error:&innerError];
-      if (!sharedCachePath) {
-        return [FBFuture futureWithError:innerError];
-      }
-      if (![FBDeviceDebugSymbolsCommands extractSharedCacheFile:sharedCachePath toDestinationDirectory:destinationDirectory logger:self.device.logger error:&innerError]) {
-        return [FBFuture futureWithError:innerError];
-      }
-      for (NSString *extractedSymbolFile in extractedSymbolFiles) {
-        [NSFileManager.defaultManager removeItemAtPath:extractedSymbolFile error:nil];
-      }
-      return [FBFuture futureWithResult:destinationDirectory];
-    }];
+            indicesAndRemotePathsOfSharedCache]
+           onQueue:self.device.asyncQueue
+           fmap:^(NSDictionary<NSNumber *, NSString *> *indicesToRemotePaths) {
+             NSMutableDictionary<NSNumber *, NSString *> *indicesToLocalPaths = NSMutableDictionary.dictionary;
+             for (NSNumber *fileIndex in indicesToRemotePaths.allKeys) {
+               NSString *localFileName = indicesToRemotePaths[fileIndex].lastPathComponent;
+               indicesToLocalPaths[fileIndex] = [destinationDirectory stringByAppendingPathComponent:localFileName];
+             }
+             [logger log:[NSString stringWithFormat:@"Extracting remote symbols %@", [FBCollectionInformation oneLineDescriptionFromArray:indicesToRemotePaths.allValues]]];
+             return [self extractSymbolFilesWithIndicesMap:indicesToLocalPaths extractedPaths:@[]];
+           }]
+          onQueue:self.device.asyncQueue
+          fmap:^(NSArray<NSString *> *extractedSymbolFiles) {
+            NSError *innerError = nil;
+            NSString *sharedCachePath = [FBDeviceDebugSymbolsCommands extractSharedCachePathFromPaths:extractedSymbolFiles error:&innerError];
+            if (!sharedCachePath) {
+              return [FBFuture futureWithError:innerError];
+            }
+            if (![FBDeviceDebugSymbolsCommands extractSharedCacheFile:sharedCachePath toDestinationDirectory:destinationDirectory logger:self.device.logger error:&innerError]) {
+              return [FBFuture futureWithError:innerError];
+            }
+            for (NSString *extractedSymbolFile in extractedSymbolFiles) {
+              [NSFileManager.defaultManager removeItemAtPath:extractedSymbolFile error:nil];
+            }
+            return [FBFuture futureWithResult:destinationDirectory];
+          }];
 }
 
 #pragma mark Private
@@ -115,87 +118,94 @@ static const uint32_t GetFileAck = GetFileCommand;
   [nextIndicesToName removeObjectForKey:nextIndexNumber];
   uint32_t nextIndex = nextIndexNumber.unsignedIntValue;
   return [[self
-    writeSymbolFileWithIndex:nextIndex toFileAtPath:nextPath]
-    onQueue:self.device.asyncQueue fmap:^(NSString *extractedPath) {
-      NSMutableArray<NSString *> *nextExtractedPaths = [extractedPaths mutableCopy];
-      [nextExtractedPaths addObject:extractedPath];
-      return [self extractSymbolFilesWithIndicesMap:nextIndicesToName extractedPaths:nextExtractedPaths];
-    }];
+           writeSymbolFileWithIndex:nextIndex
+           toFileAtPath:nextPath]
+          onQueue:self.device.asyncQueue
+          fmap:^(NSString *extractedPath) {
+            NSMutableArray<NSString *> *nextExtractedPaths = [extractedPaths mutableCopy];
+            [nextExtractedPaths addObject:extractedPath];
+            return [self extractSymbolFilesWithIndicesMap:nextIndicesToName extractedPaths:nextExtractedPaths];
+          }];
 }
 
 - (FBFuture<NSDictionary<NSNumber *, NSString *> *> *)indicesAndRemotePathsOfSharedCache
 {
   return [[self
-    symbolServiceConnection]
-    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
-      if (!files) {
-        return [FBFuture futureWithError:error];
-      }
-      NSArray<NSString *> *matchingFiles = [FBDeviceDebugSymbolsCommands matchingPathsOfSharedCache:files];
-      NSDictionary<NSNumber *, NSString *> *indicesToFile = [FBDeviceDebugSymbolsCommands matchFiles:matchingFiles againstFileIndices:files error:&error];
-      if (!indicesToFile) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:indicesToFile];
-    }];
+           symbolServiceConnection]
+          onQueue:self.device.asyncQueue
+          pop:^(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
+            if (!files) {
+              return [FBFuture futureWithError:error];
+            }
+            NSArray<NSString *> *matchingFiles = [FBDeviceDebugSymbolsCommands matchingPathsOfSharedCache:files];
+            NSDictionary<NSNumber *, NSString *> *indicesToFile = [FBDeviceDebugSymbolsCommands matchFiles:matchingFiles againstFileIndices:files error:&error];
+            if (!indicesToFile) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:indicesToFile];
+          }];
 }
 
 - (FBFuture<NSNumber *> *)indexOfSymbolFile:(NSString *)fileName
 {
   return [[self
-    symbolServiceConnection]
-    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
-      if (!files) {
-        return [FBFuture futureWithError:error];
-      }
-      NSUInteger index = [files indexOfObject:fileName];
-      if (index == NSNotFound) {
-        return [[FBDeviceControlError
-          describeFormat:@"Could not find %@ within %@", fileName, [FBCollectionInformation oneLineDescriptionFromArray:files]]
-          failFuture];
-      }
-      return [FBFuture futureWithResult:@(index)];
-    }];
+           symbolServiceConnection]
+          onQueue:self.device.asyncQueue
+          pop:^(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
+            if (!files) {
+              return [FBFuture futureWithError:error];
+            }
+            NSUInteger index = [files indexOfObject:fileName];
+            if (index == NSNotFound) {
+              return (FBFuture *)[[FBDeviceControlError
+                                   describe:[NSString stringWithFormat:@"Could not find %@ within %@", fileName, [FBCollectionInformation oneLineDescriptionFromArray:files]]]
+                                  failFuture];
+            }
+            return [FBFuture futureWithResult:@(index)];
+          }];
 }
 
 - (FBFuture<NSString *> *)writeSymbolFileWithIndex:(uint32_t)index toFileAtPath:(NSString *)destinationPath
 {
   return [[self
-    symbolServiceConnection]
-    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      if(![FBDeviceDebugSymbolsCommands getFileWithIndex:index toDestinationPath:destinationPath onConnection:connection error:&error]) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:destinationPath];
-    }];
+           symbolServiceConnection]
+          onQueue:self.device.asyncQueue
+          pop:^(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            if (![FBDeviceDebugSymbolsCommands getFileWithIndex:index toDestinationPath:destinationPath onConnection:connection error:&error]) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:destinationPath];
+          }];
 }
 
 - (FBFutureContext<FBAMDServiceConnection *> *)symbolServiceConnection
 {
   return [[self.device
-    ensureDeveloperDiskImageIsMounted]
-    onQueue:self.device.workQueue pushTeardown:^(FBDeveloperDiskImage *image) {
-      return [self.device startService:@"com.apple.dt.fetchsymbols"];
-    }];
+           ensureDeveloperDiskImageIsMounted]
+          onQueue:self.device.workQueue
+          pushTeardown:^(FBDeveloperDiskImage *image) {
+            return [self.device startService:@"com.apple.dt.fetchsymbols"];
+          }];
 }
 
 - (FBFuture<NSArray<NSString *> *> *)fetchRemoteSymbolListing
 {
   return [[self
-    symbolServiceConnection]
-    onQueue:self.device.asyncQueue pop:^(FBAMDServiceConnection *connection) {
-      NSError *error = nil;
-      NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
-      if (!files) {
-        return [FBFuture futureWithError:error];
-      }
-      return [FBFuture futureWithResult:files];
-    }];
+           symbolServiceConnection]
+          onQueue:self.device.asyncQueue
+          pop:^(FBAMDServiceConnection *connection) {
+            NSError *error = nil;
+            NSArray<NSString *> *files = [FBDeviceDebugSymbolsCommands obtainFileListingFromService:connection error:&error];
+            if (!files) {
+              return [FBFuture futureWithError:error];
+            }
+            return [FBFuture futureWithResult:files];
+          }];
 }
 
 + (NSArray<NSString *> *)obtainFileListingFromService:(FBAMDServiceConnection *)connection error:(NSError **)error
@@ -207,14 +217,14 @@ static const uint32_t GetFileAck = GetFileCommand;
   NSDictionary<NSString *, id> *message = [connection receiveMessageWithError:&innerError];
   if (!message) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve ListFiles plist message %@", innerError]
-      fail:error];
+             describe:[NSString stringWithFormat:@"Failed to receive ListFiles plist message %@", innerError]]
+            fail:error];
   }
   NSArray<NSString *> *files = message[@"files"];
   if (![FBCollectionInformation isArrayHeterogeneous:files withClass:NSString.class]) {
     return [[FBDeviceControlError
-      describeFormat:@"ListFilesPlist expected Array<String> for 'files' but got %@", [FBCollectionInformation oneLineDescriptionFromArray:files]]
-      fail:error];
+             describe:[NSString stringWithFormat:@"ListFilesPlist expected Array<String> for 'files' but got %@", [FBCollectionInformation oneLineDescriptionFromArray:files]]]
+            fail:error];
   }
   return files;
 }
@@ -225,20 +235,20 @@ static const uint32_t GetFileAck = GetFileCommand;
   BOOL success = [connection sendUnsignedInt32:command error:&innerError];
   if (!success) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to send '%@' command to symbol service %@", commandName, innerError]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to send '%@' command to symbol service %@", commandName, innerError]]
+            failBool:error];
   }
   uint32_t response = 0;
   success = [connection receiveUnsignedInt32:&response error:&innerError];
   if (!success) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve '%@' response from %@", commandName, innerError]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to receive '%@' response from %@", commandName, innerError]]
+            failBool:error];
   }
   if (response != ack) {
     return [[FBDeviceControlError
-      describeFormat:@"Incorrect '%@' ack from symbol service; got %u expected %u", commandName, response, ack]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Incorrect '%@' ack from symbol service; got %u expected %u", commandName, response, ack]]
+            failBool:error];
   }
   return YES;
 }
@@ -254,31 +264,31 @@ static const uint32_t GetFileAck = GetFileCommand;
   uint32_t indexWire = OSSwapHostToBigInt32(index);
   if (![connection sendUnsignedInt32:indexWire error:&innerError]) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to send GetFile file index %u packet %@", index, innerError]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to send GetFile file index %u packet %@", index, innerError]]
+            failBool:error];
   }
   uint64_t recieveLengthWire = 0;
   if (![connection receiveUnsignedInt64:&recieveLengthWire error:&innerError]) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to recieve GetFile file length %@", innerError]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to recieve GetFile file length %@", innerError]]
+            failBool:error];
   }
   if (recieveLengthWire == 0) {
     return [[FBDeviceControlError
-      describe:@"Failed to get file length, recieveLength not returned or is zero."]
-      failBool:error];
+             describe:@"Failed to get file length, recieveLength not returned or is zero."]
+            failBool:error];
   }
   uint64_t recieveLength = OSSwapBigToHostInt64(recieveLengthWire);
   if (![NSFileManager.defaultManager createFileAtPath:destinationPath contents:nil attributes:nil]) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to create destination file at path %@", destinationPath]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to create destination file at path %@", destinationPath]]
+            failBool:error];
   }
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:destinationPath];
   if (!fileHandle) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to open file for writing at %@", destinationPath]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to open file for writing at %@", destinationPath]]
+            failBool:error];
   }
   if (![connection receive:recieveLength toFile:fileHandle error:error]) {
     return NO;
@@ -292,16 +302,17 @@ static const uint32_t GetFileAck = GetFileCommand;
   if (!extractor) {
     return NO;
   }
-  [logger logFormat:@"Extracting shared cache at %@ to directory at %@", sharedCacheFile, destinationDirectory];
-  int status = extractor(sharedCacheFile.UTF8String, destinationDirectory.UTF8String, ^(int completed, int total){
-    [logger logFormat:@"Completed %d Total %d", completed, total];
-  });
+  [logger log:[NSString stringWithFormat:@"Extracting shared cache at %@ to directory at %@", sharedCacheFile, destinationDirectory]];
+  int status = extractor(sharedCacheFile.UTF8String,
+    destinationDirectory.UTF8String, ^(int completed, int total) {
+      [logger log:[NSString stringWithFormat:@"Completed %d Total %d", completed, total]];
+    });
   if (status != 0) {
     return [[FBDeviceControlError
-      describeFormat:@"Failed to get extract shared cache directory %@ to %@ with status %d", sharedCacheFile, destinationDirectory, status]
-      failBool:error];
+             describe:[NSString stringWithFormat:@"Failed to get extract shared cache directory %@ to %@ with status %d", sharedCacheFile, destinationDirectory, status]]
+            failBool:error];
   }
-  [logger logFormat:@"Shared cache extracted to %@", destinationDirectory];
+  [logger log:[NSString stringWithFormat:@"Shared cache extracted to %@", destinationDirectory]];
   return YES;
 }
 
@@ -314,8 +325,8 @@ static const uint32_t GetFileAck = GetFileCommand;
   void *handle = dlopen(path.UTF8String, RTLD_LAZY);
   if (!handle) {
     return [[FBControlCoreError
-      describeFormat:@"Failed to dlopen() %@", path]
-      failPointer:error];
+             describe:[NSString stringWithFormat:@"Failed to dlopen() %@", path]]
+            failPointer:error];
   }
   return FBGetSymbolFromHandle(handle, "dyld_shared_cache_extract_dylibs_progress");
 }
@@ -325,8 +336,8 @@ static const uint32_t GetFileAck = GetFileCommand;
   NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform/usr/lib/dsc_extractor.bundle"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[FBDeviceControlError
-      describeFormat:@"Expected dyld_shared_cache extractor library was not found at path %@", path]
-      fail:error];
+             describe:[NSString stringWithFormat:@"Expected dyld_shared_cache extractor library was not found at path %@", path]]
+            fail:error];
   }
   return path;
 }
@@ -353,8 +364,8 @@ static const uint32_t GetFileAck = GetFileCommand;
     NSUInteger index = [fileIndices indexOfObject:file];
     if (index == NSNotFound) {
       return [[FBDeviceControlError
-        describeFormat:@"Could not find %@ within %@", file, [FBCollectionInformation oneLineDescriptionFromArray:fileIndices]]
-        fail:error];
+               describe:[NSString stringWithFormat:@"Could not find %@ within %@", file, [FBCollectionInformation oneLineDescriptionFromArray:fileIndices]]]
+              fail:error];
     }
     indexToFileName[@(index)] = file;
   }
@@ -369,8 +380,8 @@ static const uint32_t GetFileAck = GetFileCommand;
     }
   }
   return [[FBDeviceControlError
-    describeFormat:@"Could not find the shared cache file within %@", [FBCollectionInformation oneLineDescriptionFromArray:paths]]
-    fail:error];
+           describe:[NSString stringWithFormat:@"Could not find the shared cache file within %@", [FBCollectionInformation oneLineDescriptionFromArray:paths]]]
+          fail:error];
 }
-  
+
 @end

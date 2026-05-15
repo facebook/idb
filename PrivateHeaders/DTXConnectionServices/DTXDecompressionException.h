@@ -8,8 +8,6 @@
 #import <Foundation/Foundation.h>
 
 @interface DTXDecompressionException : NSException
-{
-}
+{}
 
 @end
-
