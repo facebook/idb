@@ -86,7 +86,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Sends a raw mach message to the simulator's PurpleWorkspacePort.
  Convenience wrapper around `-sendPurpleEvent:timeoutMs:error:` that delegates with
- a `timeoutMs` of `0` (no timeout — `mach_msg_send` is unbounded).
+ a default 2000ms timeout — generous enough to absorb scheduler jitter on a healthy
+ simulator (round-trips return in low single-digit milliseconds) while bounded enough
+ to surface a stalled SpringBoard receive thread instead of hanging the caller forever.
+ Callers that need a different timeout (or the legacy unbounded behavior with `0`)
+ should call `-sendPurpleEvent:timeoutMs:error:` directly.
 
  @param data the complete mach message to send.
  @param error an error out for any error that occurs.

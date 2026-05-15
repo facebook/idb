@@ -113,9 +113,15 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   [self.client sendWithMessage:message freeWhenDone:YES completionQueue:completionQueue completion:completion];
 }
 
+// Default Mach send timeout (in milliseconds) for the convenience wrapper.
+// Healthy `sendPurpleEvent:` round-trips return in low single-digit milliseconds.
+// 2000ms absorbs scheduler jitter while bounding the wedge condition where SpringBoard's
+// PurpleWorkspacePort receive queue fills under sustained event flow with a stalled receiver.
+static const mach_msg_timeout_t DefaultPurpleSendTimeoutMs = 2000;
+
 - (BOOL)sendPurpleEvent:(NSData *)data error:(NSError **)error
 {
-  return [self sendPurpleEvent:data timeoutMs:0 error:error];
+  return [self sendPurpleEvent:data timeoutMs:DefaultPurpleSendTimeoutMs error:error];
 }
 
 - (BOOL)sendPurpleEvent:(NSData *)data timeoutMs:(mach_msg_timeout_t)timeoutMs error:(NSError **)error
