@@ -115,6 +115,11 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (BOOL)sendPurpleEvent:(NSData *)data error:(NSError **)error
 {
+  return [self sendPurpleEvent:data timeoutMs:0 error:error];
+}
+
+- (BOOL)sendPurpleEvent:(NSData *)data timeoutMs:(mach_msg_timeout_t)timeoutMs error:(NSError **)error
+{
   FBSimulator *simulator = self.simulator;
   if (!simulator) {
     return [[FBSimulatorError describe:@"Cannot send PurpleEvent, simulator reference is nil"] failBool:error];
@@ -130,11 +135,32 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   mach_msg_header_t *header = (mach_msg_header_t *)mutableData.mutableBytes;
   header->msgh_remote_port = purplePort;
 
-  kern_return_t kr = mach_msg_send(header);
-  if (kr != KERN_SUCCESS) {
-    return [[FBSimulatorError describeFormat:@"mach_msg_send to PurpleWorkspacePort failed: %d", kr] failBool:error];
+  kern_return_t kr;
+  if (timeoutMs == 0) {
+    kr = mach_msg_send(header);
+  } else {
+    kr = mach_msg(
+      header,
+      MACH_SEND_MSG | MACH_SEND_TIMEOUT,
+      header->msgh_size,
+      0,
+      MACH_PORT_NULL,
+      timeoutMs,
+      MACH_PORT_NULL);
   }
-  return YES;
+  if (kr == KERN_SUCCESS) {
+    return YES;
+  }
+  if (kr == MACH_SEND_TIMED_OUT) {
+    return [[FBSimulatorError
+      describeFormat:@"mach_msg to PurpleWorkspacePort %u timed out after %u ms — receive queue full, SpringBoard is likely not draining HID events: %s",
+        purplePort, timeoutMs, mach_error_string(kr)]
+      failBool:error];
+  }
+  return [[FBSimulatorError
+    describeFormat:@"mach_msg to PurpleWorkspacePort %u failed: %s (kr=0x%x)",
+      purplePort, mach_error_string(kr), kr]
+    failBool:error];
 }
 
 - (BOOL)postDarwinNotification:(NSString *)notificationName error:(NSError **)error
