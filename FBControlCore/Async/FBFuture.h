@@ -254,7 +254,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  The chained future is resolved in error, with the provided error message.
 
  @param timeout the amount of time to time out the receiver in
- @param format the description of the timeout.
+ @param description the description of the timeout.
  @return the current future with a timeout applied.
  */
 - (nonnull FBFuture *)timeout:(NSTimeInterval)timeout waitingFor:(nonnull NSString *)description;
@@ -307,7 +307,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 /**
  Replaces the error message in the event of a failure.
 
- @param format the format string to re-phrase the failure message.
+ @param description the description to re-phrase the failure message.
  @return a future with the replacement.
  */
 - (nonnull FBFuture<T> *)rephraseFailure:(nonnull NSString *)description;

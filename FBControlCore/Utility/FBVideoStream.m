@@ -30,7 +30,7 @@ BOOL checkConsumerBufferLimit(id<FBDataConsumer> consumer, id<FBControlCoreLogge
   return YES;
 }
 
-static const int AVCCHeaderLength = 4;
+#define AVCCHeaderLength 4
 static const uint8_t AnnexBStartCode[] = {0x00, 0x00, 0x00, 0x01};
 
 /**
@@ -161,7 +161,7 @@ BOOL WriteHEVCFrameToAnnexBStream(CMSampleBufferRef sampleBuffer, id _Nullable c
 
 #pragma mark - MPEG-TS Writer
 
-static const int TSPacketSize = 188;
+#define TSPacketSize 188
 static const uint8_t TSSyncByte = 0x47;
 static const uint16_t PATPID = 0x0000;
 static const uint16_t PMTPID = 0x0100;

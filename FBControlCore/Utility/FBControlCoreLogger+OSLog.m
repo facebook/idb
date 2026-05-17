@@ -7,6 +7,8 @@
 
 #import "FBControlCoreLogger+OSLog.h"
 
+#import <FBControlCore/FBControlCore-Swift.h>
+
 #if defined(__apple_build_version__)
 
  #include <os/log.h>

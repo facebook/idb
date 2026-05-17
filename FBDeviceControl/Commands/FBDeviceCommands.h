@@ -106,7 +106,7 @@ extern FBDeviceActivationState _Nonnull FBDeviceActivationStateCoerceFromString(
 /**
  Obtain the connection for a device.
 
- @param format the purpose of the connection
+ @param purpose the purpose of the connection
  @return a connection wrapped in an async context.
  */
 - (nonnull FBFutureContext<id<FBDeviceCommands>> *)connectToDeviceWithPurpose:(nonnull NSString *)purpose;

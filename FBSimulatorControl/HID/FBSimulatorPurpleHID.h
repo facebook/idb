@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBSimulatorIndigoHID.h"
+#import <FBSimulatorControl/FBSimulatorIndigoHID.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

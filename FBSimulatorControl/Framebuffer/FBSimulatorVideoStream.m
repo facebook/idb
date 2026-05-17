@@ -973,7 +973,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
     sourceImage = [sourceImage imageByApplyingTransform:CGAffineTransformMakeScale(s, s)];
   }
   if (insets.left > 0 || insets.bottom > 0) {
-    sourceImage = [sourceImage imageByApplyingTransform:CGAffineTransformMakeTranslation(insets.left, insets.bottom)];
+    sourceImage = [sourceImage imageByApplyingTransform:CGAffineTransformMakeTranslation((CGFloat)insets.left, (CGFloat)insets.bottom)];
   }
 
   CIImage *result = sourceImage;
@@ -1410,7 +1410,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       overrunCount++;
       uint64_t overrunNanos = (afterPush - nextTargetTime) * timebase.numer / timebase.denom;
       [self.logger log:[NSString stringWithFormat:@"Frame push exceeded budget by %.1f ms (budget: %.1f ms)",
-                        overrunNanos / 1e6, frameIntervalNanos / 1e6]];
+                        (double)overrunNanos / 1e6, (double)frameIntervalNanos / 1e6]];
     }
     nextTargetTime += frameIntervalMach;
 
@@ -1423,7 +1423,7 @@ static void MinicapCompressorCallback(void *outputCallbackRefCon, void *sourceFr
       double intervalSeconds = (double)(afterPush - statsStartTime) * timebase.numer / timebase.denom / 1e9;
       [self.logger.info log:[NSString stringWithFormat:
                              @"Cadence stats (%.1fs): %llu pushes, %llu overruns, push duration avg %.1f ms / max %.1f ms, jitter stddev %.1f ms (budget: %.1f ms)",
-                             intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, frameIntervalNanos / 1e6]];
+                             intervalSeconds, pushCount, overrunCount, avgMs, maxMs, stddevMs, (double)frameIntervalNanos / 1e6]];
 
       // Reset for next interval
       statsStartTime = afterPush;

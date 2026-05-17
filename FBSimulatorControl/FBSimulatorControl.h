@@ -9,6 +9,7 @@
 // FBSimulatorControl-Swift.h, because the generated Swift header may reference
 // these types (e.g. FBSimulatorBootOptions).
 #import <FBSimulatorControl/FBFramebuffer.h>
+#import <FBSimulatorControl/FBPeriodicStatsTimer.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
