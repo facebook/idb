@@ -580,6 +580,15 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 @property (nonatomic, strong, nullable) NSNumber *additionalFrameCoverage;
 @property (nonatomic, strong, nullable) AXPTranslator *translator;
 
+/**
+ Per-request timeout (in seconds) applied to each synchronous CoreSimulator
+ accessibility XPC round-trip dispatched on this request's behalf. A value of
+ `0` (the default) disables the timeout — the dispatcher waits forever, matching
+ the historical behavior. Callers that want to bound the wait set this to a
+ positive value before pushing the request to the dispatcher.
+ */
+@property (nonatomic, assign) NSTimeInterval requestTimeoutSeconds;
+
 @end
 
 @implementation FBAXTranslationRequest
@@ -1020,6 +1029,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   SimDevice *device = request.device;
   FBAccessibilityProfilingCollector *collector = request.collector;
   id<FBControlCoreLogger> logger = request.logger;
+  NSTimeInterval timeoutSeconds = request.requestTimeoutSeconds;
   return ^ AXPTranslatorResponse * (AXPTranslatorRequest *axRequest){
     if (logger) {
       [logger logFormat:@"Sending Accessibility Request %@", axRequest];
@@ -1033,9 +1043,19 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
       response = innerResponse;
       dispatch_group_leave(group);
     }];
-    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    dispatch_time_t deadline = timeoutSeconds > 0
+      ? dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeoutSeconds * NSEC_PER_SEC))
+      : DISPATCH_TIME_FOREVER;
+    intptr_t waitResult = dispatch_group_wait(group, deadline);
     if (collector) {
       [collector addXPCCallDuration:CFAbsoluteTimeGetCurrent() - xpcStart];
+    }
+
+    if (waitResult != 0) {
+      if (logger) {
+        [logger logFormat:@"Accessibility request %@ timed out after %.2fs — returning empty response", axRequest, timeoutSeconds];
+      }
+      return [objc_getClass("AXPTranslatorResponse") emptyResponse];
     }
 
     if (logger) {
