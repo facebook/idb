@@ -99,24 +99,26 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)sendPurpleEvent:(NSData *)data error:(NSError **)error;
 
 /**
- Sends a raw mach message to the simulator's PurpleWorkspacePort, with an optional
- send-side timeout. Used for GSEvent-based HID events (e.g., orientation changes)
- that bypass the Indigo HID system. The data must contain a complete mach message
- including `mach_msg_header_t`. The `msgh_remote_port` field will be patched with
- the PurpleWorkspacePort looked up from the simulator's bootstrap namespace.
+ Sends a raw mach message to the simulator's PurpleWorkspacePort, bounded by an
+ explicit send-side timeout. Used for GSEvent-based HID events (e.g., orientation
+ changes) that bypass the Indigo HID system. The data must contain a complete mach
+ message including `mach_msg_header_t`. The `msgh_remote_port` field will be patched
+ with the PurpleWorkspacePort looked up from the simulator's bootstrap namespace.
 
- When `timeoutMs == 0`, the send is unbounded (`mach_msg_send`) — the call blocks
- indefinitely if SpringBoard's PurpleWorkspacePort receive queue is full and not
- being drained. When `timeoutMs > 0`, the send uses `mach_msg(MACH_SEND_TIMEOUT)`
- and returns a `MACH_SEND_TIMED_OUT`-tagged error if the queue does not drain in
- time. On `MACH_SEND_TIMED_OUT` the kernel guarantees the message is not enqueued
- (no partial-receive risk on the SpringBoard side).
+ The send always uses `mach_msg(MACH_SEND_TIMEOUT)` and returns a
+ `MACH_SEND_TIMED_OUT`-tagged error if the queue does not drain in time. On
+ `MACH_SEND_TIMED_OUT` the kernel guarantees the message is not enqueued (no
+ partial-receive risk on the SpringBoard side). A `timeoutMs` of `0` is a
+ non-blocking send: it succeeds only if the destination port queue has space
+ immediately, otherwise returns `MACH_SEND_TIMED_OUT` straight away. There is no
+ "wait forever" mode — the unbounded `mach_msg_send` path that previously hung the
+ caller indefinitely on a stalled SpringBoard receive thread has been removed.
 
  This is synchronous — callers are responsible for dispatching to the appropriate
  queue and wrapping in a future if needed.
 
  @param data the complete mach message to send.
- @param timeoutMs the send-side timeout in milliseconds, or `0` for no timeout.
+ @param timeoutMs the send-side timeout in milliseconds.
  @param error an error out for any error that occurs.
  @return YES if the message was sent successfully, NO otherwise.
  */

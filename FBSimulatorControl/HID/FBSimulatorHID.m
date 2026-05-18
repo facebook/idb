@@ -141,19 +141,14 @@ static const mach_msg_timeout_t DefaultPurpleSendTimeoutMs = 2000;
   mach_msg_header_t *header = (mach_msg_header_t *)mutableData.mutableBytes;
   header->msgh_remote_port = purplePort;
 
-  kern_return_t kr;
-  if (timeoutMs == 0) {
-    kr = mach_msg_send(header);
-  } else {
-    kr = mach_msg(
-      header,
-      MACH_SEND_MSG | MACH_SEND_TIMEOUT,
-      header->msgh_size,
-      0,
-      MACH_PORT_NULL,
-      timeoutMs,
-      MACH_PORT_NULL);
-  }
+  kern_return_t kr = mach_msg(
+    header,
+    MACH_SEND_MSG | MACH_SEND_TIMEOUT,
+    header->msgh_size,
+    0,
+    MACH_PORT_NULL,
+    timeoutMs,
+    MACH_PORT_NULL);
   if (kr == KERN_SUCCESS) {
     return YES;
   }
