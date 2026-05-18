@@ -21,4 +21,11 @@
 - (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point;
 - (nonnull FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication;
 
+/**
+ Returns the translation dispatcher used for accessibility requests.
+ Defaults to `simulator.accessibilityTranslationDispatcher`. Subclasses
+ (typically test wrappers) may override this to inject a mock dispatcher.
+ */
+- (nonnull id)translationDispatcher;
+
 @end

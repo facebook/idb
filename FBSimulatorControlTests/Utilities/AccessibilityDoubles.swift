@@ -266,32 +266,6 @@ class FBAccessibilityTranslatorSwizzler: NSObject {
   }
 }
 
-// MARK: - FBSimulator Double
-
-private let FBiOSTargetStateBooted_Value: UInt64 = 3
-
-@objcMembers
-class FBSimulatorControlTests_FBSimulator_Double: NSObject {
-  var device: FBSimulatorControlTests_SimDevice_Accessibility_Double
-  var workQueue: DispatchQueue
-  var asyncQueue: DispatchQueue
-  var state: UInt64
-  var logger: FBControlCoreLogger?
-  var mockTranslationDispatcher: AnyObject?
-
-  init(device: FBSimulatorControlTests_SimDevice_Accessibility_Double) {
-    self.device = device
-    self.workQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.tests.workqueue")
-    self.asyncQueue = DispatchQueue.global(qos: .userInitiated)
-    self.state = FBiOSTargetStateBooted_Value
-    super.init()
-  }
-
-  func accessibilityTranslationDispatcher() -> AnyObject? {
-    return mockTranslationDispatcher
-  }
-}
-
 // MARK: - Element Builder
 
 class FBAccessibilityTestElementBuilder: NSObject {
@@ -351,16 +325,17 @@ class FBAccessibilityTestElementBuilder: NSObject {
 
 // MARK: - Test Fixture
 
+private let FBiOSTargetStateBooted_Value: UInt64 = 3
+
 class FBAccessibilityTestFixture: NSObject {
   private(set) var translator: FBSimulatorControlTests_AXPTranslator_Double
-  private(set) var simulator: FBSimulatorControlTests_FBSimulator_Double
+  private(set) var device: FBSimulatorControlTests_SimDevice_Accessibility_Double
   var rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double?
 
   private override init() {
-    let device = FBSimulatorControlTests_SimDevice_Accessibility_Double()
-    self.simulator = FBSimulatorControlTests_FBSimulator_Double(device: device)
-    self.simulator.state = FBiOSTargetStateBooted_Value
     self.translator = FBSimulatorControlTests_AXPTranslator_Double()
+    self.device = FBSimulatorControlTests_SimDevice_Accessibility_Double()
+    self.device.state = FBiOSTargetStateBooted_Value
     super.init()
   }
 
@@ -373,6 +348,10 @@ class FBAccessibilityTestFixture: NSObject {
     return bootedSimulatorFixture()
   }
 
+  /// Installs the AXPTranslator swizzle and wires the translator's results.
+  /// Tests build the dispatcher separately via
+  /// `FBSimulator.createAccessibilityTranslationDispatcher(withTranslator:translator)`
+  /// once setUp returns.
   func setUp() {
     FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworksOrAbort()
 
@@ -389,13 +368,9 @@ class FBAccessibilityTestFixture: NSObject {
     }
 
     FBAccessibilityTranslatorSwizzler.installMockTranslator(translator)
-
-    let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
-    simulator.mockTranslationDispatcher = dispatcher as AnyObject
   }
 
   func tearDown() {
-    simulator.mockTranslationDispatcher = nil
     FBAccessibilityTranslatorSwizzler.uninstallMockTranslator()
   }
 }

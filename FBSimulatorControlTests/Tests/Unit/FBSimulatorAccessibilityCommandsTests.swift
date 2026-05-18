@@ -8,17 +8,30 @@
 @testable import FBSimulatorControl
 import XCTest
 
+// MARK: - Mock Dispatcher Wrapper
+
+/// Subclass of the real `FBSimulatorAccessibilityCommands` that overrides only
+/// `translationDispatcher` to return a mock dispatcher built against the test
+/// fixture's mock `AXPTranslator`. All other behavior is inherited unchanged.
+private final class MockDispatcherAccessibilityCommands: FBSimulatorAccessibilityCommands {
+  var mockDispatcher: Any?
+
+  override func translationDispatcher() -> Any {
+    guard let mockDispatcher else {
+      fatalError("MockDispatcherAccessibilityCommands.mockDispatcher must be set before use")
+    }
+    return mockDispatcher
+  }
+}
+
 final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Properties
 
   private var fixture: FBAccessibilityTestFixture?
+  private var simulator: FBSimulator!
 
   // MARK: - Helpers
-
-  private var commands: FBSimulatorAccessibilityCommands {
-    FBSimulatorAccessibilityCommands.commands(with: unsafeBitCast(fixture!.simulator, to: FBSimulator.self))
-  }
 
   /// All properties accessed during full serialization (no key filtering)
   private var allSerializationProperties: Set<String> {
@@ -123,11 +136,8 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   private func assertFlatOutput(
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
-  ) -> FBAccessibilityElementsResponse {
-    let cmds = commands
-    XCTAssertNotNil(cmds)
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+  ) async throws -> FBAccessibilityElementsResponse {
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
@@ -243,12 +253,10 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     point: CGPoint,
     element elementDouble: FBSimulatorControlTests_AXPMacPlatformElement_Double,
     expected: [String: Any]
-  ) -> FBAccessibilityElementsResponse {
+  ) async throws -> FBAccessibilityElementsResponse {
     fixture!.translator.macPlatformElementResult = elementDouble
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElement(at: point).await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElement(at: point)
 
     let options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
@@ -277,10 +285,8 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   private func assertNestedOutput(
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
-  ) -> FBAccessibilityElementsResponse {
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+  ) async throws -> FBAccessibilityElementsResponse {
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = true
@@ -399,10 +405,8 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   private func assertKeyFiltering(
     withProfiling enableProfiling: Bool,
     childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
-  ) -> FBAccessibilityElementsResponse {
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+  ) async throws -> FBAccessibilityElementsResponse {
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
@@ -458,7 +462,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// Core test for element at point with key filtering - returns response for optional profiling assertions
   @discardableResult
-  private func assertElementAtPointKeyFiltering(withProfiling enableProfiling: Bool) -> FBAccessibilityElementsResponse {
+  private func assertElementAtPointKeyFiltering(withProfiling enableProfiling: Bool) async throws -> FBAccessibilityElementsResponse {
     // Configure objectAtPointResult to return the title label element
     let titleLabel = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Confirm Action",
@@ -466,9 +470,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
     fixture!.translator.macPlatformElementResult = titleLabel
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElement(at: CGPoint(x: 100, y: 115)).await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElement(at: CGPoint(x: 100, y: 115))
 
     let options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
@@ -503,16 +505,29 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Setup/Teardown
 
   override func tearDown() {
+    simulator = nil
     fixture?.tearDown()
     fixture = nil
     super.tearDown()
   }
 
-  /// Creates and activates the fixture with the given root element tree.
+  /// Creates and activates the fixture with the given root element tree, then
+  /// builds a real `FBSimulator`, a mock translation dispatcher, and registers
+  /// a `MockDispatcherAccessibilityCommands` wrapper into the simulator's
+  /// command cache. Production paths that resolve `accessibilityCommands()` on
+  /// the simulator will return the wrapper.
   private func setUp(withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double) {
     fixture = FBAccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
     fixture!.setUp()
+
+    let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
+    let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
+    let wrapper = MockDispatcherAccessibilityCommands.commands(with: sim) as! MockDispatcherAccessibilityCommands
+    wrapper.mockDispatcher = dispatcher
+    sim.commandCache.register(wrapper, as: FBSimulatorAccessibilityCommands.self)
+
+    simulator = sim
   }
 
   // MARK: - Default Element Factories
@@ -539,44 +554,44 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Tests
 
-  func testAccessibilityCommandsProducesCorrectFlatOutput() {
+  func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    assertFlatOutput(withProfiling: false, childElements: children)
+    _ = try await assertFlatOutput(withProfiling: false, childElements: children)
   }
 
-  func testAccessibilityCommandsProducesCorrectFlatOutputWithProfiling() {
+  func testAccessibilityCommandsProducesCorrectFlatOutputWithProfiling() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    let response = assertFlatOutput(withProfiling: true, childElements: children)
+    let response = try await assertFlatOutput(withProfiling: true, childElements: children)
     // 4 elements x 15 properties (all except actionNames) = 60 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  func testAccessibilityCommandsProducesCorrectNestedOutput() {
+  func testAccessibilityCommandsProducesCorrectNestedOutput() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    assertNestedOutput(withProfiling: false, childElements: children)
+    _ = try await assertNestedOutput(withProfiling: false, childElements: children)
   }
 
-  func testAccessibilityCommandsProducesCorrectNestedOutputWithProfiling() {
+  func testAccessibilityCommandsProducesCorrectNestedOutputWithProfiling() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    let response = assertNestedOutput(withProfiling: true, childElements: children)
+    let response = try await assertNestedOutput(withProfiling: true, childElements: children)
     // 4 elements x 15 properties (all except actionNames) = 60 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 4, expectedAttributeFetches: 60)
   }
 
-  func testAccessibilityCommandsRespectsKeyFiltering() {
+  func testAccessibilityCommandsRespectsKeyFiltering() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    assertKeyFiltering(withProfiling: false, childElements: children)
+    _ = try await assertKeyFiltering(withProfiling: false, childElements: children)
   }
 
-  func testAccessibilityCommandsRespectsKeyFilteringWithProfiling() {
+  func testAccessibilityCommandsRespectsKeyFilteringWithProfiling() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     setUp(withRootElement: defaultRoot(withChildren: children))
-    let response = assertKeyFiltering(withProfiling: true, childElements: children)
+    let response = try await assertKeyFiltering(withProfiling: true, childElements: children)
     // 4 elements x 3 properties (AXFrame always, label, frame dict) = 12 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 4, expectedAttributeFetches: 12)
 
@@ -585,7 +600,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(response.profilingData!.fetchedKeys as! Set<String>, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
-  func testAccessibilityPerformTapOnButtonSucceeds() {
+  func testAccessibilityPerformTapOnButtonSucceeds() async throws {
     setUp(withRootElement: defaultElementTree)
 
     // Configure objectAtPointResult to return the OK button element
@@ -596,10 +611,8 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
     fixture!.translator.macPlatformElementResult = okButton
 
-    let cmds = commands
-
     // Acquire element handle then perform tap
-    let element = try! cmds.accessibilityElement(at: CGPoint(x: 95, y: 772)).await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElement(at: CGPoint(x: 95, y: 772))
 
     // Read the label using the decomposed API and verify it
     let label = try! element.stringValue(forSearchableKey: .label)
@@ -649,7 +662,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     )
   }
 
-  func testAccessibilityElementAtPointReturnsElement() {
+  func testAccessibilityElementAtPointReturnsElement() async throws {
     setUp(withRootElement: defaultElementTree)
 
     let cancelButton = FBAccessibilityTestElementBuilder.button(
@@ -677,10 +690,10 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       "traits": NSNull(),
     ]
 
-    assertElementAtPoint(withProfiling: false, point: CGPoint(x: 275, y: 772), element: cancelButton, expected: expected)
+    _ = try await assertElementAtPoint(withProfiling: false, point: CGPoint(x: 275, y: 772), element: cancelButton, expected: expected)
   }
 
-  func testAccessibilityElementAtPointReturnsElementWithProfiling() {
+  func testAccessibilityElementAtPointReturnsElementWithProfiling() async throws {
     setUp(withRootElement: defaultElementTree)
 
     let cancelButton = FBAccessibilityTestElementBuilder.button(
@@ -708,19 +721,19 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
       "traits": NSNull(),
     ]
 
-    let response = assertElementAtPoint(withProfiling: true, point: CGPoint(x: 275, y: 772), element: cancelButton, expected: expected)
+    let response = try await assertElementAtPoint(withProfiling: true, point: CGPoint(x: 275, y: 772), element: cancelButton, expected: expected)
     // 1 element x 15 properties (no children) = 15 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 1, expectedAttributeFetches: 15)
   }
 
-  func testAccessibilityElementAtPointRespectsKeyFiltering() {
+  func testAccessibilityElementAtPointRespectsKeyFiltering() async throws {
     setUp(withRootElement: defaultElementTree)
-    assertElementAtPointKeyFiltering(withProfiling: false)
+    _ = try await assertElementAtPointKeyFiltering(withProfiling: false)
   }
 
-  func testAccessibilityElementAtPointRespectsKeyFilteringWithProfiling() {
+  func testAccessibilityElementAtPointRespectsKeyFilteringWithProfiling() async throws {
     setUp(withRootElement: defaultElementTree)
-    let response = assertElementAtPointKeyFiltering(withProfiling: true)
+    let response = try await assertElementAtPointKeyFiltering(withProfiling: true)
     // 1 element x 4 properties (AXFrame always, label, role for type, frame dict) = 4 attribute fetches
     assertProfilingData(response.profilingData, expectedElements: 1, expectedAttributeFetches: 4)
 
@@ -731,30 +744,26 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Coverage Calculation Tests
 
-  func testCoverageCalculationDisabledByDefault() {
+  func testCoverageCalculationDisabledByDefault() async throws {
     setUp(withRootElement: defaultElementTree)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNil(response.frameCoverage, "Coverage should be nil when collectFrameCoverage is not enabled")
   }
 
-  func testCoverageCalculationWithDefaultFixture() {
+  func testCoverageCalculationWithDefaultFixture() async throws {
     // Simple test verifying coverage is returned when enabled
     setUp(withRootElement: defaultElementTree)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage, "Coverage should be returned when collectFrameCoverage is enabled")
 
@@ -763,7 +772,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertLessThan(coverage, 0.15, "Coverage should be low since only 3 small elements")
   }
 
-  func testCoverageCalculationWithSafariLikeLayout() {
+  func testCoverageCalculationWithSafariLikeLayout() async throws {
     let navBar = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Navigation Bar",
       frame: NSRect(x: 0, y: 0, width: 390, height: 44)
@@ -787,13 +796,11 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
@@ -802,7 +809,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertLessThan(coverage, 0.4, "Coverage should be < 40% due to empty WebView area")
   }
 
-  func testCoverageCalculationWithFullCoverage() {
+  func testCoverageCalculationWithFullCoverage() async throws {
     // Create an element that covers the entire screen
     let fullCoverageElement = FBAccessibilityTestElementBuilder.staticText(
       withLabel: "Full Coverage",
@@ -817,13 +824,11 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
@@ -831,7 +836,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertGreaterThanOrEqual(coverage, 0.99, "Coverage should be near 100% when element covers full screen")
   }
 
-  func testCoverageCalculationSkipsApplicationElement() {
+  func testCoverageCalculationSkipsApplicationElement() async throws {
     // Create a tree with ONLY an Application element (no children)
     let root = FBAccessibilityTestElementBuilder.application(
       withLabel: "App Window",
@@ -841,13 +846,11 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     setUp(withRootElement: root)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage)
 
@@ -856,34 +859,30 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
 
-  func testAdditionalFrameCoverageIsNilWithoutRemoteContent() {
+  func testAdditionalFrameCoverageIsNilWithoutRemoteContent() async throws {
     // Test that additionalFrameCoverage is nil when no remote content is discovered
     setUp(withRootElement: defaultElementTree)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNotNil(response.frameCoverage, "frameCoverage should be set when collectFrameCoverage is enabled")
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil when no remote content is discovered")
   }
 
-  func testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions() {
+  func testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions() async throws {
     // Test that additionalFrameCoverage is nil when remote content options are not set
     setUp(withRootElement: defaultElementTree)
 
-    let cmds = commands
-
-    let element = try! cmds.accessibilityElementForFrontmostApplication().await(withTimeout: 5.0)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
 
     let options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     // remoteContentOptions is nil by default
-    let response = try! element.serialize(with: options)
+    let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil without remoteContentOptions")
   }

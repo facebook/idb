@@ -45,12 +45,16 @@
 
 + (FBSimulator *)testableSimulator
 {
-  id stubDevice = [FBStubSimDevice new];
+  return [self testableSimulatorWithDevice:[FBStubSimDevice new]];
+}
+
++ (FBSimulator *)testableSimulatorWithDevice:(id)device
+{
   id<FBControlCoreLogger> logger = [FBControlCoreLoggerFactory loggerToConsumer:[FBNullDataConsumer new]];
   id stubReporter = [FBStubEventReporter new];
-  // Cast the stub through `id` so the type checker accepts it as `SimDevice *`.
-  // The init only stores fields and reads `device.UDID.UUIDString`.
-  return [[FBSimulator alloc] initWithDevice:stubDevice
+  // Cast through `id` so the type checker accepts the substitution as
+  // `SimDevice *`. The init only stores fields and reads `device.UDID.UUIDString`.
+  return [[FBSimulator alloc] initWithDevice:device
                                configuration:FBSimulatorConfiguration.defaultConfiguration
                                          set:nil
                           auxillaryDirectory:NSTemporaryDirectory()

@@ -1384,37 +1384,34 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 
 - (FBFuture<FBAccessibilityElement *> *)accessibilityElementAtPoint:(CGPoint)point
 {
-  FBSimulator *simulator = self.simulator;
   NSError *error = nil;
   if (![self validateAccessibilityWithError:&error]) {
     return [FBFuture futureWithError:error];
   }
   FBAXTranslationRequest *request = [[FBAXTranslationRequest_Point alloc] initWithPoint:point];
-  return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:NO];
+  return [self accessibilityElementWithRequest:request remediationPermitted:NO];
 }
 
 - (FBFuture<FBAccessibilityElement *> *)accessibilityElementForFrontmostApplication
 {
-  FBSimulator *simulator = self.simulator;
   NSError *error = nil;
   if (![self validateAccessibilityWithError:&error]) {
     return [FBFuture futureWithError:error];
   }
   FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
-  return [FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES];
+  return [self accessibilityElementWithRequest:request remediationPermitted:YES];
 }
 
 - (FBFuture<FBAccessibilityElement *> *)accessibilityElementMatchingValue:(NSString *)value
                                                                    forKey:(FBAXSearchableKey)key
                                                                     depth:(NSUInteger)depth
 {
-  FBSimulator *simulator = self.simulator;
   NSError *error = nil;
   if (![self validateAccessibilityWithError:&error]) {
     return [FBFuture futureWithError:error];
   }
   FBAXTranslationRequest *request = [[FBAXTranslationRequest_FrontmostApplication alloc] init];
-  return [[FBSimulatorAccessibilityCommands accessibilityElementWithRequest:request simulator:simulator remediationPermitted:YES]
+  return [[self accessibilityElementWithRequest:request remediationPermitted:YES]
           onQueue:dispatch_get_main_queue()
           fmap:^FBFuture *(FBAccessibilityElement *rootElement) {
             NSError *innerError = nil;
@@ -1424,6 +1421,13 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
             }
             return [FBFuture futureWithResult:found];
           }];
+}
+
+#pragma mark Translation Dispatcher Hook
+
+- (id)translationDispatcher
+{
+  return self.simulator.accessibilityTranslationDispatcher;
 }
 
 #pragma mark Private
@@ -1457,11 +1461,11 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
 // the original request's token is manually popped (it's not wrapped in a handle yet at that point),
 // CoreSimulatorBridge is restarted, and the method recurses with a fresh request.
 // The recursion is bounded: the retry passes remediationPermitted=NO, so at most one remediation attempt occurs.
-+ (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
-                                                              simulator:(FBSimulator *)simulator
+- (FBFuture<FBAccessibilityElement *> *)accessibilityElementWithRequest:(FBAXTranslationRequest *)request
                                                    remediationPermitted:(BOOL)remediationPermitted
 {
-  FBAXTranslationDispatcher *dispatcher = simulator.accessibilityTranslationDispatcher;
+  FBSimulator *simulator = self.simulator;
+  FBAXTranslationDispatcher *dispatcher = (FBAXTranslationDispatcher *)self.translationDispatcher;
   return [[dispatcher platformElementWithRequest:request simulator:simulator]
           onQueue:simulator.workQueue
           fmap:^FBFuture<FBAccessibilityElement *> *(AXPMacPlatformElement *element) {
@@ -1472,7 +1476,7 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
                                                  dispatcher:dispatcher
                                                  simulator:simulator]];
             }
-            return [[self
+            return [[FBSimulatorAccessibilityCommands
                      remediationRequiredForSimulator:simulator
                      element:element]
                     onQueue:simulator.workQueue
@@ -1488,11 +1492,11 @@ static NSString *const CoreSimulatorBridgeServiceName = @"com.apple.CoreSimulato
                       // FBAccessibilityElement, so we must pop it manually before discarding the request.
                       [dispatcher popRequest:request];
                       FBAXTranslationRequest *nextRequest = [request cloneWithNewToken];
-                      return [[self remediateSpringBoardForSimulator:simulator]
+                      return [[FBSimulatorAccessibilityCommands remediateSpringBoardForSimulator:simulator]
                               onQueue:simulator.workQueue
                               fmap:^FBFuture<FBAccessibilityElement *> *(id _) {
                                 // remediationPermitted:NO ensures at most one retry and avoids infinite recursion.
-                                return [self accessibilityElementWithRequest:nextRequest simulator:simulator remediationPermitted:NO];
+                                return [self accessibilityElementWithRequest:nextRequest remediationPermitted:NO];
                               }];
                     }];
           }];

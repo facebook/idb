@@ -31,6 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// returned simulator — they are stub-backed and unsafe.
 + (FBSimulator *)testableSimulator;
 
+/// Variant that lets the caller substitute a custom device double. Useful when
+/// production code under test reads `simulator.state` (which delegates to
+/// `device.state`) or calls `device respondsToSelector:`. The supplied object
+/// must respond to `-UDID` (returning `NSUUID *`) and any other selectors the
+/// code path exercises.
++ (FBSimulator *)testableSimulatorWithDevice:(id)device;
+
 @end
 
 NS_ASSUME_NONNULL_END
