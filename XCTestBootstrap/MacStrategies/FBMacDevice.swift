@@ -199,7 +199,7 @@ import IOKit
     var proxyError: Error?
     let proxy =
       connection.synchronousRemoteObjectProxyWithErrorHandler { [weak self] error in
-        logger?.log("Error occured during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
+        logger?.log("Error occurred during synchronousRemoteObjectProxyWithErrorHandler call: \(error.localizedDescription)")
         self?.connection = nil
         proxyError = error
       } as! XCTestManager_XPCControl
