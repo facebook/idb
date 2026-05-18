@@ -582,16 +582,23 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
 /**
  Per-request timeout (in seconds) applied to each synchronous CoreSimulator
- accessibility XPC round-trip dispatched on this request's behalf. A value of
- `0` (the default) disables the timeout — the dispatcher waits forever, matching
- the historical behavior. Callers that want to bound the wait set this to a
- positive value before pushing the request to the dispatcher.
+ accessibility XPC round-trip dispatched on this request's behalf. Defaults to 5s.
+ A value of `0` disables the timeout (the dispatcher waits forever) — only set this
+ if you need to opt back into the historical unbounded behavior; the default value
+ is sized to absorb scheduler jitter while bounding stalled XPC services.
  */
 @property (nonatomic, assign) NSTimeInterval requestTimeoutSeconds;
 
 @end
 
 @implementation FBAXTranslationRequest
+
+// Default timeout (in seconds) for synchronous accessibility XPC round-trips.
+// Healthy SpringBoard responses return well under 1s; 5s comfortably absorbs
+// scheduler jitter and slow-element edge cases while bounding the wedge condition
+// where the accessibility XPC service stalls and the caller would otherwise hang
+// indefinitely on `dispatch_group_wait(group, DISPATCH_TIME_FOREVER)`.
+static const NSTimeInterval DefaultRequestTimeoutSeconds = 5.0;
 
 - (instancetype)init
 {
@@ -601,6 +608,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   }
 
   _token = NSUUID.UUID.UUIDString;
+  _requestTimeoutSeconds = DefaultRequestTimeoutSeconds;
 
   return self;
 }
