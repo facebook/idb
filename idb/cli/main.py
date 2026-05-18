@@ -370,11 +370,17 @@ async def drain_coroutines(pending: set[asyncio.Task]) -> None:
 
 
 def main(cmd_input: list[str] | None = None) -> SysExitArg:
-    loop = asyncio.get_event_loop()
-    try:
-        return loop.run_until_complete(gen_main(cmd_input))
-    finally:
-        loop.close()
+    # asyncio.run() is the canonical CLI entrypoint since Python 3.7 — it
+    # creates a fresh event loop, runs the coroutine, and closes the loop
+    # (including cancelling any pending tasks) in one call.
+    #
+    # The previous form `loop = asyncio.get_event_loop()` raised
+    # `RuntimeError: There is no current event loop in thread 'MainThread'`
+    # on Python ≥ 3.10 when no loop had been explicitly set — a behaviour
+    # change announced in 3.10 and enforced ever harder through 3.12+. By
+    # 3.14 it's the default and prevents `idb` from launching at all on a
+    # standard Python install (see #896, still reported as of 2026-04).
+    return asyncio.run(gen_main(cmd_input))
 
 
 def main_2() -> None:
