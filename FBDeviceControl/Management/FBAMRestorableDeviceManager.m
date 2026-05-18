@@ -18,7 +18,7 @@
 @property (nonatomic, readonly, strong) dispatch_queue_t asyncQueue;
 @property (nonatomic, readonly, assign) AMDCalls calls;
 @property (nonatomic, readwrite, assign) int registrationID;
-@property (nonatomic, readonly, copy) NSString *ecidFilter;
+@property (nullable, nonatomic, readonly, copy) NSString *ecidFilter;
 
 - (NSDictionary<NSString *, id> *)infoForRestorableDevice:(AMRestorableDeviceRef)device;
 

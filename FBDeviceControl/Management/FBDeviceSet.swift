@@ -28,8 +28,8 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
     let calls = FBDeviceControlFrameworkLoader.amDeviceCalls
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)
-    let amDeviceManager = FBAMDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter ?? "", logger: logger)
-    let restorableDeviceManager = FBAMRestorableDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter ?? "", logger: logger)
+    let amDeviceManager = FBAMDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
+    let restorableDeviceManager = FBAMRestorableDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
     self.init(amDeviceManager: amDeviceManager, restorableDeviceManager: restorableDeviceManager, logger: logger, delegate: delegate)
     try amDeviceManager.startListening()
     try restorableDeviceManager.startListening()

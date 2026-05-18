@@ -23,10 +23,10 @@
  @param calls the AMDCalls to use.
  @param workQueue the queue on which work should be serialized.
  @param asyncQueue the queue on which asynchronous work can be performed sequentially.
- @param ecidFilter an ECID filter to apply.
+ @param ecidFilter an ECID filter to apply, or `nil` to accept all devices.
  @param logger the logger to use.
  @return a new FBAMRestorableDeviceManager instance
  */
-- (nonnull instancetype)initWithCalls:(AMDCalls)calls workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue ecidFilter:(nonnull NSString *)ecidFilter logger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithCalls:(AMDCalls)calls workQueue:(nonnull dispatch_queue_t)workQueue asyncQueue:(nonnull dispatch_queue_t)asyncQueue ecidFilter:(nullable NSString *)ecidFilter logger:(nonnull id<FBControlCoreLogger>)logger;
 
 @end
