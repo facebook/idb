@@ -582,10 +582,11 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 
 /**
  Per-request timeout (in seconds) applied to each synchronous CoreSimulator
- accessibility XPC round-trip dispatched on this request's behalf. Defaults to 5s.
- A value of `0` disables the timeout (the dispatcher waits forever) — only set this
- if you need to opt back into the historical unbounded behavior; the default value
- is sized to absorb scheduler jitter while bounding stalled XPC services.
+ accessibility XPC round-trip dispatched on this request's behalf. Defaults to 5s,
+ sized to absorb scheduler jitter while bounding stalled XPC services. A value of
+ `0` (or negative) is "wait nothing": `dispatch_group_wait` returns immediately and
+ the dispatcher emits an empty response. There is no "wait forever" mode — a stalled
+ XPC service will not hang the calling thread regardless of how this is set.
  */
 @property (nonatomic, assign) NSTimeInterval requestTimeoutSeconds;
 
@@ -1051,9 +1052,7 @@ static const NSTimeInterval DefaultRequestTimeoutSeconds = 5.0;
       response = innerResponse;
       dispatch_group_leave(group);
     }];
-    dispatch_time_t deadline = timeoutSeconds > 0
-      ? dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeoutSeconds * NSEC_PER_SEC))
-      : DISPATCH_TIME_FOREVER;
+    dispatch_time_t deadline = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeoutSeconds * NSEC_PER_SEC));
     intptr_t waitResult = dispatch_group_wait(group, deadline);
     if (collector) {
       [collector addXPCCallDuration:CFAbsoluteTimeGetCurrent() - xpcStart];
