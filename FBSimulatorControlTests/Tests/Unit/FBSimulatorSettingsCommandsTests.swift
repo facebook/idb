@@ -9,28 +9,16 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - Simulator Test Double
-
-private class SimDouble: NSObject {
-  let workQueue = DispatchQueue(label: "com.test.settings.work")
-  let asyncQueue = DispatchQueue(label: "com.test.settings.async")
-  var logger: (any FBControlCoreLogger)?
-  var dataDirectory: String?
-}
-
 // MARK: - Tests
 
 final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private var simDoubleStrongRef: SimDouble?
-
-  private func makeCommands() -> FBSimulatorSettingsCommands {
-    let sim = SimDouble()
-    simDoubleStrongRef = sim
-    let casted = unsafeBitCast(sim, to: FBSimulator.self)
-    return FBSimulatorSettingsCommands(simulator: casted)
+  private func makeSimulator() -> FBSimulator {
+    let simulator = FBSimulatorTestSupport.testableSimulator()
+    simulator.commandCache.register(FBSimulatorSettingsCommands(simulator: simulator), as: FBSimulatorSettingsCommands.self)
+    return simulator
   }
 
   private func assertFuture(_ future: FBFuture<NSNull>, failsWithTimeout timeout: TimeInterval, message: String) {
@@ -152,33 +140,33 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
   // MARK: - Grant/Revoke Access Input Validation
 
   func testGrantAccessRejectsEmptyServices() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.grantAccess(["com.test"], toServices: []),
+      simulator.grantAccess(["com.test"], toServices: []),
       failsWithTimeout: 1.0,
       message: "grantAccess should reject empty services set")
   }
 
   func testGrantAccessRejectsEmptyBundleIDs() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.grantAccess([], toServices: [.contacts]),
+      simulator.grantAccess([], toServices: [.contacts]),
       failsWithTimeout: 1.0,
       message: "grantAccess should reject empty bundle IDs set")
   }
 
   func testRevokeAccessRejectsEmptyServices() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.revokeAccess(["com.test"], toServices: []),
+      simulator.revokeAccess(["com.test"], toServices: []),
       failsWithTimeout: 1.0,
       message: "revokeAccess should reject empty services set")
   }
 
   func testRevokeAccessRejectsEmptyBundleIDs() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.revokeAccess([], toServices: [.contacts]),
+      simulator.revokeAccess([], toServices: [.contacts]),
       failsWithTimeout: 1.0,
       message: "revokeAccess should reject empty bundle IDs set")
   }
@@ -186,33 +174,33 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
   // MARK: - Deeplink Access Validation
 
   func testGrantDeeplinkRejectsEmptyScheme() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.grantAccess(["com.test"], toDeeplink: ""),
+      simulator.grantAccess(["com.test"], toDeeplink: ""),
       failsWithTimeout: 1.0,
       message: "grantAccess(toDeeplink:) should reject empty scheme")
   }
 
   func testGrantDeeplinkRejectsEmptyBundleIDs() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.grantAccess([], toDeeplink: "myapp"),
+      simulator.grantAccess([], toDeeplink: "myapp"),
       failsWithTimeout: 1.0,
       message: "grantAccess(toDeeplink:) should reject empty bundle IDs")
   }
 
   func testRevokeDeeplinkRejectsEmptyScheme() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.revokeAccess(["com.test"], toDeeplink: ""),
+      simulator.revokeAccess(["com.test"], toDeeplink: ""),
       failsWithTimeout: 1.0,
       message: "revokeAccess(toDeeplink:) should reject empty scheme")
   }
 
   func testRevokeDeeplinkRejectsEmptyBundleIDs() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.revokeAccess([], toDeeplink: "myapp"),
+      simulator.revokeAccess([], toDeeplink: "myapp"),
       failsWithTimeout: 1.0,
       message: "revokeAccess(toDeeplink:) should reject empty bundle IDs")
   }
@@ -220,9 +208,9 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
   // MARK: - DNS Validation
 
   func testSetDnsServersRejectsEmptyArray() {
-    let cmds = makeCommands()
+    let simulator = makeSimulator()
     assertFuture(
-      cmds.setDnsServers([]),
+      simulator.setDnsServers([]),
       failsWithTimeout: 1.0,
       message: "setDnsServers should reject empty array")
   }
