@@ -2,7 +2,7 @@ name: FBSimulatorControl
 
 options:
   deploymentTarget:
-    macOS: "10.14"
+    macOS: "11.0"
   createIntermediateGroups: true
   groupSortPosition: top
   bundleIdPrefix: com.facebook
@@ -33,6 +33,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
         PRODUCT_NAME: FBControlCore
         DEFINES_MODULE: YES
+        # Mixed-language workaround: Xcode 26 omits the Swift module's emit
+        # directory from HEADER_SEARCH_PATHS, so `#import "FBControlCore-Swift.h"`
+        # in .m files fails to find the Swift-generated header. Add the per-arch
+        # Swift output dir explicitly.
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
     dependencies:
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -128,6 +133,20 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControl
         PRODUCT_NAME: FBSimulatorControl
         DEFINES_MODULE: YES
+        # Mixed-language workaround: see FBControlCore for rationale.
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/PrivateHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
+        # CoreSimulator and SimulatorKit are private Apple frameworks living in
+        # $(DEVELOPER_DIR)/Library/PrivateFrameworks; they're not on the public SDK search path.
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
+        # Wrap the reverse-engineered headers under PrivateHeaders/<Name>/ as Clang
+        # modules so Swift can `import CoreSimulator`, `import SimulatorKit`, etc.
+        # Mirrors `make_private_header_frameworks()` in fbobjc/Tools/idb/defs.bzl.
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap
+        # CoreSimulator is loaded at runtime by FBSimulatorControlFrameworkLoader.
+        # Swift generates direct class references that must be satisfied at link
+        # time, so weak-link against the TBD stub. SimulatorKit is header-only —
+        # no symbols are referenced from compiled code (mirrors the Buck setup).
+        OTHER_LDFLAGS: $(inherited) -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd
     dependencies:
       - target: FBControlCore
         embed: true
@@ -226,29 +245,33 @@ targets:
   IDBCompanionUtilities:
     type: framework
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "11.0"
     sources:
       - path: IDBCompanionUtilities
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilities
         PRODUCT_NAME: IDBCompanionUtilities
         DEFINES_MODULE: YES
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
+        # The @TaskLocal macro lives in SwiftMacros plugin and sometimes can't
+        # be loaded under Xcode 26's plugin sandbox; disable the frontend
+        # sandbox so swift-plugin-server can spawn the macro implementation.
+        OTHER_SWIFT_FLAGS: $(inherited) -Xfrontend -disable-sandbox
     dependencies:
       - sdk: Foundation.framework
 
   IDBCompanionUtilitiesTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "11.0"
     sources:
       - path: IDBCompanionUtilitiesTests
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBCompanionUtilitiesTests
         PRODUCT_NAME: IDBCompanionUtilitiesTests
         SWIFT_VERSION: "5.9"
@@ -260,14 +283,14 @@ targets:
   CompanionLib:
     type: framework
     platform: macOS
-    deploymentTarget: "10.15"
+    deploymentTarget: "11.0"
     sources:
       - path: CompanionLib
         excludes:
           - "**/*-Info.plist"
     settings:
       base:
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
         PRODUCT_NAME: CompanionLib
         DEFINES_MODULE: YES

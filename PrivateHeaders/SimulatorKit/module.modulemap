@@ -1,0 +1,5 @@
+module SimulatorKit {
+    umbrella "."
+    export *
+    module * { export * }
+}

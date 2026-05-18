@@ -26,10 +26,15 @@ function supports_xattrs() {
 
 # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
 if supports_xattrs; then
-  BUILD_DIRECTORY=build
+  BUILD_DIRECTORY=Build
 else
   BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
   echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
+  # idb_companion/project.yml hard-codes framework refs as
+  # `../Build/Products/Release/...`. Symlink the in-tree `Build` dir so
+  # those references resolve to the actual external build output.
+  rm -rf Build
+  ln -s "$BUILD_DIRECTORY" Build
 fi
 
 # =============================================================================
@@ -107,11 +112,26 @@ function generate_xcodeproj() {
     local pbxproj="${temp_dir}/${xcodeproj_name}/project.pbxproj"
     if [ -f "$pbxproj" ]; then
       # Calculate the wrong relative prefix that XcodeGen created
-      # and replace it with correct relative path (empty for same dir)
+      # and replace it with correct relative path
       local escaped_path
       escaped_path=$(echo "$abs_project_dir/" | sed 's/[\/&]/\\&/g')
-      # Replace absolute path references that were made relative from /tmp
+      local abs_parent_dir
+      abs_parent_dir=$(dirname "$abs_project_dir")
+      local escaped_parent
+      escaped_parent=$(echo "$abs_parent_dir/" | sed 's/[\/&]/\\&/g')
+      local escaped_parent_no_slash
+      escaped_parent_no_slash=$(echo "$abs_parent_dir" | sed 's/[\/&]/\\&/g')
+      # Order matters: handle the longer (project-dir) prefix first so it
+      # doesn't get partially eaten by the parent-dir pattern, then handle
+      # references that point into the project's parent directory.
+      # Files inside project_dir become bare paths.
       sed -i '' "s|[.][.]/[^;\"]*${escaped_path}||g" "$pbxproj"
+      # Files in project_dir's parent become "../" relative to project_dir.
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent}|../|g" "$pbxproj"
+      # The parent dir itself (no trailing path component) becomes "..".
+      # Match the terminator (`;` or `"`) and preserve it.
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash};|..;|g" "$pbxproj"
+      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash}\"|..\"|g" "$pbxproj"
       echo "  [xattr workaround] Fixed relative paths in project.pbxproj"
     fi
 
@@ -230,12 +250,14 @@ function regenerate_projects() {
 
 function invoke_xcodebuild() {
   local arguments=$@
+  local symroot="$BUILD_DIRECTORY/Products"
+  local objroot="$BUILD_DIRECTORY/Intermediates"
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO SYMROOT="$symroot" OBJROOT="$objroot" $arguments | xcpretty -c
   else
-    xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO $arguments
+    xcodebuild -skipMacroValidation ENABLE_USER_SCRIPT_SANDBOXING=NO SYMROOT="$symroot" OBJROOT="$objroot" $arguments
   fi
 }
 
@@ -246,7 +268,7 @@ function build_idb_deps() {
 }
 
 function strip_framework() {
-  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Release/$1"
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/$1"
   if [ -d "$FRAMEWORK_PATH" ]; then
     echo "Stripping Framework $FRAMEWORK_PATH"
     rm -r "$FRAMEWORK_PATH"

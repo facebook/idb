@@ -98,7 +98,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 ./build.sh build FBControlCore
 ```
 
-The idb_companion binary will be at `build/Build/Products/Release/idb_companion`.
+The idb_companion binary will be at `Build/Products/Release/idb_companion`.
 
 ### Running Tests
 
