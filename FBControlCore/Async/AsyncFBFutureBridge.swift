@@ -64,6 +64,12 @@ public func bridgeFBFuture<T: AnyObject>(_ future: FBFuture<T>) async throws -> 
           } else if let value = resolved.result {
             // swiftlint:disable:next force_cast
             continuation.resume(returning: FBFutureResultBox(value as! T))
+          } else if resolved.state == .cancelled {
+            // A cancelled FBFuture has neither `result` nor `error` set, only
+            // `state == FBFutureStateCancelled`. Surface this as Swift's
+            // standard cancellation error so callers (and logs) see something
+            // actionable instead of the generic "fulfilled without values".
+            continuation.resume(throwing: CancellationError())
           } else {
             continuation.resume(throwing: AsyncFBFutureBridgeError.continuationFulfilledWithoutValues)
           }
