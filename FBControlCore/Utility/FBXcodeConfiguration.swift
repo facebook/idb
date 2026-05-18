@@ -80,11 +80,17 @@ public class FBXcodeConfiguration: NSObject {
   }
 
   @objc public class var simulatorApp: FBBundleDescriptor {
-    do {
-      return try FBBundleDescriptor.bundle(fromPath: simulatorApplicationPath)
-    } catch {
-      fatalError("Expected to be able to build an Application, got an error \(error)")
+    let path = simulatorApplicationPath
+    guard let bundle = Bundle(path: path) else {
+      fatalError("Could not load Simulator.app bundle at '\(path)'")
     }
+    let name =
+      (bundle.infoDictionary?["CFBundleName"] as? String)
+      ?? (bundle.infoDictionary?["CFBundleExecutable"] as? String)
+      ?? ((path as NSString).deletingPathExtension as NSString).lastPathComponent
+    let identifier = bundle.bundleIdentifier ?? "com.apple.iphonesimulator"
+    // We deliberately don't include the binary because we should never need it.
+    return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }
 
   @objc(getDeveloperDirectoryIfExists)
