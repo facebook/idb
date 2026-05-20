@@ -81,6 +81,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#pragma mark - Healthcheck Helpers
+
+/**
+ Convenience wrappers for interacting with CoreSimulator IPC surfaces
+ without importing SimDevice or constructing Mach headers directly.
+ */
+@interface FBSimulator (FBHealthcheckHelpers)
+
+/**
+ Bootstrap-namespace lookup for a Mach port name in the simulator.
+ Live XPC round-trip to the CoreSimulator daemon (SimDevice.lookup: is not cached).
+
+ @param name The bootstrap port name to look up.
+ @param error An error out parameter.
+ @return The looked-up Mach port as an NSNumber, or nil on failure.
+ */
+- (nullable NSNumber *)lookupBootstrapPortNamed:(NSString *)name error:(NSError **)error;
+
+@end
+
 #pragma mark - Accessibility Dispatcher
 
 /**

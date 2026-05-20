@@ -341,4 +341,19 @@ static NSString *const DefaultDeviceSet = @"~/Library/Developer/CoreSimulator/De
 
 @end
 
+#pragma mark - Healthcheck Helpers
+
+@implementation FBSimulator (FBHealthcheckHelpers)
+
+- (nullable NSNumber *)lookupBootstrapPortNamed:(NSString *)name error:(NSError **)error
+{
+  mach_port_t port = [self.device lookup:name error:error];
+  if (port == MACH_PORT_NULL) {
+    return nil;
+  }
+  return @(port);
+}
+
+@end
+
 #pragma clang diagnostic pop
