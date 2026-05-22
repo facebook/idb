@@ -267,18 +267,18 @@ static const uint32_t GetFileAck = GetFileCommand;
              describe:[NSString stringWithFormat:@"Failed to send GetFile file index %u packet %@", index, innerError]]
             failBool:error];
   }
-  uint64_t recieveLengthWire = 0;
-  if (![connection receiveUnsignedInt64:&recieveLengthWire error:&innerError]) {
+  uint64_t receiveLengthWire = 0;
+  if (![connection receiveUnsignedInt64:&receiveLengthWire error:&innerError]) {
     return [[FBDeviceControlError
-             describe:[NSString stringWithFormat:@"Failed to recieve GetFile file length %@", innerError]]
+             describe:[NSString stringWithFormat:@"Failed to receive GetFile file length %@", innerError]]
             failBool:error];
   }
-  if (recieveLengthWire == 0) {
+  if (receiveLengthWire == 0) {
     return [[FBDeviceControlError
-             describe:@"Failed to get file length, recieveLength not returned or is zero."]
+             describe:@"Failed to get file length, receiveLength not returned or is zero."]
             failBool:error];
   }
-  uint64_t recieveLength = OSSwapBigToHostInt64(recieveLengthWire);
+  uint64_t receiveLength = OSSwapBigToHostInt64(receiveLengthWire);
   if (![NSFileManager.defaultManager createFileAtPath:destinationPath contents:nil attributes:nil]) {
     return [[FBDeviceControlError
              describe:[NSString stringWithFormat:@"Failed to create destination file at path %@", destinationPath]]
@@ -290,7 +290,7 @@ static const uint32_t GetFileAck = GetFileCommand;
              describe:[NSString stringWithFormat:@"Failed to open file for writing at %@", destinationPath]]
             failBool:error];
   }
-  if (![connection receive:recieveLength toFile:fileHandle error:error]) {
+  if (![connection receive:receiveLength toFile:fileHandle error:error]) {
     return NO;
   }
   return YES;

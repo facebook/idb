@@ -14,7 +14,7 @@
 @protocol FBControlCoreLogger;
 
 /**
- An Object wrapper for an Apple File Conduit handle/
+ An Object wrapper for an Apple File Conduit handle.
  */
 @interface FBAFCConnection : NSObject
 
@@ -67,7 +67,7 @@
  Get the contents of a directory.
 
  @param path the path to locate.
- @param error an error out for any occurs
+ @param error an error out for any error that occurs.
  @return the contents of the directory.
  */
 - (nullable NSArray<NSString *> *)contentsOfDirectory:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
@@ -76,7 +76,7 @@
  Get the contents of a file.
 
  @param path the path to read.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return the data for the file.
  */
 - (nullable NSData *)contentsOfPath:(nonnull NSString *)path error:(NSError * _Nullable * _Nullable)error;
@@ -86,7 +86,7 @@
 
  @param path the path to remove.
  @param recursively YES to recurse, NO otherwise.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
 - (BOOL)removePath:(nonnull NSString *)path recursively:(BOOL)recursively error:(NSError * _Nullable * _Nullable)error;
@@ -96,7 +96,7 @@
 
  @param path the path to rename
  @param destination the destination path.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
 - (BOOL)renamePath:(nonnull NSString *)path destination:(nonnull NSString *)destination error:(NSError * _Nullable * _Nullable)error;
@@ -106,7 +106,7 @@
  The connection should not be used after this.
 
  @param error an error out for any error that occurs.
- @return YES if succesful, NO otherwise.
+ @return YES if successful, NO otherwise.
  */
 - (BOOL)closeWithError:(NSError * _Nullable * _Nullable)error;
 
