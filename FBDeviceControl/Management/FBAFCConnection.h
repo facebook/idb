@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 
 /**
- An Object wrapper for an Apple File Conduit handle/
+ An Object wrapper for an Apple File Conduit handle.
  */
 @interface FBAFCConnection : NSObject
 
@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param serviceConnection the connection to use.
  @param calls the calls to use.
  @param logger the logger to use.
- @param queue the logger to use.
+ @param queue the queue to use.
  @return an FBAFCConnection instance.
  */
 + (FBFutureContext<FBAFCConnection *> *)afcFromServiceConnection:(FBAMDServiceConnection *)serviceConnection calls:(AFCCalls)calls logger:(id<FBControlCoreLogger>)logger queue:(dispatch_queue_t)queue;
@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  Get the contents of a directory.
 
  @param path the path to locate.
- @param error an error out for any occurs
+ @param error an error out for any error that occurs.
  @return the contents of the directory.
  */
 - (nullable NSArray<NSString *> *)contentsOfDirectory:(NSString *)path error:(NSError **)error;
@@ -78,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  Get the contents of a file.
 
  @param path the path to read.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return the data for the file.
  */
 - (nullable NSData *)contentsOfPath:(NSString *)path error:(NSError **)error;
@@ -88,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param path the path to remove.
  @param recursively YES to recurse, NO otherwise.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
 - (BOOL)removePath:(NSString *)path recursively:(BOOL)recursively error:(NSError **)error;
@@ -98,7 +98,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param path the path to rename
  @param destination the destination path.
- @param error an error out for any occurs.
+ @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
 - (BOOL)renamePath:(NSString *)path destination:(NSString *)destination error:(NSError **)error;
@@ -108,7 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
  The connection should not be used after this.
 
  @param error an error out for any error that occurs.
- @return YES if succesful, NO otherwise.
+ @return YES if successful, NO otherwise.
  */
 - (BOOL)closeWithError:(NSError **)error;
 
