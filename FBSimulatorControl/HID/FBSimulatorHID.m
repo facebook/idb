@@ -113,7 +113,18 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   [self.client sendWithMessage:message freeWhenDone:YES completionQueue:completionQueue completion:completion];
 }
 
+// Default Mach send timeout (in milliseconds) for the convenience wrapper.
+// Healthy `sendPurpleEvent:` round-trips return in low single-digit milliseconds.
+// 2000ms absorbs scheduler jitter while bounding the wedge condition where SpringBoard's
+// PurpleWorkspacePort receive queue fills under sustained event flow with a stalled receiver.
+static const mach_msg_timeout_t DefaultPurpleSendTimeoutMs = 2000;
+
 - (BOOL)sendPurpleEvent:(NSData *)data error:(NSError **)error
+{
+  return [self sendPurpleEvent:data timeoutMs:DefaultPurpleSendTimeoutMs error:error];
+}
+
+- (BOOL)sendPurpleEvent:(NSData *)data timeoutMs:(mach_msg_timeout_t)timeoutMs error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   if (!simulator) {
@@ -130,11 +141,28 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   mach_msg_header_t *header = (mach_msg_header_t *)mutableData.mutableBytes;
   header->msgh_remote_port = purplePort;
 
-  kern_return_t kr = mach_msg_send(header);
-  if (kr != KERN_SUCCESS) {
-    return [[FBSimulatorError describe:[NSString stringWithFormat:@"mach_msg_send to PurpleWorkspacePort failed: %d", kr]] failBool:error];
+  kern_return_t kr = mach_msg(
+    header,
+    MACH_SEND_MSG | MACH_SEND_TIMEOUT,
+    header->msgh_size,
+    0,
+    MACH_PORT_NULL,
+    timeoutMs,
+    MACH_PORT_NULL
+  );
+  if (kr == KERN_SUCCESS) {
+    return YES;
   }
-  return YES;
+  if (kr == MACH_SEND_TIMED_OUT) {
+    return [[FBSimulatorError
+             describe:[NSString stringWithFormat:@"mach_msg to PurpleWorkspacePort %u timed out after %u ms — receive queue full, SpringBoard is likely not draining HID events: %s",
+                       purplePort, timeoutMs, mach_error_string(kr)]]
+            failBool:error];
+  }
+  return [[FBSimulatorError
+           describe:[NSString stringWithFormat:@"mach_msg to PurpleWorkspacePort %u failed: %s (kr=0x%x)",
+                     purplePort, mach_error_string(kr), kr]]
+          failBool:error];
 }
 
 - (BOOL)postDarwinNotification:(NSString *)notificationName error:(NSError **)error

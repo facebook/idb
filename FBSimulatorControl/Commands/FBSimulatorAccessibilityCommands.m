@@ -633,9 +633,26 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
 @property (nullable, nonatomic, strong) NSNumber *additionalFrameCoverage;
 @property (nullable, nonatomic, strong) AXPTranslator *translator;
 
+/**
+ Per-request timeout (in seconds) applied to each synchronous CoreSimulator
+ accessibility XPC round-trip dispatched on this request's behalf. Defaults to 5s,
+ sized to absorb scheduler jitter while bounding stalled XPC services. A value of
+ `0` (or negative) is "wait nothing": `dispatch_group_wait` returns immediately and
+ the dispatcher emits an empty response. There is no "wait forever" mode — a stalled
+ XPC service will not hang the calling thread regardless of how this is set.
+ */
+@property (nonatomic, assign) NSTimeInterval requestTimeoutSeconds;
+
 @end
 
 @implementation FBAXTranslationRequest
+
+// Default timeout (in seconds) for synchronous accessibility XPC round-trips.
+// Healthy SpringBoard responses return well under 1s; 5s comfortably absorbs
+// scheduler jitter and slow-element edge cases while bounding the wedge condition
+// where the accessibility XPC service stalls and the caller would otherwise hang
+// indefinitely on `dispatch_group_wait(group, DISPATCH_TIME_FOREVER)`.
+static const NSTimeInterval DefaultRequestTimeoutSeconds = 5.0;
 
 - (instancetype)init
 {
@@ -645,6 +662,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   }
 
   _token = NSUUID.UUID.UUIDString;
+  _requestTimeoutSeconds = DefaultRequestTimeoutSeconds;
 
   return self;
 }
@@ -1078,6 +1096,7 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
   SimDevice *device = request.device;
   FBAccessibilityProfilingCollector *collector = request.collector;
   id<FBControlCoreLogger> logger = request.logger;
+  NSTimeInterval timeoutSeconds = request.requestTimeoutSeconds;
   return ^AXPTranslatorResponse *(AXPTranslatorRequest *axRequest) {
     if (logger) {
       [logger log:[NSString stringWithFormat:@"Sending Accessibility Request %@", axRequest]];
@@ -1093,9 +1112,17 @@ static NSString *const FBAXDiscoveryMethodPointGrid = @"point_grid";
                           response = innerResponse;
                           dispatch_group_leave(group);
                         }];
-    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    dispatch_time_t deadline = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeoutSeconds * NSEC_PER_SEC));
+    intptr_t waitResult = dispatch_group_wait(group, deadline);
     if (collector) {
       [collector addXPCCallDuration:CFAbsoluteTimeGetCurrent() - xpcStart];
+    }
+
+    if (waitResult != 0) {
+      if (logger) {
+        [logger log:[NSString stringWithFormat:@"Accessibility request %@ timed out after %.2fs — returning empty response", axRequest, timeoutSeconds]];
+      }
+      return [objc_getClass("AXPTranslatorResponse") emptyResponse];
     }
 
     if (logger) {

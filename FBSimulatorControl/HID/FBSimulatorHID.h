@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <mach/mach.h>
+
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -80,19 +82,44 @@
 
 /**
  Sends a raw mach message to the simulator's PurpleWorkspacePort.
- Used for GSEvent-based HID events (e.g., orientation changes) that bypass
- the Indigo HID system. The data must contain a complete mach message
- including mach_msg_header_t. The msgh_remote_port field will be patched
- with the PurpleWorkspacePort looked up from the simulator's bootstrap namespace.
-
- This is synchronous — callers are responsible for dispatching to the appropriate
- queue and wrapping in a future if needed (mirrors sendIndigoMessageData:completionQueue:completion:).
+ Convenience wrapper around `-sendPurpleEvent:timeoutMs:error:` that delegates with
+ a default 2000ms timeout — generous enough to absorb scheduler jitter on a healthy
+ simulator (round-trips return in low single-digit milliseconds) while bounded enough
+ to surface a stalled SpringBoard receive thread instead of hanging the caller forever.
+ Callers that need a different timeout (or the legacy unbounded behavior with `0`)
+ should call `-sendPurpleEvent:timeoutMs:error:` directly.
 
  @param data the complete mach message to send.
  @param error an error out for any error that occurs.
  @return YES if the message was sent successfully, NO otherwise.
  */
 - (BOOL)sendPurpleEvent:(nonnull NSData *)data error:(NSError * _Nullable * _Nullable)error;
+
+/**
+ Sends a raw mach message to the simulator's PurpleWorkspacePort, bounded by an
+ explicit send-side timeout. Used for GSEvent-based HID events (e.g., orientation
+ changes) that bypass the Indigo HID system. The data must contain a complete mach
+ message including `mach_msg_header_t`. The `msgh_remote_port` field will be patched
+ with the PurpleWorkspacePort looked up from the simulator's bootstrap namespace.
+
+ The send always uses `mach_msg(MACH_SEND_TIMEOUT)` and returns a
+ `MACH_SEND_TIMED_OUT`-tagged error if the queue does not drain in time. On
+ `MACH_SEND_TIMED_OUT` the kernel guarantees the message is not enqueued (no
+ partial-receive risk on the SpringBoard side). A `timeoutMs` of `0` is a
+ non-blocking send: it succeeds only if the destination port queue has space
+ immediately, otherwise returns `MACH_SEND_TIMED_OUT` straight away. There is no
+ "wait forever" mode — the unbounded `mach_msg_send` path that previously hung the
+ caller indefinitely on a stalled SpringBoard receive thread has been removed.
+
+ This is synchronous — callers are responsible for dispatching to the appropriate
+ queue and wrapping in a future if needed.
+
+ @param data the complete mach message to send.
+ @param timeoutMs the send-side timeout in milliseconds.
+ @param error an error out for any error that occurs.
+ @return YES if the message was sent successfully, NO otherwise.
+ */
+- (BOOL)sendPurpleEvent:(nonnull NSData *)data timeoutMs:(mach_msg_timeout_t)timeoutMs error:(NSError * _Nullable * _Nullable)error;
 
 /**
  Posts a Darwin notification to the simulator.
