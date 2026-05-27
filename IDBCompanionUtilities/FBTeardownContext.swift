@@ -124,7 +124,12 @@ public final class FBTeardownContext: Sendable {
       }
 
       Task {
-        try await contextImpl.performCleanup()
+        do {
+          try await contextImpl.performCleanup()
+        } catch {
+          // errors thrown above are not caught in this task, this was found during the move to pika17 where the compiler
+          // will no longer allow for an unstructured task with a throwing closure
+        }
       }
     }
   }
