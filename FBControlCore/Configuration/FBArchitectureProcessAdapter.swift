@@ -127,8 +127,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .onQueue(
           queue, timeout: 20,
           handler: {
-            return
-              FBControlCoreError
+            FBControlCoreError
               .describe("Timed out after 20.0s waiting for \(timeoutDescription)")
               .failFuture()
           }),
@@ -156,8 +155,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .onQueue(
           queue, timeout: 10,
           handler: {
-            return
-              FBControlCoreError
+            FBControlCoreError
               .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
               .failFuture()
           }),
@@ -230,8 +228,7 @@ public class FBArchitectureProcessAdapter: NSObject {
         .onQueue(
           queue, timeout: 10,
           handler: {
-            return
-              FBControlCoreError
+            FBControlCoreError
               .describe("Timed out after 10.0s waiting for \(timeoutDescription)")
               .failFuture()
           }),
