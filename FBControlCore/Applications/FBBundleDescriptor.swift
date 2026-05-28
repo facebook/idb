@@ -55,11 +55,11 @@ public class FBBundleDescriptor: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return name.hash | path.hash | identifier.hash | (binary?.hash ?? 0)
+    name.hash | path.hash | identifier.hash | (binary?.hash ?? 0)
   }
 
   public override var description: String {
-    return "Name: \(name) | ID: \(identifier)"
+    "Name: \(name) | ID: \(identifier)"
   }
 
   // MARK: Public Methods
@@ -80,10 +80,10 @@ public class FBBundleDescriptor: NSObject, NSCopying {
             return FBFuture(result: replacements as NSDictionary)
           }
           var arguments: [String] = []
-          for key in replacements.keys {
+          for (key, value) in replacements {
             arguments.append("-rpath")
             arguments.append(key)
-            arguments.append(replacements[key]!)
+            arguments.append(value)
           }
           if let binaryPath = self.binary?.path {
             arguments.append(binaryPath)
