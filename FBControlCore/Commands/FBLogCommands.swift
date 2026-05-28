@@ -39,7 +39,7 @@ public class FBProcessLogOperation: NSObject, FBLogOperation {
       .onQueue(
         queue,
         respondToCancellation: {
-          return unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
+          unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
         })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
@@ -60,6 +60,6 @@ public class FBProcessLogOperation: NSObject, FBLogOperation {
   // MARK: Private
 
   private static let osLogSubcommands: Set<String> = {
-    return Set(["collect", "config", "erase", "show", "stream", "stats"])
+    Set(["collect", "config", "erase", "show", "stream", "stats"])
   }()
 }
