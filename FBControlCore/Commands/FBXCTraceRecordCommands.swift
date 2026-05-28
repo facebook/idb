@@ -18,7 +18,7 @@ public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return self.init(target: target)
+    self.init(target: target)
   }
 
   required init(target: any FBiOSTarget) {
