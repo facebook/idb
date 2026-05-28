@@ -34,7 +34,7 @@ public class FBApplicationLaunchConfiguration: FBProcessLaunchConfiguration {
   // MARK: NSObject
 
   public override var hash: Int {
-    return super.hash ^ (bundleID as NSString).hash ^ ((bundleName as NSString?)?.hash ?? 0) &+ (waitForDebugger ? 1231 : 1237)
+    super.hash ^ (bundleID as NSString).hash ^ ((bundleName as NSString?)?.hash ?? 0) &+ (waitForDebugger ? 1231 : 1237)
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -50,6 +50,6 @@ public class FBApplicationLaunchConfiguration: FBProcessLaunchConfiguration {
   }
 
   public override var description: String {
-    return "App Launch \(bundleID) (\(bundleName ?? "(null)"))"
+    "App Launch \(bundleID) (\(bundleName ?? "(null)"))"
   }
 }
