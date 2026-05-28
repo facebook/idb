@@ -20,12 +20,12 @@ public class FBCodesignProvider: NSObject {
 
   @objc(codeSignCommandWithIdentityName:logger:)
   public class func codeSignCommand(withIdentityName identityName: String, logger: FBControlCoreLogger?) -> Self {
-    return self.init(identityName: identityName, logger: logger)
+    self.init(identityName: identityName, logger: logger)
   }
 
   @objc(codeSignCommandWithAdHocIdentityWithLogger:)
   public class func codeSignCommandWithAdHocIdentity(logger: FBControlCoreLogger?) -> Self {
-    return self.init(identityName: "-", logger: logger)
+    self.init(identityName: "-", logger: logger)
   }
 
   required init(identityName: String, logger: FBControlCoreLogger?) {
@@ -39,7 +39,7 @@ public class FBCodesignProvider: NSObject {
 
   private static let cdHashRegex: NSRegularExpression = {
     // swiftlint:disable:next force_try
-    return try! NSRegularExpression(pattern: "CDHash=(.+)", options: [])
+    try! NSRegularExpression(pattern: "CDHash=(.+)", options: [])
   }()
 
   private func makeCodesignatureWritable(_ bundlePath: String) throws {
