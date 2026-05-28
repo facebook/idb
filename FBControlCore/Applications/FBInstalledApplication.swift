@@ -22,12 +22,12 @@ public final class FBInstalledApplication: NSObject, NSCopying {
   @objc public let dataContainer: String?
 
   @objc public var installTypeString: String {
-    return FBInstalledApplication.string(from: installType)
+    FBInstalledApplication.string(from: installType)
   }
 
   @objc(installedApplicationWithBundle:installType:dataContainer:)
   public class func installedApplication(withBundle bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
-    return FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
+    FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
   @objc(installedApplicationWithBundle:installTypeString:signerIdentity:dataContainer:)
@@ -53,7 +53,7 @@ public final class FBInstalledApplication: NSObject, NSCopying {
   // MARK: NSObject
 
   public override var hash: Int {
-    return bundle.hash ^ Int(installType.rawValue)
+    bundle.hash ^ Int(installType.rawValue)
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -64,13 +64,13 @@ public final class FBInstalledApplication: NSObject, NSCopying {
   }
 
   public override var description: String {
-    return "Bundle \(bundle.description) | Install Type \(installTypeString) | Container \(dataContainer ?? "nil")"
+    "Bundle \(bundle.description) | Install Type \(installTypeString) | Container \(dataContainer ?? "nil")"
   }
 
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: Private
