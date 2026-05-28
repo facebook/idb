@@ -166,7 +166,13 @@ import IOKit
   // MARK: - Device UDID
 
   private static func resolveDeviceUDID() -> String {
-    let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+    let mainPort: mach_port_t
+    if #available(macOS 12.0, *) {
+      mainPort = kIOMainPortDefault
+    } else {
+      mainPort = kIOMasterPortDefault
+    }
+    let platformExpert = IOServiceGetMatchingService(mainPort, IOServiceMatching("IOPlatformExpertDevice"))
     guard platformExpert != 0 else {
       return ""
     }

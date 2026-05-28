@@ -9,6 +9,7 @@ import CoreImage
 import FBControlCore
 import Foundation
 import ImageIO
+import UniformTypeIdentifiers
 
 @objc(FBSimulatorImage)
 public final class FBSimulatorImage: NSObject {
@@ -72,14 +73,14 @@ public final class FBSimulatorImage: NSObject {
   // MARK: - Private
 
   private class func jpegImageData(from image: CGImage?) throws -> Data {
-    return try imageData(from: image, type: kUTTypeJPEG)
+    return try imageData(from: image, type: .jpeg)
   }
 
   private class func pngImageData(from image: CGImage?) throws -> Data {
-    return try imageData(from: image, type: kUTTypePNG)
+    return try imageData(from: image, type: .png)
   }
 
-  private class func imageData(from image: CGImage?, type: CFString) throws -> Data {
+  private class func imageData(from image: CGImage?, type: UTType) throws -> Data {
     guard let image else {
       throw
         FBSimulatorError
@@ -88,7 +89,7 @@ public final class FBSimulatorImage: NSObject {
     }
 
     let data = NSMutableData()
-    guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, type, 1, nil) else {
+    guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, type.identifier as CFString, 1, nil) else {
       throw
         FBSimulatorError
         .describe("Could not create image destination")

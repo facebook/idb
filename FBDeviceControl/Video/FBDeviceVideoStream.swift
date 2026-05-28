@@ -7,7 +7,6 @@
 
 import AVFoundation
 import CoreMedia
-import CoreServices
 import CoreVideo
 @preconcurrency import FBControlCore
 import Foundation
@@ -18,7 +17,7 @@ private func pixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: 
   let frameSize = CVPixelBufferGetDataSize(pixelBuffer)
   let rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer)
   let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-  let pixelFormatString = UTCreateStringForOSType(pixelFormat).takeRetainedValue() as String
+  let pixelFormatString = pixelFormat.fourCharCodeString
 
   return [
     "width": width,

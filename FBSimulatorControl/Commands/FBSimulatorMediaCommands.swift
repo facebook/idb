@@ -8,6 +8,7 @@
 import AppKit
 import FBControlCore
 import Foundation
+import UniformTypeIdentifiers
 
 @objc public protocol FBSimulatorMediaCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
   @objc(addMedia:)
@@ -60,15 +61,19 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Private
 
   private class var predicateForVideoPaths: NSPredicate {
-    return predicateForPaths(matchingUTIs: [kUTTypeMovie as String, kUTTypeMPEG4 as String, kUTTypeQuickTimeMovie as String])
+    return predicateForPaths(matchingTypes: [.movie, .mpeg4Movie, .quickTimeMovie])
   }
 
   private class var predicateForPhotoPaths: NSPredicate {
-    return predicateForPaths(matchingUTIs: [kUTTypeImage as String, kUTTypePNG as String, kUTTypeJPEG as String, kUTTypeJPEG2000 as String])
+    var types: [UTType] = [.image, .png, .jpeg]
+    if let jpeg2000 = UTType("public.jpeg-2000") {
+      types.append(jpeg2000)
+    }
+    return predicateForPaths(matchingTypes: types)
   }
 
   private class var predicateForContactPaths: NSPredicate {
-    return predicateForPaths(matchingUTIs: [kUTTypeVCard as String])
+    return predicateForPaths(matchingTypes: [.vCard])
   }
 
   private class var predicateForMediaPaths: NSPredicate {
@@ -126,13 +131,11 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
     }
   }
 
-  private class func predicateForPaths(matchingUTIs utis: [String]) -> NSPredicate {
-    let utiSet = Set(utis)
-    let workspace = NSWorkspace.shared
+  private class func predicateForPaths(matchingTypes types: [UTType]) -> NSPredicate {
     return NSPredicate { (evaluatedObject: Any?, _: [String: Any]?) -> Bool in
       guard let url = evaluatedObject as? URL else { return false }
-      guard let uti = try? workspace.type(ofFile: url.path) else { return false }
-      return utiSet.contains(uti)
+      guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else { return false }
+      return types.contains { contentType.conforms(to: $0) }
     }
   }
 }
