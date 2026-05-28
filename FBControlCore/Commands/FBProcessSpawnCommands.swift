@@ -53,7 +53,7 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
       .onQueue(
         queue,
         map: { _ -> AnyObject in
-          return NSString(data: consumer.data(), encoding: String.Encoding.utf8.rawValue) ?? "" as NSString
+          NSString(data: consumer.data(), encoding: String.Encoding.utf8.rawValue) ?? "" as NSString
         })
     return unsafeBitCast(result, to: FBFuture<NSString>.self)
   }
