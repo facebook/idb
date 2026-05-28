@@ -24,9 +24,6 @@ import XCTestBootstrap
     } catch {
       return FBFuture(error: error)
     }
-    if !warmUp {
-      return FBFuture(result: target as AnyObject)
-    }
     return FBFuture(result: target as AnyObject)
   }
 
