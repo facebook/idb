@@ -47,7 +47,7 @@ private class FBSimulatorDebugServer: NSObject, FBDebugServer {
         // sendSignal returns FBFuture<NSNumber>. Map to NSNull so the
         // responder's future actually matches its declared return type and
         // the bridge can read its result safely.
-        return task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil)
+        task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil)
           // swiftlint:disable:next force_cast
           .mapReplace(NSNull()) as! FBFuture<NSNull>
       }
@@ -68,7 +68,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Class Methods
 
   internal class func resolveDebugServerPath() -> String {
-    return (FBXcodeConfiguration.contentsDirectory as NSString)
+    (FBXcodeConfiguration.contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
@@ -76,7 +76,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorDebuggerCommands {
-    return FBSimulatorDebuggerCommands(
+    FBSimulatorDebuggerCommands(
       // swiftlint:disable:next force_cast
       simulator: target as! FBSimulator,
       debugServerPath: resolveDebugServerPath()
@@ -126,7 +126,7 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: FBSimulator, debugServerPath: String) -> FBFuture<AnyObject> {
-    return FBProcessBuilder<NSNull, AnyObject, AnyObject>
+    FBProcessBuilder<NSNull, AnyObject, AnyObject>
       .withLaunchPath(debugServerPath)
       .withArguments(["localhost:\(port)", "--attach", "\(processIdentifier)"])
       // swiftlint:disable:next force_unwrapping
