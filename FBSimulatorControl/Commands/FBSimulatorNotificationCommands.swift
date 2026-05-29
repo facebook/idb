@@ -19,7 +19,7 @@ public final class FBSimulatorNotificationCommands: NSObject, FBiOSTargetCommand
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorNotificationCommands {
-    return FBSimulatorNotificationCommands(simulator: target as! FBSimulator)
+    FBSimulatorNotificationCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
