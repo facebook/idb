@@ -23,7 +23,7 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorCrashLogCommands {
-    return FBSimulatorCrashLogCommands(
+    FBSimulatorCrashLogCommands(
       simulator: target as! FBSimulator,
       notifier: FBCrashLogNotifier.sharedInstance
     )
@@ -39,7 +39,7 @@ public final class FBSimulatorCrashLogCommands: NSObject, FBiOSTargetCommand {
 
   @objc(notifyOfCrash:)
   public func notifyOfCrash(_ predicate: NSPredicate) -> FBFuture<FBCrashLogInfo> {
-    return notifier.nextCrashLog(forPredicate: predicate)
+    notifier.nextCrashLog(forPredicate: predicate)
   }
 
   // MARK: - Private
