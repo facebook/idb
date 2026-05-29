@@ -10,26 +10,26 @@ import Foundation
 extension FBWeakFramework {
 
   @objc(CoreSimulator) public class var coreSimulator: FBWeakFramework {
-    return FBWeakFramework.framework(withPath: "/Library/Developer/PrivateFrameworks/CoreSimulator.framework", requiredClassNames: ["SimDevice"], rootPermitted: false)
+    FBWeakFramework.framework(withPath: "/Library/Developer/PrivateFrameworks/CoreSimulator.framework", requiredClassNames: ["SimDevice"], rootPermitted: false)
   }
 
   @objc(SimulatorKit) public class var simulatorKit: FBWeakFramework {
-    return FBWeakFramework.xcodeFramework(withRelativePath: "Library/PrivateFrameworks/SimulatorKit.framework", requiredClassNames: [])
+    FBWeakFramework.xcodeFramework(withRelativePath: "Library/PrivateFrameworks/SimulatorKit.framework", requiredClassNames: [])
   }
 
   @objc(DTXConnectionServices) public class var dtxConnectionServices: FBWeakFramework {
-    return FBWeakFramework.xcodeFramework(withRelativePath: "../SharedFrameworks/DTXConnectionServices.framework", requiredClassNames: ["DTXConnection", "DTXRemoteInvocationReceipt"])
+    FBWeakFramework.xcodeFramework(withRelativePath: "../SharedFrameworks/DTXConnectionServices.framework", requiredClassNames: ["DTXConnection", "DTXRemoteInvocationReceipt"])
   }
 
   @objc(XCTest) public class var xcTest: FBWeakFramework {
-    return FBWeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration"])
+    FBWeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration"])
   }
 
   @objc(MobileDevice) public class var mobileDevice: FBWeakFramework {
-    return FBWeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/MobileDevice.framework", requiredClassNames: [], rootPermitted: true)
+    FBWeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/MobileDevice.framework", requiredClassNames: [], rootPermitted: true)
   }
 
   @objc(AccessibilityPlatformTranslation) public class var accessibilityPlatformTranslation: FBWeakFramework {
-    return FBWeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework", requiredClassNames: ["AXPTranslationObject"], rootPermitted: false)
+    FBWeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework", requiredClassNames: ["AXPTranslationObject"], rootPermitted: false)
   }
 }
