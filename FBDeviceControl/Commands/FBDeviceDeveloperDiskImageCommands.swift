@@ -35,7 +35,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
   // MARK: Initializers
 
   @objc public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceDeveloperDiskImageCommands(device: target as! FBDevice), to: self)
+    unsafeDowncast(FBDeviceDeveloperDiskImageCommands(device: target as! FBDevice), to: self)
   }
 
   init(device: FBDevice) {
@@ -65,7 +65,7 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
   }
 
   @objc public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    return FBDeveloperDiskImage.allDiskImages
+    FBDeveloperDiskImage.allDiskImages
   }
 
   @objc public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
