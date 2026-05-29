@@ -19,9 +19,9 @@ public class FBControlCoreGlobalConfiguration: NSObject {
 
   // MARK: Timeouts
 
-  @objc public class var fastTimeout: TimeInterval { return 10 }
-  @objc public class var regularTimeout: TimeInterval { return 30 }
-  @objc public class var slowTimeout: TimeInterval { return 120 }
+  @objc public class var fastTimeout: TimeInterval { 10 }
+  @objc public class var regularTimeout: TimeInterval { 30 }
+  @objc public class var slowTimeout: TimeInterval { 120 }
 
   // MARK: Logger
 
@@ -59,17 +59,17 @@ public class FBControlCoreGlobalConfiguration: NSObject {
   // MARK: NSObject
 
   override public class func description() -> String {
-    return "Default Logger \(_logger.map(String.init(describing:)) ?? "(nil)")"
+    "Default Logger \(_logger.map(String.init(describing:)) ?? "(nil)")"
   }
 
   public override var description: String {
-    return Self.description()
+    Self.description()
   }
 
   // MARK: Private
 
   private class func createDefaultLogger() -> any FBControlCoreLogger {
-    return FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
+    FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
   }
 
   private class var stderrLoggingEnabledByDefault: Bool {
