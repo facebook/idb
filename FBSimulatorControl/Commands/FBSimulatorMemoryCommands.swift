@@ -19,7 +19,7 @@ public final class FBSimulatorMemoryCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorMemoryCommands {
-    return FBSimulatorMemoryCommands(simulator: target as! FBSimulator)
+    FBSimulatorMemoryCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
