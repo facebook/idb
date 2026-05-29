@@ -15,12 +15,12 @@ extension FBInstrumentsOperation {
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> FBInstrumentsOperation {
-    return try await bridgeFBFuture(operation(with: target, configuration: configuration, logger: logger))
+    try await bridgeFBFuture(operation(with: target, configuration: configuration, logger: logger))
   }
 
   /// Async wrapper for `-stop`. Returns the trace file URL.
   public func stopAsync() async throws -> URL {
-    return try await bridgeFBFuture(stop()) as URL
+    try await bridgeFBFuture(stop()) as URL
   }
 
   /// Async wrapper for `postProcess:traceFile:queue:logger:`. Returns the post-processed trace URL.
@@ -30,6 +30,6 @@ extension FBInstrumentsOperation {
     queue: DispatchQueue,
     logger: (any FBControlCoreLogger)?
   ) async throws -> URL {
-    return try await bridgeFBFuture(postProcess(arguments, traceFile: traceFile, queue: queue, logger: logger)) as URL
+    try await bridgeFBFuture(postProcess(arguments, traceFile: traceFile, queue: queue, logger: logger)) as URL
   }
 }
