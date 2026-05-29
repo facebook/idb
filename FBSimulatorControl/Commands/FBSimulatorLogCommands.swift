@@ -19,7 +19,7 @@ public final class FBSimulatorLogCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLogCommands {
-    return FBSimulatorLogCommands(simulator: target as! FBSimulator)
+    FBSimulatorLogCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
