@@ -46,9 +46,9 @@ private final class SpringboardDataBox: @unchecked Sendable {
 
 @objc(FBSpringboardServicesClient)
 public class FBSpringboardServicesClient: NSObject {
-  private var connection: FBAMDServiceConnection
-  fileprivate var queue: DispatchQueue
-  private var logger: any FBControlCoreLogger
+  private let connection: FBAMDServiceConnection
+  fileprivate let queue: DispatchQueue
+  private let logger: any FBControlCoreLogger
 
   // MARK: ObjC-visible Constants
 
@@ -197,8 +197,8 @@ public class FBSpringboardServicesClient: NSObject {
 private typealias IconLayoutJSONType = [[String]]
 
 class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol {
-  private var client: FBSpringboardServicesClient
-  private var validFilenames: [String]
+  private let client: FBSpringboardServicesClient
+  private let validFilenames: [String]
 
   init(client: FBSpringboardServicesClient) {
     self.client = client
