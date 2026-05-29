@@ -159,7 +159,7 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
       .onQueue(
         queue,
         map: { _ -> AnyObject in
-          return outputTraceFile as NSURL
+          outputTraceFile as NSURL
         })
     return unsafeBitCast(result, to: FBFuture<NSURL>.self)
   }
@@ -180,7 +180,7 @@ public final class FBXCTraceRecordOperation: NSObject, FBiOSTargetOperation {
       .onQueue(
         queue,
         respondToCancellation: {
-          return self.stop(withTimeout: DefaultXCTraceRecordStopTimeout).mapReplace(NSNull()) as! FBFuture<NSNull>
+          self.stop(withTimeout: DefaultXCTraceRecordStopTimeout).mapReplace(NSNull()) as! FBFuture<NSNull>
         })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
