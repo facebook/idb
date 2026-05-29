@@ -129,7 +129,7 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLifecycleCommands {
-    return FBSimulatorLifecycleCommands(simulator: target as! FBSimulator)
+    FBSimulatorLifecycleCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
