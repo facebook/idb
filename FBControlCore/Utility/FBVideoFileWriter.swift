@@ -73,7 +73,7 @@ public class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
   }
 
   @objc public func completed() -> FBFuture<NSNull> {
-    return unsafeBitCast(finishFuture, to: FBFuture<NSNull>.self)
+    unsafeBitCast(finishFuture, to: FBFuture<NSNull>.self)
   }
 
   // MARK: AVCaptureFileOutputRecordingDelegate
