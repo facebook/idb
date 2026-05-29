@@ -24,11 +24,11 @@ public class FBCrashLogNotifier: NSObject {
   }
 
   @objc public class var sharedInstance: FBCrashLogNotifier {
-    return _sharedInstance
+    _sharedInstance
   }
 
   nonisolated(unsafe) private static let _sharedInstance: FBCrashLogNotifier = {
-    return FBCrashLogNotifier(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    FBCrashLogNotifier(logger: FBControlCoreGlobalConfiguration.defaultLogger)
   }()
 
   // MARK: Notifications
