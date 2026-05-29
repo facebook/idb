@@ -16,22 +16,22 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
 
   @objc(compressedVideoWithCodec:transport:)
   public class func compressedVideo(withCodec codec: FBVideoStreamCodec, transport: FBVideoStreamTransport) -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .compressedVideo, codec: codec, transport: transport)
+    FBVideoStreamFormat(type: .compressedVideo, codec: codec, transport: transport)
   }
 
   @objc
   public class func mjpeg() -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .mjpeg, codec: nil, transport: nil)
+    FBVideoStreamFormat(type: .mjpeg, codec: nil, transport: nil)
   }
 
   @objc
   public class func minicap() -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .minicap, codec: nil, transport: nil)
+    FBVideoStreamFormat(type: .minicap, codec: nil, transport: nil)
   }
 
   @objc
   public class func bgra() -> FBVideoStreamFormat {
-    return FBVideoStreamFormat(type: .bgra, codec: nil, transport: nil)
+    FBVideoStreamFormat(type: .bgra, codec: nil, transport: nil)
   }
 
   private init(type: FBVideoStreamFormatType, codec: FBVideoStreamCodec?, transport: FBVideoStreamTransport?) {
@@ -44,7 +44,7 @@ public final class FBVideoStreamFormat: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: NSObject
@@ -89,12 +89,12 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
 
   @objc(quality:)
   public class func quality(_ quality: NSNumber) -> FBVideoStreamRateControl {
-    return FBVideoStreamRateControl(mode: .constantQuality, value: quality)
+    FBVideoStreamRateControl(mode: .constantQuality, value: quality)
   }
 
   @objc(bitrate:)
   public class func bitrate(_ bitrate: NSNumber) -> FBVideoStreamRateControl {
-    return FBVideoStreamRateControl(mode: .averageBitrate, value: bitrate)
+    FBVideoStreamRateControl(mode: .averageBitrate, value: bitrate)
   }
 
   private init(mode: FBVideoStreamRateControlMode, value: NSNumber) {
@@ -106,7 +106,7 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: NSObject
@@ -117,7 +117,7 @@ public final class FBVideoStreamRateControl: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return Int(mode.rawValue) ^ value.hash
+    Int(mode.rawValue) ^ value.hash
   }
 
   public override var description: String {
@@ -159,7 +159,7 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: NSObject
@@ -176,10 +176,10 @@ public final class FBVideoStreamConfiguration: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return format.hash ^ (framesPerSecond?.hash ?? 0) ^ rateControl.hash ^ (scaleFactor?.hash ?? 0) ^ keyFrameRate.hash
+    format.hash ^ (framesPerSecond?.hash ?? 0) ^ rateControl.hash ^ (scaleFactor?.hash ?? 0) ^ keyFrameRate.hash
   }
 
   public override var description: String {
-    return "Format \(format) | FPS \(framesPerSecond?.description ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor?.description ?? "nil") | Key frame rate \(keyFrameRate)"
+    "Format \(format) | FPS \(framesPerSecond?.description ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor?.description ?? "nil") | Key frame rate \(keyFrameRate)"
   }
 }
