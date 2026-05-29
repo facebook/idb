@@ -51,7 +51,7 @@ public final class FBTestLaunchConfiguration: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: NSObject
@@ -94,6 +94,6 @@ public final class FBTestLaunchConfiguration: NSObject, NSCopying {
   }
 
   public override var description: String {
-    return "FBTestLaunchConfiguration TestBundle \(testBundle) | AppConfig \(applicationLaunchConfiguration) | HostBundle \(testHostBundle.map(String.init(describing:)) ?? "(nil)") | UITesting \(shouldInitializeUITesting ? 1 : 0) | UseXcodebuild \(shouldUseXcodebuild ? 1 : 0) | TestsToRun \(testsToRun.map(String.init(describing:)) ?? "(nil)") | TestsToSkip \(testsToSkip.map(String.init(describing:)) ?? "(nil)") | Target application bundle \(targetApplicationBundle.map(String.init(describing:)) ?? "(nil)") xcTestRunProperties \(xcTestRunProperties.map(String.init(describing:)) ?? "(nil)") | ResultBundlePath \(resultBundlePath ?? "(nil)") | CoverageDirPath \(coverageDirectoryPath ?? "(nil)") | EnableContinuousCoverageCollection \(shouldEnableContinuousCoverageCollection ? 1 : 0) | LogDirectoryPath \(logDirectoryPath ?? "(nil)") | ReportResultBundle \(reportResultBundle ? 1 : 0)"
+    "FBTestLaunchConfiguration TestBundle \(testBundle) | AppConfig \(applicationLaunchConfiguration) | HostBundle \(testHostBundle.map(String.init(describing:)) ?? "(nil)") | UITesting \(shouldInitializeUITesting ? 1 : 0) | UseXcodebuild \(shouldUseXcodebuild ? 1 : 0) | TestsToRun \(testsToRun.map(String.init(describing:)) ?? "(nil)") | TestsToSkip \(testsToSkip.map(String.init(describing:)) ?? "(nil)") | Target application bundle \(targetApplicationBundle.map(String.init(describing:)) ?? "(nil)") xcTestRunProperties \(xcTestRunProperties.map(String.init(describing:)) ?? "(nil)") | ResultBundlePath \(resultBundlePath ?? "(nil)") | CoverageDirPath \(coverageDirectoryPath ?? "(nil)") | EnableContinuousCoverageCollection \(shouldEnableContinuousCoverageCollection ? 1 : 0) | LogDirectoryPath \(logDirectoryPath ?? "(nil)") | ReportResultBundle \(reportResultBundle ? 1 : 0)"
   }
 }
