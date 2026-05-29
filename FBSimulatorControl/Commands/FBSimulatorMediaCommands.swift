@@ -40,7 +40,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorMediaCommands {
-    return FBSimulatorMediaCommands(simulator: target as! FBSimulator)
+    FBSimulatorMediaCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
@@ -61,7 +61,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Private
 
   private class var predicateForVideoPaths: NSPredicate {
-    return predicateForPaths(matchingTypes: [.movie, .mpeg4Movie, .quickTimeMovie])
+    predicateForPaths(matchingTypes: [.movie, .mpeg4Movie, .quickTimeMovie])
   }
 
   private class var predicateForPhotoPaths: NSPredicate {
@@ -73,11 +73,11 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   }
 
   private class var predicateForContactPaths: NSPredicate {
-    return predicateForPaths(matchingTypes: [.vCard])
+    predicateForPaths(matchingTypes: [.vCard])
   }
 
   private class var predicateForMediaPaths: NSPredicate {
-    return NSCompoundPredicate(orPredicateWithSubpredicates: [
+    NSCompoundPredicate(orPredicateWithSubpredicates: [
       predicateForVideoPaths,
       predicateForPhotoPaths,
       predicateForContactPaths,
@@ -132,7 +132,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   }
 
   private class func predicateForPaths(matchingTypes types: [UTType]) -> NSPredicate {
-    return NSPredicate { (evaluatedObject: Any?, _: [String: Any]?) -> Bool in
+    NSPredicate { (evaluatedObject: Any?, _: [String: Any]?) -> Bool in
       guard let url = evaluatedObject as? URL else { return false }
       guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else { return false }
       return types.contains { contentType.conforms(to: $0) }
