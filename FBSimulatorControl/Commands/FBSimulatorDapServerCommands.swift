@@ -19,7 +19,7 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorDapServerCommand {
-    return FBSimulatorDapServerCommand(simulator: target as! FBSimulator)
+    FBSimulatorDapServerCommand(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
