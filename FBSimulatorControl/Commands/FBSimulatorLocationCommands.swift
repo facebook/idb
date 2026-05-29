@@ -21,7 +21,7 @@ public final class FBSimulatorLocationCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorLocationCommands {
-    return FBSimulatorLocationCommands(simulator: target as! FBSimulator)
+    FBSimulatorLocationCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
