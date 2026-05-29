@@ -22,7 +22,7 @@ public class FBWeakFramework: NSObject {
 
   @objc(xcodeFrameworkWithRelativePath:requiredClassNames:)
   public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> FBWeakFramework {
-    return FBWeakFramework(
+    FBWeakFramework(
       basePath: FBXcodeConfiguration.developerDirectory,
       relativePath: relativePath,
       requiredClassNames: requiredClassNames,
@@ -32,7 +32,7 @@ public class FBWeakFramework: NSObject {
 
   @objc(frameworkWithPath:requiredClassNames:rootPermitted:)
   public class func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> FBWeakFramework {
-    return FBWeakFramework(
+    FBWeakFramework(
       basePath: absolutePath,
       relativePath: "",
       requiredClassNames: requiredClassNames,
