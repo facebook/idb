@@ -25,7 +25,7 @@ public class FBProcessLaunchConfiguration: NSObject {
   // MARK: NSObject
 
   public override var hash: Int {
-    return (arguments as NSArray).hash ^ ((environment as NSDictionary).hash & io.hash)
+    (arguments as NSArray).hash ^ ((environment as NSDictionary).hash & io.hash)
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
