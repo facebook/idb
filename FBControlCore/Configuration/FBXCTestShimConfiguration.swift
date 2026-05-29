@@ -33,18 +33,18 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   }
 
   private class func createWorkQueue() -> DispatchQueue {
-    return DispatchQueue(label: "com.facebook.xctestbootstrap.shims")
+    DispatchQueue(label: "com.facebook.xctestbootstrap.shims")
   }
 
   private class var canonicalShimNameToShimFilenames: [String: String] {
-    return [
+    [
       keySimulatorTestShim: shimulatorFileName,
       keyMacTestShim: maculatorShimFileName,
     ]
   }
 
   private class var canonicalShimNameToCodesigningRequired: [String: Bool] {
-    return [
+    [
       keySimulatorTestShim: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid,
       keyMacTestShim: false,
     ]
@@ -188,7 +188,7 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: NSObject
@@ -200,6 +200,6 @@ public class FBXCTestShimConfiguration: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return iOSSimulatorTestShimPath.hash ^ macOSTestShimPath.hash
+    iOSSimulatorTestShimPath.hash ^ macOSTestShimPath.hash
   }
 }
