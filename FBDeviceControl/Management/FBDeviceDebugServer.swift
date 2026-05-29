@@ -64,7 +64,7 @@ private class FBDeviceDebugServer_TwistedPairFiles: NSObject {
       while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
         do {
           let data = try connection.receiveUp(to: connectionReadSizeLimit)
-          if data.count == 0 {
+          if data.isEmpty {
             logger.log("debugserver read ended")
             break
           }
