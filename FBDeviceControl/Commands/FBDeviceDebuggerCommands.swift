@@ -31,7 +31,7 @@ public class FBDeviceDebuggerCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Initializers
 
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return self.init(device: target as! FBDevice)
+    self.init(device: target as! FBDevice)
   }
 
   required init(device: FBDevice) {
