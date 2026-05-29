@@ -235,7 +235,7 @@ func FBiOSTargetResolveState(_ target: FBiOSTarget, _ state: FBiOSTargetState) -
   return FBFuture<AnyObject>.onQueue(
     target.workQueue,
     resolveWhen: {
-      return target.state == state
+      target.state == state
     })
 }
 
@@ -245,6 +245,6 @@ func FBiOSTargetResolveLeavesState(_ target: FBiOSTarget, _ state: FBiOSTargetSt
   return FBFuture<AnyObject>.onQueue(
     target.workQueue,
     resolveWhen: {
-      return target.state != state
+      target.state != state
     })
 }
