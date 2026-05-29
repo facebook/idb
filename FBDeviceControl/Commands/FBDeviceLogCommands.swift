@@ -32,7 +32,7 @@ public class FBDeviceLogOperation: NSObject, FBLogOperation {
   // MARK: FBiOSTargetOperation
 
   public var completed: FBFuture<NSNull> {
-    return unsafeBitCast(serviceCompleted, to: FBFuture<NSNull>.self)
+    unsafeBitCast(serviceCompleted, to: FBFuture<NSNull>.self)
   }
 }
 
@@ -45,7 +45,7 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Initializers
 
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return self.init(device: target as! FBDevice)
+    self.init(device: target as! FBDevice)
   }
 
   required init(device: FBDevice) {
