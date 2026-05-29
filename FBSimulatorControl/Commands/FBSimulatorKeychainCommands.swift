@@ -38,7 +38,7 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorKeychainCommands {
-    return FBSimulatorKeychainCommands(simulator: target as! FBSimulator)
+    FBSimulatorKeychainCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
