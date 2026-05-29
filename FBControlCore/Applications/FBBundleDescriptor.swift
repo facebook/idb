@@ -8,7 +8,7 @@
 import Foundation
 
 @objc(FBBundleDescriptor)
-public class FBBundleDescriptor: NSObject, NSCopying {
+public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
 
   @objc public let name: String
   @objc public let identifier: String

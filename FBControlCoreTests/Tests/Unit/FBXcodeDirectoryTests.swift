@@ -10,7 +10,7 @@ import XCTest
 
 final class FBXcodeDirectoryTests: XCTestCase {
   func testXcodeSelect() throws {
-    let directory = try FBXcodeDirectory.xcodeSelectDeveloperDirectory().await(withTimeout: 10) as String
+    let directory = try FBXcodeDirectory.xcodeSelectDeveloperDirectory()
     assertDirectory(directory)
   }
 

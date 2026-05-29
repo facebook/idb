@@ -7,79 +7,53 @@
 
 import Foundation
 
-// Lazy thread-safe initialization (equivalent to dispatch_once)
-private let _xcodeVersionNumber: NSDecimalNumber = {
-  let versionString = FBXcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: FBXcodeConfiguration.xcodeInfoPlistPath)
-  return NSDecimalNumber(string: versionString as? String)
-}()
-
-private let _xcodeVersion: OperatingSystemVersion = {
-  FBOSVersion.operatingSystemVersion(fromName: _xcodeVersionNumber.stringValue)
-}()
-
-private let _iosSDKVersion: String = {
-  FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as! String
-}()
-
-private let _iosSDKVersionNumberFormatter: NumberFormatter = {
-  let formatter = NumberFormatter()
-  formatter.numberStyle = .decimal
-  formatter.minimumFractionDigits = 1
-  formatter.maximumFractionDigits = 3
-  return formatter
-}()
-
-private let _developerDirectoryResult: (directory: String?, error: NSError?) = {
-  do {
-    let dir = try FBXcodeDirectory.symlinkedDeveloperDirectory()
-    return (dir, nil)
-  } catch {
-    return (nil, error as NSError)
-  }
-}()
-
 @objc(FBXcodeConfiguration)
 public class FBXcodeConfiguration: NSObject {
 
   // MARK: Public Properties
 
-  @objc public class var developerDirectory: String {
-    findXcodeDeveloperDirectoryOrAssert()
-  }
+  @objc public static let developerDirectory: String = {
+    (try? FBXcodeDirectory.resolveDeveloperDirectory()) ?? ""
+  }()
 
-  @objc public class var contentsDirectory: String {
+  @objc public static let contentsDirectory: String = {
     (developerDirectory as NSString).deletingLastPathComponent
-  }
+  }()
 
-  @objc public class var xcodeVersionNumber: NSDecimalNumber {
-    _xcodeVersionNumber
-  }
+  @objc public static let xcodeVersionNumber: NSDecimalNumber = {
+    let versionString = FBXcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: FBXcodeConfiguration.xcodeInfoPlistPath)
+    return NSDecimalNumber(string: versionString as? String)
+  }()
 
-  @objc public class var xcodeVersion: OperatingSystemVersion {
-    _xcodeVersion
-  }
+  @objc public static let xcodeVersion: OperatingSystemVersion = {
+    return FBOSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
+  }()
 
-  @objc public class var iosSDKVersionNumber: NSDecimalNumber {
+  @objc public static let iosSDKVersionNumber: NSDecimalNumber = {
     NSDecimalNumber(string: iosSDKVersion)
-  }
+  }()
 
-  @objc public class var iosSDKVersionNumberFormatter: NumberFormatter {
-    _iosSDKVersionNumberFormatter
-  }
+  @objc public static let iosSDKVersionNumberFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.minimumFractionDigits = 1
+    formatter.maximumFractionDigits = 3
+    return formatter
+  }()
 
-  @objc public class var iosSDKVersion: String {
-    _iosSDKVersion
-  }
+  @objc public static let iosSDKVersion: String = {
+    return FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
+  }()
 
-  @objc public class var isXcode12OrGreater: Bool {
+  @objc public static let isXcode12OrGreater: Bool = {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.0")) != .orderedAscending
-  }
+  }()
 
-  @objc public class var isXcode12_5OrGreater: Bool {
+  @objc public static let isXcode12_5OrGreater: Bool = {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
-  }
+  }()
 
-  @objc public class var simulatorApp: FBBundleDescriptor {
+  @objc public static let simulatorApp: FBBundleDescriptor = {
     let path = simulatorApplicationPath
     guard let bundle = Bundle(path: path) else {
       fatalError("Could not load Simulator.app bundle at '\(path)'")
@@ -91,12 +65,7 @@ public class FBXcodeConfiguration: NSObject {
     let identifier = bundle.bundleIdentifier ?? "com.apple.iphonesimulator"
     // We deliberately don't include the binary because we should never need it.
     return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
-  }
-
-  @objc(getDeveloperDirectoryIfExists)
-  public class func getDeveloperDirectoryIfExists() -> String? {
-    _developerDirectoryResult.directory
-  }
+  }()
 
   // MARK: NSObject
 
@@ -133,10 +102,4 @@ public class FBXcodeConfiguration: NSObject {
     return value
   }
 
-  private class func findXcodeDeveloperDirectoryOrAssert() -> String {
-    guard let directory = _developerDirectoryResult.directory else {
-      fatalError("Failed to get developer directory from xcode-select: \(_developerDirectoryResult.error?.description ?? "")")
-    }
-    return directory
-  }
 }

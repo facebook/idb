@@ -59,6 +59,15 @@ private let kUsageHelpMessage = """
       ecid:ECID                  Limit interactions to a specific Device ECID
   """
 
+private let kXcodeHelpMessage = """
+
+  ====================================================================
+  Xcode is required. Please make sure Xcode is installed and then run:
+  sudo xcode-select --switch $(ls -td /Applications/Xcode* | head -1)
+  ====================================================================
+
+  """
+
 private func writeJSONToStdOut(_ json: Any) {
   guard let jsonOutput = try? JSONSerialization.data(withJSONObject: json) else { return }
   var readyOutput = Data(jsonOutput)
@@ -679,7 +688,7 @@ private func logStartupInfo(_ logger: FBIDBLogger) {
   logger.info().log("Invoked with args=\(FBCollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments)) env=\(envDescription())")
 }
 
-private func idbMain() -> Int32 {
+private func idbMain() async -> Int32 {
   let arguments = ProcessInfo.processInfo.arguments
   if arguments.contains("--help") {
     fputs(kUsageHelpMessage, stderr)
@@ -694,10 +703,9 @@ private func idbMain() -> Int32 {
   let logger = FBIDBLogger.logger(withUserDefaults: userDefaults)
   logStartupInfo(logger)
 
-  // Check that xcode-select returns a valid path, exit with error if not found
-  let xcodeAvailable = (try? FBXcodeDirectory.xcodeSelectDeveloperDirectory().`await`()) != nil
-  if !xcodeAvailable {
-    logger.error().log("Xcode developer directory not found. idb_companion requires Xcode to be installed and selected via xcode-select")
+  guard FBXcodeConfiguration.developerDirectory != "" else {
+    logger.error().log("Failed to resolve the Xcode developer directory. Ensure Xcode is installed and selected with xcode-select.")
+    fputs(kXcodeHelpMessage, stderr)
     return 1
   }
 
@@ -705,7 +713,7 @@ private func idbMain() -> Int32 {
     signalHandlerFuture(UInt(SIGINT), exitMessage: "Signalled: SIGINT", logger: logger),
     signalHandlerFuture(UInt(SIGTERM), exitMessage: "Signalled: SIGTERM", logger: logger),
   ])
-  let companionCompletedFuture = unsafeBitCast(getCompanionCompletedFuture(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger), to: FBFuture<AnyObject>.self)
+  let companionCompletedFuture = unsafeBitCast(getCompanionCompletedFuture(userDefaults, xcodeAvailable: true, logger: logger), to: FBFuture<AnyObject>.self)
   let companionCompleted: FBFuture<NSNull>
   do {
     guard let result = try companionCompletedFuture.`await`() as? FBFuture<NSNull> else {
@@ -744,4 +752,6 @@ private func idbMain() -> Int32 {
   return 0
 }
 
-exit(autoreleasepool { idbMain() })
+let result = await idbMain()
+
+exit(result)
