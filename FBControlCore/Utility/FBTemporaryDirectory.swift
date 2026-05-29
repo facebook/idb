@@ -21,11 +21,8 @@ public class FBTemporaryDirectory: NSObject {
 
   @objc(temporaryDirectoryWithLogger:)
   public class func temporaryDirectory(logger: FBControlCoreLogger) -> Self {
-    var base = ProcessInfo.processInfo.environment["TMPDIR"]
-    if base == nil {
-      base = NSTemporaryDirectory()
-    }
-    let tempPathComponents = [base!, "IDB", UUID().uuidString]
+    let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
+    let tempPathComponents = [base, "IDB", UUID().uuidString]
     let temporaryDirectory = NSURL.fileURL(withPathComponents: tempPathComponents)!
     var error: NSError?
     let success: Bool
@@ -43,11 +40,8 @@ public class FBTemporaryDirectory: NSObject {
 
   @objc(initWithLogger:)
   public convenience init(logger: FBControlCoreLogger) {
-    var base = ProcessInfo.processInfo.environment["TMPDIR"]
-    if base == nil {
-      base = NSTemporaryDirectory()
-    }
-    let tempPathComponents = [base!, "IDB", UUID().uuidString]
+    let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
+    let tempPathComponents = [base, "IDB", UUID().uuidString]
     let temporaryDirectory = NSURL.fileURL(withPathComponents: tempPathComponents)!
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
