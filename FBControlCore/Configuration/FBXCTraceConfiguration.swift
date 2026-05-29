@@ -24,7 +24,7 @@ public final class FBXCTraceRecordConfiguration: NSObject, NSCopying {
 
   @objc(RecordWithTemplateName:timeLimit:package:allProcesses:processToAttach:processToLaunch:launchArgs:targetStdin:targetStdout:processEnv:shim:)
   public class func record(withTemplateName templateName: String, timeLimit: TimeInterval, package: String?, allProcesses: Bool, processToAttach: String?, processToLaunch: String?, launchArgs: [String]?, targetStdin: String?, targetStdout: String?, processEnv: [String: String]?, shim: FBXCTestShimConfiguration?) -> FBXCTraceRecordConfiguration {
-    return FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
+    FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
   }
 
   @objc
@@ -45,7 +45,7 @@ public final class FBXCTraceRecordConfiguration: NSObject, NSCopying {
 
   @objc
   public func withShim(_ shim: FBXCTestShimConfiguration) -> FBXCTraceRecordConfiguration {
-    return FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
+    FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
   }
 
   public override var description: String {
@@ -55,6 +55,6 @@ public final class FBXCTraceRecordConfiguration: NSObject, NSCopying {
   }
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 }
