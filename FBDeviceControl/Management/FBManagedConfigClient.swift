@@ -35,9 +35,9 @@ private final class ManagedConfigDataBox: @unchecked Sendable {
 
 @objc(FBManagedConfigClient)
 public class FBManagedConfigClient: NSObject {
-  private var connection: FBAMDServiceConnection
-  private var queue: DispatchQueue
-  private var logger: any FBControlCoreLogger
+  private let connection: FBAMDServiceConnection
+  private let queue: DispatchQueue
+  private let logger: any FBControlCoreLogger
 
   // MARK: ObjC-visible Constants
 
