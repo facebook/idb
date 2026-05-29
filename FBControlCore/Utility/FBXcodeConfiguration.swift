@@ -14,11 +14,11 @@ private let _xcodeVersionNumber: NSDecimalNumber = {
 }()
 
 private let _xcodeVersion: OperatingSystemVersion = {
-  return FBOSVersion.operatingSystemVersion(fromName: _xcodeVersionNumber.stringValue)
+  FBOSVersion.operatingSystemVersion(fromName: _xcodeVersionNumber.stringValue)
 }()
 
 private let _iosSDKVersion: String = {
-  return FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as! String
+  FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as! String
 }()
 
 private let _iosSDKVersionNumberFormatter: NumberFormatter = {
@@ -44,39 +44,39 @@ public class FBXcodeConfiguration: NSObject {
   // MARK: Public Properties
 
   @objc public class var developerDirectory: String {
-    return findXcodeDeveloperDirectoryOrAssert()
+    findXcodeDeveloperDirectoryOrAssert()
   }
 
   @objc public class var contentsDirectory: String {
-    return (developerDirectory as NSString).deletingLastPathComponent
+    (developerDirectory as NSString).deletingLastPathComponent
   }
 
   @objc public class var xcodeVersionNumber: NSDecimalNumber {
-    return _xcodeVersionNumber
+    _xcodeVersionNumber
   }
 
   @objc public class var xcodeVersion: OperatingSystemVersion {
-    return _xcodeVersion
+    _xcodeVersion
   }
 
   @objc public class var iosSDKVersionNumber: NSDecimalNumber {
-    return NSDecimalNumber(string: iosSDKVersion)
+    NSDecimalNumber(string: iosSDKVersion)
   }
 
   @objc public class var iosSDKVersionNumberFormatter: NumberFormatter {
-    return _iosSDKVersionNumberFormatter
+    _iosSDKVersionNumberFormatter
   }
 
   @objc public class var iosSDKVersion: String {
-    return _iosSDKVersion
+    _iosSDKVersion
   }
 
   @objc public class var isXcode12OrGreater: Bool {
-    return xcodeVersionNumber.compare(NSDecimalNumber(string: "12.0")) != .orderedAscending
+    xcodeVersionNumber.compare(NSDecimalNumber(string: "12.0")) != .orderedAscending
   }
 
   @objc public class var isXcode12_5OrGreater: Bool {
-    return xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
+    xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
   }
 
   @objc public class var simulatorApp: FBBundleDescriptor {
@@ -95,31 +95,31 @@ public class FBXcodeConfiguration: NSObject {
 
   @objc(getDeveloperDirectoryIfExists)
   public class func getDeveloperDirectoryIfExists() -> String? {
-    return _developerDirectoryResult.directory
+    _developerDirectoryResult.directory
   }
 
   // MARK: NSObject
 
   override public class func description() -> String {
-    return "Developer Directory \(developerDirectory) | Xcode Version \(xcodeVersionNumber) | iOS SDK Version \(iosSDKVersionNumber)"
+    "Developer Directory \(developerDirectory) | Xcode Version \(xcodeVersionNumber) | iOS SDK Version \(iosSDKVersionNumber)"
   }
 
   public override var description: String {
-    return Self.description()
+    Self.description()
   }
 
   // MARK: Private
 
   fileprivate class var simulatorApplicationPath: String {
-    return ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
+    ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
   }
 
   fileprivate class var iPhoneSimulatorPlatformInfoPlistPath: String {
-    return ((developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform") as NSString).appendingPathComponent("Info.plist")
+    ((developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform") as NSString).appendingPathComponent("Info.plist")
   }
 
   fileprivate class var xcodeInfoPlistPath: String {
-    return ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
+    ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
   }
 
   fileprivate class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
