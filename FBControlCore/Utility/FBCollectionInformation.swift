@@ -12,7 +12,7 @@ public final class FBCollectionInformation: NSObject {
 
   @objc(oneLineDescriptionFromArray:)
   public class func oneLineDescription(from array: [Any]) -> String {
-    return oneLineDescription(from: array, atKeyPath: "description")
+    oneLineDescription(from: array, atKeyPath: "description")
   }
 
   @objc(oneLineDescriptionFromArray:atKeyPath:)
