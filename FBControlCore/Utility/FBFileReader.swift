@@ -43,11 +43,11 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
   // MARK: - Initializers
 
   private static func createQueue() -> DispatchQueue {
-    return DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilereader")
+    DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilereader")
   }
 
   @objc public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> Self {
-    return dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
+    dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
   }
 
   @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDispatchDataConsumer, logger: FBControlCoreLogger?) -> Self {
@@ -97,7 +97,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
   // MARK: - NSObject
 
   public override var description: String {
-    return "Reader for \(targeting) with state \(stateString(from: state))"
+    "Reader for \(targeting) with state \(stateString(from: state))"
   }
 
   // MARK: - Public Methods
@@ -107,7 +107,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
       FBFuture<AnyObject>.onQueue(
         readQueue,
         resolve: {
-          return self.startReadingNow()
+          self.startReadingNow()
         }),
       to: FBFuture<NSNull>.self
     )
@@ -118,7 +118,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
       FBFuture<AnyObject>.onQueue(
         readQueue,
         resolve: {
-          return self.stopReadingNow()
+          self.stopReadingNow()
         }),
       to: FBFuture<NSNumber>.self
     )
@@ -128,7 +128,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
     return unsafeBitCast(
       finishedReading
         .onQueue(readQueue, timeout: timeout) {
-          return self.stopReadingNow()
+          self.stopReadingNow()
         },
       to: FBFuture<NSNumber>.self
     )
@@ -143,7 +143,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
         .onQueue(
           readQueue,
           respondToCancellation: {
-            return unsafeBitCast(self.stopReadingNow(), to: FBFuture<NSNull>.self)
+            unsafeBitCast(self.stopReadingNow(), to: FBFuture<NSNull>.self)
           }),
       to: FBFuture<NSNumber>.self
     )
@@ -179,7 +179,7 @@ public class FBFileReader: NSObject, FBFileReaderProtocol {
     // Report partial results with as little as 1 byte read.
     io.setLimit(lowWater: 1)
     io.read(offset: 0, length: Int.max, queue: readQueue) { done, data, errorCode in
-      if let data, data.count > 0 {
+      if let data, !data.isEmpty {
         consumer.consumeData(data as __DispatchData)
       }
       if done {
