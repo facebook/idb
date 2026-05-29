@@ -16,7 +16,7 @@ public final class FBProcessInfo: NSObject, NSCopying {
   @objc public let environment: [String: String]
 
   @objc public var processName: String {
-    return (launchPath as NSString).lastPathComponent
+    (launchPath as NSString).lastPathComponent
   }
 
   @objc
@@ -31,7 +31,7 @@ public final class FBProcessInfo: NSObject, NSCopying {
   // MARK: NSObject
 
   public override var hash: Int {
-    return Int(processIdentifier) ^ (launchPath as NSString).hash ^ (arguments as NSArray).hash
+    Int(processIdentifier) ^ (launchPath as NSString).hash ^ (arguments as NSArray).hash
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -42,12 +42,12 @@ public final class FBProcessInfo: NSObject, NSCopying {
   }
 
   public override var description: String {
-    return "Process \(processName) | PID \(processIdentifier)"
+    "Process \(processName) | PID \(processIdentifier)"
   }
 
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 }
