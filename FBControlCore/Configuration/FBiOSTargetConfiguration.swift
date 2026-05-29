@@ -34,17 +34,17 @@ public final class FBiOSTargetScreenInfo: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return Int(widthPixels) ^ Int(heightPixels) ^ Int(scale)
+    Int(widthPixels) ^ Int(heightPixels) ^ Int(scale)
   }
 
   public override var description: String {
-    return String(format: "Screen Pixels %lu,%lu | Scale %fX", widthPixels, heightPixels, scale)
+    String(format: "Screen Pixels %lu,%lu | Scale %fX", widthPixels, heightPixels, scale)
   }
 
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 }
 
@@ -60,7 +60,7 @@ public final class FBDeviceType: NSObject, NSCopying {
 
   @objc(genericWithName:)
   public class func generic(withName name: String) -> FBDeviceType {
-    return FBDeviceType(model: FBDeviceModel(rawValue: name), productTypes: [], deviceArchitecture: .arm64, family: .familyUnknown)
+    FBDeviceType(model: FBDeviceModel(rawValue: name), productTypes: [], deviceArchitecture: .arm64, family: .familyUnknown)
   }
 
   private init(model: FBDeviceModel, productTypes: Set<String>, deviceArchitecture: FBArchitecture, family: FBControlCoreProductFamily) {
@@ -79,43 +79,43 @@ public final class FBDeviceType: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return model.hashValue
+    model.hashValue
   }
 
   public override var description: String {
-    return "Model '\(model.rawValue)'"
+    "Model '\(model.rawValue)'"
   }
 
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: Fileprivate Helpers
 
   fileprivate class func iPhone(withModel model: FBDeviceModel, productType: String, deviceArchitecture: FBArchitecture) -> FBDeviceType {
-    return iPhone(withModel: model, productTypes: [productType], deviceArchitecture: deviceArchitecture)
+    iPhone(withModel: model, productTypes: [productType], deviceArchitecture: deviceArchitecture)
   }
 
   fileprivate class func iPhone(withModel model: FBDeviceModel, productTypes: [String], deviceArchitecture: FBArchitecture) -> FBDeviceType {
-    return FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyiPhone)
+    FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyiPhone)
   }
 
   fileprivate class func iPad(withModel model: FBDeviceModel, productTypes: [String], deviceArchitecture: FBArchitecture) -> FBDeviceType {
-    return FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyiPad)
+    FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyiPad)
   }
 
   fileprivate class func tv(withModel model: FBDeviceModel, productTypes: [String], deviceArchitecture: FBArchitecture) -> FBDeviceType {
-    return FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyAppleTV)
+    FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyAppleTV)
   }
 
   fileprivate class func watch(withModel model: FBDeviceModel, productTypes: [String], deviceArchitecture: FBArchitecture) -> FBDeviceType {
-    return FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyAppleWatch)
+    FBDeviceType(model: model, productTypes: Set(productTypes), deviceArchitecture: deviceArchitecture, family: .familyAppleWatch)
   }
 
   fileprivate class func generic(withModel model: String) -> FBDeviceType {
-    return FBDeviceType(model: FBDeviceModel(rawValue: model), productTypes: [], deviceArchitecture: .arm64, family: .familyUnknown)
+    FBDeviceType(model: FBDeviceModel(rawValue: model), productTypes: [], deviceArchitecture: .arm64, family: .familyUnknown)
   }
 }
 
@@ -129,7 +129,7 @@ public final class FBOSVersion: NSObject, NSCopying {
 
   @objc(genericWithName:)
   public class func generic(withName name: String) -> FBOSVersion {
-    return FBOSVersion(name: FBOSVersionName(rawValue: name), families: [])
+    FBOSVersion(name: FBOSVersionName(rawValue: name), families: [])
   }
 
   @objc(operatingSystemVersionFromName:)
@@ -161,15 +161,15 @@ public final class FBOSVersion: NSObject, NSCopying {
   // MARK: Public Computed Properties
 
   @objc public var versionString: String {
-    return (name.rawValue as String).components(separatedBy: CharacterSet.whitespaces)[1]
+    (name.rawValue as String).components(separatedBy: CharacterSet.whitespaces)[1]
   }
 
   @objc public var number: NSDecimalNumber {
-    return NSDecimalNumber(string: versionString)
+    NSDecimalNumber(string: versionString)
   }
 
   @objc public var version: OperatingSystemVersion {
-    return FBOSVersion.operatingSystemVersion(fromName: versionString)
+    FBOSVersion.operatingSystemVersion(fromName: versionString)
   }
 
   // MARK: NSObject
@@ -180,17 +180,17 @@ public final class FBOSVersion: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return name.hashValue
+    name.hashValue
   }
 
   public override var description: String {
-    return "OS '\(name.rawValue)'"
+    "OS '\(name.rawValue)'"
   }
 
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: Fileprivate Helpers
@@ -204,15 +204,15 @@ public final class FBOSVersion: NSObject, NSCopying {
   }
 
   fileprivate class func tvOS(withName name: FBOSVersionName) -> FBOSVersion {
-    return FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyAppleTV.rawValue)])
+    FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyAppleTV.rawValue)])
   }
 
   fileprivate class func watchOS(withName name: FBOSVersionName) -> FBOSVersion {
-    return FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyAppleWatch.rawValue)])
+    FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyAppleWatch.rawValue)])
   }
 
   fileprivate class func macOS(withName name: FBOSVersionName) -> FBOSVersion {
-    return FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyMac.rawValue)])
+    FBOSVersion(name: name, families: [NSNumber(value: FBControlCoreProductFamily.familyMac.rawValue)])
   }
 }
 
@@ -224,7 +224,7 @@ public final class FBiOSTargetConfiguration: NSObject {
   // MARK: Device Configurations
 
   nonisolated(unsafe) private static let _deviceConfigurations: [FBDeviceType] = {
-    return [
+    [
       FBDeviceType.iPhone(withModel: .modeliPhone4s, productType: "iPhone4,1", deviceArchitecture: .armv7),
       FBDeviceType.iPhone(withModel: .modeliPhone5, productTypes: ["iPhone5,1", "iPhone5,2"], deviceArchitecture: .armv7s),
       FBDeviceType.iPhone(withModel: .modeliPhone5c, productTypes: ["iPhone5,3"], deviceArchitecture: .armv7s),
@@ -325,7 +325,7 @@ public final class FBiOSTargetConfiguration: NSObject {
   // MARK: OS Configurations
 
   nonisolated(unsafe) private static let _osConfigurations: [FBOSVersion] = {
-    return [
+    [
       FBOSVersion.iOS(withName: .nameiOS_7_1),
       FBOSVersion.iOS(withName: .nameiOS_8_0),
       FBOSVersion.iOS(withName: .nameiOS_8_1),
@@ -446,15 +446,15 @@ public final class FBiOSTargetConfiguration: NSObject {
   }()
 
   @objc public class var nameToDevice: [FBDeviceModel: FBDeviceType] {
-    return _nameToDevice
+    _nameToDevice
   }
 
   @objc public class var productTypeToDevice: [String: FBDeviceType] {
-    return _productTypeToDevice
+    _productTypeToDevice
   }
 
   @objc public class var nameToOSVersion: [FBOSVersionName: FBOSVersion] {
-    return _nameToOSVersion
+    _nameToOSVersion
   }
 
   // MARK: Public Methods
