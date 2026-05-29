@@ -21,7 +21,7 @@ public class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
   @objc public let mode: FBProcessSpawnMode
 
   @objc public var processName: String {
-    return (launchPath as NSString).lastPathComponent
+    (launchPath as NSString).lastPathComponent
   }
 
   @objc
@@ -34,7 +34,7 @@ public class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
   // MARK: NSObject
 
   public override var hash: Int {
-    return super.hash | (launchPath as NSString).hash | Int(mode.rawValue)
+    super.hash | (launchPath as NSString).hash | Int(mode.rawValue)
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -50,6 +50,6 @@ public class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
   }
 
   public override var description: String {
-    return "Process Launch \(launchPath) | Arguments \(FBCollectionInformation.oneLineDescription(from: arguments)) | Environment \(FBCollectionInformation.oneLineDescription(from: environment)) | Output \(io)"
+    "Process Launch \(launchPath) | Arguments \(FBCollectionInformation.oneLineDescription(from: arguments)) | Environment \(FBCollectionInformation.oneLineDescription(from: environment)) | Output \(io)"
   }
 }
