@@ -22,7 +22,7 @@ extension FBSimulator: FBSimulatorApplicationCommandsProtocol {
 
   @objc(installedApplicationWithBundleID:error:)
   public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
-    return try applicationCommands().installedApplication(withBundleID: bundleID)
+    try applicationCommands().installedApplication(withBundleID: bundleID)
   }
 }
 
@@ -104,7 +104,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
-    return try fetchInstalledApplication(bundleID: bundleID)
+    try fetchInstalledApplication(bundleID: bundleID)
   }
 
   // MARK: - Async
@@ -188,7 +188,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func installedApplicationAsync(withBundleID bundleID: String) async throws -> FBInstalledApplication {
-    return try fetchInstalledApplication(bundleID: bundleID)
+    try fetchInstalledApplication(bundleID: bundleID)
   }
 
   fileprivate func runningApplicationsAsync() async throws -> [String: NSNumber] {
@@ -231,7 +231,7 @@ public class FBSimulatorApplicationCommands: NSObject, FBiOSTargetCommand {
   }
 
   private static let uiKitApplicationRegex: NSRegularExpression = {
-    return try! NSRegularExpression(pattern: "UIKitApplication:", options: [])
+    try! NSRegularExpression(pattern: "UIKitApplication:", options: [])
   }()
 
   private func ensureApplicationIsInstalledAsync(_ bundleID: String) async throws {
