@@ -16,7 +16,7 @@ public class FBDeviceRecoveryCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceRecoveryCommands(device: target as! FBDevice), to: self)
+    unsafeDowncast(FBDeviceRecoveryCommands(device: target as! FBDevice), to: self)
   }
 
   init(device: FBDevice) {
