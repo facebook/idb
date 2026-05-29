@@ -304,7 +304,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Private
 
   private static let regularExpressionForServiceNameToBundleID: NSRegularExpression = {
-    return try! NSRegularExpression(pattern: "UIKitApplication:([^\\[]*).*", options: .dotMatchesLineSeparators)
+    try! NSRegularExpression(pattern: "UIKitApplication:([^\\[]*).*", options: .dotMatchesLineSeparators)
   }()
 
   private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
