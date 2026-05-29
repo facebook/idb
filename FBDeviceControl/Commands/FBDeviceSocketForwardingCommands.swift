@@ -17,7 +17,7 @@ public class FBDeviceSocketForwardingCommands: NSObject, FBiOSTargetCommand {
   // MARK: Initializers
 
   @objc public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceSocketForwardingCommands(device: target as! FBDevice), to: self)
+    unsafeDowncast(FBDeviceSocketForwardingCommands(device: target as! FBDevice), to: self)
   }
 
   init(device: FBDevice) {
