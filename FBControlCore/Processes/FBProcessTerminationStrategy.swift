@@ -38,7 +38,7 @@ public class FBProcessTerminationStrategy: NSObject {
     workQueue: DispatchQueue,
     logger: FBControlCoreLogger
   ) -> Self {
-    return self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
+    self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
   }
 
   @objc
@@ -47,7 +47,7 @@ public class FBProcessTerminationStrategy: NSObject {
     workQueue: DispatchQueue,
     logger: FBControlCoreLogger
   ) -> Self {
-    return self.init(
+    self.init(
       configuration: FBProcessTerminationStrategyConfigurationDefault,
       processFetcher: processFetcher,
       workQueue: workQueue,
@@ -100,7 +100,7 @@ public class FBProcessTerminationStrategy: NSObject {
     }
 
     // It may take some time for the process to have truly died, so wait for it to be so.
-    logger.debug().log("Waiting on \(processIdentifier) to dissappear from the process table")
+    logger.debug().log("Waiting on \(processIdentifier) to disappear from the process table")
 
     let waitFuture: FBFuture<NSNull> = waitForProcessIdentifierToDie(processIdentifier, on: workQueue, processFetcher: processFetcher)
 
@@ -109,8 +109,7 @@ public class FBProcessTerminationStrategy: NSObject {
       .onQueue(
         workQueue, timeout: ProcessTableRemovalTimeout,
         handler: { () -> FBFuture<AnyObject> in
-          return
-            FBControlCoreError
+          FBControlCoreError
             .describe("Process \(processIdentifier) to be removed from the process table")
             .failFuture()
         }
@@ -127,7 +126,7 @@ public class FBProcessTerminationStrategy: NSObject {
             let processInfo: Any = self.processFetcher.processInfo(for: processIdentifier) ?? ("No Process Info" as NSString)
             return
               FBControlCoreError
-              .describe("Timed out waiting for \(processIdentifier) to dissapear from the process table")
+              .describe("Timed out waiting for \(processIdentifier) to disappear from the process table")
               .extraInfo("\(processIdentifier)_process", value: processInfo)
               .failFuture()
           }
@@ -158,11 +157,11 @@ public class FBProcessTerminationStrategy: NSObject {
   // MARK: Private
 
   private func hasOption(_ option: FBProcessTerminationStrategyOptions) -> Bool {
-    return (configuration.options.rawValue & option.rawValue) == option.rawValue
+    (configuration.options.rawValue & option.rawValue) == option.rawValue
   }
 
   private func strategyWith(configuration: FBProcessTerminationStrategyConfiguration) -> FBProcessTerminationStrategy {
-    return FBProcessTerminationStrategy(
+    FBProcessTerminationStrategy(
       configuration: configuration,
       processFetcher: processFetcher,
       workQueue: workQueue,
@@ -171,10 +170,10 @@ public class FBProcessTerminationStrategy: NSObject {
   }
 
   private func waitForProcessIdentifierToDie(_ processIdentifier: pid_t, on queue: DispatchQueue, processFetcher: FBProcessFetcher) -> FBFuture<NSNull> {
-    return FBFuture<NSNull>.onQueue(
+    FBFuture<NSNull>.onQueue(
       queue,
       resolveWhen: {
-        return processFetcher.processInfo(for: processIdentifier) == nil
+        processFetcher.processInfo(for: processIdentifier) == nil
       })
   }
 }
