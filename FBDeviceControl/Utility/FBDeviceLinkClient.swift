@@ -83,7 +83,7 @@ public class FBDeviceLinkClient: NSObject {
             return
           }
           guard let response = resultArray[1] as? NSDictionary else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(resultArray[1]) is not a NSDictionary").build())
+            continuation.resume(throwing: FBDeviceControlError.describe("\(resultArray[1]) is not an NSDictionary").build())
             return
           }
           continuation.resume(returning: response)
@@ -108,7 +108,7 @@ public class FBDeviceLinkClient: NSObject {
           }
           let versionNumber = plistArray[1]
           guard versionNumber is NSNumber else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(versionNumber) is not a NSNumber for the handshake version").build())
+            continuation.resume(throwing: FBDeviceControlError.describe("\(versionNumber) is not an NSNumber for the handshake version").build())
             return
           }
           let response: [Any] = ["DLMessageVersionExchange", "DLVersionsOk", versionNumber]
@@ -119,7 +119,7 @@ public class FBDeviceLinkClient: NSObject {
           }
           let message = replyArray[0]
           guard let messageString = message as? String else {
-            continuation.resume(throwing: FBDeviceControlError.describe("\(message) is not a NSString for the device ready call").build())
+            continuation.resume(throwing: FBDeviceControlError.describe("\(message) is not an NSString for the device ready call").build())
             return
           }
           if messageString != DeviceReady {
