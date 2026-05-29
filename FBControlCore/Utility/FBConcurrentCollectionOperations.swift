@@ -40,7 +40,7 @@ public final class FBConcurrentCollectionOperations: NSObject {
   public class func map(_ array: [Any], withBlock block: @Sendable @escaping (Any) -> Any) -> [Any] {
     let sendableArray = UncheckedSendableBox(array)
     return generate(UInt(array.count)) { index in
-      return block(sendableArray.value[Int(index)])
+      block(sendableArray.value[Int(index)])
     }
   }
 
