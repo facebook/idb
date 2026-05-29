@@ -22,7 +22,7 @@ public class FBDeviceXCTestCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceXCTestCommands(device: target as! FBDevice, workingDirectory: NSTemporaryDirectory()), to: self)
+    unsafeDowncast(FBDeviceXCTestCommands(device: target as! FBDevice, workingDirectory: NSTemporaryDirectory()), to: self)
   }
 
   init(device: FBDevice, workingDirectory: String) {
