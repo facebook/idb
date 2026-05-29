@@ -154,7 +154,7 @@ open class FBControlCoreError: NSObject {
   // MARK: NSObject
 
   open override var description: String {
-    return build().description
+    build().description
   }
 
   // MARK: Private
