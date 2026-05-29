@@ -79,7 +79,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         device.asyncQueue,
         pend: { connection -> FBFuture<AnyObject> in
-          return FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: device.asyncQueue) as AnyObject)
+          FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: device.asyncQueue) as AnyObject)
         })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
@@ -184,7 +184,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         device.workQueue,
         push: { connection -> FBFutureContext<AnyObject> in
-          return FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: device.logger!, queue: device.workQueue) as! FBFutureContext<AnyObject>
+          FBAFCConnection.afc(from: connection, calls: FBAFCConnection.defaultCalls, logger: device.logger!, queue: device.workQueue) as! FBFutureContext<AnyObject>
         }) as! FBFutureContext<FBAFCConnection>
   }
 }
