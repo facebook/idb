@@ -66,14 +66,14 @@ private class FBDeviceLaunchedApplication: NSObject, FBLaunchedApplication {
         .onQueue(
           queue,
           respondToCancellation: {
-            return commands.killApplication(withProcessIdentifier: processIdentifier)
+            commands.killApplication(withProcessIdentifier: processIdentifier)
           }),
       to: FBFuture<NSNull>.self
     )
   }
 
   var bundleID: String {
-    return _configuration.bundleID
+    _configuration.bundleID
   }
 }
 
