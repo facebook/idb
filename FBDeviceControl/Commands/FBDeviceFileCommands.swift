@@ -27,7 +27,7 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
   // MARK: FBFileContainerProtocol
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return handleAFCOperation { afc in
+    handleAFCOperation { afc in
       try afc.copy(fromHost: sourcePath, toContainerPath: destinationPath)
       return NSNull()
     }
@@ -40,33 +40,33 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    return FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
   }
 
   public func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    return handleAFCOperation { afc in
+    handleAFCOperation { afc in
       try afc.createDirectory(directoryPath)
       return NSNull()
     }
   }
 
   public func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    return handleAFCOperation { afc in
+    handleAFCOperation { afc in
       try afc.renamePath(sourcePath, destination: destinationPath)
       return NSNull()
     }
   }
 
   public func remove(_ path: String) -> FBFuture<NSNull> {
-    return handleAFCOperation { afc in
+    handleAFCOperation { afc in
       try afc.removePath(path, recursively: true)
       return NSNull()
     }
   }
 
   public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return handleAFCOperation { afc in
-      return try afc.contents(ofDirectory: path) as NSArray
+    handleAFCOperation { afc in
+      try afc.contents(ofDirectory: path) as NSArray
     }
   }
 
@@ -85,13 +85,13 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
   // MARK: Private
 
   private func readFileFromPath(inContainer path: String) -> FBFuture<NSData> {
-    return handleAFCOperation { afc in
-      return try afc.contents(ofPath: path) as NSData
+    handleAFCOperation { afc in
+      try afc.contents(ofPath: path) as NSData
     }
   }
 
   private func handleAFCOperation<T: AnyObject>(_ operation: @escaping (FBAFCConnection) throws -> T) -> FBFuture<T> {
-    return FBFuture.onQueue(
+    FBFuture.onQueue(
       queue,
       resolveValue: { errorPtr in
         do {
@@ -124,7 +124,7 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return FBFuture(result: [FBSpringboardServicesClient.wallpaperNameHomescreen, FBSpringboardServicesClient.wallpaperNameLockscreen] as NSArray)
+    FBFuture(result: [FBSpringboardServicesClient.wallpaperNameHomescreen, FBSpringboardServicesClient.wallpaperNameLockscreen] as NSArray)
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
@@ -144,19 +144,19 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    return FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
   }
 
   func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
   }
 
   func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
   }
 
   func remove(_ path: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
   }
 }
 
@@ -173,11 +173,11 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    return managedConfig.getProfileList()
+    managedConfig.getProfileList()
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    return FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSString>
+    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSString>
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
@@ -189,19 +189,19 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    return FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
   }
 
   func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
   }
 
   func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
   }
 
   func remove(_ path: String) -> FBFuture<NSNull> {
-    return managedConfig.removeProfile(path)
+    managedConfig.removeProfile(path)
   }
 }
 
@@ -218,19 +218,19 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSString>
+    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSString>
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    return FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
   }
 
   func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
   }
 
   func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
@@ -332,7 +332,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   static func filePath(for image: FBDeveloperDiskImage) -> String {
-    return "\(image.version.majorVersion).\(image.version.minorVersion)/\((image.diskImagePath as NSString).lastPathComponent)"
+    "\(image.version.majorVersion).\(image.version.minorVersion)/\((image.diskImagePath as NSString).lastPathComponent)"
   }
 }
 
@@ -349,7 +349,7 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
@@ -360,19 +360,19 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<FBFuture<NSNull>>
+    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<FBFuture<NSNull>>
   }
 
   func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
   }
 
   func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
   }
 
   func remove(_ path: String) -> FBFuture<NSNull> {
-    return FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
   }
 
   func contents(ofDirectory path: String) -> FBFuture<NSArray> {
@@ -393,11 +393,11 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   // MARK: Initializers
 
   @objc public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: FBAFCConnection.defaultCalls), to: self)
+    unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: FBAFCConnection.defaultCalls), to: self)
   }
 
   @objc public class func commands(with target: any FBiOSTarget, afcCalls: AFCCalls) -> Self {
-    return unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: afcCalls), to: self)
+    unsafeDowncast(FBDeviceFileCommands(device: target as! FBDevice, afcCalls: afcCalls), to: self)
   }
 
   init(device: FBDevice, afcCalls: AFCCalls) {
@@ -409,7 +409,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   // MARK: FBFileCommands
 
   public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
-    return device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
+    device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
@@ -419,23 +419,23 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! any FBFileContainerProtocol)
+    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! any FBFileContainerProtocol)
   }
 
   public func fileCommandsForApplicationContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForGroupContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForRootFilesystem() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
   }
 
   public func fileCommandsForMediaDirectory() -> FBFutureContext<any FBFileContainerProtocol> {
-    return device!.startAFCService("com.apple.afc")
+    device!.startAFCService("com.apple.afc")
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
@@ -445,11 +445,11 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! any FBFileContainerProtocol)
+    FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! any FBFileContainerProtocol)
   }
 
   public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    return device!.startService(FBManagedConfigClient.serviceName)
+    device!.startService(FBManagedConfigClient.serviceName)
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
@@ -460,7 +460,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<any FBFileContainerProtocol> {
-    return device!.startService(FBSpringboardServicesClient.serviceName)
+    device!.startService(FBSpringboardServicesClient.serviceName)
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
@@ -470,7 +470,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForWallpaper() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(futureContexts: [
+    FBFutureContext(futureContexts: [
       unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
       unsafeBitCast(device!.startService(FBManagedConfigClient.serviceName), to: FBFutureContext<AnyObject>.self),
     ])
@@ -485,7 +485,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForDiskImages() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any FBDeveloperDiskImageCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
+    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any FBDeveloperDiskImageCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
   }
 
   public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
