@@ -43,5 +43,5 @@ private class FBiOSTargetOperationWrapper: NSObject, FBiOSTargetOperation {
 /// C function replacement: called from the @_cdecl function below.
 @_cdecl("FBiOSTargetOperationFromFuture")
 func FBiOSTargetOperationFromFuture(_ completed: FBFuture<NSNull>) -> FBiOSTargetOperation {
-  return FBiOSTargetOperationWrapper(completed: completed)
+  FBiOSTargetOperationWrapper(completed: completed)
 }
