@@ -94,11 +94,11 @@ public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
   // MARK: Public
 
   @objc public func startRecording() -> FBFuture<NSNull> {
-    return encoder.startRecording()
+    encoder.startRecording()
   }
 
   @objc public func stopRecording() -> FBFuture<NSNull> {
-    return encoder.stopRecording()
+    encoder.stopRecording()
   }
 
   // MARK: FBiOSTargetOperation
@@ -108,7 +108,7 @@ public class FBDeviceVideo: NSObject, FBiOSTargetOperation {
     return encoder.completed().onQueue(
       workQueue,
       respondToCancellation: {
-        return encoder.stopRecording()
+        encoder.stopRecording()
       })
   }
 }
