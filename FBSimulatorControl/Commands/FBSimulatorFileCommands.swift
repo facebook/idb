@@ -27,17 +27,17 @@ extension FBSimulator: FBSimulatorFileCommandsProtocol {
 
   @objc(containedFileForApplication:error:)
   public func containedFile(forApplication bundleID: String) throws -> any FBContainedFile {
-    return try fileCommands().containedFile(forApplication: bundleID)
+    try fileCommands().containedFile(forApplication: bundleID)
   }
 
   @objc(containedFileForGroupContainersWithError:)
   public func containedFileForGroupContainers() throws -> any FBContainedFile {
-    return try fileCommands().containedFileForGroupContainers()
+    try fileCommands().containedFileForGroupContainers()
   }
 
   @objc(containedFileForApplicationContainersWithError:)
   public func containedFileForApplicationContainers() throws -> any FBContainedFile {
-    return try fileCommands().containedFileForApplicationContainers()
+    try fileCommands().containedFileForApplicationContainers()
   }
 
   @objc public func containedFileForRootFilesystem() -> any FBContainedFile {
@@ -63,7 +63,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return unsafeDowncast(FBSimulatorFileCommands(simulator: target as! FBSimulator), to: self)
+    unsafeDowncast(FBSimulatorFileCommands(simulator: target as! FBSimulator), to: self)
   }
 
   private init(simulator: FBSimulator) {
@@ -94,7 +94,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          return FBFuture<NSNull>.empty()
+          FBFuture<NSNull>.empty()
         })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
@@ -124,7 +124,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          return FBFuture<NSNull>.empty()
+          FBFuture<NSNull>.empty()
         })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
@@ -149,7 +149,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
       .onQueue(
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
-          return FBFuture<NSNull>.empty()
+          FBFuture<NSNull>.empty()
         })) as! FBFutureContext<any FBFileContainerProtocol>
   }
 
@@ -263,7 +263,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public func containedFileForRootFilesystem() -> any FBContainedFile {
-    return FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!) as! any FBContainedFile
+    FBFileContainer.containedFile(forBasePath: simulator.dataDirectory!) as! any FBContainedFile
   }
 }
 
