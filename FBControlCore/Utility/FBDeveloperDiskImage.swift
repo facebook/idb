@@ -50,14 +50,13 @@ public class FBDeveloperDiskImage: NSObject {
   }
 
   @objc public class var allDiskImages: [FBDeveloperDiskImage] {
-    return _cachedAllDiskImages
+    _cachedAllDiskImages
   }
 
   nonisolated(unsafe) private static let _cachedAllDiskImages: [FBDeveloperDiskImage] = {
     let searchPath = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport")
     var images = allDiskImages(fromSearchPath: searchPath, xcodeVersion: FBXcodeConfiguration.xcodeVersion, logger: FBControlCoreGlobalConfiguration.defaultLogger)
-    if ProcessInfo.processInfo.environment.keys.contains(ExtraDeviceSupportDirEnv) {
-      let extraPath = ProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv]!
+    if let extraPath = ProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] {
       let extraImages = allDiskImages(fromSearchPath: extraPath, xcodeVersion: FBXcodeConfiguration.xcodeVersion, logger: FBControlCoreGlobalConfiguration.defaultLogger)
       images = images + extraImages
     }
@@ -133,7 +132,7 @@ public class FBDeveloperDiskImage: NSObject {
   // MARK: NSObject
 
   override public var description: String {
-    return "\(diskImagePath): \(version.majorVersion).\(version.minorVersion)"
+    "\(diskImagePath): \(version.majorVersion).\(version.minorVersion)"
   }
 
   @objc public func compare(_ other: FBDeveloperDiskImage) -> ComparisonResult {
