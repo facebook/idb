@@ -52,30 +52,30 @@ public class FBDeviceSet: NSObject, FBiOSTargetSet, FBiOSTargetSetDelegate {
   // MARK: NSObject
 
   public override var description: String {
-    return "FBDeviceSet: \(FBCollectionInformation.oneLineDescription(from: allDevices))"
+    "FBDeviceSet: \(FBCollectionInformation.oneLineDescription(from: allDevices))"
   }
 
   // MARK: Querying
 
   @objc(targetWithUDID:)
   public func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
-    return deviceWithUDID(udid)
+    deviceWithUDID(udid)
   }
 
   @objc public func deviceWithUDID(_ udid: String) -> FBDevice? {
-    return allDevices.first { $0.udid == udid }
+    allDevices.first { $0.udid == udid }
   }
 
   // MARK: FBiOSTargetSet
 
   @objc public var allTargetInfos: [any FBiOSTargetInfo] {
-    return allDevices
+    allDevices
   }
 
   // MARK: Properties
 
   @objc public var allDevices: [FBDevice] {
-    return (storage.attached.values.compactMap { $0 as? FBDevice }).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
+    (storage.attached.values.compactMap { $0 as? FBDevice }).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
   }
 
   // MARK: Private
