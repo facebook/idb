@@ -18,7 +18,7 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Initializers
 
   public class func commands(with target: any FBiOSTarget) -> Self {
-    return self.init(device: target as! FBDevice)
+    self.init(device: target as! FBDevice)
   }
 
   required init(device: FBDevice) {
@@ -88,7 +88,7 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func activationStateAsync() async throws -> FBDeviceActivationState {
-    return try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withFBFutureContext(mobileActivationService()) { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
       guard let responseDict = response as? NSDictionary,
         let activationState = responseDict["Value"] as? String
@@ -100,7 +100,7 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func buildDRMHandshakePayloadAsync() async throws -> Data {
-    return try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withFBFutureContext(mobileActivationService()) { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
@@ -112,7 +112,7 @@ public class FBDeviceActivationCommands: NSObject, FBiOSTargetCommand {
   }
 
   private func activationRecordFromDRMHandshakePayloadAsync(_ handshakePayload: Data) async throws -> Data {
-    return try await withFBFutureContext(mobileActivationService()) { connection in
+    try await withFBFutureContext(mobileActivationService()) { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
