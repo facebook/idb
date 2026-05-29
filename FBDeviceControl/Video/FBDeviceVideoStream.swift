@@ -141,10 +141,10 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream {
   // MARK: FBiOSTargetOperation
 
   @objc public var completed: FBFuture<NSNull> {
-    return unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(
+    unsafeBitCast(stopFuture, to: FBFuture<NSNull>.self).onQueue(
       writeQueue,
       respondToCancellation: {
-        return self.stopStreaming()
+        self.stopStreaming()
       })
   }
 }
