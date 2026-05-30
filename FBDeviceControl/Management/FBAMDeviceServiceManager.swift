@@ -57,11 +57,11 @@ private class FBAMDeviceServiceManager_HouseArrest: NSObject, FBFutureContextMan
   }
 
   var contextName: String {
-    return "house_arrest_\(bundleID)"
+    "house_arrest_\(bundleID)"
   }
 
   var isContextSharable: Bool {
-    return false
+    false
   }
 }
 
@@ -76,7 +76,7 @@ public class FBAMDeviceServiceManager: NSObject {
 
   @objc(managerWithAMDevice:serviceTimeout:)
   public class func manager(withAMDevice device: FBAMDevice, serviceTimeout: NSNumber?) -> FBAMDeviceServiceManager {
-    return FBAMDeviceServiceManager(device: device, serviceTimeout: serviceTimeout)
+    FBAMDeviceServiceManager(device: device, serviceTimeout: serviceTimeout)
   }
 
   private init(device: FBAMDevice, serviceTimeout: NSNumber?) {
