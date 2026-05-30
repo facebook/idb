@@ -7,71 +7,62 @@
 
 import Foundation
 
-struct TaskSelectState<Success: Sendable, Failure: Error>: Sendable {
-  var complete = false
-  var tasks: [Task<Success, Failure>]? = []
+extension Task where Success: Sendable {
 
-  mutating func add(_ task: Task<Success, Failure>) -> Task<Success, Failure>? {
-    if var tasks {
-      tasks.append(task)
-      self.tasks = tasks
-      return nil
-    } else {
-      return task
-    }
-  }
-}
-
-extension Task {
-  /// Determine the first task to complete of a sequence of tasks.
+  /// Returns the first task to complete out of a sequence of tasks.
   ///
-  /// - Parameters:
-  ///   - tasks: The running tasks to obtain a result from
-  /// - Returns: The first task to complete from the running tasks
+  /// Once a winner is determined, the remaining tasks are left to finish on
+  /// their own (matching prior behavior). If the surrounding task is
+  /// cancelled before a winner is selected, cancellation is propagated to
+  /// every input task.
+  ///
+  /// - Parameter tasks: The running tasks to await.
+  /// - Returns: The first task to complete, whether by success or failure.
+  /// - Precondition: `tasks` must not be empty.
   public static func select<Tasks: Sequence & Sendable>(
     _ tasks: Tasks
   ) async -> Task<Success, Failure>
-  where Tasks.Element == Task<Success, Failure>, Success: Sendable {
+  where Tasks.Element == Task<Success, Failure> {
 
-    let state = Atomic<TaskSelectState<Success, Failure>>(wrappedValue: .init())
+    // Snapshot once so the cancellation handler observes the exact same set
+    // of tasks that the task group is racing, without sharing mutable state.
+    let snapshot = Array(tasks)
+    precondition(!snapshot.isEmpty, "Task.select requires at least one task")
+
     return await withTaskCancellationHandler {
-      await withUnsafeContinuation { continuation in
-        for task in tasks {
-          Task<Void, Never> {
+      await withTaskGroup(of: Task<Success, Failure>.self) { group in
+        for task in snapshot {
+          group.addTask {
             _ = await task.result
-            let winner = state.sync { state -> Bool in
-              defer { state.complete = true }
-              return !state.complete
-            }
-            if winner {
-              continuation.resume(returning: task)
-            }
+            return task
           }
-          state.sync { state in
-            state.add(task)
-          }?.cancel()
         }
+
+        // The first child observer to finish carries our winner. Leaving the
+        // group implicitly cancels the remaining observer tasks via
+        // structured concurrency; the input tasks themselves are deliberately
+        // left running so callers can decide their fate.
+        return await group.next()!
       }
     } onCancel: {
-
-      let tasks = state.sync { state -> [Task<Success, Failure>] in
-        defer { state.tasks = nil }
-        return state.tasks ?? []
-      }
-      for task in tasks {
+      for task in snapshot {
         task.cancel()
       }
     }
   }
 
-  /// Determine the first task to complete of a list of tasks.
+  /// Returns the first task to complete out of a list of tasks.
   ///
-  /// - Parameters:
-  ///   - tasks: The running tasks to obtain a result from
-  /// - Returns: The first task to complete from the running tasks
+  /// Once a winner is determined, the remaining tasks are left to finish on
+  /// their own (matching prior behavior). If the surrounding task is
+  /// cancelled before a winner is selected, cancellation is propagated to
+  /// every input task.
+  ///
+  /// - Parameter tasks: The running tasks to await.
+  /// - Returns: The first task to complete, whether by success or failure.
   public static func select(
     _ tasks: Task<Success, Failure>...
-  ) async -> Task<Success, Failure> where Success: Sendable {
+  ) async -> Task<Success, Failure> {
     await select(tasks)
   }
 }

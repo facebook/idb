@@ -108,6 +108,48 @@ final class IDBCompanionUtilitiesTransientTests: XCTestCase {
     XCTAssertTrue(task2.isCancelled)
   }
 
+  func testSelectReturnsFailingTaskWhenItFinishesFirst() async {
+    struct FastFailure: Error {}
+    let failingFast = Task<Int, Error> { throw FastFailure() }
+    let slow = Task<Int, Error> {
+      try await Task.sleep(nanoseconds: 5_000_000_000)
+      return 42
+    }
+
+    let winner = await Task.select(failingFast, slow)
+    do {
+      _ = try await winner.value
+      XCTFail("Expected FastFailure")
+    } catch {
+      XCTAssertTrue(error is FastFailure)
+    }
+    slow.cancel()
+  }
+
+  func testSelectWithSingleTaskReturnsThatTask() async {
+    let only = Task<Int, Never> { 7 }
+    let winner = await Task.select(only)
+    let value = await winner.value
+    XCTAssertEqual(value, 7)
+  }
+
+  func testSelectLeavesLosersRunning() async {
+    // Ensures that losing tasks are NOT cancelled when a winner is selected;
+    // callers retain ownership of remaining tasks.
+    let fast = Task<Int, Never> { 1 }
+    let slow = Task<Int, Never> {
+      try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+      return 2
+    }
+
+    let winner = await Task.select(fast, slow)
+    XCTAssertEqual(await winner.value, 1)
+
+    // The slow task should still be running (not cancelled).
+    XCTAssertFalse(slow.isCancelled)
+    XCTAssertEqual(await slow.value, 2)
+  }
+
   // MARK: - Task.timeout Tests
 
   func testTimeoutSucceedsWhenJobCompletesInTime() async throws {
