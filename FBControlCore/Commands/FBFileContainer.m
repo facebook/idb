@@ -292,7 +292,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return self;
 }
 
-#pragma mark FBFileCommands
+#pragma mark FBFileContainerProtocol
 
 - (FBFuture<NSNull *> *)copyFromHost:(NSString *)sourcePath toContainer:(NSString *)destinationPath
 {

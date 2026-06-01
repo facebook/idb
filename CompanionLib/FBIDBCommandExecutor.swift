@@ -497,72 +497,72 @@ import XCTestBootstrap
     }
     if containerType == FBFileContainerKind.application.rawValue {
       return try await target.withFileCommandsForApplicationContainers { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.group.rawValue {
       return try await target.withFileCommandsForGroupContainers { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.media.rawValue {
       return try await target.withFileCommandsForMediaDirectory { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.root.rawValue {
       return try await target.withFileCommandsForRootFilesystem { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
       return try await target.withFileCommandsForProvisioningProfiles { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.mdmProfiles.rawValue {
       return try await target.withFileCommandsForMDMProfiles { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.springboardIcons.rawValue {
       return try await target.withFileCommandsForSpringboardIconLayout { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.wallpaper.rawValue {
       return try await target.withFileCommandsForWallpaper { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.diskImages.rawValue {
       return try await target.withFileCommandsForDiskImages { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.symbols.rawValue {
       return try await target.withFileCommandsForSymbols { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.auxillary.rawValue {
       return try await target.withFileCommandsForAuxillary { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == nil || containerType?.isEmpty == true {
       if target is FBDevice {
         return try await target.withFileCommandsForMediaDirectory { container in
-          try await body(AsyncFileContainerAdapter(container))
+          try await body(container)
         }
       } else {
         return try await target.withFileCommandsForRootFilesystem { container in
-          try await body(AsyncFileContainerAdapter(container))
+          try await body(container)
         }
       }
     }
     return try await target.withFileCommandsForContainerApplication(containerType!) { container in
-      try await body(AsyncFileContainerAdapter(container))
+      try await body(container)
     }
   }
 
