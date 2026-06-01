@@ -157,7 +157,6 @@ final class FBFileContainerTests: XCTestCase {
     var actualFiles = try container.contents(ofDirectory: "dir").`await`() as! [String]
     XCTAssertEqual(expectedFiles, Set(actualFiles))
     expectedFiles = [
-      "xctest",
       "app_custom_set.crash",
       "tree.json",
       "app_default_set.crash",
@@ -297,7 +296,6 @@ final class FBFileContainerTests: XCTestCase {
     var actualFiles = try container.contents(ofDirectory: "bar/dir").`await`() as! [String]
     XCTAssertEqual(expectedFiles, Set(actualFiles))
     expectedFiles = [
-      "xctest",
       "app_custom_set.crash",
       "tree.json",
       "app_default_set.crash",

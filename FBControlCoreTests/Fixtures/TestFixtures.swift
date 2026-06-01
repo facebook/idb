@@ -13,9 +13,6 @@ private class BundleFinder {}
 
 enum TestFixtures {
 
-  static let xctestBinary = Bundle(for: BundleFinder.self)
-    .path(forResource: "xctest", ofType: nil)!
-
   static let assetsdCrashPathWithCustomDeviceSet = Bundle(for: BundleFinder.self)
     .path(forResource: "assetsd_custom_set", ofType: "crash")!
 
