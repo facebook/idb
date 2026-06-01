@@ -50,8 +50,11 @@ public final class FBSimulatorKeychainCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public func clearKeychain() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await clearKeychainImpl()
+    fbFutureFromAsync { [weak self] in
+      guard let self else {
+        throw FBSimulatorError.describe("Simulator deallocated").build()
+      }
+      try await self.clearKeychainImpl()
       return NSNull()
     }
   }
