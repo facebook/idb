@@ -28,14 +28,9 @@ public class FBXCTraceRecordCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: Operations
 
-  public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) -> FBFuture<FBXCTraceRecordOperation> {
-    let result = FBXCTestShimConfiguration.sharedShimConfiguration(with: logger)
-      .onQueue(
-        target.workQueue,
-        fmap: { shim in
-          let op = FBXCTraceRecordOperation.operation(with: self.target, configuration: configuration.withShim(shim), logger: logger)
-          return unsafeBitCast(op, to: FBFuture<AnyObject>.self)
-        })
-    return unsafeBitCast(result, to: FBFuture<FBXCTraceRecordOperation>.self)
+  public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
+    let shim = try await bridgeFBFuture(FBXCTestShimConfiguration.sharedShimConfiguration(with: logger))
+    return try await bridgeFBFuture(
+      FBXCTraceRecordOperation.operation(with: target, configuration: configuration.withShim(shim), logger: logger))
   }
 }
