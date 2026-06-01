@@ -7,13 +7,8 @@
 
 import Foundation
 
-@objc public protocol FBLogOperation: FBiOSTargetOperation {
-
-  @objc var consumer: FBDataConsumer { get }
-}
-
 @objc(FBProcessLogOperation)
-public class FBProcessLogOperation: NSObject, FBLogOperation {
+public class FBProcessLogOperation: NSObject, AsyncLogOperation {
 
   // MARK: Properties
 
@@ -30,7 +25,7 @@ public class FBProcessLogOperation: NSObject, FBLogOperation {
     super.init()
   }
 
-  // MARK: FBiOSTargetOperation
+  // MARK: AsyncLogOperation
 
   @objc public var completed: FBFuture<NSNull> {
     let process = self.process
@@ -42,6 +37,10 @@ public class FBProcessLogOperation: NSObject, FBLogOperation {
           unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
         })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
+  }
+
+  public func waitUntilCompleted() async throws {
+    try await bridgeFBFutureVoid(completed)
   }
 
   // MARK: Class Methods

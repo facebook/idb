@@ -294,7 +294,7 @@ import XCTestBootstrap
     return server
   }
 
-  public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> FBLogOperation {
+  public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any AsyncLogOperation {
     return try await logger.tailToConsumerAsync(consumer)
   }
 

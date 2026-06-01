@@ -11,7 +11,7 @@ import Foundation
 // MARK: - FBDeviceLogOperation
 
 @objc(FBDeviceLogOperation)
-public class FBDeviceLogOperation: NSObject, FBLogOperation {
+public class FBDeviceLogOperation: NSObject, AsyncLogOperation {
   public let consumer: any FBDataConsumer
   private let readCompleted: FBFuture<NSNull>
   private let serviceCompleted: FBMutableFuture<NSNull>
@@ -29,10 +29,14 @@ public class FBDeviceLogOperation: NSObject, FBLogOperation {
     super.init()
   }
 
-  // MARK: FBiOSTargetOperation
+  // MARK: AsyncLogOperation
 
   public var completed: FBFuture<NSNull> {
     unsafeBitCast(serviceCompleted, to: FBFuture<NSNull>.self)
+  }
+
+  public func waitUntilCompleted() async throws {
+    try await bridgeFBFutureVoid(completed)
   }
 }
 
@@ -55,7 +59,7 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - FBLogCommands
 
-  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<any FBLogOperation> {
+  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBDeviceLogOperation> {
     guard let device else {
       return FBFuture(error: FBDeviceControlError().describe("Device is nil").build())
     }
@@ -82,7 +86,7 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
             readCompleted: readCompleted,
             serviceCompleted: teardown
           )
-        }) as! FBFuture<any FBLogOperation>
+        }) as! FBFuture<FBDeviceLogOperation>
   }
 }
 
@@ -91,7 +95,6 @@ public class FBDeviceLogCommands: NSObject, FBiOSTargetCommand {
 extension FBDevice: AsyncLogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any AsyncLogOperation {
-    let operation = try await bridgeFBFuture(logCommands().tailLog(arguments, consumer: consumer))
-    return AsyncLogOperationBridge(operation)
+    return try await bridgeFBFuture(logCommands().tailLog(arguments, consumer: consumer))
   }
 }

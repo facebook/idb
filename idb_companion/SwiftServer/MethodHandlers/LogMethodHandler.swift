@@ -35,24 +35,16 @@ struct LogMethodHandler {
       }
     }
 
+    let operation: any AsyncLogOperation
     if request.source == .companion {
-      let operation: FBLogOperation = try await commandExecutor.tail_companion_logs(consumer)
-      let observeWritingDone = Task<Void, Error> {
-        try await awaitMutableFutureVoid(writingDone)
+      operation = try await commandExecutor.tail_companion_logs(consumer)
+    } else {
+      guard let asyncTarget = target as? any AsyncLogCommands else {
+        throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncLogCommands")
       }
-      let observeOperationCompletion = Task<Void, Error> {
-        try await operation.awaitCompletionAsync()
-      }
-      try await Task.select(observeWritingDone, observeOperationCompletion).value
-      writingDone.resolve(withResult: NSNull())
-      try await operation.cancelAsync()
-      return
+      operation = try await asyncTarget.tailLog(arguments: request.arguments, consumer: consumer)
     }
 
-    guard let asyncTarget = target as? any AsyncLogCommands else {
-      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support AsyncLogCommands")
-    }
-    let operation = try await asyncTarget.tailLog(arguments: request.arguments, consumer: consumer)
     let observeWritingDone = Task<Void, Error> {
       try await awaitMutableFutureVoid(writingDone)
     }

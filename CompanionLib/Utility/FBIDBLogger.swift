@@ -24,7 +24,7 @@ private func removeGlobalLogger(_ logger: FBControlCoreLogger) {
   globalLoggersLock.unlock()
 }
 
-private class FBIDBLoggerOperation: NSObject, FBLogOperation {
+private class FBIDBLoggerOperation: NSObject, AsyncLogOperation {
   let consumer: FBDataConsumer
   let logger: FBControlCoreLogger
   let queue: DispatchQueue
@@ -48,8 +48,8 @@ private class FBIDBLoggerOperation: NSObject, FBLogOperation {
       })
   }
 
-  var operationType: String {
-    "companion_log"
+  func waitUntilCompleted() async throws {
+    try await bridgeFBFutureVoid(completed)
   }
 }
 
@@ -105,9 +105,9 @@ private class FBIDBLoggerOperation: NSObject, FBLogOperation {
     }
   }
 
-  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> FBLogOperation {
+  public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any AsyncLogOperation {
     let queue = FBIDBLogger.loggerQueue
-    return await withCheckedContinuation { (continuation: CheckedContinuation<FBLogOperation, Never>) in
+    return await withCheckedContinuation { (continuation: CheckedContinuation<any AsyncLogOperation, Never>) in
       queue.async {
         let logger = FBControlCoreLoggerFactory.logger(to: consumer)
         let operation = FBIDBLoggerOperation(consumer: consumer, logger: logger, queue: queue)
