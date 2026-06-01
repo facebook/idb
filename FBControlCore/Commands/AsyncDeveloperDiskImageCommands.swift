@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBDeveloperDiskImageCommands`.
 public protocol AsyncDeveloperDiskImageCommands: AnyObject {
 
   func mountedDiskImages() async throws -> [FBDeveloperDiskImage]

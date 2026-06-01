@@ -208,10 +208,10 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
 // MARK: - FBDeviceFileCommands_DiskImages
 
 private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol {
-  let commands: any FBDeveloperDiskImageCommands
+  let commands: any AsyncDeveloperDiskImageCommands
   let queue: DispatchQueue
 
-  init(commands: any FBDeveloperDiskImageCommands, queue: DispatchQueue) {
+  init(commands: any AsyncDeveloperDiskImageCommands, queue: DispatchQueue) {
     self.commands = commands
     self.queue = queue
     super.init()
@@ -234,14 +234,17 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    if !destinationPath.hasPrefix(MountRootPath) {
-      return FBDeviceControlError.describe("\(destinationPath) only moving into mounts is supported.").failFuture() as! FBFuture<NSNull>
+    fbFutureFromAsync { [self] in
+      if !destinationPath.hasPrefix(MountRootPath) {
+        throw FBDeviceControlError.describe("\(destinationPath) only moving into mounts is supported.").build()
+      }
+      let mountableImagesByPath = self.mountableDiskImagesByPath
+      guard let image = mountableImagesByPath[sourcePath] else {
+        throw FBControlCoreError.describe("\(sourcePath) is not one of \(FBCollectionInformation.oneLineDescription(from: mountableImagesByPath.keys.sorted()))").build()
+      }
+      _ = try await commands.mountDiskImage(image)
+      return NSNull()
     }
-    let mountableImagesByPath = self.mountableDiskImagesByPath
-    guard let image = mountableImagesByPath[sourcePath] else {
-      return FBControlCoreError.describe("\(sourcePath) is not one of \(FBCollectionInformation.oneLineDescription(from: mountableImagesByPath.keys.sorted()))").failFuture() as! FBFuture<NSNull>
-    }
-    return commands.mountDiskImage(image).mapReplace(NSNull()) as! FBFuture<NSNull>
   }
 
   func remove(_ path: String) -> FBFuture<NSNull> {
@@ -267,7 +270,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
     guard let image = mountedImages[path] else {
       throw FBDeviceControlError.describe("\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: Array(mountedImages.keys)))").build()
     }
-    try await bridgeFBFutureVoid(commands.unmountDiskImage(image))
+    try await commands.unmountDiskImage(image)
   }
 
   fileprivate func contentsAsync(ofDirectory path: String) async throws -> [String] {
@@ -287,7 +290,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
   }
 
   private func mountedDiskImagesAsync() async throws -> [String: FBDeveloperDiskImage] {
-    let mountedImages = try await bridgeFBFutureArray(commands.mountedDiskImages()) as [FBDeveloperDiskImage]
+    let mountedImages = try await commands.mountedDiskImages()
     var imagesByPath: [String: FBDeveloperDiskImage] = [:]
     for image in mountedImages {
       let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
@@ -485,7 +488,7 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   public func fileCommandsForDiskImages() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any FBDeveloperDiskImageCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
+    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any AsyncDeveloperDiskImageCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
   }
 
   public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {

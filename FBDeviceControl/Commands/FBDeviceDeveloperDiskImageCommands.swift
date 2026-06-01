@@ -29,7 +29,7 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
 }
 
 @objc(FBDeviceDeveloperDiskImageCommands)
-public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
+public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand, AsyncDeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Initializers
@@ -43,45 +43,18 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: FBDeveloperDiskImageCommands (legacy FBFuture entry points)
+  // MARK: AsyncDeveloperDiskImageCommands
 
-  @objc public func mountedDiskImages() -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await mountedDiskImagesAsync() as NSArray
-    }
-  }
-
-  @objc public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<FBDeveloperDiskImage> {
-    fbFutureFromAsync { [self] in
-      try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
-    }
-  }
-
-  @objc public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await unmountDiskImageAsync(diskImage)
-      return NSNull()
-    }
-  }
-
-  @objc public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    FBDeveloperDiskImage.allDiskImages
-  }
-
-  @objc public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
-    fbFutureFromAsync { [self] in
-      try await ensureDeveloperDiskImageIsMountedAsync()
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func mountedDiskImagesAsync() async throws -> [FBDeveloperDiskImage] {
+  public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
     let mountInfo = try await mountInfoToDiskImageAsync()
     return Array(mountInfo.values)
   }
 
-  fileprivate func unmountDiskImageAsync(_ diskImage: FBDeveloperDiskImage) async throws {
+  public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage {
+    try await mountDeveloperDiskImageAsync(diskImage, imageType: DiskImageTypeDeveloper)
+  }
+
+  public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws {
     let entries = try await mountedImageEntriesAsync()
     for mountEntry in entries {
       let mountSignature = mountEntry[ImageSignatureKey] as? Data
@@ -95,7 +68,11 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
     throw FBDeviceControlError.describe("\(diskImage) does not appear to be mounted").build()
   }
 
-  fileprivate func ensureDeveloperDiskImageIsMountedAsync() async throws -> FBDeveloperDiskImage {
+  public func mountableDiskImages() -> [FBDeveloperDiskImage] {
+    return FBDeveloperDiskImage.allDiskImages
+  }
+
+  public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -205,49 +182,40 @@ public class FBDeviceDeveloperDiskImageCommands: NSObject, FBiOSTargetCommand {
   }
 }
 
-// MARK: - FBDevice+FBDeveloperDiskImageCommands
+// MARK: - FBDevice+AsyncDeveloperDiskImageCommands
 
-extension FBDevice: FBDeveloperDiskImageCommands {
+extension FBDevice: AsyncDeveloperDiskImageCommands {
 
-  @objc public func mountedDiskImages() -> FBFuture<NSArray> {
-    do {
-      return try developerDiskImageCommands().mountedDiskImages()
-    } catch {
-      return FBFuture(error: error)
-    }
+  public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
+    try await developerDiskImageCommands().mountedDiskImages()
   }
 
-  @objc(mountDiskImage:)
-  public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<FBDeveloperDiskImage> {
-    do {
-      return try developerDiskImageCommands().mountDiskImage(diskImage)
-    } catch {
-      return FBFuture(error: error)
-    }
+  public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage {
+    try await developerDiskImageCommands().mountDiskImage(diskImage)
   }
 
-  @objc(unmountDiskImage:)
-  public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) -> FBFuture<NSNull> {
-    do {
-      return try developerDiskImageCommands().unmountDiskImage(diskImage)
-    } catch {
-      return FBFuture(error: error)
-    }
+  public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws {
+    try await developerDiskImageCommands().unmountDiskImage(diskImage)
   }
 
-  @objc public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    do {
-      return try developerDiskImageCommands().mountableDiskImages()
-    } catch {
-      return []
-    }
+  public func mountableDiskImages() -> [FBDeveloperDiskImage] {
+    ((try? developerDiskImageCommands())?.mountableDiskImages()) ?? []
   }
+
+  public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
+    try await developerDiskImageCommands().ensureDeveloperDiskImageIsMounted()
+  }
+
+  // MARK: Objective-C entry point
+  //
+  // `ensureDeveloperDiskImageIsMounted` is part of `FBDevice`'s Objective-C interface
+  // (`FBDevice.h`) and is invoked from Objective-C (e.g. `FBDeviceDebugSymbolsCommands.m`),
+  // which cannot call the Swift `async` method above. The `FBFuture` form is retained for
+  // those callers and bridges to the async implementation.
 
   @objc public func ensureDeveloperDiskImageIsMounted() -> FBFuture<FBDeveloperDiskImage> {
-    do {
-      return try developerDiskImageCommands().ensureDeveloperDiskImageIsMounted()
-    } catch {
-      return FBFuture(error: error)
+    fbFutureFromAsync { [self] in
+      try await developerDiskImageCommands().ensureDeveloperDiskImageIsMounted()
     }
   }
 }
