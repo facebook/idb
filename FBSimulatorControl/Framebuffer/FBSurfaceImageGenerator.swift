@@ -73,10 +73,7 @@ public final class FBSurfaceImageGenerator: NSObject, FBFramebufferConsumer {
       scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
     }
 
-    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-      return nil
-    }
-    return cgImage
+    return context.createCGImage(ciImage, from: ciImage.extent)
   }
 
   // MARK: - FBFramebufferConsumer
