@@ -24,7 +24,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
   @objc public let testConfiguration: FBTestConfiguration
 
   @objc public var launchArguments: [String] {
-    return [
+    [
       "-NSTreatUnknownArgumentsAsOpen", "NO",
       "-ApplePersistenceIgnoreState", "YES",
     ]
@@ -45,7 +45,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
   // MARK: NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: Public
@@ -58,7 +58,7 @@ public class FBTestRunnerConfiguration: NSObject, NSCopying {
           .onQueue(
             target.asyncQueue,
             fmap: { (_: AnyObject) -> FBFuture<AnyObject> in
-              return unsafeBitCast(
+              unsafeBitCast(
                 self.prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory),
                 to: FBFuture<AnyObject>.self
               )
