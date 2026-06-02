@@ -243,7 +243,7 @@ public class FBLocationServicesModificationStrategy: FBDefaultsModificationStrat
       .onQueue(
         simulator.workQueue,
         fmap: { (_: Any) -> FBFuture<AnyObject> in
-          return FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
+          FBFuture<AnyObject>.combine(futures).mapReplace(NSNull())
         }
       )
       .onQueue(
