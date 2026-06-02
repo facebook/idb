@@ -21,6 +21,6 @@ import Foundation
   }
 
   public override var description: String {
-    return "Coverage Directory \(coverageDirectory) | Format \(format.rawValue) | Enable Continuous Coverage Collection \(shouldEnableContinuousCoverageCollection)"
+    "Coverage Directory \(coverageDirectory) | Format \(format.rawValue) | Enable Continuous Coverage Collection \(shouldEnableContinuousCoverageCollection)"
   }
 }
