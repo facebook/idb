@@ -91,7 +91,7 @@ import Foundation
   }
 
   @objc var notifierDone: FBFuture<NSNull> {
-    return unsafeBitCast(finished, to: FBFuture<NSNull>.self)
+    unsafeBitCast(finished, to: FBFuture<NSNull>.self)
   }
 
   // MARK: Private
