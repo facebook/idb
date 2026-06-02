@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 private func fullyFormattedXCTestName(_ className: String, _ methodName: String) -> String {
-  return "-[\(className) \(methodName)]"
+  "-[\(className) \(methodName)]"
 }
 
 @objc public final class FBJSONTestReporter: NSObject, FBXCTestReporter {
@@ -176,7 +176,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   }
 
   private static func exceptionEvent(_ reason: String, file: String, line: UInt) -> [String: Any] {
-    return [
+    [
       "lineNumber": line,
       "filePathInProject": file,
       "reason": reason,
@@ -184,7 +184,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   }
 
   private static func beginTestCaseEvent(_ testClass: String, testMethod method: String) -> [String: Any] {
-    return [
+    [
       "event": "begin-test",
       "className": testClass,
       "methodName": method,
@@ -193,21 +193,21 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   }
 
   private static func beginTestSuiteEvent(_ testSuite: String) -> [String: Any] {
-    return [
+    [
       "event": "begin-test-suite",
       "suite": testSuite,
     ]
   }
 
   private static func testOutputEvent(_ output: String) -> [String: Any] {
-    return [
+    [
       "event": "test-output",
       "output": output,
     ]
   }
 
   private static func waitingForDebuggerEvent(_ pid: pid_t) -> [String: Any] {
-    return [
+    [
       "event": "begin-status",
       "pid": pid,
       "level": "Info",
@@ -216,7 +216,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   }
 
   private static func createOCUnitBeginEvent(_ testType: String, testBundlePath: String) -> [String: Any] {
-    return [
+    [
       "event": "begin-ocunit",
       "testType": testType,
       "bundleName": (testBundlePath as NSString).lastPathComponent,
@@ -239,7 +239,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   }
 
   private static func finishedEvent(from summary: FBTestManagerResultSummary) -> [String: Any] {
-    return [
+    [
       "event": "end-test-suite",
       "suite": summary.testSuite,
       "testCaseCount": summary.runCount,
