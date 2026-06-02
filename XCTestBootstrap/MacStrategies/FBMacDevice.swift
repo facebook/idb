@@ -48,7 +48,7 @@ import IOKit
   }()
 
   @objc public static var applicationInstallDirectory: String {
-    return _applicationInstallDirectory
+    _applicationInstallDirectory
   }
 
   @objc public static func fetchInstalledApplications() -> NSMutableDictionary {
@@ -152,15 +152,15 @@ import IOKit
   // MARK: - Paths
 
   @objc public var runtimeRootDirectory: String {
-    return platformRootDirectory
+    platformRootDirectory
   }
 
   @objc public var platformRootDirectory: String {
-    return (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
   }
 
   @objc public var xctestPath: String {
-    return (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
+    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
   }
 
   // MARK: - Device UDID
@@ -268,7 +268,7 @@ import IOKit
   // MARK: - FBiOSTarget
 
   @objc public func requiresBundlesToBeSigned() -> Bool {
-    return false
+    false
   }
 
   @objc public static func commands(with target: FBiOSTarget) -> Self {
@@ -389,23 +389,23 @@ import IOKit
   }
 
   @objc public var uniqueIdentifier: String {
-    return udid
+    udid
   }
 
   @objc public var extendedInformation: [String: Any] {
-    return [:]
+    [:]
   }
 
   @objc public func compare(_ target: FBiOSTarget) -> ComparisonResult {
-    return .orderedSame
+    .orderedSame
   }
 
   @objc public var customDeviceSetPath: String? {
-    return nil
+    nil
   }
 
   @objc public func replacementMapping() -> [String: String] {
-    return [:]
+    [:]
   }
 
   @objc public func environmentAdditions() -> [String: String] {
