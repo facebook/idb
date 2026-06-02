@@ -56,7 +56,7 @@ private let KeyWorkingDirectory = "working_directory"
   }
 
   private static func defaultTimeoutValue() -> TimeInterval {
-    return 500
+    500
   }
 
   // MARK: NSObject
@@ -80,7 +80,7 @@ private let KeyWorkingDirectory = "working_directory"
   }
 
   public override var hash: Int {
-    return (processUnderTestEnvironment as NSDictionary).hash ^ (workingDirectory as NSString).hash ^ (testBundlePath as NSString).hash ^ (testType.rawValue as NSString).hash ^ (waitForDebugger ? 1 : 0) ^ Int(testTimeout)
+    (processUnderTestEnvironment as NSDictionary).hash ^ (workingDirectory as NSString).hash ^ (testBundlePath as NSString).hash ^ (testType.rawValue as NSString).hash ^ (waitForDebugger ? 1 : 0) ^ Int(testTimeout)
   }
 
   // MARK: Public
@@ -110,7 +110,7 @@ private let KeyWorkingDirectory = "working_directory"
   // MARK: JSON
 
   @objc public func jsonSerializableRepresentation() -> [String: Any] {
-    return [
+    [
       KeyEnvironment: processUnderTestEnvironment,
       KeyWorkingDirectory: workingDirectory,
       KeyTestBundlePath: testBundlePath,
@@ -124,7 +124,7 @@ private let KeyWorkingDirectory = "working_directory"
   // MARK: NSCopying
 
   @objc public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 }
 
@@ -136,7 +136,7 @@ private let KeyWorkingDirectory = "working_directory"
   @objc public let runnerAppPath: String?
 
   @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> FBListTestConfiguration {
-    return FBListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
+    FBListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
   }
 
   @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
@@ -146,7 +146,7 @@ private let KeyWorkingDirectory = "working_directory"
   }
 
   @objc public override var testType: FBXCTestType {
-    return FBXCTestType.listTest
+    FBXCTestType.listTest
   }
 
   @objc public override func jsonSerializableRepresentation() -> [String: Any] {
@@ -169,7 +169,7 @@ private let KeyWorkingDirectory = "working_directory"
   @objc public let testArtifactsFilenameGlobs: [String]?
 
   @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> FBTestManagerTestConfiguration {
-    return FBTestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
+    FBTestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
   }
 
   @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
@@ -183,7 +183,7 @@ private let KeyWorkingDirectory = "working_directory"
   }
 
   @objc public override var testType: FBXCTestType {
-    return testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
+    testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
   }
 
   @objc public override func jsonSerializableRepresentation() -> [String: Any] {
@@ -210,7 +210,7 @@ private let KeyWorkingDirectory = "working_directory"
   @objc public let architectures: Set<String>
 
   @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
-    return FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
+    FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
   }
 
   @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) {
@@ -224,7 +224,7 @@ private let KeyWorkingDirectory = "working_directory"
   }
 
   @objc public override var testType: FBXCTestType {
-    return FBXCTestType.logicTest
+    FBXCTestType.logicTest
   }
 
   @objc public override func jsonSerializableRepresentation() -> [String: Any] {
