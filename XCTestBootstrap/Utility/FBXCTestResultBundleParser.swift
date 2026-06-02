@@ -27,7 +27,7 @@ private func readNumberFromDict(_ dict: NSDictionary, _ key: String) -> NSNumber
 }
 
 private func readDoubleFromDict(_ dict: NSDictionary, _ key: String) -> Double {
-  return readNumberFromDict(dict, key).doubleValue
+  readNumberFromDict(dict, key).doubleValue
 }
 
 private func readStringFromDict(_ dict: NSDictionary, _ key: String) -> String {
@@ -45,11 +45,11 @@ private func readArrayFromDict(_ dict: NSDictionary, _ key: String) -> NSArray {
 }
 
 private func unwrapValues(_ wrapped: NSDictionary) -> NSArray? {
-  return wrapped["_values"] as? NSArray
+  wrapped["_values"] as? NSArray
 }
 
 private func unwrapValue(_ wrapped: NSDictionary) -> Any? {
-  return wrapped["_value"]
+  wrapped["_value"]
 }
 
 private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger: FBControlCoreLogger) -> NSArray? {
@@ -304,7 +304,7 @@ private func dateFromString(_ date: String) -> Date? {
   }
 
   private static func parseTestsRef(_ testsRef: NSDictionary, logger: FBControlCoreLogger) -> String {
-    return accessAndUnwrapValue(testsRef, "id", logger) as! String
+    accessAndUnwrapValue(testsRef, "id", logger) as! String
   }
 
   private static func reportSummaries(_ summaries: NSArray?, reporter: FBXCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
