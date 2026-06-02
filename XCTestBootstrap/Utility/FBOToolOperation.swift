@@ -45,10 +45,9 @@ import Foundation
     var libs: [String] = []
     let nsString = otoolOutput as NSString
     regex.enumerateMatches(in: otoolOutput, options: [], range: NSRange(location: 0, length: nsString.length)) { result, _, _ in
-      if let result {
-        let range = result.range(at: 1)
-        libs.append(nsString.substring(with: range))
-      }
+      guard let result else { return }
+      let range = result.range(at: 1)
+      libs.append(nsString.substring(with: range))
     }
     return libs
   }
