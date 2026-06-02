@@ -51,12 +51,12 @@ private func directionString(from direction: FBSimulatorHIDDirection) -> String?
 }
 
 private func shouldLogHIDEventDetails() -> Bool {
-  return ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"]?.boolValue ?? false
+  ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"]?.boolValue ?? false
 }
 
 private extension String {
   var boolValue: Bool {
-    return (self as NSString).boolValue
+    (self as NSString).boolValue
   }
 }
 
@@ -72,7 +72,7 @@ private class FBSimulatorHIDEvent_Composite: NSObject, FBSimulatorHIDEventCompos
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return performEvents(events, on: hid)
+    performEvents(events, on: hid)
   }
 
   private func performEvents(_ events: [any FBSimulatorHIDEventProtocol], on hid: FBSimulatorHID) -> FBFuture<NSNull> {
@@ -94,11 +94,11 @@ private class FBSimulatorHIDEvent_Composite: NSObject, FBSimulatorHIDEventCompos
   }
 
   override var description: String {
-    return "Composite \(FBCollectionInformation.oneLineDescription(from: events))"
+    "Composite \(FBCollectionInformation.oneLineDescription(from: events))"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -107,7 +107,7 @@ private class FBSimulatorHIDEvent_Composite: NSObject, FBSimulatorHIDEventCompos
   }
 
   override var hash: Int {
-    return (events as NSArray).hash
+    (events as NSArray).hash
   }
 }
 
@@ -127,11 +127,11 @@ private class FBSimulatorHIDEvent_Touch: NSObject, FBSimulatorHIDEventPayload {
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return hid.sendEvent(payload(for: hid))
+    hid.sendEvent(payload(for: hid))
   }
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.indigo.touchScreenSize(hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, x: x, y: y)
+    hid.indigo.touchScreenSize(hid.mainScreenSize, screenScale: hid.mainScreenScale, direction: direction, x: x, y: y)
   }
 
   override var description: String {
@@ -142,7 +142,7 @@ private class FBSimulatorHIDEvent_Touch: NSObject, FBSimulatorHIDEventPayload {
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -151,7 +151,7 @@ private class FBSimulatorHIDEvent_Touch: NSObject, FBSimulatorHIDEventPayload {
   }
 
   override var hash: Int {
-    return Int(direction.rawValue) | (Int(x) ^ Int(y))
+    Int(direction.rawValue) | (Int(x) ^ Int(y))
   }
 }
 
@@ -169,11 +169,11 @@ private class FBSimulatorHIDEvent_Button: NSObject, FBSimulatorHIDEventPayload {
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return hid.sendEvent(payload(for: hid))
+    hid.sendEvent(payload(for: hid))
   }
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.indigo.button(with: type, button: button)
+    hid.indigo.button(with: type, button: button)
   }
 
   override var description: String {
@@ -184,7 +184,7 @@ private class FBSimulatorHIDEvent_Button: NSObject, FBSimulatorHIDEventPayload {
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -193,7 +193,7 @@ private class FBSimulatorHIDEvent_Button: NSObject, FBSimulatorHIDEventPayload {
   }
 
   override var hash: Int {
-    return Int(type.rawValue) ^ Int(button.rawValue)
+    Int(type.rawValue) ^ Int(button.rawValue)
   }
 
   class func buttonString(from button: FBSimulatorHIDButton) -> String? {
@@ -228,11 +228,11 @@ private class FBSimulatorHIDEvent_Keyboard: NSObject, FBSimulatorHIDEventPayload
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return hid.sendEvent(payload(for: hid))
+    hid.sendEvent(payload(for: hid))
   }
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.indigo.keyboard(with: direction, keyCode: keyCode)
+    hid.indigo.keyboard(with: direction, keyCode: keyCode)
   }
 
   override var description: String {
@@ -243,7 +243,7 @@ private class FBSimulatorHIDEvent_Keyboard: NSObject, FBSimulatorHIDEventPayload
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -252,7 +252,7 @@ private class FBSimulatorHIDEvent_Keyboard: NSObject, FBSimulatorHIDEventPayload
   }
 
   override var hash: Int {
-    return Int(direction.rawValue) ^ Int(keyCode)
+    Int(direction.rawValue) ^ Int(keyCode)
   }
 }
 
@@ -272,11 +272,11 @@ private class FBSimulatorHIDEvent_TwoFingerTouch: NSObject, FBSimulatorHIDEventP
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return hid.sendEvent(payload(for: hid))
+    hid.sendEvent(payload(for: hid))
   }
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.indigo.twoFingerTouchScreenSize(
+    hid.indigo.twoFingerTouchScreenSize(
       hid.mainScreenSize,
       screenScale: hid.mainScreenScale,
       direction: direction,
@@ -292,7 +292,7 @@ private class FBSimulatorHIDEvent_TwoFingerTouch: NSObject, FBSimulatorHIDEventP
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -303,7 +303,7 @@ private class FBSimulatorHIDEvent_TwoFingerTouch: NSObject, FBSimulatorHIDEventP
   }
 
   override var hash: Int {
-    return Int(direction.rawValue) ^ Int(finger1.x) ^ Int(finger1.y) ^ Int(finger2.x) ^ Int(finger2.y)
+    Int(direction.rawValue) ^ Int(finger1.x) ^ Int(finger1.y) ^ Int(finger2.x) ^ Int(finger2.y)
   }
 }
 
@@ -319,15 +319,15 @@ private class FBSimulatorHIDEvent_Delay: NSObject, FBSimulatorHIDEventDelay {
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
-    return FBFuture(delay: duration, future: FBFuture<NSNull>.empty())
+    FBFuture(delay: duration, future: FBFuture<NSNull>.empty())
   }
 
   override var description: String {
-    return "Delay for \(duration)"
+    "Delay for \(duration)"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -336,7 +336,7 @@ private class FBSimulatorHIDEvent_Delay: NSObject, FBSimulatorHIDEventDelay {
   }
 
   override var hash: Int {
-    return Int(duration)
+    Int(duration)
   }
 }
 
@@ -352,7 +352,7 @@ private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEve
   }
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.purple.orientationEvent(orientation)
+    hid.purple.orientationEvent(orientation)
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
@@ -380,11 +380,11 @@ private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEve
   }
 
   override var description: String {
-    return "Set Orientation \(FBSimulatorHIDEvent_DeviceOrientation.orientationString(from: orientation))"
+    "Set Orientation \(FBSimulatorHIDEvent_DeviceOrientation.orientationString(from: orientation))"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -393,7 +393,7 @@ private class FBSimulatorHIDEvent_DeviceOrientation: NSObject, FBSimulatorHIDEve
   }
 
   override var hash: Int {
-    return Int(orientation.rawValue)
+    Int(orientation.rawValue)
   }
 }
 
@@ -404,7 +404,7 @@ private let shakeDarwinNotification = "com.apple.UIKit.SimulatorShake"
 private class FBSimulatorHIDEvent_Shake: NSObject, FBSimulatorHIDEventPayload {
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return Data()
+    Data()
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
@@ -417,19 +417,19 @@ private class FBSimulatorHIDEvent_Shake: NSObject, FBSimulatorHIDEventPayload {
   }
 
   override var description: String {
-    return "Shake"
+    "Shake"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
-    return object is FBSimulatorHIDEvent_Shake
+    object is FBSimulatorHIDEvent_Shake
   }
 
   override var hash: Int {
-    return shakeDarwinNotification.hashValue
+    shakeDarwinNotification.hashValue
   }
 }
 
@@ -440,7 +440,7 @@ private let inCallStatusBarNotification = "com.apple.iphonesimulator.toggleincal
 private class FBSimulatorHIDEvent_ToggleInCallStatusBar: NSObject, FBSimulatorHIDEventPayload {
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return Data()
+    Data()
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
@@ -453,19 +453,19 @@ private class FBSimulatorHIDEvent_ToggleInCallStatusBar: NSObject, FBSimulatorHI
   }
 
   override var description: String {
-    return "Toggle In-Call Status Bar"
+    "Toggle In-Call Status Bar"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
-    return object is FBSimulatorHIDEvent_ToggleInCallStatusBar
+    object is FBSimulatorHIDEvent_ToggleInCallStatusBar
   }
 
   override var hash: Int {
-    return inCallStatusBarNotification.hashValue
+    inCallStatusBarNotification.hashValue
   }
 }
 
@@ -474,7 +474,7 @@ private class FBSimulatorHIDEvent_ToggleInCallStatusBar: NSObject, FBSimulatorHI
 private class FBSimulatorHIDEvent_LockDevice: NSObject, FBSimulatorHIDEventPayload {
 
   func payload(for hid: FBSimulatorHID) -> Data {
-    return hid.purple.lockDeviceEvent()
+    hid.purple.lockDeviceEvent()
   }
 
   func sendOn(hid: FBSimulatorHID) -> FBFuture<NSNull> {
@@ -487,19 +487,19 @@ private class FBSimulatorHIDEvent_LockDevice: NSObject, FBSimulatorHIDEventPaylo
   }
 
   override var description: String {
-    return "Lock Device"
+    "Lock Device"
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   override func isEqual(_ object: Any?) -> Bool {
-    return object is FBSimulatorHIDEvent_LockDevice
+    object is FBSimulatorHIDEvent_LockDevice
   }
 
   override var hash: Int {
-    return 1014
+    1014
   }
 }
 
@@ -512,64 +512,64 @@ public final class FBSimulatorHIDEvent: NSObject {
 
   @objc(touchDownAtX:y:)
   public class func touchDownAt(x: Double, y: Double) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Touch(direction: .down, x: x, y: y)
+    FBSimulatorHIDEvent_Touch(direction: .down, x: x, y: y)
   }
 
   @objc(touchUpAtX:y:)
   public class func touchUpAt(x: Double, y: Double) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Touch(direction: .up, x: x, y: y)
+    FBSimulatorHIDEvent_Touch(direction: .up, x: x, y: y)
   }
 
   @objc(buttonDown:)
   public class func buttonDown(_ button: FBSimulatorHIDButton) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Button(direction: .down, button: button)
+    FBSimulatorHIDEvent_Button(direction: .down, button: button)
   }
 
   @objc(buttonUp:)
   public class func buttonUp(_ button: FBSimulatorHIDButton) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Button(direction: .up, button: button)
+    FBSimulatorHIDEvent_Button(direction: .up, button: button)
   }
 
   @objc(keyDown:)
   public class func keyDown(_ keyCode: UInt32) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Keyboard(direction: .down, keyCode: keyCode)
+    FBSimulatorHIDEvent_Keyboard(direction: .down, keyCode: keyCode)
   }
 
   @objc(keyUp:)
   public class func keyUp(_ keyCode: UInt32) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Keyboard(direction: .up, keyCode: keyCode)
+    FBSimulatorHIDEvent_Keyboard(direction: .up, keyCode: keyCode)
   }
 
   @objc(setOrientation:)
   public class func setOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_DeviceOrientation(orientation: orientation)
+    FBSimulatorHIDEvent_DeviceOrientation(orientation: orientation)
   }
 
   @objc(shake)
   public class func shake() -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_Shake()
+    FBSimulatorHIDEvent_Shake()
   }
 
   @objc(lockDevice)
   public class func lockDevice() -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_LockDevice()
+    FBSimulatorHIDEvent_LockDevice()
   }
 
   @objc(toggleInCallStatusBar)
   public class func toggleInCallStatusBar() -> any FBSimulatorHIDEventPayload {
-    return FBSimulatorHIDEvent_ToggleInCallStatusBar()
+    FBSimulatorHIDEvent_ToggleInCallStatusBar()
   }
 
   // MARK: - Multiple Payload Events
 
   @objc(eventWithEvents:)
   public class func with(events: [any FBSimulatorHIDEventProtocol]) -> any FBSimulatorHIDEventComposite {
-    return FBSimulatorHIDEvent_Composite(events: events)
+    FBSimulatorHIDEvent_Composite(events: events)
   }
 
   @objc(tapAtX:y:)
   public class func tapAt(x: Double, y: Double) -> any FBSimulatorHIDEventComposite {
-    return with(events: [
+    with(events: [
       touchDownAt(x: x, y: y),
       touchUpAt(x: x, y: y),
     ])
@@ -577,7 +577,7 @@ public final class FBSimulatorHIDEvent: NSObject {
 
   @objc(tapAtX:y:duration:)
   public class func tapAt(x: Double, y: Double, duration: Double) -> any FBSimulatorHIDEventComposite {
-    return with(events: [
+    with(events: [
       touchDownAt(x: x, y: y),
       delay(duration),
       touchUpAt(x: x, y: y),
@@ -586,7 +586,7 @@ public final class FBSimulatorHIDEvent: NSObject {
 
   @objc(shortButtonPress:)
   public class func shortButtonPress(_ button: FBSimulatorHIDButton) -> any FBSimulatorHIDEventComposite {
-    return with(events: [
+    with(events: [
       buttonDown(button),
       buttonUp(button),
     ])
@@ -594,7 +594,7 @@ public final class FBSimulatorHIDEvent: NSObject {
 
   @objc(shortKeyPress:)
   public class func shortKeyPress(_ keyCode: UInt32) -> any FBSimulatorHIDEventComposite {
-    return with(events: [
+    with(events: [
       keyDown(keyCode),
       keyUp(keyCode),
     ])
@@ -681,6 +681,6 @@ public final class FBSimulatorHIDEvent: NSObject {
 
   @objc(delay:)
   public class func delay(_ duration: Double) -> any FBSimulatorHIDEventDelay {
-    return FBSimulatorHIDEvent_Delay(duration: duration)
+    FBSimulatorHIDEvent_Delay(duration: duration)
   }
 }
