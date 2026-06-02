@@ -15,7 +15,7 @@ extension FBSimulatorConfiguration {
 
   @objc(newestAvailableOSForDevice:)
   public class func newestAvailableOS(forDevice device: FBDeviceType) -> FBOSVersion? {
-    return FBSimulatorConfiguration.supportedOSVersions(forDevice: device).last
+    FBSimulatorConfiguration.supportedOSVersions(forDevice: device).last
   }
 
   @objc
@@ -26,7 +26,7 @@ extension FBSimulatorConfiguration {
 
   @objc(oldestAvailableOSForDevice:)
   public class func oldestAvailableOS(forDevice device: FBDeviceType) -> FBOSVersion? {
-    return FBSimulatorConfiguration.supportedOSVersions(forDevice: device).first
+    FBSimulatorConfiguration.supportedOSVersions(forDevice: device).first
   }
 
   @objc
@@ -79,12 +79,12 @@ extension FBSimulatorConfiguration {
 
   @objc
   public class func supportedOSVersions() -> [FBOSVersion] {
-    return osVersions(forRuntimes: supportedRuntimes())
+    osVersions(forRuntimes: supportedRuntimes())
   }
 
   @objc(supportedOSVersionsForDevice:)
   public class func supportedOSVersions(forDevice device: FBDeviceType) -> [FBOSVersion] {
-    return osVersions(forRuntimes: supportedRuntimes(forDevice: device))
+    osVersions(forRuntimes: supportedRuntimes(forDevice: device))
   }
 
   @objc(allAvailableDefaultConfigurationsWithLogger:)
@@ -178,22 +178,22 @@ extension FBSimulatorConfiguration {
   // MARK: - Private
 
   private class func osVersions(forRuntimes runtimes: [SimRuntime]) -> [FBOSVersion] {
-    return runtimes.map { runtime in
+    runtimes.map { runtime in
       let name = FBOSVersionName(rawValue: runtime.name!)
       return FBiOSTargetConfiguration.nameToOSVersion[name] ?? FBOSVersion.generic(withName: runtime.name!)
     }
   }
 
   private class func supportedRuntimes() -> [SimRuntime] {
-    return FBSimulatorServiceContext.sharedServiceContext().supportedRuntimes()
+    FBSimulatorServiceContext.sharedServiceContext().supportedRuntimes()
   }
 
   private class func supportedDeviceTypes() -> [SimDeviceType] {
-    return FBSimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
+    FBSimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
   }
 
   private class func supportedRuntimes(forDevice device: FBDeviceType) -> [SimRuntime] {
-    return supportedRuntimes()
+    supportedRuntimes()
       .filter { runtime in
         (runtime.supportedProductFamilyIDs as! [NSNumber]).contains(NSNumber(value: device.family.rawValue))
       }
@@ -205,7 +205,7 @@ extension FBSimulatorConfiguration {
   }
 
   private var runtimePredicate: NSPredicate {
-    return NSCompoundPredicate(andPredicateWithSubpredicates: [
+    NSCompoundPredicate(andPredicateWithSubpredicates: [
       FBSimulatorConfiguration.runtimeProductFamilyPredicate(device),
       FBSimulatorConfiguration.runtimeNamePredicate(os),
       runtimeAvailabilityPredicate,
@@ -213,28 +213,28 @@ extension FBSimulatorConfiguration {
   }
 
   private class func runtimeProductFamilyPredicate(_ device: FBDeviceType) -> NSPredicate {
-    return NSPredicate { obj, _ in
+    NSPredicate { obj, _ in
       guard let runtime = obj as? SimRuntime else { return false }
       return (runtime.supportedProductFamilyIDs as! [NSNumber]).contains(NSNumber(value: device.family.rawValue))
     }
   }
 
   private class func runtimeNamePredicate(_ os: FBOSVersion) -> NSPredicate {
-    return NSPredicate { obj, _ in
+    NSPredicate { obj, _ in
       guard let runtime = obj as? SimRuntime else { return false }
       return runtime.name == os.name.rawValue
     }
   }
 
   private var runtimeAvailabilityPredicate: NSPredicate {
-    return NSPredicate { obj, _ in
+    NSPredicate { obj, _ in
       guard let runtime = obj as? SimRuntime else { return false }
       return runtime.available
     }
   }
 
   private class func deviceTypePredicate(_ device: FBDeviceType) -> NSPredicate {
-    return NSPredicate { obj, _ in
+    NSPredicate { obj, _ in
       guard let deviceType = obj as? SimDeviceType else { return false }
       return deviceType.name == device.model.rawValue
     }
