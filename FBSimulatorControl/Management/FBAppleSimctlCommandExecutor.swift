@@ -23,7 +23,7 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
 
   @objc(executorForSimulator:)
   public class func executor(for simulator: FBSimulator) -> FBAppleSimctlCommandExecutor {
-    return FBAppleSimctlCommandExecutor(
+    FBAppleSimctlCommandExecutor(
       deviceSetPath: simulator.set.deviceSet.setPath,
       deviceUUID: simulator.udid,
       logger: simulator.logger!.withName("simctl"))
@@ -31,7 +31,7 @@ public final class FBAppleSimctlCommandExecutor: NSObject {
 
   @objc(executorForDeviceSet:)
   public class func executor(for set: FBSimulatorSet) -> FBAppleSimctlCommandExecutor {
-    return FBAppleSimctlCommandExecutor(
+    FBAppleSimctlCommandExecutor(
       deviceSetPath: set.deviceSet.setPath,
       deviceUUID: nil,
       logger: set.logger!)
