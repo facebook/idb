@@ -24,7 +24,7 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
 
   @objc(videoWithSimctlExecutor:filePath:logger:)
   public class func video(withSimctlExecutor simctlExecutor: FBAppleSimctlCommandExecutor, filePath: String, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
-    return FBSimulatorVideoSimCtl(simctlExecutor: simctlExecutor, filePath: filePath, logger: logger)
+    FBSimulatorVideoSimCtl(simctlExecutor: simctlExecutor, filePath: filePath, logger: logger)
   }
 
   init(filePath: String, logger: any FBControlCoreLogger) {
@@ -51,7 +51,7 @@ public class FBSimulatorVideo: NSObject, FBiOSTargetOperation {
 
   @objc
   public var completed: FBFuture<NSNull> {
-    return unsafeBitCast(
+    unsafeBitCast(
       completedFuture.onQueue(
         queue,
         respondToCancellation: { [weak self] in
@@ -168,8 +168,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
   private static let simctlResolveFileTimeout: TimeInterval = 10
 
   private class func confirmFileHasBeenWritten(_ filePath: String, queue: DispatchQueue, logger: any FBControlCoreLogger) -> FBFuture<NSNull> {
-    return
-      (FBFuture<AnyObject>
+    (FBFuture<AnyObject>
       .onQueue(
         queue,
         resolveWhen: {
@@ -186,8 +185,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
   }
 
   private func simctlVersionNumber() -> FBFuture<AnyObject> {
-    return
-      ((((FBProcessBuilder<NSNull, AnyObject, AnyObject>
+    ((((FBProcessBuilder<NSNull, AnyObject, AnyObject>
       .withLaunchPath("/usr/bin/what", arguments: ["/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl"]) as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
       .withStdOutInMemoryAsString() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
       .withStdErrToDevNull() as! FBProcessBuilder<NSNull, AnyObject, AnyObject>)
@@ -202,7 +200,7 @@ private class FBSimulatorVideoSimCtl: FBSimulatorVideo {
             return FBFuture(result: NSDecimalNumber.zero)
           }
           let matches = regex.matches(in: output, options: [], range: NSRange(location: 0, length: output.count))
-          if matches.count < 1 {
+          if matches.isEmpty {
             self?.logger.log("Couldn't find simctl version from: \(output), return 0.0")
             return FBFuture(result: NSDecimalNumber.zero)
           }
