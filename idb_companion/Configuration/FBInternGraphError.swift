@@ -23,7 +23,7 @@ public enum FBInternGraphError: Error, LocalizedError {
 }
 
 /// Internal library error that should not be propagated to user directly.
-/// The cause is unobvious so we will just user `defaultValue` of request. Most likely some configuration or netwokring problems
+/// The cause is unobvious so we will just use `defaultValue` of request. Most likely some configuration or networking problems
 enum FBInternGraphInternalError: Error, CustomStringConvertible {
   case sitevarNotFoundInResult
   case notReceiveErrorOrData
