@@ -20,13 +20,13 @@ public final class FBSimulatorImage: NSObject {
   private let writeQueue: DispatchQueue
   private let imageGenerator: FBSurfaceImageGenerator
   private let framebuffer: FBFramebuffer
-  private var consumerUUID: UUID
+  private let consumerUUID: UUID
 
   // MARK: - Initializers
 
   @objc(imageWithFramebuffer:logger:)
   public class func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> FBSimulatorImage {
-    return FBSimulatorImage(framebuffer: framebuffer, logger: logger)
+    FBSimulatorImage(framebuffer: framebuffer, logger: logger)
   }
 
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
@@ -49,7 +49,7 @@ public final class FBSimulatorImage: NSObject {
         logger.log("Surface \(surface) immediately available, adding to Image Generator \(imageGenerator)")
         imageGenerator.didChange(surface)
       } else {
-        logger.log("Surface for ImageGenerator not immedately available")
+        logger.log("Surface for ImageGenerator not immediately available")
       }
     }
 
@@ -62,22 +62,22 @@ public final class FBSimulatorImage: NSObject {
 
   @objc
   public func jpegImageData() throws -> Data {
-    return try FBSimulatorImage.jpegImageData(from: image())
+    try FBSimulatorImage.jpegImageData(from: image())
   }
 
   @objc
   public func pngImageData() throws -> Data {
-    return try FBSimulatorImage.pngImageData(from: image())
+    try FBSimulatorImage.pngImageData(from: image())
   }
 
   // MARK: - Private
 
   private class func jpegImageData(from image: CGImage?) throws -> Data {
-    return try imageData(from: image, type: .jpeg)
+    try imageData(from: image, type: .jpeg)
   }
 
   private class func pngImageData(from image: CGImage?) throws -> Data {
-    return try imageData(from: image, type: .png)
+    try imageData(from: image, type: .png)
   }
 
   private class func imageData(from image: CGImage?, type: UTType) throws -> Data {
