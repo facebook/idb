@@ -36,7 +36,7 @@ public class FBSimulatorBootConfiguration: NSObject, NSCopying {
   // MARK: - NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: - NSObject
@@ -49,11 +49,11 @@ public class FBSimulatorBootConfiguration: NSObject, NSCopying {
   }
 
   public override var hash: Int {
-    return Int(bitPattern: options.rawValue) ^ (environment as NSDictionary).hash
+    Int(bitPattern: options.rawValue) ^ (environment as NSDictionary).hash
   }
 
   public override var description: String {
-    return String(
+    String(
       format: "Boot Environment %@ | Options %@",
       FBCollectionInformation.oneLineDescription(from: environment as [String: Any]),
       FBCollectionInformation.oneLineDescription(from: Self.stringsFromBootOptions(options) as [Any])
