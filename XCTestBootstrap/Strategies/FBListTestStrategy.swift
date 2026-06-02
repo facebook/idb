@@ -86,7 +86,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
   }
 
   @objc public func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
-    return FBListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
+    FBListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 
   // MARK: Private
@@ -161,7 +161,7 @@ private final class FBListTestStrategy_ReporterWrapped: NSObject, FBXCTestRunner
         .onQueue(
           queue,
           fmap: { _ -> FBFuture<AnyObject> in
-            return unsafeBitCast(
+            unsafeBitCast(
               FBListTestStrategy.onQueue(queue, confirmExit: exitCode, closingOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer),
               to: FBFuture<AnyObject>.self
             )
