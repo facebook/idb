@@ -213,7 +213,7 @@ private final class FBLogicTestRunOutputs: NSObject {
             let timedOut = combined.onQueue(
               queue, timeout: EndOfFileFromStopReadingTimeout,
               handler: {
-                return FBControlCoreError.describe("Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited").failFuture()
+                FBControlCoreError.describe("Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited").failFuture()
               })
             return timedOut.chainReplace(unsafeBitCast(exitCode, to: FBFuture<AnyObject>.self))
           }
