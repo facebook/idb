@@ -30,10 +30,10 @@ import Foundation
     let result = future.onQueue(
       queue,
       respondToCancellation: { () -> FBFuture<NSNull> in
-        if let device {
-          return device.killApplication(withBundleID: bundleID)
+        guard let device else {
+          return FBFuture(result: NSNull())
         }
-        return FBFuture(result: NSNull())
+        return device.killApplication(withBundleID: bundleID)
       })
     return unsafeBitCast(result, to: FBFuture<NSNull>.self)
   }
