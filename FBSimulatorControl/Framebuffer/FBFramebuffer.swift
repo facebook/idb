@@ -129,11 +129,11 @@ public final class FBFramebuffer: NSObject, @unchecked Sendable {
 
   @objc
   public func currentStats() -> FBFramebufferStats {
-    return stats
+    stats
   }
 
   @objc public var statsStartTime: CFTimeInterval {
-    return statsTimer.startTime
+    statsTimer.startTime
   }
 
   // MARK: - Private
