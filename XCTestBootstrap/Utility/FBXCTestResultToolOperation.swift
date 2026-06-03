@@ -34,7 +34,7 @@ private let JPEG = "public.jpeg"
         .onQueue(
           queue,
           map: { task -> AnyObject in
-            return task
+            task
           }),
       to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
     )
