@@ -344,7 +344,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorSettingsCommands {
-    return FBSimulatorSettingsCommands(simulator: target as! FBSimulator)
+    FBSimulatorSettingsCommands(simulator: target as! FBSimulator)
   }
 
   internal init(simulator: FBSimulator) {
@@ -1061,7 +1061,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   ]
 
   internal class func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
-    return approvals.intersection(Set(tccDatabaseMapping.keys))
+    approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
   fileprivate func grantAccessInTCCDatabaseAsync(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
@@ -1187,7 +1187,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   }
 
   internal class func magicDeeplinkKey(forScheme scheme: String) -> String {
-    return "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
+    "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
   }
 }
 
@@ -1204,7 +1204,7 @@ extension FBSimulator: AsyncSettingsCommands {
   }
 
   public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
-    return try await settingsCommands().getCurrentPreferenceAsync(name, domain: domain)
+    try await settingsCommands().getCurrentPreferenceAsync(name, domain: domain)
   }
 
   public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
@@ -1268,7 +1268,7 @@ extension FBSimulator: AsyncSettingsCommands {
   }
 
   public func listProxy() async throws -> String {
-    return try await bridgeFBFuture(settingsCommands().listProxy()) as String
+    try await bridgeFBFuture(settingsCommands().listProxy()) as String
   }
 
   public func setDnsServers(_ servers: [String]) async throws {
@@ -1280,7 +1280,7 @@ extension FBSimulator: AsyncSettingsCommands {
   }
 
   public func listDns() async throws -> String {
-    return try await bridgeFBFuture(settingsCommands().listDns()) as String
+    try await bridgeFBFuture(settingsCommands().listDns()) as String
   }
 
   public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
@@ -1292,6 +1292,6 @@ extension FBSimulator: AsyncSettingsCommands {
   }
 
   public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
-    return try await bridgeFBFuture(settingsCommands().listHealthAuthorization(forBundleID: bundleID)) as String
+    try await bridgeFBFuture(settingsCommands().listHealthAuthorization(forBundleID: bundleID)) as String
   }
 }
