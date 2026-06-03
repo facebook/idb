@@ -20,7 +20,7 @@ public final class FBSimulatorInflationStrategy: NSObject {
 
   @objc(strategyForSet:)
   public class func strategy(for set: FBSimulatorSet) -> FBSimulatorInflationStrategy {
-    return FBSimulatorInflationStrategy(set: set)
+    FBSimulatorInflationStrategy(set: set)
   }
 
   private init(set: FBSimulatorSet) {
