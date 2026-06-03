@@ -22,7 +22,7 @@ public final class FBSimulatorVideoRecordingCommands: NSObject, FBiOSTargetComma
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorVideoRecordingCommands {
-    return FBSimulatorVideoRecordingCommands(simulator: target as! FBSimulator)
+    FBSimulatorVideoRecordingCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
