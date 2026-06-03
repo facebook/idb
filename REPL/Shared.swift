@@ -9,14 +9,8 @@ import ArgumentParser
 import Foundation
 
 struct SharedOptions: ParsableArguments {
-  @Option(name: .long, help: "Simulator identifier.")
-  var udid: String
-
-  @Option(name: .long, help: "Path to a custom Simulator device set.")
-  var deviceSetPath: String?
-
-  @Option(name: .long, help: "Path to the idb-xctest .app bundle.")
-  var idbXctestPath: String
+  @Option(name: .long, help: "Path to the idb_companion gRPC Unix domain socket.")
+  var companionSocket: String
 
   @Option(name: .long, help: "Path to the test bundle.")
   var testBundlePath: String
@@ -107,77 +101,4 @@ func resolveTargetTriple(platform: Platform) throws -> String {
 
   let version = output.trimmingCharacters(in: .whitespacesAndNewlines)
   return platform.targetTriple(version: version)
-}
-
-func launchAndWaitForPid(options: SharedOptions) throws -> (Process, Int32) {
-  var arguments = [
-    "ios", "repl", "logic",
-    "--bundle-path", options.testBundlePath,
-    "--udid", options.udid,
-  ]
-
-  if let deviceSetPath = options.deviceSetPath {
-    arguments += ["--device-set-path", deviceSetPath]
-  }
-
-  guard let appBundle = Bundle(path: options.idbXctestPath),
-    let executableURL = appBundle.executableURL
-  else {
-    throw ValidationError("Failed to load app bundle or find executable at '\(options.idbXctestPath)'")
-  }
-
-  let process = Process()
-  process.executableURL = executableURL
-  process.arguments = arguments
-
-  process.standardInput = FileHandle.nullDevice
-  let pipe = Pipe()
-  process.standardOutput = pipe
-
-  try process.run()
-
-  let fileHandle = pipe.fileHandleForReading
-
-  while process.isRunning {
-    guard let line = readLine(from: fileHandle) else {
-      continue
-    }
-
-    if let testPid = parsePid(from: line) {
-      return (process, testPid)
-    }
-  }
-
-  throw ValidationError("idb-xctest exited without reporting a PID")
-}
-
-func sendCommand(_ command: String, to writeHandle: FileHandle, readingFrom readHandle: FileHandle? = nil) {
-  writeHandle.write(Data((command + "\n").utf8))
-  if let readHandle {
-    _ = readLine(from: readHandle)
-  }
-}
-
-func readLine(from fileHandle: FileHandle) -> String? {
-  var lineData = Data()
-  while true {
-    let byte = fileHandle.readData(ofLength: 1)
-    if byte.isEmpty {
-      return lineData.isEmpty ? nil : String(data: lineData, encoding: .utf8)
-    }
-    if byte[0] == 0x0A {
-      return String(data: lineData, encoding: .utf8)
-    }
-    lineData.append(byte)
-  }
-}
-
-func parsePid(from line: String) -> Int32? {
-  guard let data = line.data(using: .utf8),
-    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-    let pid = json["pid"] as? Int32
-  else {
-    return nil
-  }
-  return pid
 }

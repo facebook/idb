@@ -8,7 +8,7 @@
 import ArgumentParser
 
 @main
-struct TestRepl: ParsableCommand {
+struct TestRepl: AsyncParsableCommand {
   static var configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",

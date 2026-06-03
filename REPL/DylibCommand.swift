@@ -10,8 +10,12 @@
 
 import ArgumentParser
 import Foundation
+import GRPC
+import IDBGRPCSwift
+import NIOCore
+import NIOPosix
 
-struct DylibCommand: ParsableCommand {
+struct DylibCommand: AsyncParsableCommand {
   static var configuration = CommandConfiguration(
     commandName: "dylib",
     abstract: "Run the test process for dylib injection")
@@ -39,26 +43,39 @@ struct DylibCommand: ParsableCommand {
     }
   }
 
-  func run() throws {
+  func run() async throws {
     let (moduleMap, moduleMapPath) = try prepareModuleMap()
     let sdkPath = try resolveSDKPath(platform: platform)
     let targetTriple = try resolveTargetTriple(platform: platform)
-    let (process, testPid) = try launchAndWaitForPid(options: options)
-    var runIndex = 0
 
-    printStatus("Found pid: \(testPid)")
+    // Connect to idb_companion over its gRPC Unix domain socket.
+    let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    let channel = try GRPCChannelPool.with(
+      target: .unixDomainSocket(options.companionSocket),
+      transportSecurity: .plaintext,
+      eventLoopGroup: group
+    )
+    let client = Idb_CompanionServiceAsyncClient(channel: channel)
 
-    let socketPath = "/tmp/test_repl_\(testPid).sock"
-    let socketFd = try connectToSocket(path: socketPath)
-    defer {
-      close(socketFd)
-      unlink(socketPath)
+    // Open the bidirectional repl stream and start a session for the bundle.
+    let call = client.makeReplCall()
+    var responses = call.responseStream.makeAsyncIterator()
+    try await call.requestStream.send(
+      .with {
+        $0.control = .start(.with { $0.testBundlePath = options.testBundlePath })
+      })
+
+    // The companion launches the test and connects to the shim before it is ready.
+    let first = try await responses.next()
+    guard let firstEvent = first?.event, case .ready = firstEvent else {
+      throw ValidationError("idb_companion did not report the REPL as ready")
     }
 
     printStatus("Connected to test process.", "Type '/help' for available commands.")
 
     var lines: [String] = []
     let editor = LineEditor()
+    var runIndex = 0
 
     inputLoop: while let input = editor.readLine() {
       let trimmed = input.trimmingCharacters(in: .whitespaces)
@@ -69,7 +86,38 @@ struct DylibCommand: ParsableCommand {
         switch trimmed {
         case "/run":
           let swiftCode = lines.joined(separator: "\n")
-          handleRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, socketFd: socketFd)
+          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath) {
+            try await call.requestStream.send(
+              .with {
+                $0.control = .execute(
+                  .with {
+                    $0.dylib = dylib
+                    $0.symbol = "test_\(runIndex)"
+                  })
+              })
+            do {
+              let event = try await responses.next()?.event
+              switch event {
+              case let .result(result):
+                printStatus(result.output)
+              case let .stopped(stopped):
+                let detail = stopped.desc.isEmpty ? "idb_companion ended the REPL session" : stopped.desc
+                printStatus("Session ended:", detail)
+                break inputLoop
+              case .ready:
+                printStatus("Error:", "idb_companion sent an unexpected 'ready' event instead of a result")
+              case .none:
+                printStatus("Error:", "idb_companion closed the REPL stream without returning a result")
+                break inputLoop
+              }
+            } catch let status as GRPCStatus {
+              printStatus("Error:", status.message ?? "idb_companion failed with gRPC status \(status.code)")
+              break inputLoop
+            } catch {
+              printStatus("Error:", "\(error)")
+              break inputLoop
+            }
+          }
           runIndex += 1
           lines = []
         case "/help":
@@ -84,8 +132,9 @@ struct DylibCommand: ParsableCommand {
       }
     }
 
-    kill(process.processIdentifier, SIGKILL)
-    process.waitUntilExit()
+    try? await call.requestStream.finish()
+    try? await channel.close().get()
+    try? await group.shutdownGracefully()
     sessionDirectory.cleanup()
   }
 
@@ -106,33 +155,29 @@ struct DylibCommand: ParsableCommand {
     return (updatedMap, path)
   }
 
-  private func handleRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap, moduleMapPath: String, targetTriple: String, sdkPath: String, socketFd: Int32) {
+  /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
+  /// compile error and returns nil.
+  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap, moduleMapPath: String, targetTriple: String, sdkPath: String) -> Data? {
     do {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
 
-      let (userImports, strippedCode) = extractImports(from: swiftCode)
-      _ = userImports
+      let (_, strippedCode) = extractImports(from: swiftCode)
       let code = wrappedCode(swiftCode: strippedCode, index: index, moduleMap: moduleMap)
       try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
       let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath)
+      try? FileManager.default.removeItem(atPath: swiftPath)
 
       if status == 0 {
-        let response = try sendCommand(dylibPath: dylibPath, symbol: "test_\(index)", socketFd: socketFd)
-        if response["success"] as? Bool == true {
-          let result = response["result"] as? String ?? ""
-          printStatus(result)
-        } else {
-          printStatus("Error:", "\(response["error"] ?? "unknown")")
-        }
+        return try Data(contentsOf: URL(fileURLWithPath: dylibPath))
       } else {
         printStatus("Error:", compilerOutput)
+        return nil
       }
-
-      try? FileManager.default.removeItem(atPath: swiftPath)
     } catch {
       printStatus("Error:", "\(error)")
+      return nil
     }
   }
 
@@ -302,73 +347,5 @@ struct DylibCommand: ParsableCommand {
       print(line)
     }
     print("")
-  }
-
-  // MARK: - Socket Communication
-
-  private func connectToSocket(path: String) throws -> Int32 {
-    let fd = socket(AF_UNIX, SOCK_STREAM, 0)
-    guard fd >= 0 else {
-      throw ValidationError("Failed to create socket")
-    }
-
-    var addr = sockaddr_un()
-    addr.sun_family = sa_family_t(AF_UNIX)
-    let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
-    guard path.utf8.count < maxLength else {
-      close(fd)
-      throw ValidationError("Socket path too long (\(path.utf8.count) bytes, max \(maxLength - 1)): \(path)")
-    }
-    _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
-      path.withCString { src in
-        memcpy(ptr, src, path.utf8.count + 1)
-      }
-    }
-
-    let size = socklen_t(MemoryLayout<sockaddr_un>.size)
-    var connected = false
-    for _ in 0..<10 {
-      let result = withUnsafePointer(to: &addr) { ptr in
-        ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
-          connect(fd, sockPtr, size)
-        }
-      }
-      if result == 0 {
-        connected = true
-        break
-      }
-      usleep(100_000)
-    }
-
-    guard connected else {
-      close(fd)
-      throw ValidationError("Failed to connect to test process socket at \(path)")
-    }
-
-    return fd
-  }
-
-  private func sendCommand(dylibPath: String, symbol: String, socketFd: Int32) throws -> [String: Any] {
-    let command: [String: String] = ["dylib": dylibPath, "symbol": symbol]
-    var data = try JSONSerialization.data(withJSONObject: command)
-    data.append(0x0A)
-    data.withUnsafeBytes { ptr in
-      if let base = ptr.baseAddress {
-        _ = write(socketFd, base, ptr.count)
-      }
-    }
-
-    var responseData = Data()
-    var byte: UInt8 = 0
-    while read(socketFd, &byte, 1) > 0 {
-      if byte == 0x0A { break }
-      responseData.append(byte)
-    }
-
-    guard let response = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] else {
-      throw ValidationError("Invalid response from test process")
-    }
-
-    return response
   }
 }
