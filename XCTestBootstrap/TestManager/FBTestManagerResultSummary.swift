@@ -26,7 +26,7 @@ import Foundation
     testDuration: NSNumber,
     totalDuration: NSNumber
   ) -> FBTestManagerResultSummary {
-    return FBTestManagerResultSummary(
+    FBTestManagerResultSummary(
       testSuite: testSuite,
       finishTime: FBTestManagerResultSummary.dateFormatter.date(from: finishTime) ?? Date(timeIntervalSince1970: 0),
       runCount: runCount.intValue,
@@ -57,7 +57,7 @@ import Foundation
   }
 
   public override var description: String {
-    return "Suite \(testSuite) | Finish Time \(finishTime) | Run Count \(runCount) | Failures \(failureCount) | Unexpected \(unexpected) | Test Duration \(testDuration) | Total Duration \(totalDuration)"
+    "Suite \(testSuite) | Finish Time \(finishTime) | Run Count \(runCount) | Failures \(failureCount) | Unexpected \(unexpected) | Test Duration \(testDuration) | Total Duration \(totalDuration)"
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
