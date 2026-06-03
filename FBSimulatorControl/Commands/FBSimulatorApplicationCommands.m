@@ -199,7 +199,7 @@
   NSError *error = nil;
   NSString *pattern = [NSString stringWithFormat:@"UIKitApplication:%@(\\[|$)",[NSRegularExpression escapedPatternForString:bundleID]];
   NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:&error];
-  if (error) {
+  if (!regex) {
     return [[FBSimulatorError
              describeFormat:@"Couldn't build search pattern for '%@'", bundleID]
              failFuture];

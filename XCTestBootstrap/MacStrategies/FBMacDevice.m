@@ -271,7 +271,7 @@
 {
   NSError *error;
   FBBundleDescriptor *bundle = [FBBundleDescriptor bundleFromPath:path error:&error];
-  if (error) {
+  if (!bundle) {
     return [FBFuture futureWithError:error];
   }
   self.bundleIDToProductMap[bundle.identifier] = bundle;

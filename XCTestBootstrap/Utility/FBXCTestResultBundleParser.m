@@ -723,7 +723,7 @@ static inline NSDate *dateFromString(NSString *date)
   // Extract all screenshots to the "Attachments" folder just as in the legacy test result bundle
   NSError *error = nil;
   NSString *screenshotsPath = [self ensureSubdirectory:@"Attachments" insideResultBundle:resultBundlePath error:&error];
-  if (error != nil) {
+  if (!screenshotsPath) {
     [logger logFormat:@"Failed to ensure attachments directory %@", error];
     return;
   }
@@ -817,7 +817,7 @@ static inline NSDate *dateFromString(NSString *date)
   }
   NSError *error = nil;
   NSData *json = [NSJSONSerialization dataWithJSONObject:metrics options:NSJSONWritingPrettyPrinted error:&error];
-  if (error != nil) {
+  if (!json) {
     [logger logFormat:@"Failed to serilize performance metrics %@ with error %@", metrics, error];
     return;
   }
@@ -825,7 +825,7 @@ static inline NSDate *dateFromString(NSString *date)
     return;
   }
   NSString *performanceMetricsDirectory = [self ensureSubdirectory:@"Metrics" insideResultBundle:resultBundlePath error:&error];
-  if (error != nil) {
+  if (!performanceMetricsDirectory) {
     [logger logFormat:@"Failed to ensure performance metrics directory %@", error];
     return;
   }

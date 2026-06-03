@@ -17,7 +17,7 @@ static int clearContacts(void) {
                                                                           keysToFetch:@[]
                                                                                 error:&fetchError];
 
-  if (fetchError) {
+  if (!allContacts) {
     NSLog(@"Failed to fetch contacts: %@", fetchError.localizedDescription);
     return 1;
   }

@@ -67,7 +67,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
   }
   id<FBControlCoreLogger> logger = self.logger;
   [logger logFormat:@"Signing bundle %@ with identity %@", bundlePath, self.identityName];
-  
+
   return [[[[[[FBProcessBuilder
     withLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     withStdOutInMemoryAsString]
@@ -118,11 +118,13 @@ static NSString *const CDHashPrefix = @"CDHash=";
   NSString *frameworksPath = [bundlePath stringByAppendingString:@"/Frameworks/"];
   if ([fileManager fileExistsAtPath:frameworksPath]) {
     NSError *fileSystemError;
-    for (NSString *frameworkPath in [fileManager contentsOfDirectoryAtPath:frameworksPath error:&fileSystemError]) {
-      [pathsToSign addObject:[frameworksPath stringByAppendingString:frameworkPath]];
-    }
-    if (fileSystemError) {
+    NSArray<NSString *> *const contents = [fileManager contentsOfDirectoryAtPath:frameworksPath error:&fileSystemError];
+    if (!contents) {
       return [FBControlCoreError failFutureWithError:fileSystemError];
+    }
+
+    for (NSString *frameworkPath in contents) {
+      [pathsToSign addObject:[frameworksPath stringByAppendingString:frameworkPath]];
     }
   }
   NSMutableArray<FBFuture<NSNull *> *> *futures = [NSMutableArray array];
