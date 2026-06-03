@@ -107,14 +107,14 @@ public final class FBTeardownContext: Sendable {
   }
 
   deinit {
-    if let contextImpl, contextImpl.cleanupPerformed == false {
+    if let contextImpl, !contextImpl.cleanupPerformed {
 
       if !Task.isCancelled && !isAutocleanup {
         // Despite that we can cleanup automatically, this should be done explicitly
 
         // Note:
         // When current task is cancelled, we may not reach explicit cleanup.
-        // Then cleanup in deinit is ok, bacause task cancellation means that we exceeded client
+        // Then cleanup in deinit is ok, because task cancellation means that we exceeded client
         // request timeout and error propagation is not required anymore.
         // But Task.isCancelled not always correctly represents cancellation in deinit (concurrency bug?)
         // so there are possibility of false-failure report.
