@@ -38,12 +38,13 @@ import Foundation
 
             var bundleLibsNames: Set<String>?
             if let bundleLibs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: bundleFrameworksFolder), includingPropertiesForKeys: [.isDirectoryKey], options: []) {
-              bundleLibsNames = Set<String>()
+              var names = Set<String>()
               for libURL in bundleLibs {
                 if let libName = libURL.pathComponents.last {
-                  bundleLibsNames!.insert(libName)
+                  names.insert(libName)
                 }
               }
+              bundleLibsNames = names
             }
 
             var libraries: [String] = []
