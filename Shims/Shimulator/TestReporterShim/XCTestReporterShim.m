@@ -104,7 +104,7 @@ static void PrintJSON(id JSONObject)
   NSError *error = nil;
   NSData *data = [NSJSONSerialization dataWithJSONObject:JSONObject options:0 error:&error];
 
-  if (error) {
+  if (!data) {
     fprintf(
       __stderr,
       "ERROR: Error generating JSON for object: %s: %s\n",
