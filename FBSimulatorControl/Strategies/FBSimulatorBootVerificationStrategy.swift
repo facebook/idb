@@ -75,11 +75,12 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
     let stallInterval = FBSimulatorBootVerificationStrategy.bootVerificationStallInterval
     let logger = simulator.logger
 
+    let updateDate = lastInfoUpdateDate ?? Date()
     if lastInfoUpdateDate == nil {
-      lastInfoUpdateDate = Date()
+      lastInfoUpdateDate = updateDate
     }
     if bootInfo.isEqual(lastBootInfo) {
-      let updateInterval = Date().timeIntervalSince(lastInfoUpdateDate!)
+      let updateInterval = Date().timeIntervalSince(updateDate)
       if updateInterval < stallInterval {
         return
       }
@@ -123,7 +124,7 @@ public final class FBSimulatorBootVerificationStrategy: NSObject {
   }
 
   private class func dataMigrationString(_ bootInfo: SimDeviceBootInfo) -> String? {
-    if bootInfo.status != .waitingOnDataMigration {
+    guard bootInfo.status == .waitingOnDataMigration else {
       return nil
     }
     return "Migration Phase '\(bootInfo.migrationPhaseDescription ?? "")' | Migration Elapsed \(bootInfo.migrationElapsedTime)"
