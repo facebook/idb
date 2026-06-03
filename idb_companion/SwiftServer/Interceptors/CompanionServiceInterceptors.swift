@@ -183,6 +183,10 @@ final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorF
     commonInterceptors()
   }
 
+  func makereplInterceptors() -> [ServerInterceptor<Idb_ReplRequest, Idb_ReplResponse>] {
+    commonInterceptors()
+  }
+
   func makelsInterceptors() -> [ServerInterceptor<Idb_LsRequest, Idb_LsResponse>] {
     commonInterceptors()
   }

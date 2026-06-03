@@ -392,6 +392,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider {
     }
   }
 
+  func repl(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
+    // This is a minimal stub so the generated provider protocol is
+    // satisfied and the build stays green.
+    throw GRPCStatus(code: .unimplemented, message: "repl is not yet implemented")
+  }
+
   func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
     return try await telemetry.unaryCall("ls", request: request) {
       try await FBTeardownContext.withAutocleanup {
