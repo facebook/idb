@@ -31,7 +31,7 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
     logger: (any FBControlCoreLogger)?,
     reporter: (any FBEventReporter)?
   ) -> FBSimulatorControlConfiguration {
-    return FBSimulatorControlConfiguration(
+    FBSimulatorControlConfiguration(
       deviceSetPath: deviceSetPath,
       logger: logger,
       reporter: reporter
@@ -50,13 +50,13 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
   // MARK: - NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   // MARK: - NSObject
 
   public override var hash: Int {
-    return deviceSetPath?.hash ?? 0
+    deviceSetPath?.hash ?? 0
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -67,7 +67,7 @@ public class FBSimulatorControlConfiguration: NSObject, NSCopying {
   }
 
   public override var description: String {
-    return "Pool Config | Set Path \(deviceSetPath ?? "(null)")"
+    "Pool Config | Set Path \(deviceSetPath ?? "(null)")"
   }
 
   // MARK: - Helpers
