@@ -45,7 +45,7 @@ import Foundation
   }
 
   func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 
   @objc var asJSON: [String: Any] {
