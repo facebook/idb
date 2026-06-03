@@ -40,19 +40,19 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
   }
 
   private static func defaultLogName() -> String {
-    return "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
+    "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
   }
 
   @objc public static func defaultLoggerInDefaultDirectory() -> FBXCTestLogger {
-    return loggerInDefaultDirectory(defaultLogName())
+    loggerInDefaultDirectory(defaultLogName())
   }
 
   @objc public static func loggerInDefaultDirectory(_ name: String) -> FBXCTestLogger {
-    return logger(inDirectory: defaultLogDirectory(), name: name)
+    logger(inDirectory: defaultLogDirectory(), name: name)
   }
 
   @objc public static func defaultLogger(inDirectory directory: String) -> FBXCTestLogger {
-    return logger(inDirectory: directory, name: defaultLogName())
+    logger(inDirectory: directory, name: defaultLogName())
   }
 
   @objc public static func logger(inDirectory directory: String, name: String) -> FBXCTestLogger {
@@ -84,31 +84,31 @@ private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
   }
 
   @objc public func info() -> FBControlCoreLogger {
-    return FBXCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
+    FBXCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
   }
 
   @objc public func debug() -> FBControlCoreLogger {
-    return FBXCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
+    FBXCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
   }
 
   @objc public func error() -> FBControlCoreLogger {
-    return FBXCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
+    FBXCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
   }
 
   @objc public func withName(_ prefix: String) -> FBControlCoreLogger {
-    return FBXCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
+    FBXCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
   }
 
   @objc public func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger {
-    return FBXCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
+    FBXCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
   }
 
   @objc public var name: String? {
-    return baseLogger.name
+    baseLogger.name
   }
 
   @objc public var level: FBControlCoreLogLevel {
-    return baseLogger.level
+    baseLogger.level
   }
 
   // MARK: Log Consumption
