@@ -126,7 +126,7 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
 
   @objc
   public var xctestPath: String {
-    return (FBXcodeConfiguration.developerDirectory as NSString)
+    (FBXcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
   }
 
@@ -235,14 +235,14 @@ public final class FBSimulatorXCTestCommands: NSObject, FBiOSTargetCommand {
             socketPath = nil
             getenvError = error as NSError
           }
-          if socketPath == nil || socketPath!.isEmpty {
+          guard let socketPath, !socketPath.isEmpty else {
             return
               FBSimulatorError
               .describe("Failed to get \(simSockEnvKey) from simulator environment")
               .caused(by: getenvError)
               .failFuture()
           }
-          return FBFuture(result: socketPath! as NSString)
+          return FBFuture(result: socketPath as NSString)
         }
       )
       .timeout(testmanagerdSimSockTimeout, waitingFor: "\(simSockEnvKey) to become available in the simulator environment")) as! FBFuture<NSString>
