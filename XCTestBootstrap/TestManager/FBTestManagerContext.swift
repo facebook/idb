@@ -32,10 +32,10 @@ import Foundation
   }
 
   public override var description: String {
-    return "Test Host \(testHostLaunchConfiguration) | Session ID \(sessionIdentifier.uuidString) | Timeout \(timeout)"
+    "Test Host \(testHostLaunchConfiguration) | Session ID \(sessionIdentifier.uuidString) | Timeout \(timeout)"
   }
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return self
+    self
   }
 }
