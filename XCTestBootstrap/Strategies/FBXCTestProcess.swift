@@ -23,13 +23,13 @@ private let KillBackoffTimeout: TimeInterval = 1
         .onQueue(
           queue, timeout: timeout,
           handler: {
-            return FBXCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
+            FBXCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
           }
         )
         .onQueue(
           queue,
           fmap: { _ -> FBFuture<AnyObject> in
-            return unsafeBitCast(process.exitCode, to: FBFuture<AnyObject>.self)
+            unsafeBitCast(process.exitCode, to: FBFuture<AnyObject>.self)
               .onQueue(
                 queue,
                 chain: { exitCodeFuture -> FBFuture<AnyObject> in
@@ -69,11 +69,11 @@ private let KillBackoffTimeout: TimeInterval = 1
   // MARK: Private
 
   private static func performSampleStackshot(onProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, forTimeout timeout: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
-    return (FBProcessFetcher.performSampleStackshot(forProcessIdentifier: process.processIdentifier, queue: queue) as FBFuture)
+    (FBProcessFetcher.performSampleStackshot(forProcessIdentifier: process.processIdentifier, queue: queue) as FBFuture)
       .onQueue(
         queue,
         fmap: { stackshot -> FBFuture<AnyObject> in
-          return FBXCTestError.describe("Waited \(timeout) seconds for process \(process.processIdentifier) to terminate, but the xctest process stalled: \(stackshot)").failFuture()
+          FBXCTestError.describe("Waited \(timeout) seconds for process \(process.processIdentifier) to terminate, but the xctest process stalled: \(stackshot)").failFuture()
         }
       )
       .onQueue(
@@ -122,7 +122,7 @@ private let KillBackoffTimeout: TimeInterval = 1
         .onQueue(
           queue, timeout: crashLogWaitTime,
           handler: {
-            return FBControlCoreError.describe("Crash logs for terminated process \(process.processIdentifier) to appear").failFuture()
+            FBControlCoreError.describe("Crash logs for terminated process \(process.processIdentifier) to appear").failFuture()
           }),
       to: FBFuture<FBCrashLogInfo>.self
     )
