@@ -67,7 +67,7 @@ import Foundation
   }
 
   private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: FBApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: FBTestRunnerConfiguration) -> FBApplicationLaunchConfiguration {
-    return FBApplicationLaunchConfiguration(
+    FBApplicationLaunchConfiguration(
       bundleID: testRunnerConfiguration.testRunner.identifier,
       bundleName: testRunnerConfiguration.testRunner.identifier,
       arguments: arguments(fromConfiguration: testRunnerConfiguration, attributes: applicationLaunchConfiguration.arguments),
@@ -79,7 +79,7 @@ import Foundation
   }
 
   private static func arguments(fromConfiguration configuration: FBTestRunnerConfiguration, attributes: [String]) -> [String] {
-    return configuration.launchArguments + attributes
+    configuration.launchArguments + attributes
   }
 
   private static func environment(fromConfiguration configuration: FBTestRunnerConfiguration, environment: [String: String]) -> [String: String] {
