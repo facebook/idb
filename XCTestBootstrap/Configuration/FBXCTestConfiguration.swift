@@ -208,18 +208,20 @@ private let KeyWorkingDirectory = "working_directory"
   @objc public let binaryPath: String?
   @objc public let logDirectoryPath: String?
   @objc public let architectures: Set<String>
+  @objc public let injectLibraries: [String]
 
   @objc public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
     FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
   }
 
-  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) {
+  @objc public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
     self.testFilter = testFilter
     self.mirroring = mirroring
     self.coverageConfiguration = coverageConfiguration
     self.binaryPath = binaryPath
     self.logDirectoryPath = logDirectoryPath
     self.architectures = architectures
+    self.injectLibraries = injectLibraries
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 

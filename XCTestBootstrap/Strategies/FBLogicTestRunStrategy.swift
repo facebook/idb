@@ -105,7 +105,7 @@ private final class FBLogicTestRunOutputs: NSObject {
             self.target.workQueue,
             fmap: { librariesObj -> FBFuture<AnyObject> in
               let libraries = librariesObj as! [String]
-              let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
+              let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
 
               return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL as URL)
                 .onQueue(
@@ -123,9 +123,10 @@ private final class FBLogicTestRunOutputs: NSObject {
     )
   }
 
-  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: FBiOSTarget) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
+    librariesWithShim.append(contentsOf: injectLibraries)
 
     var environmentAdditions: [String: String] = [
       "DYLD_INSERT_LIBRARIES": librariesWithShim.joined(separator: ":"),

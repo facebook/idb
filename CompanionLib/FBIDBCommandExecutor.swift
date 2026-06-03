@@ -273,6 +273,19 @@ import XCTestBootstrap
     return try await request.startAsync(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
+  /// Launches a logic test bundle in REPL mode. The implementation lives in the
+  /// REPL command (`FBSimulatorReplCommands`); this forwards to the target, which
+  /// injects the REPL shim (`libRepl`), forces the shim's `TestRepl/start` test,
+  /// and has the shim bind a control socket whose path is passed via
+  /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
+  /// the test process exits, i.e. once the control socket is closed.
+  public func repl_start(bundlePath: String) async throws -> ReplSession {
+    guard let replTarget = target as? AsyncReplCommands else {
+      throw FBIDBError.describe("\(target) does not support running REPL tests").build()
+    }
+    return try await replTarget.startReplTest(bundlePath: bundlePath)
+  }
+
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
     let bundle = try debugserver_prepare(bundleID)
     let server = try await target.launchDebugServer(forHostApplication: bundle, port: debugserverPort)

@@ -90,6 +90,10 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorDapServerCommand.commands(with: self) }
   }
 
+  func replCommands() throws -> FBSimulatorReplCommands {
+    commandCache.resolve { FBSimulatorReplCommands.commands(with: self) }
+  }
+
   func notificationCommands() throws -> FBSimulatorNotificationCommands {
     commandCache.resolve { FBSimulatorNotificationCommands.commands(with: self) }
   }
