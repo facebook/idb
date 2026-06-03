@@ -25,6 +25,6 @@ import Foundation
   }
 
   public override var description: String {
-    return "Message \(message) | File \(file ?? "(null)") | Line \(line)"
+    "Message \(message) | File \(file ?? "(null)") | Line \(line)"
   }
 }
