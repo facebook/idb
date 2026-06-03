@@ -158,14 +158,14 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   // MARK: - NSObject
 
   public override var description: String {
-    return FBCollectionInformation.oneLineDescription(from: allSimulators)
+    FBCollectionInformation.oneLineDescription(from: allSimulators)
   }
 
   // MARK: - FBiOSTargetSet
 
   @objc
   public var allTargetInfos: [any FBiOSTargetInfo] {
-    return allSimulators
+    allSimulators
   }
 
   // MARK: - Public Properties
