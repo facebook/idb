@@ -24,15 +24,15 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
   // MARK: - FBLaunchedApplication Protocol
 
   @objc public var bundleID: String {
-    return configuration.bundleID
+    configuration.bundleID
   }
 
   @objc public var stdOut: (any FBProcessFileOutput)? {
-    return attachment.stdOut
+    attachment.stdOut
   }
 
   @objc public var stdErr: (any FBProcessFileOutput)? {
-    return attachment.stdErr
+    attachment.stdErr
   }
 
   // MARK: - Factory
@@ -77,8 +77,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
       .onQueue(
         simulator.workQueue,
         respondToCancellation: {
-          return
-            FBProcessTerminationStrategy
+          FBProcessTerminationStrategy
             .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger!)
             .killProcessIdentifier(processIdentifier)
         })
@@ -101,7 +100,7 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
       terminationFuture.onQueue(
         simulator.workQueue,
         chain: { future in
-          return attachment.detach().chainReplace(future)
+          attachment.detach().chainReplace(future)
         }) as! FBFuture<NSNull>
     super.init()
   }
@@ -137,6 +136,6 @@ public class FBSimulatorLaunchedApplication: NSObject, FBLaunchedApplication {
   // MARK: - NSObject
 
   public override var description: String {
-    return "Application Operation \(configuration.description) | pid \(processIdentifier) | State \(applicationTerminated)"
+    "Application Operation \(configuration.description) | pid \(processIdentifier) | State \(applicationTerminated)"
   }
 }
