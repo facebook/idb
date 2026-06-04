@@ -65,7 +65,7 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
   }
 
   private class var predicateForPhotoPaths: NSPredicate {
-    var types: [UTType] = [.image, .png, .jpeg]
+    var types: [UTType] = [.heic, .image, .jpeg, .png]
     if let jpeg2000 = UTType("public.jpeg-2000") {
       types.append(jpeg2000)
     }
@@ -103,21 +103,19 @@ public final class FBSimulatorMediaCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Simulator must be booted to upload photos, is \(stateString)").build()
     }
 
-    let photos = (mediaFileURLs as NSArray).filtered(using: FBSimulatorMediaCommands.predicateForPhotoPaths) as! [URL]
-    for url in photos {
+    let photosAndVideos =
+      (mediaFileURLs as NSArray).filtered(
+        using: NSCompoundPredicate(orPredicateWithSubpredicates: [
+          FBSimulatorMediaCommands.predicateForPhotoPaths,
+          FBSimulatorMediaCommands.predicateForVideoPaths,
+        ])
+        // swiftlint:disable:next force_cast
+      ) as! [URL]
+    if !photosAndVideos.isEmpty {
       do {
-        try FBSimDeviceWrapper.addPhoto(onDevice: simulator.device, url: url)
+        try FBSimDeviceWrapper.addMedia(onDevice: simulator.device, urls: photosAndVideos)
       } catch {
-        throw FBSimulatorError.describe("Failed to add photo \(url)").caused(by: error as NSError).build()
-      }
-    }
-
-    let videos = (mediaFileURLs as NSArray).filtered(using: FBSimulatorMediaCommands.predicateForVideoPaths) as! [URL]
-    for url in videos {
-      do {
-        try FBSimDeviceWrapper.addVideo(onDevice: simulator.device, url: url)
-      } catch {
-        throw FBSimulatorError.describe("Failed to add video \(url)").caused(by: error as NSError).build()
+        throw FBSimulatorError.describe("Failed to add media \(photosAndVideos)").caused(by: error as NSError).build()
       }
     }
 
