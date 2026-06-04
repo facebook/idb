@@ -22,7 +22,7 @@ public final class FBSimulatorScreenshotCommands: NSObject, FBiOSTargetCommand {
 
   @objc(commandsWithTarget:)
   public class func commands(with target: any FBiOSTarget) -> FBSimulatorScreenshotCommands {
-    return FBSimulatorScreenshotCommands(simulator: target as! FBSimulator)
+    FBSimulatorScreenshotCommands(simulator: target as! FBSimulator)
   }
 
   private init(simulator: FBSimulator) {
