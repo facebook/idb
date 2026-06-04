@@ -26,7 +26,7 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
 
   // Swift compatibility alias: ObjC importer mapped `defaultConfiguration` to `default`
   public static var `default`: FBSimulatorConfiguration {
-    return defaultConfiguration
+    defaultConfiguration
   }
 
   @objc public nonisolated(unsafe) static let defaultConfiguration: FBSimulatorConfiguration = {
@@ -40,13 +40,13 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
   // MARK: - NSCopying
 
   public func copy(with zone: NSZone? = nil) -> Any {
-    return FBSimulatorConfiguration(device: device, os: os)
+    FBSimulatorConfiguration(device: device, os: os)
   }
 
   // MARK: - NSObject
 
   public override var hash: Int {
-    return device.model.rawValue.hash ^ os.name.rawValue.hash
+    device.model.rawValue.hash ^ os.name.rawValue.hash
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -55,7 +55,7 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
   }
 
   public override var description: String {
-    return "Device '\(device.model.rawValue)' | OS Version '\(os.name.rawValue)'"
+    "Device '\(device.model.rawValue)' | OS Version '\(os.name.rawValue)'"
   }
 
   // MARK: - Models
@@ -77,7 +77,7 @@ public final class FBSimulatorConfiguration: NSObject, NSCopying {
   // MARK: - Private
 
   func withOS(_ os: FBOSVersion) -> FBSimulatorConfiguration {
-    return FBSimulatorConfiguration(device: device, os: os)
+    FBSimulatorConfiguration(device: device, os: os)
   }
 
   private func withDevice(_ device: FBDeviceType) -> FBSimulatorConfiguration {
