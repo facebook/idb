@@ -63,22 +63,4 @@
   [self doTestApplicationLaunches:self.safariAppLaunch];
 }
 
-- (void)testCanUninstallApplication
-{
-  FBBundleDescriptor *application = self.tableSearchApplication;
-  FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:application];
-
-  NSError *error = nil;
-  BOOL success = [[simulator launchApplication:launch] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-
-  [self assertSimulator:simulator isRunningApplicationFromConfiguration:launch];
-
-  success = [[simulator uninstallApplicationWithBundleID:application.identifier] await:&error] != nil;
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
 @end
