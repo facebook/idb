@@ -22,7 +22,7 @@ class SessionDirectory {
 
   init() {
     path = (NSTemporaryDirectory() as NSString)
-      .appendingPathComponent("test_repl_\(UUID().uuidString)")
+      .appendingPathComponent("idb_repl_\(UUID().uuidString)")
   }
 
   deinit {

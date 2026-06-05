@@ -92,7 +92,7 @@ struct DylibCommand: AsyncParsableCommand {
                 $0.control = .execute(
                   .with {
                     $0.dylib = dylib
-                    $0.symbol = "test_\(runIndex)"
+                    $0.symbol = "idb_repl_\(runIndex)"
                   })
               })
             do {
@@ -201,7 +201,7 @@ struct DylibCommand: AsyncParsableCommand {
     //   .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
     //   .map { module in
     //     let testable = module.modulePath?.contains("toolchain") == true ? "" : "@testable "
-    //     return "\(testable)import \(module.moduleName) // test-repl-strip"
+    //     return "\(testable)import \(module.moduleName) // idb-repl-strip"
     //   }
     //   .joined(separator: "\n")
     let function =
@@ -209,7 +209,7 @@ struct DylibCommand: AsyncParsableCommand {
       ? asyncFunction(swiftCode: swiftCode, index: index)
       : syncFunction(swiftCode: swiftCode, index: index)
     return """
-      import Foundation // test-repl-strip
+      import Foundation // idb-repl-strip
       \(function)
       """
   }
@@ -225,46 +225,46 @@ struct DylibCommand: AsyncParsableCommand {
 
   private func syncFunction(swiftCode: String, index: Int) -> String {
     return """
-      private func userCode_\(index)() throws -> Any { // test-repl-strip
+      private func userCode_\(index)() throws -> Any { // idb-repl-strip
         \(swiftCode)
-      } // test-repl-strip
-      @_cdecl("test_\(index)") public func test_\(index)() -> UnsafePointer<CChar>? { // test-repl-strip
-        let output: String // test-repl-strip
-        do { // test-repl-strip
-          let result = try userCode_\(index)() // test-repl-strip
-          output = "Result:\\n\\(String(describing: result))" // test-repl-strip
-        } catch { // test-repl-strip
-          output = "Exception:\\n\\(String(describing: error))" // test-repl-strip
-        } // test-repl-strip
-        return output.withCString { UnsafePointer(strdup($0)) } // test-repl-strip
-      } // test-repl-strip
+      } // idb-repl-strip
+      @_cdecl("idb_repl_\(index)") public func idb_repl_\(index)() -> UnsafePointer<CChar>? { // idb-repl-strip
+        let output: String // idb-repl-strip
+        do { // idb-repl-strip
+          let result = try userCode_\(index)() // idb-repl-strip
+          output = "Result:\\n\\(String(describing: result))" // idb-repl-strip
+        } catch { // idb-repl-strip
+          output = "Exception:\\n\\(String(describing: error))" // idb-repl-strip
+        } // idb-repl-strip
+        return output.withCString { UnsafePointer(strdup($0)) } // idb-repl-strip
+      } // idb-repl-strip
       """
   }
 
   private func asyncFunction(swiftCode: String, index: Int) -> String {
     return """
-      private func userCode_\(index)() async throws -> Any { // test-repl-strip
+      private func userCode_\(index)() async throws -> Any { // idb-repl-strip
         \(swiftCode)
-      } // test-repl-strip
-      @_cdecl("test_\(index)") public func test_\(index)() -> UnsafePointer<CChar>? { // test-repl-strip
-        final class _Box: @unchecked Sendable { var value: Result<Any, Error> = .success("()") } // test-repl-strip
-        let box = _Box() // test-repl-strip
-        let semaphore = DispatchSemaphore(value: 0) // test-repl-strip
-        Task { // test-repl-strip
-          do { box.value = .success(try await userCode_\(index)()) } // test-repl-strip
-          catch { box.value = .failure(error) } // test-repl-strip
-          semaphore.signal() // test-repl-strip
-        } // test-repl-strip
-        semaphore.wait() // test-repl-strip
-        let output: String // test-repl-strip
-        do { // test-repl-strip
-          let result = try box.value.get() // test-repl-strip
-          output = "Result:\\n\\(String(describing: result))" // test-repl-strip
-        } catch { // test-repl-strip
-          output = "Exception:\\n\\(String(describing: error))" // test-repl-strip
-        } // test-repl-strip
-        return output.withCString { UnsafePointer(strdup($0)) } // test-repl-strip
-      } // test-repl-strip
+      } // idb-repl-strip
+      @_cdecl("idb_repl_\(index)") public func idb_repl_\(index)() -> UnsafePointer<CChar>? { // idb-repl-strip
+        final class _Box: @unchecked Sendable { var value: Result<Any, Error> = .success("()") } // idb-repl-strip
+        let box = _Box() // idb-repl-strip
+        let semaphore = DispatchSemaphore(value: 0) // idb-repl-strip
+        Task { // idb-repl-strip
+          do { box.value = .success(try await userCode_\(index)()) } // idb-repl-strip
+          catch { box.value = .failure(error) } // idb-repl-strip
+          semaphore.signal() // idb-repl-strip
+        } // idb-repl-strip
+        semaphore.wait() // idb-repl-strip
+        let output: String // idb-repl-strip
+        do { // idb-repl-strip
+          let result = try box.value.get() // idb-repl-strip
+          output = "Result:\\n\\(String(describing: result))" // idb-repl-strip
+        } catch { // idb-repl-strip
+          output = "Exception:\\n\\(String(describing: error))" // idb-repl-strip
+        } // idb-repl-strip
+        return output.withCString { UnsafePointer(strdup($0)) } // idb-repl-strip
+      } // idb-repl-strip
       """
   }
 
@@ -322,7 +322,7 @@ struct DylibCommand: AsyncParsableCommand {
         for line in output.components(separatedBy: "\n") {
           let range = NSRange(line.startIndex..., in: line)
           let filtered = filters.contains { $0.firstMatch(in: line, range: range) != nil }
-          if !filtered && !line.isEmpty && !line.contains("// test-repl-strip") {
+          if !filtered && !line.isEmpty && !line.contains("// idb-repl-strip") {
             filteredLines.append(line.replacingOccurrences(of: sessionPath, with: ""))
           }
         }
