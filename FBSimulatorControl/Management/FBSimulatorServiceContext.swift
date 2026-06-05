@@ -45,10 +45,17 @@ public final class FBSimulatorServiceContext: NSObject {
     assert(
       serviceContextClass != nil && serviceContextClass!.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:")),
       "Service Context cannot be instantiated")
+    // An empty developer directory makes -[SimServiceContext sharedServiceContextForDeveloperDir:error:]
+    // crash with an opaque NSException; assert to surface the cause.
+    let developerDirectory = FBXcodeConfiguration.developerDirectory
+    assert(
+      !developerDirectory.isEmpty,
+      "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR.")
+
     var innerError: AnyObject?
     let serviceContext = (serviceContextClass as! SimServiceContext.Type)
-      .sharedServiceContext(forDeveloperDir: FBXcodeConfiguration.developerDirectory, error: &innerError)
-    assert(serviceContext != nil, "Could not create a service context with error \(String(describing: innerError))")
+      .sharedServiceContext(forDeveloperDir: developerDirectory, error: &innerError)
+    assert(serviceContext != nil, "Could not create a SimServiceContext for developer directory '\(developerDirectory)': \(String(describing: innerError))")
     return FBSimulatorServiceContext(serviceContext: serviceContext! as! SimServiceContext)
   }
 
