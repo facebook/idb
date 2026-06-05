@@ -196,20 +196,20 @@ struct DylibCommand: AsyncParsableCommand {
   }
 
   private func wrappedCode(swiftCode: String, index: Int, moduleMap: SwiftModuleMap) -> String {
-    let imports = moduleMap.entries
-      .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
-      .map { module in
-        let testable = module.modulePath?.contains("toolchain") == true ? "" : "@testable "
-        return "\(testable)import \(module.moduleName) // test-repl-strip"
-      }
-      .joined(separator: "\n")
+    // TODO: fix importing the modules declared in the module map.
+    // let imports = moduleMap.entries
+    //   .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
+    //   .map { module in
+    //     let testable = module.modulePath?.contains("toolchain") == true ? "" : "@testable "
+    //     return "\(testable)import \(module.moduleName) // test-repl-strip"
+    //   }
+    //   .joined(separator: "\n")
     let function =
       containsAsync(swiftCode)
       ? asyncFunction(swiftCode: swiftCode, index: index)
       : syncFunction(swiftCode: swiftCode, index: index)
     return """
       import Foundation // test-repl-strip
-      \(imports)
       \(function)
       """
   }
@@ -279,8 +279,9 @@ struct DylibCommand: AsyncParsableCommand {
       sourcePath,
       "-emit-library", "-o", outputPath,
       "-target", targetTriple,
-      "-Xfrontend", "-explicit-swift-module-map-file", "-Xfrontend", moduleMapPath,
-      "-Xfrontend", "-disable-implicit-swift-modules",
+      // TODO: pass the Swift module map to swiftc.
+      // "-Xfrontend", "-explicit-swift-module-map-file", "-Xfrontend", moduleMapPath,
+      // "-Xfrontend", "-disable-implicit-swift-modules",
       "-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup",
     ]
     let outputPipe = Pipe()
