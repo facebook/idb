@@ -480,6 +480,7 @@ class TestParser(TestCase):
         namespace.xctest = "run"
         namespace.udid = None
         namespace.json = False
+        namespace.reason = None
         if command in ["app", "ui"]:
             namespace.tests_to_run = None
             namespace.tests_to_skip = None
@@ -654,6 +655,7 @@ class TestParser(TestCase):
             namespace.root_command = "log"
             namespace.udid = "1234"
             namespace.json = False
+            namespace.reason = None
             namespace.log_arguments = []
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
@@ -672,9 +674,64 @@ class TestParser(TestCase):
             namespace.root_command = "log"
             namespace.udid = None
             namespace.json = False
+            namespace.reason = None
             namespace.log_arguments = ["--", "--style", "json"]
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
+
+    async def test_reason(self) -> None:
+        mock = AsyncMock()
+        with patch("idb.cli.commands.log.LogCommand._run_impl", new=mock, create=True):
+            await cli_main(cmd_input=["log", "--reason", "investigating a test flake"])
+            mock.assert_called_once()
+            namespace = mock.call_args.args[0]
+            self.assertEqual(namespace.reason, "investigating a test flake")
+
+    async def test_reason_added_to_telemetry_metadata(self) -> None:
+        reason = "investigating a test flake"
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps", "--reason", reason])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["reason"], reason)
+
+    async def test_reason_omitted_from_telemetry_metadata_when_absent(self) -> None:
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps"])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertNotIn("reason", metadata)
+
+    async def test_reason_logged_to_stderr(self) -> None:
+        reason = "investigating a test flake"
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        with self.assertLogs(level="INFO") as log_context:
+            await cli_main(cmd_input=["--log", "INFO", "list-apps", "--reason", reason])
+        self.assertTrue(
+            any(reason in message for message in log_context.output),
+            f"Expected invocation reason in logs, got: {log_context.output}",
+        )
+
+    async def test_reason_truncated_to_200(self) -> None:
+        reason = "x" * 250
+        self.client_mock.list_apps = AsyncMock(return_value=[])
+        log_call_mock = MagicMock(
+            return_value=AsyncContextManagerMock(return_value=None)
+        )
+        with patch("idb.cli.log_call", log_call_mock):
+            await cli_main(cmd_input=["list-apps", "--reason", reason])
+        log_call_mock.assert_called_once()
+        metadata = log_call_mock.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["reason"], "x" * 200)
+        self.assertEqual(len(metadata["reason"]), 200)
 
     async def test_clear_keychain(self) -> None:
         self.client_mock.clear_keychain = AsyncMock(return_value=[])
@@ -743,6 +800,7 @@ class TestParser(TestCase):
             namespace.root_command = "record-video"
             namespace.udid = None
             namespace.json = False
+            namespace.reason = None
             namespace.output_file = output_file
             namespace.companion_tls = False
             mock.assert_called_once_with(namespace)
@@ -769,6 +827,7 @@ class TestParser(TestCase):
                     root_command="video-stream",
                     udid=None,
                     json=False,
+                    reason=None,
                     output_file=output_file,
                     companion_tls=False,
                 )
@@ -857,7 +916,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "key", "19", "--shift"])
         self.client_mock.hid.assert_called_once()
 
-        async_iter = self.client_mock.hid.call_args[0][0]
+        async_iter = self.client_mock.hid.call_args.args[0]
         events = [event async for event in async_iter]
         self.assertEqual(len(events), 4)
         self.assertEqual(events[0].action.keycode, 225)  # Shift down
@@ -886,7 +945,7 @@ class TestParser(TestCase):
         )
         self.client_mock.hid.assert_called_once()
 
-        async_iter = self.client_mock.hid.call_args[0][0]
+        async_iter = self.client_mock.hid.call_args.args[0]
         events = [event async for event in async_iter]
 
         self.assertEqual(len(events), 10)
@@ -921,7 +980,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "key", "11", "--tab"])
         self.client_mock.hid.assert_called_once()
 
-        async_iter = self.client_mock.hid.call_args[0][0]
+        async_iter = self.client_mock.hid.call_args.args[0]
         events = [event async for event in async_iter]
 
         self.assertEqual(len(events), 4)
@@ -941,7 +1000,7 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["ui", "key", "19", "--shift", "--duration", "0.5"])
         self.client_mock.hid.assert_called_once()
 
-        async_iter = self.client_mock.hid.call_args[0][0]
+        async_iter = self.client_mock.hid.call_args.args[0]
         events = [event async for event in async_iter]
 
         # Expected: Shift down, P down, HIDDelay(0.5), P up, Shift up
