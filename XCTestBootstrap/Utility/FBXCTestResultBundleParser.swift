@@ -76,10 +76,14 @@ private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger:
   return unwrapped
 }
 
+private let FBXCTestResultBundleParser_dateFormatter: DateFormatter = {
+  let formatter = DateFormatter()
+  formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  return formatter
+}()
+
 private func dateFromString(_ date: String) -> Date? {
-  let dateFormatter = DateFormatter()
-  dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-  return dateFormatter.date(from: date)
+  return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
 @objc public final class FBXCTestResultBundleParser: NSObject {
@@ -550,11 +554,15 @@ private func dateFromString(_ date: String) -> Date? {
     return subdirectoryFullPath
   }
 
+  private static let screenshotFilenameRegex: NSRegularExpression = {
+    // swiftlint:disable:next force_try
+    try! NSRegularExpression(pattern: "^Screenshot_.*", options: [])
+  }()
+
   private static func extractScreenshotsFromAttachments(_ attachments: [NSDictionary], to destination: String, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger) {
-    guard let regex = try? NSRegularExpression(pattern: "^Screenshot_.*", options: []) else { return }
     for attachment in attachments {
       guard let filename = accessAndUnwrapValue(attachment, "filename", logger) as? String else { continue }
-      let matchResult = regex.firstMatch(in: filename, options: [], range: NSRange(location: 0, length: (filename as NSString).length))
+      let matchResult = FBXCTestResultBundleParser.screenshotFilenameRegex.firstMatch(in: filename, options: [], range: NSRange(location: 0, length: (filename as NSString).length))
       if attachment["payloadRef"] != nil && matchResult != nil {
         let timestamp = accessAndUnwrapValue(attachment, "timestamp", logger) as? String ?? ""
         let jpgFilename = (filename as NSString).deletingPathExtension.appending(".jpg")
