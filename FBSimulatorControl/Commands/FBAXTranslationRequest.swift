@@ -321,9 +321,8 @@ public final class FBAXTranslationRequest {
     )
   }
 
-  // Maps the request options' raw string keys to the typed serializer keys,
-  // dropping any unrecognized keys (which would never match the output anyway).
+  // The keys to serialize, or an empty set when none were requested.
   private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
-    Set((options.keys ?? []).compactMap(FBAXKeys.init(rawValue:)))
+    options.keys ?? []
   }
 }

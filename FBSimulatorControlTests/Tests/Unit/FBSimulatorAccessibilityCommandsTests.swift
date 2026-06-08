@@ -410,7 +410,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
-    options.keys = Set(["AXLabel", "frame"])
+    options.keys = Set([FBAXKeys.label, .frameDict])
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 
@@ -474,7 +474,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
-    options.keys = Set(["AXLabel", "type", "frame"])
+    options.keys = Set([FBAXKeys.label, .type, .frameDict])
     options.enableLogging = true
     options.enableProfiling = enableProfiling
 

@@ -41,9 +41,9 @@ public struct FBAccessibilityRequestOptions: Sendable {
   /// If `true`, data is returned in nested format with children; otherwise flat. Default: `false`.
   public var nestedFormat: Bool
 
-  /// Set of string keys to filter which properties are returned.
-  /// Defaults to `FBAXKeys.defaultSet` (the standard keys). `nil` means all default keys.
-  public var keys: Set<String>?
+  /// Set of keys to filter which properties are returned.
+  /// Defaults to `FBAXKeys.defaultSet` (the standard keys).
+  public var keys: Set<FBAXKeys>?
 
   /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
   public var enableLogging: Bool
@@ -59,7 +59,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
 
   public init(
     nestedFormat: Bool = false,
-    keys: Set<String>? = Set(FBAXKeys.defaultSet.map(\.rawValue)),
+    keys: Set<FBAXKeys>? = FBAXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
