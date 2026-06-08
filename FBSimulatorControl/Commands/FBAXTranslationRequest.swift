@@ -15,12 +15,9 @@ import Foundation
 /// the synchronous XPC timeout. Subclasses implement how the root element is
 /// obtained (frontmost application vs. point) and how the response is serialized.
 ///
-/// Still created and driven by the Objective-C `FBAXTranslationDispatcher` /
-/// `FBAccessibilityElement` / facade in this module (via `FBSimulatorControl-Swift.h`),
-/// so it stays an `@objc` class with the original selectors. `public` so it lands
-/// in the module's generated header.
-@objc(FBAXTranslationRequest)
-public class FBAXTranslationRequest: NSObject {
+/// Created and driven entirely from Swift in this module (the dispatcher, the
+/// element handle, and the facade), so it is a plain Swift class.
+public class FBAXTranslationRequest {
 
   // Default timeout (in seconds) for synchronous accessibility XPC round-trips.
   // Healthy SpringBoard responses return well under 1s; 5s comfortably absorbs
@@ -29,26 +26,24 @@ public class FBAXTranslationRequest: NSObject {
   // indefinitely on a `DispatchGroup.wait`.
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
-  @objc public let token: String
-  @objc public var device: SimDevice?
-  @objc public var collector: FBAccessibilityProfilingCollector?
-  @objc public var logger: FBControlCoreLogger?
-  @objc public var frameCoverage: NSNumber?
-  @objc public var additionalFrameCoverage: NSNumber?
-  @objc public var translator: AXPTranslator?
+  public let token: String
+  public var device: SimDevice?
+  public var collector: FBAccessibilityProfilingCollector?
+  public var logger: FBControlCoreLogger?
+  public var frameCoverage: NSNumber?
+  public var additionalFrameCoverage: NSNumber?
+  public var translator: AXPTranslator?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
-  @objc public var requestTimeoutSeconds: TimeInterval
+  public var requestTimeoutSeconds: TimeInterval
 
-  @objc public override init() {
+  public init() {
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
-    super.init()
   }
 
-  @objc(performWithTranslator:)
   public func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
     fatalError("\(type(of: self)).perform(withTranslator:) is abstract and should be overridden")
   }
@@ -57,7 +52,7 @@ public class FBAXTranslationRequest: NSObject {
     fatalError("\(type(of: self)).run(_:options:) is abstract and should be overridden")
   }
 
-  @objc public func cloneWithNewToken() -> FBAXTranslationRequest {
+  public func cloneWithNewToken() -> FBAXTranslationRequest {
     fatalError("\(type(of: self)).cloneWithNewToken() is abstract and should be overridden")
   }
 
@@ -82,7 +77,6 @@ public class FBAXTranslationRequest: NSObject {
 
 // MARK: - Frontmost Application
 
-@objc(FBAXTranslationRequest_FrontmostApplication)
 public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationRequest {
 
   public override func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
@@ -301,12 +295,11 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
 
 // MARK: - Point
 
-@objc(FBAXTranslationRequest_Point)
 public final class FBAXTranslationRequest_Point: FBAXTranslationRequest {
 
-  @objc public let point: CGPoint
+  public let point: CGPoint
 
-  @objc public init(point: CGPoint) {
+  public init(point: CGPoint) {
     self.point = point
     super.init()
   }

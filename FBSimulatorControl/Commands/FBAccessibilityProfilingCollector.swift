@@ -14,17 +14,15 @@ import Foundation
 /// called from the accessibility XPC callback thread while the serialization
 /// walk increments element/attribute counts.
 ///
-/// Still created and driven by the Objective-C serializer/dispatcher in this
-/// module (via `FBSimulatorControl-Swift.h`), so it keeps its `@objc` class name
-/// and selectors. `public` so it lands in the module's generated header.
-@objc(FBAccessibilityProfilingCollector)
-public final class FBAccessibilityProfilingCollector: NSObject {
+/// Created and driven entirely from Swift in this module (the serializer and the
+/// dispatcher), so it is a plain Swift class.
+public final class FBAccessibilityProfilingCollector {
 
   // Timing fields are set on the serialization thread (non-atomic, as in the
   // original ObjC `assign` properties).
-  @objc public var translationDuration: CFAbsoluteTime = 0
-  @objc public var elementConversionDuration: CFAbsoluteTime = 0
-  @objc public var serializationDuration: CFAbsoluteTime = 0
+  public var translationDuration: CFAbsoluteTime = 0
+  public var elementConversionDuration: CFAbsoluteTime = 0
+  public var serializationDuration: CFAbsoluteTime = 0
 
   private let lock = NSLock()
   private var _elementCount: Int64 = 0
@@ -33,17 +31,14 @@ public final class FBAccessibilityProfilingCollector: NSObject {
   private var _totalXPCDuration: CFAbsoluteTime = 0
   private var _fetchedKeys = Set<String>()
 
-  @objc public override init() {
-    super.init()
-  }
+  public init() {}
 
-  @objc public func incrementElementCount() {
+  public func incrementElementCount() {
     lock.lock()
     _elementCount += 1
     lock.unlock()
   }
 
-  @objc(incrementAttributeFetchCountForKey:)
   public func incrementAttributeFetchCount(forKey key: String?) {
     lock.lock()
     _attributeFetchCount += 1
@@ -53,7 +48,6 @@ public final class FBAccessibilityProfilingCollector: NSObject {
     lock.unlock()
   }
 
-  @objc(addXPCCallDuration:)
   public func addXPCCallDuration(_ duration: CFAbsoluteTime) {
     lock.lock()
     _xpcCallCount += 1
@@ -67,25 +61,25 @@ public final class FBAccessibilityProfilingCollector: NSObject {
     return _fetchedKeys
   }
 
-  @objc public var elementCount: Int64 {
+  public var elementCount: Int64 {
     lock.lock()
     defer { lock.unlock() }
     return _elementCount
   }
 
-  @objc public var attributeFetchCount: Int64 {
+  public var attributeFetchCount: Int64 {
     lock.lock()
     defer { lock.unlock() }
     return _attributeFetchCount
   }
 
-  @objc public var xpcCallCount: Int64 {
+  public var xpcCallCount: Int64 {
     lock.lock()
     defer { lock.unlock() }
     return _xpcCallCount
   }
 
-  @objc public var totalXPCDuration: CFAbsoluteTime {
+  public var totalXPCDuration: CFAbsoluteTime {
     lock.lock()
     defer { lock.unlock() }
     return _totalXPCDuration

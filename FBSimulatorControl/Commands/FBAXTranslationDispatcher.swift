@@ -86,7 +86,6 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
     logger?.log("Registered request with token \(request.token)")
   }
 
-  @objc(popRequest:)
   public func popRequest(_ request: FBAXTranslationRequest) {
     lock.lock()
     let present = tokenToRequest[request.token] != nil

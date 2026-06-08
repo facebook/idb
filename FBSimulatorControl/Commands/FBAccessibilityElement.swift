@@ -18,12 +18,9 @@ import Foundation
 /// require the token. Call `close()` when done to deregister the token; after
 /// close, serialization fails.
 ///
-/// Previously declared in FBControlCore and implemented in Objective-C here; now
-/// a Swift class in FBSimulatorControl (FBControlCore never consumed it — only
-/// the simulator-side facade does). `@objc`/`public` so it stays usable from the
-/// remaining Objective-C facade and from consumers via `FBSimulatorControl-Swift.h`.
-@objc(FBAccessibilityElement)
-public final class FBAccessibilityElement: NSObject {
+/// A pure-Swift class in FBSimulatorControl (FBControlCore never consumed it —
+/// only the simulator-side facade does, which is now Swift too).
+public final class FBAccessibilityElement {
 
   private let element: AXPMacPlatformElement
   private let request: FBAXTranslationRequest
@@ -31,13 +28,11 @@ public final class FBAccessibilityElement: NSObject {
   private weak var simulator: FBSimulator?
   private var closed: Bool = false
 
-  @objc(initWithElement:request:dispatcher:simulator:)
   public init(element: AXPMacPlatformElement, request: FBAXTranslationRequest, dispatcher: FBAXTranslationDispatcher, simulator: FBSimulator) {
     self.element = element
     self.request = request
     self.dispatcher = dispatcher
     self.simulator = simulator
-    super.init()
   }
 
   deinit {
@@ -48,7 +43,7 @@ public final class FBAccessibilityElement: NSObject {
 
   /// Close the element, deregistering the token. Called automatically on dealloc
   /// as a safety net. After close, serialization fails.
-  @objc public func close() {
+  public func close() {
     if !closed {
       closed = true
       dispatcher.popRequest(request)
@@ -82,7 +77,6 @@ public final class FBAccessibilityElement: NSObject {
   // MARK: - Actions
 
   /// Perform an unconditional accessibility tap (AXPress) without any label verification.
-  @objc(tapWithError:)
   public func tap() throws {
     if closed {
       throw FBSimulatorError.describe("Cannot tap a closed element").build()

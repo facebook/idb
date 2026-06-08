@@ -69,7 +69,6 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
 
   // MARK: - Entry points
 
-  @objc(recursiveDescriptionFromElement:token:nestedFormat:keys:collector:coverageGrid:seenPids:applicationElement:)
   public static func recursiveDescription(
     fromElement element: AXPMacPlatformElement,
     token: String,
@@ -89,7 +88,6 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
     return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
   }
 
-  @objc(formattedDescriptionOfElement:token:nestedFormat:keys:collector:coverageGrid:)
   public static func formattedDescription(
     ofElement element: AXPMacPlatformElement,
     token: String,
@@ -108,7 +106,6 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
   // The values here are intended to mirror the values in the old SimulatorBridge
   // implementation for compatibility downstream. `frontmostPid` is accepted for
   // selector compatibility with the remote-content caller; it is unused.
-  @objc(accessibilityDictionaryForElement:token:keys:collector:frontmostPid:coverageGrid:seenPids:discoveryMethod:)
   public static func accessibilityDictionary(
     forElement element: AXPMacPlatformElement,
     token: String,
