@@ -196,7 +196,7 @@ public class FBSpringboardServicesClient: NSObject {
 
 private typealias IconLayoutJSONType = [[String]]
 
-class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol {
+class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol, AsyncFileContainer {
   private let client: FBSpringboardServicesClient
   private let validFilenames: [String]
 
@@ -239,6 +239,36 @@ class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol {
 
   func remove(_ path: String) -> FBFuture<NSNull> {
     FBControlCoreError.describe("remove does not make sense for Springboard File Containers").failFuture() as! FBFuture<NSNull>
+  }
+
+  // MARK: AsyncFileContainer
+
+  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    try await copyFromHostAsync(sourcePath: sourcePath, toContainer: destinationPath)
+  }
+
+  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    try await copyFromContainerAsync(sourcePath: sourcePath, toHost: destinationPath)
+  }
+
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not implemented for FBSpringboardServicesIconContainer").build()
+  }
+
+  func createDirectory(_ directoryPath: String) async throws {
+    try await bridgeFBFutureVoid(createDirectory(directoryPath))
+  }
+
+  func move(from sourcePath: String, to destinationPath: String) async throws {
+    try await bridgeFBFutureVoid(move(from: sourcePath, to: destinationPath))
+  }
+
+  func remove(_ path: String) async throws {
+    try await bridgeFBFutureVoid(remove(path))
+  }
+
+  func contents(ofDirectory path: String) async throws -> [String] {
+    try await bridgeFBFutureArray(contents(ofDirectory: path)) as [String]
   }
 
   // MARK: - Async

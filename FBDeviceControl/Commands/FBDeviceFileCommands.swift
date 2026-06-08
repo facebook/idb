@@ -11,96 +11,126 @@ import Foundation
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
 
+/// Carries a non-`Sendable` `FBAFCConnection` across the serial-queue boundary.
+/// The wrapped value is only ever touched on the owning serial queue.
+private final class AFCConnectionBox: @unchecked Sendable {
+  let connection: FBAFCConnection
+  init(_ connection: FBAFCConnection) {
+    self.connection = connection
+  }
+}
+
 // MARK: - FBDeviceFileContainer
 
 @objc(FBDeviceFileContainer)
-public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
+public class FBDeviceFileContainer: NSObject, AsyncFileContainer {
   private let queue: DispatchQueue
-  private let connection: FBAFCConnection
+  private let connectionBox: AFCConnectionBox
 
   @objc public init(afcConnection connection: FBAFCConnection, queue: DispatchQueue) {
-    self.connection = connection
+    self.connectionBox = AFCConnectionBox(connection)
     self.queue = queue
     super.init()
   }
 
-  // MARK: FBFileContainerProtocol
+  // MARK: AsyncFileContainer
 
-  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    handleAFCOperation { afc in
-      try afc.copy(fromHost: sourcePath, toContainerPath: destinationPath)
-      return NSNull()
+  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    let box = connectionBox
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async {
+        do {
+          try box.connection.copy(fromHost: sourcePath, toContainerPath: destinationPath)
+          continuation.resume(returning: ())
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
     }
   }
 
-  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await copyAsync(fromContainer: sourcePath, toHost: destinationPath) as NSString
-    }
-  }
-
-  public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
-  }
-
-  public func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    handleAFCOperation { afc in
-      try afc.createDirectory(directoryPath)
-      return NSNull()
-    }
-  }
-
-  public func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    handleAFCOperation { afc in
-      try afc.renamePath(sourcePath, destination: destinationPath)
-      return NSNull()
-    }
-  }
-
-  public func remove(_ path: String) -> FBFuture<NSNull> {
-    handleAFCOperation { afc in
-      try afc.removePath(path, recursively: true)
-      return NSNull()
-    }
-  }
-
-  public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    handleAFCOperation { afc in
-      try afc.contents(ofDirectory: path) as NSArray
-    }
-  }
-
-  // MARK: Async
-
-  fileprivate func copyAsync(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
     var destination = destinationPath
     if FBDeviceFileContainer.isDirectory(destinationPath) {
       destination = (destinationPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
     }
-    let data = try await bridgeFBFuture(readFileFromPath(inContainer: sourcePath)) as Data
+    let data = try await readFile(inContainer: sourcePath)
     try data.write(to: URL(fileURLWithPath: destination))
     return destination
   }
 
-  // MARK: Private
+  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not implemented for FBDeviceFileContainer").build()
+  }
 
-  private func readFileFromPath(inContainer path: String) -> FBFuture<NSData> {
-    handleAFCOperation { afc in
-      try afc.contents(ofPath: path) as NSData
+  public func createDirectory(_ directoryPath: String) async throws {
+    let box = connectionBox
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async {
+        do {
+          try box.connection.createDirectory(directoryPath)
+          continuation.resume(returning: ())
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
     }
   }
 
-  private func handleAFCOperation<T: AnyObject>(_ operation: @escaping (FBAFCConnection) throws -> T) -> FBFuture<T> {
-    FBFuture.onQueue(
-      queue,
-      resolveValue: { errorPtr in
+  public func move(from sourcePath: String, to destinationPath: String) async throws {
+    let box = connectionBox
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async {
         do {
-          return try operation(self.connection)
+          try box.connection.renamePath(sourcePath, destination: destinationPath)
+          continuation.resume(returning: ())
         } catch {
-          errorPtr?.pointee = error as NSError
-          return nil
+          continuation.resume(throwing: error)
         }
-      }) as! FBFuture<T>
+      }
+    }
+  }
+
+  public func remove(_ path: String) async throws {
+    let box = connectionBox
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async {
+        do {
+          try box.connection.removePath(path, recursively: true)
+          continuation.resume(returning: ())
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  public func contents(ofDirectory path: String) async throws -> [String] {
+    let box = connectionBox
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
+      queue.async {
+        do {
+          continuation.resume(returning: try box.connection.contents(ofDirectory: path))
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  // MARK: Private
+
+  private func readFile(inContainer path: String) async throws -> Data {
+    let box = connectionBox
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+      queue.async {
+        do {
+          continuation.resume(returning: try box.connection.contents(ofPath: path))
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
   }
 
   private static func isDirectory(_ path: String) -> Bool {
@@ -111,7 +141,7 @@ public class FBDeviceFileContainer: NSObject, FBFileContainerProtocol {
 
 // MARK: - FBDeviceFileContainer_Wallpaper
 
-private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol {
+private class FBDeviceFileContainer_Wallpaper: NSObject, AsyncFileContainer {
   let queue: DispatchQueue
   let springboard: FBSpringboardServicesClient
   let managedConfig: FBManagedConfigClient
@@ -123,46 +153,41 @@ private class FBDeviceFileContainer_Wallpaper: NSObject, FBFileContainerProtocol
     super.init()
   }
 
-  func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    FBFuture(result: [FBSpringboardServicesClient.wallpaperNameHomescreen, FBSpringboardServicesClient.wallpaperNameLockscreen] as NSArray)
+  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+    try await bridgeFBFutureVoid(managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data))
   }
 
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      let imageData = try await bridgeFBFuture(springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)) as Data
-      try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
-      return destinationPath as NSString
-    }
+  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    let imageData = try await bridgeFBFuture(springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)) as Data
+    try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
+    return destinationPath
   }
 
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-      try await bridgeFBFutureVoid(managedConfig.changeWallpaper(withName: (destinationPath as NSString).lastPathComponent, data: data))
-      return NSNull()
-    }
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not supported for Wallpaper File Containers").build()
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+  func createDirectory(_ directoryPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
   }
 
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+  func move(from sourcePath: String, to destinationPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
   }
 
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+  func remove(_ path: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").build()
   }
 
-  func remove(_ path: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Wallpaper File Containers").failFuture() as! FBFuture<NSNull>
+  func contents(ofDirectory path: String) async throws -> [String] {
+    [FBSpringboardServicesClient.wallpaperNameHomescreen, FBSpringboardServicesClient.wallpaperNameLockscreen]
   }
 }
 
 // MARK: - FBDeviceFileContainer_MDMProfiles
 
-private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtocol {
+private class FBDeviceFileContainer_MDMProfiles: NSObject, AsyncFileContainer {
   let queue: DispatchQueue
   let managedConfig: FBManagedConfigClient
 
@@ -172,42 +197,39 @@ private class FBDeviceFileContainer_MDMProfiles: NSObject, FBFileContainerProtoc
     super.init()
   }
 
-  func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    managedConfig.getProfileList()
+  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+    _ = try await bridgeFBFuture(managedConfig.installProfile(data))
   }
 
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSString>
+  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
   }
 
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-      _ = try await bridgeFBFuture(managedConfig.installProfile(data))
-      return NSNull()
-    }
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not supported for MDM Profile File Containers").build()
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+  func createDirectory(_ directoryPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
   }
 
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
+  func move(from sourcePath: String, to destinationPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").build()
   }
 
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for MDM Profile File Containers").failFuture() as! FBFuture<NSNull>
+  func remove(_ path: String) async throws {
+    try await bridgeFBFutureVoid(managedConfig.removeProfile(path))
   }
 
-  func remove(_ path: String) -> FBFuture<NSNull> {
-    managedConfig.removeProfile(path)
+  func contents(ofDirectory path: String) async throws -> [String] {
+    try await bridgeFBFutureArray(managedConfig.getProfileList()) as [String]
   }
 }
 
 // MARK: - FBDeviceFileCommands_DiskImages
 
-private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol {
+private class FBDeviceFileCommands_DiskImages: NSObject, AsyncFileContainer {
   let commands: any AsyncDeveloperDiskImageCommands
   let queue: DispatchQueue
 
@@ -217,52 +239,36 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
     super.init()
   }
 
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
+  // MARK: AsyncFileContainer
+
+  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
   }
 
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSString>
+  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("-[\(type(of: self)) \(#function)] is not implemented").failFuture() as! FBFuture<FBFuture<NSNull>>
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not supported for Disk Images").build()
   }
 
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Disk Images").failFuture() as! FBFuture<NSNull>
+  func createDirectory(_ directoryPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Disk Images").build()
   }
 
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      if !destinationPath.hasPrefix(MountRootPath) {
-        throw FBDeviceControlError.describe("\(destinationPath) only moving into mounts is supported.").build()
-      }
-      let mountableImagesByPath = self.mountableDiskImagesByPath
-      guard let image = mountableImagesByPath[sourcePath] else {
-        throw FBControlCoreError.describe("\(sourcePath) is not one of \(FBCollectionInformation.oneLineDescription(from: mountableImagesByPath.keys.sorted()))").build()
-      }
-      _ = try await commands.mountDiskImage(image)
-      return NSNull()
+  func move(from sourcePath: String, to destinationPath: String) async throws {
+    if !destinationPath.hasPrefix(MountRootPath) {
+      throw FBDeviceControlError.describe("\(destinationPath) only moving into mounts is supported.").build()
     }
-  }
-
-  func remove(_ path: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await removeAsync(path)
-      return NSNull()
+    let mountableImagesByPath = self.mountableDiskImagesByPath
+    guard let image = mountableImagesByPath[sourcePath] else {
+      throw FBControlCoreError.describe("\(sourcePath) is not one of \(FBCollectionInformation.oneLineDescription(from: mountableImagesByPath.keys.sorted()))").build()
     }
+    _ = try await commands.mountDiskImage(image)
   }
 
-  func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await contentsAsync(ofDirectory: path) as NSArray
-    }
-  }
-
-  // MARK: Async
-
-  fileprivate func removeAsync(_ path: String) async throws {
+  func remove(_ path: String) async throws {
     if !path.hasPrefix(MountRootPath) {
       throw FBDeviceControlError.describe("\(path) cannot be removed, only mounts can be removed").build()
     }
@@ -273,7 +279,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
     try await commands.unmountDiskImage(image)
   }
 
-  fileprivate func contentsAsync(ofDirectory path: String) async throws -> [String] {
+  func contents(ofDirectory path: String) async throws -> [String] {
     let diskImagePaths = try await allDiskImagePathsAsync()
     return FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
   }
@@ -341,7 +347,7 @@ private class FBDeviceFileCommands_DiskImages: NSObject, FBFileContainerProtocol
 
 // MARK: - FBDeviceFileCommands_Symbols
 
-private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
+private class FBDeviceFileCommands_Symbols: NSObject, AsyncFileContainer {
   let commands: any FBDeviceDebugSymbolsCommandsProtocol
   let queue: DispatchQueue
 
@@ -351,38 +357,36 @@ private class FBDeviceFileCommands_Symbols: NSObject, FBFileContainerProtocol {
     super.init()
   }
 
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
   }
 
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
+  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
     if sourcePath == ExtractedSymbolsDirectory {
-      return commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)
+      return try await bridgeFBFuture(commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)) as String
     }
-    return commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
+    return try await bridgeFBFuture(commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)) as String
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<FBFuture<NSNull>>
+  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> any FBiOSTargetOperation {
+    throw FBControlCoreError.describe("tail is not supported for Symbols").build()
   }
 
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+  func createDirectory(_ directoryPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
   }
 
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+  func move(from sourcePath: String, to destinationPath: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
   }
 
-  func remove(_ path: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("\(#function) does not make sense for Symbols").failFuture() as! FBFuture<NSNull>
+  func remove(_ path: String) async throws {
+    throw FBControlCoreError.describe("\(#function) does not make sense for Symbols").build()
   }
 
-  func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      let listedSymbols = try await bridgeFBFutureArray(commands.listSymbols()) as [String]
-      return (listedSymbols + [ExtractedSymbolsDirectory]) as NSArray
-    }
+  func contents(ofDirectory path: String) async throws -> [String] {
+    let listedSymbols = try await bridgeFBFutureArray(commands.listSymbols()) as [String]
+    return listedSymbols + [ExtractedSymbolsDirectory]
   }
 }
 
@@ -411,47 +415,52 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: FBFileCommands
 
-  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<FBDeviceFileContainer> {
     device!.houseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls)
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAFCConnection
           return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-        }) as! FBFutureContext<any FBFileContainerProtocol>
+        }) as! FBFutureContext<FBDeviceFileContainer>
   }
 
-  public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! any FBFileContainerProtocol)
+  fileprivate func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
+    // swiftlint:disable:next force_cast force_unwrapping
+    FBFutureContext(result: FBFileContainer.fileContainer(forBasePath: device!.auxillaryDirectory) as! FBContainedFile_ContainedRoot)
   }
 
-  public func fileCommandsForApplicationContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+  fileprivate func fileCommandsForApplicationContainers() -> FBFutureContext<FBDeviceFileContainer> {
+    // swiftlint:disable:next force_cast
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
-  public func fileCommandsForGroupContainers() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+  fileprivate func fileCommandsForGroupContainers() -> FBFutureContext<FBDeviceFileContainer> {
+    // swiftlint:disable:next force_cast
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
-  public func fileCommandsForRootFilesystem() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+  fileprivate func fileCommandsForRootFilesystem() -> FBFutureContext<FBDeviceFileContainer> {
+    // swiftlint:disable:next force_cast
+    FBControlCoreError.describe("\(#function) not supported on devices, requires a rooted device").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
   }
 
-  public func fileCommandsForMediaDirectory() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForMediaDirectory() -> FBFutureContext<FBDeviceFileContainer> {
     device!.startAFCService("com.apple.afc")
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAFCConnection
           return FBFuture(result: FBDeviceFileContainer(afcConnection: conn, queue: self.device!.asyncQueue) as AnyObject)
-        }) as! FBFutureContext<any FBFileContainerProtocol>
+        }) as! FBFutureContext<FBDeviceFileContainer>
   }
 
-  public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! any FBFileContainerProtocol)
+  fileprivate func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
+    // swiftlint:disable:next force_cast force_unwrapping
+    FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! FBFileContainer_ProvisioningProfile)
   }
 
-  public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForMDMProfiles() -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
     device!.startService(FBManagedConfigClient.serviceName)
       .onQueue(
         device!.asyncQueue,
@@ -459,20 +468,20 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
           let conn = connection as! FBAMDServiceConnection
           let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conn, logger: self.device!.logger!)
           return FBFuture(result: FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
-        }) as! FBFutureContext<any FBFileContainerProtocol>
+        }) as! FBFutureContext<FBDeviceFileContainer_MDMProfiles>
   }
 
-  public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForSpringboardIconLayout() -> FBFutureContext<FBSpringboardServicesIconContainer> {
     device!.startService(FBSpringboardServicesClient.serviceName)
       .onQueue(
         device!.asyncQueue,
         pend: { (connection: AnyObject) -> FBFuture<AnyObject> in
           let conn = connection as! FBAMDServiceConnection
           return FBFuture(result: FBSpringboardServicesClient.springboardServicesClient(connection: conn, logger: self.device!.logger!).iconContainer() as AnyObject)
-        }) as! FBFutureContext<any FBFileContainerProtocol>
+        }) as! FBFutureContext<FBSpringboardServicesIconContainer>
   }
 
-  public func fileCommandsForWallpaper() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForWallpaper() -> FBFutureContext<FBDeviceFileContainer_Wallpaper> {
     FBFutureContext(futureContexts: [
       unsafeBitCast(device!.startService(FBSpringboardServicesClient.serviceName), to: FBFutureContext<AnyObject>.self),
       unsafeBitCast(device!.startService(FBManagedConfigClient.serviceName), to: FBFutureContext<AnyObject>.self),
@@ -484,16 +493,17 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
         let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: conns[0] as! FBAMDServiceConnection, logger: self.device!.logger!)
         let managedConfig = FBManagedConfigClient.managedConfigClient(connection: conns[1] as! FBAMDServiceConnection, logger: self.device!.logger!)
         return FBFuture(result: FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: self.device!.workQueue) as AnyObject)
-      }) as! FBFutureContext<any FBFileContainerProtocol>
+      }) as! FBFutureContext<FBDeviceFileContainer_Wallpaper>
   }
 
-  public func fileCommandsForDiskImages() -> FBFutureContext<any FBFileContainerProtocol> {
-    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any AsyncDeveloperDiskImageCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
+  fileprivate func fileCommandsForDiskImages() -> FBFutureContext<FBDeviceFileCommands_DiskImages> {
+    // swiftlint:disable:next force_unwrapping
+    FBFutureContext(result: FBDeviceFileCommands_DiskImages(commands: device! as any AsyncDeveloperDiskImageCommands, queue: device!.asyncQueue))
   }
 
-  public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func fileCommandsForSymbols() -> FBFutureContext<FBDeviceFileCommands_Symbols> {
     let symbolCommands: any FBDeviceDebugSymbolsCommandsProtocol = device!
-    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue) as any FBFileContainerProtocol)
+    return FBFutureContext(result: FBDeviceFileCommands_Symbols(commands: symbolCommands, queue: device!.asyncQueue))
   }
 }
 
@@ -574,14 +584,14 @@ extension FBDevice: AsyncFileCommands {
     try await withAsyncFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
   }
 
-  /// Scopes the legacy file container to `body`, exposing it through the
-  /// `AsyncFileContainer` async API so callers never see `FBFileContainerProtocol`.
-  private func withAsyncFileContainer<R>(
-    _ context: FBFutureContext<any FBFileContainerProtocol>,
+  /// Scopes the file container to `body`, exposing it through the
+  /// `AsyncFileContainer` async API.
+  private func withAsyncFileContainer<C: AsyncFileContainer, R>(
+    _ context: FBFutureContext<C>,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     try await withFBFutureContext(context) { container in
-      try await body(AsyncFileContainerAdapter(container))
+      try await body(container)
     }
   }
 }
