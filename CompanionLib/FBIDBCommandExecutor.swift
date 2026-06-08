@@ -503,20 +503,20 @@ import XCTestBootstrap
   ) async throws -> R {
     if containerType == FBFileContainerKind.crashes.rawValue {
       return try await target.withCrashLogFiles { container in
-        try await body(AsyncFileContainerAdapter(container))
+        try await body(container)
       }
     }
     if containerType == FBFileContainerKind.xctest.rawValue {
-      return try await body(AsyncFileContainerAdapter(storageManager.xctest.asFileContainer()))
+      return try await body(storageManager.xctest.asFileContainer())
     }
     if containerType == FBFileContainerKind.dylib.rawValue {
-      return try await body(AsyncFileContainerAdapter(storageManager.dylib.asFileContainer()))
+      return try await body(storageManager.dylib.asFileContainer())
     }
     if containerType == FBFileContainerKind.dsym.rawValue {
-      return try await body(AsyncFileContainerAdapter(storageManager.dsym.asFileContainer()))
+      return try await body(storageManager.dsym.asFileContainer())
     }
     if containerType == FBFileContainerKind.framework.rawValue {
-      return try await body(AsyncFileContainerAdapter(storageManager.framework.asFileContainer()))
+      return try await body(storageManager.framework.asFileContainer())
     }
     if containerType == FBFileContainerKind.application.rawValue {
       return try await target.withFileCommandsForApplicationContainers { container in

@@ -53,8 +53,9 @@ public let IdbFrameworksFolder: String = "idb-frameworks"
     }
   }
 
-  @objc public func asFileContainer() -> FBFileContainerProtocol {
-    return FBFileContainer.fileContainer(forBasePath: basePath.path) as! FBFileContainerProtocol
+  public func asFileContainer() -> any AsyncFileContainer {
+    // swiftlint:disable:next force_cast
+    return FBFileContainer.fileContainer(forBasePath: basePath.path) as! FBContainedFile_ContainedRoot
   }
 
   @objc public var replacementMapping: [String: String] {

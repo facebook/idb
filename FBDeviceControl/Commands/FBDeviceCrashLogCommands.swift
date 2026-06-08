@@ -70,9 +70,9 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
     return try await removeCrashLogsFromDeviceAsync(pruned, logger: logger)
   }
 
-  fileprivate func crashLogFilesContext() -> FBFutureContext<any FBFileContainerProtocol> {
+  fileprivate func crashLogFilesContext() -> FBFutureContext<FBDeviceFileContainer> {
     guard let device else {
-      return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      return FBDeviceControlError().describe("Device is nil").failFutureContext() as! FBFutureContext<FBDeviceFileContainer>
     }
     return
       (crashReportFileConnection()
@@ -80,7 +80,7 @@ public class FBDeviceCrashLogCommands: NSObject, FBiOSTargetCommand {
         device.asyncQueue,
         pend: { connection -> FBFuture<AnyObject> in
           FBFuture(result: FBDeviceFileContainer(afcConnection: connection, queue: device.asyncQueue) as AnyObject)
-        })) as! FBFutureContext<any FBFileContainerProtocol>
+        })) as! FBFutureContext<FBDeviceFileContainer>
   }
 
   // MARK: - Private
@@ -206,8 +206,10 @@ extension FBDevice: AsyncCrashLogCommands {
     try await crashLogCommands().pruneCrashesAsync(predicate)
   }
 
-  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
-    try await withFBFutureContext(crashLogCommands().crashLogFilesContext(), body: body)
+  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+    try await withFBFutureContext(crashLogCommands().crashLogFilesContext()) { container in
+      try await body(container)
+    }
   }
 }
 

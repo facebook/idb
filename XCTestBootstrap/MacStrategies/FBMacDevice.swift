@@ -598,7 +598,7 @@ extension FBMacDevice: AsyncCrashLogCommands {
     throw FBControlCoreError.describe("-[FBMacDevice pruneCrashes:] is not implemented").build()
   }
 
-  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
+  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw FBControlCoreError.describe("-[FBMacDevice crashLogFiles] is not implemented").build()
   }
 }

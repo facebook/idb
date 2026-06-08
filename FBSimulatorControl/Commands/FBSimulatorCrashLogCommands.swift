@@ -84,7 +84,7 @@ extension FBSimulator: AsyncCrashLogCommands {
     try await crashLogCommands().pruneCrashesAsync(matching: predicate)
   }
 
-  public func withCrashLogFiles<R>(body: (any FBFileContainerProtocol) async throws -> R) async throws -> R {
+  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw FBControlCoreError.describe("crashLogFiles not supported on simulators").build()
   }
 }
