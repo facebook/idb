@@ -271,7 +271,7 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 @implementation FBFileContainer
 
-+ (id<FBFileContainerProtocol>)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
++ (id)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
 {
   return [[FBFileContainer_ProvisioningProfile alloc] initWithCommands:commands];
 }
@@ -286,19 +286,19 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
   return [[FBContainedFile_Mapped_Host alloc] initWithMappingPaths:pathMapping fileManager:NSFileManager.defaultManager];
 }
 
-+ (id<FBFileContainerProtocol>)fileContainerForBasePath:(NSString *)basePath
++ (id)fileContainerForBasePath:(NSString *)basePath
 {
   id<FBContainedFile> rootFile = [self containedFileForBasePath:basePath];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainerProtocol>)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
++ (id)fileContainerForPathMapping:(NSDictionary<NSString *, NSString *> *)pathMapping
 {
   id<FBContainedFile> rootFile = [self containedFileForPathMapping:pathMapping];
   return [self fileContainerForContainedFile:rootFile];
 }
 
-+ (id<FBFileContainerProtocol>)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
++ (id)fileContainerForContainedFile:(id<FBContainedFile>)containedFile
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.file_container", DISPATCH_QUEUE_SERIAL);
   return [[FBContainedFile_ContainedRoot alloc] initWithRootFile:containedFile queue:queue];

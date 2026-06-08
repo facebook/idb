@@ -112,7 +112,7 @@ public class FBSpringboardServicesClient: NSObject {
     }
   }
 
-  @objc public func iconContainer() -> any FBFileContainerProtocol {
+  public func iconContainer() -> any AsyncFileContainer {
     FBSpringboardServicesIconContainer(client: self)
   }
 
@@ -196,7 +196,7 @@ public class FBSpringboardServicesClient: NSObject {
 
 private typealias IconLayoutJSONType = [[String]]
 
-class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol, AsyncFileContainer {
+class FBSpringboardServicesIconContainer: NSObject, AsyncFileContainer {
   private let client: FBSpringboardServicesClient
   private let validFilenames: [String]
 
@@ -204,41 +204,6 @@ class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol, Asy
     self.client = client
     self.validFilenames = [IconPlistFile, IconJSONFile]
     super.init()
-  }
-
-  // MARK: FBFileContainer Implementation
-
-  func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    FBFuture(result: validFilenames as NSArray)
-  }
-
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await copyFromContainerAsync(sourcePath: sourcePath, toHost: destinationPath) as NSString
-    }
-  }
-
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await copyFromHostAsync(sourcePath: sourcePath, toContainer: destinationPath)
-      return NSNull()
-    }
-  }
-
-  func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    FBControlCoreError.describe("tail is not implemented for FBSpringboardServicesIconContainer").failFuture() as! FBFuture<FBFuture<NSNull>>
-  }
-
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("createDirectory does not make sense for Springboard File Containers").failFuture() as! FBFuture<NSNull>
-  }
-
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("moveFrom does not make sense for Springboard File Containers").failFuture() as! FBFuture<NSNull>
-  }
-
-  func remove(_ path: String) -> FBFuture<NSNull> {
-    FBControlCoreError.describe("remove does not make sense for Springboard File Containers").failFuture() as! FBFuture<NSNull>
   }
 
   // MARK: AsyncFileContainer
@@ -256,19 +221,19 @@ class FBSpringboardServicesIconContainer: NSObject, FBFileContainerProtocol, Asy
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    try await bridgeFBFutureVoid(createDirectory(directoryPath))
+    throw FBControlCoreError.describe("createDirectory does not make sense for Springboard File Containers").build()
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    try await bridgeFBFutureVoid(move(from: sourcePath, to: destinationPath))
+    throw FBControlCoreError.describe("moveFrom does not make sense for Springboard File Containers").build()
   }
 
   func remove(_ path: String) async throws {
-    try await bridgeFBFutureVoid(remove(path))
+    throw FBControlCoreError.describe("remove does not make sense for Springboard File Containers").build()
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    try await bridgeFBFutureArray(contents(ofDirectory: path)) as [String]
+    validFilenames
   }
 
   // MARK: - Async

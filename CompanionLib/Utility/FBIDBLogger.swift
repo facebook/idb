@@ -99,12 +99,6 @@ private class FBIDBLoggerOperation: NSObject, AsyncLogOperation {
     return all
   }
 
-  @objc public func tailToConsumer(_ consumer: FBDataConsumer) -> FBFuture<AnyObject> {
-    fbFutureFromAsync { [self] in
-      try await tailToConsumerAsync(consumer) as AnyObject
-    }
-  }
-
   public func tailToConsumerAsync(_ consumer: FBDataConsumer) async throws -> any AsyncLogOperation {
     let queue = FBIDBLogger.loggerQueue
     return await withCheckedContinuation { (continuation: CheckedContinuation<any AsyncLogOperation, Never>) in

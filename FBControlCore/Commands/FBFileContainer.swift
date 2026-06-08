@@ -7,30 +7,6 @@
 
 import Foundation
 
-@objc public protocol FBFileContainerProtocol: NSObjectProtocol {
-
-  @objc(copyFromHost:toContainer:)
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull>
-
-  @objc(copyFromContainer:toHost:)
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString>
-
-  @objc(tail:toConsumer:)
-  func tail(_ path: String, to consumer: FBDataConsumer) -> FBFuture<FBFuture<NSNull>>
-
-  @objc(createDirectory:)
-  func createDirectory(_ directoryPath: String) -> FBFuture<NSNull>
-
-  @objc(moveFrom:to:)
-  func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull>
-
-  @objc(remove:)
-  func remove(_ path: String) -> FBFuture<NSNull>
-
-  @objc(contentsOfDirectory:)
-  func contents(ofDirectory path: String) -> FBFuture<NSArray>
-}
-
 @objc public protocol FBContainedFile: NSObjectProtocol {
 
   @objc(removeItemWithError:)
@@ -94,9 +70,9 @@ private final class FileContainerTailOperation: NSObject, FBiOSTargetOperation {
 
 /// File container backed by a synchronous `FBContainedFile`. Each operation
 /// resolves the target path and runs the synchronous file work on a serial
-/// queue. Replaces the former Objective-C `FBContainedFile_ContainedRoot`.
+/// queue.
 @objc(FBContainedFile_ContainedRoot)
-public final class FBContainedFile_ContainedRoot: NSObject, FBFileContainerProtocol, AsyncFileContainer {
+public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
 
   private let rootFileBox: ContainedFileBox
   private let queue: DispatchQueue
@@ -302,60 +278,11 @@ public final class FBContainedFile_ContainedRoot: NSObject, FBFileContainerProto
     }
   }
 
-  // MARK: - FBFileContainerProtocol (legacy, delegates to the async API)
-
-  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await copy(fromHost: sourcePath, toContainer: destinationPath)
-      return NSNull()
-    }
-  }
-
-  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await copy(fromContainer: sourcePath, toHost: destinationPath) as NSString
-    }
-  }
-
-  public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    fbFutureFromAsync { [self] in
-      let operation = try await tail(path, to: consumer)
-      return operation.completed
-    }
-  }
-
-  public func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await createDirectory(directoryPath)
-      return NSNull()
-    }
-  }
-
-  public func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await move(from: sourcePath, to: destinationPath)
-      return NSNull()
-    }
-  }
-
-  public func remove(_ path: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await remove(path)
-      return NSNull()
-    }
-  }
-
-  public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await contents(ofDirectory: path) as NSArray
-    }
-  }
 }
 
-/// File container backed by `FBProvisioningProfileCommands`. Replaces the former
-/// Objective-C `FBFileContainer_ProvisioningProfile`.
+/// File container backed by `FBProvisioningProfileCommands`.
 @objc(FBFileContainer_ProvisioningProfile)
-public final class FBFileContainer_ProvisioningProfile: NSObject, FBFileContainerProtocol, AsyncFileContainer {
+public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileContainer {
 
   private let commandsBox: ProvisioningCommandsBox
 
@@ -400,54 +327,5 @@ public final class FBFileContainer_ProvisioningProfile: NSObject, FBFileContaine
       }
     }
     return files
-  }
-
-  // MARK: - FBFileContainerProtocol (legacy, delegates to the async API)
-
-  public func copy(fromHost sourcePath: String, toContainer destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await copy(fromHost: sourcePath, toContainer: destinationPath)
-      return NSNull()
-    }
-  }
-
-  public func copy(fromContainer sourcePath: String, toHost destinationPath: String) -> FBFuture<NSString> {
-    fbFutureFromAsync { [self] in
-      try await copy(fromContainer: sourcePath, toHost: destinationPath) as NSString
-    }
-  }
-
-  public func tail(_ path: String, to consumer: any FBDataConsumer) -> FBFuture<FBFuture<NSNull>> {
-    fbFutureFromAsync { [self] in
-      let operation = try await tail(path, to: consumer)
-      return operation.completed
-    }
-  }
-
-  public func createDirectory(_ directoryPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await createDirectory(directoryPath)
-      return NSNull()
-    }
-  }
-
-  public func move(from sourcePath: String, to destinationPath: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await move(from: sourcePath, to: destinationPath)
-      return NSNull()
-    }
-  }
-
-  public func remove(_ path: String) -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await remove(path)
-      return NSNull()
-    }
-  }
-
-  public func contents(ofDirectory path: String) -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await contents(ofDirectory: path) as NSArray
-    }
   }
 }
