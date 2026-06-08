@@ -56,86 +56,11 @@ extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyPlaceholder;
  */
 extern NSSet<FBAXKeys> *_Nonnull FBAXKeysDefaultSet(void);
 
-/**
- Options for fetching remote process elements (e.g., WebView content).
- Remote elements are in separate processes and require grid-based hit-testing to discover.
- */
-@interface FBAccessibilityRemoteContentOptions : NSObject <NSCopying>
-
-/**
- Grid step size in points for sampling. Smaller = more thorough but slower.
- Default: 50.0
- */
-@property (nonatomic, assign) CGFloat gridStepSize;
-
-/**
- Region to sample. CGRectNull = full screen (default).
- */
-@property (nonatomic, assign) CGRect region;
-
-/**
- Maximum points to sample. 0 = unlimited (default).
- */
-@property (nonatomic, assign) NSUInteger maxPoints;
-
-/**
- Creates options with default values.
- */
-+ (nonnull instancetype)defaultOptions;
-
-@end
-
-/**
- Request options for accessibility operations.
- Consolidates all parameters needed for an accessibility query.
- */
-@interface FBAccessibilityRequestOptions : NSObject <NSCopying>
-
-/**
- If YES, data is returned in nested format with children. If NO, flat format.
- Default: NO
- */
-@property (nonatomic, assign) BOOL nestedFormat;
-
-/**
- Set of string keys to filter which properties are returned.
- Default: FBAXKeysDefaultSet() (all standard keys).
- Set to nil to use all default keys.
- */
-@property (nullable, nonatomic, copy) NSSet<NSString *> *keys;
-
-/**
- Log accessibility requests and responses to the simulator's logger.
- Default: NO
- */
-@property (nonatomic, assign) BOOL enableLogging;
-
-/**
- Collect profiling data (element counts, timing metrics).
- Default: NO
- */
-@property (nonatomic, assign) BOOL enableProfiling;
-
-/**
- Enable frame coverage calculation during traversal.
- When YES, frameCoverage will be populated in the response.
- Default: NO
- */
-@property (nonatomic, assign) BOOL collectFrameCoverage;
-
-/**
- Options for remote content fetching. If nil (default), remote content is not fetched.
- Remote elements are in separate processes (e.g., WebKit content in Safari) and require
- grid-based hit-testing to discover, which adds ~270ms overhead.
- */
-@property (nullable, nonatomic, strong) FBAccessibilityRemoteContentOptions *remoteContentOptions;
-
-/**
- Creates options with default values.
- */
-+ (nonnull instancetype)defaultOptions;
-
-@end
+// `FBAccessibilityRemoteContentOptions` and `FBAccessibilityRequestOptions` are
+// now defined in Swift (see FBAccessibilityRequestOptions.swift). `RequestOptions`
+// is forward-declared here for the ObjC `FBAccessibilityElement` interface below.
+// ObjC code that reads them imports <FBControlCore/FBControlCore-Swift.h>.
+@class FBAccessibilityRequestOptions;
 
 // `FBAccessibilityProfilingData` and `FBAccessibilityElementsResponse` are now
 // defined in Swift (see FBAccessibilityResponse.swift). They are forward-declared
