@@ -488,21 +488,21 @@ extension IDBXCTestReporter {
     return createResponse(logOutput: logOutput)
   }
 
+  private static let assertionFailureRegex: NSRegularExpression = {
+    // swiftlint:disable:next force_try
+    try! NSRegularExpression(pattern: "Assertion failed: (.*), function (.*), file (.*), line (\\d+).", options: .caseInsensitive)
+  }()
+
   private func extractFailureInfo(from logOutput: String) {
-    do {
-      let regexp = try NSRegularExpression(pattern: "Assertion failed: (.*), function (.*), file (.*), line (\\d+).", options: .caseInsensitive)
-      let log = logOutput as NSString
-      if let result = regexp.firstMatch(in: logOutput, options: [], range: .init(location: 0, length: log.length)) {
-        _currentInfo.sync {
-          $0.failureInfo = failureInfoWith(
-            message: log.substring(with: result.range(at: 1)),
-            file: log.substring(with: result.range(at: 3)),
-            line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
-        }
-      }
-    } catch {
-      assertionFailure(error.localizedDescription)
-      logger.error().log("Incorrect regexp \(error.localizedDescription)")
+    let log = logOutput as NSString
+    guard let result = Self.assertionFailureRegex.firstMatch(in: logOutput, options: [], range: .init(location: 0, length: log.length)) else {
+      return
+    }
+    _currentInfo.sync {
+      $0.failureInfo = failureInfoWith(
+        message: log.substring(with: result.range(at: 1)),
+        file: log.substring(with: result.range(at: 3)),
+        line: UInt(log.substring(with: result.range(at: 4))) ?? 0)
     }
   }
 
