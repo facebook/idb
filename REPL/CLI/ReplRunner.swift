@@ -36,13 +36,14 @@ struct ReplRunner: ParsableArguments {
   @Option(name: .long, help: "Path to the idb_companion gRPC Unix domain socket.")
   var companionSocket: String
 
-  @Option(name: .long, help: "Path to the Swift toolchain used to compile code.")
-  var toolchainPath: String
+  @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
+  var toolchainPath: String?
 
   @Option(name: .long, help: "Target platform (ios, macos).")
   var platform: Platform
 
   func run(context: Context) async throws {
+    let toolchain = try resolveToolchainPath(explicit: toolchainPath)
     let sdkPath = try resolveSDKPath(platform: platform)
     let targetTriple = try resolveTargetTriple(platform: platform)
 
@@ -103,7 +104,7 @@ struct ReplRunner: ParsableArguments {
         switch trimmed {
         case "/run":
           let swiftCode = lines.joined(separator: "\n")
-          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath) {
+          if let dylib = compileRun(swiftCode: swiftCode, index: runIndex, moduleMap: moduleMap, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain) {
             try await call.requestStream.send(
               .with {
                 $0.control = .execute(
@@ -174,7 +175,7 @@ struct ReplRunner: ParsableArguments {
 
   /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
   /// compile error and returns nil.
-  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, targetTriple: String, sdkPath: String) -> Data? {
+  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, targetTriple: String, sdkPath: String, toolchain: String) -> Data? {
     do {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
@@ -183,7 +184,7 @@ struct ReplRunner: ParsableArguments {
       let code = wrappedCode(swiftCode: strippedCode, index: index, moduleMap: moduleMap)
       try code.write(toFile: swiftPath, atomically: true, encoding: .utf8)
 
-      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath)
+      let (status, compilerOutput) = try compileSwift(sourcePath: swiftPath, outputPath: dylibPath, moduleMapPath: moduleMapPath, targetTriple: targetTriple, sdkPath: sdkPath, toolchain: toolchain)
       try? FileManager.default.removeItem(atPath: swiftPath)
 
       if status == 0 {
@@ -285,8 +286,8 @@ struct ReplRunner: ParsableArguments {
       """
   }
 
-  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, targetTriple: String, sdkPath: String) throws -> (Int32, String) {
-    let swiftcPath = (toolchainPath as NSString).appendingPathComponent("usr/bin/swiftc")
+  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, targetTriple: String, sdkPath: String, toolchain: String) throws -> (Int32, String) {
+    let swiftcPath = (toolchain as NSString).appendingPathComponent("usr/bin/swiftc")
     let swiftc = Process()
     swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
     var environment = ProcessInfo.processInfo.environment

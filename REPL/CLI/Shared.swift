@@ -115,3 +115,30 @@ func resolveTargetTriple(platform: Platform) throws -> String {
   let version = output.trimmingCharacters(in: .whitespacesAndNewlines)
   return platform.targetTriple(version: version)
 }
+
+/// Resolves the Swift toolchain path. Returns `explicit` when given (e.g. the
+/// `test` context derives one from the test target's `[xctoolchain]` sub-target);
+/// otherwise falls back to the locally selected Xcode toolchain via
+/// `xcode-select -p`, matching idb-repl-simulator.sh.
+func resolveToolchainPath(explicit: String?) throws -> String {
+  if let explicit {
+    return explicit
+  }
+
+  let process = Process()
+  process.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
+  process.arguments = ["-p"]
+  let pipe = Pipe()
+  process.standardOutput = pipe
+  try process.run()
+  process.waitUntilExit()
+
+  guard process.terminationStatus == 0,
+    let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+  else {
+    throw ValidationError("Failed to resolve the selected Xcode toolchain via xcode-select; pass --toolchain-path explicitly")
+  }
+
+  let developerDirectory = output.trimmingCharacters(in: .whitespacesAndNewlines)
+  return (developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain")
+}
