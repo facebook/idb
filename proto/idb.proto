@@ -794,6 +794,11 @@ message ReplRequest {
   // Sent once, first, to start the session.
   message Start {
     string test_bundle_path = 1;
+    enum Context {
+      SIMULATOR = 0;
+      TEST = 1;
+    }
+    Context context = 2;
   }
   // Sent for each piece of code to run: a compiled dylib and the symbol to
   // call.
