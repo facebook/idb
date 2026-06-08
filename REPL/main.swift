@@ -12,5 +12,30 @@ struct TestRepl: AsyncParsableCommand {
   static var configuration = CommandConfiguration(
     commandName: "idb-repl",
     abstract: "Launch a test bundle in REPL mode",
-    subcommands: [DylibCommand.self])
+    subcommands: [TestCommand.self, SimulatorCommand.self])
+}
+
+struct TestCommand: AsyncParsableCommand {
+  static var configuration = CommandConfiguration(
+    commandName: "test",
+    abstract: "Run the REPL in a test context.")
+
+  @OptionGroup var repl: ReplRunner
+  @OptionGroup var bundle: TestBundleOptions
+
+  func run() async throws {
+    try await repl.run(context: .test(bundle))
+  }
+}
+
+struct SimulatorCommand: AsyncParsableCommand {
+  static var configuration = CommandConfiguration(
+    commandName: "simulator",
+    abstract: "Run the REPL in a simulator context.")
+
+  @OptionGroup var repl: ReplRunner
+
+  func run() async throws {
+    try await repl.run(context: .simulator)
+  }
 }

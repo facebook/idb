@@ -21,6 +21,8 @@ struct ReplMethodHandler {
     guard case let .start(start) = try await requestStream.requiredNext.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "repl expected a Start message at the beginning of the stream") }
 
+    targetLogger.debug().log("REPL session context: \(start.context)")
+
     // Launch the test bundle in REPL mode: libRepl injected, TestRepl/start
     // forced, and IDB_REPL_SOCKET_PATH set so the shim binds the control socket.
     let session = try await commandExecutor.repl_start(bundlePath: start.testBundlePath)

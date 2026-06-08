@@ -15,54 +15,71 @@ import IDBGRPCSwift
 import NIOCore
 import NIOPosix
 
-struct DylibCommand: AsyncParsableCommand {
-  static var configuration = CommandConfiguration(
-    commandName: "dylib",
-    abstract: "Run the test process for dylib injection")
+/// Selects which context the REPL runs in. The `test` context carries the
+/// bundle/module options it needs; `simulator` has none.
+enum Context {
+  case simulator
+  case test(TestBundleOptions)
 
-  @OptionGroup var options: SharedOptions
+  /// The corresponding gRPC enum forwarded to the companion in the Start message.
+  var proto: Idb_ReplRequest.Start.Context {
+    switch self {
+    case .simulator: return .simulator
+    case .test: return .test
+    }
+  }
+}
 
-  @Option(name: .long, help: "Path to the Swift module for the test target. Must end with a .swiftmodule file.")
-  var swiftModule: String
+/// Shared REPL implementation backing both the `test` and `simulator`
+/// subcommands. Its options are flattened into each subcommand via `@OptionGroup`.
+struct ReplRunner: ParsableArguments {
+  @Option(name: .long, help: "Path to the idb_companion gRPC Unix domain socket.")
+  var companionSocket: String
 
-  @Option(name: .long, help: "Path to the explicit Swift module map for the test target. Must end with a .json file.")
-  var swiftModuleMap: String
-
-  @Option(name: .long, help: "Path to the toolchain for the test target.")
+  @Option(name: .long, help: "Path to the Swift toolchain used to compile code.")
   var toolchainPath: String
 
   @Option(name: .long, help: "Target platform (ios, macos).")
   var platform: Platform
 
-  func validate() throws {
-    guard (swiftModule as NSString).pathExtension == "swiftmodule" else {
-      throw ValidationError("--swift-module path must end with a .swiftmodule file, got: \(swiftModule)")
-    }
-    guard (swiftModuleMap as NSString).pathExtension == "json" else {
-      throw ValidationError("--swift-module-map path must end with a .json file, got: \(swiftModuleMap)")
-    }
-  }
-
-  func run() async throws {
-    let (moduleMap, moduleMapPath) = try prepareModuleMap()
+  func run(context: Context) async throws {
     let sdkPath = try resolveSDKPath(platform: platform)
     let targetTriple = try resolveTargetTriple(platform: platform)
+
+    // The module map only applies to the test context; the simulator context
+    // runs without a bundle or module map.
+    let moduleMap: SwiftModuleMap?
+    let moduleMapPath: String?
+    switch context {
+    case let .test(bundle):
+      (moduleMap, moduleMapPath) = try prepareModuleMap(bundle: bundle)
+    case .simulator:
+      moduleMap = nil
+      moduleMapPath = nil
+    }
 
     // Connect to idb_companion over its gRPC Unix domain socket.
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     let channel = try GRPCChannelPool.with(
-      target: .unixDomainSocket(options.companionSocket),
+      target: .unixDomainSocket(companionSocket),
       transportSecurity: .plaintext,
       eventLoopGroup: group
     )
     let client = Idb_CompanionServiceAsyncClient(channel: channel)
 
-    // Open the bidirectional repl stream and start a session for the bundle.
+    // Open the bidirectional repl stream and start a session.
     let call = client.makeReplCall()
     var responses = call.responseStream.makeAsyncIterator()
     try await call.requestStream.send(
       .with {
-        $0.control = .start(.with { $0.testBundlePath = options.testBundlePath })
+        $0.control = .start(
+          .with {
+            $0.context = context.proto
+            // Only the test context runs against a bundle.
+            if case let .test(bundle) = context {
+              $0.testBundlePath = bundle.testBundlePath
+            }
+          })
       })
 
     // The companion launches the test and connects to the shim before it is ready.
@@ -138,13 +155,13 @@ struct DylibCommand: AsyncParsableCommand {
     sessionDirectory.cleanup()
   }
 
-  private func prepareModuleMap() throws -> (moduleMap: SwiftModuleMap, path: String) {
-    let original = try SwiftModuleMap(path: swiftModuleMap)
-    let moduleName = ((swiftModule as NSString).lastPathComponent as NSString).deletingPathExtension
+  private func prepareModuleMap(bundle: TestBundleOptions) throws -> (moduleMap: SwiftModuleMap, path: String) {
+    let original = try SwiftModuleMap(path: bundle.swiftModuleMap)
+    let moduleName = ((bundle.swiftModule as NSString).lastPathComponent as NSString).deletingPathExtension
     let newModule = SwiftModuleMap.Module(
       moduleName: moduleName,
       isFramework: false,
-      modulePath: swiftModule,
+      modulePath: bundle.swiftModule,
       clangModulePath: nil,
       clangModuleMapPath: nil
     )
@@ -157,7 +174,7 @@ struct DylibCommand: AsyncParsableCommand {
 
   /// Compiles the entered Swift into a dylib and returns its bytes, or prints a
   /// compile error and returns nil.
-  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap, moduleMapPath: String, targetTriple: String, sdkPath: String) -> Data? {
+  private func compileRun(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?, moduleMapPath: String?, targetTriple: String, sdkPath: String) -> Data? {
     do {
       let swiftPath = try sessionDirectory.filePath(named: "run-\(index).swift")
       let dylibPath = try sessionDirectory.filePath(named: "run-\(index).dylib")
@@ -195,7 +212,7 @@ struct DylibCommand: AsyncParsableCommand {
     return (imports, stripped)
   }
 
-  private func wrappedCode(swiftCode: String, index: Int, moduleMap: SwiftModuleMap) -> String {
+  private func wrappedCode(swiftCode: String, index: Int, moduleMap: SwiftModuleMap?) -> String {
     // TODO: fix importing the modules declared in the module map.
     // let imports = moduleMap.entries
     //   .filter { $0.modulePath != nil && !$0.moduleName.hasPrefix("_") }
@@ -268,7 +285,7 @@ struct DylibCommand: AsyncParsableCommand {
       """
   }
 
-  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String, targetTriple: String, sdkPath: String) throws -> (Int32, String) {
+  private func compileSwift(sourcePath: String, outputPath: String, moduleMapPath: String?, targetTriple: String, sdkPath: String) throws -> (Int32, String) {
     let swiftcPath = (toolchainPath as NSString).appendingPathComponent("usr/bin/swiftc")
     let swiftc = Process()
     swiftc.executableURL = URL(fileURLWithPath: swiftcPath)
