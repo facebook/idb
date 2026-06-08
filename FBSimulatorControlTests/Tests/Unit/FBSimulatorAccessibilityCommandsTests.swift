@@ -986,4 +986,122 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     defer { found.perform(NSSelectorFromString("close")) }
     XCTAssertEqual(try found.stringValue(forSearchableKey: .label), "Deep")
   }
+
+  // MARK: - Serialize-to-Data Golden / Envelope Tests
+
+  /// Canonical (sorted-keys) JSON string for an object — the exact encoding both
+  /// `sime2e` (full `asDictionary()`) and the gRPC companion (`.elements` only)
+  /// emit on the wire. Used as a byte-level oracle for the swiftification.
+  private func canonicalJSONString(_ object: Any) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    return String(decoding: data, as: UTF8.self)
+  }
+
+  func testSerializedEnvelopeDefaultContainsOnlyElements() async throws {
+    setUp(withRootElement: defaultElementTree)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+    element.perform(NSSelectorFromString("close"))
+
+    let dict = response.asDictionary()
+    XCTAssertEqual(Set(dict.keys), ["elements"], "Default envelope must carry elements only")
+  }
+
+  func testSerializedEnvelopeWithProfilingContainsProfile() async throws {
+    setUp(withRootElement: defaultElementTree)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let options = FBAccessibilityRequestOptions.default()
+    options.enableProfiling = true
+    let response = try element.serialize(with: options)
+    element.perform(NSSelectorFromString("close"))
+
+    let dict = response.asDictionary()
+    XCTAssertEqual(Set(dict.keys), ["elements", "profile"])
+    let profile = try XCTUnwrap(dict["profile"] as? [String: Any])
+    XCTAssertEqual(
+      Set(profile.keys),
+      [
+        "element_count",
+        "attribute_fetch_count",
+        "xpc_call_count",
+        "translation_duration_ms",
+        "element_conversion_duration_ms",
+        "serialization_duration_ms",
+        "total_xpc_duration_ms",
+      ],
+      "Profile envelope keys changed"
+    )
+  }
+
+  func testSerializedEnvelopeWithCoverageContainsCoverage() async throws {
+    setUp(withRootElement: defaultElementTree)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let options = FBAccessibilityRequestOptions.default()
+    options.collectFrameCoverage = true
+    let response = try element.serialize(with: options)
+    element.perform(NSSelectorFromString("close"))
+
+    let dict = response.asDictionary()
+    XCTAssertEqual(Set(dict.keys), ["elements", "coverage"])
+    let coverage = try XCTUnwrap(dict["coverage"] as? [String: Any])
+    XCTAssertNotNil(coverage["frame"], "Coverage envelope must carry frame")
+    XCTAssertNil(coverage["additional"], "No remote content -> no additional coverage")
+  }
+
+  func testGRPCElementsOnlyBytesMatchExpected() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    // The cancel button is returned for the point query; the gRPC companion
+    // serializes `response.elements` directly (no envelope).
+    let cancel = FBAccessibilityTestElementBuilder.button(
+      withLabel: "Cancel",
+      identifier: "cancel_button",
+      frame: NSRect(x: 200, y: 750, width: 150, height: 44)
+    )
+    fixture!.translator.macPlatformElementResult = cancel
+    let element = try await simulator.accessibilityElement(at: CGPoint(x: 275, y: 772))
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+
+    let expected: [String: Any] = [
+      "AXLabel": "Cancel",
+      "AXFrame": "{{200, 750}, {150, 44}}",
+      "AXValue": NSNull(),
+      "AXUniqueId": "cancel_button",
+      "type": "Button",
+      "title": NSNull(),
+      "frame": ["x": 200, "y": 750, "width": 150, "height": 44],
+      "help": NSNull(),
+      "enabled": true,
+      "custom_actions": [] as [Any],
+      "role": "AXButton",
+      "role_description": NSNull(),
+      "subrole": NSNull(),
+      "content_required": false,
+      "pid": 12345,
+      "traits": NSNull(),
+    ]
+
+    XCTAssertEqual(
+      try canonicalJSONString(response.elements),
+      try canonicalJSONString(expected),
+      "gRPC elements-only JSON bytes changed"
+    )
+  }
+
+  func testSerializeToDataIsDeterministicAndRoundTrips() async throws {
+    setUp(withRootElement: defaultElementTree)
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+    element.perform(NSSelectorFromString("close"))
+
+    let envelope = response.asDictionary()
+    let first = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
+    let second = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
+    XCTAssertEqual(first, second, "sorted-keys serialization must be deterministic")
+
+    let reparsed = try JSONSerialization.jsonObject(with: first) as? [String: Any]
+    XCTAssertEqual(reparsed?["elements"] as? [[String: Any]] as NSArray?, envelope["elements"] as? [[String: Any]] as NSArray?)
+  }
 }
