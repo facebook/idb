@@ -93,17 +93,10 @@ public class FBDefaultsModificationStrategy: NSObject {
     )
 
     // Run the defaults command.
-    return
-      (unsafeBitCast(
-        FBProcessSpawnCommandHelpers.launchConsumingStdout(configuration, withCommands: simulator),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        simulator.asyncQueue,
-        map: { (output: Any) -> AnyObject in
-          let str = output as! NSString
-          return str.trimmingCharacters(in: .newlines) as NSString
-        })) as! FBFuture<NSString>
+    return fbFutureFromAsync { [simulator] in
+      let output = try await FBProcessSpawnCommandHelpers.launchConsumingStdout(configuration, withCommands: simulator)
+      return output.trimmingCharacters(in: .newlines) as NSString
+    }
   }
 
   fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) -> FBFuture<NSNull> {

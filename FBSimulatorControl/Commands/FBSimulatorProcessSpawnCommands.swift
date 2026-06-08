@@ -27,15 +27,6 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
     super.init()
   }
 
-  // MARK: - FBProcessSpawnCommands (legacy FBFuture entry point)
-
-  @objc
-  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    fbFutureFromAsync { [self] in
-      try await launchProcessAsync(configuration)
-    }
-  }
-
   // MARK: - Public
 
   @objc(launchOptionsWithArguments:environment:waitForDebugger:)
@@ -51,19 +42,19 @@ public final class FBSimulatorProcessSpawnCommands: NSObject, FBiOSTargetCommand
 
   // MARK: - Private
 
-  fileprivate func launchProcessAsync(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  fileprivate func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
-    return try await FBSimulatorProcessSpawnCommands.launchProcessAsync(
+    return try await FBSimulatorProcessSpawnCommands.launchProcess(
       withSimulator: simulator,
       configuration: configuration,
       attachment: attachment
     )
   }
 
-  private class func launchProcessAsync(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private class func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = simulator.logger
     let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")
     let exitCode = FBMutableFuture<NSNumber>(name: "Process exit of \(configuration.launchPath) on \(simulator.udid)")
@@ -158,20 +149,6 @@ extension FBSimulator: AsyncProcessSpawnCommands {
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await processSpawnCommands().launchProcessAsync(configuration)
-  }
-}
-
-// MARK: - FBSimulator+FBProcessSpawnCommands
-
-extension FBSimulator: FBProcessSpawnCommands {
-
-  @objc(launchProcess:)
-  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    do {
-      return try processSpawnCommands().launchProcess(configuration)
-    } catch {
-      return FBFuture(error: error)
-    }
+    try await processSpawnCommands().launchProcess(configuration)
   }
 }

@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBProcessSpawnCommands`.
 public protocol AsyncProcessSpawnCommands: AnyObject {
 
   func launchProcess(

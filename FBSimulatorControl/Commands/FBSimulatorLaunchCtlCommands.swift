@@ -335,7 +335,7 @@ public final class FBSimulatorLaunchCtlCommands: NSObject, FBiOSTargetCommand {
       io: FBProcessIO.outputToDevNull(),
       mode: .default
     )
-    let result = try await bridgeFBFuture(FBProcessSpawnCommandHelpers.launchConsumingStdout(launchConfiguration, withCommands: simulator))
-    return result as String
+    let result = try await FBProcessSpawnCommandHelpers.launchConsumingStdout(launchConfiguration, withCommands: simulator)
+    return result
   }
 }

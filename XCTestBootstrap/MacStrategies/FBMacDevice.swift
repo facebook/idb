@@ -13,7 +13,7 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-@objc public final class FBMacDevice: NSObject, FBiOSTarget, FBApplicationCommands, FBCrashLogCommands, FBXCTestExtendedCommands, FBProcessSpawnCommands {
+@objc public final class FBMacDevice: NSObject, FBiOSTarget, FBApplicationCommands, FBCrashLogCommands, FBXCTestExtendedCommands {
 
   // MARK: - FBiOSTarget synthesized properties
 
@@ -487,9 +487,6 @@ import IOKit
     return FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
-  @objc public func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    return FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: self.logger!)
-  }
 }
 
 // MARK: - FBMacDevice+AsyncProcessSpawnCommands
@@ -499,7 +496,8 @@ extension FBMacDevice: AsyncProcessSpawnCommands {
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await bridgeFBFuture(launchProcess(configuration))
+    let logger = self.logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: logger))
   }
 }
 

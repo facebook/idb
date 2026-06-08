@@ -7,35 +7,16 @@
 
 import Foundation
 
-@objc public protocol FBProcessSpawnCommands: NSObjectProtocol, FBiOSTargetCommand {
-
-  @objc(launchProcess:)
-  func launchProcess(_ configuration: FBProcessSpawnConfiguration) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>
-}
-
 @objc(FBProcessSpawnCommandHelpers)
 public final class FBProcessSpawnCommandHelpers: NSObject {
 
-  // MARK: Private
-
-  private static let queue: DispatchQueue = DispatchQueue(label: "com.facebook.fbcontrolcore.process_spawn_helpers", attributes: .concurrent)
-
   // MARK: Short-Running Processes
 
-  @objc
-  public class func launchAndNotifyOfCompletion(_ configuration: FBProcessSpawnConfiguration, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSNumber> {
-    let result = commands.launchProcess(configuration)
-      .onQueue(
-        queue,
-        fmap: { processObj -> FBFuture<AnyObject> in
-          let process = processObj as! FBSubprocess
-          return unsafeBitCast(process.exitCode, to: FBFuture<AnyObject>.self)
-        })
-    return unsafeBitCast(result, to: FBFuture<NSNumber>.self)
-  }
-
-  @objc
-  public class func launchConsumingStdout(_ configuration: FBProcessSpawnConfiguration, withCommands commands: any FBProcessSpawnCommands) -> FBFuture<NSString> {
+  /// Launches the process described by `configuration`, waits for it to exit, and returns its accumulated stdout.
+  public class func launchConsumingStdout(
+    _ configuration: FBProcessSpawnConfiguration,
+    withCommands commands: any AsyncProcessSpawnCommands
+  ) async throws -> String {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
       stdIn: configuration.io.stdIn,
@@ -49,13 +30,9 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
       io: io,
       mode: configuration.mode
     )
-    let result = launchAndNotifyOfCompletion(derived, withCommands: commands)
-      .onQueue(
-        queue,
-        map: { _ -> AnyObject in
-          NSString(data: consumer.data(), encoding: String.Encoding.utf8.rawValue) ?? "" as NSString
-        })
-    return unsafeBitCast(result, to: FBFuture<NSString>.self)
+    let process = try await commands.launchProcess(derived)
+    _ = try await bridgeFBFuture(process.exitCode)
+    return (NSString(data: consumer.data(), encoding: String.Encoding.utf8.rawValue) ?? "") as String
   }
 
   @objc
