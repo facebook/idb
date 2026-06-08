@@ -887,6 +887,48 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil without remoteContentOptions")
   }
 
+  func testRemoteContentDiscoveryMergesDiscoveredElement() async throws {
+    // The frontmost app (pid 12345) is an AXApplication with no children, so the
+    // main traversal marks no coverage. A separate-process element (pid 99999)
+    // sits mid-screen and must be found via grid hit-testing and merged into the
+    // flat output, with additionalFrameCoverage reflecting the newly covered area.
+    let appElement = FBAccessibilityTestElementBuilder.application(
+      withLabel: "App",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+      children: []
+    )
+    let remoteElement = FBAccessibilityTestElementBuilder.button(
+      withLabel: "Remote WebView Content",
+      identifier: "remote_button",
+      frame: NSRect(x: 0, y: 400, width: 390, height: 100)
+    )
+    setUp(withRootElement: appElement)
+
+    // Object-at-point hit-testing returns a translation with a distinct pid that
+    // maps to the remote element; the frontmost translation (pid 12345) still
+    // resolves to the app element.
+    let remoteTranslation = FBSimulatorControlTests_AXPTranslationObject_Double()
+    remoteTranslation.pid = 99999
+    fixture!.translator.objectAtPointResult = remoteTranslation
+    fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
+
+    let element = try await simulator.accessibilityElementForFrontmostApplication()
+    var options = FBAccessibilityRequestOptions.default()
+    options.collectFrameCoverage = true
+    var remoteOptions = FBAccessibilityRemoteContentOptions.default()
+    remoteOptions.gridStepSize = 50
+    options.remoteContentOptions = remoteOptions
+    let response = try element.serialize(with: options)
+    element.close()
+
+    XCTAssertNotNil(response.additionalFrameCoverage, "additionalFrameCoverage should be set when remote content is discovered")
+
+    let elements = response.elements as! [Any]
+    let labels = elements.compactMap { ($0 as? [String: Any])?["AXLabel"] as? String }
+    XCTAssertEqual(elements.count, 2, "App element plus one discovered remote element")
+    XCTAssertTrue(labels.contains("Remote WebView Content"), "Discovered remote element should be merged into the output")
+  }
+
   // MARK: - Marker Search Tests (accessibilityElementMatching)
 
   func testAccessibilityElementMatchingFindsDescendantByLabel() async throws {

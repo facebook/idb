@@ -151,6 +151,10 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
   var frontmostApplicationResult: FBSimulatorControlTests_AXPTranslationObject_Double?
   var objectAtPointResult: FBSimulatorControlTests_AXPTranslationObject_Double?
   var macPlatformElementResult: FBSimulatorControlTests_AXPMacPlatformElement_Double?
+  /// Optional per-pid element results, keyed by the translation's pid. Lets a test
+  /// return a distinct element for object-at-point hit-testing (remote content)
+  /// versus the frontmost application. Falls back to `macPlatformElementResult`.
+  var macPlatformElementResultsByPid: [pid_t: FBSimulatorControlTests_AXPMacPlatformElement_Double] = [:]
   weak var bridgeTokenDelegate: AnyObject?
   private(set) var methodCalls = NSMutableArray()
 
@@ -171,7 +175,7 @@ class FBSimulatorControlTests_AXPTranslator_Double: NSObject {
 
   func macPlatformElement(fromTranslation translation: FBSimulatorControlTests_AXPTranslationObject_Double) -> FBSimulatorControlTests_AXPMacPlatformElement_Double? {
     methodCalls.add("macPlatformElementFromTranslation")
-    let result = macPlatformElementResult
+    let result = macPlatformElementResultsByPid[translation.pid] ?? macPlatformElementResult
     result?.translation = translation
     return result
   }

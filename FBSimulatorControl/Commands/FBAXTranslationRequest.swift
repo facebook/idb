@@ -200,10 +200,14 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
           continue
         }
 
-        guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? AXPMacPlatformElement else {
+        guard let rawHit = translator.macPlatformElement(fromTranslation: hitTranslation) else {
           x += stepSize
           continue
         }
+        // Mirrors the unchecked typed cast used by the serializer and dispatcher so
+        // message-responding test doubles (non-AXPMacPlatformElement subclasses) flow
+        // through; identical to `as!` for the real elements returned in production.
+        let hitElement = unsafeBitCast(rawHit as AnyObject, to: AXPMacPlatformElement.self)
 
         let hitFrame = hitElement.accessibilityFrame()
         let hitFrameValue = NSValue(rect: hitFrame)
