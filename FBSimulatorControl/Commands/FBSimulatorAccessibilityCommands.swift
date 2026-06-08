@@ -133,7 +133,7 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     guard let dispatcher = translationDispatcher() as? FBAXTranslationDispatcher else {
       throw FBSimulatorError.describe("Accessibility translation dispatcher is unavailable").build()
     }
-    let element = try await Self.awaitPlatformElement(dispatcher.platformElement(withRequest: request, simulator: simulator))
+    let element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
     if !remediationPermitted {
       return FBAccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
@@ -146,19 +146,6 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     let nextRequest = request.cloneWithNewToken()
     try await Self.remediateSpringBoard(forSimulator: simulator)
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
-  }
-
-  // Awaits the dispatcher's platform-element future without a checked cast to
-  // AXPMacPlatformElement. The dispatcher installs the element via `unsafeBitCast`
-  // (so test doubles flow through), so this bridges as `AnyObject` and reinterprets
-  // — a checked `as!` to AXPMacPlatformElement would trap on a non-subclass double.
-  private static func awaitPlatformElement(_ future: FBFuture<AXPMacPlatformElement>) async throws -> AXPMacPlatformElement {
-    // `raw` is bound as `Any` so the `as AnyObject` coercion below stays out of the
-    // statically-`AnyObject` form that the unsafeDowncast lint flags (and the
-    // mirrors the dispatcher/serializer idiom). unsafeDowncast would assert on a
-    // non-subclass test double.
-    let raw: Any = try await bridgeFBFuture(unsafeBitCast(future, to: FBFuture<AnyObject>.self))
-    return unsafeBitCast(raw as AnyObject, to: AXPMacPlatformElement.self)
   }
 
   private static func remediationRequired(forSimulator simulator: FBSimulator, element: AXPMacPlatformElement) async throws -> Bool {

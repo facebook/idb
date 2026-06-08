@@ -23,10 +23,10 @@ private final class AXPResponseBox: @unchecked Sendable {
 /// per request, performs the translator handshake and converts the lazy AXP
 /// attribute callbacks into synchronous CoreSimulator XPC round-trips.
 ///
-/// Still created by the Objective-C `FBSimulator (FBAccessibilityDispatcher)`
-/// category and driven by the element/facade in this module (via
-/// `FBSimulatorControl-Swift.h`), so it stays an `@objc` class with the original
-/// selectors. `public` so it lands in the module's generated header.
+/// Created and driven entirely from Swift in this module (see
+/// `FBSimulatorAccessibilityCommands`). It remains an `@objc`/`NSObject` class
+/// only because it conforms to the Objective-C `AXPTranslationTokenDelegateHelper`
+/// protocol and is installed as `AXPTranslator`'s bridge-token delegate.
 @objc(FBAXTranslationDispatcher)
 public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 
@@ -45,38 +45,36 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
 
   // MARK: - Public
 
-  @objc(platformElementWithRequest:simulator:)
-  public func platformElement(withRequest request: FBAXTranslationRequest, simulator: FBSimulator) -> FBFuture<AXPMacPlatformElement> {
-    // Runs off the main queue (the synchronous XPC round-trips in the delegate
-    // callback block below must never run on the main queue).
-    fbFutureFromAsync {
-      request.device = simulator.device
-      request.translator = self.translator
-      self.pushRequest(request)
-      let collector = request.collector
+  public func platformElement(withRequest request: FBAXTranslationRequest, simulator: FBSimulator) async throws -> AXPMacPlatformElement {
+    // The synchronous XPC round-trips driven below (via the delegate callback)
+    // must never run on the main queue. This `nonisolated` async method runs on
+    // the cooperative executor, off the main actor.
+    request.device = simulator.device
+    request.translator = self.translator
+    self.pushRequest(request)
+    let collector = request.collector
 
-      let translationStart = CFAbsoluteTimeGetCurrent()
-      guard let translator = self.translator, let translation = request.perform(withTranslator: translator) else {
-        self.popRequest(request)
-        throw NSError(
-          domain: "com.facebook.FBSimulatorControl.accessibility",
-          code: 1,
-          userInfo: [NSLocalizedDescriptionKey: "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
-        )
-      }
-      collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
-      translation.bridgeDelegateToken = request.token
-
-      let conversionStart = CFAbsoluteTimeGetCurrent()
-      let rawElement = translator.macPlatformElement(fromTranslation: translation)
-      collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
-
-      // Mirrors the ObjC unchecked typed assignment; test doubles respond to the
-      // selectors without being AXPMacPlatformElement subclasses.
-      let element = unsafeBitCast(rawElement as AnyObject, to: AXPMacPlatformElement.self)
-      element.translation?.bridgeDelegateToken = request.token
-      return element
+    let translationStart = CFAbsoluteTimeGetCurrent()
+    guard let translator = self.translator, let translation = request.perform(withTranslator: translator) else {
+      self.popRequest(request)
+      throw NSError(
+        domain: "com.facebook.FBSimulatorControl.accessibility",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
+      )
     }
+    collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
+    translation.bridgeDelegateToken = request.token
+
+    let conversionStart = CFAbsoluteTimeGetCurrent()
+    let rawElement = translator.macPlatformElement(fromTranslation: translation)
+    collector?.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
+
+    // Mirrors the ObjC unchecked typed assignment; test doubles respond to the
+    // selectors without being AXPMacPlatformElement subclasses.
+    let element = unsafeBitCast(rawElement as AnyObject, to: AXPMacPlatformElement.self)
+    element.translation?.bridgeDelegateToken = request.token
+    return element
   }
 
   // MARK: - Private
