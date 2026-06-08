@@ -15,8 +15,3 @@
 // Serves the REPL on `socketPath`. A no-op (returns 0) if `socketPath` is empty.
 // Returns 0 on normal completion, non-zero if the socket could not be created.
 int FBReplServeSocket(NSString *socketPath);
-
-// Reads the socket path from the `IDB_REPL_SOCKET_PATH` environment variable and
-// serves the REPL there via `FBReplServeSocket`. A no-op if the variable is
-// unset or empty, so running it outside of a REPL session does nothing.
-int FBReplServeSocketFromEnvironment(void);

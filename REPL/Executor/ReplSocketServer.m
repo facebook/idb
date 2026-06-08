@@ -12,11 +12,6 @@
 #import <sys/un.h>
 #import <unistd.h>
 
-// Environment variable through which the REPL driver passes the Unix-domain
-// socket path. idb_companion sets it on the launched process when starting a
-// REPL session.
-static NSString *const IDBReplSocketPathEnv = @"IDB_REPL_SOCKET_PATH";
-
 // MARK: - Socket Setup
 
 static int CreateSocketAtPath(NSString *socketPath)
@@ -108,7 +103,7 @@ static void SendResponse(NSDictionary *response, int fd)
   [lineData release];
 }
 
-// MARK: - Entry Points
+// MARK: - Entry Point
 
 int FBReplServeSocket(NSString *socketPath)
 {
@@ -136,10 +131,4 @@ int FBReplServeSocket(NSString *socketPath)
   close(serverFd);
   unlink(socketPath.fileSystemRepresentation);
   return 0;
-}
-
-int FBReplServeSocketFromEnvironment(void)
-{
-  NSString *socketPath = [[[NSProcessInfo processInfo] environment] objectForKey:IDBReplSocketPathEnv];
-  return FBReplServeSocket(socketPath);
 }

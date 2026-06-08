@@ -23,27 +23,29 @@ struct ReplMethodHandler {
 
     targetLogger.debug().log("REPL session context: \(start.context)")
 
+    let session: ReplSession
     if case .test = start.context {
-      try await handleTest(start: start, requestStream: requestStream, responseStream: responseStream)
+      session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
     } else {
-      try await handleSimulator(responseStream: responseStream)
+      session = try await commandExecutor.repl_start_simulator()
     }
+
+    try await serve(session: session, requestStream: requestStream, responseStream: responseStream)
   }
 
-  /// The `test` context: launch the test bundle in REPL mode (libRepl injected,
-  /// TestRepl/start forced, IDB_REPL_SOCKET_PATH set), connect to the shim's
-  /// control socket, and bridge Execute messages to it.
-  private func handleTest(start: Idb_ReplRequest.Start, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
-    let session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
-
+  /// Bridges the gRPC repl stream to a launched session's control socket:
+  /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
+  /// plus a symbol) to the socket and streams back the result, and on stop/EOF
+  /// closes the socket (which ends the served process) and reports `stopped`.
+  private func serve(session: ReplSession, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
-    // lives on the host filesystem, which the simulator's test process can read.
+    // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")
     try FileManager.default.createDirectory(atPath: scratchDirectory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(atPath: scratchDirectory) }
 
-    // Connect to the shim's control socket. It appears once the test process has
-    // launched, so retry for a while.
+    // Connect to the control socket. It appears once the launched process binds
+    // it, so retry for a while.
     let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
     defer { client.close() }
 
@@ -76,7 +78,7 @@ struct ReplMethodHandler {
       }
     }
 
-    // Closing the socket ends the shim's accept loop, so the test process exits;
+    // Closing the socket ends the served process's accept loop, so it exits;
     // wait for it (bounded), then report the session stopped.
     client.close()
     let thirtySeconds: UInt64 = 30 * 1_000_000_000
@@ -84,16 +86,5 @@ struct ReplMethodHandler {
       try await bridgeFBFutureVoid(session.run)
     }
     try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL session ended" }) })
-  }
-
-  /// The `simulator` context: launch SimulatorFrameworkBridge on the simulator.
-  private func handleSimulator(responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
-    try await commandExecutor.repl_start_simulator()
-    targetLogger.debug().log("SimulatorFrameworkBridge launched for REPL simulator context")
-
-    // The bridge does not host a control socket yet, so there is nothing to
-    // bridge. Report ready, then end the session.
-    try await responseStream.send(.with { $0.event = .ready(.init()) })
-    try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL simulator session ended" }) })
   }
 }

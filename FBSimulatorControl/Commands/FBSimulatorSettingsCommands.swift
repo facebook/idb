@@ -922,7 +922,7 @@ public final class FBSimulatorSettingsCommands: NSObject, FBiOSTargetCommand {
   // MARK: - Private
 
   @discardableResult
-  func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
+  fileprivate func runSimulatorFrameworkBridgeAsync(withService service: String, action: String, arguments: [String] = []) async throws -> String {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }

@@ -75,12 +75,35 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
     return ReplSession(socketPath: socketPath, run: runner.execute())
   }
 
-  fileprivate func startReplSimulatorAsync() async throws {
+  fileprivate func startReplSimulatorAsync() async throws -> ReplSession {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator is deallocated").build()
     }
 
-    try await simulator.settingsCommands().runSimulatorFrameworkBridgeAsync(withService: "repl", action: "start")
+    // The SimulatorFrameworkBridge binary is bundled alongside the shims.
+    guard let bridgePath = Bundle(for: FBSimulatorReplCommands.self).path(forResource: "SimulatorFrameworkBridge", ofType: nil) else {
+      throw FBSimulatorError.describe("SimulatorFrameworkBridge binary not found in bundle resources").build()
+    }
+
+    // The bridge's `repl start` action takes the socket path as its argument and
+    // serves the control socket there. Serving blocks until the socket is
+    // closed, which is what keeps the session alive.
+    let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
+
+    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
+    let configuration = FBProcessSpawnConfiguration(
+      launchPath: bridgePath,
+      arguments: ["repl", "start", socketPath],
+      environment: [:],
+      io: io,
+      mode: .posixSpawn
+    )
+
+    // Launch without waiting; `statLoc` completes when the bridge exits (once
+    // the socket is closed), matching the `ReplSession.run` contract.
+    let process = try await simulator.launchProcess(configuration)
+    let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
+    return ReplSession(socketPath: socketPath, run: run)
   }
 }
 
@@ -92,7 +115,7 @@ extension FBSimulator: AsyncReplCommands {
     try await replCommands().startReplTestAsync(bundlePath: bundlePath)
   }
 
-  public func startReplSimulator() async throws {
+  public func startReplSimulator() async throws -> ReplSession {
     try await replCommands().startReplSimulatorAsync()
   }
 }

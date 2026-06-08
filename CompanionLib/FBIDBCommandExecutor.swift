@@ -286,13 +286,14 @@ import XCTestBootstrap
     return try await replTarget.startReplTest(bundlePath: bundlePath)
   }
 
-  /// Launches the `SimulatorFrameworkBridge` binary on the simulator for the
-  /// "simulator" REPL context.
-  public func repl_start_simulator() async throws {
+  /// Launches `SimulatorFrameworkBridge` on the simulator for the "simulator"
+  /// REPL context. The returned `ReplSession.run` completes when the bridge
+  /// process exits.
+  public func repl_start_simulator() async throws -> ReplSession {
     guard let replTarget = target as? AsyncReplCommands else {
       throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
     }
-    try await replTarget.startReplSimulator()
+    return try await replTarget.startReplSimulator()
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {

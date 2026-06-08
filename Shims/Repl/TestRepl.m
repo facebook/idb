@@ -13,10 +13,9 @@
 
 - (void)start
 {
-  // The socket/dylib-running logic is shared. The only REPL piece specific to
-  // `libRepl` is this XCTest entry point, which the REPL driver triggers as the
-  // `TestRepl/start` test.
-  FBReplServeSocketFromEnvironment();
+  // Start the shared ReplExecutor with the requested socket path.
+  NSString *socketPath = [[[NSProcessInfo processInfo] environment] objectForKey:@"IDB_REPL_SOCKET_PATH"];
+  FBReplServeSocket(socketPath);
 }
 
 @end

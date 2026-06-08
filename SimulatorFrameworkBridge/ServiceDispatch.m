@@ -38,7 +38,9 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
   } else if ([service isEqualToString:@"repl"]) {
     if ([action isEqualToString:@"start"]) {
       // Serve the REPL control socket.
-      return FBReplServeSocketFromEnvironment();
+      // The socket path is passed as the first argument to `repl start`.
+      NSString *socketPath = arguments.count > 0 ? arguments[0] : nil;
+      return FBReplServeSocket(socketPath);
     }
     NSLog(@"Unknown repl action: %@", action);
     return 1;
