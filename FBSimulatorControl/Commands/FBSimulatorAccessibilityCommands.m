@@ -18,6 +18,7 @@
 #import <AccessibilityPlatformTranslation/AXPTranslatorRequest.h>
 #import <AccessibilityPlatformTranslation/AXPTranslatorResponse.h>
 #import <FBControlCore/FBAccessibilityTraits.h>
+#import <FBControlCore/FBControlCore-Swift.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorControl-Swift.h"
