@@ -75,10 +75,9 @@
 - (nonnull FBFuture<NSString *> *)serviceNameForProcessIdentifier:(pid_t)processIdentifier;
 - (nonnull FBFuture<NSString *> *)startServiceWithName:(nonnull NSString *)serviceName;
 
-// FBPowerCommands / FBEraseCommands / FBSimulatorLifecycleCommandsProtocol
+// Lifecycle (legacy FBFuture entry points, ObjC-visible)
 - (nonnull FBFuture<NSNull *> *)shutdown;
 - (nonnull FBFuture<NSNull *> *)reboot;
-- (nonnull FBFuture<NSNull *> *)erase;
 - (nonnull FBFuture<NSNull *> *)boot:(nonnull FBSimulatorBootConfiguration *)configuration;
 
 #pragma mark Properties

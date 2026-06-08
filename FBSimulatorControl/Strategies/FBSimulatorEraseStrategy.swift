@@ -14,24 +14,14 @@ public final class FBSimulatorEraseStrategy: NSObject {
 
   // MARK: - Public
 
-  @objc
-  public class func erase(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await eraseAsync(simulator)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  static func eraseAsync(_ simulator: FBSimulator) async throws {
+  static func erase(_ simulator: FBSimulator) async throws {
     try await FBSimulatorShutdownStrategy.shutdownAsync(simulator)
-    try await eraseContentsAndSettingsAsync(simulator)
+    try await eraseContentsAndSettings(simulator)
   }
 
   // MARK: - Private
 
-  private static func eraseContentsAndSettingsAsync(_ simulator: FBSimulator) async throws {
+  private static func eraseContentsAndSettings(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger
     let description = "\(simulator)"
     logger?.log("Erasing \(description)")

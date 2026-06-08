@@ -12,7 +12,6 @@
 
 #import "FBAMDevice.h"
 #import "FBAMRestorableDevice.h"
-#import "FBDeviceEraseCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"

@@ -21,7 +21,7 @@ extension XCTestCase {
     }
 
     do {
-      try simulator.erase().await()
+      try await simulator.erase()
     } catch {
       XCTFail("Failed to erase simulator: \(error)")
     }

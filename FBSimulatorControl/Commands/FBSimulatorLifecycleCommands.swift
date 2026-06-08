@@ -14,7 +14,7 @@ import AppKit
 
 private let openURLRetries = 2
 
-@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand, FBEraseCommands {
+@objc public protocol FBSimulatorLifecycleCommandsProtocol: NSObjectProtocol, FBiOSTargetCommand {
   @objc(boot:)
   func boot(_ configuration: FBSimulatorBootConfiguration) -> FBFuture<NSNull>
 
@@ -34,16 +34,6 @@ private let openURLRetries = 2
 // MARK: - FBSimulator+FBSimulatorLifecycleCommandsProtocol
 
 extension FBSimulator: FBSimulatorLifecycleCommandsProtocol {
-
-  // MARK: FBEraseCommands
-
-  @objc public func erase() -> FBFuture<NSNull> {
-    do {
-      return try lifecycleCommands().erase()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
 
   // MARK: FBSimulatorLifecycleCommandsProtocol
 
@@ -130,14 +120,6 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
   }
 
   @objc
-  public func erase() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await eraseAsync()
-      return NSNull()
-    }
-  }
-
-  @objc
   public func focus() -> FBFuture<NSNull> {
     fbFutureFromAsync { [self] in
       try await focusAsync()
@@ -196,11 +178,11 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
     try await bootAsync(FBSimulatorBootConfiguration.default)
   }
 
-  fileprivate func eraseAsync() async throws {
+  fileprivate func erase() async throws {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
-    try await FBSimulatorEraseStrategy.eraseAsync(simulator)
+    try await FBSimulatorEraseStrategy.erase(simulator)
   }
 
   fileprivate func resolveStateAsync(_ state: FBiOSTargetState) async throws {
@@ -355,7 +337,7 @@ extension FBSimulator: AsyncPowerCommands {
 extension FBSimulator: AsyncEraseCommands {
 
   public func erase() async throws {
-    try await lifecycleCommands().eraseAsync()
+    try await lifecycleCommands().erase()
   }
 }
 

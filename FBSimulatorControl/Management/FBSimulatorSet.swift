@@ -125,11 +125,6 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
     return FBSimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  @objc(erase:)
-  public func erase(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    return FBSimulatorEraseStrategy.erase(simulator)
-  }
-
   @objc(delete:)
   public func delete(_ simulator: FBSimulator) -> FBFuture<NSNull> {
     return FBSimulatorDeletionStrategy.delete(simulator)

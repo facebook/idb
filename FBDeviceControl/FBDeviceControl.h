@@ -16,7 +16,6 @@
 #import <FBDeviceControl/FBDeviceCommands.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
 #import <FBDeviceControl/FBDeviceDebugSymbolsCommands.h>
-#import <FBDeviceControl/FBDeviceEraseCommands.h>
 #import <FBDeviceControl/FBDeviceManager.h>
 #import <FBDeviceControl/FBInstrumentsClient.h>
 

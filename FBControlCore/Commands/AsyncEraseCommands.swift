@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBEraseCommands`.
 public protocol AsyncEraseCommands: AnyObject {
 
   func erase() async throws
