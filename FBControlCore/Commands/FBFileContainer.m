@@ -271,11 +271,6 @@ FBFileContainerKind const FBFileContainerKindFramework = @"framework";
 
 @implementation FBFileContainer
 
-+ (id)fileContainerForProvisioningProfileCommands:(id<FBProvisioningProfileCommands>)commands queue:(dispatch_queue_t)queue
-{
-  return [[FBFileContainer_ProvisioningProfile alloc] initWithCommands:commands];
-}
-
 + (id<FBContainedFile>)containedFileForBasePath:(NSString *)basePath
 {
   return [[FBContainedFile_Host alloc] initWithFileManager:NSFileManager.defaultManager path:basePath];

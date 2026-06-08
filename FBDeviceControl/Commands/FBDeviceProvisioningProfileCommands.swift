@@ -9,7 +9,7 @@
 import Foundation
 
 @objc(FBDeviceProvisioningProfileCommands)
-public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfileCommands {
+public class FBDeviceProvisioningProfileCommands: NSObject, FBiOSTargetCommand, AsyncProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
   // MARK: Public
@@ -23,29 +23,9 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
     super.init()
   }
 
-  // MARK: FBDeviceProvisioningProfileCommands (legacy FBFuture entry points)
+  // MARK: AsyncProvisioningProfileCommands
 
-  @objc public func allProvisioningProfiles() -> FBFuture<NSArray> {
-    fbFutureFromAsync { [self] in
-      try await allProvisioningProfilesAsync() as NSArray
-    }
-  }
-
-  @objc public func removeProvisioningProfile(_ uuid: String) -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await removeProvisioningProfileAsync(uuid: uuid) as NSDictionary
-    }
-  }
-
-  @objc public func installProvisioningProfile(_ profileData: Data) -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await installProvisioningProfileAsync(profileData) as NSDictionary
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func allProvisioningProfilesAsync() async throws -> [[String: Any]] {
+  public func allProvisioningProfiles() async throws -> [[String: Any]] {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -68,7 +48,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
     }
   }
 
-  fileprivate func removeProvisioningProfileAsync(uuid: String) async throws -> [String: Any] {
+  public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -83,7 +63,7 @@ public class FBDeviceProvisioningProfileCommands: NSObject, FBProvisioningProfil
     }
   }
 
-  fileprivate func installProvisioningProfileAsync(_ profileData: Data) async throws -> [String: Any] {
+  public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }

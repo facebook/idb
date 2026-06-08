@@ -50,10 +50,10 @@ private final class ContainedFileBox: @unchecked Sendable {
   }
 }
 
-/// Carries a non-`Sendable` `FBProvisioningProfileCommands` across the async boundary.
+/// Carries a non-`Sendable` `AsyncProvisioningProfileCommands` across the async boundary.
 private final class ProvisioningCommandsBox: @unchecked Sendable {
-  let commands: any FBProvisioningProfileCommands
-  init(_ commands: any FBProvisioningProfileCommands) {
+  let commands: any AsyncProvisioningProfileCommands
+  init(_ commands: any AsyncProvisioningProfileCommands) {
     self.commands = commands
   }
 }
@@ -280,13 +280,13 @@ public final class FBContainedFile_ContainedRoot: NSObject, AsyncFileContainer {
 
 }
 
-/// File container backed by `FBProvisioningProfileCommands`.
+/// File container backed by `AsyncProvisioningProfileCommands`.
 @objc(FBFileContainer_ProvisioningProfile)
 public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileContainer {
 
   private let commandsBox: ProvisioningCommandsBox
 
-  @objc public init(commands: any FBProvisioningProfileCommands) {
+  public init(commands: any AsyncProvisioningProfileCommands) {
     self.commandsBox = ProvisioningCommandsBox(commands)
     super.init()
   }
@@ -295,7 +295,7 @@ public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileConta
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    _ = try await bridgeFBFuture(commandsBox.commands.installProvisioningProfile(data))
+    _ = try await commandsBox.commands.installProvisioningProfile(data)
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -315,13 +315,13 @@ public final class FBFileContainer_ProvisioningProfile: NSObject, AsyncFileConta
   }
 
   public func remove(_ path: String) async throws {
-    _ = try await bridgeFBFuture(commandsBox.commands.removeProvisioningProfile(path))
+    _ = try await commandsBox.commands.removeProvisioningProfile(uuid: path)
   }
 
   public func contents(ofDirectory path: String) async throws -> [String] {
-    let profiles = try await bridgeFBFuture(commandsBox.commands.allProvisioningProfiles()) as NSArray
+    let profiles = try await commandsBox.commands.allProvisioningProfiles()
     var files: [String] = []
-    for case let profile as [String: Any] in profiles {
+    for profile in profiles {
       if let uuid = profile["UUID"] as? String {
         files.append(uuid)
       }

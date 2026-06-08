@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBProvisioningProfileCommands`.
 public protocol AsyncProvisioningProfileCommands: AnyObject {
 
   func allProvisioningProfiles() async throws -> [[String: Any]]

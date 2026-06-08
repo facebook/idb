@@ -31,14 +31,12 @@ extern FBFileContainerKind _Nonnull const FBFileContainerKindDsym;
 extern FBFileContainerKind _Nonnull const FBFileContainerKindFramework;
 
 @protocol FBDataConsumer;
-@protocol FBProvisioningProfileCommands;
 
 /**
  Implementations of File Commands.
  */
 @interface FBFileContainer : NSObject
 
-+ (nonnull id)fileContainerForProvisioningProfileCommands:(nonnull id<FBProvisioningProfileCommands>)commands queue:(nonnull dispatch_queue_t)queue;
 + (nonnull id)containedFileForBasePath:(nonnull NSString *)basePath;
 + (nonnull id)containedFileForPathMapping:(nonnull NSDictionary<NSString *, NSString *> *)pathMapping;
 + (nonnull id)fileContainerForBasePath:(nonnull NSString *)basePath;

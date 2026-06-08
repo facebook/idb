@@ -456,8 +456,8 @@ public class FBDeviceFileCommands: NSObject, FBiOSTargetCommand {
   }
 
   fileprivate func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBFileContainer_ProvisioningProfile> {
-    // swiftlint:disable:next force_cast force_unwrapping
-    FBFutureContext(result: FBFileContainer.fileContainer(for: FBDeviceProvisioningProfileCommands.commands(with: device!), queue: device!.workQueue) as! FBFileContainer_ProvisioningProfile)
+    // swiftlint:disable:next force_unwrapping
+    FBFutureContext(result: FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device!)))
   }
 
   fileprivate func fileCommandsForMDMProfiles() -> FBFutureContext<FBDeviceFileContainer_MDMProfiles> {
