@@ -139,7 +139,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -258,7 +258,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElement(at: point)
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -288,7 +288,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = true
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -408,7 +408,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
     options.keys = Set(["AXLabel", "frame"])
     options.enableLogging = true
@@ -472,7 +472,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElement(at: CGPoint(x: 100, y: 115))
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = false
     options.keys = Set(["AXLabel", "type", "frame"])
     options.enableLogging = true
@@ -622,7 +622,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     try! (element as FBAccessibilityElement).tap()
 
     // Serialize and verify structure — same expected dict as element-at-point tests
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.nestedFormat = true
     let response = try! element.serialize(with: options)
 
@@ -761,7 +761,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -798,7 +798,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -826,7 +826,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -848,7 +848,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -865,7 +865,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -879,7 +879,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     // remoteContentOptions is nil by default
     let response = try element.serialize(with: options)
@@ -1010,7 +1010,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializedEnvelopeWithProfilingContainsProfile() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.enableProfiling = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))
@@ -1036,7 +1036,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializedEnvelopeWithCoverageContainsCoverage() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    let options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions.default()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.perform(NSSelectorFromString("close"))

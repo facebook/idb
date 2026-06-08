@@ -133,7 +133,7 @@ import XCTestBootstrap
     guard let simulator = target as? FBSimulator else {
       throw FBIDBError.describe("Target is not a simulator, cannot provide accessibility commands: \(target)").build()
     }
-    let options = FBAccessibilityRequestOptions.`default`()
+    var options = FBAccessibilityRequestOptions.`default`()
     options.nestedFormat = nestedFormat
     options.enableLogging = true
 

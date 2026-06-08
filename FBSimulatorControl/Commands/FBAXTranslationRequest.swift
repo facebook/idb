@@ -53,7 +53,6 @@ public class FBAXTranslationRequest: NSObject {
     fatalError("\(type(of: self)).perform(withTranslator:) is abstract and should be overridden")
   }
 
-  @objc(run:options:error:)
   public func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
     fatalError("\(type(of: self)).run(_:options:) is abstract and should be overridden")
   }

@@ -58,7 +58,6 @@ public final class FBAccessibilityElement: NSObject {
   // MARK: - Serialization
 
   /// Serialize the element to a full response (preserves profiling/coverage data).
-  @objc(serializeWithOptions:error:)
   public func serialize(with options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
     if closed {
       throw FBSimulatorError.describe("Cannot serialize a closed element").build()
