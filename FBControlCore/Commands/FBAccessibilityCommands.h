@@ -56,18 +56,6 @@ extern FBAXSearchableKey _Nonnull const FBAXSearchableKeyPlaceholder;
  */
 extern NSSet<FBAXKeys> *_Nonnull FBAXKeysDefaultSet(void);
 
-// `FBAccessibilityRemoteContentOptions` and `FBAccessibilityRequestOptions` are
-// now defined in Swift (see FBAccessibilityRequestOptions.swift). `RequestOptions`
-// is forward-declared here for the ObjC `FBAccessibilityElement` interface below.
-// ObjC code that reads them imports <FBControlCore/FBControlCore-Swift.h>.
-@class FBAccessibilityRequestOptions;
-
-// `FBAccessibilityProfilingData` and `FBAccessibilityElementsResponse` are now
-// defined in Swift (see FBAccessibilityResponse.swift). They are forward-declared
-// here so the ObjC `FBAccessibilityElement` interface below can reference the
-// response type. ObjC code that constructs them imports <FBControlCore/FBControlCore-Swift.h>.
-@class FBAccessibilityElementsResponse;
-
 /**
  The direction of an accessibility scroll action.
  */
@@ -79,67 +67,10 @@ typedef NS_ENUM(NSUInteger, FBAccessibilityScrollDirection) {
   FBAccessibilityScrollDirectionToVisible NS_SWIFT_NAME(visible),
 };
 
-/**
- An opaque accessibility element with a managed token lifecycle.
- The element's translation token remains registered as long as the element is open,
- allowing serialization (attribute reads go through XPC callbacks routed by token).
- Actions (tap, scroll) are direct calls on the element and do not require the token.
- Call -close when done to deregister the token. After close, serialization will fail.
- */
-@interface FBAccessibilityElement : NSObject
-
-/**
- Serialize the element to a full response (preserves profiling/coverage data).
-
- @param options the request options controlling format, keys, and profiling.
- @param error an error out parameter.
- @return the serialized response, or nil on failure.
- */
-- (nullable FBAccessibilityElementsResponse *)serializeWithOptions:(nonnull FBAccessibilityRequestOptions *)options
-                                                             error:(NSError * _Nullable * _Nullable)error;
-
-/**
- Perform an unconditional accessibility tap (AXPress) without any label verification.
-
- @param error an error out parameter.
- @return YES on success, NO on failure.
- */
-- (BOOL)tapWithError:(NSError * _Nullable * _Nullable)error;
-
-/**
- Read the string value of a searchable accessibility key from this element.
-
- @param key the searchable key to read.
- @param error an error out parameter.
- @return the string value, or nil if the key has no string value or on failure.
- */
-- (nullable NSString *)stringValueForSearchableKey:(nonnull FBAXSearchableKey)key error:(NSError * _Nullable * _Nullable)error;
-
-/**
- Perform an accessibility scroll on the element.
-
- @param direction the scroll direction.
- @param error an error out parameter.
- @return YES on success, NO on failure.
- */
-- (BOOL)scrollWithDirection:(FBAccessibilityScrollDirection)direction error:(NSError * _Nullable * _Nullable)error;
-
-/**
- Set the accessibility value of the element (e.g., text field content, slider position).
-
- @param value the value to set.
- @param error an error out parameter.
- @return YES on success, NO on failure.
- */
-- (BOOL)setValue:(nonnull id)value error:(NSError * _Nullable * _Nullable)error;
-
-/**
- Close the element, deregistering the token. Called automatically on dealloc as a safety net.
- After close, serialization will fail. Actions (tap) may still work but are unsupported.
- */
-- (void)close;
-
-@end
-
-@protocol FBAccessibilityCommands;
-@protocol FBAccessibilityOperations;
+// `FBAccessibilityElement`, the `FBAccessibilityOperations`/`FBAccessibilityCommands`
+// command protocols, and their async counterparts now live in FBSimulatorControl
+// (accessibility is simulator-only and the element's implementation depends on
+// AccessibilityPlatformTranslation, which FBControlCore must not). FBControlCore
+// keeps only the accessibility value layer above: keys, the scroll-direction enum,
+// the request options (FBAccessibilityRequestOptions.swift), and the response
+// types (FBAccessibilityResponse.swift).

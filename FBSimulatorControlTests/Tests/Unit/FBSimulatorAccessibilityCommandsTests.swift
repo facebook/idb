@@ -523,7 +523,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
-    let wrapper = MockDispatcherAccessibilityCommands.commands(with: sim) as! MockDispatcherAccessibilityCommands
+    let wrapper = MockDispatcherAccessibilityCommands.commands(with: sim)
     wrapper.mockDispatcher = dispatcher
     sim.commandCache.register(wrapper, as: FBSimulatorAccessibilityCommands.self)
 

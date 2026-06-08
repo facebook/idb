@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
-/// Swift-native async/await counterpart of `FBAccessibilityOperations`.
+/// Swift-native async/await accessibility element-resolution surface, implemented
+/// by `FBSimulatorAccessibilityCommands` and exposed on `FBSimulator`. Replaces
+/// the former Objective-C `FBFuture`-returning `FBAccessibilityOperations`.
 public protocol AsyncAccessibilityOperations: AnyObject {
 
   func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement
@@ -21,5 +24,5 @@ public protocol AsyncAccessibilityOperations: AnyObject {
   ) async throws -> FBAccessibilityElement
 }
 
-/// Swift-native async/await counterpart of `FBAccessibilityCommands`.
+/// Async/await accessibility command surface.
 public protocol AsyncAccessibilityCommands: AsyncAccessibilityOperations {}

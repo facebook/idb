@@ -12,7 +12,6 @@
 #import <FBSimulatorControl/FBPeriodicStatsTimer.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorAccessibilityCommands.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlFrameworkLoader.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
