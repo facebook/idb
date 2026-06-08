@@ -110,7 +110,6 @@ public final class FBAccessibilityElement {
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
-  @objc(setValue:error:)
   public func setValue(_ value: Any) throws {
     if closed {
       throw FBAccessibilityError.closedElement(operation: "set value on")

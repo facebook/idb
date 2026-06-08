@@ -36,7 +36,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
   private let lock = NSLock()
   private var tokenToRequest: [String: FBAXTranslationRequest] = [:]
 
-  @objc public init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
+  public init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
     self.callbackQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.callback")
