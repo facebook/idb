@@ -139,7 +139,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -258,7 +258,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElement(at: point)
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -288,7 +288,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = true
     options.enableLogging = true
     options.enableProfiling = enableProfiling
@@ -408,7 +408,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
     options.keys = Set(["AXLabel", "frame"])
     options.enableLogging = true
@@ -472,7 +472,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElement(at: CGPoint(x: 100, y: 115))
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = false
     options.keys = Set(["AXLabel", "type", "frame"])
     options.enableLogging = true
@@ -622,7 +622,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     try! (element as FBAccessibilityElement).tap()
 
     // Serialize and verify structure — same expected dict as element-at-point tests
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.nestedFormat = true
     let response = try! element.serialize(with: options)
 
@@ -749,7 +749,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    let options = FBAccessibilityRequestOptions.default()
+    let options = FBAccessibilityRequestOptions()
     let response = try element.serialize(with: options)
     element.close()
     XCTAssertNil(response.frameCoverage, "Coverage should be nil when collectFrameCoverage is not enabled")
@@ -761,7 +761,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -798,7 +798,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -826,7 +826,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -848,7 +848,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -865,7 +865,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -879,7 +879,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
 
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     // remoteContentOptions is nil by default
     let response = try element.serialize(with: options)
@@ -913,9 +913,9 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
 
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
-    var remoteOptions = FBAccessibilityRemoteContentOptions.default()
+    var remoteOptions = FBAccessibilityRemoteContentOptions()
     remoteOptions.gridStepSize = 50
     options.remoteContentOptions = remoteOptions
     let response = try element.serialize(with: options)
@@ -1042,7 +1042,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializedEnvelopeDefaultContainsOnlyElements() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+    let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
     let dict = response.asDictionary()
@@ -1052,7 +1052,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializedEnvelopeWithProfilingContainsProfile() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.enableProfiling = true
     let response = try element.serialize(with: options)
     element.close()
@@ -1078,7 +1078,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializedEnvelopeWithCoverageContainsCoverage() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    var options = FBAccessibilityRequestOptions.default()
+    var options = FBAccessibilityRequestOptions()
     options.collectFrameCoverage = true
     let response = try element.serialize(with: options)
     element.close()
@@ -1104,7 +1104,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.accessibilityElement(at: CGPoint(x: 275, y: 772))
     defer { element.close() }
 
-    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+    let response = try element.serialize(with: FBAccessibilityRequestOptions())
 
     let expected: [String: Any] = [
       "AXLabel": "Cancel",
@@ -1135,7 +1135,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   func testSerializeToDataIsDeterministicAndRoundTrips() async throws {
     setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibilityElementForFrontmostApplication()
-    let response = try element.serialize(with: FBAccessibilityRequestOptions.default())
+    let response = try element.serialize(with: FBAccessibilityRequestOptions())
     element.close()
 
     let envelope = response.asDictionary()
