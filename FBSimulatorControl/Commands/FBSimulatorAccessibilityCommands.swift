@@ -107,14 +107,14 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
   // This API requires Xcode 12+ to have been installed on the host at some point.
   private func validateAccessibility() throws {
     guard let simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBAccessibilityError.simulatorDeallocated
     }
     guard simulator.state == .booted else {
-      throw FBControlCoreError.describe("Cannot run accessibility commands against \(simulator) as it is not booted").build()
+      throw FBAccessibilityError.simulatorNotBooted(description: "\(simulator)")
     }
     let selector = NSSelectorFromString("sendAccessibilityRequestAsync:completionQueue:completionHandler:")
     guard simulator.device.responds(to: selector) else {
-      throw FBControlCoreError.describe("-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:] is not present on this host, you must install and/or use Xcode 12 to use accessibility.").build()
+      throw FBAccessibilityError.accessibilityUnavailable
     }
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
@@ -128,10 +128,10 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
   // request. The retry passes remediationPermitted=false, bounding it to a single attempt.
   private func accessibilityElement(request: FBAXTranslationRequest, remediationPermitted: Bool) async throws -> FBAccessibilityElement {
     guard let simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBAccessibilityError.simulatorDeallocated
     }
     guard let dispatcher = translationDispatcher() as? FBAXTranslationDispatcher else {
-      throw FBSimulatorError.describe("Accessibility translation dispatcher is unavailable").build()
+      throw FBAccessibilityError.dispatcherUnavailable
     }
     let element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
     if !remediationPermitted {
@@ -170,7 +170,7 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
     do {
       _ = try await bridgeFBFuture(simulator.stopService(withName: coreSimulatorBridgeServiceName))
     } catch {
-      throw FBSimulatorError.describe("Could not restart \(coreSimulatorBridgeServiceName) bridge when attempting to remediate SpringBoard Crash").build()
+      throw FBAccessibilityError.springBoardRemediationFailed(serviceName: coreSimulatorBridgeServiceName)
     }
   }
 }

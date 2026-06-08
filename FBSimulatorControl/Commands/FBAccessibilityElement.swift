@@ -55,7 +55,7 @@ public final class FBAccessibilityElement {
   /// Serialize the element to a full response (preserves profiling/coverage data).
   public func serialize(with options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
     if closed {
-      throw FBSimulatorError.describe("Cannot serialize a closed element").build()
+      throw FBAccessibilityError.closedElement(operation: "serialize")
     }
     if options.enableProfiling && request.collector == nil {
       request.collector = FBAccessibilityProfilingCollector()
@@ -66,10 +66,10 @@ public final class FBAccessibilityElement {
   /// Read the string value of a searchable accessibility key from this element.
   public func stringValue(forSearchableKey key: FBAXSearchableKey) throws -> String {
     if closed {
-      throw FBSimulatorError.describe("Cannot read from a closed element").build()
+      throw FBAccessibilityError.closedElement(operation: "read from")
     }
     guard let value = Self.stringValue(forKey: key, from: element) else {
-      throw FBSimulatorError.describe("No string value for key \(key.rawValue)").build()
+      throw FBAccessibilityError.noStringValue(key: key.rawValue)
     }
     return value
   }
@@ -79,21 +79,21 @@ public final class FBAccessibilityElement {
   /// Perform an unconditional accessibility tap (AXPress) without any label verification.
   public func tap() throws {
     if closed {
-      throw FBSimulatorError.describe("Cannot tap a closed element").build()
+      throw FBAccessibilityError.closedElement(operation: "tap")
     }
     let actionNames = element.accessibilityActionNames() ?? []
     guard actionNames.contains("AXPress") else {
-      throw FBSimulatorError.describe("Element does not support pressing. Supported: \(FBCollectionInformation.oneLineDescription(from: actionNames))").build()
+      throw FBAccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
     }
     guard element.accessibilityPerformPress() else {
-      throw FBSimulatorError.describe("accessibilityPerformPress did not succeed").build()
+      throw FBAccessibilityError.pressFailed
     }
   }
 
   /// Perform an accessibility scroll on the element.
   public func scroll(with direction: FBAccessibilityScrollDirection) throws {
     if closed {
-      throw FBSimulatorError.describe("Cannot scroll a closed element").build()
+      throw FBAccessibilityError.closedElement(operation: "scroll")
     }
     switch direction {
     case .down:
@@ -113,7 +113,7 @@ public final class FBAccessibilityElement {
   @objc(setValue:error:)
   public func setValue(_ value: Any) throws {
     if closed {
-      throw FBSimulatorError.describe("Cannot set value on a closed element").build()
+      throw FBAccessibilityError.closedElement(operation: "set value on")
     }
     element.setAccessibilityValue(value)
   }
@@ -128,11 +128,11 @@ public final class FBAccessibilityElement {
   public func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
     guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) else {
       close()
-      throw FBSimulatorError.describe("Element with \(key.rawValue) containing '\(value)' not found within depth \(depth)").build()
+      throw FBAccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }
     assert(!closed, "Cannot transfer ownership from a closed element")
     guard let simulator else {
-      throw FBSimulatorError.describe("Simulator deallocated").build()
+      throw FBAccessibilityError.simulatorDeallocated
     }
     let newHandle = FBAccessibilityElement(element: found, request: request, dispatcher: dispatcher, simulator: simulator)
     closed = true
