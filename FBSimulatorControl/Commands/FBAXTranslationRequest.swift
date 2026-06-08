@@ -30,8 +30,6 @@ public class FBAXTranslationRequest {
   public var device: SimDevice?
   public var collector: FBAccessibilityProfilingCollector?
   public var logger: FBControlCoreLogger?
-  public var frameCoverage: NSNumber?
-  public var additionalFrameCoverage: NSNumber?
   public var translator: AXPTranslator?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
@@ -61,8 +59,8 @@ public class FBAXTranslationRequest {
   fileprivate func buildResponse(
     elements: Any,
     serializationStart: CFAbsoluteTime,
-    frameCoverage: NSNumber?,
-    additionalFrameCoverage: NSNumber?
+    frameCoverage: Double?,
+    additionalFrameCoverage: Double?
   ) -> FBAccessibilityElementsResponse {
     let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
     let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
@@ -118,11 +116,11 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
     )
 
     // Base coverage after the main traversal.
-    var frameCoverage: NSNumber?
+    var frameCoverage: Double?
     if let grid {
       let baseCoverage = grid.coverageRatio()
       if baseCoverage >= 0 {
-        frameCoverage = NSNumber(value: Double(baseCoverage))
+        frameCoverage = Double(baseCoverage)
       }
     }
 
@@ -252,7 +250,7 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    frameCoverage: NSNumber?,
+    frameCoverage: Double?,
     serializationStart: CFAbsoluteTime,
     keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
@@ -270,11 +268,11 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
       translator: translator
     )
 
-    var additionalFrameCoverage: NSNumber?
+    var additionalFrameCoverage: Double?
     if let coverageGrid, !discoveredElements.isEmpty {
       let additionalCoverage = coverageGrid.coverageRatio() - coverageBefore
       if additionalCoverage > 0 {
-        additionalFrameCoverage = NSNumber(value: Double(additionalCoverage))
+        additionalFrameCoverage = Double(additionalCoverage)
       }
     }
 

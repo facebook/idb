@@ -97,17 +97,17 @@ public struct FBAccessibilityElementsResponse {
 
   /// The proportion of the screen covered by accessibility element frames (0.0 - 1.0).
   /// Nil if coverage calculation was not requested. Low values suggest remote content.
-  public let frameCoverage: NSNumber?
+  public let frameCoverage: Double?
 
   /// Additional coverage discovered via grid-based hit-testing for remote content.
   /// Nil if remote content discovery was not performed or found nothing.
-  public let additionalFrameCoverage: NSNumber?
+  public let additionalFrameCoverage: Double?
 
   public init(
     elements: Any,
     profilingData: FBAccessibilityProfilingData?,
-    frameCoverage: NSNumber?,
-    additionalFrameCoverage: NSNumber?
+    frameCoverage: Double?,
+    additionalFrameCoverage: Double?
   ) {
     self.elements = elements
     self.profilingData = profilingData

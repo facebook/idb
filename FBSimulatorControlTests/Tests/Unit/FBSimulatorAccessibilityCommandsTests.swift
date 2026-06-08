@@ -767,7 +767,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
     XCTAssertNotNil(response.frameCoverage, "Coverage should be returned when collectFrameCoverage is enabled")
 
-    let coverage = response.frameCoverage!.doubleValue
+    let coverage = response.frameCoverage!
     XCTAssertGreaterThan(coverage, 0.0, "Coverage should be greater than 0")
     XCTAssertLessThan(coverage, 0.15, "Coverage should be low since only 3 small elements")
   }
@@ -804,7 +804,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
     XCTAssertNotNil(response.frameCoverage)
 
-    let coverage = response.frameCoverage!.doubleValue
+    let coverage = response.frameCoverage!
     XCTAssertGreaterThan(coverage, 0.2, "Coverage should be > 20% from bars")
     XCTAssertLessThan(coverage, 0.4, "Coverage should be < 40% due to empty WebView area")
   }
@@ -832,7 +832,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
     XCTAssertNotNil(response.frameCoverage)
 
-    let coverage = response.frameCoverage!.doubleValue
+    let coverage = response.frameCoverage!
     XCTAssertGreaterThanOrEqual(coverage, 0.99, "Coverage should be near 100% when element covers full screen")
   }
 
@@ -855,7 +855,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNotNil(response.frameCoverage)
 
     // Application element is skipped, so coverage should be 0
-    let coverage = response.frameCoverage!.doubleValue
+    let coverage = response.frameCoverage!
     XCTAssertEqual(coverage, 0.0, accuracy: 0.001, "Coverage should be 0 when only Application element exists")
   }
 
