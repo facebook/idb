@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
@@ -12,9 +13,9 @@ import XCTest
 
 extension XCTestCase {
 
-  func assertShutdownSimulatorAndTerminateSession(_ simulator: FBSimulator) {
+  func assertShutdownSimulatorAndTerminateSession(_ simulator: FBSimulator) async {
     do {
-      try simulator.shutdown().await()
+      try await simulator.shutdown()
     } catch {
       XCTFail("Failed to shutdown simulator: \(error)")
     }

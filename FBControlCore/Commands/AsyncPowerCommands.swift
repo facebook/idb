@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBPowerCommands`.
 public protocol AsyncPowerCommands: AnyObject {
 
   func shutdown() async throws

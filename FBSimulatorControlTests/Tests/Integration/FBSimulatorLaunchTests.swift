@@ -9,7 +9,7 @@ import XCTest
 
 final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
 
-  func testLaunchesSingleSimulator(_ configuration: FBSimulatorConfiguration) {
+  func testLaunchesSingleSimulator(_ configuration: FBSimulatorConfiguration) async {
     guard
       let simulator = assertObtainsBootedSimulator(
         with: configuration,
@@ -20,29 +20,29 @@ final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
     }
 
     assertSimulatorBooted(simulator)
-    assertShutdownSimulatorAndTerminateSession(simulator)
+    await assertShutdownSimulatorAndTerminateSession(simulator)
   }
 
-  func testLaunchesiPhone() {
-    testLaunchesSingleSimulator(
+  func testLaunchesiPhone() async {
+    await testLaunchesSingleSimulator(
       FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "iPhone 8"))
     )
   }
 
-  func testLaunchesiPad() {
-    testLaunchesSingleSimulator(
+  func testLaunchesiPad() async {
+    await testLaunchesSingleSimulator(
       FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "iPad Air 2"))
     )
   }
 
-  func testLaunchesWatch() {
-    testLaunchesSingleSimulator(
+  func testLaunchesWatch() async {
+    await testLaunchesSingleSimulator(
       FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "Apple Watch - 42mm"))
     )
   }
 
-  func testLaunchesTV() {
-    testLaunchesSingleSimulator(
+  func testLaunchesTV() async {
+    await testLaunchesSingleSimulator(
       FBSimulatorConfiguration.default.withDeviceModel(FBDeviceModel(rawValue: "Apple TV"))
     )
   }

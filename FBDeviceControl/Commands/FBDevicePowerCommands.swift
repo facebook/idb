@@ -23,25 +23,9 @@ public class FBDevicePowerCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBPowerCommands (legacy FBFuture entry points)
+  // MARK: - Private
 
-  public func shutdown() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await sendRelayCommandAsync("Shutdown")
-      return NSNull()
-    }
-  }
-
-  public func reboot() -> FBFuture<NSNull> {
-    fbFutureFromAsync { [self] in
-      try await sendRelayCommandAsync("Restart")
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
-  fileprivate func sendRelayCommandAsync(_ request: String) async throws {
+  fileprivate func sendRelayCommand(_ request: String) async throws {
     guard let device else {
       throw FBDeviceControlError().describe("Device is nil").build()
     }
@@ -61,31 +45,10 @@ public class FBDevicePowerCommands: NSObject, FBiOSTargetCommand {
 extension FBDevice: AsyncPowerCommands {
 
   public func shutdown() async throws {
-    try await powerCommands().sendRelayCommandAsync("Shutdown")
+    try await powerCommands().sendRelayCommand("Shutdown")
   }
 
   public func reboot() async throws {
-    try await powerCommands().sendRelayCommandAsync("Restart")
-  }
-}
-
-// MARK: - FBDevice+FBPowerCommands
-
-extension FBDevice: FBPowerCommands {
-
-  @objc public func shutdown() -> FBFuture<NSNull> {
-    do {
-      return try powerCommands().shutdown()
-    } catch {
-      return FBFuture(error: error)
-    }
-  }
-
-  @objc public func reboot() -> FBFuture<NSNull> {
-    do {
-      return try powerCommands().reboot()
-    } catch {
-      return FBFuture(error: error)
-    }
+    try await powerCommands().sendRelayCommand("Restart")
   }
 }

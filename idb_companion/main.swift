@@ -261,7 +261,10 @@ private func bootFuture(_ udid: String, userDefaults: UserDefaults, logger: FBCo
           .onQueue(
             DispatchQueue.main,
             respondToCancellation: {
-              return simulator.shutdown()
+              return fbFutureFromAsync {
+                try await simulator.shutdown()
+                return NSNull()
+              }
             }) as AnyObject
       }) as! FBFuture<FBFuture<NSNull>>
 }
