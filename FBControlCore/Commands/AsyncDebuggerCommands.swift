@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBDebuggerCommands`.
 public protocol AsyncDebuggerCommands: AnyObject {
 
   func launchDebugServer(

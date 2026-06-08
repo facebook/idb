@@ -11,9 +11,3 @@ import Foundation
 
   @objc var lldbBootstrapCommands: [String] { get }
 }
-
-@objc public protocol FBDebuggerCommands: NSObjectProtocol, FBiOSTargetCommand {
-
-  @objc(launchDebugServerForHostApplication:port:)
-  func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<FBDebugServer>
-}

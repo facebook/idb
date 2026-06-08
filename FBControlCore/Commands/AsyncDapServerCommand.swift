@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBDapServerCommand`.
 public protocol AsyncDapServerCommand: AnyObject {
 
   func launchDapServer(

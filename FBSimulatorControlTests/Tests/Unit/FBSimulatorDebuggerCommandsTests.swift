@@ -36,7 +36,7 @@ private final class CapturingApplicationCommands: FBSimulatorApplicationCommands
     lock.lock()
     _capturedConfiguration = configuration
     lock.unlock()
-    // Throw to unwind launchDebugServerAsync before it reaches the
+    // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
     // surfaces — tests poll the captured configuration directly.
     throw LaunchCaptureStop()
@@ -84,7 +84,7 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
 
   // MARK: - Launch Configuration
 
-  func testLaunchDebugServerConfiguresApplicationForDebugging() {
+  func testLaunchDebugServerConfiguresApplicationForDebugging() async {
     let harness = makeHarness()
     let app = FBBundleDescriptor(
       name: "MyApp",
@@ -92,7 +92,7 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/MyApp.app",
       binary: nil)
 
-    _ = harness.commands.launchDebugServer(forHostApplication: app, port: 12345)
+    _ = try? await harness.commands.launchDebugServer(forHostApplication: app, port: 12345)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertNotNil(config, "Should have captured the launch configuration")
@@ -110,7 +110,7 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
       "No custom environment variables should be passed to the debugged application")
   }
 
-  func testLaunchDebugServerUsesApplicationDescriptorProperties() {
+  func testLaunchDebugServerUsesApplicationDescriptorProperties() async {
     let harness = makeHarness()
     let app = FBBundleDescriptor(
       name: "SpecialApp",
@@ -118,7 +118,7 @@ final class FBSimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/SpecialApp.app",
       binary: nil)
 
-    _ = harness.commands.launchDebugServer(forHostApplication: app, port: 9999)
+    _ = try? await harness.commands.launchDebugServer(forHostApplication: app, port: 9999)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertEqual(

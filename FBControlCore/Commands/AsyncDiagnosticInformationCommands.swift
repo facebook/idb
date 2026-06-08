@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Swift-native async/await counterpart of `FBDiagnosticInformationCommands`.
 public protocol AsyncDiagnosticInformationCommands: AnyObject {
 
   func fetchDiagnosticInformation() async throws -> [String: Any]

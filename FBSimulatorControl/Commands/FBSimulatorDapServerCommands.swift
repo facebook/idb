@@ -27,15 +27,6 @@ public final class FBSimulatorDapServerCommand: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBDapServerCommand (legacy FBFuture entry point)
-
-  @objc
-  public func launchDapServer(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) -> FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>> {
-    fbFutureFromAsync { [self] in
-      try await launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func launchDapServerAsync(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, any FBDataConsumer, NSString> {
@@ -88,19 +79,5 @@ extension FBSimulator: AsyncDapServerCommand {
     stdOut: any FBDataConsumer
   ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
     try await dapServerCommand().launchDapServerAsync(dapPath, stdIn: stdIn, stdOut: stdOut)
-  }
-}
-
-// MARK: - FBSimulator+FBDapServerCommand
-
-extension FBSimulator: FBDapServerCommand {
-
-  @objc(launchDapServer:stdIn:stdOut:)
-  public func launchDapServer(_ dapPath: Any, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) -> FBFuture<FBSubprocess<AnyObject, any FBDataConsumer, NSString>> {
-    do {
-      return try dapServerCommand().launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
-    } catch {
-      return FBFuture(error: error)
-    }
   }
 }

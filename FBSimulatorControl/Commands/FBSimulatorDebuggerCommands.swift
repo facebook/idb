@@ -89,18 +89,9 @@ public final class FBSimulatorDebuggerCommands: NSObject, FBiOSTargetCommand {
     super.init()
   }
 
-  // MARK: - FBDebuggerCommands (legacy FBFuture entry point)
-
-  @objc
-  public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) -> FBFuture<any FBDebugServer> {
-    fbFutureFromAsync { [self] in
-      try await launchDebugServerAsync(forHostApplication: application, port: port)
-    }
-  }
-
   // MARK: - Private
 
-  fileprivate func launchDebugServerAsync(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
+  func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let simulator = self.simulator else {
       throw FBSimulatorError.describe("Simulator deallocated").build()
     }
@@ -146,6 +137,6 @@ extension FBSimulator: AsyncDebuggerCommands {
     forHostApplication application: FBBundleDescriptor,
     port: in_port_t
   ) async throws -> any FBDebugServer {
-    try await debuggerCommands().launchDebugServerAsync(forHostApplication: application, port: port)
+    try await debuggerCommands().launchDebugServer(forHostApplication: application, port: port)
   }
 }

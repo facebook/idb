@@ -25,14 +25,6 @@ public class FBDeviceDiagnosticInformationCommands: NSObject, FBiOSTargetCommand
     super.init()
   }
 
-  // MARK: - FBDiagnosticInformationCommands (legacy FBFuture entry point)
-
-  public func fetchDiagnosticInformation() -> FBFuture<NSDictionary> {
-    fbFutureFromAsync { [self] in
-      try await fetchDiagnosticInformationAsync() as NSDictionary
-    }
-  }
-
   // MARK: - Async
 
   fileprivate func fetchDiagnosticInformationAsync() async throws -> [String: Any] {
@@ -93,18 +85,5 @@ extension FBDevice: AsyncDiagnosticInformationCommands {
 
   public func fetchDiagnosticInformation() async throws -> [String: Any] {
     try await diagnosticInformationCommands().fetchDiagnosticInformationAsync()
-  }
-}
-
-// MARK: - FBDevice+FBDiagnosticInformationCommands
-
-extension FBDevice: FBDiagnosticInformationCommands {
-
-  @objc public func fetchDiagnosticInformation() -> FBFuture<NSDictionary> {
-    do {
-      return try diagnosticInformationCommands().fetchDiagnosticInformation()
-    } catch {
-      return FBFuture(error: error)
-    }
   }
 }
