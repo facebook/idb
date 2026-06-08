@@ -23,11 +23,12 @@ public final class FBAccessibilityCoverageGrid {
 
   private var grid: [UInt8]
 
-  private static let defaultCellSize: CGFloat = 10.0
+  /// Default grid cell size in points.
+  public static let defaultCellSize: CGFloat = 10.0
 
-  /// Initialize with screen bounds and cell size. Returns nil if the bounds
-  /// produce a zero-dimension grid.
-  public init?(screenBounds: CGRect, cellSize: CGFloat) {
+  /// Initialize with screen bounds and cell size (default 10pt). Returns nil if
+  /// the bounds produce a zero-dimension grid.
+  public init?(screenBounds: CGRect, cellSize: CGFloat = FBAccessibilityCoverageGrid.defaultCellSize) {
     let resolvedCellSize = cellSize > 0 ? cellSize : Self.defaultCellSize
     let computedWidth = UInt(ceil(screenBounds.size.width / resolvedCellSize))
     let computedHeight = UInt(ceil(screenBounds.size.height / resolvedCellSize))
@@ -39,10 +40,6 @@ public final class FBAccessibilityCoverageGrid {
     self.width = computedWidth
     self.height = computedHeight
     self.grid = [UInt8](repeating: 0, count: Int(computedWidth * computedHeight))
-  }
-
-  public convenience init?(screenBounds: CGRect) {
-    self.init(screenBounds: screenBounds, cellSize: Self.defaultCellSize)
   }
 
   /// Mark cells covered by the given frame. Handles out-of-bounds frames safely.
