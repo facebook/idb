@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFuture.h>
-
 /**
  Keys for accessibility element dictionaries.
  */
