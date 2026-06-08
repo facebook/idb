@@ -60,6 +60,10 @@ public final class FBAccessibilityElement {
     if options.enableProfiling && request.collector == nil {
       request.collector = FBAccessibilityProfilingCollector()
     }
+    // Wire the per-request logger from the option so the dispatcher's XPC
+    // callbacks (which capture `request.logger`) actually emit request/response
+    // logging during the serialization walk. Mirrors the `collector` wiring above.
+    request.logger = options.enableLogging ? simulator?.logger : nil
     return try request.run(element, options: options)
   }
 
