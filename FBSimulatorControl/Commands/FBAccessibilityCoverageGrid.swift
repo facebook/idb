@@ -14,21 +14,21 @@ import Foundation
 /// serialization traversal.
 ///
 /// Created and used entirely from Swift (the serializer), so it is a plain Swift class.
-public final class FBAccessibilityCoverageGrid {
+final class FBAccessibilityCoverageGrid {
 
-  public let screenBounds: CGRect
-  public let cellSize: CGFloat
-  public let width: UInt
-  public let height: UInt
+  let screenBounds: CGRect
+  let cellSize: CGFloat
+  let width: UInt
+  let height: UInt
 
   private var grid: [UInt8]
 
   /// Default grid cell size in points.
-  public static let defaultCellSize: CGFloat = 10.0
+  static let defaultCellSize: CGFloat = 10.0
 
   /// Initialize with screen bounds and cell size (default 10pt). Returns nil if
   /// the bounds produce a zero-dimension grid.
-  public init?(screenBounds: CGRect, cellSize: CGFloat = FBAccessibilityCoverageGrid.defaultCellSize) {
+  init?(screenBounds: CGRect, cellSize: CGFloat = FBAccessibilityCoverageGrid.defaultCellSize) {
     let resolvedCellSize = cellSize > 0 ? cellSize : Self.defaultCellSize
     let computedWidth = UInt(ceil(screenBounds.size.width / resolvedCellSize))
     let computedHeight = UInt(ceil(screenBounds.size.height / resolvedCellSize))
@@ -43,7 +43,7 @@ public final class FBAccessibilityCoverageGrid {
   }
 
   /// Mark cells covered by the given frame. Handles out-of-bounds frames safely.
-  public func markFilled(with frame: CGRect) {
+  func markFilled(with frame: CGRect) {
     guard !frame.isEmpty, !frame.isNull else {
       return
     }
@@ -78,7 +78,7 @@ public final class FBAccessibilityCoverageGrid {
   }
 
   /// Whether the cell containing the given point is filled. NO if empty or out of bounds.
-  public func isFilled(at point: CGPoint) -> Bool {
+  func isFilled(at point: CGPoint) -> Bool {
     let relativeX = point.x - screenBounds.origin.x
     let relativeY = point.y - screenBounds.origin.y
     let cellX = Int(floor(relativeX / cellSize))
@@ -90,7 +90,7 @@ public final class FBAccessibilityCoverageGrid {
   }
 
   /// Coverage ratio for the entire screen (0.0–1.0), or -1 if the grid is invalid.
-  public func coverageRatio() -> CGFloat {
+  func coverageRatio() -> CGFloat {
     let totalCells = Int(width * height)
     guard totalCells > 0 else {
       return -1
