@@ -83,19 +83,19 @@ public class FBSimulatorAccessibilityCommands: NSObject, AsyncAccessibilityOpera
 
   public func accessibilityElement(at point: CGPoint) async throws -> FBAccessibilityElement {
     try validateAccessibility()
-    let request = FBAXTranslationRequest_Point(point: point)
+    let request = FBAXTranslationRequest(kind: .point(point))
     return try await accessibilityElement(request: request, remediationPermitted: false)
   }
 
   public func accessibilityElementForFrontmostApplication() async throws -> FBAccessibilityElement {
     try validateAccessibility()
-    let request = FBAXTranslationRequest_FrontmostApplication()
+    let request = FBAXTranslationRequest(kind: .frontmostApplication)
     return try await accessibilityElement(request: request, remediationPermitted: true)
   }
 
   public func accessibilityElementMatching(value: String, forKey key: FBAXSearchableKey, depth: UInt) async throws -> FBAccessibilityElement {
     try validateAccessibility()
-    let request = FBAXTranslationRequest_FrontmostApplication()
+    let request = FBAXTranslationRequest(kind: .frontmostApplication)
     let root = try await accessibilityElement(request: request, remediationPermitted: true)
     return try root.findElement(withValue: value, forKey: key, depth: depth)
   }

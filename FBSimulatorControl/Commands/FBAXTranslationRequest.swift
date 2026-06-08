@@ -12,12 +12,22 @@ import Foundation
 
 /// A single accessibility translation request. Carries the per-request token,
 /// the resolved CoreSimulator device + translator, the profiling collector, and
-/// the synchronous XPC timeout. Subclasses implement how the root element is
-/// obtained (frontmost application vs. point) and how the response is serialized.
+/// the synchronous XPC timeout. The `kind` selects how the root element is
+/// obtained (the frontmost application or the element at a point) and how the
+/// response is serialized.
 ///
 /// Created and driven entirely from Swift in this module (the dispatcher, the
 /// element handle, and the facade), so it is a plain Swift class.
-public class FBAXTranslationRequest {
+public final class FBAXTranslationRequest {
+
+  /// What the request resolves and how it serializes.
+  public enum Kind {
+    /// The frontmost application's element tree, with frame-coverage calculation
+    /// and remote (separate-process) content discovery.
+    case frontmostApplication
+    /// The single element at a screen point.
+    case point(CGPoint)
+  }
 
   // Default timeout (in seconds) for synchronous accessibility XPC round-trips.
   // Healthy SpringBoard responses return well under 1s; 5s comfortably absorbs
@@ -26,6 +36,7 @@ public class FBAXTranslationRequest {
   // indefinitely on a `DispatchGroup.wait`.
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
+  public let kind: Kind
   public let token: String
   public var device: SimDevice?
   public var collector: FBAccessibilityProfilingCollector?
@@ -37,61 +48,58 @@ public class FBAXTranslationRequest {
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
   public var requestTimeoutSeconds: TimeInterval
 
-  public init() {
+  public init(kind: Kind) {
+    self.kind = kind
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
   }
 
-  public func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
-    fatalError("\(type(of: self)).perform(withTranslator:) is abstract and should be overridden")
-  }
-
-  public func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
-    fatalError("\(type(of: self)).run(_:options:) is abstract and should be overridden")
-  }
-
+  /// A fresh request of the same kind with a new token, used to retry after
+  /// SpringBoard remediation.
   public func cloneWithNewToken() -> FBAXTranslationRequest {
-    fatalError("\(type(of: self)).cloneWithNewToken() is abstract and should be overridden")
+    FBAXTranslationRequest(kind: kind)
   }
 
-  // Builds the response, finalizing profiling timing — the Swift equivalent of the
-  // old `FBAccessibilityElementsResponse (ResponseBuilder)` ObjC category.
-  fileprivate func buildResponse(
-    elements: Any,
-    serializationStart: CFAbsoluteTime,
-    frameCoverage: Double?,
-    additionalFrameCoverage: Double?
-  ) -> FBAccessibilityElementsResponse {
-    let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
-    let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
-    return FBAccessibilityElementsResponse(
-      elements: elements,
-      profilingData: profilingData,
-      frameCoverage: frameCoverage,
-      additionalFrameCoverage: additionalFrameCoverage
+  /// Resolves the root translation object for this request's kind.
+  public func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
+    switch kind {
+    case .frontmostApplication:
+      return translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)
+    case .point(let point):
+      return translator.object(at: point, displayId: 0, bridgeDelegateToken: token)
+    }
+  }
+
+  /// Serializes the resolved element into a response. The frontmost-application
+  /// path additionally computes frame coverage and merges remote (separate-process)
+  /// content; the point path is a single-element description.
+  public func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+    switch kind {
+    case .point:
+      return runPoint(element, options: options)
+    case .frontmostApplication:
+      return runFrontmostApplication(element, options: options)
+    }
+  }
+
+  // MARK: - Point
+
+  private func runPoint(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+    let serializationStart = CFAbsoluteTimeGetCurrent()
+    let elements = FBSimulatorAccessibilitySerializer.formattedDescription(
+      ofElement: element,
+      token: token,
+      nestedFormat: options.nestedFormat,
+      keys: Self.serializerKeys(options),
+      collector: collector,
+      coverageGrid: nil
     )
+    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil)
   }
 
-  // Maps the request options' raw string keys to the typed serializer keys,
-  // dropping any unrecognized keys (which would never match the output anyway).
-  fileprivate static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
-    Set((options.keys ?? []).compactMap(FBAXKeys.init(rawValue:)))
-  }
-}
+  // MARK: - Frontmost Application
 
-// MARK: - Frontmost Application
-
-public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationRequest {
-
-  public override func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
-    translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)
-  }
-
-  public override func cloneWithNewToken() -> FBAXTranslationRequest {
-    FBAXTranslationRequest_FrontmostApplication()
-  }
-
-  public override func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
+  private func runFrontmostApplication(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
     // Screen bounds for coverage calculation and remote content fetching.
     let screenBounds = element.accessibilityFrame()
 
@@ -292,37 +300,30 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
 
     return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
   }
-}
 
-// MARK: - Point
+  // MARK: - Helpers
 
-public final class FBAXTranslationRequest_Point: FBAXTranslationRequest {
-
-  public let point: CGPoint
-
-  public init(point: CGPoint) {
-    self.point = point
-    super.init()
-  }
-
-  public override func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
-    translator.object(at: point, displayId: 0, bridgeDelegateToken: token)
-  }
-
-  public override func cloneWithNewToken() -> FBAXTranslationRequest {
-    FBAXTranslationRequest_Point(point: point)
-  }
-
-  public override func run(_ element: AXPMacPlatformElement, options: FBAccessibilityRequestOptions) throws -> FBAccessibilityElementsResponse {
-    let serializationStart = CFAbsoluteTimeGetCurrent()
-    let elements = FBSimulatorAccessibilitySerializer.formattedDescription(
-      ofElement: element,
-      token: token,
-      nestedFormat: options.nestedFormat,
-      keys: Self.serializerKeys(options),
-      collector: collector,
-      coverageGrid: nil
+  // Builds the response, finalizing profiling timing — the Swift equivalent of the
+  // old `FBAccessibilityElementsResponse (ResponseBuilder)` ObjC category.
+  private func buildResponse(
+    elements: Any,
+    serializationStart: CFAbsoluteTime,
+    frameCoverage: Double?,
+    additionalFrameCoverage: Double?
+  ) -> FBAccessibilityElementsResponse {
+    let serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart
+    let profilingData = collector?.finalize(withSerializationDuration: serializationDuration)
+    return FBAccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      frameCoverage: frameCoverage,
+      additionalFrameCoverage: additionalFrameCoverage
     )
-    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: nil, additionalFrameCoverage: nil)
+  }
+
+  // Maps the request options' raw string keys to the typed serializer keys,
+  // dropping any unrecognized keys (which would never match the output anyway).
+  private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
+    Set((options.keys ?? []).compactMap(FBAXKeys.init(rawValue:)))
   }
 }
