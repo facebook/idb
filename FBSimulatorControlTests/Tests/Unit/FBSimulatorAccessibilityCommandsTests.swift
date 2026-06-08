@@ -886,4 +886,104 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     element.perform(NSSelectorFromString("close"))
     XCTAssertNil(response.additionalFrameCoverage, "additionalFrameCoverage should be nil without remoteContentOptions")
   }
+
+  // MARK: - Marker Search Tests (accessibilityElementMatching)
+
+  func testAccessibilityElementMatchingFindsDescendantByLabel() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    let element = try await simulator.accessibilityElementMatching(value: "OK", forKey: .label, depth: 10)
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "OK")
+  }
+
+  func testAccessibilityElementMatchingFindsByUniqueID() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    let element = try await simulator.accessibilityElementMatching(value: "cancel_button", forKey: .uniqueID, depth: 10)
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "Cancel")
+  }
+
+  func testAccessibilityElementMatchingIsSubstringMatch() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    // "Conf" is a substring of the "Confirm Action" static text label.
+    let element = try await simulator.accessibilityElementMatching(value: "Conf", forKey: .label, depth: 10)
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "Confirm Action")
+  }
+
+  func testAccessibilityElementMatchingMatchesRootAtDepthZero() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    // depth 0 only inspects the root element itself.
+    let element = try await simulator.accessibilityElementMatching(value: "App Window", forKey: .label, depth: 0)
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "App Window")
+  }
+
+  func testAccessibilityElementMatchingByRoleReturnsFirstDFSMatch() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    // Root is AXApplication, first child is AXStaticText; the first AXButton in DFS order is "OK".
+    let element = try await simulator.accessibilityElementMatching(value: "AXButton", forKey: .role, depth: 10)
+    defer { element.perform(NSSelectorFromString("close")) }
+
+    XCTAssertEqual(try element.stringValue(forSearchableKey: .label), "OK")
+  }
+
+  func testAccessibilityElementMatchingNotFoundThrows() async throws {
+    setUp(withRootElement: defaultElementTree)
+
+    do {
+      let element = try await simulator.accessibilityElementMatching(value: "DefinitelyMissing", forKey: .label, depth: 10)
+      element.perform(NSSelectorFromString("close"))
+      XCTFail("Expected matching to throw for a missing element")
+    } catch {
+      XCTAssertTrue(
+        "\(error)".contains("not found"),
+        "Expected a not-found error, got: \(error)"
+      )
+    }
+  }
+
+  func testAccessibilityElementMatchingRespectsDepthBound() async throws {
+    // Build a tree where the target is two levels below the root:
+    // root -> container -> deepButton
+    let deepButton = FBAccessibilityTestElementBuilder.button(
+      withLabel: "Deep",
+      identifier: "deep_id",
+      frame: NSRect(x: 0, y: 0, width: 10, height: 10)
+    )
+    let container = FBAccessibilityTestElementBuilder.application(
+      withLabel: "Container",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+      children: [deepButton]
+    )
+    let root = FBAccessibilityTestElementBuilder.application(
+      withLabel: "App Window",
+      frame: NSRect(x: 0, y: 0, width: 390, height: 844),
+      children: [container]
+    )
+    setUp(withRootElement: root)
+
+    // depth 1 cannot reach a level-2 descendant.
+    do {
+      let tooShallow = try await simulator.accessibilityElementMatching(value: "Deep", forKey: .label, depth: 1)
+      tooShallow.perform(NSSelectorFromString("close"))
+      XCTFail("Expected depth-1 search not to reach a level-2 element")
+    } catch {
+      // expected
+    }
+
+    // depth 2 reaches it.
+    let found = try await simulator.accessibilityElementMatching(value: "Deep", forKey: .label, depth: 2)
+    defer { found.perform(NSSelectorFromString("close")) }
+    XCTAssertEqual(try found.stringValue(forSearchableKey: .label), "Deep")
+  }
 }
