@@ -57,11 +57,7 @@ public final class FBAXTranslationDispatcher: NSObject, AXPTranslationTokenDeleg
     let translationStart = CFAbsoluteTimeGetCurrent()
     guard let translator = self.translator, let translation = request.perform(withTranslator: translator) else {
       self.popRequest(request)
-      throw NSError(
-        domain: "com.facebook.FBSimulatorControl.accessibility",
-        code: 1,
-        userInfo: [NSLocalizedDescriptionKey: "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"]
-      )
+      throw FBSimulatorError.describe("No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog").build()
     }
     collector?.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
     translation.bridgeDelegateToken = request.token
