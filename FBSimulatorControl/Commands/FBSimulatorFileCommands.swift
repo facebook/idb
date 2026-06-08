@@ -73,8 +73,7 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
 
   // MARK: - FBFileCommands Implementation
 
-  @objc
-  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForContainerApplication(_ bundleID: String) -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       (FBFuture<AnyObject>
       .onQueue(
@@ -95,16 +94,15 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
           FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<any FBFileContainerProtocol>
+        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForAuxillary() -> FBFutureContext<any FBFileContainerProtocol> {
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<any FBFileContainerProtocol>
+  public func fileCommandsForAuxillary() -> FBFutureContext<FBContainedFile_ContainedRoot> {
+    // swiftlint:disable:next force_cast
+    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForApplicationContainers() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForApplicationContainers() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       (FBFuture<AnyObject>
       .onQueue(
@@ -125,11 +123,10 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
           FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<any FBFileContainerProtocol>
+        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForGroupContainers() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForGroupContainers() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       (FBFuture<AnyObject>
       .onQueue(
@@ -150,68 +147,60 @@ public final class FBSimulatorFileCommands: NSObject, FBiOSTargetCommand {
         simulator.asyncQueue,
         contextualTeardown: { (_: Any, _: FBFutureState) -> FBFuture<NSNull> in
           FBFuture<NSNull>.empty()
-        })) as! FBFutureContext<any FBFileContainerProtocol>
+        })) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForRootFilesystem() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForRootFilesystem() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     let containedFile = containedFileForRootFilesystem()
     let fileContainer = FBFileContainer.fileContainer(forContainedFile: containedFile as AnyObject) as AnyObject
-    return FBFutureContext<AnyObject>(result: fileContainer) as! FBFutureContext<any FBFileContainerProtocol>
+    return FBFutureContext<AnyObject>(result: fileContainer) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForMediaDirectory() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForMediaDirectory() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     let mediaDirectory = (simulator.dataDirectory! as NSString).appendingPathComponent("Media")
-    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory) as AnyObject) as! FBFutureContext<any FBFileContainerProtocol>
+    return FBFutureContext<AnyObject>(result: FBFileContainer.fileContainer(forBasePath: mediaDirectory) as AnyObject) as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForMDMProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForMDMProfiles() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForMDMProfiles not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForProvisioningProfiles() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForProvisioningProfiles() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForProvisioningProfiles not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForSpringboardIconLayout() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForSpringboardIconLayout not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForWallpaper() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForWallpaper() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForWallpaper not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForDiskImages() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForDiskImages() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForDiskImages not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
-  @objc
-  public func fileCommandsForSymbols() -> FBFutureContext<any FBFileContainerProtocol> {
+  public func fileCommandsForSymbols() -> FBFutureContext<FBContainedFile_ContainedRoot> {
     return
       FBControlCoreError
       .describe("fileCommandsForSymbols not supported on simulators")
-      .failFutureContext() as! FBFutureContext<any FBFileContainerProtocol>
+      .failFutureContext() as! FBFutureContext<FBContainedFile_ContainedRoot>
   }
 
   // MARK: - FBSimulatorFileCommandsProtocol Implementation
@@ -344,14 +333,14 @@ extension FBSimulator: AsyncFileCommands {
     try await withAsyncFileContainer(fileCommands().fileCommandsForSymbols(), body: body)
   }
 
-  /// Scopes the legacy file container to `body`, exposing it through the
-  /// `AsyncFileContainer` async API so callers never see `FBFileContainerProtocol`.
-  private func withAsyncFileContainer<R>(
-    _ context: FBFutureContext<any FBFileContainerProtocol>,
+  /// Scopes the file container to `body`, exposing it through the
+  /// `AsyncFileContainer` async API.
+  private func withAsyncFileContainer<C: AsyncFileContainer, R>(
+    _ context: FBFutureContext<C>,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     try await withFBFutureContext(context) { container in
-      try await body(AsyncFileContainerAdapter(container))
+      try await body(container)
     }
   }
 }
