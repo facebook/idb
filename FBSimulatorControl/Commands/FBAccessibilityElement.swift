@@ -70,7 +70,6 @@ public final class FBAccessibilityElement: NSObject {
   }
 
   /// Read the string value of a searchable accessibility key from this element.
-  @objc(stringValueForSearchableKey:error:)
   public func stringValue(forSearchableKey key: FBAXSearchableKey) throws -> String {
     if closed {
       throw FBSimulatorError.describe("Cannot read from a closed element").build()
@@ -99,7 +98,6 @@ public final class FBAccessibilityElement: NSObject {
   }
 
   /// Perform an accessibility scroll on the element.
-  @objc(scrollWithDirection:error:)
   public func scroll(with direction: FBAccessibilityScrollDirection) throws {
     if closed {
       throw FBSimulatorError.describe("Cannot scroll a closed element").build()
@@ -115,8 +113,6 @@ public final class FBAccessibilityElement: NSObject {
       element.performScrollRightByPageAction()
     case .visible:
       element.performScrollToVisible()
-    @unknown default:
-      throw FBSimulatorError.describe("Unknown scroll direction \(direction.rawValue)").build()
     }
   }
 
@@ -136,7 +132,6 @@ public final class FBAccessibilityElement: NSObject {
   /// transferred to a new handle wrapping the found element, and the receiver is
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
-  @objc(findElementWithValue:forKey:depth:error:)
   public func findElement(withValue value: String, forKey key: FBAXSearchableKey, depth: UInt) throws -> FBAccessibilityElement {
     guard let found = Self.findElement(withValue: value, forKey: key, in: element, token: request.token, remainingDepth: depth) else {
       close()
@@ -173,8 +168,6 @@ public final class FBAccessibilityElement: NSObject {
       return element.accessibilityHelp()
     case .placeholder:
       return element.accessibilityPlaceholderValue()
-    default:
-      return nil
     }
   }
 

@@ -63,7 +63,7 @@ public final class FBAccessibilityRequestOptions: NSObject, NSCopying {
   @objc public var nestedFormat: Bool = false
 
   /// Set of string keys to filter which properties are returned.
-  /// Defaults to `FBAXKeysDefaultSet()` (the standard keys). `nil` means all default keys.
+  /// Defaults to `FBAXKeys.defaultSet` (the standard keys). `nil` means all default keys.
   @objc public var keys: Set<String>?
 
   /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
@@ -79,7 +79,7 @@ public final class FBAccessibilityRequestOptions: NSObject, NSCopying {
   @objc public var remoteContentOptions: FBAccessibilityRemoteContentOptions?
 
   @objc public override init() {
-    self.keys = Set((FBAXKeysDefaultSet() as NSSet).allObjects.compactMap { $0 as? String })
+    self.keys = Set(FBAXKeys.defaultSet.map(\.rawValue))
     super.init()
   }
 

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBControlCore/FBAccessibilityCommands.h>
 #import <FBControlCore/FBAccessibilityTraits.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
