@@ -13,15 +13,13 @@ import Foundation
 /// (a cell is filled or not) and coverage is computed incrementally during the
 /// serialization traversal.
 ///
-/// Still created and used by the Objective-C serializer in this module (via
-/// `FBSimulatorControl-Swift.h`), so it keeps its `@objc` class name and selectors.
-@objc(FBAccessibilityCoverageGrid)
-public final class FBAccessibilityCoverageGrid: NSObject {
+/// Created and used entirely from Swift (the serializer), so it is a plain Swift class.
+public final class FBAccessibilityCoverageGrid {
 
-  @objc public let screenBounds: CGRect
-  @objc public let cellSize: CGFloat
-  @objc public let width: UInt
-  @objc public let height: UInt
+  public let screenBounds: CGRect
+  public let cellSize: CGFloat
+  public let width: UInt
+  public let height: UInt
 
   private var grid: [UInt8]
 
@@ -29,7 +27,6 @@ public final class FBAccessibilityCoverageGrid: NSObject {
 
   /// Initialize with screen bounds and cell size. Returns nil if the bounds
   /// produce a zero-dimension grid.
-  @objc(initWithScreenBounds:cellSize:)
   public init?(screenBounds: CGRect, cellSize: CGFloat) {
     let resolvedCellSize = cellSize > 0 ? cellSize : Self.defaultCellSize
     let computedWidth = UInt(ceil(screenBounds.size.width / resolvedCellSize))
@@ -42,16 +39,13 @@ public final class FBAccessibilityCoverageGrid: NSObject {
     self.width = computedWidth
     self.height = computedHeight
     self.grid = [UInt8](repeating: 0, count: Int(computedWidth * computedHeight))
-    super.init()
   }
 
-  @objc(initWithScreenBounds:)
   public convenience init?(screenBounds: CGRect) {
     self.init(screenBounds: screenBounds, cellSize: Self.defaultCellSize)
   }
 
   /// Mark cells covered by the given frame. Handles out-of-bounds frames safely.
-  @objc(markFilledWithFrame:)
   public func markFilled(with frame: CGRect) {
     guard !frame.isEmpty, !frame.isNull else {
       return
@@ -87,7 +81,6 @@ public final class FBAccessibilityCoverageGrid: NSObject {
   }
 
   /// Whether the cell containing the given point is filled. NO if empty or out of bounds.
-  @objc(isFilledAtPoint:)
   public func isFilled(at point: CGPoint) -> Bool {
     let relativeX = point.x - screenBounds.origin.x
     let relativeY = point.y - screenBounds.origin.y
@@ -100,7 +93,7 @@ public final class FBAccessibilityCoverageGrid: NSObject {
   }
 
   /// Coverage ratio for the entire screen (0.0–1.0), or -1 if the grid is invalid.
-  @objc public func coverageRatio() -> CGFloat {
+  public func coverageRatio() -> CGFloat {
     let totalCells = Int(width * height)
     guard totalCells > 0 else {
       return -1
