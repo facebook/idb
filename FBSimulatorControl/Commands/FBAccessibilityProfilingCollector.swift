@@ -61,10 +61,10 @@ public final class FBAccessibilityProfilingCollector: NSObject {
     lock.unlock()
   }
 
-  @objc public var fetchedKeys: NSSet {
+  public var fetchedKeys: Set<String> {
     lock.lock()
     defer { lock.unlock() }
-    return NSSet(set: _fetchedKeys)
+    return _fetchedKeys
   }
 
   @objc public var elementCount: Int64 {
@@ -91,7 +91,6 @@ public final class FBAccessibilityProfilingCollector: NSObject {
     return _totalXPCDuration
   }
 
-  @objc(finalizeWithSerializationDuration:)
   public func finalize(withSerializationDuration serializationDuration: CFAbsoluteTime) -> FBAccessibilityProfilingData {
     FBAccessibilityProfilingData(
       elementCount: elementCount,

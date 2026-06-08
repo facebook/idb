@@ -597,7 +597,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.frameDict.rawValue])
-    XCTAssertEqual(response.profilingData!.fetchedKeys as! Set<String>, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
+    XCTAssertEqual(response.profilingData!.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
   func testAccessibilityPerformTapOnButtonSucceeds() async throws {
@@ -739,7 +739,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
     // Verify fetched keys match exactly the keys that were requested
     let expectedKeys: Set<String> = Set([FBAXKeys.frame.rawValue, FBAXKeys.label.rawValue, FBAXKeys.type.rawValue, FBAXKeys.frameDict.rawValue])
-    XCTAssertEqual(response.profilingData!.fetchedKeys as! Set<String>, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
+    XCTAssertEqual(response.profilingData!.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
   // MARK: - Coverage Calculation Tests
