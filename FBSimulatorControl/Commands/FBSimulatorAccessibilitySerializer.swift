@@ -10,16 +10,22 @@ import AppKit
 import FBControlCore
 import Foundation
 
+/// Reference-typed accumulator for the process ids seen during a serialization
+/// traversal. Shared with the remote-content phase so processes already present
+/// in the main tree are skipped during grid hit-testing.
+final class SeenPIDs {
+  private var pids: Set<pid_t> = []
+  func insert(_ pid: pid_t) { pids.insert(pid) }
+  func contains(_ pid: pid_t) -> Bool { pids.contains(pid) }
+}
+
 /// Serializes an `AXPMacPlatformElement` tree into the JSON-ready dictionaries
 /// emitted by the accessibility commands. The values mirror the old
 /// SimulatorBridge implementation for downstream compatibility.
 ///
-/// Still driven by the Objective-C `FBAXTranslationRequest` / remote-content code
-/// in this module (via `FBSimulatorControl-Swift.h`), so it keeps `@objc` class
-/// methods with the original selectors and `NSMutable*` return types. `public`
-/// so it lands in the module's generated header.
-@objc(FBSimulatorAccessibilitySerializer)
-public final class FBSimulatorAccessibilitySerializer: NSObject {
+/// Driven entirely from Swift (`FBAXTranslationRequest` and its remote-content
+/// code), so it is a plain Swift namespace returning Swift collections.
+enum FBSimulatorAccessibilitySerializer {
 
   private static let axPrefix = "AX"
   private static let discoveryMethodRecursive = "recursive"
@@ -69,58 +75,53 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
 
   // MARK: - Entry points
 
-  public static func recursiveDescription(
+  static func recursiveDescription(
     fromElement element: AXPMacPlatformElement,
     token: String,
     nestedFormat: Bool,
-    keys: Set<String>,
+    keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: NSMutableSet?,
-    applicationElement outApplicationElement: AutoreleasingUnsafeMutablePointer<NSMutableDictionary?>?
-  ) -> NSMutableArray {
+    seenPids: SeenPIDs?
+  ) -> [[String: Any]] {
     element.translation?.bridgeDelegateToken = token
     if nestedFormat {
-      let appElement = nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
-      outApplicationElement?.pointee = appElement
-      return NSMutableArray(array: [appElement])
+      return [nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)]
     }
     return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids)
   }
 
-  public static func formattedDescription(
+  static func formattedDescription(
     ofElement element: AXPMacPlatformElement,
     token: String,
     nestedFormat: Bool,
-    keys: Set<String>,
+    keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?
-  ) -> NSDictionary {
+  ) -> [String: Any] {
     element.translation?.bridgeDelegateToken = token
     if nestedFormat {
       return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil)
     }
-    return accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, frontmostPid: 0, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive) as NSDictionary
+    return accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: nil, discoveryMethod: discoveryMethodRecursive)
   }
 
-  // The values here are intended to mirror the values in the old SimulatorBridge
-  // implementation for compatibility downstream. `frontmostPid` is accepted for
-  // selector compatibility with the remote-content caller; it is unused.
-  public static func accessibilityDictionary(
+  // The values here mirror the old SimulatorBridge implementation for downstream
+  // compatibility.
+  static func accessibilityDictionary(
     forElement element: AXPMacPlatformElement,
     token: String,
-    keys: Set<String>,
+    keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
-    frontmostPid: pid_t,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: NSMutableSet?,
+    seenPids: SeenPIDs?,
     discoveryMethod: String
   ) -> [String: Any] {
     // The token must always be set so that the right callback is called.
     element.translation?.bridgeDelegateToken = token
 
     let elementPid = element.translation?.pid ?? 0
-    seenPids?.add(NSNumber(value: elementPid))
+    seenPids?.insert(elementPid)
 
     collector?.incrementElementCount()
 
@@ -130,12 +131,11 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
     // the profiling counter and reading the value lazily so attribute access is
     // tracked exactly as the ObjC macro did.
     func include(_ key: FBAXKeys, _ value: @autoclosure () -> Any?) {
-      let rawKey = key.rawValue
-      guard keys.contains(rawKey) else {
+      guard keys.contains(key) else {
         return
       }
-      collector?.incrementAttributeFetchCount(forKey: rawKey)
-      values[rawKey] = ensureJSONSerializable(value())
+      collector?.incrementAttributeFetchCount(forKey: key.rawValue)
+      values[key.rawValue] = ensureJSONSerializable(value())
     }
 
     // Frame is always computed since it is used by multiple keys and the coverage grid.
@@ -146,12 +146,12 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
     // assign rawRole, then Type can derive from it.
     var role: String?
     var rawRole: String?
-    if keys.contains(FBAXKeys.role.rawValue) {
+    if keys.contains(.role) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.role.rawValue)
       rawRole = element.accessibilityRole()?.rawValue
       values[FBAXKeys.role.rawValue] = ensureJSONSerializable(rawRole)
     }
-    if keys.contains(FBAXKeys.type.rawValue) {
+    if keys.contains(.type) {
       if rawRole == nil {
         collector?.incrementAttributeFetchCount(forKey: FBAXKeys.type.rawValue)
         rawRole = element.accessibilityRole()?.rawValue
@@ -179,20 +179,20 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
 
     // Legacy values that mirror SimulatorBridge.
     include(.label, element.accessibilityLabel())
-    if keys.contains(FBAXKeys.frame.rawValue) {
+    if keys.contains(.frame) {
       values[FBAXKeys.frame.rawValue] = NSStringFromRect(frame)
     }
     include(.value, element.accessibilityValue())
     include(.uniqueID, element.accessibilityIdentifier())
 
     // Synthetic values.
-    if keys.contains(FBAXKeys.type.rawValue) {
+    if keys.contains(.type) {
       values[FBAXKeys.type.rawValue] = ensureJSONSerializable(role)
     }
 
     // New values.
     include(.title, element.accessibilityTitle())
-    if keys.contains(FBAXKeys.frameDict.rawValue) {
+    if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
       values[FBAXKeys.frameDict.rawValue] = [
         "x": frame.origin.x,
@@ -214,7 +214,7 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
     include(.subrole, element.accessibilitySubrole()?.rawValue)
     include(.contentRequired, (element as AnyObject).isAccessibilityRequired())
     include(.pid, element.translation?.pid ?? 0)
-    if keys.contains(FBAXKeys.traits.rawValue) {
+    if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
       values[FBAXKeys.traits.rawValue] = traits(from: element) ?? NSNull()
     }
@@ -233,16 +233,16 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
   private static func flatRecursiveDescription(
     fromElement element: AXPMacPlatformElement,
     token: String,
-    keys: Set<String>,
+    keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: NSMutableSet?
-  ) -> NSMutableArray {
-    let values = NSMutableArray()
-    values.add(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, frontmostPid: 0, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
+    seenPids: SeenPIDs?
+  ) -> [[String: Any]] {
+    var values: [[String: Any]] = []
+    values.append(accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
     for child in children(of: element) {
       child.translation?.bridgeDelegateToken = token
-      values.addObjects(from: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids) as [AnyObject])
+      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     return values
   }
@@ -250,16 +250,16 @@ public final class FBSimulatorAccessibilitySerializer: NSObject {
   private static func nestedRecursiveDescription(
     fromElement element: AXPMacPlatformElement,
     token: String,
-    keys: Set<String>,
+    keys: Set<FBAXKeys>,
     collector: FBAccessibilityProfilingCollector?,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    seenPids: NSMutableSet?
-  ) -> NSMutableDictionary {
-    let values = NSMutableDictionary(dictionary: accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, frontmostPid: 0, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive))
-    let childrenValues = NSMutableArray()
+    seenPids: SeenPIDs?
+  ) -> [String: Any] {
+    var values = accessibilityDictionary(forElement: element, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids, discoveryMethod: discoveryMethodRecursive)
+    var childrenValues: [[String: Any]] = []
     for child in children(of: element) {
       child.translation?.bridgeDelegateToken = token
-      childrenValues.add(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
+      childrenValues.append(nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, coverageGrid: coverageGrid, seenPids: seenPids))
     }
     values["children"] = childrenValues
     return values

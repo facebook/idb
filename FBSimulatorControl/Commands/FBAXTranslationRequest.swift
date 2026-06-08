@@ -73,6 +73,12 @@ public class FBAXTranslationRequest {
       additionalFrameCoverage: additionalFrameCoverage
     )
   }
+
+  // Maps the request options' raw string keys to the typed serializer keys,
+  // dropping any unrecognized keys (which would never match the output anyway).
+  fileprivate static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
+    Set((options.keys ?? []).compactMap(FBAXKeys.init(rawValue:)))
+  }
 }
 
 // MARK: - Frontmost Application
@@ -95,8 +101,9 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
     let grid: FBAccessibilityCoverageGrid? = options.collectFrameCoverage ? FBAccessibilityCoverageGrid(screenBounds: screenBounds) : nil
 
     // PIDs seen during traversal, for dedup during remote-content discovery.
-    let seenPids = NSMutableSet()
+    let seenPids = SeenPIDs()
 
+    let keys = Self.serializerKeys(options)
     let serializationStart = CFAbsoluteTimeGetCurrent()
 
     // Serialize, passing the grid to be populated during traversal.
@@ -104,15 +111,11 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
       fromElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
-      keys: options.keys ?? [],
+      keys: keys,
       collector: collector,
       coverageGrid: grid,
-      seenPids: seenPids,
-      applicationElement: nil
+      seenPids: seenPids
     )
-    // In nested format the root application element is the single returned element;
-    // remote content is merged into its children.
-    let applicationElement: NSMutableDictionary? = options.nestedFormat ? (mainAppElements.firstObject as? NSMutableDictionary) : nil
 
     // Base coverage after the main traversal.
     var frameCoverage: NSNumber?
@@ -131,14 +134,14 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
     let frontmostPid = element.translation?.pid ?? 0
     return processRemoteContent(
       mainAppElements: mainAppElements,
-      applicationElement: applicationElement,
+      nestedFormat: options.nestedFormat,
       screenBounds: screenBounds,
       frontmostPid: frontmostPid,
       seenPids: seenPids,
       coverageGrid: grid,
       frameCoverage: frameCoverage,
       serializationStart: serializationStart,
-      options: options,
+      keys: keys,
       remoteOptions: remoteOptions,
       translator: translator
     )
@@ -151,18 +154,18 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
   private func discoverRemoteElements(
     screenBounds: CGRect,
     frontmostPid: pid_t,
-    seenPids: NSSet,
+    seenPids: SeenPIDs,
     coverageGrid: FBAccessibilityCoverageGrid?,
-    options: FBAccessibilityRequestOptions,
+    keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
   ) -> [[String: Any]] {
     var discoveredElements: [[String: Any]] = []
-    var discoveredFrames = Set<NSValue>()
+    var discoveredFrames = Set<String>()
 
     // Always include AXFrame for hit-tested elements (needed for nesting and coverage).
-    var keysWithFrame = options.keys ?? []
-    keysWithFrame.insert("AXFrame")
+    var keysWithFrame = keys
+    keysWithFrame.insert(.frame)
 
     let stepSize = remoteOptions.gridStepSize > 0 ? remoteOptions.gridStepSize : 50.0
     let region = remoteOptions.region.isNull ? screenBounds : remoteOptions.region
@@ -195,7 +198,7 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
         let hitPid = hitTranslation.pid
 
         // Skip PIDs already seen in the main traversal, and the frontmost app itself.
-        if seenPids.contains(NSNumber(value: hitPid)) || hitPid <= 0 || hitPid == frontmostPid {
+        if seenPids.contains(hitPid) || hitPid <= 0 || hitPid == frontmostPid {
           x += stepSize
           continue
         }
@@ -210,12 +213,12 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
         let hitElement = unsafeBitCast(rawHit as AnyObject, to: AXPMacPlatformElement.self)
 
         let hitFrame = hitElement.accessibilityFrame()
-        let hitFrameValue = NSValue(rect: hitFrame)
-        if discoveredFrames.contains(hitFrameValue) {
+        let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
+        if discoveredFrames.contains(hitFrameKey) {
           x += stepSize
           continue
         }
-        discoveredFrames.insert(hitFrameValue)
+        discoveredFrames.insert(hitFrameKey)
 
         coverageGrid?.markFilled(with: hitFrame)
 
@@ -224,7 +227,6 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
           token: token,
           keys: keysWithFrame,
           collector: collector,
-          frontmostPid: frontmostPid,
           coverageGrid: nil, // already marked above
           seenPids: nil, // already filtered
           discoveryMethod: "point_grid"
@@ -244,15 +246,15 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
 
   // Process remote-content discovery and merge with the main elements.
   private func processRemoteContent(
-    mainAppElements: NSMutableArray,
-    applicationElement: NSMutableDictionary?,
+    mainAppElements: [[String: Any]],
+    nestedFormat: Bool,
     screenBounds: CGRect,
     frontmostPid: pid_t,
-    seenPids: NSSet,
+    seenPids: SeenPIDs,
     coverageGrid: FBAccessibilityCoverageGrid?,
     frameCoverage: NSNumber?,
     serializationStart: CFAbsoluteTime,
-    options: FBAccessibilityRequestOptions,
+    keys: Set<FBAXKeys>,
     remoteOptions: FBAccessibilityRemoteContentOptions,
     translator: AXPTranslator
   ) -> FBAccessibilityElementsResponse {
@@ -263,7 +265,7 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
       frontmostPid: frontmostPid,
       seenPids: seenPids,
       coverageGrid: coverageGrid,
-      options: options,
+      keys: keys,
       remoteOptions: remoteOptions,
       translator: translator
     )
@@ -276,24 +278,21 @@ public final class FBAXTranslationRequest_FrontmostApplication: FBAXTranslationR
       }
     }
 
+    var elements = mainAppElements
     if !discoveredElements.isEmpty {
-      if let applicationElement {
-        // Append to the Application element's children (nested format).
-        let children =
-          (applicationElement["children"] as? NSMutableArray)
-          ?? {
-            let array = NSMutableArray()
-            applicationElement["children"] = array
-            return array
-          }()
-        children.addObjects(from: discoveredElements)
+      if nestedFormat, var applicationElement = elements.first {
+        // Append to the root Application element's children (nested format).
+        var children = applicationElement["children"] as? [[String: Any]] ?? []
+        children.append(contentsOf: discoveredElements)
+        applicationElement["children"] = children
+        elements[0] = applicationElement
       } else {
         // Append to the flat array.
-        mainAppElements.addObjects(from: discoveredElements)
+        elements.append(contentsOf: discoveredElements)
       }
     }
 
-    return buildResponse(elements: mainAppElements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
+    return buildResponse(elements: elements, serializationStart: serializationStart, frameCoverage: frameCoverage, additionalFrameCoverage: additionalFrameCoverage)
   }
 }
 
@@ -322,7 +321,7 @@ public final class FBAXTranslationRequest_Point: FBAXTranslationRequest {
       ofElement: element,
       token: token,
       nestedFormat: options.nestedFormat,
-      keys: options.keys ?? [],
+      keys: Self.serializerKeys(options),
       collector: collector,
       coverageGrid: nil
     )
