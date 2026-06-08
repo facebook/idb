@@ -33,6 +33,14 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleHealthSettingsAction(action, bundleID, typeIDs);
   } else if ([service isEqualToString:@"proxy"]) {
     return handleProxyAction(action, arguments);
+  } else if ([service isEqualToString:@"repl"]) {
+    if ([action isEqualToString:@"start"]) {
+      // No-op for now. `repl start` will host the REPL control socket and serve
+      // injected code in a later step.
+      return 0;
+    }
+    NSLog(@"Unknown repl action: %@", action);
+    return 1;
   } else {
     NSLog(@"Unknown service: %@", service);
     NSLog(@"Available services: contacts, dns, photos, notifications, health, proxy");

@@ -10,4 +10,6 @@ import Foundation
 public protocol AsyncReplCommands: AnyObject {
 
   func startReplTest(bundlePath: String) async throws -> ReplSession
+
+  func startReplSimulator() async throws
 }

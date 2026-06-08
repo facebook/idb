@@ -23,9 +23,18 @@ struct ReplMethodHandler {
 
     targetLogger.debug().log("REPL session context: \(start.context)")
 
-    // Launch the test bundle in REPL mode: libRepl injected, TestRepl/start
-    // forced, and IDB_REPL_SOCKET_PATH set so the shim binds the control socket.
-    let session = try await commandExecutor.repl_start(bundlePath: start.testBundlePath)
+    if case .test = start.context {
+      try await handleTest(start: start, requestStream: requestStream, responseStream: responseStream)
+    } else {
+      try await handleSimulator(responseStream: responseStream)
+    }
+  }
+
+  /// The `test` context: launch the test bundle in REPL mode (libRepl injected,
+  /// TestRepl/start forced, IDB_REPL_SOCKET_PATH set), connect to the shim's
+  /// control socket, and bridge Execute messages to it.
+  private func handleTest(start: Idb_ReplRequest.Start, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+    let session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
 
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator's test process can read.
@@ -75,5 +84,16 @@ struct ReplMethodHandler {
       try await bridgeFBFutureVoid(session.run)
     }
     try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL session ended" }) })
+  }
+
+  /// The `simulator` context: launch SimulatorFrameworkBridge on the simulator.
+  private func handleSimulator(responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+    try await commandExecutor.repl_start_simulator()
+    targetLogger.debug().log("SimulatorFrameworkBridge launched for REPL simulator context")
+
+    // The bridge does not host a control socket yet, so there is nothing to
+    // bridge. Report ready, then end the session.
+    try await responseStream.send(.with { $0.event = .ready(.init()) })
+    try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL simulator session ended" }) })
   }
 }

@@ -279,11 +279,20 @@ import XCTestBootstrap
   /// and has the shim bind a control socket whose path is passed via
   /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
   /// the test process exits, i.e. once the control socket is closed.
-  public func repl_start(bundlePath: String) async throws -> ReplSession {
+  public func repl_start_test(bundlePath: String) async throws -> ReplSession {
     guard let replTarget = target as? AsyncReplCommands else {
       throw FBIDBError.describe("\(target) does not support running REPL tests").build()
     }
     return try await replTarget.startReplTest(bundlePath: bundlePath)
+  }
+
+  /// Launches the `SimulatorFrameworkBridge` binary on the simulator for the
+  /// "simulator" REPL context.
+  public func repl_start_simulator() async throws {
+    guard let replTarget = target as? AsyncReplCommands else {
+      throw FBIDBError.describe("\(target) does not support running REPL sessions").build()
+    }
+    try await replTarget.startReplSimulator()
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {

@@ -74,6 +74,14 @@ public final class FBSimulatorReplCommands: NSObject, FBiOSTargetCommand {
       logger: logger)
     return ReplSession(socketPath: socketPath, run: runner.execute())
   }
+
+  fileprivate func startReplSimulatorAsync() async throws {
+    guard let simulator = self.simulator else {
+      throw FBSimulatorError.describe("Simulator is deallocated").build()
+    }
+
+    try await simulator.settingsCommands().runSimulatorFrameworkBridgeAsync(withService: "repl", action: "start")
+  }
 }
 
 // MARK: - FBSimulator+AsyncReplCommands
@@ -82,6 +90,10 @@ extension FBSimulator: AsyncReplCommands {
 
   public func startReplTest(bundlePath: String) async throws -> ReplSession {
     try await replCommands().startReplTestAsync(bundlePath: bundlePath)
+  }
+
+  public func startReplSimulator() async throws {
+    try await replCommands().startReplSimulatorAsync()
   }
 }
 
