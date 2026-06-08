@@ -7,6 +7,8 @@
 
 #import "ServiceDispatch.h"
 
+#import <ReplExecutor/ReplSocketServer.h>
+
 #import "ContactsService.h"
 #import "DnsService.h"
 #import "HealthSettingsService.h"
@@ -35,9 +37,8 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleProxyAction(action, arguments);
   } else if ([service isEqualToString:@"repl"]) {
     if ([action isEqualToString:@"start"]) {
-      // No-op for now. `repl start` will host the REPL control socket and serve
-      // injected code in a later step.
-      return 0;
+      // Serve the REPL control socket.
+      return FBReplServeSocketFromEnvironment();
     }
     NSLog(@"Unknown repl action: %@", action);
     return 1;
