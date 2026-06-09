@@ -79,4 +79,46 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
       }
     }
   }
+
+  // MARK: - Lock Device
+
+  func testLockDeviceEventSize() {
+    let data = FBSimulatorPurpleHID.purple().lockDeviceEvent()
+    XCTAssertEqual(data.count, 112, "Buffer should be 112 bytes (aligned to 8)")
+    XCTAssertEqual(uint32(at: 0x04, in: data), 108, "msgh_size should be 108")
+  }
+
+  func testLockDeviceEventMachHeader() {
+    let data = FBSimulatorPurpleHID.purple().lockDeviceEvent()
+
+    // msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0) = 0x13
+    XCTAssertEqual(uint32(at: 0x00, in: data), 0x13)
+    // msgh_remote_port = 0 (patched later by transport)
+    XCTAssertEqual(uint32(at: 0x08, in: data), 0)
+    // msgh_local_port = 0
+    XCTAssertEqual(uint32(at: 0x0C, in: data), 0)
+    // msgh_id = 0x7B (123)
+    XCTAssertEqual(uint32(at: 0x14, in: data), 0x7B)
+  }
+
+  func testLockDeviceEventType() {
+    let data = FBSimulatorPurpleHID.purple().lockDeviceEvent()
+
+    // GSEvent type at offset 0x18 = 1014 | 0x20000 = 0x203F6
+    XCTAssertEqual(uint32(at: 0x18, in: data), 0x203F6)
+    // record_info_size at offset 0x48 = 0 (no payload for lock)
+    XCTAssertEqual(uint32(at: 0x48, in: data), 0)
+  }
+
+  func testLockDeviceEventZeroedBody() {
+    let data = FBSimulatorPurpleHID.purple().lockDeviceEvent()
+
+    // Everything after the GSEvent type word (0x1C..end) carries no payload and should be zeroed.
+    data.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in
+      for i in 0x1C..<112 {
+        let byte = buf.load(fromByteOffset: i, as: UInt8.self)
+        XCTAssertEqual(byte, 0, "Byte at offset 0x\(String(i, radix: 16)) should be zero")
+      }
+    }
+  }
 }
