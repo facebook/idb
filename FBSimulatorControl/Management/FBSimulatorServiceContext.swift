@@ -22,25 +22,25 @@ public final class FBSimulatorServiceContext: NSObject {
   private static let sharedLock = NSLock()
 
   @objc
-  public class func sharedServiceContext() -> FBSimulatorServiceContext {
-    return sharedServiceContext(withLogger: FBControlCoreGlobalConfiguration.defaultLogger)
+  public class func sharedServiceContext() throws -> FBSimulatorServiceContext {
+    return try sharedServiceContext(withLogger: FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  @objc(sharedServiceContextWithLogger:)
-  public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) -> FBSimulatorServiceContext {
+  @objc(sharedServiceContextWithLogger:error:)
+  public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
     sharedLock.lock()
     defer { sharedLock.unlock() }
     if let instance = _sharedInstance {
       return instance
     }
-    let instance = createServiceContext(withLogger: logger)
+    let instance = try createServiceContext(withLogger: logger)
     _sharedInstance = instance
     return instance
   }
 
   // MARK: - Private Initialization
 
-  private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) -> FBSimulatorServiceContext {
+  private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
     let serviceContextClass: AnyClass? = NSClassFromString("SimServiceContext")
     assert(
       serviceContextClass != nil && serviceContextClass!.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:")),

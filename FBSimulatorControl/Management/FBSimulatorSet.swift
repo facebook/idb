@@ -113,7 +113,7 @@ public final class FBSimulatorSet: NSObject, FBiOSTargetSet {
   @objc
   public func configurationsForAbsentDefaultSimulators() -> [FBSimulatorConfiguration] {
     let existingConfigurations = Set(allSimulators.compactMap { $0.configuration })
-    var absentConfigurations = Set(FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger))
+    var absentConfigurations = Set((try? FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger)) ?? [])
     absentConfigurations.subtract(existingConfigurations)
     return Array(absentConfigurations)
   }
