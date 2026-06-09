@@ -9,7 +9,7 @@
 import XCTest
 
 final class FBControlCoreLoggerTests: XCTestCase {
-  func testLoggingToFileDescriptor() {
+  func testLoggingToFileDescriptor() throws {
     let filename = "\(UUID().uuidString).log"
     let temporaryFilePath = NSTemporaryDirectory().appending(filename)
     FileManager.default.createFile(atPath: temporaryFilePath, contents: nil, attributes: nil)
@@ -21,9 +21,8 @@ final class FBControlCoreLoggerTests: XCTestCase {
     fileHandle.closeFile()
 
     var error: NSError?
-    let fileContent = try? String(contentsOfFile: temporaryFilePath, encoding: .utf8)
-    XCTAssertNotNil(fileContent)
-    XCTAssertTrue(fileContent!.hasSuffix("Some content\n"), "Unexpected fileContent: \(fileContent!)")
+    let fileContent = try XCTUnwrap(try? String(contentsOfFile: temporaryFilePath, encoding: .utf8))
+    XCTAssertTrue(fileContent.hasSuffix("Some content\n"), "Unexpected fileContent: \(fileContent)")
   }
 
   func testLoggingToConsumer() {
