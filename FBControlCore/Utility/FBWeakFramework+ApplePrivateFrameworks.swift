@@ -14,7 +14,13 @@ extension FBWeakFramework {
   }
 
   @objc(SimulatorKit) public class var simulatorKit: FBWeakFramework {
-    FBWeakFramework.xcodeFramework(withRelativePath: "Library/PrivateFrameworks/SimulatorKit.framework", requiredClassNames: [])
+    // Xcode 27 moved SimulatorKit.framework from Contents/Developer/Library/PrivateFrameworks
+    // to Contents/SharedFrameworks. Prefer the new location, falling back to the legacy one for
+    // Xcode <= 26. xcodeFramework(withRelativePath:) resolves relative to the Developer directory.
+    let sharedRelativePath = "../SharedFrameworks/SimulatorKit.framework"
+    let sharedAbsolutePath = ((FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent(sharedRelativePath) as NSString).standardizingPath
+    let relativePath = FileManager.default.fileExists(atPath: sharedAbsolutePath) ? sharedRelativePath : "Library/PrivateFrameworks/SimulatorKit.framework"
+    return FBWeakFramework.xcodeFramework(withRelativePath: relativePath, requiredClassNames: [])
   }
 
   @objc(DTXConnectionServices) public class var dtxConnectionServices: FBWeakFramework {
