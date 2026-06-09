@@ -292,7 +292,7 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertEqual(output, expectedData)
   }
 
-  func testH264AnnexBNotReadyBufferReturnsError() {
+  func testH264AnnexBNotReadyBufferReturnsError() throws {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
@@ -300,8 +300,7 @@ final class FBVideoStreamTests: XCTestCase {
 
     let result = WriteFrameToAnnexBStream(sampleBuffer, nil, consumer, logger, &error)
     XCTAssertFalse(result)
-    XCTAssertNotNil(error)
-    XCTAssertTrue(error!.localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
     XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
   }
 
@@ -841,7 +840,7 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertNotEqual(textRange.location, NSNotFound, "Chapter text should be present in emsg box")
   }
 
-  func testFMP4NotReadyBufferReturnsError() {
+  func testFMP4NotReadyBufferReturnsError() throws {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let ctx = FBFMP4MuxerContext(hevc: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
@@ -850,8 +849,7 @@ final class FBVideoStreamTests: XCTestCase {
 
     let result = WriteH264FrameToFMP4Stream(sampleBuffer, ctx, consumer, logger, &error)
     XCTAssertFalse(result)
-    XCTAssertNotNil(error)
-    XCTAssertTrue(error!.localizedDescription.contains("Sample Buffer is not ready"))
+    XCTAssertTrue(try XCTUnwrap(error).localizedDescription.contains("Sample Buffer is not ready"))
     XCTAssertEqual(consumer.data().count, 0)
   }
 
