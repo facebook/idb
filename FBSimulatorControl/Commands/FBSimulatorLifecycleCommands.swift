@@ -208,6 +208,14 @@ public final class FBSimulatorLifecycleCommands: NSObject, FBiOSTargetCommand {
       throw FBSimulatorError.describe("Focusing on the Simulator App for a simulator in a custom device set (\(deviceSetPath)) is not supported").build()
     }
 
+    // Xcode 27 replaced Simulator.app with the CoreDevice-based DeviceHub.app, which only
+    // displays simulators it started itself. It will not attach to a simulator booted out of
+    // band by CoreSimulator/FBSimulatorControl (Apple known issue 176809181), so launching it
+    // here would only open an empty window. Fail with guidance instead.
+    if FBXcodeConfiguration.simulatorApp.identifier == "com.apple.dt.Devices" {
+      throw FBSimulatorError.describe("Focus is unsupported on Xcode 27 and later: DeviceHub.app does not attach to externally-booted simulators (Apple known issue 176809181). Use video streaming to view the simulator instead.").build()
+    }
+
     // Find the running instances of SimulatorApp.
     let apps = NSWorkspace.shared.runningApplications
     let simulatorApps = apps.filter { $0.bundleIdentifier == "com.apple.iphonesimulator" }

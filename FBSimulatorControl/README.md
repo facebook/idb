@@ -104,6 +104,8 @@ The `CoreSimulator` Framework that is used by the `Simulator.app` as well as Pla
 ## Launching via `Simulator.app`
 `Simulator.app` is the macOS Application bundle with Xcode that you are probably familiar with for viewing and interacting with a Simulator. This Mac Application is the part of the Xcode Toolchain that you will be used to.
 
+> **Xcode 27 and later:** `Simulator.app` has been replaced by the CoreDevice-based `DeviceHub.app`, which only displays simulators it launched itself and will not attach to a Simulator booted out of band by `CoreSimulator` (Apple known issue 176809181). As a result `focus` is unsupported on Xcode 27+; use the `FBFramebuffer` / video-streaming APIs to view a `FBSimulatorControl`-booted Simulator instead.
+
 `FBSimulatorControl` can launch the Application Excutable directly, thereby allowing specific Simulators to be booted by UDID and Device Set. This can be done by overriding the `Simulator.app`s `NSUserDefaults` by [passing them as Arguments to the Application Process](https://www.bignerdranch.com/blog/by-your-command). Once the Simulator has booted, it can be interacted with via `CoreSimulator` with commands such as installing Apps and launch executables.
 
 However, this mode of operation does limit the amount that `FBSimulatorControl` can manipulate the Simulator, once the `Simulator.app` process has been launched. In particular it's not [possible to execute custom code inside the Simulator Application process](https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f), which means that it's not possible to get video frames that the booted simulator passes back to the `Simulator.app` process.

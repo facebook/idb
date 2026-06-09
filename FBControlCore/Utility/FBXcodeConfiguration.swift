@@ -80,7 +80,14 @@ public class FBXcodeConfiguration: NSObject {
   // MARK: Private
 
   fileprivate class var simulatorApplicationPath: String {
-    ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
+    // Xcode 27 renamed Simulator.app to DeviceHub.app and moved it from
+    // Contents/Developer/Applications to Contents/Applications. Prefer the new
+    // location, falling back to the legacy Simulator.app for Xcode <= 26.
+    let deviceHubPath = ((contentsDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("DeviceHub.app")
+    if FileManager.default.fileExists(atPath: deviceHubPath) {
+      return deviceHubPath
+    }
+    return ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
   }
 
   fileprivate class var iPhoneSimulatorPlatformInfoPlistPath: String {
