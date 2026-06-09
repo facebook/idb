@@ -104,6 +104,11 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 - (void)sendIndigoMessageData:(NSData *)data completionQueue:(dispatch_queue_t)completionQueue completion:(void (^)(NSError *))completion
 {
+  // Host-side "Indigo" injection: hand the IndigoMessage to SimulatorKit's
+  // SimDeviceLegacyHIDClient, which writes it to the guest's SimDeviceIO port for
+  // backboardd to consume. See FBSimulatorHID.h for the full host→guest chain and the
+  // parallel (currently entitlement-gated, unreachable) CoreDevice/dtuhidd path.
+  //
   // The event is delivered asynchronously.
   // Therefore copy the message and let the client manage the lifecycle of it.
   // The free of the buffer is performed by the client and the NSData will free when it falls out of scope.

@@ -27,6 +27,42 @@
     Guest-side: GraphicsServices._PurpleEventCallback → backboardd.
 
  See Indigo.h and GSEvent.h for wire format documentation.
+
+ ## Touch delivery: the two CoreSimulator HID paths (as of Xcode 27)
+
+ A tap reaches UIKit through one of two parallel host→guest injection paths. Both are
+ implemented by CoreSimulator and both bottom out in the guest's HID system (backboardd);
+ they differ only in how the event crosses the host/guest boundary:
+
+ 1. Legacy "Indigo" path — what this class uses.
+      FBSimulatorIndigoHID builds an `IndigoMessage`
+        → -[SimDeviceLegacyHIDClient sendWithMessage:freeWhenDone:completionQueue:completion:]  (SimulatorKit, host-side)
+        → SimDeviceIO Indigo port  (CoreSimulator host↔guest IO channel)
+        → guest SimHIDVirtualServiceManager → backboardd → UIKit touch
+    Host-side, ObjC/C-callable, requires no entitlement. This is the reachable, stable
+    path that FBSimulatorControl uses today.
+
+ 2. Modern "CoreDevice" path — Xcode 27+, NOT used here (unreachable by third parties).
+      CoreDevice.HIDDigitizer.send(pointOne:pointTwo:eventType:edge:target:)  (private Swift)
+        → `IndigoDigitizerEvent`  (CoreDeviceUtilities)
+        → guest Mach endpoint `com.apple.coredevice.feature.remote.hid.digitizer`
+        → dtuhidd  (CoreSimulator daemon in launchd_sim; class dtuhidd.IndigoHIDServer;
+                    binary at CoreSimulator.framework/Resources/Platforms/iphoneos/usr/libexec/dtuhidd)
+        → HIDEventSystemClient posts an `IOHIDEvent` to com.apple.iohideventsystem
+        → guest backboardd → UIKit touch
+    This is what Xcode's coding agent and DeviceHub drive. It is not callable from a
+    third party today: the CoreDevice Swift API is generic/async with no shipped module
+    interface and no client-constructible `RemoteDevice`, and the HID feature is gated by
+    the `com.apple.private.CoreDevice.hid` entitlement held by CoreDeviceService.xpc.
+
+ Both paths speak the same Indigo digitizer model (start/position/end edge transitions
+ with per-contact points) and both bottom out in CoreSimulator — notably, `dtuhidd` is
+ itself a CoreSimulator binary, so the "CoreDevice" digitizer for a simulator is still
+ CoreSimulator functionality behind an entitled front door. The CoreDevice path is the
+ direction Apple is converging on, and is the only host-driven touch path for physical
+ devices (where SimDeviceIO does not exist). The intent for this layer is to expose both
+ as alternative transports: the legacy Indigo path for simulators today, and a
+ CoreDevice-aligned path once Apple ships a supported (non-entitled) interface.
  */
 @interface FBSimulatorHID : NSObject
 
